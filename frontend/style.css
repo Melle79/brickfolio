@@ -462,3 +462,16 @@ header .logo-studs.small i:first-child {
 .stat-bar-fill {
   height: 100%; background: var(--blue, #0057A6); border-radius: 6px;
 }
+details.help {
+  border: 1.5px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 8px; background: #fff;
+}
+details.help summary {
+  font-weight: 800; cursor: pointer; user-select: none;
+}
+details.help[open] summary { margin-bottom: 6px; }
+details.help p, details.help ol {
+  font-size: 13.5px; line-height: 1.5; margin: 6px 0;
+}
+details.help ol { padding-left: 20px; }
+details.help a { color: var(--blue, #0057A6); font-weight: 700; }

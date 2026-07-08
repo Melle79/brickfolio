@@ -210,7 +210,9 @@
     <div id="api-panel" class="settings-card" hidden>
       <h3>API-Schlüssel</h3>
       <p class="search-hint">Gespeicherte Schlüssel werden maskiert angezeigt.
-        Feld leer lassen = Wert bleibt unverändert.</p>
+        Feld leer lassen = Wert bleibt unverändert.
+        Woher die Schlüssel kommen, steht unten in der
+        <b>Hilfe → API-Schlüssel besorgen</b>.</p>
       <label for="k-rb">Rebrickable Key (Namenssuche)</label>
       <input id="k-rb" autocapitalize="none" autocomplete="off" spellcheck="false">
       <label for="k-bck">BrickLink Consumer Key</label>
@@ -244,6 +246,95 @@
       <input type="file" id="restore-file" accept=".json,application/json" hidden>
       <p class="search-hint">Enthält alles: Benutzer, Sammlung, Wünsche,
         Preisverläufe, Set-Zuordnungen und Einstellungen.</p>
+    </div>
+
+    <div class="settings-card">
+      <h3>❓ Hilfe</h3>
+
+      <details class="help">
+        <summary>🚀 Erste Schritte</summary>
+        <p>Im Tab <b>Scannen</b> eine Figur oder ein Set fotografieren und den
+        richtigen Treffer antippen – oder unten per Name/Nummer suchen (reine
+        Nummern wie <i>75154</i> oder <i>sw0815</i> findet die App als Set
+        <i>und</i> Figur). Mit <b>＋ Zur Sammlung</b> landet der Fund nach
+        einer kurzen Zustandsfrage in eurer Sammlung. Alles, was die
+        Erkennung nicht kennt, geht über <b>✏️ Manuell erfassen</b>.</p>
+      </details>
+
+      <details class="help" id="help-keys">
+        <summary>🔑 API-Schlüssel besorgen</summary>
+        <p>Ohne Schlüssel funktioniert das Scannen (Brickognize ist frei) –
+        <b>Preise, Namenssuche und Set-Inhalte</b> brauchen aber eigene,
+        kostenlose API-Zugänge. Eintragen kann sie nur der Admin unter
+        <b>Mehr → API-Schlüssel</b>.</p>
+        <p><b>BrickLink</b> (Preise &amp; Set-Inhalte):</p>
+        <ol>
+          <li>Ein BrickLink-Konto anlegen bzw. einloggen.</li>
+          <li>Auf der Seite <a href="https://www.bricklink.com/v2/api/register_consumer.page" target="_blank" rel="noopener">API → Register Consumer</a>
+            die Nutzungsbedingungen akzeptieren und einen Access Token
+            erzeugen (als IP kann <i>0.0.0.0</i> für „beliebig" eingetragen
+            werden).</li>
+          <li>Die vier Werte – <i>Consumer Key</i>, <i>Consumer Secret</i>,
+            <i>Token</i>, <i>Token Secret</i> – hier in die vier Felder
+            kopieren und speichern.</li>
+        </ol>
+        <p><b>Rebrickable</b> (Suche nach Namen):</p>
+        <ol>
+          <li>Kostenloses Konto auf rebrickable.com anlegen.</li>
+          <li>Unter <a href="https://rebrickable.com/api/" target="_blank" rel="noopener">Account → API</a>
+            einen Key erzeugen und ins Feld <i>Rebrickable Key</i>
+            eintragen.</li>
+        </ol>
+        <p>Danach <b>„Verbindung testen"</b> drücken – zwei grüne Haken, und
+        die Preise laufen ab sofort automatisch ein.</p>
+      </details>
+
+      <details class="help">
+        <summary>👤 Rollen &amp; Rechte</summary>
+        <p><b>Standard</b>: Sammlung, Wünsche und Statistik – bewusst
+        einfach. Einkaufslisten erscheinen nur, wenn eine aktive existiert;
+        angekommene Artikel darf jeder verbuchen.<br>
+        <b>Sammlerprofi</b> 💼: zusätzlich Kaufpreise &amp; Gewinn,
+        Einkaufslisten verwalten, Gesamtangebot, Verkaufsliste, Archiv,
+        CSV-Import. Die Rolle vergibt der Admin in der Benutzerverwaltung
+        („Profi"-Knopf).<br>
+        <b>Admin</b> 🔧: Benutzer, API-Schlüssel, Sicherung.</p>
+      </details>
+
+      <details class="help">
+        <summary>💼 Flohmarkt-Ablauf (Sammlerprofi)</summary>
+        <ol>
+          <li>Im Tab <b>Listen</b> eine Einkaufsliste anlegen.</li>
+          <li>Am Stand scannen und per <b>🛒 Liste</b> befüllen – die
+            Kopfzeile zeigt den Marktwert, der Zustand ist je Artikel
+            umschaltbar.</li>
+          <li><b>💰 Gesamtangebot</b>: Der rote Vorschlag ist deine
+            Verhandlungsbasis; „Verteilen" legt den Endpreis anteilig nach
+            Marktwert auf die Artikel um.</li>
+          <li>Zu Hause verbucht jeder die Funde mit <b>✔ Da!</b> – ist alles
+            drin, archiviert sich die Liste selbst.</li>
+        </ol>
+      </details>
+
+      <details class="help">
+        <summary>🔣 Symbole</summary>
+        <p>⚙️ Kaufpreis automatisch (BrickLink-Ø, Datum im Tooltip) ·
+        ✏️ Kaufpreis manuell · 👥 3/4 ✔ Set-Figuren vorhanden/komplett ·
+        📦 „steckt in euren Sets" bzw. Archiv · ⭐ auf der Wunschliste ·
+        ausgegraut = Listen-Artikel schon verbucht.</p>
+      </details>
+
+      <details class="help">
+        <summary>💾 Sicherung &amp; Updates</summary>
+        <p>Der Admin lädt unter <b>Sicherung</b> eine JSON-Datei mit allen
+        Daten herunter und kann sie jederzeit wieder einspielen – ideal vor
+        Updates oder für den Server-Umzug. Alternativ genügt es, die Datei
+        <i>data/brickfolio.db</i> auf dem Server zu kopieren.</p>
+      </details>
+
+      <p class="search-hint" style="margin-top:10px">Das ausführliche
+        Handbuch mit allen Funktionen:
+        <a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md" target="_blank" rel="noopener">docs/HANDBUCH.md auf GitHub</a></p>
     </div>
   </main>
 
