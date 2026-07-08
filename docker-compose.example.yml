@@ -1,0 +1,24 @@
+services:
+  brickfolio:
+    build: .
+    container_name: brickfolio
+    restart: unless-stopped
+    ports:
+      - "8300:8300"
+    volumes:
+      - ./data:/data
+    environment:
+      # Erst-Login (wird nur beim allerersten Start angelegt)
+      ADMIN_USER: "admin"
+      ADMIN_PASSWORD: "bitte-aendern"
+
+      # Optional: BrickLink-API für Preise & Set-Inhalte
+      # Keys: https://www.bricklink.com/v2/api/register_consumer.page
+      # BL_CONSUMER_KEY: ""
+      # BL_CONSUMER_SECRET: ""
+      # BL_TOKEN: ""
+      # BL_TOKEN_SECRET: ""
+
+      # Optional: Rebrickable-API für die Namenssuche
+      # Key: https://rebrickable.com/api/
+      # REBRICKABLE_KEY: ""

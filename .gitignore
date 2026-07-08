@@ -1,0 +1,16 @@
+# Laufzeitdaten (Datenbank, Schlüssel) – niemals committen!
+data/
+*.db
+secret.key
+
+# Update-Pakete & Sicherungen
+*.zip
+brickfolio-sicherung-*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# System
+.DS_Store
