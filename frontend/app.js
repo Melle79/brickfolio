@@ -2027,6 +2027,43 @@ function yearChart(list) {
   <div class="price-note">Antippen/Zeigen für Details je Jahr</div>`;
 }
 
+/* ---------------------------------------------------------------- CSV-Import */
+function downloadCsvSample() {
+  downloadCsv("brickfolio-import-beispiel.csv", [
+    ["Nummer", "Typ", "Name", "Anzahl", "Zustand", "Bezahlt", "Jahr",
+     "Notizen"],
+    ["sw0815", "Figur", "Shoretrooper", "2", "Gebraucht", "24,50", "2016",
+     "Flohmarkt Ottobrunn"],
+    ["75154", "Set", "TIE Striker", "1", "Neu", "89,99", "2016", ""],
+    ["col424", "Figur", "", "1", "Gebraucht", "", "", "leerer Name: Nummer wird als Name verwendet"],
+    ["manuell-01", "Figur", "Eigenbau-Ritter", "1", "Gebraucht", "3,00", "",
+     "eigene Nummern bekommen keine BrickLink-Preise"],
+  ]);
+  toast("Beispiel-CSV heruntergeladen 💾");
+}
+
+async function importCsvFile(file) {
+  let text;
+  try {
+    text = await file.text();
+  } catch (_) {
+    toast("Datei konnte nicht gelesen werden");
+    return;
+  }
+  try {
+    const res = await api("/import/csv", { method: "POST",
+      body: { csv: text } });
+    let msg = `Import fertig: ${res.created} neu, ${res.merged} zusammengeführt`;
+    if (res.error_count) msg += `, ${res.error_count} Fehler`;
+    toast(msg + " ✔");
+    if (res.errors && res.errors.length) {
+      alert("Nicht importierte Zeilen:\n" + res.errors
+        .map((e) => `Zeile ${e.line}: ${e.error}`).join("\n")
+        + (res.error_count > res.errors.length ? "\n…" : ""));
+    }
+  } catch (e) { toast(e.message); }
+}
+
 /* ---------------------------------------------------------------- Verkaufsliste */
 async function toggleDuplicates() {
   const box = $("duplicates-box");
@@ -2251,6 +2288,8 @@ async function restoreBackupFile(file) {
 
 /* ---------------------------------------------------------------- Einstellungen */
 async function loadSettings() {
+  const dealerUi = state.user && state.user.is_dealer;
+  if ($("csv-import-block")) $("csv-import-block").hidden = !dealerUi;
   $("settings-user").textContent = state.user ? state.user.username : "";
   $("own-name").value = state.user ? state.user.username : "";
   const isAdmin = !!(state.user && state.user.is_admin);
@@ -2341,6 +2380,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) { toast(e.message); }
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
+  $("btn-csv-sample").addEventListener("click", downloadCsvSample);
+  $("btn-csv-import").addEventListener("click", () => $("csv-file").click());
+  $("csv-file").addEventListener("change", (ev) => {
+    const file = ev.target.files[0];
+    ev.target.value = "";
+    if (file) importCsvFile(file);
+  });
   $("btn-toggle-archive").addEventListener("click", () => {
     state.showArchive = !state.showArchive;
     loadLists();

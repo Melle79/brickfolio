@@ -187,6 +187,17 @@
     </div>
     <div class="settings-card">
       <h3>Export & Druck</h3>
+      <div id="csv-import-block" hidden>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn" id="btn-csv-import">📥 CSV importieren</button>
+          <button class="mini-btn" id="btn-csv-sample">Beispiel-CSV laden</button>
+        </div>
+        <input type="file" id="csv-file" accept=".csv,text/csv" hidden>
+        <p class="search-hint">Spalten (Reihenfolge egal, nur „Nummer" ist
+          Pflicht): Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen.
+          Preise, Bilder und Set-Inhalte holt die App automatisch nach.</p>
+        <hr style="border:none;border-top:1.5px dashed var(--line);margin:12px 0">
+      </div>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="btn-csv-col">Sammlung als CSV</button>
         <button class="mini-btn" id="btn-csv-want">Wunschliste als CSV</button>

@@ -461,6 +461,132 @@ def stats_dashboard(user: dict = Depends(current_user)):
             "winners": winners[:5]}
 
 
+class CsvImportBody(BaseModel):
+    csv: str = Field(min_length=1, max_length=2_000_000)
+
+
+CSV_TYPE_MAP = {"figur": "minifig", "minifig": "minifig", "fig": "minifig",
+                "set": "set", "teil": "part", "part": "part"}
+CSV_COND_MAP = {"neu": "new", "new": "new",
+                "gebraucht": "used", "used": "used"}
+
+
+@app.post("/api/import/csv")
+def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
+    import csv as csvmod
+    import io
+    text = body.csv.lstrip("\ufeff").strip()
+    if not text:
+        raise HTTPException(400, "Die Datei ist leer")
+    first = text.splitlines()[0]
+    delim = ";" if first.count(";") >= first.count(",") else ","
+    rows = list(csvmod.reader(io.StringIO(text), delimiter=delim))
+    if len(rows) < 2:
+        raise HTTPException(400, "Keine Datenzeilen gefunden (Kopfzeile + "
+                                 "mindestens eine Zeile nötig)")
+    header = [h.strip().lower() for h in rows[0]]
+
+    def col(*names):
+        for i, h in enumerate(header):
+            if h in names:
+                return i
+        return None
+
+    idx = {"num": col("nummer", "item_id", "no", "number"),
+           "type": col("typ", "type"),
+           "name": col("name"),
+           "qty": col("anzahl", "menge", "qty", "quantity"),
+           "cond": col("zustand", "condition"),
+           "paid": col("bezahlt", "kaufpreis", "einkauf", "paid"),
+           "year": col("jahr", "year"),
+           "notes": col("notizen", "notes", "bemerkung")}
+    if idx["num"] is None:
+        raise HTTPException(400, "Spalte 'Nummer' fehlt in der Kopfzeile")
+
+    def cell(row, key):
+        i = idx[key]
+        return row[i].strip() if i is not None and i < len(row) else ""
+
+    created = merged = 0
+    errors = []
+    now = int(time.time())
+    with core.db() as conn:
+        for line_no, row in enumerate(rows[1:], start=2):
+            if not any(c.strip() for c in row):
+                continue
+            num = cell(row, "num")
+            if not num:
+                errors.append({"line": line_no, "error": "Nummer fehlt"})
+                continue
+            typ = CSV_TYPE_MAP.get(cell(row, "type").lower(), "minifig")
+            name = cell(row, "name") or num
+            cond = CSV_COND_MAP.get(cell(row, "cond").lower(), "used")
+            try:
+                qty = int(cell(row, "qty") or 1)
+                if not 1 <= qty <= 999:
+                    raise ValueError
+            except ValueError:
+                errors.append({"line": line_no,
+                               "error": f"Ungültige Anzahl bei {num}"})
+                continue
+            paid = None
+            raw_paid = cell(row, "paid").replace("€", "").strip()
+            if raw_paid:
+                try:
+                    paid = round(float(raw_paid.replace(".", "")
+                                       .replace(",", ".")
+                                       if "," in raw_paid
+                                       else raw_paid), 2)
+                    if paid < 0:
+                        raise ValueError
+                except ValueError:
+                    errors.append({"line": line_no,
+                                   "error": f"Ungültiger Preis bei {num}"})
+                    continue
+            year = None
+            if cell(row, "year"):
+                try:
+                    year = int(cell(row, "year"))
+                    if not 1900 <= year <= 2100:
+                        year = None
+                except ValueError:
+                    year = None
+            notes = cell(row, "notes")[:500]
+
+            ex = conn.execute(
+                "SELECT id, paid_price FROM collection WHERE item_id = ? "
+                "AND item_type = ?", (num, typ)).fetchone()
+            if ex:
+                conn.execute("UPDATE collection SET quantity = quantity + ? "
+                             "WHERE id = ?", (qty, ex["id"]))
+                if paid is not None:
+                    if ex["paid_price"] is None:
+                        conn.execute(
+                            "UPDATE collection SET paid_price = ?, "
+                            "paid_source = 'manual', paid_at = ? "
+                            "WHERE id = ?", (paid, now, ex["id"]))
+                    else:
+                        conn.execute(
+                            "UPDATE collection SET paid_price = "
+                            "paid_price + ?, paid_source = 'manual', "
+                            "paid_at = ? WHERE id = ?",
+                            (paid, now, ex["id"]))
+                merged += 1
+            else:
+                conn.execute(
+                    "INSERT INTO collection (item_id, item_type, name, "
+                    "img_url, bricklink_url, quantity, condition, notes, "
+                    "year, paid_price, paid_source, paid_at, added_by, "
+                    "added_at) VALUES (?, ?, ?, '', '', ?, ?, ?, ?, ?, ?, "
+                    "?, ?, ?)",
+                    (num, typ, name, qty, cond, notes, year, paid,
+                     "manual" if paid is not None else None,
+                     now if paid is not None else None, user["id"], now))
+                created += 1
+    return {"ok": True, "created": created, "merged": merged,
+            "errors": errors[:20], "error_count": len(errors)}
+
+
 # ---------------------------------------------------------------- Sicherung (Admin)
 
 BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
