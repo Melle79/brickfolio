@@ -19,7 +19,23 @@
 
 <!-- ===== Login ===== -->
 <section id="view-login" class="view" hidden>
-  <div class="login-box">
+  <div class="login-box" id="setup-box" hidden>
+    <div class="logo">
+      <span class="logo-name">FINN</span>
+      <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
+      <h1>Willkommen!</h1>
+      <p>Lege zuerst das Admin-Konto an –<br>danach kann die Sammlung starten. 🧱</p>
+    </div>
+    <label for="setup-user">Benutzername</label>
+    <input id="setup-user" autocomplete="username" autocapitalize="none">
+    <label for="setup-pass">Passwort</label>
+    <input id="setup-pass" type="password" autocomplete="new-password">
+    <label for="setup-pass2">Passwort wiederholen</label>
+    <input id="setup-pass2" type="password" autocomplete="new-password">
+    <button id="btn-setup" class="btn btn-primary">Admin-Konto anlegen</button>
+    <p id="setup-error" class="error" hidden></p>
+  </div>
+  <div class="login-box" id="login-box">
     <div class="logo">
       <span class="logo-name">FINN</span>
       <span class="logo-studs"><i></i><i></i><i></i><i></i></span>

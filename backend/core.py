@@ -265,17 +265,19 @@ def set_setting(name: str, value: str):
 
 
 def _bootstrap_admin():
-    """Legt den Admin aus ENV an (nur wenn es noch keine Benutzer gibt)."""
-    user = os.environ.get("ADMIN_USER", "admin")
+    """Optional: Admin aus ENV anlegen (für automatisierte Setups).
+
+    Ohne ADMIN_USER/ADMIN_PASSWORD bleibt die Datenbank leer – die App
+    zeigt dann beim ersten Aufruf den Ersteinrichtungs-Bildschirm.
+    """
+    user = os.environ.get("ADMIN_USER")
     password = os.environ.get("ADMIN_PASSWORD")
+    if not user or not password:
+        return
     with db() as conn:
         count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
         if count > 0:
             return
-        if not password:
-            password = secrets.token_urlsafe(9)
-            print(f"[brickfolio] Kein ADMIN_PASSWORD gesetzt – generiert: "
-                  f"Benutzer '{user}', Passwort '{password}'", flush=True)
         conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at) "
             "VALUES (?, ?, 1, ?)",

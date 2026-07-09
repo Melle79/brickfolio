@@ -684,6 +684,59 @@ async function updateListsTab() {
 function showLogin() {
   $("view-login").hidden = false;
   $("app").hidden = true;
+  checkSetup();
+}
+
+async function checkSetup() {
+  try {
+    const s = await api("/setup");
+    $("setup-box").hidden = !s.needed;
+    $("login-box").hidden = s.needed;
+    if (s.needed) $("setup-user").focus();
+  } catch (_) {
+    $("setup-box").hidden = true;
+    $("login-box").hidden = false;
+  }
+}
+
+async function doSetup() {
+  const err = $("setup-error");
+  err.hidden = true;
+  const username = $("setup-user").value.trim();
+  const p1 = $("setup-pass").value;
+  const p2 = $("setup-pass2").value;
+  if (username.length < 2) {
+    err.textContent = "Bitte einen Benutzernamen eingeben (mind. 2 Zeichen)";
+    err.hidden = false;
+    return;
+  }
+  if (p1.length < 4) {
+    err.textContent = "Das Passwort braucht mindestens 4 Zeichen";
+    err.hidden = false;
+    return;
+  }
+  if (p1 !== p2) {
+    err.textContent = "Die Passwörter stimmen nicht überein";
+    err.hidden = false;
+    return;
+  }
+  $("btn-setup").disabled = true;
+  try {
+    const data = await api("/setup", { method: "POST",
+      body: { username, password: p1 } });
+    state.token = data.token;
+    state.user = { username: data.username, is_admin: data.is_admin,
+      is_dealer: data.is_dealer };
+    localStorage.setItem("bf_token", data.token);
+    localStorage.setItem("bf_user", JSON.stringify(state.user));
+    toast(`Willkommen, ${data.username}! 🧱`);
+    showApp();
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
+  } finally {
+    $("btn-setup").disabled = false;
+  }
 }
 
 function showApp() {
@@ -2403,6 +2456,10 @@ async function addUser() {
 /* ---------------------------------------------------------------- Start */
 document.addEventListener("DOMContentLoaded", () => {
   $("btn-login").addEventListener("click", doLogin);
+  $("btn-setup").addEventListener("click", doSetup);
+  $("setup-pass2").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") doSetup();
+  });
   $("login-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
   $("btn-logout").addEventListener("click", logout);
   $("btn-add-user").addEventListener("click", addUser);

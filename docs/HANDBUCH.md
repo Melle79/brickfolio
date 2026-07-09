@@ -66,7 +66,6 @@ Homescreen.
 git clone https://github.com/Melle79/brickfolio.git
 cd brickfolio
 cp docker-compose.example.yml docker-compose.yml
-# docker-compose.yml öffnen und ADMIN_USER / ADMIN_PASSWORD setzen!
 docker compose up -d --build
 ```
 
@@ -77,12 +76,19 @@ Updates und Container-Neubauten.
 **Synology-Hinweis:** Projektordner z. B. nach `/volume1/docker/brickfolio`
 legen und die Befehle per SSH ausführen (`sudo` erforderlich).
 
-### 2.3 Erster Start
+### 2.3 Erster Start: die Ersteinrichtung
 
-Beim allerersten Start legt Brickfolio den Admin-Benutzer aus
-`ADMIN_USER`/`ADMIN_PASSWORD` an (spätere Änderungen an diesen Variablen
-haben keine Wirkung mehr – Passwörter werden danach in der App verwaltet).
-Melde dich an und richte als Erstes die API-Schlüssel ein.
+Beim ersten Aufruf im Browser begrüßt dich Brickfolio mit der
+**Ersteinrichtung**: Benutzername und Passwort für das Admin-Konto wählen,
+„Admin-Konto anlegen" – du bist direkt angemeldet. Der Bildschirm
+erscheint nur, solange noch kein Benutzer existiert; danach kommt immer
+der normale Login.
+
+*Für unbeaufsichtigte Setups:* Sind die Umgebungsvariablen
+`ADMIN_USER`/`ADMIN_PASSWORD` gesetzt, legt Brickfolio den Admin beim
+allerersten Start automatisch an und überspringt die Ersteinrichtung.
+
+Als Nächstes: die API-Schlüssel einrichten.
 
 ### 2.4 API-Schlüssel einrichten (Admin)
 
@@ -575,7 +581,7 @@ die jeweiligen Nutzungsbedingungen.
 
 | Variable | Bedeutung |
 |---|---|
-| `ADMIN_USER` / `ADMIN_PASSWORD` | Erst-Login (nur beim allerersten Start) |
+| `ADMIN_USER` / `ADMIN_PASSWORD` | Optional: Admin automatisch anlegen (sonst Ersteinrichtung im Browser) |
 | `DB_PATH` | Pfad zur SQLite-Datei (Default: `/data/brickfolio.db`) |
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | BrickLink-Store-API (Fallback zu den App-Einstellungen) |
 | `REBRICKABLE_KEY` | Rebrickable-API (Fallback zu den App-Einstellungen) |

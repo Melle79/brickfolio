@@ -8,9 +8,11 @@ services:
     volumes:
       - ./data:/data
     environment:
-      # Erst-Login (wird nur beim allerersten Start angelegt)
-      ADMIN_USER: "admin"
-      ADMIN_PASSWORD: "bitte-aendern"
+      # Optional: Admin automatisch anlegen (für unbeaufsichtigte Setups).
+      # Ohne diese Variablen führt die App beim ersten Aufruf durch die
+      # Ersteinrichtung im Browser – empfohlen.
+      # ADMIN_USER: "admin"
+      # ADMIN_PASSWORD: "bitte-aendern"
 
       # Optional: BrickLink-API für Preise & Set-Inhalte
       # Keys: https://www.bricklink.com/v2/api/register_consumer.page

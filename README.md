@@ -58,12 +58,12 @@ kommen von [BrickLink](https://www.bricklink.com) und
 git clone https://github.com/Melle79/brickfolio.git
 cd brickfolio
 cp docker-compose.example.yml docker-compose.yml
-# ADMIN_USER / ADMIN_PASSWORD in docker-compose.yml anpassen!
 docker compose up -d --build
 ```
 
-Aufrufen: `http://<server>:8300` – die Datenbank liegt persistent unter
-`./data/brickfolio.db`.
+Aufrufen: `http://<server>:8300` – beim ersten Besuch führt die App durch
+die **Ersteinrichtung** (Admin-Konto anlegen). Die Datenbank liegt
+persistent unter `./data/brickfolio.db`.
 
 ### Synology NAS
 
@@ -78,7 +78,7 @@ sudo docker compose up -d --build
 
 | Variable | Pflicht | Beschreibung |
 |---|---|---|
-| `ADMIN_USER` / `ADMIN_PASSWORD` | ja | Erst-Login; wird nur beim allerersten Start angelegt |
+| `ADMIN_USER` / `ADMIN_PASSWORD` | nein | Optional: Admin automatisch anlegen (sonst Ersteinrichtung im Browser) |
 | `DB_PATH` | nein | Pfad zur SQLite-Datei (Default im Container: `/data/brickfolio.db`) |
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | nein | BrickLink-Store-API für Preise & Set-Inhalte ([Key beantragen](https://www.bricklink.com/v2/api/register_consumer.page)) |
 | `REBRICKABLE_KEY` | nein | Rebrickable-API für die Namenssuche ([Key erstellen](https://rebrickable.com/api/)) |
