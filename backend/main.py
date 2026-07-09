@@ -273,6 +273,48 @@ def me(user: dict = Depends(current_user)):
     return user
 
 
+_UPDATE_CACHE = {"ts": 0.0, "data": None}
+_UPDATE_URL = ("https://api.github.com/repos/Melle79/brickfolio/"
+               "releases/latest")
+
+
+def _ver_tuple(v: str):
+    try:
+        return tuple(int(x) for x in v.strip().lstrip("v").split("."))
+    except (ValueError, AttributeError):
+        return (0,)
+
+
+@app.get("/api/update_check")
+def update_check(force: int = 0, user: dict = Depends(admin_user)):
+    """Prüft gegen das neueste GitHub-Release (gecacht, max. alle 6 h)."""
+    now = time.time()
+    if not force and _UPDATE_CACHE["data"] \
+            and now - _UPDATE_CACHE["ts"] < 6 * 3600:
+        return _UPDATE_CACHE["data"]
+    data = {"current": core.APP_VERSION, "latest": None,
+            "update_available": False, "url": "", "notes": ""}
+    try:
+        r = requests.get(_UPDATE_URL, timeout=10,
+                         headers={"Accept": "application/vnd.github+json"})
+        r.raise_for_status()
+        rel = r.json()
+        latest = (rel.get("tag_name") or "").lstrip("v")
+        data.update({
+            "latest": latest or None,
+            "update_available": bool(latest) and
+            _ver_tuple(latest) > _ver_tuple(core.APP_VERSION),
+            "url": rel.get("html_url") or "",
+            "notes": (rel.get("body") or "")[:1500],
+        })
+    except requests.RequestException:
+        data["error"] = "GitHub gerade nicht erreichbar"
+        return data          # Fehler nicht cachen – nächster Aufruf probiert neu
+    _UPDATE_CACHE["ts"] = now
+    _UPDATE_CACHE["data"] = data
+    return data
+
+
 @app.get("/favicon.ico")
 def favicon():
     from fastapi.responses import FileResponse

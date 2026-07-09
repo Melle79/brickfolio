@@ -663,6 +663,12 @@ async function refreshMe() {
     localStorage.setItem("bf_user", JSON.stringify(state.user));
   } catch (_) { /* 401 wird von api() behandelt */ }
   updateListsTab();
+  checkForUpdate(false).then((info) => {
+    if (info && info.update_available && !state.updateToastShown) {
+      state.updateToastShown = true;
+      toast(`⬆️ Update v${info.latest} verfügbar – Details im Mehr-Tab`);
+    }
+  });
 }
 
 async function updateListsTab() {
@@ -2383,6 +2389,34 @@ async function restoreBackupFile(file) {
 }
 
 /* ---------------------------------------------------------------- Einstellungen */
+async function checkForUpdate(force) {
+  if (!(state.user && state.user.is_admin)) return null;
+  try {
+    return await api("/update_check" + (force ? "?force=1" : ""));
+  } catch (_) {
+    return null;
+  }
+}
+
+function renderUpdateInfo(info) {
+  if (!info) return;
+  $("ver-current").textContent = "v" + info.current;
+  const hasUpdate = info.update_available;
+  $("update-hint").hidden = !hasUpdate;
+  $("ver-latest-ok").hidden = hasUpdate || !info.latest;
+  if (hasUpdate) {
+    $("ver-latest").textContent = "v" + info.latest;
+    $("ver-url").href = info.url || "https://github.com/Melle79/brickfolio/releases";
+  }
+  const status = $("update-status");
+  if (info.error) {
+    status.textContent = info.error;
+    status.hidden = false;
+  } else {
+    status.hidden = true;
+  }
+}
+
 async function loadSettings() {
   const dealerUi = state.user && state.user.is_dealer;
   if ($("csv-import-block")) $("csv-import-block").hidden = !dealerUi;
@@ -2394,6 +2428,8 @@ async function loadSettings() {
   $("own-name").value = state.user ? state.user.username : "";
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
+  $("update-card").hidden = !isAdmin;
+  if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");
   panel.hidden = !isAdmin;
   if (!isAdmin) return;
@@ -2485,6 +2521,16 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
+  $("btn-update-check").addEventListener("click", async (ev) => {
+    const btn = ev.currentTarget;
+    btn.disabled = true;
+    const info = await checkForUpdate(true);
+    renderUpdateInfo(info);
+    if (info && !info.update_available && !info.error) {
+      toast("Brickfolio ist aktuell ✔");
+    }
+    btn.disabled = false;
+  });
   $("btn-offer-percent").addEventListener("click", async () => {
     const pct = Number($("offer-percent").value.trim());
     if (!Number.isInteger(pct) || pct < 1 || pct > 100) {

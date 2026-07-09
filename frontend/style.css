@@ -489,3 +489,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   stroke-width: 3.5px;
   stroke-linejoin: round;
 }
+.update-banner {
+  background: var(--yellow); border: 2px solid var(--ink);
+  border-radius: 10px; padding: 8px 12px; font-size: 14px;
+}
+.update-banner a { margin-left: 6px; font-weight: 800; }
+.update-cmd {
+  background: #1a1a1a; color: #9fe28f; border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; overflow-x: auto;
+}

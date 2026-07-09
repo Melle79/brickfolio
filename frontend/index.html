@@ -276,6 +276,21 @@
         Preisverläufe, Set-Zuordnungen und Einstellungen.</p>
     </div>
 
+    <div class="settings-card" id="update-card" hidden>
+      <h3>🔄 Version &amp; Updates</h3>
+      <p class="sub">Installiert: <b id="ver-current">…</b>
+        <span id="ver-latest-ok" hidden> – aktuell ✔</span></p>
+      <div id="update-hint" hidden>
+        <p class="update-banner">⬆️ Update <b id="ver-latest"></b> verfügbar!
+          <a id="ver-url" href="#" target="_blank" rel="noopener">Release-Notes ansehen</a></p>
+        <p class="search-hint">Einspielen auf dem Server:</p>
+        <pre class="update-cmd">cd /volume1/docker/brickfolio
+sudo bash update.sh</pre>
+      </div>
+      <button class="mini-btn" id="btn-update-check">Nach Updates suchen</button>
+      <p id="update-status" class="search-hint" hidden></p>
+    </div>
+
     <div class="settings-card">
       <h3>❓ Hilfe</h3>
 

@@ -41,6 +41,9 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
+APP_VERSION = "1.3.0"
+
+
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac(
