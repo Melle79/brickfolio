@@ -1897,14 +1897,17 @@ function listItemRow(it, dealer) {
   </div>`;
 }
 
-async function addToList(list, it) {
+async function addToList(list, it, condition) {
+  const cond = condition === "new" ? "new" : "used";
   try {
     const res = await api(`/lists/${list.id}/items`, { method: "POST",
       body: { item_id: it.item_id, item_type: it.item_type || "minifig",
         name: it.name, img_url: it.img_url || "",
-        bricklink_url: it.bricklink_url || "", year: it.year || 0 } });
-    toast(res.merged ? `Menge erhöht in "${list.name}" 🛒`
-                     : `Auf "${list.name}" gesetzt 🛒`);
+        bricklink_url: it.bricklink_url || "", year: it.year || 0,
+        condition: cond } });
+    const suffix = cond === "new" ? " (Neu)" : "";
+    toast(res.merged ? `Menge erhöht in "${list.name}" 🛒${suffix}`
+                     : `Auf "${list.name}" gesetzt 🛒${suffix}`);
   } catch (e) { toast(e.message); }
 }
 
@@ -1926,11 +1929,25 @@ function wireCartButtons(box, items) {
       actions.after(row);
 
       const close = () => { row.remove(); actions.hidden = false; };
+      let cond = "used";
+      const condChips = () => `
+        <button class="mini-btn cond-mini ${cond !== "new" ? "sel" : ""}" data-cc="used">Gebraucht</button>
+        <button class="mini-btn cond-mini ${cond === "new" ? "sel" : ""}" data-cc="new">Neu</button>`;
+      const wireCondChips = (rerender) => {
+        row.querySelectorAll("[data-cc]").forEach((c) => {
+          c.addEventListener("click", () => {
+            if (c.dataset.cc === cond) return;
+            cond = c.dataset.cc;
+            rerender();
+          });
+        });
+      };
 
       const renderNew = () => {
         const today = new Date().toLocaleDateString("de-DE",
           { day: "2-digit", month: "2-digit" });
         row.innerHTML = `
+          ${condChips()}
           <span class="buy-label">Neue Einkaufsliste anlegen:</span>
           <input data-cl-name maxlength="120" style="grid-column:1/-1"
             value="Flohmarkt ${today}">
@@ -1949,7 +1966,7 @@ function wireCartButtons(box, items) {
           try {
             const res = await api("/lists", { method: "POST",
               body: { name } });
-            await addToList({ id: res.id, name }, it);
+            await addToList({ id: res.id, name }, it, cond);
             updateListsTab();
             close();
           } catch (e) {
@@ -1962,10 +1979,12 @@ function wireCartButtons(box, items) {
         input.addEventListener("keydown", (ev) => {
           if (ev.key === "Enter") create();
         });
+        wireCondChips(renderNew);
       };
 
       const renderChooser = () => {
-        row.innerHTML = `<span class="buy-label">Auf welche Liste?</span>`
+        row.innerHTML = condChips()
+          + `<span class="buy-label">Auf welche Liste?</span>`
           + lists.map((l) => `<button class="mini-btn" data-cl="${l.id}">${esc(l.name)}</button>`).join("")
           + `<button class="mini-btn add" data-cl-new>＋ Neue Liste</button>`
           + `<button class="mini-btn" data-cl-cancel>Abbrechen</button>`;
@@ -1976,10 +1995,11 @@ function wireCartButtons(box, items) {
         row.querySelectorAll("[data-cl]").forEach((b) => {
           b.addEventListener("click", async () => {
             const l = lists.find((x) => x.id === Number(b.dataset.cl));
-            await addToList(l, it);
+            await addToList(l, it, cond);
             close();
           });
         });
+        wireCondChips(renderChooser);
       };
 
       if (lists.length) renderChooser(); else renderNew();

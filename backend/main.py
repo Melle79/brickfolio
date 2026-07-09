@@ -1588,8 +1588,9 @@ def add_list_item(list_id: int, body: ListItemBody,
             raise HTTPException(400, "Liste ist archiviert")
         ex = conn.execute(
             "SELECT id, qty FROM shopping_items WHERE list_id = ? AND "
-            "item_id = ? AND item_type = ? AND done = 0",
-            (list_id, body.item_id, body.item_type)).fetchone()
+            "item_id = ? AND item_type = ? AND condition = ? AND done = 0",
+            (list_id, body.item_id, body.item_type,
+             body.condition)).fetchone()
         if ex:
             conn.execute("UPDATE shopping_items SET qty = qty + ? "
                          "WHERE id = ?", (body.qty, ex["id"]))
