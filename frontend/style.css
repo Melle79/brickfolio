@@ -368,6 +368,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   color: var(--blue); font: inherit; font-size: 12px; font-weight: 800;
   text-decoration: underline; cursor: pointer;
 }
+.set-link.owned {
+  background: var(--yellow); color: var(--ink);
+  text-decoration: none; border-radius: 8px;
+  padding: 1px 7px; border: 1.5px solid var(--ink);
+}
 .card.flash { animation: cardflash 1.5s ease-out; }
 @keyframes cardflash {
   0% { box-shadow: 0 0 0 5px var(--yellow); }

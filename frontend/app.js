@@ -294,8 +294,8 @@ function applySuggestInfo(info, withDetail) {
             const qty = Number(parts[parts.length - 1]) || 1;
             const name = parts.slice(1, -1).join("|");
             seen.add(no);
-            links.push(`<button class="set-link" data-jump-set="${esc(no)}">`
-              + `${esc(name)} (${esc(no)}${qty > 1 ? `, ${qty}×` : ""}) ✔</button>`);
+            links.push(`<button class="set-link owned" data-jump-set="${esc(no)}">`
+              + `✔ ${esc(name)} (${esc(no)}${qty > 1 ? `, ${qty}×` : ""})</button>`);
           });
         }
         (d.all_sets || []).forEach((s) => {
@@ -610,8 +610,8 @@ function inSetLinks(raw) {
     const no = parts[0];
     const qty = Number(parts[parts.length - 1]) || 1;
     const name = parts.slice(1, -1).join("|");
-    return `<button class="set-link" data-jump-set="${esc(no)}">`
-      + `${esc(name)} (${esc(no)}${qty > 1 ? `, ${qty}×` : ""})</button>`;
+    return `<button class="set-link owned" data-jump-set="${esc(no)}">`
+      + `✔ ${esc(name)} (${esc(no)}${qty > 1 ? `, ${qty}×` : ""})</button>`;
   });
   if (links.length <= 1) return links.join("");
   return links[0]
