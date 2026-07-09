@@ -904,6 +904,14 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
                 "SELECT 1 FROM wanted WHERE item_id = ? AND item_type = ?",
                 (it.item_id, it.item_type)).fetchone()
             info["wanted"] = bool(wrow)
+            lrows = conn.execute(
+                "SELECT DISTINCT l.name FROM shopping_items i "
+                "JOIN shopping_lists l ON l.id = i.list_id "
+                "WHERE i.item_id = ? AND i.item_type = ? "
+                "AND i.done = 0 AND l.archived = 0",
+                (it.item_id, it.item_type)).fetchall()
+            if lrows:
+                info["on_lists"] = [r["name"] for r in lrows]
             srow = conn.execute(
                 "SELECT GROUP_CONCAT(c2.item_id || '|' || c2.name || '|' || "
                 "sc.qty, ';;') AS s FROM set_contents sc JOIN collection c2 "

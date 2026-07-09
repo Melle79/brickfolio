@@ -498,3 +498,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   background: #1a1a1a; color: #9fe28f; border-radius: 8px;
   padding: 8px 10px; font-size: 12px; overflow-x: auto;
 }
+.badge-list {
+  background: var(--yellow); border-color: var(--yellow-dark);
+  color: var(--ink);
+}

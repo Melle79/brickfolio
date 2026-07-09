@@ -338,6 +338,18 @@ function applySuggestInfo(info, withDetail) {
       ownedEl.classList.add("badge-wanted");
       ownedEl.hidden = false;
     }
+    if (d.on_lists && d.on_lists.length) {
+      const card2 = ownedEl ? ownedEl.closest(".card") : null;
+      if (card2 && !card2.querySelector(".badge-list")) {
+        const lb = document.createElement("span");
+        lb.className = "badge badge-list";
+        lb.textContent = d.on_lists.length === 1
+          ? `🛒 auf »${d.on_lists[0]}«`
+          : `🛒 auf ${d.on_lists.length} Einkaufslisten`;
+        if (ownedEl && !ownedEl.hidden) ownedEl.after(lb);
+        else if (ownedEl) ownedEl.parentElement.appendChild(lb);
+      }
+    }
     if (withDetail) {
       const sub = card.querySelector("[data-sug-sub]");
       const parts = [];
