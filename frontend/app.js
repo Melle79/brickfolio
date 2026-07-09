@@ -745,6 +745,7 @@ function showApp() {
   $("app").hidden = false;
   $("whoami").textContent = state.user ? state.user.username : "";
   api("/config").then((c) => {
+    state.offerPercent = c.offer_percent || 60;
     state.bricklinkPrices = c.bricklink_prices;
     state.catalogSearch = c.catalog_search;
     state.bricklinkLookup = c.bricklink_lookup;
@@ -1628,7 +1629,8 @@ function renderLists(lists) {
         .reduce((s, i) => s + (((i.condition === "new"
           ? (i.price_new || i.price_used)
           : (i.price_used || i.price_new)) || 0) * i.qty), 0);
-      const suggestion = Math.round(openValue * 0.6 * 100) / 100;
+      const pct = (state.offerPercent || 60) / 100;
+      const suggestion = Math.round(openValue * pct * 100) / 100;
       const row = document.createElement("div");
       row.className = "card-actions btn-grid";
       row.setAttribute("data-offer-row", "");
@@ -2384,6 +2386,10 @@ async function restoreBackupFile(file) {
 async function loadSettings() {
   const dealerUi = state.user && state.user.is_dealer;
   if ($("csv-import-block")) $("csv-import-block").hidden = !dealerUi;
+  if ($("dealer-settings")) {
+    $("dealer-settings").hidden = !dealerUi;
+    if (dealerUi) $("offer-percent").value = state.offerPercent || 60;
+  }
   $("settings-user").textContent = state.user ? state.user.username : "";
   $("own-name").value = state.user ? state.user.username : "";
   const isAdmin = !!(state.user && state.user.is_admin);
@@ -2479,6 +2485,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
+  $("btn-offer-percent").addEventListener("click", async () => {
+    const pct = Number($("offer-percent").value.trim());
+    if (!Number.isInteger(pct) || pct < 1 || pct > 100) {
+      toast("Bitte eine ganze Zahl zwischen 1 und 100 eingeben");
+      return;
+    }
+    try {
+      await api("/settings/offer_percent", { method: "POST",
+        body: { percent: pct } });
+      state.offerPercent = pct;
+      toast(`Vorschlag steht jetzt auf ${pct} % ✔`);
+    } catch (e) { toast(e.message); }
+  });
   $("btn-csv-import").addEventListener("click", () => $("csv-file").click());
   $("csv-file").addEventListener("change", (ev) => {
     const file = ev.target.files[0];

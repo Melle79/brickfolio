@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Finn's Brickfolio</title>
 <meta name="theme-color" content="#FFCF00">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -203,6 +204,17 @@
     </div>
     <div class="settings-card">
       <h3>Export & Druck</h3>
+      <div id="dealer-settings" hidden>
+        <div class="paid-row" style="margin-bottom:4px">
+          <span class="paid-label">Angebots-Vorschlag</span>
+          <input id="offer-percent" class="paid-input" inputmode="numeric" style="flex:0 0 64px;width:64px">
+          <span class="paid-suffix">%</span>
+          <button class="mini-btn add" id="btn-offer-percent" style="flex:1;min-height:38px">Speichern</button>
+        </div>
+        <p class="search-hint">Prozentsatz vom Marktwert für den roten
+          Preisvorschlag im Gesamtangebot (Standard: 60&nbsp;%).</p>
+        <hr style="border:none;border-top:1.5px dashed var(--line);margin:12px 0">
+      </div>
       <div id="csv-import-block" hidden>
         <div class="detail-row btn-grid">
           <button class="mini-btn" id="btn-csv-import">📥 CSV importieren</button>

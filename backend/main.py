@@ -273,11 +273,38 @@ def me(user: dict = Depends(current_user)):
     return user
 
 
+@app.get("/favicon.ico")
+def favicon():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(FRONTEND_DIR, "icons", "favicon.ico"),
+                        media_type="image/x-icon")
+
+
+def _offer_percent() -> int:
+    try:
+        val = int(core.get_setting("offer_percent") or 60)
+        return val if 1 <= val <= 100 else 60
+    except (TypeError, ValueError):
+        return 60
+
+
 @app.get("/api/config")
 def config(user: dict = Depends(current_user)):
     return {"bricklink_prices": integrations.bricklink_enabled(),
             "bricklink_lookup": integrations.bricklink_enabled(),
-            "catalog_search": integrations.rebrickable_enabled()}
+            "catalog_search": integrations.rebrickable_enabled(),
+            "offer_percent": _offer_percent()}
+
+
+class OfferPercentBody(BaseModel):
+    percent: int = Field(ge=1, le=100)
+
+
+@app.post("/api/settings/offer_percent")
+def set_offer_percent(body: OfferPercentBody,
+                      user: dict = Depends(dealer_user)):
+    core.set_setting("offer_percent", str(body.percent))
+    return {"ok": True, "percent": body.percent}
 
 
 @app.get("/api/lookup/{item_type}/{item_no}")
