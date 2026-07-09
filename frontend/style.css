@@ -502,3 +502,33 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   background: var(--yellow); border-color: var(--yellow-dark);
   color: var(--ink);
 }
+.help-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2.5px solid var(--ink); background: #fff;
+  font-weight: 900; font-size: 17px; line-height: 1;
+  margin-right: 10px; cursor: pointer;
+  box-shadow: var(--shadow); flex-shrink: 0;
+}
+.topbar .whoami { margin-left: auto; }
+.help-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(20, 20, 20, .5);
+  display: flex; padding: 18px 12px;
+}
+.help-sheet {
+  background: var(--bg, #F3F4F6); margin: auto;
+  width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+  border: 2.5px solid var(--ink); border-radius: 16px;
+  box-shadow: var(--shadow); padding: 14px 16px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+.help-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.help-head h3 { margin: 0; }
+.help-close {
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 2px solid var(--ink); background: #fff;
+  font-weight: 900; font-size: 16px; cursor: pointer;
+}

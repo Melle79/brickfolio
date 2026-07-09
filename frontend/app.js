@@ -2530,6 +2530,21 @@ async function addUser() {
 /* ---------------------------------------------------------------- Start */
 document.addEventListener("DOMContentLoaded", () => {
   $("btn-login").addEventListener("click", doLogin);
+  $("btn-help").addEventListener("click", () => {
+    $("help-overlay").hidden = false;
+    document.body.style.overflow = "hidden";
+  });
+  const closeHelp = () => {
+    $("help-overlay").hidden = true;
+    document.body.style.overflow = "";
+  };
+  $("btn-help-close").addEventListener("click", closeHelp);
+  $("help-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("help-overlay")) closeHelp();
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && !$("help-overlay").hidden) closeHelp();
+  });
   $("btn-setup").addEventListener("click", doSetup);
   $("setup-pass2").addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") doSetup();
