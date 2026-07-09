@@ -2542,8 +2542,28 @@ document.addEventListener("DOMContentLoaded", () => {
   $("help-overlay").addEventListener("click", (ev) => {
     if (ev.target === $("help-overlay")) closeHelp();
   });
+  const closeProfile = () => {
+    $("profile-overlay").hidden = true;
+    document.body.style.overflow = "";
+  };
+  $("whoami").addEventListener("click", () => {
+    if (!state.user) return;
+    $("settings-user").textContent = state.user.username;
+    $("own-name").value = state.user.username;
+    $("own-name-error").hidden = true;
+    $("own-pass-error").hidden = true;
+    $("own-pass-current").value = "";
+    $("own-pass-new").value = "";
+    $("profile-overlay").hidden = false;
+    document.body.style.overflow = "hidden";
+  });
+  $("btn-profile-close").addEventListener("click", closeProfile);
+  $("profile-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("profile-overlay")) closeProfile();
+  });
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape" && !$("help-overlay").hidden) closeHelp();
+    if (ev.key === "Escape" && !$("profile-overlay").hidden) closeProfile();
   });
   $("btn-setup").addEventListener("click", doSetup);
   $("setup-pass2").addEventListener("keydown", (ev) => {

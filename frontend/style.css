@@ -506,10 +506,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   width: 32px; height: 32px; border-radius: 50%;
   border: 2.5px solid var(--ink); background: #fff;
   font-weight: 900; font-size: 17px; line-height: 1;
-  margin-right: 10px; cursor: pointer;
+  margin-left: auto; margin-right: 10px; cursor: pointer;
   box-shadow: var(--shadow); flex-shrink: 0;
 }
-.topbar .whoami { margin-left: auto; }
+.topbar .whoami {
+  margin-left: 0; background: none; border: none;
+  font-size: 13px; font-weight: 800; color: rgba(29,29,27,.65);
+  cursor: pointer; padding: 4px 2px;
+}
 .help-overlay {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(20, 20, 20, .5);

@@ -55,13 +55,13 @@
 <!-- ===== App ===== -->
 <div id="app" hidden>
   <header class="topbar">
-    <button id="btn-help" class="help-btn" title="Hilfe" aria-label="Hilfe">?</button>
     <span class="logo-mini">
       <span class="logo-name mini">FINN</span>
       <span class="logo-studs small"><i></i><i></i><i></i><i></i></span>
     </span>
     <h1>Brickfolio</h1>
-    <span id="whoami" class="whoami"></span>
+    <button id="btn-help" class="help-btn" title="Hilfe" aria-label="Hilfe">?</button>
+    <button id="whoami" class="whoami" title="Profil"></button>
   </header>
 
   <!-- Scannen -->
@@ -190,20 +190,6 @@
   <main id="view-settings" class="view" hidden>
     <h2>Einstellungen</h2>
     <div class="settings-card">
-      <p>Angemeldet als <strong id="settings-user"></strong></p>
-      <label for="own-name">Anzeigename ändern</label>
-      <input id="own-name" autocomplete="username" maxlength="60">
-      <button id="btn-own-name" class="btn btn-outline">Namen ändern</button>
-      <p id="own-name-error" class="error" hidden></p>
-      <label for="own-pass-current">Aktuelles Passwort</label>
-      <input id="own-pass-current" type="password" autocomplete="current-password">
-      <label for="own-pass-new">Neues Passwort (mind. 4 Zeichen)</label>
-      <input id="own-pass-new" type="password" autocomplete="new-password">
-      <button id="btn-own-pass" class="btn btn-primary">Passwort ändern</button>
-      <p id="own-pass-error" class="error" hidden></p>
-      <button id="btn-logout" class="btn btn-outline">Abmelden</button>
-    </div>
-    <div class="settings-card">
       <h3>Export & Druck</h3>
       <div id="dealer-settings" hidden>
         <div class="paid-row" style="margin-bottom:4px">
@@ -240,7 +226,7 @@
       <h3>API-Schlüssel</h3>
       <p class="search-hint">Gespeicherte Schlüssel werden maskiert angezeigt.
         Feld leer lassen = Wert bleibt unverändert.
-        Woher die Schlüssel kommen, steht in der Hilfe (❓ oben links)
+        Woher die Schlüssel kommen, steht in der Hilfe (❓ oben rechts)
         unter <b>API-Schlüssel besorgen</b>.</p>
       <label for="k-rb">Rebrickable Key (Namenssuche)</label>
       <input id="k-rb" autocapitalize="none" autocomplete="off" spellcheck="false">
@@ -335,6 +321,27 @@ sudo bash update.sh</pre>
 <div id="print-area"></div>
 
 <script src="/static/app.js"></script>
+<div id="profile-overlay" class="help-overlay" hidden>
+  <div class="help-sheet" role="dialog" aria-label="Profil">
+    <div class="help-head">
+      <h3>👤 Profil</h3>
+      <button id="btn-profile-close" class="help-close" aria-label="Schließen">✕</button>
+    </div>
+    <p>Angemeldet als <strong id="settings-user"></strong></p>
+    <label for="own-name">Anzeigename ändern</label>
+    <input id="own-name" autocomplete="username" maxlength="60">
+    <button id="btn-own-name" class="btn btn-outline">Namen ändern</button>
+    <p id="own-name-error" class="error" hidden></p>
+    <label for="own-pass-current">Aktuelles Passwort</label>
+    <input id="own-pass-current" type="password" autocomplete="current-password">
+    <label for="own-pass-new">Neues Passwort (mind. 4 Zeichen)</label>
+    <input id="own-pass-new" type="password" autocomplete="new-password">
+    <button id="btn-own-pass" class="btn btn-primary">Passwort ändern</button>
+    <p id="own-pass-error" class="error" hidden></p>
+    <button id="btn-logout" class="btn btn-outline">Abmelden</button>
+  </div>
+</div>
+
 <div id="help-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Hilfe">
     <div class="help-head">
