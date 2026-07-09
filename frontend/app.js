@@ -1842,12 +1842,7 @@ function wireCartButtons(box, items) {
       try {
         lists = (await api("/lists")).lists || [];
       } catch (e) { toast(e.message); return; }
-      if (!lists.length) {
-        toast("Erst im Tab Listen eine Einkaufsliste anlegen");
-        return;
-      }
       const it = items[Number(btn.dataset.cart)];
-      if (lists.length === 1) { addToList(lists[0], it); return; }
       const card = btn.closest(".card");
       if (card.querySelector("[data-cart-row]")) return;
       const actions = card.querySelector(".card-actions");
@@ -1855,289 +1850,68 @@ function wireCartButtons(box, items) {
       const row = document.createElement("div");
       row.className = "card-actions btn-grid";
       row.setAttribute("data-cart-row", "");
-      row.innerHTML = `<span class="buy-label">Auf welche Liste?</span>`
-        + lists.map((l) => `<button class="mini-btn" data-cl="${l.id}">${esc(l.name)}</button>`).join("")
-        + `<button class="mini-btn" data-cl-cancel>Abbrechen</button>`;
       actions.after(row);
-      row.querySelector("[data-cl-cancel]").addEventListener("click",
-        () => { row.remove(); actions.hidden = false; });
-      row.querySelectorAll("[data-cl]").forEach((b) => {
-        b.addEventListener("click", async () => {
-          const l = lists.find((x) => x.id === Number(b.dataset.cl));
-          await addToList(l, it);
-          row.remove();
-          actions.hidden = false;
+
+      const close = () => { row.remove(); actions.hidden = false; };
+
+      const renderNew = () => {
+        const today = new Date().toLocaleDateString("de-DE",
+          { day: "2-digit", month: "2-digit" });
+        row.innerHTML = `
+          <span class="buy-label">Neue Einkaufsliste anlegen:</span>
+          <input data-cl-name maxlength="120" style="grid-column:1/-1"
+            value="Flohmarkt ${today}">
+          <button class="mini-btn add" data-cl-create>Anlegen &amp; drauflegen</button>
+          <button class="mini-btn" data-cl-back>${lists.length ? "Zurück" : "Abbrechen"}</button>`;
+        const input = row.querySelector("[data-cl-name]");
+        input.focus();
+        input.select();
+        row.querySelector("[data-cl-back]").addEventListener("click",
+          () => { lists.length ? renderChooser() : close(); });
+        const create = async () => {
+          const name = input.value.trim();
+          if (!name) { toast("Bitte einen Namen eingeben"); return; }
+          const createBtn = row.querySelector("[data-cl-create]");
+          createBtn.disabled = true;
+          try {
+            const res = await api("/lists", { method: "POST",
+              body: { name } });
+            await addToList({ id: res.id, name }, it);
+            updateListsTab();
+            close();
+          } catch (e) {
+            toast(e.message);
+            createBtn.disabled = false;
+          }
+        };
+        row.querySelector("[data-cl-create]").addEventListener("click",
+          create);
+        input.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") create();
         });
-      });
+      };
+
+      const renderChooser = () => {
+        row.innerHTML = `<span class="buy-label">Auf welche Liste?</span>`
+          + lists.map((l) => `<button class="mini-btn" data-cl="${l.id}">${esc(l.name)}</button>`).join("")
+          + `<button class="mini-btn add" data-cl-new>＋ Neue Liste</button>`
+          + `<button class="mini-btn" data-cl-cancel>Abbrechen</button>`;
+        row.querySelector("[data-cl-cancel]").addEventListener("click",
+          close);
+        row.querySelector("[data-cl-new]").addEventListener("click",
+          renderNew);
+        row.querySelectorAll("[data-cl]").forEach((b) => {
+          b.addEventListener("click", async () => {
+            const l = lists.find((x) => x.id === Number(b.dataset.cl));
+            await addToList(l, it);
+            close();
+          });
+        });
+      };
+
+      if (lists.length) renderChooser(); else renderNew();
     });
   });
-}
-
-/* ---------------------------------------------------------------- Statistik */
-const TYPE_LABELS = { minifig: "Figuren", set: "Sets", part: "Teile" };
-
-async function loadStats() {
-  const box = $("stats-view");
-  box.innerHTML = `<p class="empty">Lade Statistik …</p>`;
-  try {
-    const data = await api("/stats/dashboard");
-    renderStats(data);
-  } catch (e) {
-    box.innerHTML = `<p class="empty">${esc(e.message)}</p>`;
-  }
-}
-
-function renderStats(data) {
-  const t = data.totals;
-  const dealer = state.user && state.user.is_dealer;
-  const profitCls = t.profit >= 0 ? "profit-pos" : "profit-neg";
-
-  const chips = `
-  <div class="card">
-    <div class="stats-row">
-      <div class="stat-chip"><strong>${t.pieces}</strong><span>Stück</span></div>
-      <div class="stat-chip"><strong>${t.unique}</strong><span>verschieden</span></div>
-      <div class="stat-chip"><strong>${fmtEur(t.avg_piece)}</strong><span>Ø je Stück</span></div>
-    </div>
-    <div class="stats-row">
-      <div class="stat-chip"><strong>${fmtEur(t.value)}</strong><span>Gesamtwert</span></div>
-      ${dealer ? `
-      <div class="stat-chip"><strong>${fmtEur(t.paid)}</strong><span>bezahlt</span></div>
-      <div class="stat-chip"><strong class="${profitCls}">${t.profit >= 0 ? "+" : "−"}${fmtEur(Math.abs(t.profit))}</strong><span>Gewinn</span></div>` : ""}
-    </div>
-  </div>`;
-
-  const chart = `
-  <div class="card">
-    <h3 style="margin:0 0 4px">Wertentwicklung</h3>
-    ${data.timeline.length >= 2 ? totalChart(data.timeline)
-      : `<div class="price-note">Der Wertverlauf wächst mit jedem
-         Preis-Update – schau in ein paar Tagen wieder rein.</div>`}
-  </div>`;
-
-  const typeRows = Object.entries(data.by_type)
-    .sort((a, b) => b[1].value - a[1].value)
-    .map(([k, v]) => statBarRow(TYPE_LABELS[k] || k, v, t.value)).join("");
-  const condRows = Object.entries(data.by_condition)
-    .sort((a, b) => b[1].value - a[1].value)
-    .map(([k, v]) => statBarRow(k === "new" ? "Neu" : "Gebraucht", v,
-      t.value)).join("");
-  const split = `
-  <div class="card">
-    <h3 style="margin:0 0 8px">Aufteilung</h3>
-    ${typeRows}
-    <div style="height:8px"></div>
-    ${condRows}
-  </div>`;
-
-  const years = data.by_year.length >= 2 ? `
-  <div class="card">
-    <h3 style="margin:0 0 4px">Wert nach Erscheinungsjahr</h3>
-    ${yearChart(data.by_year)}
-  </div>` : "";
-
-  const top = data.top.length ? `
-  <div class="card">
-    <h3 style="margin:0 0 6px">Top ${data.top.length} nach Wert</h3>
-    <div class="set-figs">
-      ${data.top.map((it, i) => `
-      <div class="fig-row">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
-        <div class="fig-info" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <strong style="font-size:14px">${i + 1}. ${esc(it.name)}${it.quantity > 1 ? ` (${it.quantity}×)` : ""}</strong>
-          <b style="white-space:nowrap">${fmtEur(it.value)}</b>
-        </div>
-      </div>`).join("")}
-    </div>
-  </div>` : "";
-
-  const winners = dealer && data.winners.length ? `
-  <div class="card">
-    <h3 style="margin:0 0 6px">Beste Wertsteigerungen</h3>
-    ${data.winners.map((it, i) => `
-      <div class="sub" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)">
-        <span>${i + 1}. ${esc(it.name)}</span>
-        <b class="${it.gain >= 0 ? "profit-pos" : "profit-neg"}">${it.gain >= 0 ? "+" : "−"}${fmtEur(Math.abs(it.gain))}</b>
-      </div>`).join("")}
-    <div class="price-note" style="margin-top:6px">Aktueller Wert minus Kaufpreis</div>
-  </div>` : "";
-
-  $("stats-view").innerHTML = chips + chart + split + years + top + winners;
-}
-
-function statBarRow(label, v, total) {
-  const pct = total > 0 ? Math.round((v.value / total) * 100) : 0;
-  return `
-  <div class="stat-bar-row">
-    <div class="sub" style="display:flex;justify-content:space-between">
-      <span>${label} · ${v.pieces} Stück</span>
-      <b>${fmtEur(v.value)} (${pct} %)</b>
-    </div>
-    <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
-  </div>`;
-}
-
-function totalChart(pts) {
-  const w = 560, h = 150, padX = 8, padT = 12, padB = 22;
-  const values = pts.map((p) => p.value);
-  let lo = Math.min(...values), hi = Math.max(...values);
-  if (hi - lo < 0.01) { lo -= 1; hi += 1; }
-  const t0 = pts[0].ts, t1 = pts[pts.length - 1].ts || t0 + 1;
-  const x = (ts) => padX + ((ts - t0) / Math.max(1, t1 - t0)) * (w - 2 * padX);
-  const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
-  const line = pts.map((p) => `${x(p.ts).toFixed(1)},${y(p.value).toFixed(1)}`)
-    .join(" ");
-  const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString("de-DE",
-    { day: "2-digit", month: "2-digit", year: "2-digit" });
-  return `
-  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="Wertentwicklung">
-    <line x1="${padX}" y1="${h - padB}" x2="${w - padX}" y2="${h - padB}" stroke="#D4D7DC" stroke-width="1.5"/>
-    <polyline points="${line}" fill="none" stroke="#0057A6" stroke-width="2.5"/>
-    ${pts.map((p) => `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3" fill="#0057A6"/>`).join("")}
-    <text x="${padX}" y="${h - 6}" class="hist-label">${dFmt(t0)}</text>
-    <text x="${w - padX}" y="${h - 6}" text-anchor="end" class="hist-label">${dFmt(t1)}</text>
-    <text x="${padX}" y="${padT + 2}" class="hist-label">${fmtEur(hi)}</text>
-    <text x="${padX}" y="${h - padB - 4}" class="hist-label">${fmtEur(lo)}</text>
-  </svg>
-  <div class="price-note">Wertentwicklung eurer heutigen Sammlung
-    (eigene Preisaufzeichnung)</div>`;
-}
-
-function yearChart(list) {
-  const w = 560, h = 150, padB = 22, padT = 16;
-  const maxV = Math.max(...list.map((e) => e.value)) || 1;
-  const gap = 3;
-  const bw = Math.max(4, Math.floor((w - 16) / list.length) - gap);
-  const bars = list.map((e, i) => {
-    const bh = Math.max(2, (e.value / maxV) * (h - padT - padB));
-    const bx = 8 + i * (bw + gap);
-    const by = h - padB - bh;
-    return `<rect x="${bx}" y="${by.toFixed(1)}" width="${bw}" height="${bh.toFixed(1)}" rx="2" fill="#0057A6"><title>${e.year}: ${fmtEur(e.value)} (${e.pieces} Stück)</title></rect>`;
-  }).join("");
-  const first = list[0], last = list[list.length - 1];
-  const peak = list.reduce((a, b) => (b.value > a.value ? b : a), list[0]);
-  const px = 8 + list.indexOf(peak) * (bw + gap) + bw / 2;
-  return `
-  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="Wert nach Jahr">
-    ${bars}
-    <text x="8" y="${h - 6}" class="hist-label">${first.year}</text>
-    <text x="${w - 8}" y="${h - 6}" text-anchor="end" class="hist-label">${last.year}</text>
-    <text x="${Math.min(Math.max(px, 30), w - 30)}" y="${padT - 4}" text-anchor="middle" class="hist-label">${peak.year}: ${fmtEur(peak.value)}</text>
-  </svg>
-  <div class="price-note">Antippen/Zeigen für Details je Jahr</div>`;
-}
-
-/* ---------------------------------------------------------------- CSV-Import */
-function downloadCsvSample() {
-  downloadCsv("brickfolio-import-beispiel.csv", [
-    ["Nummer", "Typ", "Name", "Anzahl", "Zustand", "Bezahlt", "Jahr",
-     "Notizen"],
-    ["sw0815", "Figur", "Shoretrooper", "2", "Gebraucht", "24,50", "2016",
-     "Flohmarkt Ottobrunn"],
-    ["75154", "Set", "TIE Striker", "1", "Neu", "89,99", "2016", ""],
-    ["col424", "Figur", "", "1", "Gebraucht", "", "", "leerer Name: Nummer wird als Name verwendet"],
-    ["manuell-01", "Figur", "Eigenbau-Ritter", "1", "Gebraucht", "3,00", "",
-     "eigene Nummern bekommen keine BrickLink-Preise"],
-  ]);
-  toast("Beispiel-CSV heruntergeladen 💾");
-}
-
-async function importCsvFile(file) {
-  let text;
-  try {
-    text = await file.text();
-  } catch (_) {
-    toast("Datei konnte nicht gelesen werden");
-    return;
-  }
-  try {
-    const res = await api("/import/csv", { method: "POST",
-      body: { csv: text } });
-    let msg = `Import fertig: ${res.created} neu, ${res.merged} zusammengeführt`;
-    if (res.error_count) msg += `, ${res.error_count} Fehler`;
-    toast(msg + " ✔");
-    if (res.errors && res.errors.length) {
-      alert("Nicht importierte Zeilen:\n" + res.errors
-        .map((e) => `Zeile ${e.line}: ${e.error}`).join("\n")
-        + (res.error_count > res.errors.length ? "\n…" : ""));
-    }
-  } catch (e) { toast(e.message); }
-}
-
-/* ---------------------------------------------------------------- Verkaufsliste */
-async function toggleDuplicates() {
-  const box = $("duplicates-box");
-  if (!box.hidden) {
-    box.hidden = true;
-    $("btn-duplicates").textContent = "📋 Verkaufsliste (Doppelte)";
-    return;
-  }
-  try {
-    const data = await api("/duplicates");
-    state.duplicates = data;
-    renderDuplicates(data);
-    box.hidden = false;
-    $("btn-duplicates").textContent = "📋 Verkaufsliste ausblenden";
-  } catch (e) { toast(e.message); }
-}
-
-function renderDuplicates(data) {
-  const box = $("duplicates-box");
-  if (!data.items.length) {
-    box.innerHTML = `<div class="card"><div class="price-note">
-      Keine Doppelten – alles Einzelstücke.</div></div>`;
-    return;
-  }
-  box.innerHTML = `
-  <div class="card">
-    <div class="card-head"><div class="card-title">
-      <strong>📋 Verkaufsliste – Doppelte</strong>
-      <div class="sub">${data.stats.pieces} Stück abgebbar
-        · Verkaufswert ca. ${fmtEur(data.stats.value)}
-        <span class="search-hint">(1 Exemplar bleibt immer · Set-Figuren bleiben reserviert)</span></div>
-    </div></div>
-    <div class="set-figs">
-      ${data.items.map((it) => `
-      <div class="fig-row">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
-        <div class="fig-info">
-          <strong>${esc(it.name)}</strong>
-          <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? "Neu" : "Gebraucht"}
-            · ${it.quantity}× vorhanden${it.reserved > 0 ? ` (${it.reserved}× für Sets reserviert)` : ""} → <b>${it.surplus}× abgebbar</b>
-            ${it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}${it.surplus > 1 ? " → " + fmtEur(it.value) : ""}` : ""}</div>
-        </div>
-      </div>`).join("")}
-    </div>
-    <div class="card-actions btn-grid" style="margin-top:8px">
-      <button class="mini-btn" id="btn-dup-csv">Als CSV</button>
-      <button class="mini-btn" id="btn-dup-print">Drucken</button>
-    </div>
-  </div>`;
-  $("btn-dup-csv").addEventListener("click", exportDuplicatesCsv);
-  $("btn-dup-print").addEventListener("click", printDuplicates);
-}
-
-function exportDuplicatesCsv() {
-  const data = state.duplicates;
-  const rows = [["Nummer", "Name", "Zustand", "Vorhanden", "Abgebbar",
-    "Ø Stück (EUR)", "Wert (EUR)"]];
-  data.items.forEach((it) => rows.push([it.item_id, it.name,
-    it.condition === "new" ? "Neu" : "Gebraucht", it.quantity, it.surplus,
-    numDe(it.unit_price), numDe(it.value)]));
-  downloadCsv("brickfolio-verkaufsliste.csv", rows);
-  toast("Verkaufsliste exportiert ✔");
-}
-
-function printDuplicates() {
-  const data = state.duplicates;
-  const rows = data.items.map((it) => [it.item_id, it.name,
-    it.condition === "new" ? "Neu" : "Gebraucht",
-    it.surplus, it.unit_price ? fmtEur(it.unit_price) : "",
-    it.value ? fmtEur(it.value) : ""]);
-  printTable("Verkaufsliste – Doppelte",
-    `${data.stats.pieces} Stück abgebbar · Verkaufswert ca. ${fmtEur(data.stats.value)}`,
-    ["Nummer", "Name", "Zustand", "Abgebbar", "Ø Stück", "Wert"], rows,
-    ["num", "name", "cond", "qty", "price", "price"]);
 }
 
 /* ---------------------------------------------------------------- Passwörter */
