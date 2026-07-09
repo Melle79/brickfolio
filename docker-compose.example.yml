@@ -7,20 +7,19 @@ services:
       - "8300:8300"
     volumes:
       - ./data:/data
-    environment:
-      # Optional: Admin automatisch anlegen (für unbeaufsichtigte Setups).
-      # Ohne diese Variablen führt die App beim ersten Aufruf durch die
-      # Ersteinrichtung im Browser – empfohlen.
-      # ADMIN_USER: "admin"
-      # ADMIN_PASSWORD: "bitte-aendern"
-
-      # Optional: BrickLink-API für Preise & Set-Inhalte
-      # Keys: https://www.bricklink.com/v2/api/register_consumer.page
-      # BL_CONSUMER_KEY: ""
-      # BL_CONSUMER_SECRET: ""
-      # BL_TOKEN: ""
-      # BL_TOKEN_SECRET: ""
-
-      # Optional: Rebrickable-API für die Namenssuche
-      # Key: https://rebrickable.com/api/
-      # REBRICKABLE_KEY: ""
+    # Alle Umgebungsvariablen sind optional – ohne sie führt die App beim
+    # ersten Aufruf durch die Ersteinrichtung im Browser (empfohlen) und
+    # die API-Schlüssel werden in der App hinterlegt (Mehr → API-Schlüssel).
+    # Zum Aktivieren: den environment-Block einkommentieren.
+    #
+    # environment:
+    #   # Admin automatisch anlegen (für unbeaufsichtigte Setups):
+    #   ADMIN_USER: "admin"
+    #   ADMIN_PASSWORD: "bitte-aendern"
+    #   # BrickLink-API (https://www.bricklink.com/v2/api/register_consumer.page):
+    #   BL_CONSUMER_KEY: ""
+    #   BL_CONSUMER_SECRET: ""
+    #   BL_TOKEN: ""
+    #   BL_TOKEN_SECRET: ""
+    #   # Rebrickable-API (https://rebrickable.com/api/):
+    #   REBRICKABLE_KEY: ""
