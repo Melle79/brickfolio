@@ -1,5 +1,6 @@
 # Laufzeitdaten (Datenbank, Schlüssel) – niemals committen!
-data/
+data/*
+!data/.gitkeep
 *.db
 secret.key
 
