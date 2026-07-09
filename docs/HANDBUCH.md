@@ -73,6 +73,14 @@ Danach ist die App unter `http://<server>:8300` erreichbar. Die Datenbank
 liegt persistent unter `./data/brickfolio.db` – dieser Ordner überlebt
 Updates und Container-Neubauten.
 
+**Port ändern / mehrere Instanzen:** Der erreichbare Port ist die *erste*
+Zahl im `ports`-Mapping der `docker-compose.yml` – `"8301:8300"` macht die
+App unter Port 8301 erreichbar (die zweite Zahl bleibt immer 8300). So
+lassen sich auch mehrere Brickfolio-Instanzen parallel betreiben, z. B.
+für getrennte Sammlungen oder eine Testinstallation: eigener Ordner,
+eigener `container_name`, eigener Port – jede Instanz hat ihren eigenen
+`data/`-Ordner und damit ihre eigene Datenbank.
+
 **Synology-Hinweis:** Projektordner z. B. nach `/volume1/docker/brickfolio`
 legen und die Befehle per SSH ausführen (`sudo` erforderlich).
 
