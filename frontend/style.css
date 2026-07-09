@@ -475,3 +475,17 @@ details.help p, details.help ol {
 }
 details.help ol { padding-left: 20px; }
 details.help a { color: var(--blue, #0057A6); font-weight: 700; }
+/* Statistik: Chips umbrechen lassen, lange Beträge verkleinern */
+#view-stats .stats-row { flex-wrap: wrap; }
+#view-stats .stat-chip { flex: 1 1 40%; min-width: 0; }
+#view-stats .stat-chip strong {
+  font-size: clamp(15px, 5.2vw, 24px);
+  overflow-wrap: anywhere;
+}
+/* Chart-Labels mit weißem Halo, damit Kurve/Achse nicht überdecken */
+.history-svg .hist-label {
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
