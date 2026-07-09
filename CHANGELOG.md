@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 – Juli 2026
+## Neu
+- 🚀 **Ersteinrichtung im Browser**: Beim allerersten Start (leere Datenbank) führt Brickfolio durch das Anlegen des Admin-Kontos – kein Default-Passwort, kein Editieren der docker-compose.yml mehr nötig. `ADMIN_USER`/`ADMIN_PASSWORD` bleiben als optionale Variablen für unbeaufsichtigte Setups erhalten.
+
+## Verbessert
+- 📖 README, Handbuch und docker-compose.example.yml an den neuen Erststart angepasst
+
+
 ## 1.1.0 – Juli 2026
 ## Neu
 - 📥 **CSV-Import** für Sammlerprofis (Mehr → Export & Druck) – mit Beispiel-CSV, toleranter Spaltenerkennung und Fehlerbericht je Zeile; vorhandene Artikel werden zusammengeführt
