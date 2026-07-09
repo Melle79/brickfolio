@@ -81,8 +81,19 @@ für getrennte Sammlungen oder eine Testinstallation: eigener Ordner,
 eigener `container_name`, eigener Port – jede Instanz hat ihren eigenen
 `data/`-Ordner und damit ihre eigene Datenbank.
 
-**Synology-Hinweis:** Projektordner z. B. nach `/volume1/docker/brickfolio`
-legen und die Befehle per SSH ausführen (`sudo` erforderlich).
+**Ohne git** (viele NAS-Systeme, etwa Synology, haben kein git an Bord)
+lädt man den aktuellen Stand als Archiv:
+
+```bash
+mkdir brickfolio && cd brickfolio
+curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
+cp docker-compose.example.yml docker-compose.yml
+docker compose up -d --build
+```
+
+**Synology-Hinweis:** Ordner unter `/volume1/docker/brickfolio` anlegen und
+alle Befehle per SSH mit `sudo` ausführen – bei der curl-Variante als
+`sudo sh -c 'curl … | tar …'`, damit die gesamte Pipe mit Rechten läuft.
 
 ### 2.3 Erster Start: die Ersteinrichtung
 

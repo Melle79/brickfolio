@@ -65,14 +65,21 @@ Aufrufen: `http://<server>:8300` – beim ersten Besuch führt die App durch
 die **Ersteinrichtung** (Admin-Konto anlegen). Die Datenbank liegt
 persistent unter `./data/brickfolio.db`.
 
-### Synology NAS
-
-Projektordner z. B. nach `/volume1/docker/brickfolio` kopieren, dann per SSH:
+**Ohne git** (z. B. auf Synology-NAS, wo git meist fehlt) – das neueste
+Release als Archiv laden:
 
 ```bash
-cd /volume1/docker/brickfolio
-sudo docker compose up -d --build
+mkdir brickfolio && cd brickfolio
+curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
+cp docker-compose.example.yml docker-compose.yml
+docker compose up -d --build
 ```
+
+### Synology NAS
+
+Ordner unter `/volume1/docker/brickfolio` anlegen und die Befehle per SSH
+mit `sudo` ausführen (bei der curl-Variante: `sudo sh -c 'curl … | tar …'`,
+damit die ganze Pipe mit Rechten läuft).
 
 ## Konfiguration
 
