@@ -502,9 +502,11 @@ Sicherungen ohne Admin-Benutzer werden abgelehnt (Aussperr-Schutz).
 eine konsistente Sicherung der Datenbank unter `data/backups/` ab und
 behält die letzten 14 Tagesstände (einstellbar über die Umgebungsvariable
 `BACKUP_KEEP`, 0 schaltet ab). Die Sicherung-Karte zeigt Datum der
-letzten automatischen Sicherung. Zum Wiederherstellen eines Tagesstands
-einfach die gewünschte Datei über `data/brickfolio.db` kopieren und den
-Container neu starten.
+letzten automatischen Sicherung. Wiederhergestellt wird
+direkt in der App: In der Sicherung-Karte den gewünschten Tagesstand
+auswählen und **„↩︎ Diesen Stand wiederherstellen"** – der aktuelle Stand
+wird dabei automatisch als zusätzliche Sicherung weggeschrieben, die
+Aktion ist also umkehrbar.
 
 Empfehlung trotzdem: vor größeren Aktionen zusätzlich eine JSON-Sicherung
 ziehen – und wer ein NAS-Backup (z. B. Hyper Backup) betreibt, nimmt den

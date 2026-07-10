@@ -743,7 +743,63 @@ BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
 def backup_info(user: dict = Depends(admin_user)):
     files = _backup_list()
     return {"keep": BACKUP_KEEP, "count": len(files),
-            "latest": files[-1]["name"] if files else None}
+            "latest": files[-1]["name"] if files else None,
+            "files": list(reversed(files))}
+
+
+class RestoreFileBody(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+
+
+@app.post("/api/backup_restore_file")
+def backup_restore_file(body: RestoreFileBody,
+                        user: dict = Depends(admin_user)):
+    """Stellt einen automatischen Tagesstand wieder her (Admin).
+
+    Vorher wird der aktuelle Stand als zusätzliche Sicherung weggeschrieben,
+    die Aktion ist also selbst wieder umkehrbar.
+    """
+    import datetime
+    valid = {f["name"] for f in _backup_list()}
+    if body.name not in valid:
+        raise HTTPException(404, "Sicherung nicht gefunden")
+    bdir = os.path.join(os.path.dirname(core.DB_PATH), "backups")
+    snap_path = os.path.join(bdir, body.name)
+
+    # Schnappschuss prüfen: lesbar + enthält mindestens einen Admin
+    try:
+        check = sqlite3.connect(f"file:{snap_path}?mode=ro", uri=True)
+        admins = check.execute(
+            "SELECT COUNT(*) FROM users WHERE is_admin = 1").fetchone()[0]
+        check.close()
+    except sqlite3.Error:
+        raise HTTPException(400, "Sicherung ist beschädigt oder kein "
+                                 "Brickfolio-Stand")
+    if admins < 1:
+        raise HTTPException(400, "Sicherung enthält keinen Admin – "
+                                 "Wiederherstellung würde aussperren")
+
+    # Sicherheitskopie des aktuellen Stands
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    safety = os.path.join(bdir, f"brickfolio-manuell-{stamp}.db")
+    live = sqlite3.connect(core.DB_PATH)
+    dst = sqlite3.connect(safety)
+    try:
+        live.backup(dst)
+    finally:
+        dst.close()
+
+    # Schnappschuss in die laufende Datenbank zurückspielen
+    snap = sqlite3.connect(snap_path)
+    try:
+        snap.backup(live)
+    finally:
+        snap.close()
+        live.close()
+    print(f"[brickfolio] Wiederhergestellt: {body.name} "
+          f"(Sicherheitskopie: {os.path.basename(safety)})", flush=True)
+    return {"ok": True, "restored": body.name,
+            "safety": os.path.basename(safety)}
 
 
 @app.get("/api/backup")

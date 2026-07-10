@@ -271,6 +271,14 @@
       <p class="search-hint" id="backup-auto-info">Zusätzlich sichert
         Brickfolio die Datenbank täglich von selbst nach
         <code>data/backups/</code>.</p>
+      <div id="backup-restore-block" hidden>
+        <label for="backup-select">Automatischen Tagesstand wiederherstellen</label>
+        <div class="detail-row btn-grid">
+          <select id="backup-select" style="grid-column:1/-1"></select>
+          <button class="mini-btn danger" id="btn-restore-snap"
+            style="grid-column:1/-1">↩︎ Diesen Stand wiederherstellen</button>
+        </div>
+      </div>
     </div>
 
     <div class="settings-card" id="update-card" hidden>

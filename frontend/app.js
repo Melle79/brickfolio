@@ -2505,8 +2505,17 @@ async function loadSettings() {
       if (!b || b.keep <= 0) return;
       const el = $("backup-auto-info");
       el.textContent = b.latest
-        ? `Automatische Sicherung: täglich nach data/backups/ · letzte: ${b.latest.replace("brickfolio-", "").replace(".db", "")} · ${b.count} von ${b.keep} Tagesständen`
+        ? `Automatische Sicherung: täglich nach data/backups/ · ${b.count} von ${b.keep} Tagesständen`
         : `Automatische Sicherung: täglich nach data/backups/ (die erste entsteht kurz nach dem Start).`;
+      const block = $("backup-restore-block");
+      if (b.files && b.files.length) {
+        block.hidden = false;
+        $("backup-select").innerHTML = b.files.map((f) => {
+          const label = f.name.replace("brickfolio-", "").replace(".db", "")
+            + ` (${(f.size / 1024).toFixed(0)} KB)`;
+          return `<option value="${esc(f.name)}">${esc(label)}</option>`;
+        }).join("");
+      }
     }).catch(() => {});
   }
   $("update-card").hidden = !isAdmin;
@@ -2671,6 +2680,22 @@ document.addEventListener("DOMContentLoaded", () => {
     loadLists();
   });
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
+  $("btn-restore-snap").addEventListener("click", async () => {
+    const name = $("backup-select").value;
+    if (!name) return;
+    const label = name.replace("brickfolio-", "").replace(".db", "");
+    if (!confirm(`Wirklich den Stand vom ${label} wiederherstellen?\n\n`
+      + `Alle aktuellen Daten werden durch diesen Tagesstand ersetzt. `
+      + `Der jetzige Stand wird vorher automatisch als zusätzliche `
+      + `Sicherung weggeschrieben.`)) return;
+    try {
+      const res = await api("/backup_restore_file", { method: "POST",
+        body: { name } });
+      alert(`Stand ${label} wiederhergestellt.\n`
+        + `Sicherheitskopie: ${res.safety}\n\nDie App lädt jetzt neu.`);
+      location.reload();
+    } catch (e) { toast(e.message); }
+  });
   $("restore-file").addEventListener("change", (ev) => {
     const file = ev.target.files[0];
     ev.target.value = "";
