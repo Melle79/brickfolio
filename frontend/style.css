@@ -541,3 +541,4 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   border: 2px solid var(--ink); background: #fff;
   font-weight: 900; font-size: 16px; cursor: pointer;
 }
+.rename-btn { font-size: 13px; text-decoration: none; margin-left: 4px; }

@@ -1617,7 +1617,7 @@ function renderLists(lists) {
     <div class="card list-card" data-lid="${l.id}">
       <div class="card-head">
         <div class="card-title">
-          <strong data-l-name>${state.showArchive ? "📦 " : "🛒 "}${esc(l.name)}</strong>${dealer && !state.showArchive ? `<button class="set-link" data-l-rename title="Liste umbenennen">✏️</button>` : ""}
+          <strong>${state.showArchive ? "📦 " : "🛒 "}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="Liste umbenennen">✏️</button>` : ""}</strong>
           <div class="sub">${l.stats.count} Artikel · ${l.stats.open} offen
             · Marktwert ca. ${fmtEur(l.stats.est)} (je Zustand)${l.stats.paid_sum > 0 ? ` · Einkauf ${fmtEur(l.stats.paid_sum)}` : ""}</div>
         </div>
@@ -1641,8 +1641,8 @@ function renderLists(lists) {
     if (renameBtn) {
       renameBtn.addEventListener("click", () => {
         if (card.querySelector("[data-l-rename-row]")) return;
-        const strong = card.querySelector("[data-l-name]");
-        const current = strong.textContent.replace(/^([🛒📦]\s*)/, "");
+        const nameEl = card.querySelector("[data-l-name]");
+        const current = nameEl.textContent;
         const row = document.createElement("div");
         row.className = "card-actions btn-grid";
         row.setAttribute("data-l-rename-row", "");
@@ -1650,7 +1650,7 @@ function renderLists(lists) {
           <input data-l-newname maxlength="120" style="grid-column:1/-1">
           <button class="mini-btn add" data-l-rename-save>Umbenennen</button>
           <button class="mini-btn" data-l-rename-cancel>Abbrechen</button>`;
-        strong.parentElement.after(row);
+        nameEl.closest(".card-title").after(row);
         const input = row.querySelector("[data-l-newname]");
         input.value = current;
         input.focus();
