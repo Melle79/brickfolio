@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.5 – Juli 2026
+
+### Verbessert
+- ✏️ Einkaufslisten umbenennen (Stift am Listennamen, Sammlerprofi)
+- ✔ Verbuchen-Knopf heißt jetzt „Da! Ab in die Sammlung"
+
 ## 1.4.4 – Juli 2026
 
 ### Verbessert
