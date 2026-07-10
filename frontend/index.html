@@ -190,29 +190,7 @@
   <main id="view-settings" class="view" hidden>
     <h2>Einstellungen</h2>
     <div class="settings-card">
-      <h3>Export & Druck</h3>
-      <div id="dealer-settings" hidden>
-        <div class="paid-row" style="margin-bottom:4px">
-          <span class="paid-label">Angebots-Vorschlag</span>
-          <input id="offer-percent" class="paid-input" inputmode="numeric" style="flex:0 0 64px;width:64px">
-          <span class="paid-suffix">%</span>
-          <button class="mini-btn add" id="btn-offer-percent" style="flex:1;min-height:38px">Speichern</button>
-        </div>
-        <p class="search-hint">Prozentsatz vom Marktwert für den roten
-          Preisvorschlag im Gesamtangebot (Standard: 60&nbsp;%).</p>
-        <hr style="border:none;border-top:1.5px dashed var(--line);margin:12px 0">
-      </div>
-      <div id="csv-import-block" hidden>
-        <div class="detail-row btn-grid">
-          <button class="mini-btn" id="btn-csv-import">📥 CSV importieren</button>
-          <button class="mini-btn" id="btn-csv-sample">Beispiel-CSV laden</button>
-        </div>
-        <input type="file" id="csv-file" accept=".csv,text/csv" hidden>
-        <p class="search-hint">Spalten (Reihenfolge egal, nur „Nummer" ist
-          Pflicht): Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen.
-          Preise, Bilder und Set-Inhalte holt die App automatisch nach.</p>
-        <hr style="border:none;border-top:1.5px dashed var(--line);margin:12px 0">
-      </div>
+      <h3>📤 Export &amp; Druck</h3>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="btn-csv-col">Sammlung als CSV</button>
         <button class="mini-btn" id="btn-csv-want">Wunschliste als CSV</button>
@@ -222,8 +200,34 @@
       <p class="search-hint">CSV öffnet sich direkt in Excel/Numbers ·
         Drucken nutzt den System-Druckdialog (auch „Als PDF sichern")</p>
     </div>
+
+    <div class="settings-card" id="dealer-card" hidden>
+      <h3>💼 Sammlerprofi</h3>
+      <div id="dealer-settings">
+        <div class="paid-row" style="margin-bottom:4px">
+          <span class="paid-label">Angebots-Vorschlag</span>
+          <input id="offer-percent" class="paid-input" inputmode="numeric" style="flex:0 0 64px;width:64px">
+          <span class="paid-suffix">%</span>
+          <button class="mini-btn add" id="btn-offer-percent" style="flex:1;min-height:38px">Speichern</button>
+        </div>
+        <p class="search-hint">Prozentsatz vom Marktwert für den roten
+          Preisvorschlag im Gesamtangebot (Standard: 60&nbsp;%).</p>
+        </div>
+      <hr style="border:none;border-top:1.5px dashed var(--line);margin:12px 0">
+      <div id="csv-import-block">
+        <div class="detail-row btn-grid">
+          <button class="mini-btn" id="btn-csv-import">📥 CSV importieren</button>
+          <button class="mini-btn" id="btn-csv-sample">Beispiel-CSV laden</button>
+        </div>
+        <input type="file" id="csv-file" accept=".csv,text/csv" hidden>
+        <p class="search-hint">Spalten (Reihenfolge egal, nur „Nummer" ist
+          Pflicht): Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen.
+          Preise, Bilder und Set-Inhalte holt die App automatisch nach.</p>
+        </div>
+    </div>
+
     <div id="api-panel" class="settings-card" hidden>
-      <h3>API-Schlüssel</h3>
+      <h3>🔑 API-Schlüssel</h3>
       <p class="search-hint">Gespeicherte Schlüssel werden maskiert angezeigt.
         Feld leer lassen = Wert bleibt unverändert.
         Woher die Schlüssel kommen, steht in der Hilfe (❓ oben rechts)
@@ -245,7 +249,7 @@
       <p id="keys-status" class="search-hint" hidden></p>
     </div>
     <div id="admin-panel" class="settings-card" hidden>
-      <h3>Benutzer verwalten</h3>
+      <h3>👥 Benutzer verwalten</h3>
       <ul id="user-list" class="user-list"></ul>
       <label for="new-user">Neuer Benutzername</label>
       <input id="new-user" autocapitalize="none">
@@ -253,7 +257,10 @@
       <input id="new-pass" type="password" autocomplete="new-password">
       <button id="btn-add-user" class="btn btn-primary">Benutzer anlegen</button>
       <p id="user-error" class="error" hidden></p>
-      <h3 style="margin-top:20px">Sicherung</h3>
+    </div>
+
+    <div class="settings-card" id="backup-card" hidden>
+      <h3>💾 Sicherung</h3>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="btn-backup">💾 Sicherung herunterladen</button>
         <button class="mini-btn" id="btn-restore">📥 Sicherung einspielen</button>

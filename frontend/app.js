@@ -2451,15 +2451,15 @@ function renderUpdateInfo(info) {
 
 async function loadSettings() {
   const dealerUi = state.user && state.user.is_dealer;
-  if ($("csv-import-block")) $("csv-import-block").hidden = !dealerUi;
-  if ($("dealer-settings")) {
-    $("dealer-settings").hidden = !dealerUi;
+  if ($("dealer-card")) {
+    $("dealer-card").hidden = !dealerUi;
     if (dealerUi) $("offer-percent").value = state.offerPercent || 60;
   }
   $("settings-user").textContent = state.user ? state.user.username : "";
   $("own-name").value = state.user ? state.user.username : "";
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
+  $("backup-card").hidden = !isAdmin;
   $("update-card").hidden = !isAdmin;
   if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");
