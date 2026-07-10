@@ -1638,7 +1638,7 @@ function renderLists(lists) {
   box.querySelectorAll(".list-card").forEach((card) => {
     const lid = Number(card.dataset.lid);
     const storeKey = "bf_listcard_" + lid;
-    if (localStorage.getItem(storeKey) === "closed") {
+    if (localStorage.getItem(storeKey) !== "open") {
       card.classList.add("collapsed");
     }
     card.querySelector(".card-head").addEventListener("click", (ev) => {
