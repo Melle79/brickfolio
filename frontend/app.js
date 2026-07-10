@@ -1637,6 +1637,16 @@ function renderLists(lists) {
 
   box.querySelectorAll(".list-card").forEach((card) => {
     const lid = Number(card.dataset.lid);
+    const storeKey = "bf_listcard_" + lid;
+    if (localStorage.getItem(storeKey) === "closed") {
+      card.classList.add("collapsed");
+    }
+    card.querySelector(".card-head").addEventListener("click", (ev) => {
+      if (ev.target.closest("[data-l-rename]")) return;
+      card.classList.toggle("collapsed");
+      localStorage.setItem(storeKey,
+        card.classList.contains("collapsed") ? "closed" : "open");
+    });
     const renameBtn = card.querySelector("[data-l-rename]");
     if (renameBtn) {
       renameBtn.addEventListener("click", () => {
