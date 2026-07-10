@@ -2500,6 +2500,15 @@ async function loadSettings() {
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
   $("backup-card").hidden = !isAdmin;
+  if (isAdmin) {
+    api("/backup_info").then((b) => {
+      if (!b || b.keep <= 0) return;
+      const el = $("backup-auto-info");
+      el.textContent = b.latest
+        ? `Automatische Sicherung: täglich nach data/backups/ · letzte: ${b.latest.replace("brickfolio-", "").replace(".db", "")} · ${b.count} von ${b.keep} Tagesständen`
+        : `Automatische Sicherung: täglich nach data/backups/ (die erste entsteht kurz nach dem Start).`;
+    }).catch(() => {});
+  }
   $("update-card").hidden = !isAdmin;
   if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");

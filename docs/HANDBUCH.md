@@ -498,9 +498,17 @@ Einkaufslisten, Preisverläufe, Set-Zuordnungen und Einstellungen.
 Sicherheitsabfrage mit Datum; **alle aktuellen Daten werden ersetzt**.
 Sicherungen ohne Admin-Benutzer werden abgelehnt (Aussperr-Schutz).
 
-Empfehlung: vor jedem Update und in regelmäßigen Abständen eine Sicherung
-ziehen. Alternativ genügt es, die Datei `data/brickfolio.db` auf dem
-Server zu kopieren – sie *ist* die komplette Datenbank.
+**Automatisch passiert es außerdem von selbst:** Brickfolio legt täglich
+eine konsistente Sicherung der Datenbank unter `data/backups/` ab und
+behält die letzten 14 Tagesstände (einstellbar über die Umgebungsvariable
+`BACKUP_KEEP`, 0 schaltet ab). Die Sicherung-Karte zeigt Datum der
+letzten automatischen Sicherung. Zum Wiederherstellen eines Tagesstands
+einfach die gewünschte Datei über `data/brickfolio.db` kopieren und den
+Container neu starten.
+
+Empfehlung trotzdem: vor größeren Aktionen zusätzlich eine JSON-Sicherung
+ziehen – und wer ein NAS-Backup (z. B. Hyper Backup) betreibt, nimmt den
+Ordner `data/` mit auf, damit auch ein Hardware-Ausfall abgedeckt ist.
 
 ### 11.2 Updates einspielen
 
@@ -648,6 +656,7 @@ die jeweiligen Nutzungsbedingungen.
 | Variable | Bedeutung |
 |---|---|
 | `ADMIN_USER` / `ADMIN_PASSWORD` | Optional: Admin automatisch anlegen (sonst Ersteinrichtung im Browser) |
+| `BACKUP_KEEP` | Automatische tägliche Sicherungen aufbewahren (Standard 14, 0 = aus) |
 | `DB_PATH` | Pfad zur SQLite-Datei (Default: `/data/brickfolio.db`) |
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | BrickLink-Store-API (Fallback zu den App-Einstellungen) |
 | `REBRICKABLE_KEY` | Rebrickable-API (Fallback zu den App-Einstellungen) |

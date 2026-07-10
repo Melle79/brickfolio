@@ -1,6 +1,7 @@
 """Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
 import json
 import os
+import sqlite3
 import threading
 import time
 
@@ -39,6 +40,11 @@ def _price_refresher():
     """Frischt Ø-Preise auf, die älter als 7 Tage sind (max. 40 pro Lauf)."""
     time.sleep(120)   # Start nicht ausbremsen
     while True:
+        try:
+            _auto_backup()
+        except Exception as e:
+            print(f"[brickfolio] Auto-Sicherung übersprungen: {e}",
+                  flush=True)
         try:
             if integrations.bricklink_enabled():
                 for table in PRICE_TABLES:
@@ -731,6 +737,13 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
 BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
                  "shopping_items", "price_history",
                  "set_contents", "set_meta", "fig_sets", "settings"]
+
+
+@app.get("/api/backup_info")
+def backup_info(user: dict = Depends(admin_user)):
+    files = _backup_list()
+    return {"keep": BACKUP_KEEP, "count": len(files),
+            "latest": files[-1]["name"] if files else None}
 
 
 @app.get("/api/backup")
@@ -1815,6 +1828,45 @@ PRICE_STALE_SECONDS = 7 * 86400      # Hintergrund-Refresh: älter als 7 Tage
 
 
 PRICE_TABLES = ("collection", "wanted", "shopping_items")
+
+BACKUP_KEEP = int(os.environ.get("BACKUP_KEEP", "14"))
+
+
+def _auto_backup():
+    """Tägliche Sicherung der Datenbank (konsistent via SQLite-Backup-API).
+
+    Läuft im Hintergrundjob; legt höchstens eine Sicherung pro Tag an und
+    behält die letzten BACKUP_KEEP Tagesstände. BACKUP_KEEP=0 schaltet ab.
+    """
+    if BACKUP_KEEP <= 0:
+        return
+    import glob
+    import datetime
+    bdir = os.path.join(os.path.dirname(core.DB_PATH), "backups")
+    os.makedirs(bdir, exist_ok=True)
+    target = os.path.join(
+        bdir, f"brickfolio-{datetime.date.today().isoformat()}.db")
+    if os.path.exists(target):
+        return
+    src_conn = sqlite3.connect(core.DB_PATH)
+    dst_conn = sqlite3.connect(target)
+    try:
+        src_conn.backup(dst_conn)
+    finally:
+        dst_conn.close()
+        src_conn.close()
+    old_files = sorted(glob.glob(os.path.join(bdir, "brickfolio-*.db")))
+    for f in old_files[:-BACKUP_KEEP]:
+        os.remove(f)
+    print(f"[brickfolio] Auto-Sicherung angelegt: {target}", flush=True)
+
+
+def _backup_list():
+    import glob
+    bdir = os.path.join(os.path.dirname(core.DB_PATH), "backups")
+    files = sorted(glob.glob(os.path.join(bdir, "brickfolio-*.db")))
+    return [{"name": os.path.basename(f),
+             "size": os.path.getsize(f)} for f in files]
 
 
 def _unit_price(condition, price_new, price_used):
