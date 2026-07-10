@@ -1,6 +1,6 @@
 # Finn's Brickfolio – Das Handbuch
 
-*Version 1.1 · Juli 2026 · für Brickfolio ab Release v1.1.0*
+*Version 1.4 · Juli 2026 · für Brickfolio ab Release v1.4.4*
 
 Brickfolio ist eine selbstgehostete Progressive Web App (PWA) zum Scannen,
 Verwalten und Bewerten einer LEGO®-Sammlung. Dieses Handbuch erklärt jede
@@ -132,7 +132,8 @@ Unter **Mehr → API-Schlüssel** (nur für Admins sichtbar):
    und ins Feld *Rebrickable Key* eintragen.
 
 Zum Abschluss **„Verbindung testen"** drücken – die App prüft beide
-Zugänge und meldet das Ergebnis. Gespeicherte Schlüssel werden maskiert
+Zugänge und meldet das Ergebnis. Dieselbe Anleitung steckt übrigens auch
+in der App: ❓-Knopf oben rechts → „API-Schlüssel besorgen". Gespeicherte Schlüssel werden maskiert
 angezeigt; ein leeres Feld beim Speichern lässt den vorhandenen Wert
 unverändert. Alternativ können alle Schlüssel als Umgebungsvariablen
 gesetzt werden (siehe README), die App-Einstellungen haben Vorrang.
@@ -143,6 +144,25 @@ Brickfolio im Handy-Browser öffnen → Teilen-Menü → **„Zum Home-Bildschir
 (iOS/Safari) bzw. **„App installieren"** (Android/Chrome). Danach startet
 Brickfolio wie eine native App im Vollbild – inklusive Kamerazugriff fürs
 Scannen.
+
+### 2.6 Orientierung: Kopfzeile und Mehr-Tab
+
+In der Kopfzeile sitzen zwei ständige Begleiter: der **❓-Knopf** (oben
+rechts) öffnet die Hilfe als Popup – von jedem Tab aus, mit Anleitungen zu
+allen Funktionen. Und der **eigene Name** daneben ist antippbar: Dahinter
+liegt das **Profil-Popup** mit Anzeigename ändern, Passwort ändern und
+Abmelden.
+
+Der Tab **Mehr** ist nach Themen sortiert – je nach Rolle sichtbar:
+
+| Karte | sichtbar für |
+|---|---|
+| 📤 Export & Druck | alle |
+| 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
+| 🔑 API-Schlüssel | Admin |
+| 👥 Benutzer verwalten | Admin |
+| 💾 Sicherung | Admin |
+| 🔄 Version & Updates | Admin |
 
 ---
 
@@ -161,10 +181,11 @@ Brickfolio kennt drei Stufen, die sich kombinieren lassen:
 ¹ Der Listen-Tab erscheint für Standard-Benutzer nur, wenn mindestens eine
 aktive Liste existiert.
 
-**Benutzer anlegen (Admin):** Mehr → Benutzer verwalten → Name + Passwort
-→ „Benutzer anlegen". Jeder Benutzer kann später unter **Mehr → Profil**
-sein eigenes Passwort und seinen Anzeigenamen ändern; der Admin kann
-Passwörter zurücksetzen und Benutzer entfernen.
+**Benutzer anlegen (Admin):** Mehr → 👥 Benutzer verwalten → Name +
+Passwort → „Benutzer anlegen". Jeder Benutzer ändert sein Passwort und
+seinen Anzeigenamen selbst, indem er **oben rechts auf seinen Namen
+tippt** (Profil-Popup); der Admin kann Passwörter zurücksetzen und
+Benutzer entfernen.
 
 **Sammlerprofi-Rolle vergeben (Admin):** In der Benutzerliste den
 **„Profi"**-Knopf antippen – er wird grün („Profi ✔"). Die Rolle wirkt
@@ -206,8 +227,16 @@ Unter dem Kamerabereich liegt die Textsuche. Sie versteht:
 - **＋ Zur Sammlung** – fragt den Zustand ab (Gebraucht/Neu) und erfasst
   den Artikel. Ist er schon vorhanden, erhöht sich die Menge.
 - **☆ Merken** – setzt ihn auf die Wunschliste (⭐-Badge erscheint).
-- **🛒 Liste** *(nur Profi)* – legt ihn auf eine Einkaufsliste; siehe
-  Kapitel 7. Von hier lässt sich auch direkt eine **neue Liste anlegen**.
+- **🛒 Liste** *(nur Profi)* – legt ihn auf eine Einkaufsliste (siehe
+  Kapitel 7): Im Dialog zuerst optional den **Zustand** wählen
+  (Gebraucht/Neu, Gebraucht ist vorausgewählt), dann die Liste antippen –
+  oder mit **„＋ Neue Liste"** direkt am Stand eine anlegen (Name
+  „Flohmarkt <Datum>" ist vorbefüllt).
+
+Die Treffer-Karten tragen außerdem Hinweis-Badges: **✔ n× in eurer
+Sammlung**, **⭐ auf eurer Wunschliste** und **🛒 auf »Listenname«**, wenn
+der Artikel bereits auf einer aktiven Einkaufsliste eingeplant ist – der
+eingebaute Schutz vor Doppelkäufen und Doppel-Einplanung.
 
 ### 4.4 Manuell erfassen
 
@@ -252,6 +281,10 @@ automatisch geladen):
   Wunschliste** setzen.
 - Umgekehrt zeigen Figuren-Karten **„📦 aus euren Sets"** mit Sprung zur
   jeweiligen Set-Karte.
+- In den Figuren-Details (Suche wie Sammlung) sind Sets aus **eurer
+  Sammlung** als **gelbe Chips mit ✔** gekennzeichnet und springen zur
+  Set-Karte; Sets, die ihr nicht besitzt, erscheinen als blaue
+  BrickLink-Links.
 
 ### 5.4 Kaufpreise & Gewinn *(Sammlerprofi)*
 
@@ -303,10 +336,11 @@ angekommene Artikel verbuchen; alles andere ist Profi-Sache.
 Zwei Tipps, und die Liste existiert samt erstem Artikel.
 
 **2. Kiste durchscannen.** Jeden interessanten Fund per 🛒 auf die Liste
-legen (bei mehreren aktiven Listen fragt die App, auf welche). Gleicher
-Artikel nochmal = Menge erhöht sich. Der **Zustand** je Artikel ist per
-gelbem Umschalter änderbar (Standard: Gebraucht) – Marktwert und
-Ø-Anzeige rechnen zustandsgerecht.
+legen – den **Zustand** wählt ihr direkt im Dialog (Gebraucht ist
+vorausgewählt), nachträglich geht es per gelbem Umschalter am
+Listen-Artikel. Gleicher Artikel im gleichen Zustand nochmal = Menge
+erhöht sich; **unterschiedliche Zustände sind getrennte Zeilen** mit
+eigenen Marktwerten. Alles rechnet zustandsgerecht.
 
 **3. Marktwert ablesen.** Die Listen-Kopfzeile zeigt laufend:
 *„7 Artikel · 7 offen · Marktwert ca. 86,40 € (je Zustand)"* – deine
@@ -314,7 +348,8 @@ Verhandlungsbasis, ohne dass der Verkäufer etwas davon mitbekommt.
 
 **4. Angebot machen: 💰 Gesamtangebot.** Der Dialog zeigt den
 Ø-Marktwert aller offenen Artikel und einen **roten Preisvorschlag**
-(60 % des Marktwerts – antippen übernimmt ihn ins Feld). Nach der
+(standardmäßig 60 % des Marktwerts – antippen übernimmt ihn ins Feld;
+der Prozentsatz ist unter Mehr → 💼 Sammlerprofi einstellbar). Nach der
 Einigung den Endpreis eintragen und **„Verteilen"** drücken:
 
 > **Die Verteilungs-Mathematik:** Der Gesamtpreis wird anteilig nach
@@ -410,7 +445,8 @@ Für alle sichtbar (📊 in der Tab-Leiste), lädt beim Öffnen automatisch:
 
 ## 10. CSV-Import, Export & Druck
 
-*(Alles unter Mehr → Export & Druck.)*
+*(Export & Druck unter Mehr → 📤 Export & Druck; der CSV-Import wohnt
+in der Karte Mehr → 💼 Sammlerprofi.)*
 
 ### 10.1 Export & Druck (alle Benutzer)
 
@@ -468,18 +504,27 @@ Server zu kopieren – sie *ist* die komplette Datenbank.
 
 ### 11.2 Updates einspielen
 
-Neue Version aus dem Git-Repo holen bzw. Dateien ersetzen, dann:
+Brickfolio sagt selbst Bescheid: Die Karte **Mehr → 🔄 Version & Updates**
+(Admin) vergleicht die installierte Version mit dem neuesten
+GitHub-Release – automatisch beim App-Start und beim Öffnen des Mehr-Tabs
+(serverseitig für 6 Stunden zwischengespeichert), sofort per „Nach
+Updates suchen". Wartet ein Update, erscheinen ein Hinweis-Toast und ein
+gelber Banner mit Link zu den Release-Notes.
+
+Eingespielt wird mit einem Befehl auf dem Server:
 
 ```bash
 cd /pfad/zu/brickfolio
-docker compose up -d --build
+sudo bash update.sh
 ```
 
-Datenbank-Migrationen laufen beim Start automatisch und sind idempotent –
-mehrfaches Bauen schadet nie. Wichtig: Im Build-Log sollten die
-`COPY backend/`- und `COPY frontend/`-Schritte bei geänderten Dateien
-**nicht** „CACHED" sein. Der Browser holt sich die neue Oberfläche beim
-normalen Neuladen (die App verhindert veraltete Caches selbst).
+Das Skript legt zuerst einen **Datenbank-Schnappschuss** an (die letzten
+drei bleiben erhalten), holt dann den aktuellen Stand von GitHub (ohne
+git, per Tarball – eure `docker-compose.yml` und der `data/`-Ordner
+bleiben unberührt) und baut den Container neu. Datenbank-Migrationen
+laufen beim Start automatisch und sind idempotent – mehrfaches
+Aktualisieren schadet nie. Der Browser holt sich die neue Oberfläche beim
+normalen Neuladen.
 
 ---
 
@@ -513,11 +558,10 @@ selbst.
 
 ## 13. Fehlerbehebung
 
-**Ein Update greift nicht / alte Oberfläche.** Container wirklich neu
-gebaut? (`docker compose up -d --build`; `COPY frontend/` darf nicht
-„CACHED" sein, wenn sich Frontend-Dateien geändert haben.) Danach reicht
-normales Neuladen. Prüfen, welche Version im Container liegt:
-`docker exec brickfolio grep -c "<suchbegriff>" /app/frontend/app.js`.
+**Ein Update greift nicht / alte Oberfläche.** `sudo bash update.sh`
+komplett durchgelaufen? Im Build-Log darf `COPY frontend/` nicht „CACHED"
+sein, wenn sich Frontend-Dateien geändert haben. Welche Version läuft,
+zeigt Mehr → 🔄 Version & Updates; danach reicht normales Neuladen.
 
 **Preise fehlen bei einzelnen Artikeln.** Manuelle Nummern haben keine
 BrickLink-Entsprechung. Frisch importierte Artikel werden in 40er-Häppchen
@@ -531,8 +575,9 @@ der Admin vergibt sie unter Mehr → Benutzer verwalten.
 eine aktive Liste existiert; nach dem Archivieren der letzten Liste
 verschwindet er wieder. Profis sehen ihn immer.
 
-**Login klappt nicht mehr / Benutzer vergessen.** Der Admin setzt
-Passwörter in der Benutzerverwaltung zurück. Ist der Admin selbst
+**Login klappt nicht mehr / Benutzer vergessen.** Das eigene Passwort
+ändert man über das Profil-Popup (Name oben rechts antippen); vergessene
+Passwörter setzt der Admin in der Benutzerverwaltung zurück. Ist der Admin selbst
 ausgesperrt: letzte Sicherung einspielen oder `data/brickfolio.db` aus
 einem Backup zurückkopieren.
 
@@ -593,6 +638,8 @@ die jeweiligen Nutzungsbedingungen.
 | 👥 3/4 (✔) | 3 von 4 Set-Figuren vorhanden (✔ = komplett) |
 | 📦 | „steckt in euren Sets" bzw. Archiv |
 | ⭐ / ☆ | steht auf der Wunschliste / merken |
+| 🛒 auf »…« | Artikel ist auf einer aktiven Einkaufsliste eingeplant |
+| gelber Set-Link mit ✔ | dieses Set ist in eurer Sammlung |
 | ✔ (ausgegraut) | Listen-Artikel wurde in die Sammlung verbucht |
 | 🛒 | auf eine Einkaufsliste legen |
 
