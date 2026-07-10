@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.6 – Juli 2026
+
+### Verbessert
+- 📸 README mit Screenshots
+- 🔄 Update-Hinweis mit generischem Pfad
+
 ## 1.4.5 – Juli 2026
 
 ### Verbessert
