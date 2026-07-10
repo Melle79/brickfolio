@@ -1617,7 +1617,7 @@ function renderLists(lists) {
     <div class="card list-card" data-lid="${l.id}">
       <div class="card-head">
         <div class="card-title">
-          <strong>${state.showArchive ? "📦 " : "🛒 "}${esc(l.name)}</strong>
+          <strong data-l-name>${state.showArchive ? "📦 " : "🛒 "}${esc(l.name)}</strong>${dealer && !state.showArchive ? `<button class="set-link" data-l-rename title="Liste umbenennen">✏️</button>` : ""}
           <div class="sub">${l.stats.count} Artikel · ${l.stats.open} offen
             · Marktwert ca. ${fmtEur(l.stats.est)} (je Zustand)${l.stats.paid_sum > 0 ? ` · Einkauf ${fmtEur(l.stats.paid_sum)}` : ""}</div>
         </div>
@@ -1637,6 +1637,46 @@ function renderLists(lists) {
 
   box.querySelectorAll(".list-card").forEach((card) => {
     const lid = Number(card.dataset.lid);
+    const renameBtn = card.querySelector("[data-l-rename]");
+    if (renameBtn) {
+      renameBtn.addEventListener("click", () => {
+        if (card.querySelector("[data-l-rename-row]")) return;
+        const strong = card.querySelector("[data-l-name]");
+        const current = strong.textContent.replace(/^([🛒📦]\s*)/, "");
+        const row = document.createElement("div");
+        row.className = "card-actions btn-grid";
+        row.setAttribute("data-l-rename-row", "");
+        row.innerHTML = `
+          <input data-l-newname maxlength="120" style="grid-column:1/-1">
+          <button class="mini-btn add" data-l-rename-save>Umbenennen</button>
+          <button class="mini-btn" data-l-rename-cancel>Abbrechen</button>`;
+        strong.parentElement.after(row);
+        const input = row.querySelector("[data-l-newname]");
+        input.value = current;
+        input.focus();
+        input.select();
+        const closeRow = () => row.remove();
+        row.querySelector("[data-l-rename-cancel]")
+          .addEventListener("click", closeRow);
+        const save = async () => {
+          const name = input.value.trim();
+          if (!name) { toast("Bitte einen Namen eingeben"); return; }
+          if (name === current) { closeRow(); return; }
+          try {
+            await api(`/lists/${lid}/rename`, { method: "POST",
+              body: { name } });
+            toast(`Liste heißt jetzt »${name}« ✔`);
+            loadLists();
+          } catch (e) { toast(e.message); }
+        };
+        row.querySelector("[data-l-rename-save]")
+          .addEventListener("click", save);
+        input.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") save();
+          if (ev.key === "Escape") { ev.stopPropagation(); closeRow(); }
+        });
+      });
+    }
     const list = lists.find((l) => l.id === lid);
     const lOffer = card.querySelector("[data-l-offer]");
     if (lOffer) lOffer.addEventListener("click", () => {

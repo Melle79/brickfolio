@@ -1550,6 +1550,26 @@ def create_list(body: ListBody, user: dict = Depends(dealer_user)):
     return {"ok": True, "id": cur.lastrowid}
 
 
+class RenameListBody(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+@app.post("/api/lists/{list_id}/rename")
+def rename_list(list_id: int, body: RenameListBody,
+                user: dict = Depends(dealer_user)):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, "Bitte einen Namen eingeben")
+    with core.db() as conn:
+        row = conn.execute("SELECT id FROM shopping_lists WHERE id = ?",
+                           (list_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "Liste nicht gefunden")
+        conn.execute("UPDATE shopping_lists SET name = ? WHERE id = ?",
+                     (name, list_id))
+    return {"ok": True, "name": name}
+
+
 @app.post("/api/lists/{list_id}/archive")
 def archive_list(list_id: int, body: ListArchiveBody,
                  user: dict = Depends(dealer_user)):
