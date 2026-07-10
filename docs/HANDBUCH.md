@@ -361,7 +361,7 @@ Einigung den Endpreis eintragen und **„Verteilen"** drücken:
 > einzelne Preise bleiben von Hand korrigierbar („Einkauf … € ✓").
 
 **5. Zu Hause verbuchen.** Wenn die Funde ankommen bzw. sortiert werden,
-tippt **irgendjemand** (auch ohne Profi-Rolle) auf **„✔ Da! In die
+tippt **irgendjemand** (auch ohne Profi-Rolle) auf **„✔ Da! Ab in die
 Sammlung"**. Zustand bestätigen (der gespeicherte ist mit ✓ markiert),
 Profis können den Preis nochmal anpassen – vorausgefüllt ist der
 Listen-Einkaufspreis. Verbuchte Artikel werden **ausgegraut** mit Vermerk

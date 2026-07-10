@@ -1929,7 +1929,7 @@ function listItemRow(it, dealer) {
         <button class="mini-btn add" data-ip-save="${it.id}" style="flex:1;min-height:38px">✓</button>
       </div>` : ""}
       <div class="fig-actions">
-        ${!it.done ? `<button class="mini-btn add" data-i-recv="${it.id}">✔ Da! In die Sammlung</button>` : ""}
+        ${!it.done ? `<button class="mini-btn add" data-i-recv="${it.id}">✔ Da! Ab in die Sammlung</button>` : ""}
         ${!it.done && dealer ? `<button class="mini-btn danger" data-i-del="${it.id}">✕</button>` : ""}
         ${it.done && dealer ? `<button class="mini-btn" data-i-undo="${it.id}">↩︎ Rückgängig</button>` : ""}
       </div>
