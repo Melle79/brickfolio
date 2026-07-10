@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0 – Juli 2026
+
+### Neu
+- 💾 Automatische tägliche Sicherung nach data/backups/ (BACKUP_KEEP, Standard 14)
+- ↩️ Tagesstände direkt in der App wiederherstellen (mit automatischer Sicherheitskopie)
+- ⬇️ Tagesstände aus der App herunterladen
+
+### Verbessert
+- 🗂 Mehr-Tab-Karten aufklappbar (Zustand wird gemerkt)
+
 ## 1.4.6 – Juli 2026
 
 ### Verbessert
