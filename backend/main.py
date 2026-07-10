@@ -747,6 +747,19 @@ def backup_info(user: dict = Depends(admin_user)):
             "files": list(reversed(files))}
 
 
+@app.get("/api/backup_file/{name}")
+def backup_file(name: str, user: dict = Depends(admin_user)):
+    """Einen automatischen Tagesstand herunterladen (Admin)."""
+    from fastapi.responses import FileResponse
+    valid = {f["name"] for f in _backup_list()}
+    if name not in valid:
+        raise HTTPException(404, "Sicherung nicht gefunden")
+    bdir = os.path.join(os.path.dirname(core.DB_PATH), "backups")
+    return FileResponse(os.path.join(bdir, name),
+                        media_type="application/octet-stream",
+                        filename=name)
+
+
 class RestoreFileBody(BaseModel):
     name: str = Field(min_length=1, max_length=80)
 

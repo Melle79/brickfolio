@@ -153,7 +153,9 @@ allen Funktionen. Und der **eigene Name** daneben ist antippbar: Dahinter
 liegt das **Profil-Popup** mit Anzeigename ändern, Passwort ändern und
 Abmelden.
 
-Der Tab **Mehr** ist nach Themen sortiert – je nach Rolle sichtbar:
+Der Tab **Mehr** ist nach Themen sortiert (Karten per Antippen der
+Überschrift auf- und zuklappbar; die App merkt sich den Zustand) – je
+nach Rolle sichtbar:
 
 | Karte | sichtbar für |
 |---|---|
@@ -502,9 +504,9 @@ Sicherungen ohne Admin-Benutzer werden abgelehnt (Aussperr-Schutz).
 eine konsistente Sicherung der Datenbank unter `data/backups/` ab und
 behält die letzten 14 Tagesstände (einstellbar über die Umgebungsvariable
 `BACKUP_KEEP`, 0 schaltet ab). Die Sicherung-Karte zeigt Datum der
-letzten automatischen Sicherung. Wiederhergestellt wird
-direkt in der App: In der Sicherung-Karte den gewünschten Tagesstand
-auswählen und **„↩︎ Diesen Stand wiederherstellen"** – der aktuelle Stand
+letzten automatischen Sicherung. Die Tagesstände lassen sich in
+der Sicherung-Karte auswählen, **⬇ herunterladen** (z. B. für die eigene
+externe Ablage) und **↩︎ direkt wiederherstellen** – der aktuelle Stand
 wird dabei automatisch als zusätzliche Sicherung weggeschrieben, die
 Aktion ist also umkehrbar.
 

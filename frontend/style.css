@@ -542,3 +542,18 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-weight: 900; font-size: 16px; cursor: pointer;
 }
 .rename-btn { font-size: 13px; text-decoration: none; margin-left: 4px; }
+/* Mehr-Tab: Karten aufklappbar */
+#view-settings .settings-card > h3 {
+  cursor: pointer; user-select: none;
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0;
+}
+#view-settings .settings-card > h3::after {
+  content: "▾"; font-size: 14px; color: var(--muted);
+  transition: transform .15s ease;
+}
+#view-settings .settings-card.collapsed > h3::after {
+  transform: rotate(-90deg);
+}
+#view-settings .settings-card.collapsed > :not(h3) { display: none; }
+#view-settings .settings-card:not(.collapsed) > h3 { margin-bottom: 10px; }

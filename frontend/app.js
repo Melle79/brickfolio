@@ -2461,6 +2461,22 @@ async function restoreBackupFile(file) {
 }
 
 /* ---------------------------------------------------------------- Einstellungen */
+function initCollapsibleCards() {
+  document.querySelectorAll("#view-settings .settings-card > h3")
+    .forEach((h3) => {
+      const card = h3.parentElement;
+      const key = "bf_card_" + h3.textContent.replace(/\W+/g, "");
+      const stored = localStorage.getItem(key);
+      if (stored === "open") card.classList.remove("collapsed");
+      else card.classList.add("collapsed");
+      h3.addEventListener("click", () => {
+        card.classList.toggle("collapsed");
+        localStorage.setItem(key,
+          card.classList.contains("collapsed") ? "closed" : "open");
+      });
+    });
+}
+
 async function checkForUpdate(force) {
   if (!(state.user && state.user.is_admin)) return null;
   try {
@@ -2596,6 +2612,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("help-overlay").hidden = true;
     document.body.style.overflow = "";
   };
+  initCollapsibleCards();
   $("btn-help-close").addEventListener("click", closeHelp);
   $("help-overlay").addEventListener("click", (ev) => {
     if (ev.target === $("help-overlay")) closeHelp();
@@ -2680,6 +2697,24 @@ document.addEventListener("DOMContentLoaded", () => {
     loadLists();
   });
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
+  $("btn-backup-dl").addEventListener("click", async () => {
+    const name = $("backup-select").value;
+    if (!name) return;
+    try {
+      const res = await fetch(`/api/backup_file/${encodeURIComponent(name)}`,
+        { headers: { Authorization: `Bearer ${state.token}` } });
+      if (!res.ok) throw new Error("Download fehlgeschlagen");
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast("Tagesstand heruntergeladen 💾");
+    } catch (e) { toast(e.message); }
+  });
   $("btn-restore-snap").addEventListener("click", async () => {
     const name = $("backup-select").value;
     if (!name) return;
