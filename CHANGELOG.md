@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.4 – Juli 2026
+
+### Verbessert
+- 🗂 Mehr-Tab aufgeräumt: klare Karten für Export, Sammlerprofi, API-Schlüssel, Benutzer, Sicherung und Version
+
 ## 1.4.2 – Juli 2026
 
 ### Verbessert
