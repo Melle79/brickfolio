@@ -1650,7 +1650,7 @@ function renderLists(lists) {
           <input data-l-newname maxlength="120" style="grid-column:1/-1">
           <button class="mini-btn add" data-l-rename-save>Umbenennen</button>
           <button class="mini-btn" data-l-rename-cancel>Abbrechen</button>`;
-        nameEl.closest(".card-title").after(row);
+        nameEl.closest(".card-head").after(row);
         const input = row.querySelector("[data-l-newname]");
         input.value = current;
         input.focus();
