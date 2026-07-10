@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1 – Juli 2026
+
+### Verbessert
+- 🛒 Einkaufslisten-Karten einklappbar (standardmäßig zu, Zustand wird gemerkt)
+
 ## 1.5.0 – Juli 2026
 
 ### Neu
