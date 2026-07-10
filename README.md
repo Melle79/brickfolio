@@ -52,6 +52,16 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
   eurem Server
 
+## Screenshots
+
+| Scannen | Sammlung |
+|:---:|:---:|
+| <img src="docs/screenshots/scannen.png" width="260" alt="Scannen"> | <img src="docs/screenshots/sammlung.png" width="260" alt="Sammlung"> |
+| **Statistik** | **Einkaufsliste (Flohmarkt-Modus)** |
+| <img src="docs/screenshots/statistik.png" width="260" alt="Statistik"> | <img src="docs/screenshots/einkaufsliste.png" width="260" alt="Einkaufsliste"> |
+
+*(Screenshots mit Demo-Daten)*
+
 ## Schnellstart (Docker)
 
 ```bash
