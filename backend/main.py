@@ -700,7 +700,8 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
 
             ex = conn.execute(
                 "SELECT id, paid_price FROM collection WHERE item_id = ? "
-                "AND item_type = ?", (num, typ)).fetchone()
+                "AND item_type = ? AND condition = ?",
+                (num, typ, cond)).fetchone()
             if ex:
                 conn.execute("UPDATE collection SET quantity = quantity + ? "
                              "WHERE id = ?", (qty, ex["id"]))
@@ -978,7 +979,9 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
     with core.db() as conn:
         for it in body.items:
             row = conn.execute(
-                "SELECT quantity, year, price_new, price_used FROM collection "
+                "SELECT COALESCE(SUM(quantity), 0) AS quantity, MAX(year) "
+                "AS year, MAX(price_new) AS price_new, MAX(price_used) "
+                "AS price_used FROM collection "
                 "WHERE item_id = ? AND item_type = ?",
                 (it.item_id, it.item_type)).fetchone()
             info = {"owned": row["quantity"] if row else 0}
@@ -1186,8 +1189,9 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
     with core.db() as conn:
         row = conn.execute(
             "SELECT id, quantity, paid_price, condition, price_new, "
-            "price_used FROM collection WHERE item_id = ? AND item_type = ?",
-            (body.item_id, body.item_type),
+            "price_used FROM collection WHERE item_id = ? AND item_type = ? "
+            "AND condition = ?",
+            (body.item_id, body.item_type, body.condition),
         ).fetchone()
         if row:
             conn.execute("UPDATE collection SET quantity = quantity + ? WHERE id = ?",
@@ -1232,12 +1236,42 @@ def update_item(entry_id: int, body: UpdateItemBody,
         if body.item_id and body.item_id != row["item_id"]:
             dup = conn.execute(
                 "SELECT 1 FROM collection WHERE item_id = ? AND item_type = ? "
-                "AND id != ?", (body.item_id, row["item_type"], entry_id),
+                "AND condition = ? AND id != ?",
+                (body.item_id, row["item_type"],
+                 body.condition or row["condition"], entry_id),
             ).fetchone()
             if dup:
                 raise HTTPException(409, "Diese Nummer ist schon in der Sammlung "
                                          "– lösche stattdessen diesen Eintrag und "
                                          "erhöhe dort die Anzahl")
+        if body.condition and body.condition != row["condition"]:
+            other = conn.execute(
+                "SELECT id, quantity, paid_price, paid_source FROM collection "
+                "WHERE item_id = ? AND item_type = ? AND condition = ? "
+                "AND id != ?",
+                (body.item_id or row["item_id"], row["item_type"],
+                 body.condition, entry_id)).fetchone()
+            if other:
+                # Zielzustand existiert schon: Einträge zusammenführen
+                paid_sum = None
+                if row["paid_price"] is not None or other["paid_price"] is not None:
+                    paid_sum = round((row["paid_price"] or 0)
+                                     + (other["paid_price"] or 0), 2)
+                src_manual = (row["paid_source"] == "manual"
+                              or other["paid_source"] == "manual")
+                conn.execute(
+                    "UPDATE collection SET quantity = quantity + ?, "
+                    "paid_price = ?, paid_source = ?, paid_at = ? "
+                    "WHERE id = ?",
+                    (row["quantity"], paid_sum,
+                     ("manual" if src_manual else "auto")
+                     if paid_sum is not None else None,
+                     int(time.time()) if paid_sum is not None else None,
+                     other["id"]))
+                conn.execute("DELETE FROM collection WHERE id = ?",
+                             (entry_id,))
+                return {"ok": True, "merged": True,
+                        "merged_into": other["id"]}
         fields, params = [], []
         for key in ("quantity", "condition", "notes", "item_id", "name",
                     "img_url", "bricklink_url", "year", "paid_price"):
@@ -1316,7 +1350,8 @@ def add_wanted(body: WantedBody, user: dict = Depends(current_user)):
         if exists:
             return {"ok": True, "exists": True}
         owned = conn.execute(
-            "SELECT quantity FROM collection WHERE item_id = ? AND item_type = ?",
+            "SELECT COALESCE(SUM(quantity), 0) AS quantity FROM collection "
+            "WHERE item_id = ? AND item_type = ?",
             (body.item_id, body.item_type)).fetchone()
         cur = conn.execute(
             "INSERT INTO wanted (item_id, item_type, name, img_url, "
@@ -1420,8 +1455,8 @@ def acquire_wanted(wanted_id: int, body: AcquireBody,
         now = int(time.time())
         row = conn.execute(
             "SELECT id, paid_price FROM collection WHERE item_id = ? "
-            "AND item_type = ?",
-            (w["item_id"], w["item_type"])).fetchone()
+            "AND item_type = ? AND condition = ?",
+            (w["item_id"], w["item_type"], body.condition)).fetchone()
         if row:
             conn.execute("UPDATE collection SET quantity = quantity + 1 "
                          "WHERE id = ?", (row["id"],))
@@ -1515,30 +1550,46 @@ def get_duplicates(user: dict = Depends(dealer_user)):
             " FROM set_contents sc JOIN collection c2 "
             " ON c2.item_type = 'set' AND c2.item_id = sc.set_no "
             " WHERE sc.fig_no = c.item_id) AS reserved "
-            "FROM collection c WHERE c.quantity > 1 "
+            "FROM collection c "
             "ORDER BY c.name COLLATE NOCASE").fetchall()
+    # Zeilen je Artikel gruppieren: Reservierung gilt pro Artikel,
+    # nicht pro Zustands-Zeile. Behalten wird bevorzugt "Neu",
+    # abgebbar sind zuerst die gebrauchten Exemplare.
+    groups = {}
+    for r in rows:
+        groups.setdefault((r["item_id"], r["item_type"]), []).append(r)
     items = []
     total_value = 0.0
     total_pieces = 0
-    for r in rows:
-        reserved = r["reserved"] or 0
-        keep = max(reserved, 1)          # Sets bleiben vollständig, 1 bleibt immer
-        surplus = r["quantity"] - keep
-        if surplus <= 0:
+    for group in groups.values():
+        total_qty = sum(r["quantity"] for r in group)
+        keep = max(group[0]["reserved"] or 0, 1)
+        if total_qty - keep <= 0:
             continue
-        unit = _unit_price(r["condition"], r["price_new"], r["price_used"])
-        value = round(unit * surplus, 2) if unit else None
-        items.append({
-            "id": r["id"], "item_id": r["item_id"],
-            "item_type": r["item_type"], "name": r["name"],
-            "img_url": r["img_url"], "bricklink_url": r["bricklink_url"],
-            "condition": r["condition"], "quantity": r["quantity"],
-            "reserved": reserved, "surplus": surplus,
-            "unit_price": unit, "value": value,
-        })
-        total_pieces += surplus
-        if value:
-            total_value += value
+        # Behalten-Kontingent zuerst auf Neu-Zeilen anrechnen
+        remaining_keep = keep
+        for r in sorted(group, key=lambda x: 0 if x["condition"] == "new"
+                        else 1):
+            alloc = min(r["quantity"], remaining_keep)
+            remaining_keep -= alloc
+            surplus = r["quantity"] - alloc
+            if surplus <= 0:
+                continue
+            unit = _unit_price(r["condition"], r["price_new"],
+                               r["price_used"])
+            value = round(unit * surplus, 2) if unit else None
+            items.append({
+                "id": r["id"], "item_id": r["item_id"],
+                "item_type": r["item_type"], "name": r["name"],
+                "img_url": r["img_url"], "bricklink_url": r["bricklink_url"],
+                "condition": r["condition"], "quantity": r["quantity"],
+                "reserved": min(r["quantity"], alloc), "surplus": surplus,
+                "unit_price": unit, "value": value,
+            })
+            total_pieces += surplus
+            if value:
+                total_value += value
+    items.sort(key=lambda x: (x["name"] or "").lower())
     return {"items": items,
             "stats": {"pieces": total_pieces,
                       "value": round(total_value, 2)}}
@@ -1817,8 +1868,8 @@ def receive_list_item(item_id: int, body: ReceiveBody,
             manual = False
         row = conn.execute(
             "SELECT id, quantity, paid_price FROM collection WHERE "
-            "item_id = ? AND item_type = ?",
-            (it["item_id"], it["item_type"])).fetchone()
+            "item_id = ? AND item_type = ? AND condition = ?",
+            (it["item_id"], it["item_type"], body.condition)).fetchone()
         if row and body.mode is None:
             # Schon vorhanden: Frontend soll nachfragen
             return {"ok": False, "need_mode": True,

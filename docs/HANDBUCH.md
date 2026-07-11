@@ -263,7 +263,12 @@ auf den aktuellen Filter.
 Ein Tipp auf eine Karte öffnet die Details:
 
 - **Menge** (± Stepper) und **Zustand** (Gebraucht/Neu) – Änderungen
-  greifen sofort, ohne die Karte zu schließen.
+  greifen sofort, ohne die Karte zu schließen. **Neu und Gebraucht sind
+  getrennte Einträge**: Dieselbe Figur kann einmal neu und einmal
+  gebraucht in der Sammlung stehen, jeweils mit eigener Menge, eigenem
+  Kaufpreis und zustandsgerechtem Wert. Wechselt man den Zustand eines
+  Eintrags auf einen bereits vorhandenen, führt die App beide zusammen
+  (Mengen und Kaufpreise werden addiert).
 - **Notizen** – Freitext, z. B. Herkunft oder Besonderheiten.
 - **Preise**: aktuelle Ø-Werte (neu/gebraucht), „Preise aktualisieren"
   für einen sofortigen Abruf und der **Preisverlauf** als Chart (blau =
@@ -403,6 +408,10 @@ Artikel – live berechnet, keine Pflege nötig. Die Grundregel:
 
 > **„So viele Figuren bleiben, wie eure Sets brauchen – mindestens
 > aber eine."**
+
+Gibt es eine Figur in beiden Zuständen, wird der Behalten-Anteil
+bevorzugt auf die **neuen** Exemplare angerechnet – abgebbar sind zuerst
+die gebrauchten.
 
 Konkret: Für jede Figur wird der **Set-Bedarf** ermittelt (Inventar-Menge
 × Anzahl des Sets in eurer Sammlung). Abgebbar ist nur, was über

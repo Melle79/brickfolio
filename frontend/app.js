@@ -1030,8 +1030,14 @@ function renderCollection() {
         const cond = btn.dataset.cond;
         if (cond === item.condition) return;
         try {
-          await api("/collection/" + id, { method: "PATCH",
+          const res = await api("/collection/" + id, { method: "PATCH",
             body: { condition: cond } });
+          if (res.merged) {
+            toast("Mit dem vorhandenen Eintrag in diesem Zustand "
+              + "zusammengeführt ✔");
+            loadCollection();
+            return;
+          }
           item.condition = cond;
           card.querySelectorAll("[data-cond]").forEach((b) =>
             b.classList.toggle("sel", b.dataset.cond === cond));

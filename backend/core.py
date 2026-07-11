@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.5.1"
+APP_VERSION = "1.4.1"
 
 
 def hash_password(password: str) -> str:
@@ -120,7 +120,7 @@ def init_db():
                 notes TEXT NOT NULL DEFAULT '',
                 added_by INTEGER REFERENCES users(id),
                 added_at INTEGER NOT NULL,
-                UNIQUE (item_id, item_type)
+                UNIQUE (item_id, item_type, condition)
             );
             CREATE INDEX IF NOT EXISTS idx_collection_name ON collection(name);
             CREATE TABLE IF NOT EXISTS settings (
@@ -203,6 +203,27 @@ def init_db():
         # Migration: frühere Scans speicherten Brickognize-Typ "fig"
         conn.execute(
             "UPDATE collection SET item_type = 'minifig' WHERE item_type = 'fig'")
+        # Migration: UNIQUE-Constraint um den Zustand erweitern, damit
+        # dieselbe Figur einmal neu UND einmal gebraucht existieren kann.
+        # SQLite kann Constraints nicht ändern -> Tabelle einmalig umbauen.
+        ddl_row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'collection'").fetchone()
+        if ddl_row and "UNIQUE (item_id, item_type)" in ddl_row["sql"] \
+                and "item_type, condition" not in ddl_row["sql"]:
+            new_ddl = ddl_row["sql"].replace(
+                "UNIQUE (item_id, item_type)",
+                "UNIQUE (item_id, item_type, condition)").replace(
+                "CREATE TABLE collection", "CREATE TABLE collection_new", 1)
+            conn.execute(new_ddl)
+            conn.execute("INSERT INTO collection_new "
+                         "SELECT * FROM collection")
+            conn.execute("DROP TABLE collection")
+            conn.execute("ALTER TABLE collection_new "
+                         "RENAME TO collection")
+            print("[brickfolio] Migration: Sammlung erlaubt jetzt "
+                  "getrennte Einträge je Zustand", flush=True)
+
         # Migration: Preisspalten für den Sammlungswert
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(collection)")]
         for col, typ in (("price_new", "REAL"), ("price_used", "REAL"),
