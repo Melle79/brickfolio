@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 – Juli 2026
+
+### Neu
+- 🏷 Getrennte Sammlung-Einträge je Zustand (automatische Migration)
+- ♻️ Zusammenführen beim Zustandswechsel auf einen vorhandenen Zustand
+- 📦 Verkaufslisten-Reservierung je Figur über beide Zustände
+
 ## 1.5.1 – Juli 2026
 
 ### Verbessert
