@@ -1613,6 +1613,7 @@ class ListItemBody(BaseModel):
     year: int = Field(default=0, ge=0, le=2100)
     qty: int = Field(default=1, ge=1, le=99)
     condition: str = Field(default="used", pattern="^(new|used)$")
+    paid_price: float | None = Field(default=None, ge=0)
 
 
 class ReceiveBody(BaseModel):
@@ -1747,13 +1748,20 @@ def add_list_item(list_id: int, body: ListItemBody,
         if ex:
             conn.execute("UPDATE shopping_items SET qty = qty + ? "
                          "WHERE id = ?", (body.qty, ex["id"]))
+            if body.paid_price is not None:
+                conn.execute(
+                    "UPDATE shopping_items SET paid_price = "
+                    "COALESCE(paid_price, 0) + ? WHERE id = ?",
+                    (round(body.paid_price, 2), ex["id"]))
             return {"ok": True, "merged": True, "qty": ex["qty"] + body.qty}
         cur = conn.execute(
             "INSERT INTO shopping_items (list_id, item_id, item_type, name, "
-            "img_url, bricklink_url, year, qty, condition, added_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "img_url, bricklink_url, year, qty, condition, paid_price, "
+            "added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (list_id, body.item_id, body.item_type, body.name, body.img_url,
              body.bricklink_url, body.year or None, body.qty, body.condition,
+             round(body.paid_price, 2) if body.paid_price is not None
+             else None,
              int(time.time())))
         new_id = cur.lastrowid
     _maybe_fetch_prices_async(new_id, body.item_id, table="shopping_items")

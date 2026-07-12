@@ -344,8 +344,10 @@ Zwei Tipps, und die Liste existiert samt erstem Artikel.
 
 **2. Kiste durchscannen.** Jeden interessanten Fund per 🛒 auf die Liste
 legen – den **Zustand** wählt ihr direkt im Dialog (Gebraucht ist
-vorausgewählt), nachträglich geht es per gelbem Umschalter am
-Listen-Artikel. Gleicher Artikel im gleichen Zustand nochmal = Menge
+vorausgewählt), und wer den Preis schon kennt (Preisschild am Stand),
+trägt ihn optional gleich im Feld **„Einkauf €"** mit ein – er landet als
+Einkaufspreis am Listen-Artikel. Nachträglich geht beides am
+Listen-Artikel selbst (gelber Umschalter bzw. Einkauf-Feld). Gleicher Artikel im gleichen Zustand nochmal = Menge
 erhöht sich; **unterschiedliche Zustände sind getrennte Zeilen** mit
 eigenen Marktwerten. Alles rechnet zustandsgerecht.
 
