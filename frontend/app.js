@@ -935,7 +935,7 @@ function renderCollection() {
         <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
-          <div class="sub">${esc(collSubText(it))}</div>
+          <div class="sub" data-sub>${esc(collSubText(it))}</div>
           ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
         <div class="qty">
@@ -1190,6 +1190,13 @@ async function loadEntryPrice(card, item, refresh) {
     out.innerHTML = priceLine("Neu", p.new) + priceLine("Gebraucht", p.used)
       + `<div class="price-note">Ø-Verkaufspreise, letzte 6 Monate (BrickLink)`
       + `${stand ? " · Stand " + stand : ""}</div>`;
+    // Frische Preise sofort in Karte und Rechnung übernehmen
+    if (p.new != null) item.price_new = p.new;
+    if (p.used != null) item.price_used = p.used;
+    const subEl = card.querySelector("[data-sub]");
+    if (subEl) subEl.textContent = collSubText(item);
+    const profitEl = card.querySelector("[data-profit]");
+    if (profitEl) profitEl.innerHTML = profitLine(item);
     if (refresh) updateStatsOnly();   // Wert-Widget mitziehen
     loadPriceHistory(card, item);
   } catch (e) {
