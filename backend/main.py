@@ -2015,7 +2015,8 @@ def _backup_list():
     bdir = os.path.join(os.path.dirname(core.DB_PATH), "backups")
     files = sorted(glob.glob(os.path.join(bdir, "brickfolio-*.db")))
     return [{"name": os.path.basename(f),
-             "size": os.path.getsize(f)} for f in files]
+             "size": os.path.getsize(f),
+             "mtime": int(os.path.getmtime(f))} for f in files]
 
 
 def _unit_price(condition, price_new, price_used):

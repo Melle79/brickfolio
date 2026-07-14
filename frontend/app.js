@@ -2623,8 +2623,12 @@ async function loadSettings() {
       if (b.files && b.files.length) {
         block.hidden = false;
         $("backup-select").innerHTML = b.files.map((f) => {
+          const time = f.mtime
+            ? " · " + new Date(f.mtime * 1000).toLocaleTimeString("de-DE",
+                { hour: "2-digit", minute: "2-digit" }) + " Uhr"
+            : "";
           const label = f.name.replace("brickfolio-", "").replace(".db", "")
-            + ` (${(f.size / 1024).toFixed(0)} KB)`;
+            + time + ` (${(f.size / 1024).toFixed(0)} KB)`;
           return `<option value="${esc(f.name)}">${esc(label)}</option>`;
         }).join("");
       }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.2 – Juli 2026
+
+### Verbessert
+- 🕒 Uhrzeit an den automatischen Sicherungen in der Auswahlliste
+
 ## 1.6.1 – Juli 2026
 
 ### Verbessert
