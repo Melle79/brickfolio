@@ -1191,8 +1191,8 @@ async function loadEntryPrice(card, item, refresh) {
       + `<div class="price-note">Ø-Verkaufspreise, letzte 6 Monate (BrickLink)`
       + `${stand ? " · Stand " + stand : ""}</div>`;
     // Frische Preise sofort in Karte und Rechnung übernehmen
-    if (p.new != null) item.price_new = p.new;
-    if (p.used != null) item.price_used = p.used;
+    if (p.new && p.new.avg != null) item.price_new = p.new.avg;
+    if (p.used && p.used.avg != null) item.price_used = p.used.avg;
     const subEl = card.querySelector("[data-sub]");
     if (subEl) subEl.textContent = collSubText(item);
     const profitEl = card.querySelector("[data-profit]");
