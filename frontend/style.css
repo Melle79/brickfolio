@@ -567,3 +567,22 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .list-card.collapsed > .card-head::after { transform: rotate(-90deg); }
 .list-card.collapsed > .set-figs,
 .list-card.collapsed > .card-actions { display: none; }
+.pricelog { max-height: 320px; overflow-y: auto; margin-bottom: 8px; }
+.pl-row {
+  display: flex; gap: 8px; align-items: baseline;
+  padding: 4px 0; border-bottom: 1px dashed var(--line);
+  font-size: 12.5px;
+}
+.pl-when { color: var(--muted); flex: 0 0 76px; }
+.pl-name {
+  flex: 1; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font-weight: 700;
+}
+.pl-prices { color: var(--muted); flex-shrink: 0; }
+.pl-src {
+  flex: 0 0 auto; font-size: 10.5px; font-weight: 900;
+  border: 1.5px solid var(--line); border-radius: 999px;
+  padding: 0 6px; color: var(--muted);
+}
+.pl-src.manual { background: var(--yellow); color: var(--ink);
+  border-color: var(--ink); }

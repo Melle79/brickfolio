@@ -291,6 +291,27 @@ def _ver_tuple(v: str):
         return (0,)
 
 
+@app.get("/api/price_log")
+def price_log(limit: int = 50, user: dict = Depends(dealer_user)):
+    """Die jüngsten Preisverlaufs-Punkte mit Artikelnamen (Profi)."""
+    limit = max(1, min(limit, 200))
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT ph.item_id, ph.item_type, ph.ts, ph.price_new, "
+            "ph.price_used, ph.source, "
+            "COALESCE(c.name, w.name, si.name, ph.item_id) AS name "
+            "FROM price_history ph "
+            "LEFT JOIN collection c ON c.item_id = ph.item_id "
+            "  AND c.item_type = ph.item_type "
+            "LEFT JOIN wanted w ON w.item_id = ph.item_id "
+            "  AND w.item_type = ph.item_type "
+            "LEFT JOIN shopping_items si ON si.item_id = ph.item_id "
+            "  AND si.item_type = ph.item_type "
+            "GROUP BY ph.rowid "
+            "ORDER BY ph.ts DESC LIMIT ?", (limit,)).fetchall()
+    return {"entries": [dict(r) for r in rows]}
+
+
 @app.get("/api/update_check")
 def update_check(force: int = 0, user: dict = Depends(admin_user)):
     """Prüft gegen das neueste GitHub-Release (gecacht, max. alle 6 h)."""
@@ -1420,7 +1441,7 @@ def refresh_wanted_prices(wanted_id: int, user: dict = Depends(current_user)):
     if entry["item_id"].startswith(("fig-", "manuell-")):
         raise HTTPException(400, "Ohne BrickLink-Nummer kein Preis")
     try:
-        _fetch_and_store_prices(entry, "wanted")
+        _fetch_and_store_prices(entry, "wanted", source="manuell")
         return {"ok": True}
     except LookupError as e:
         raise HTTPException(404, str(e))
@@ -2024,7 +2045,8 @@ def _maybe_fetch_prices_async(entry_id: int, item_id: str,
     threading.Thread(target=run, daemon=True).start()
 
 
-def _fetch_and_store_prices(entry: dict, table: str = "collection") -> dict:
+def _fetch_and_store_prices(entry: dict, table: str = "collection",
+                            source: str = "auto") -> dict:
     """Beide Zustände von BrickLink holen und Ø-Preise am Eintrag speichern."""
     assert table in PRICE_TABLES
     result = {}
@@ -2082,15 +2104,23 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection") -> dict:
                         (round(unit * r["quantity"], 2), now, r["id"]))
     with core.db() as conn:
         last = conn.execute(
-            "SELECT ts FROM price_history WHERE item_id = ? AND item_type = ? "
-            "ORDER BY ts DESC LIMIT 1",
+            "SELECT id, ts FROM price_history WHERE item_id = ? AND "
+            "item_type = ? ORDER BY ts DESC LIMIT 1",
             (entry["item_id"], entry["item_type"])).fetchone()
         if not last or now - last["ts"] > 20 * 3600:
             conn.execute(
                 "INSERT INTO price_history (item_id, item_type, ts, "
-                "price_new, price_used) VALUES (?, ?, ?, ?, ?)",
+                "price_new, price_used, source) VALUES (?, ?, ?, ?, ?, ?)",
                 (entry["item_id"], entry["item_type"], now,
-                 avg(result.get("new")), avg(result.get("used"))))
+                 avg(result.get("new")), avg(result.get("used")), source))
+        elif source == "manuell":
+            # Innerhalb der 20h: jüngsten Punkt aktualisieren statt
+            # verwerfen – so stimmt das Protokoll, das Chart bleibt sauber
+            conn.execute(
+                "UPDATE price_history SET ts = ?, price_new = ?, "
+                "price_used = ?, source = 'manuell' WHERE id = ?",
+                (now, avg(result.get("new")), avg(result.get("used")),
+                 last["id"]))
     result["updated_at"] = now
     return result
 
@@ -2123,7 +2153,7 @@ def entry_price(entry_id: int, refresh: int = 0,
                 "used": {"avg": entry["price_used"]} if entry.get("price_used") else None,
                 "updated_at": entry.get("price_updated_at"), "cached": True}
     try:
-        return _fetch_and_store_prices(entry)
+        return _fetch_and_store_prices(entry, source="manuell")
     except LookupError as e:
         raise HTTPException(404, str(e))
     except requests.Timeout:

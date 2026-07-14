@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.4.1"
 
 
 def hash_password(password: str) -> str:
@@ -211,18 +211,32 @@ def init_db():
             "AND name = 'collection'").fetchone()
         if ddl_row and "UNIQUE (item_id, item_type)" in ddl_row["sql"] \
                 and "item_type, condition" not in ddl_row["sql"]:
-            new_ddl = ddl_row["sql"].replace(
-                "UNIQUE (item_id, item_type)",
-                "UNIQUE (item_id, item_type, condition)").replace(
-                "CREATE TABLE collection", "CREATE TABLE collection_new", 1)
-            conn.execute(new_ddl)
-            conn.execute("INSERT INTO collection_new "
-                         "SELECT * FROM collection")
-            conn.execute("DROP TABLE collection")
-            conn.execute("ALTER TABLE collection_new "
-                         "RENAME TO collection")
+            # SQLite-Standardrezept: FK-Prüfung während des Umbaus aus
+            conn.commit()
+            conn.execute("PRAGMA foreign_keys = OFF")
+            try:
+                new_ddl = ddl_row["sql"].replace(
+                    "UNIQUE (item_id, item_type)",
+                    "UNIQUE (item_id, item_type, condition)").replace(
+                    "CREATE TABLE collection", "CREATE TABLE collection_new",
+                    1)
+                conn.execute(new_ddl)
+                conn.execute("INSERT INTO collection_new "
+                             "SELECT * FROM collection")
+                conn.execute("DROP TABLE collection")
+                conn.execute("ALTER TABLE collection_new "
+                             "RENAME TO collection")
+                conn.commit()
+            finally:
+                conn.execute("PRAGMA foreign_keys = ON")
             print("[brickfolio] Migration: Sammlung erlaubt jetzt "
                   "getrennte Einträge je Zustand", flush=True)
+
+        # Migration: Quelle je Preisverlaufs-Punkt (auto/manuell)
+        ph_cols = [r["name"] for r in
+                   conn.execute("PRAGMA table_info(price_history)")]
+        if "source" not in ph_cols:
+            conn.execute("ALTER TABLE price_history ADD COLUMN source TEXT")
 
         # Migration: Preisspalten für den Sammlungswert
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(collection)")]

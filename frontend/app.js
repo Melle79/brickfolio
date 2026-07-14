@@ -2531,6 +2531,44 @@ function initCollapsibleCards() {
     });
 }
 
+async function loadPriceLog(limit) {
+  const box = $("pricelog-list");
+  if (!box) return;
+  box.textContent = "Lade …";
+  try {
+    const res = await api(`/price_log?limit=${limit}`);
+    if (!res.entries.length) {
+      box.textContent = "Noch keine Aufzeichnungen.";
+      $("btn-pricelog-more").hidden = true;
+      return;
+    }
+    box.innerHTML = res.entries.map((e) => {
+      const d = new Date(e.ts * 1000);
+      const when = d.toLocaleDateString("de-DE",
+        { day: "2-digit", month: "2-digit" }) + " "
+        + d.toLocaleTimeString("de-DE",
+          { hour: "2-digit", minute: "2-digit" });
+      const prices = [
+        e.price_new != null ? "neu " + fmtEur(e.price_new) : null,
+        e.price_used != null ? "gebr. " + fmtEur(e.price_used) : null,
+      ].filter(Boolean).join(" · ");
+      const src = e.source === "manuell"
+        ? `<span class="pl-src manual">manuell</span>`
+        : e.source === "auto"
+          ? `<span class="pl-src">auto</span>` : "";
+      return `<div class="pl-row">
+        <span class="pl-when">${when}</span>
+        <span class="pl-name">${esc(e.name)}</span>
+        <span class="pl-prices">${prices || "–"}</span>${src}
+      </div>`;
+    }).join("");
+    $("btn-pricelog-more").hidden = limit >= 200
+      || res.entries.length < limit;
+  } catch (e) {
+    box.textContent = e.message;
+  }
+}
+
 async function checkForUpdate(force) {
   if (!(state.user && state.user.is_admin)) return null;
   try {
@@ -2564,6 +2602,10 @@ async function loadSettings() {
   if ($("dealer-card")) {
     $("dealer-card").hidden = !dealerUi;
     if (dealerUi) $("offer-percent").value = state.offerPercent || 60;
+  }
+  if ($("pricelog-card")) {
+    $("pricelog-card").hidden = !dealerUi;
+    if (dealerUi) loadPriceLog(50);
   }
   $("settings-user").textContent = state.user ? state.user.username : "";
   $("own-name").value = state.user ? state.user.username : "";
@@ -2717,6 +2759,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
+  $("btn-pricelog-more").addEventListener("click",
+    () => loadPriceLog(200));
   $("btn-update-check").addEventListener("click", async (ev) => {
     const btn = ev.currentTarget;
     btn.disabled = true;
