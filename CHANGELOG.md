@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.1 – Juli 2026
+
+### Verbessert
+- 💶 Einkaufspreis direkt im 🛒-Dialog erfassbar
+- 📈 Manuelle Preisabrufe aktualisieren den jüngsten Verlaufspunkt
+- 🛡 Zustands-Migration gehärtet
+
+### Behoben
+- Karten-Zahlen nach manuellem Preisabruf sofort aktuell (NaN-Fix)
+
 ## 1.6.0 – Juli 2026
 
 ### Neu
