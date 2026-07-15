@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.3 – Juli 2026
+
+### Neu
+- 🖼 Scannen per Drag & Drop und Zwischenablage (Strg/Cmd+V)
+
+### Verbessert
+- 💶 Einkaufspreis direkt im 🛒-Dialog
+- 📈 Manuelle Preisabrufe aktualisieren den jüngsten Verlaufspunkt
+
+### Behoben
+- Karten-Zahlen nach manuellem Preisabruf sofort aktuell (NaN-Fix)
+
 ## 1.6.2 – Juli 2026
 
 ### Verbessert
