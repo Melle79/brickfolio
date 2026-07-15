@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.4 – Juli 2026
+
+### Neu
+- 📇 Raster-Ansicht für die Sammlung (2 pro Reihe, Mengen-Badge, Auswahl wird gemerkt)
+- 🔢 Im Raster steht beim Öffnen die Mengeneinstellung oben
+
 ## 1.6.3 – Juli 2026
 
 ### Neu
