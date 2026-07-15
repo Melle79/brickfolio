@@ -629,3 +629,11 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .results.grid-mode .card-head > .qty { display: none; }
 .results.grid-mode .qty-badge { display: inline-block; }
 .results.grid-mode .card-title strong { font-size: 14px; }
+
+/* Raster: geöffnete Karte über die volle Breite, Kopf wieder als Zeile */
+.results.grid-mode .card.open { grid-column: 1 / -1; }
+.results.grid-mode .card.open .card-head {
+  flex-direction: row; align-items: center; text-align: left;
+}
+.results.grid-mode .card.open .card-img { width: 72px; height: 72px; }
+.results.grid-mode .card.open .qty-badge { display: none; }

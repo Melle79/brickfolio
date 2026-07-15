@@ -1041,6 +1041,7 @@ function renderCollection() {
       if (ev.target.closest(".qty") || ev.target.closest(".card-img")
           || ev.target.closest(".set-link")) return;
       details.hidden = !details.hidden;
+      card.classList.toggle("open", !details.hidden);
       if (!details.hidden && canPrice && !details.dataset.priced) {
         details.dataset.priced = "1";
         loadEntryPrice(card, item, false);
