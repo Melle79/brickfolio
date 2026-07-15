@@ -594,3 +594,38 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .scan-drop-hint { opacity: .8; margin-top: 4px; }
 @media (hover: none) { .scan-drop-hint { display: none; } }
+
+/* Sammlung: Ansichts-Umschalter Liste/Raster */
+.viewtoggle {
+  flex: none; width: 42px; font-size: 18px; line-height: 1;
+  border: 2px solid var(--ink); border-radius: 10px; background: var(--card);
+  cursor: pointer; box-shadow: 0 2px 0 rgba(29,29,27,.18);
+}
+.viewtoggle:active { transform: translateY(2px); box-shadow: none; }
+
+/* Mengen-Badge (nur im Raster sichtbar) + Editor-Zeile in den Details */
+.qty-badge {
+  display: none; position: absolute; top: 8px; right: 8px;
+  background: var(--yellow); border: 2px solid var(--ink); border-radius: 999px;
+  font-weight: 900; font-size: 13px; padding: 1px 8px; pointer-events: none;
+}
+.qty-badge::before { content: "×"; }
+.qty-edit { display: none; }
+.results.grid-mode .qty-edit {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 12px; padding-bottom: 12px;
+  border-bottom: 1.5px dashed var(--line);
+}
+.qty-edit-label { font-weight: 900; font-size: 15px; }
+
+/* Raster-Layout: zwei Karten pro Reihe */
+.results.grid-mode { display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; align-items: start; }
+.results.grid-mode .card { padding: 10px; }
+.results.grid-mode .card-head {
+  flex-direction: column; align-items: stretch; gap: 8px; text-align: center;
+}
+.results.grid-mode .card-img { width: 100%; height: 120px; }
+.results.grid-mode .card-head > .qty { display: none; }
+.results.grid-mode .qty-badge { display: inline-block; }
+.results.grid-mode .card-title strong { font-size: 14px; }

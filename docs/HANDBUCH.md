@@ -255,6 +255,8 @@ keine automatischen Preise – Kaufpreis und Notizen funktionieren normal.
 
 Der Tab **Sammlung** zeigt alle Artikel als Karten. Oben: Volltextsuche,
 Sortierung (Neueste, Name, Wert …) und der Typ-Filter (Alle / Figuren /
+
+Über das Umschalt-Symbol rechts neben den Filtern lässt sich zwischen **Listenansicht** und **Raster** (zwei Figuren pro Reihe, kompakt mit Mengen-Badge) wechseln; die Wahl wird gemerkt. Im Raster öffnet ein Tipp die Karte und zeigt oben zuerst die Mengeneinstellung.
 Sets). Die Kennzahlen-Widgets (Stückzahl, Gesamtwert) beziehen sich immer
 auf den aktuellen Filter.
 

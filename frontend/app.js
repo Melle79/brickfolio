@@ -923,9 +923,22 @@ async function loadCollection() {
   }
 }
 
+function applyCollView() {
+  const list = $("collection-list");
+  const btn = $("btn-collview");
+  const grid = localStorage.getItem("bf_collview") === "grid";
+  if (list) list.classList.toggle("grid-mode", grid);
+  if (btn) {
+    btn.textContent = grid ? "▦" : "▤";
+    btn.title = grid ? "Ansicht: Raster (tippen für Liste)"
+                     : "Ansicht: Liste (tippen für Raster)";
+  }
+}
+
 function renderCollection() {
   const list = $("collection-list");
   const items = state.collection;
+  applyCollView();
   $("collection-empty").hidden = items.length > 0 || $("search").value.trim() !== "";
   list.innerHTML = items.map((it) => {
     const needsBlNo = /^(fig-|manuell-)/.test(it.item_id);
@@ -933,6 +946,7 @@ function renderCollection() {
     <div class="card" data-id="${it.id}">
       <div class="card-head">
         <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <span class="qty-badge" data-qty-val>${it.quantity}</span>
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
           <div class="sub" data-sub>${esc(collSubText(it))}</div>
@@ -940,11 +954,19 @@ function renderCollection() {
         </div>
         <div class="qty">
           <button data-qty="-1" aria-label="Anzahl verringern">−</button>
-          <span>${it.quantity}</span>
+          <span data-qty-val>${it.quantity}</span>
           <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
         </div>
       </div>
       <div class="card-details" hidden>
+        <div class="qty-edit">
+          <span class="qty-edit-label">Anzahl</span>
+          <div class="qty">
+            <button data-qty="-1" aria-label="Anzahl verringern">−</button>
+            <span data-qty-val>${it.quantity}</span>
+            <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
+          </div>
+        </div>
         <label>Zustand</label>
         <div class="detail-row">
           <button class="mini-btn cond ${it.condition === "used" ? "sel" : ""}" data-cond="used">Gebraucht</button>
@@ -1050,7 +1072,8 @@ function renderCollection() {
     });
 
     card.querySelectorAll("[data-qty]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
         const newQty = item.quantity + Number(btn.dataset.qty);
         if (newQty < 0) return;
         if (newQty === 0 && !confirm(`"${item.name}" aus der Sammlung entfernen?`)) return;
@@ -1058,7 +1081,9 @@ function renderCollection() {
           await api("/collection/" + id, { method: "PATCH", body: { quantity: newQty } });
           if (newQty === 0) { loadCollection(); return; }
           item.quantity = newQty;
-          card.querySelector(".qty span").textContent = newQty;
+          card.querySelectorAll("[data-qty-val]").forEach((s) => {
+            s.textContent = newQty;
+          });
           updateStatsOnly();
         } catch (e) { toast(e.message); }
       });
@@ -2897,6 +2922,14 @@ document.addEventListener("DOMContentLoaded", () => {
     b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("sort").addEventListener("change", loadCollection);
   $("type-filter").addEventListener("change", loadCollection);
+  const collViewBtn = $("btn-collview");
+  if (collViewBtn) {
+    collViewBtn.addEventListener("click", () => {
+      const grid = localStorage.getItem("bf_collview") === "grid";
+      localStorage.setItem("bf_collview", grid ? "list" : "grid");
+      applyCollView();
+    });
+  }
   let searchTimer;
   $("search").addEventListener("input", () => {
     clearTimeout(searchTimer);
