@@ -206,7 +206,7 @@ vollständige Daten.
 ### 4.1 Per Kamera
 
 Im Tab **Scannen** auf „Foto aufnehmen" tippen, die Figur oder das Set
-möglichst formatfüllend und bei gutem Licht fotografieren. Die App zeigt
+möglichst formatfüllend und bei gutem Licht fotografieren. Am Rechner kann man ein Bild auch per Drag & Drop auf die Scan-Fläche ziehen oder einen Screenshot mit Strg/Cmd+V einfügen. Die App zeigt
 eine Kandidatenliste mit Trefferwahrscheinlichkeit, Bild, Nummer und – je
 nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
 

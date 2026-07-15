@@ -586,3 +586,11 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .pl-src.manual { background: var(--yellow); color: var(--ink);
   border-color: var(--ink); }
+/* Scan-Fläche: Drag & Drop */
+[data-scan-drop] { transition: box-shadow .15s ease, transform .1s ease; }
+[data-scan-drop].drag-over {
+  box-shadow: 0 0 0 4px var(--yellow), 0 8px 20px rgba(0,0,0,.18);
+  transform: translateY(-2px);
+}
+.scan-drop-hint { opacity: .8; margin-top: 4px; }
+@media (hover: none) { .scan-drop-hint { display: none; } }

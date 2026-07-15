@@ -2858,6 +2858,41 @@ document.addEventListener("DOMContentLoaded", () => {
     handlePhoto(e.target.files[0]);
     e.target.value = "";
   });
+
+  // Bild per Drag & Drop auf die Scan-Fläche ziehen (Desktop)
+  const dropZone = document.querySelector("[data-scan-drop]");
+  if (dropZone) {
+    ["dragenter", "dragover"].forEach((ev) =>
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      }));
+    ["dragleave", "dragend"].forEach((ev) =>
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+      }));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const file = [...(e.dataTransfer.files || [])]
+        .find((f) => f.type.startsWith("image/"));
+      if (file) handlePhoto(file);
+      else toast("Bitte eine Bilddatei ablegen");
+    });
+  }
+
+  // Screenshot/Bild aus der Zwischenablage einfügen (nur im Scan-Tab)
+  document.addEventListener("paste", (e) => {
+    const scanView = $("view-scan");
+    if (!scanView || scanView.hidden) return;
+    const item = [...(e.clipboardData?.items || [])]
+      .find((i) => i.type.startsWith("image/"));
+    if (item) {
+      const file = item.getAsFile();
+      if (file) { handlePhoto(file); toast("Bild eingefügt 📋"); }
+    }
+  });
   document.querySelectorAll(".tab").forEach((b) =>
     b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("sort").addEventListener("change", loadCollection);
