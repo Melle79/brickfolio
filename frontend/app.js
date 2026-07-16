@@ -2253,6 +2253,23 @@ function renderStats(data) {
   </div>` : "";
 
   $("stats-view").innerHTML = chips + chart + split + years + top + winners;
+  wireYearChart();
+}
+
+function wireYearChart() {
+  const detail = $("year-detail");
+  const bars = document.querySelectorAll(".year-bar");
+  if (!detail || !bars.length) return;
+  const show = (bar) => {
+    document.querySelectorAll(".year-bar").forEach((b) =>
+      b.setAttribute("fill", "#0057A6"));
+    bar.setAttribute("fill", "#E3000F");
+    detail.innerHTML = `<b>${bar.dataset.year}</b>: `
+      + `${bar.dataset.value} · ${bar.dataset.pieces} Stück`;
+  };
+  bars.forEach((bar) => {
+    bar.addEventListener("click", () => show(bar));
+  });
 }
 
 function statBarRow(label, v, total) {
@@ -2302,7 +2319,11 @@ function yearChart(list) {
     const bh = Math.max(2, (e.value / maxV) * (h - padT - padB));
     const bx = 8 + i * (bw + gap);
     const by = h - padB - bh;
-    return `<rect x="${bx}" y="${by.toFixed(1)}" width="${bw}" height="${bh.toFixed(1)}" rx="2" fill="#0057A6"><title>${e.year}: ${fmtEur(e.value)} (${e.pieces} Stück)</title></rect>`;
+    return `<rect class="year-bar" x="${bx}" y="${by.toFixed(1)}" `
+      + `width="${bw}" height="${bh.toFixed(1)}" rx="2" fill="#0057A6" `
+      + `style="cursor:pointer" data-year="${e.year}" `
+      + `data-value="${fmtEur(e.value)}" data-pieces="${e.pieces}">`
+      + `<title>${e.year}: ${fmtEur(e.value)} (${e.pieces} Stück)</title></rect>`;
   }).join("");
   const first = list[0], last = list[list.length - 1];
   const peak = list.reduce((a, b) => (b.value > a.value ? b : a), list[0]);
@@ -2314,7 +2335,7 @@ function yearChart(list) {
     <text x="${w - 8}" y="${h - 6}" text-anchor="end" class="hist-label">${last.year}</text>
     <text x="${Math.min(Math.max(px, 30), w - 30)}" y="${padT - 4}" text-anchor="middle" class="hist-label">${peak.year}: ${fmtEur(peak.value)}</text>
   </svg>
-  <div class="price-note">Antippen/Zeigen für Details je Jahr</div>`;
+  <div class="year-detail" id="year-detail">Balken antippen für Details je Jahr</div>`;
 }
 
 /* ---------------------------------------------------------------- CSV-Import */

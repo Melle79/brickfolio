@@ -637,3 +637,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .results.grid-mode .card.open .card-img { width: 72px; height: 72px; }
 .results.grid-mode .card.open .qty-badge { display: none; }
+.year-detail {
+  margin-top: 6px; font-size: 13px; color: var(--muted);
+  min-height: 1.2em; text-align: center;
+}
+.year-detail b { color: var(--ink); }
