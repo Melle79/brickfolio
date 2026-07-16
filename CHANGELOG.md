@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.5 – Juli 2026
+
+### Neu
+- 💶 Kaufpreis („Bezahlt") direkt beim Abfotografieren und manuellen Erfassen
+
 ## 1.6.4 – Juli 2026
 
 ### Neu
