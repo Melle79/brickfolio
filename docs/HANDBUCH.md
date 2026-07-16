@@ -1,6 +1,6 @@
 # Finn's Brickfolio – Das Handbuch
 
-*Version 1.5 · Juli 2026 · für Brickfolio ab Release v1.5.0*
+*Version 1.6 · Juli 2026 · für Brickfolio ab Release v1.6.5*
 
 Brickfolio ist eine selbstgehostete Progressive Web App (PWA) zum Scannen,
 Verwalten und Bewerten einer LEGO®-Sammlung. Dieses Handbuch erklärt jede
@@ -160,6 +160,7 @@ nach Rolle sichtbar:
 | Karte | sichtbar für |
 |---|---|
 | 📤 Export & Druck | alle |
+| 📈 Preis-Protokoll | Sammlerprofi |
 | 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
 | 🔑 API-Schlüssel | Admin |
 | 👥 Benutzer verwalten | Admin |
@@ -205,10 +206,12 @@ vollständige Daten.
 
 ### 4.1 Per Kamera
 
-Im Tab **Scannen** auf „Foto aufnehmen" tippen, die Figur oder das Set
-möglichst formatfüllend und bei gutem Licht fotografieren. Am Rechner kann man ein Bild auch per Drag & Drop auf die Scan-Fläche ziehen oder einen Screenshot mit Strg/Cmd+V einfügen. Die App zeigt
-eine Kandidatenliste mit Trefferwahrscheinlichkeit, Bild, Nummer und – je
-nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
+Im Tab **Scannen** auf **„Figur oder Set fotografieren"** tippen, die
+Figur oder das Set möglichst formatfüllend und bei gutem Licht
+fotografieren. Am Rechner kann man ein Bild auch **per Drag & Drop** auf
+die Scan-Fläche ziehen oder einen **Screenshot mit Strg/Cmd+V** einfügen.
+Die App zeigt eine Kandidatenliste mit Trefferwahrscheinlichkeit, Bild,
+Nummer und – je nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
 
 **Tipps für gute Trefferquoten:** Einfarbiger Hintergrund, Figur von vorn,
 keine spiegelnden Verpackungen. Bei Sets funktioniert das Boxbild oder das
@@ -226,8 +229,10 @@ Unter dem Kamerabereich liegt die Textsuche. Sie versteht:
 
 ### 4.3 Aktionen auf jeder Treffer-Karte
 
-- **＋ Zur Sammlung** – fragt den Zustand ab (Gebraucht/Neu) und erfasst
-  den Artikel. Ist er schon vorhanden, erhöht sich die Menge.
+- **＋ Zur Sammlung** – fragt den **Zustand** (Gebraucht/Neu) ab und
+  bietet ein optionales **„Bezahlt €"**-Feld: Wer den Kaufpreis schon
+  kennt, trägt ihn gleich mit ein (er landet als Kaufpreis in der
+  Sammlung). Ist der Artikel schon vorhanden, erhöht sich die Menge.
 - **☆ Merken** – setzt ihn auf die Wunschliste (⭐-Badge erscheint).
 - **🛒 Liste** *(nur Profi)* – legt ihn auf eine Einkaufsliste (siehe
   Kapitel 7): Im Dialog zuerst optional den **Zustand** wählen
@@ -244,8 +249,9 @@ eingebaute Schutz vor Doppelkäufen und Doppel-Einplanung.
 
 Für alles, was keine BrickLink-Nummer hat (Eigenbauten, Konvolute):
 **✏️ Manuell erfassen** mit freiem Namen, eigener Nummer (z. B.
-`manuell-01`), Typ, Menge, Zustand und Notizen. Solche Einträge bekommen
-keine automatischen Preise – Kaufpreis und Notizen funktionieren normal.
+`manuell-01`), Typ, Menge, Zustand, optionalem **„Bezahlt €"** (Kaufpreis)
+und Notizen. Solche Einträge bekommen keine automatischen Marktpreise –
+der eingetragene Kaufpreis und die Notizen funktionieren normal.
 
 ---
 
@@ -255,10 +261,14 @@ keine automatischen Preise – Kaufpreis und Notizen funktionieren normal.
 
 Der Tab **Sammlung** zeigt alle Artikel als Karten. Oben: Volltextsuche,
 Sortierung (Neueste, Name, Wert …) und der Typ-Filter (Alle / Figuren /
-
-Über das Umschalt-Symbol rechts neben den Filtern lässt sich zwischen **Listenansicht** und **Raster** (zwei Figuren pro Reihe, kompakt mit Mengen-Badge) wechseln; die Wahl wird gemerkt. Im Raster öffnet ein Tipp die Karte und zeigt oben zuerst die Mengeneinstellung.
 Sets). Die Kennzahlen-Widgets (Stückzahl, Gesamtwert) beziehen sich immer
 auf den aktuellen Filter.
+
+Über das **Umschalt-Symbol** rechts neben den Filtern wechselt man
+zwischen **Listenansicht** und **Raster** (zwei Figuren pro Reihe,
+kompakt, mit Mengen-Badge in der Ecke); die Wahl wird pro Gerät gemerkt.
+Im Raster öffnet ein Tipp die Karte über die **volle Breite** und zeigt
+oben zuerst die **Mengeneinstellung**.
 
 ### 5.2 Die Karten-Details
 
@@ -567,7 +577,15 @@ Artikel ist automatisch nie älter als gut eine Woche.
 
 **Preisverlauf.** Bei jedem Abruf entsteht ein Verlaufs-Punkt – höchstens
 **einer pro 20 Stunden** je Artikel. Die Wertentwicklungs-Kurve im
-Statistik-Tab entsteht aus genau diesen Punkten.
+Statistik-Tab entsteht aus genau diesen Punkten. Ein manueller Abruf
+innerhalb dieser 20 Stunden aktualisiert den jüngsten Punkt, statt einen
+neuen anzulegen (das Chart bleibt sauber).
+
+**Preis-Protokoll.** Unter **Mehr → 📈 Preis-Protokoll** *(Sammlerprofi)*
+listet die App die jüngsten Preis-Aktualisierungen quer über alle Artikel
+– mit Datum, Artikel, gefundenen Preisen und einem Badge, ob der Punkt
+**automatisch** (Hintergrundjob) oder **manuell** (↻-Knopf) entstand.
+So ist jederzeit nachvollziehbar, wann welche Preise aufgezeichnet wurden.
 
 **Kaufpreis-Automatik.** Einträge ohne manuellen Kaufpreis erhalten beim
 ersten Preisabruf den Tages-Ø als ⚙️-Wert (siehe 5.4). Manuell gesetzte
