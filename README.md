@@ -1,5 +1,7 @@
 # Finn's Brickfolio 🧱
 
+*[🇬🇧 English](README.en.md) · 🇩🇪 Deutsch*
+
 Selbstgehostete PWA zum Scannen, Verwalten und Bewerten einer LEGO®-Sammlung –
 gebaut für die ganze Familie auf einer gemeinsamen Datenbank, mit optionalem
 **Sammlerprofi-Modus** für alle, die auf Flohmärkten kaufen und verkaufen.
