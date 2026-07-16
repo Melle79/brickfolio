@@ -699,6 +699,14 @@ async function updateListsTab() {
   if (tab.hidden && !$("view-lists").hidden) showTab("scan");
 }
 
+function applyOwnerName(name) {
+  if (!name) return;
+  document.querySelectorAll(".logo-name").forEach((el) => {
+    el.textContent = name.toUpperCase();
+  });
+  document.title = name + "'s Brickfolio";
+}
+
 function showLogin() {
   $("view-login").hidden = false;
   $("app").hidden = true;
@@ -708,6 +716,7 @@ function showLogin() {
 async function checkSetup() {
   try {
     const s = await api("/setup");
+    applyOwnerName(s.owner_name);
     $("setup-box").hidden = !s.needed;
     $("login-box").hidden = s.needed;
     if (s.needed) $("setup-user").focus();
@@ -767,6 +776,8 @@ function showApp() {
     state.bricklinkPrices = c.bricklink_prices;
     state.catalogSearch = c.catalog_search;
     state.bricklinkLookup = c.bricklink_lookup;
+    state.ownerName = c.owner_name || "Finn";
+    applyOwnerName(state.ownerName);
   }).catch(() => {});
   showTab("scan");
 }
@@ -2662,6 +2673,12 @@ async function loadSettings() {
   $("own-name").value = state.user ? state.user.username : "";
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
+  $("name-card").hidden = !isAdmin;
+  if (isAdmin && $("owner-name")) {
+    $("owner-name").value =
+      (state.ownerName && state.ownerName !== "Finn") ? state.ownerName : "";
+    $("owner-name").placeholder = "Finn";
+  }
   $("backup-card").hidden = !isAdmin;
   if (isAdmin) {
     api("/backup_info").then((b) => {
@@ -2764,6 +2781,18 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "";
   };
   initCollapsibleCards();
+  const ownerBtn = $("btn-owner-name");
+  if (ownerBtn) {
+    ownerBtn.addEventListener("click", async () => {
+      try {
+        const res = await api("/settings/owner_name", { method: "POST",
+          body: { name: $("owner-name").value.trim() } });
+        state.ownerName = res.owner_name;
+        applyOwnerName(res.owner_name);
+        toast("Anzeigename gespeichert ✔");
+      } catch (e) { toast(e.message); }
+    });
+  }
   $("btn-help-close").addEventListener("click", closeHelp);
   $("help-overlay").addEventListener("click", (ev) => {
     if (ev.target === $("help-overlay")) closeHelp();

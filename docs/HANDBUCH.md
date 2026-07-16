@@ -162,6 +162,7 @@ nach Rolle sichtbar:
 | 📤 Export & Druck | alle |
 | 📈 Preis-Protokoll | Sammlerprofi |
 | 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
+| 🏷 Anzeigename | Admin |
 | 🔑 API-Schlüssel | Admin |
 | 👥 Benutzer verwalten | Admin |
 | 💾 Sicherung | Admin |

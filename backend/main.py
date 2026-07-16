@@ -184,12 +184,20 @@ class UpdateItemBody(BaseModel):
 
 # ---------------------------------------------------------------- Auth
 
+def _owner_name() -> str:
+    """Anzeigename für Logo/Titel: DB-Einstellung, sonst ENV, sonst 'Finn'."""
+    import os as _os
+    name = core.get_setting("owner_name") or _os.environ.get(
+        "BRICKFOLIO_NAME", "").strip()
+    return name or "Finn"
+
+
 @app.get("/api/setup")
 def setup_status():
     """Öffentlich: Steht die Ersteinrichtung noch aus?"""
     with core.db() as conn:
         count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
-    return {"needed": count == 0}
+    return {"needed": count == 0, "owner_name": _owner_name()}
 
 
 class SetupBody(BaseModel):
@@ -362,7 +370,8 @@ def config(user: dict = Depends(current_user)):
     return {"bricklink_prices": integrations.bricklink_enabled(),
             "bricklink_lookup": integrations.bricklink_enabled(),
             "catalog_search": integrations.rebrickable_enabled(),
-            "offer_percent": _offer_percent()}
+            "offer_percent": _offer_percent(),
+            "owner_name": _owner_name()}
 
 
 class OfferPercentBody(BaseModel):
@@ -759,6 +768,17 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
 BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
                  "shopping_items", "price_history",
                  "set_contents", "set_meta", "fig_sets", "settings"]
+
+
+class OwnerNameBody(BaseModel):
+    name: str = Field(default="", max_length=40)
+
+
+@app.post("/api/settings/owner_name")
+def set_owner_name(body: OwnerNameBody, user: dict = Depends(admin_user)):
+    """Anzeigename anpassen (leer = zurück auf Standard 'Finn')."""
+    core.set_setting("owner_name", body.name.strip())
+    return {"ok": True, "owner_name": _owner_name()}
 
 
 @app.get("/api/backup_info")
