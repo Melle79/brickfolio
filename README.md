@@ -2,6 +2,9 @@
 
 *[🇬🇧 English](README.en.md) · 🇩🇪 Deutsch*
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/melle79)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Selbstgehostete PWA zum Scannen, Verwalten und Bewerten einer LEGO®-Sammlung –
 gebaut für die ganze Familie auf einer gemeinsamen Datenbank, mit optionalem
 **Sammlerprofi-Modus** für alle, die auf Flohmärkten kaufen und verkaufen.
@@ -143,6 +146,13 @@ LEGO® ist eine Marke der LEGO Gruppe, die dieses Projekt weder sponsert noch
 autorisiert oder unterstützt. BrickLink und Rebrickable sind Marken ihrer
 jeweiligen Inhaber; für deren APIs gelten die jeweiligen Nutzungsbedingungen.
 Dieses Projekt ist ein privates Hobby-Projekt ohne kommerzielle Absicht.
+
+## Unterstützen
+
+Brickfolio ist ein privates Hobby-Projekt und kostenlos. Wenn es dir gefällt
+und du die Entwicklung unterstützen magst, freue ich mich über einen Kaffee ☕
+
+<a href="https://buymeacoffee.com/melle79"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-melle79-ffdd00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>
 
 ## Lizenz
 
