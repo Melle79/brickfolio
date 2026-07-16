@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.6 – Juli 2026
+
+### Neu
+- 🏷 Konfigurierbarer Anzeigename in Logo und Fenstertitel (Mehr → Anzeigename, Admin); Standard bleibt „Finn"
+
 ## 1.6.5 – Juli 2026
 
 ### Neu

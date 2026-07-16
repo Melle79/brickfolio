@@ -49,6 +49,8 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Profi-Rollen, eigene Passwort-/Namensänderung
 - 💾 Komplett-**Sicherung** als JSON (herunterladen & wieder einspielen),
   CSV-Export und druckfertige Listen
+- 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (Standard „Finn");
+  ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
 - 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
   eurem Server
 
