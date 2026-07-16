@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.8 – Juli 2026
+
+### Behoben
+- 📊 Das Diagramm „Wert nach Erscheinungsjahr" reagiert jetzt auch auf **Antippen** (Touch): Jahr, Wert und Stückzahl erscheinen unter dem Diagramm, der gewählte Balken wird hervorgehoben
+
+### Sonstiges
+- 🇬🇧 Englisches README mit Sprach-Umschalter und aktualisierten Screenshots
+
 ## 1.6.7 – Juli 2026
 
 ### Neu
