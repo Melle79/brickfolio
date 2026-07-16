@@ -866,10 +866,12 @@ function renderScanResults(items) {
       row.className = "card-actions btn-grid";
       row.setAttribute("data-cond-row", "");
       row.innerHTML = `
-        <span class="buy-label">Zustand:</span>
+        <input data-add-paid class="paid-input" inputmode="decimal"
+          placeholder="Bezahlt € (optional)" style="grid-column:1/-1">
+        <span class="buy-label" style="grid-column:1/-1">Zustand wählen (wird sofort gespeichert):</span>
         <button class="mini-btn add" data-c="used">Gebraucht</button>
         <button class="mini-btn add" data-c="new">Neu</button>
-        <button class="mini-btn" data-cancel>Abbrechen</button>`;
+        <button class="mini-btn" data-cancel style="grid-column:1/-1">Abbrechen</button>`;
       actions.after(row);
       row.querySelector("[data-cancel]").addEventListener("click", () => {
         row.remove();
@@ -877,13 +879,24 @@ function renderScanResults(items) {
       });
       row.querySelectorAll("[data-c]").forEach((b) => {
         b.addEventListener("click", async () => {
+          const paidRaw = row.querySelector("[data-add-paid]").value
+            .trim().replace(",", ".");
+          let paidPrice = null;
+          if (paidRaw) {
+            const n = Number(paidRaw);
+            if (!Number.isFinite(n) || n < 0) {
+              toast("Bezahlt bitte als Zahl, z. B. 4,50");
+              return;
+            }
+            paidPrice = Math.round(n * 100) / 100;
+          }
           b.disabled = true;
           try {
             const res = await api("/collection", { method: "POST", body: {
               item_id: it.item_id, item_type: it.item_type || "minifig",
               name: it.name, img_url: it.img_url,
               bricklink_url: it.bricklink_url,
-              condition: b.dataset.c,
+              condition: b.dataset.c, paid_price: paidPrice,
             }});
             toast(res.merged
               ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
