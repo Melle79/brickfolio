@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.7 – Juli 2026
+
+### Neu
+- 🗒 Beim Verbuchen von einer Liste wird der Listenname in die Notizen des Sammlungs-Eintrags übernommen (vorhandene Notiz bleibt erhalten)
+
+### Behoben
+- 📋 Verkaufsliste beschriftet zurückbehaltene Figuren jetzt korrekt: „für Sets reserviert" nur bei echtem Set-Bedarf, sonst „1 behalten"
+
 ## 1.6.6 – Juli 2026
 
 ### Neu

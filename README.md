@@ -41,7 +41,10 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Einkaufspreis je Artikel, **Gesamtangebot** mit anteiliger Verteilung nach
   Marktwert und 60-%-Preisvorschlag
 - 📋 **Verkaufsliste**: alle Doppelten mit abgebbarer Menge und Verkaufswert –
-  Figuren, die eure Sets komplett halten, bleiben automatisch reserviert
+  für eigene Sets gebrauchte Figuren bleiben reserviert, von allem anderen
+  bleibt ein Behalte-Exemplar
+- 🗒 Beim Verbuchen von einer Einkaufsliste landet der **Listenname in den
+  Notizen** des Sammlungs-Eintrags (Herkunft bleibt nachvollziehbar)
 - 📈 Zusätzliche Statistik: bezahlt gesamt, Gewinn, beste Wertsteigerungen
 
 **Familie & Betrieb**
