@@ -1486,18 +1486,30 @@ async function addManual() {
     blUrl = `https://www.bricklink.com/v2/catalog/catalogitem.page?${BL_URL_PREFIX[type]}=${encodeURIComponent(itemId)}`;
   }
   if (!itemId) itemId = "manuell-" + Date.now();
+  const paidRaw = $("m-paid").value.trim().replace(",", ".");
+  let paidPrice = null;
+  if (paidRaw) {
+    const n = Number(paidRaw);
+    if (!Number.isFinite(n) || n < 0) {
+      err.textContent = "Bezahlt bitte als Zahl, z. B. 4,50";
+      err.hidden = false;
+      return;
+    }
+    paidPrice = Math.round(n * 100) / 100;
+  }
   try {
     const res = await api("/collection", { method: "POST", body: {
       item_id: itemId, item_type: type, name, img_url: imgUrl,
       bricklink_url: blUrl, year,
       quantity: Math.max(1, Number($("m-qty").value) || 1),
       condition: $("m-cond").value, notes: $("m-notes").value,
+      paid_price: paidPrice,
     }});
     toast(res.merged
       ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
       : "Zur Sammlung hinzugefügt ✔");
     $("m-name").value = ""; $("m-id").value = "";
-    $("m-qty").value = "1"; $("m-notes").value = "";
+    $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
     $("manual-form").hidden = true;
@@ -1595,7 +1607,7 @@ async function addManualWanted() {
     else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
     else toast("Auf die Wunschliste gesetzt ⭐");
     $("m-name").value = ""; $("m-id").value = "";
-    $("m-qty").value = "1"; $("m-notes").value = "";
+    $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
     $("manual-form").hidden = true;

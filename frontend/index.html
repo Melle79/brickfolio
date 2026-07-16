@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v=164">
 </head>
 <body>
 
@@ -108,6 +108,8 @@
         <option value="used" selected>Gebraucht</option>
         <option value="new">Neu</option>
       </select>
+      <label for="m-paid">Bezahlt € (optional)</label>
+      <input id="m-paid" inputmode="decimal" placeholder="z. B. 4,50">
       <label for="m-notes">Notizen</label>
       <textarea id="m-notes" placeholder="z. B. Herkunft, Set, Besonderheiten"></textarea>
       <button id="btn-manual-add" class="btn btn-primary">Zur Sammlung hinzufügen</button>
@@ -354,7 +356,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=164"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">
