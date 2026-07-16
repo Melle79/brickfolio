@@ -387,7 +387,10 @@ tippt **irgendjemand** (auch ohne Profi-Rolle) auf **„✔ Da! Ab in die
 Sammlung"**. Zustand bestätigen (der gespeicherte ist mit ✓ markiert),
 Profis können den Preis nochmal anpassen – vorausgefüllt ist der
 Listen-Einkaufspreis. Verbuchte Artikel werden **ausgegraut** mit Vermerk
-*„✔ in Sammlung von Finn am 09.07.2026"*.
+*„✔ in Sammlung von Finn am 09.07.2026"*. In die **Notizen** des
+Sammlungs-Eintrags schreibt die App automatisch, von welcher Liste der
+Artikel stammt (z. B. *„Von Liste »Flohmarkt Riem« (09.07.2026)"*) –
+eine vorhandene Notiz bleibt erhalten, der Hinweis wird angehängt.
 
 ### 7.2 Wenn der Artikel schon in der Sammlung ist
 
@@ -427,6 +430,11 @@ Artikel – live berechnet, keine Pflege nötig. Die Grundregel:
 Gibt es eine Figur in beiden Zuständen, wird der Behalten-Anteil
 bevorzugt auf die **neuen** Exemplare angerechnet – abgebbar sind zuerst
 die gebrauchten.
+
+In der Zeile steht, **warum** etwas zurückbleibt: Wird die Figur für
+eigene Sets gebraucht, erscheint „*N× für Sets reserviert*". Steckt sie
+in keinem eurer Sets, bleibt nur das eine Behalte-Exemplar – dann steht
+schlicht „*1 behalten*".
 
 Konkret: Für jede Figur wird der **Set-Bedarf** ermittelt (Inventar-Menge
 × Anzahl des Sets in eurer Sammlung). Abgebbar ist nur, was über

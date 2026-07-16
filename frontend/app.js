@@ -2384,7 +2384,7 @@ function renderDuplicates(data) {
       <strong>📋 Verkaufsliste – Doppelte</strong>
       <div class="sub">${data.stats.pieces} Stück abgebbar
         · Verkaufswert ca. ${fmtEur(data.stats.value)}
-        <span class="search-hint">(1 Exemplar bleibt immer · Set-Figuren bleiben reserviert)</span></div>
+        <span class="search-hint">(1 Exemplar bleibt immer · für eigene Sets gebrauchte Figuren zusätzlich reserviert)</span></div>
     </div></div>
     <div class="set-figs">
       ${data.items.map((it) => `
@@ -2393,7 +2393,11 @@ function renderDuplicates(data) {
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? "Neu" : "Gebraucht"}
-            · ${it.quantity}× vorhanden${it.reserved > 0 ? ` (${it.reserved}× für Sets reserviert)` : ""} → <b>${it.surplus}× abgebbar</b>
+            · ${it.quantity}× vorhanden${
+              it.set_reserved > 0
+                ? ` (${it.set_reserved}× für Sets reserviert)`
+                : (it.reserved > 0 ? ` (1 behalten)` : "")
+            } → <b>${it.surplus}× abgebbar</b>
             ${it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}${it.surplus > 1 ? " → " + fmtEur(it.value) : ""}` : ""}</div>
         </div>
       </div>`).join("")}

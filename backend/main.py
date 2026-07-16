@@ -1607,12 +1607,18 @@ def get_duplicates(user: dict = Depends(dealer_user)):
         keep = max(group[0]["reserved"] or 0, 1)
         if total_qty - keep <= 0:
             continue
-        # Behalten-Kontingent zuerst auf Neu-Zeilen anrechnen
+        # Wie viele werden WIRKLICH für eigene Sets gebraucht?
+        set_need = group[0]["reserved"] or 0
+        # Behalten-Kontingent zuerst auf Neu-Zeilen anrechnen; dabei
+        # trennen, was für Sets reserviert ist und was nur die Behalte-1 ist
         remaining_keep = keep
+        remaining_set = set_need
         for r in sorted(group, key=lambda x: 0 if x["condition"] == "new"
                         else 1):
             alloc = min(r["quantity"], remaining_keep)
             remaining_keep -= alloc
+            set_alloc = min(alloc, remaining_set)
+            remaining_set -= set_alloc
             surplus = r["quantity"] - alloc
             if surplus <= 0:
                 continue
@@ -1624,7 +1630,8 @@ def get_duplicates(user: dict = Depends(dealer_user)):
                 "item_type": r["item_type"], "name": r["name"],
                 "img_url": r["img_url"], "bricklink_url": r["bricklink_url"],
                 "condition": r["condition"], "quantity": r["quantity"],
-                "reserved": min(r["quantity"], alloc), "surplus": surplus,
+                "reserved": min(r["quantity"], alloc),
+                "set_reserved": set_alloc, "surplus": surplus,
                 "unit_price": unit, "value": value,
             })
             total_pieces += surplus
@@ -1907,6 +1914,12 @@ def receive_list_item(item_id: int, body: ReceiveBody,
             raise HTTPException(404, "Artikel nicht gefunden")
         if it["done"]:
             raise HTTPException(409, "Artikel ist schon in der Sammlung")
+        lst = conn.execute("SELECT name FROM shopping_lists WHERE id = ?",
+                           (it["list_id"],)).fetchone()
+        list_name = lst["name"] if lst else ""
+        import datetime as _dt
+        _d = _dt.datetime.fromtimestamp(now).strftime("%d.%m.%Y")
+        note_line = f"Von Liste »{list_name}« ({_d})" if list_name else ""
         unit = _unit_price(body.condition, it["price_new"], it["price_used"])
         if body.paid_price is not None and user["is_dealer"]:
             paid_val, manual = round(body.paid_price, 2), True
@@ -1966,6 +1979,19 @@ def receive_list_item(item_id: int, body: ReceiveBody,
                  ("manual" if manual else "auto") if paid_val is not None
                  else None,
                  now if paid_val is not None else None, user["id"], now))
+        # Listenname in die Notizen der betroffenen Sammlung-Zeile übernehmen
+        if note_line:
+            target_id = row["id"] if row else conn.execute(
+                "SELECT last_insert_rowid() AS id").fetchone()["id"]
+            cur = conn.execute("SELECT notes FROM collection WHERE id = ?",
+                               (target_id,)).fetchone()
+            notes = (cur["notes"] if cur else "") or ""
+            marker = f"Von Liste »{list_name}«"
+            if marker not in notes:
+                merged_notes = (notes + ("\n" if notes else "")
+                                + note_line).strip()[:1000]
+                conn.execute("UPDATE collection SET notes = ? WHERE id = ?",
+                             (merged_notes, target_id))
         conn.execute("UPDATE shopping_items SET done = 1, done_at = ?, "
                      "done_by = ? WHERE id = ?", (now, user["id"], item_id))
         list_id = it["list_id"]
