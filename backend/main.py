@@ -540,16 +540,67 @@ def reset_user_password(user_id: int, body: PasswordBody,
     return {"ok": True}
 
 
+def _set_bound_map(conn) -> dict:
+    """Wie viele Exemplare je Figuren-Zeile stecken in eigenen Sets?
+
+    Ergebnis: {collection.id: gebundene_Menge}. Grundlage ist der
+    Set-Inhalt (set_contents) mal der Anzahl der besessenen Sets.
+    Zuerst werden zustandsgleiche Figuren-Zeilen gebunden.
+    """
+    sets = conn.execute(
+        "SELECT item_id, quantity, condition FROM collection "
+        "WHERE item_type = 'set'").fetchall()
+    if not sets:
+        return {}
+    contents: dict = {}
+    for r in conn.execute("SELECT set_no, fig_no, qty FROM set_contents"):
+        contents.setdefault(r["set_no"], []).append(
+            (r["fig_no"], r["qty"] or 1))
+    need: dict = {}
+    for s in sets:
+        for fig_no, q in contents.get(s["item_id"], []):
+            need.setdefault(fig_no, {})
+            need[fig_no][s["condition"]] = (
+                need[fig_no].get(s["condition"], 0) + q * s["quantity"])
+    if not need:
+        return {}
+    by_fig: dict = {}
+    for r in conn.execute(
+            "SELECT id, item_id, quantity, condition FROM collection "
+            "WHERE item_type = 'minifig'").fetchall():
+        by_fig.setdefault(r["item_id"], []).append(r)
+    bound: dict = {}
+    for fig_no, conds in need.items():
+        rows = by_fig.get(fig_no)
+        if not rows:
+            continue
+        for cond, amount in conds.items():
+            remaining = amount
+            ordered = sorted(
+                rows, key=lambda x: 0 if x["condition"] == cond else 1)
+            for r in ordered:
+                if remaining <= 0:
+                    break
+                free = r["quantity"] - bound.get(r["id"], 0)
+                if free <= 0:
+                    continue
+                take = min(free, remaining)
+                bound[r["id"]] = bound.get(r["id"], 0) + take
+                remaining -= take
+    return bound
+
+
 @app.get("/api/stats/dashboard")
 def stats_dashboard(user: dict = Depends(current_user)):
     with core.db() as conn:
         items = conn.execute(
-            "SELECT item_id, item_type, name, img_url, quantity, condition, "
-            "year, price_new, price_used, paid_price "
+            "SELECT id, item_id, item_type, name, img_url, quantity, "
+            "condition, year, price_new, price_used, paid_price "
             "FROM collection").fetchall()
         hist = conn.execute(
             "SELECT item_id, item_type, ts, price_new, price_used "
             "FROM price_history ORDER BY ts").fetchall()
+        bound = _set_bound_map(conn)
 
     total_value = 0.0
     paid_sum = 0.0
@@ -560,21 +611,26 @@ def stats_dashboard(user: dict = Depends(current_user)):
     by_type: dict = {}
     by_cond: dict = {}
     by_year: dict = {}
+    bound_value = 0.0
     for r in items:
         unit = _unit_price(r["condition"], r["price_new"], r["price_used"])
         value = round((unit or 0) * r["quantity"], 2)
+        # In eigenen Sets steckende Figuren nicht doppelt zählen
+        in_sets = bound.get(r["id"], 0)
+        net = round((unit or 0) * max(0, r["quantity"] - in_sets), 2)
+        bound_value += value - net
         pieces += r["quantity"]
-        total_value += value
+        total_value += net
         bt = by_type.setdefault(r["item_type"], {"pieces": 0, "value": 0.0})
         bt["pieces"] += r["quantity"]
-        bt["value"] += value
+        bt["value"] += net
         bc = by_cond.setdefault(r["condition"], {"pieces": 0, "value": 0.0})
         bc["pieces"] += r["quantity"]
-        bc["value"] += value
+        bc["value"] += net
         if r["year"]:
             by = by_year.setdefault(r["year"], {"pieces": 0, "value": 0.0})
             by["pieces"] += r["quantity"]
-            by["value"] += value
+            by["value"] += net
         if r["paid_price"] is not None:
             paid_sum += r["paid_price"]
             value_of_paid_items += value
@@ -600,7 +656,8 @@ def stats_dashboard(user: dict = Depends(current_user)):
         for k, prices in latest.items():
             r = coll[k]
             u = _unit_price(r["condition"], prices[0], prices[1])
-            s += (u or 0) * r["quantity"]
+            qty = max(0, r["quantity"] - bound.get(r["id"], 0))
+            s += (u or 0) * qty
         return round(s, 2)
 
     for h in hist:
@@ -618,6 +675,7 @@ def stats_dashboard(user: dict = Depends(current_user)):
     return {"totals": {"pieces": pieces,
                        "unique": len(items),
                        "value": round(total_value, 2),
+                       "in_sets_value": round(bound_value, 2),
                        "avg_piece": round(total_value / pieces, 2)
                        if pieces else 0,
                        "paid": round(paid_sum, 2),
@@ -1222,7 +1280,28 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
             f"COALESCE(SUM(CASE WHEN {value_expr} IS NULL THEN 1 ELSE 0 END), 0) "
             f"AS unpriced FROM collection{stats_where}", stats_params
         ).fetchone()
-    return {"items": [dict(r) for r in rows], "stats": dict(stats)}
+        stats = dict(stats)
+        stats["in_sets_value"] = 0.0
+        # Nur in der Gesamtansicht (Sets UND Figuren) doppelt gezählte
+        # Set-Figuren herausrechnen – beim Filter "Figuren" bleibt der
+        # volle Figurenwert stehen.
+        if not item_type:
+            bound = _set_bound_map(conn)
+            if bound:
+                dedup = 0.0
+                for r in conn.execute(
+                        "SELECT id, condition, price_new, price_used "
+                        "FROM collection WHERE item_type = 'minifig'"):
+                    n = bound.get(r["id"], 0)
+                    if not n:
+                        continue
+                    unit = _unit_price(r["condition"], r["price_new"],
+                                       r["price_used"])
+                    dedup += (unit or 0) * n
+                stats["in_sets_value"] = round(dedup, 2)
+                stats["total_value"] = round(
+                    max(0.0, (stats["total_value"] or 0) - dedup), 2)
+    return {"items": [dict(r) for r in rows], "stats": stats}
 
 
 @app.post("/api/collection")
