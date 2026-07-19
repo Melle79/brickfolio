@@ -2197,7 +2197,8 @@ function renderStats(data) {
     </div>
     ${t.in_sets_value > 0 ? `<div class="price-note" style="margin-top:6px">
       Figuren, die in euren Sets stecken, sind im Set-Preis enthalten und
-      werden nicht doppelt gezählt (${fmtEur(t.in_sets_value)}).</div>` : ""}
+      werden nicht doppelt gezählt (${fmtEur(t.in_sets_value)}).
+      Details unter ❓ Hilfe → „Wie der Wert berechnet wird".</div>` : ""}
   </div>`;
 
   const chart = `

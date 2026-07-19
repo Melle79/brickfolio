@@ -465,6 +465,47 @@ sudo bash update.sh</pre>
       </details>
 
       <details class="help">
+        <summary>💶 Wie der Wert berechnet wird</summary>
+        <p><b>Woher die Preise kommen.</b> Für jeden Artikel holt die App die
+        <b>Ø-Verkaufspreise der letzten 6 Monate</b> von BrickLink – getrennt
+        nach <i>neu</i> und <i>gebraucht</i>. Verwendet wird immer der Preis,
+        der zum eingetragenen <b>Zustand</b> passt; fehlt er, springt die App
+        auf den anderen Wert aus. Artikel ohne Preisdaten (z. B. manuell
+        erfasste Eigenbauten) zählen mit 0 € und stehen als
+        <i>„ohne Preis"</i> unter dem Wert-Widget.</p>
+        <p><b>Die Rechnung.</b> Wert eines Eintrags = Ø-Preis × Menge.
+        Der Gesamtwert ist die Summe über alle Einträge – mit einer
+        wichtigen Ausnahme:</p>
+        <p><b>Set-Figuren werden nicht doppelt gezählt.</b> Ein Set-Preis
+        gilt bei BrickLink für das <i>komplette</i> Set, die Minifiguren sind
+        darin also schon enthalten. Wer Sets <i>und</i> deren Figuren einzeln
+        erfasst, hätte sie sonst zweimal in der Summe. Deshalb rechnet die App
+        so: Sets zählen voll, und von jeder Figur zählen nur die Exemplare,
+        die <b>nicht</b> in einem eigenen Set stecken.</p>
+        <p>Wie viele das sind: <i>Anzahl der besessenen Sets × Stückzahl der
+        Figur im Set</i>, höchstens so viele, wie wirklich vorhanden sind.
+        Beispiel: Das Set enthält 2 Sturmtruppler, ihr besitzt das Set einmal
+        und habt die Figur 3× erfasst → 2 stecken im Set, <b>1 zählt</b> als
+        echtes Extra. Bei mehreren Zuständen werden zuerst zustandsgleiche
+        Exemplare zugeordnet (ein gebrauchtes Set „nimmt" die gebrauchten
+        Figuren). Wie viel dabei herausgerechnet wurde, steht offen unter den
+        Kacheln im Statistik-Tab.</p>
+        <p><b>Wo bereinigt wird – und wo nicht.</b> Die Bereinigung greift
+        nur, wo Sets und Figuren in <i>einer</i> Zahl zusammenkommen: im
+        Gesamtwert, im Wert-Widget der Sammlung bei Filter <i>Alle</i>, in der
+        Aufteilung nach Typ/Zustand, im Wert nach Erscheinungsjahr und in der
+        Wertentwicklungs-Kurve. Filtert ihr auf <b>Figuren</b> (oder
+        <b>Sets</b>), seht ihr den <b>vollen</b> Wert dieser Gruppe – dort ist
+        ja keine zweite Kategorie im Spiel. Auch einzelne Karten und die
+        <b>Top 10</b> zeigen immer den vollen Einzelwert des Artikels.</p>
+        <p><b>Was unverändert bleibt.</b> Die <b>Stückzahl</b> ändert sich
+        nicht – die Figuren gehören euch ja physisch, egal wo sie stecken.
+        Und <b>bezahlt/Gewinn</b> (Sammlerprofi) rechnet weiter mit dem vollen
+        Einzelwert, denn dort geht es um das, was ihr für gekaufte Artikel
+        ausgegeben habt.</p>
+      </details>
+
+      <details class="help">
         <summary>🔣 Symbole</summary>
         <p>⚙️ Kaufpreis automatisch (BrickLink-Ø, Datum im Tooltip) ·
         ✏️ Kaufpreis manuell · 👥 3/4 ✔ Set-Figuren vorhanden/komplett ·

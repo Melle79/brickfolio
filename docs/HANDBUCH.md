@@ -600,6 +600,30 @@ So ist jederzeit nachvollziehbar, wann welche Preise aufgezeichnet wurden.
 ersten Preisabruf den Tages-Ø als ⚙️-Wert (siehe 5.4). Manuell gesetzte
 Preise bleiben immer unangetastet.
 
+**So entsteht der Gesamtwert – und warum Set-Figuren nur einmal zählen.**
+Der Wert eines Eintrags ist *Ø-Preis × Menge*, passend zum eingetragenen
+Zustand. Ein **Set-Preis** gilt bei BrickLink allerdings für das *komplette*
+Set – die Minifiguren sind darin bereits enthalten. Wer Sets **und** deren
+Figuren getrennt erfasst (was für die Übersicht sinnvoll ist), hätte sie
+sonst zweimal in der Summe.
+
+Deshalb rechnet die App so: **Sets zählen voll**, und von jeder Figur zählen
+nur die Exemplare, die **nicht** in einem eigenen Set stecken. Gebunden sind
+*Anzahl der besessenen Sets × Stückzahl der Figur im Set*, höchstens so
+viele, wie tatsächlich vorhanden sind. Enthält ein Set zwei Sturmtruppler,
+besitzt ihr das Set einmal und habt die Figur 3× erfasst, dann stecken zwei
+im Set und **eines zählt** als echtes Extra. Bei gemischten Zuständen werden
+zuerst zustandsgleiche Exemplare zugeordnet. Wie viel herausgerechnet wurde,
+zeigt die Statistik offen unter den Kacheln.
+
+Bereinigt wird nur dort, wo Sets und Figuren in **einer** Zahl zusammenkommen:
+Gesamtwert, Wert-Widget der Sammlung bei Filter *Alle*, Aufteilung nach
+Typ/Zustand, Wert nach Erscheinungsjahr und Wertentwicklungs-Kurve. Filtert
+ihr auf **Figuren** oder **Sets**, erscheint der **volle** Wert dieser Gruppe;
+einzelne Karten und die **Top 10** zeigen immer den vollen Einzelwert. Die
+**Stückzahl** bleibt unverändert – die Figuren gehören euch ja physisch –,
+und **bezahlt/Gewinn** rechnet weiter mit dem vollen Einzelwert.
+
 **Weitere Hintergrund-Arbeiten:** fehlende Erscheinungsjahre werden
 nachgetragen, Set-Inhalte (Figuren-Inventare) für neue Sets geladen.
 CSV-Importe und manuelle Nummern (`manuell-…`, `fig-…`) ohne
