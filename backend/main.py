@@ -633,16 +633,22 @@ def stats_dashboard(user: dict = Depends(current_user)):
             by = by_year.setdefault(r["year"], {"pieces": 0, "value": 0.0})
             by["pieces"] += r["quantity"]
             by["value"] += net
-        # „bezahlt" zählt nur echte Käufe (✏️/Liste), nicht ⚙️-Schätzungen
-        # und nicht Figuren, die mit einem Set gekommen sind.
-        if r["paid_price"] is not None and r["paid_source"] == "manual":
+        # „bezahlt": alles zählt – auch ⚙️ geschätzte Preise, denn bezahlt
+        # wurde ja irgendwann etwas. Ausnahme: Figuren, die in einem eigenen
+        # Set stecken UND deren Preis nur automatisch ermittelt wurde – die
+        # deckt der Set-Preis bereits ab. Selbst eingetragene (✏️) Preise
+        # zählen immer, auch bei Set-Figuren (separat dazugekauft).
+        skip_paid = (r["item_type"] == "minifig"
+                     and in_sets > 0
+                     and (r["paid_source"] or "auto") != "manual")
+        if r["paid_price"] is not None and not skip_paid:
             paid_sum += r["paid_price"]
             value_of_paid_items += value
             winners.append({"item_id": r["item_id"], "name": r["name"],
                             "img_url": r["img_url"],
                             "item_type": r["item_type"],
                             "gain": round(value - r["paid_price"], 2)})
-        elif r["paid_price"] is not None and r["paid_source"] == "auto":
+        elif r["paid_price"] is not None:
             paid_estimated += r["paid_price"]
         if value > 0:
             top.append({"item_id": r["item_id"], "name": r["name"],

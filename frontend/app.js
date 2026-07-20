@@ -2376,10 +2376,10 @@ function renderStats(data) {
       <div class="stat-chip"><strong class="${profitCls}">${t.profit >= 0 ? "+" : "−"}${fmtEur(Math.abs(t.profit))}</strong><span>Gewinn</span></div>` : ""}
     </div>
     ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">
-      „Bezahlt" zählt nur wirklich gezahlte Preise (✏️ selbst eingetragen oder
-      über eine Einkaufsliste). Zusätzlich sind ${fmtEur(t.paid_estimated)}
-      als ⚙️ automatisch geschätzte Kaufpreise erfasst – die zählen hier
-      nicht mit.</div>` : ""}
+      Bei Figuren, die in euren Sets stecken, zählt ein nur ⚙️ automatisch
+      ermittelter Kaufpreis nicht extra – der Set-Preis deckt sie ab
+      (${fmtEur(t.paid_estimated)}). ✏️ Selbst eingetragene Preise zählen
+      immer mit, auch bei Set-Figuren.</div>` : ""}
     ${t.in_sets_value > 0 ? `<div class="price-note" style="margin-top:6px">
       Figuren, die in euren Sets stecken, sind im Set-Preis enthalten und
       werden nicht doppelt gezählt (${fmtEur(t.in_sets_value)}).
