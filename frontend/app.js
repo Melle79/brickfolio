@@ -745,6 +745,13 @@ function profitLine(it) {
   return s;
 }
 
+const TRASH_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" `
+  + `fill="none" stroke="currentColor" stroke-width="2.4" `
+  + `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">`
+  + `<path d="M4 7h16"/><path d="M10 4h4a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1z"/>`
+  + `<path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>`
+  + `<path d="M10 11v6M14 11v6"/></svg>`;
+
 function collSubText(it) {
   let s = `${it.item_id}`
     + `${it.year > 0 ? " · " + it.year : ""}`
@@ -1131,7 +1138,7 @@ function renderCollection() {
           ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
         <div class="qty">
-          <button data-qty="-1" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? "🗑" : "−"}</button>
+          <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
           <span data-qty-val>${it.quantity}</span>
           <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
         </div>
@@ -1140,7 +1147,7 @@ function renderCollection() {
         <div class="qty-edit">
           <span class="qty-edit-label">Anzahl</span>
           <div class="qty">
-            <button data-qty="-1" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? "🗑" : "−"}</button>
+            <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
             <span data-qty-val>${it.quantity}</span>
             <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
           </div>
@@ -1276,7 +1283,8 @@ function renderCollection() {
           });
           // Minus-Knopf wird zum Papierkorb, sobald nur noch eines übrig ist
           card.querySelectorAll('[data-qty="-1"]').forEach((b) => {
-            b.textContent = newQty <= 1 ? "🗑" : "−";
+            b.innerHTML = newQty <= 1 ? TRASH_SVG : "−";
+            b.classList.toggle("qty-del", newQty <= 1);
             b.setAttribute("aria-label", newQty <= 1
               ? "Aus der Sammlung löschen" : "Anzahl verringern");
           });

@@ -654,3 +654,10 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .setfigs-row .fig-img { width: 46px; height: 46px; flex: none; }
 .setfigs-row span { min-width: 0; }
 .setfigs-all { margin-bottom: 8px; }
+
+/* Mengen-Stepper: letztes Exemplar = Löschen (rot, eigenes Symbol) */
+.qty button.qty-del {
+  background: #fff; border-color: var(--red); color: var(--red);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.qty button.qty-del:active { background: var(--red); color: #fff; }
