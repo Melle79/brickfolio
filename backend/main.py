@@ -1660,6 +1660,44 @@ def get_set_figs(set_no: str, user: dict = Depends(current_user)):
         raise HTTPException(502, "BrickLink nicht erreichbar")
 
 
+@app.get("/api/set_figs_owned/{set_no}")
+def set_figs_owned(set_no: str, user: dict = Depends(current_user)):
+    """Welche Figuren dieses Sets sind in der Sammlung – und wie viele
+    Exemplare gehören rechnerisch zu diesem Set?
+
+    Arbeitet rein lokal auf set_contents (kein BrickLink-Abruf), damit die
+    Rückfrage beim Löschen auch ohne API-Schlüssel funktioniert.
+    """
+    with core.db() as conn:
+        srow = conn.execute(
+            "SELECT quantity, condition FROM collection "
+            "WHERE item_type = 'set' AND item_id = ?", (set_no,)).fetchone()
+        set_qty = srow["quantity"] if srow else 1
+        set_cond = srow["condition"] if srow else "used"
+        contents = conn.execute(
+            "SELECT fig_no, qty FROM set_contents WHERE set_no = ?",
+            (set_no,)).fetchall()
+        out = []
+        for c in contents:
+            need = (c["qty"] or 1) * max(1, set_qty)
+            rows = conn.execute(
+                "SELECT id, item_id, name, img_url, condition, quantity "
+                "FROM collection WHERE item_type = 'minifig' AND item_id = ?",
+                (c["fig_no"],)).fetchall()
+            # zuerst zustandsgleiche Zeilen abbauen
+            for r in sorted(rows, key=lambda x: 0
+                            if x["condition"] == set_cond else 1):
+                if need <= 0:
+                    break
+                take = min(r["quantity"], need)
+                need -= take
+                out.append({"id": r["id"], "item_id": r["item_id"],
+                            "name": r["name"], "img_url": r["img_url"],
+                            "condition": r["condition"],
+                            "quantity": r["quantity"], "remove": take})
+    return {"items": out}
+
+
 @app.get("/api/duplicates")
 def get_duplicates(user: dict = Depends(dealer_user)):
     """Alles mit Menge > 1: pro Eintrag bleibt eins, der Rest ist abgebbar."""

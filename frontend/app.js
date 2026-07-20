@@ -487,6 +487,81 @@ async function askSetFigures(item, condition) {
   });
 }
 
+// Beim Löschen eines Sets: enthaltene Figuren mit entfernen?
+async function askRemoveSetFigures(item) {
+  if ((item.item_type || "") !== "set") return 0;
+  const overlay = $("setfigs-overlay");
+  const body = $("setfigs-body");
+  if (!overlay || !body) return 0;
+  let figs = [];
+  try {
+    const data = await api(
+      `/set_figs_owned/${encodeURIComponent(item.item_id)}`);
+    figs = data.items || [];
+  } catch (_) {
+    return 0;
+  }
+  if (!figs.length) return 0;
+  body.innerHTML = `
+    <p class="search-hint">Zu „${esc(item.name)}" sind
+      <b>${figs.length} Figur${figs.length === 1 ? "" : "en"}</b> in eurer
+      Sammlung. Sollen sie mit entfernt werden?</p>
+    <button class="mini-btn setfigs-all" id="setfigs-toggle">Alle ab-/anwählen</button>
+    <div class="setfigs-list">
+      ${figs.map((f, i) => `
+        <label class="setfigs-row">
+          <input type="checkbox" data-fig="${i}" checked>
+          <img class="card-img fig-img" src="${imgSrc(f.img_url)}" alt="" loading="lazy">
+          <span><strong>${esc(f.name)}</strong><br>
+            <span class="sub">${esc(f.item_id)} ·
+              ${f.condition === "new" ? "Neu" : "Gebraucht"} ·
+              ${f.remove}× entfernen${f.quantity > f.remove
+                ? ` (von ${f.quantity}, ${f.quantity - f.remove} bleiben)`
+                : ""}</span>
+          </span>
+        </label>`).join("")}
+    </div>
+    <div class="btn-grid">
+      <button class="btn btn-outline" id="setfigs-none">Figuren behalten</button>
+      <button class="btn btn-primary" id="setfigs-ok">Mit entfernen</button>
+    </div>`;
+  overlay.hidden = false;
+
+  return new Promise((resolve) => {
+    const finish = (n) => { overlay.hidden = true; resolve(n); };
+    $("btn-setfigs-close").onclick = () => finish(0);
+    $("setfigs-none").onclick = () => finish(0);
+    $("setfigs-toggle").onclick = () => {
+      const boxes = [...body.querySelectorAll("[data-fig]")];
+      const anyOff = boxes.some((b) => !b.checked);
+      boxes.forEach((b) => { b.checked = anyOff; });
+    };
+    $("setfigs-ok").onclick = async (ev) => {
+      const btn = ev.currentTarget;
+      const chosen = [...body.querySelectorAll("[data-fig]")]
+        .filter((b) => b.checked).map((b) => figs[Number(b.dataset.fig)]);
+      if (!chosen.length) return finish(0);
+      btn.disabled = true;
+      btn.textContent = "Entferne …";
+      let done = 0;
+      for (const f of chosen) {
+        const rest = f.quantity - f.remove;
+        try {
+          if (rest > 0) {
+            await api("/collection/" + f.id, { method: "PATCH",
+              body: { quantity: rest } });
+          } else {
+            await api("/collection/" + f.id, { method: "DELETE" });
+          }
+          done += 1;
+        } catch (_) { /* einzelne Fehler überspringen */ }
+      }
+      toast(`${done} Figur${done === 1 ? "" : "en"} mit entfernt 🗑`);
+      finish(done);
+    };
+  });
+}
+
 async function loadSetFigs(card, item, btn) {
   const out = card.querySelector("[data-figs-out]");
   if (out.dataset.loaded) {
@@ -1293,6 +1368,8 @@ function renderCollection() {
     card.querySelector("[data-delete]").addEventListener("click", async () => {
       if (!confirm(`"${item.name}" wirklich löschen?`)) return;
       try {
+        // Erst fragen (solange das Set noch da ist), dann löschen
+        await askRemoveSetFigures(item);
         await api("/collection/" + id, { method: "DELETE" });
         loadCollection();
       } catch (e) { toast(e.message); }

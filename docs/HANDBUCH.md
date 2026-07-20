@@ -608,6 +608,12 @@ die Frage. Der Zustand ist mit dem des Sets vorbelegt und umstellbar; Figuren,
 die mehrfach im Set stecken, werden auch mehrfach erfasst. Ohne
 BrickLink-Schlüssel oder bei Sets ohne Minifiguren erscheint die Frage nicht.
 
+**Beim Löschen genauso.** Wird ein Set aus der Sammlung entfernt, fragt die
+App, ob die dazugehörigen Figuren mitgehen sollen. Vorgeschlagen wird genau
+die Menge, die rechnerisch zu diesem Set gehört: Besitzt ihr eine Figur
+dreimal und steckten zwei im Set, wird auf **eine** reduziert statt alles zu
+löschen. „Figuren behalten" entfernt nur das Set.
+
 **So entsteht der Gesamtwert – und warum Set-Figuren nur einmal zählen.**
 Der Wert eines Eintrags ist *Ø-Preis × Menge*, passend zum eingetragenen
 Zustand. Ein **Set-Preis** gilt bei BrickLink allerdings für das *komplette*
