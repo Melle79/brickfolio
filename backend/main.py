@@ -168,6 +168,7 @@ class AddItemBody(BaseModel):
     condition: str = Field(default="used", pattern="^(new|used)$")
     notes: str = Field(default="", max_length=1000)
     paid_price: float | None = Field(default=None, ge=0)
+    paid_source: str | None = Field(default=None, pattern="^(manual|set)$")
 
 
 class UpdateItemBody(BaseModel):
@@ -595,8 +596,8 @@ def stats_dashboard(user: dict = Depends(current_user)):
     with core.db() as conn:
         items = conn.execute(
             "SELECT id, item_id, item_type, name, img_url, quantity, "
-            "condition, year, price_new, price_used, paid_price "
-            "FROM collection").fetchall()
+            "condition, year, price_new, price_used, paid_price, "
+            "paid_source FROM collection").fetchall()
         hist = conn.execute(
             "SELECT item_id, item_type, ts, price_new, price_used "
             "FROM price_history ORDER BY ts").fetchall()
@@ -612,6 +613,7 @@ def stats_dashboard(user: dict = Depends(current_user)):
     by_cond: dict = {}
     by_year: dict = {}
     bound_value = 0.0
+    paid_estimated = 0.0
     for r in items:
         unit = _unit_price(r["condition"], r["price_new"], r["price_used"])
         value = round((unit or 0) * r["quantity"], 2)
@@ -631,13 +633,17 @@ def stats_dashboard(user: dict = Depends(current_user)):
             by = by_year.setdefault(r["year"], {"pieces": 0, "value": 0.0})
             by["pieces"] += r["quantity"]
             by["value"] += net
-        if r["paid_price"] is not None:
+        # „bezahlt" zählt nur echte Käufe (✏️/Liste), nicht ⚙️-Schätzungen
+        # und nicht Figuren, die mit einem Set gekommen sind.
+        if r["paid_price"] is not None and r["paid_source"] == "manual":
             paid_sum += r["paid_price"]
             value_of_paid_items += value
             winners.append({"item_id": r["item_id"], "name": r["name"],
                             "img_url": r["img_url"],
                             "item_type": r["item_type"],
                             "gain": round(value - r["paid_price"], 2)})
+        elif r["paid_price"] is not None and r["paid_source"] == "auto":
+            paid_estimated += r["paid_price"]
         if value > 0:
             top.append({"item_id": r["item_id"], "name": r["name"],
                         "img_url": r["img_url"], "item_type": r["item_type"],
@@ -676,6 +682,7 @@ def stats_dashboard(user: dict = Depends(current_user)):
                        "unique": len(items),
                        "value": round(total_value, 2),
                        "in_sets_value": round(bound_value, 2),
+                       "paid_estimated": round(paid_estimated, 2),
                        "avg_piece": round(total_value / pieces, 2)
                        if pieces else 0,
                        "paid": round(paid_sum, 2),
@@ -1316,7 +1323,7 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
         if row:
             conn.execute("UPDATE collection SET quantity = quantity + ? WHERE id = ?",
                          (body.quantity, row["id"]))
-            if row["paid_price"] is not None:
+            if row["paid_price"] is not None and body.paid_source != "set":
                 unit = _unit_price(row["condition"], row["price_new"],
                                    row["price_used"])
                 if unit:
@@ -1334,7 +1341,8 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
             (body.item_id, body.item_type, body.name, body.img_url,
              body.bricklink_url, body.quantity, body.condition, body.notes,
              body.year or None, body.paid_price,
-             "manual" if body.paid_price is not None else None,
+             ((body.paid_source or "manual")
+              if body.paid_price is not None else None),
              int(time.time()) if body.paid_price is not None else None,
              user["id"], int(time.time())),
         )

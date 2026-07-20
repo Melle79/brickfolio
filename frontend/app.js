@@ -477,6 +477,8 @@ async function askSetFigures(item, condition) {
             item_id: f.item_id, item_type: "minifig", name: f.name,
             img_url: f.img_url, bricklink_url: f.bricklink_url,
             condition: c, quantity: f.qty || 1,
+            // kam mit dem Set: kein eigener Kaufpreis, keine ⚙️-Schätzung
+            paid_price: 0, paid_source: "set",
           }});
           done += 1;
         } catch (_) { /* einzelne Fehler überspringen */ }
@@ -2373,6 +2375,11 @@ function renderStats(data) {
       <div class="stat-chip"><strong>${fmtEur(t.paid)}</strong><span>bezahlt</span></div>
       <div class="stat-chip"><strong class="${profitCls}">${t.profit >= 0 ? "+" : "−"}${fmtEur(Math.abs(t.profit))}</strong><span>Gewinn</span></div>` : ""}
     </div>
+    ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">
+      „Bezahlt" zählt nur wirklich gezahlte Preise (✏️ selbst eingetragen oder
+      über eine Einkaufsliste). Zusätzlich sind ${fmtEur(t.paid_estimated)}
+      als ⚙️ automatisch geschätzte Kaufpreise erfasst – die zählen hier
+      nicht mit.</div>` : ""}
     ${t.in_sets_value > 0 ? `<div class="price-note" style="margin-top:6px">
       Figuren, die in euren Sets stecken, sind im Set-Preis enthalten und
       werden nicht doppelt gezählt (${fmtEur(t.in_sets_value)}).
