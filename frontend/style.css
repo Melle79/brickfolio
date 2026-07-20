@@ -642,3 +642,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   min-height: 1.2em; text-align: center;
 }
 .year-detail b { color: var(--ink); }
+
+/* Dialog: Figuren zum Set übernehmen */
+.setfigs-cond { margin: 4px 0 10px; }
+.setfigs-list { max-height: 46vh; overflow-y: auto; margin-bottom: 12px; }
+.setfigs-row {
+  display: flex; gap: 10px; align-items: center;
+  padding: 6px 2px; border-bottom: 1px dashed var(--line);
+}
+.setfigs-row input[type="checkbox"] { width: 22px; height: 22px; flex: none; }
+.setfigs-row .fig-img { width: 46px; height: 46px; flex: none; }
+.setfigs-row span { min-width: 0; }
+.setfigs-all { margin-bottom: 8px; }

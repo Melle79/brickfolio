@@ -250,6 +250,7 @@ function renderWanted(items) {
             toast(res.merged
               ? "In der Sammlung: Anzahl erhöht ✔"
               : `In die Sammlung übernommen ✔ (${b.dataset.buyCond === "new" ? "Neu" : "Gebraucht"})`);
+            await askSetFigures(item, b.dataset.buyCond);
             loadWanted();
           } catch (e) {
             toast(e.message);
@@ -407,6 +408,83 @@ function priceGuideUrl(it) {
   if (/^(fig-|manuell-)/.test(it.item_id)) return "";
   const prefix = BL_URL_PREFIX[it.item_type] || "M";
   return `https://www.bricklink.com/v2/catalog/catalogitem.page?${prefix}=${encodeURIComponent(it.item_id)}#T=P`;
+}
+
+// Nach dem Hinzufügen eines Sets: enthaltene Figuren mit übernehmen?
+async function askSetFigures(item, condition) {
+  if ((item.item_type || "") !== "set") return 0;
+  const overlay = $("setfigs-overlay");
+  const body = $("setfigs-body");
+  if (!overlay || !body) return 0;
+  let figs = [];
+  try {
+    const data = await api(`/set_figs/${encodeURIComponent(item.item_id)}`);
+    figs = data.items || [];
+  } catch (_) {
+    return 0;   // keine BrickLink-Schlüssel oder Set unbekannt: still überspringen
+  }
+  if (!figs.length) return 0;
+  const cond = condition === "new" ? "new" : "used";
+  body.innerHTML = `
+    <p class="search-hint">„${esc(item.name)}" enthält laut BrickLink
+      <b>${figs.length} Minifigur${figs.length === 1 ? "" : "en"}</b>.
+      Welche davon sind dabei?</p>
+    <div class="setfigs-cond">
+      <label for="setfigs-cond">Zustand der Figuren</label>
+      <select id="setfigs-cond">
+        <option value="used"${cond === "used" ? " selected" : ""}>Gebraucht</option>
+        <option value="new"${cond === "new" ? " selected" : ""}>Neu</option>
+      </select>
+    </div>
+    <button class="mini-btn setfigs-all" id="setfigs-toggle">Alle ab-/anwählen</button>
+    <div class="setfigs-list">
+      ${figs.map((f, i) => `
+        <label class="setfigs-row">
+          <input type="checkbox" data-fig="${i}" checked>
+          <img class="card-img fig-img" src="${imgSrc(f.img_url)}" alt="" loading="lazy">
+          <span><strong>${esc(f.name)}</strong><br>
+            <span class="sub">${esc(f.item_id)}${f.qty > 1 ? ` · ${f.qty}× im Set` : ""}</span>
+          </span>
+        </label>`).join("")}
+    </div>
+    <div class="btn-grid">
+      <button class="btn btn-outline" id="setfigs-none">Keine übernehmen</button>
+      <button class="btn btn-primary" id="setfigs-ok">Übernehmen</button>
+    </div>`;
+  overlay.hidden = false;
+
+  return new Promise((resolve) => {
+    const finish = (n) => { overlay.hidden = true; resolve(n); };
+    $("btn-setfigs-close").onclick = () => finish(0);
+    $("setfigs-none").onclick = () => finish(0);
+    $("setfigs-toggle").onclick = () => {
+      const boxes = [...body.querySelectorAll("[data-fig]")];
+      const anyOff = boxes.some((b) => !b.checked);
+      boxes.forEach((b) => { b.checked = anyOff; });
+    };
+    $("setfigs-ok").onclick = async (ev) => {
+      const btn = ev.currentTarget;
+      const chosen = [...body.querySelectorAll("[data-fig]")]
+        .filter((b) => b.checked).map((b) => figs[Number(b.dataset.fig)]);
+      if (!chosen.length) return finish(0);
+      const c = $("setfigs-cond").value;
+      btn.disabled = true;
+      btn.textContent = "Übernehme …";
+      let done = 0;
+      for (const f of chosen) {
+        try {
+          await api("/collection", { method: "POST", body: {
+            item_id: f.item_id, item_type: "minifig", name: f.name,
+            img_url: f.img_url, bricklink_url: f.bricklink_url,
+            condition: c, quantity: f.qty || 1,
+          }});
+          done += 1;
+        } catch (_) { /* einzelne Fehler überspringen */ }
+      }
+      toast(`${done} Figur${done === 1 ? "" : "en"} zum Set übernommen 👥`);
+      finish(done);
+    };
+  });
 }
 
 async function loadSetFigs(card, item, btn) {
@@ -913,6 +991,7 @@ function renderScanResults(items) {
               ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
               : `Zur Sammlung hinzugefügt ✔ (${b.dataset.c === "new" ? "Neu" : "Gebraucht"})`);
             row.remove();
+            await askSetFigures(it, b.dataset.c);
             actions.hidden = false;
           } catch (e) {
             toast(e.message);
@@ -1537,6 +1616,8 @@ async function addManual() {
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
     $("manual-form").hidden = true;
+    await askSetFigures({ item_id: itemId, item_type: type, name },
+                        $("m-cond").value);
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;
@@ -1930,6 +2011,9 @@ function renderLists(lists) {
                    : (res.merged
                       ? "Anzahl erhöht, Einkaufspreis gemittelt ✔"
                       : "In die Sammlung übernommen ✔")));
+              if (listItem) {
+                await askSetFigures(listItem, b.dataset.rc);
+              }
               loadLists();
               updateListsTab();
               return res;

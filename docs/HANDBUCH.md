@@ -600,6 +600,14 @@ So ist jederzeit nachvollziehbar, wann welche Preise aufgezeichnet wurden.
 ersten Preisabruf den Tages-Ø als ⚙️-Wert (siehe 5.4). Manuell gesetzte
 Preise bleiben immer unangetastet.
 
+**Figuren beim Set übernehmen.** Wandert ein **Set** in die Sammlung – per
+Foto, Suche, Wunschliste, Einkaufsliste oder manuell –, fragt die App
+anschließend, welche der enthaltenen Minifiguren dabei sind. Alle sind
+vorausgewählt, einzelne lassen sich abwählen, „Keine übernehmen" überspringt
+die Frage. Der Zustand ist mit dem des Sets vorbelegt und umstellbar; Figuren,
+die mehrfach im Set stecken, werden auch mehrfach erfasst. Ohne
+BrickLink-Schlüssel oder bei Sets ohne Minifiguren erscheint die Frage nicht.
+
 **So entsteht der Gesamtwert – und warum Set-Figuren nur einmal zählen.**
 Der Wert eines Eintrags ist *Ø-Preis × Menge*, passend zum eingetragenen
 Zustand. Ein **Set-Preis** gilt bei BrickLink allerdings für das *komplette*
