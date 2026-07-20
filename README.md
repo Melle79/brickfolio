@@ -25,6 +25,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
   als Set *und* Figur nachgeschlagen
 - 📦 Mengen, Zustand (neu/gebraucht), Notizen, Bildergalerie, Volltextsuche,
   Sortierung und Typ-Filter
+- 👥 **Figuren beim Set übernehmen**: Beim Hinzufügen eines Sets fragt die App,
+  welche der enthaltenen Minifiguren dabei sind (alle, keine oder eine Auswahl,
+  inklusive Zustand) – ohne den Gesamtwert doppelt zu zählen
 - 👥 Set-Vernetzung: Sets kennen ihre Figuren („👥 3/4 ✔"-Vollständigkeit),
   Figuren zeigen, in welchen euren Sets sie stecken; fehlende Set-Figuren
   landen mit einem Tipp gesammelt auf der Wunschliste

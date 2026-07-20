@@ -1,6 +1,6 @@
 # Finn's Brickfolio – Das Handbuch
 
-*Version 1.6 · Juli 2026 · für Brickfolio ab Release v1.6.8*
+*Version 1.6 · Juli 2026 · für Brickfolio ab Release v1.6.9*
 
 Brickfolio ist eine selbstgehostete Progressive Web App (PWA) zum Scannen,
 Verwalten und Bewerten einer LEGO®-Sammlung. Dieses Handbuch erklärt jede

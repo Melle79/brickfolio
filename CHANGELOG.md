@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.9 – Juli 2026
+
+### Neu
+- 👥 **Figuren beim Set übernehmen**: Kommt ein Set in die Sammlung (Foto, Suche, Wunschliste, Einkaufsliste oder manuell), fragt die App, welche der enthaltenen Minifiguren dabei sind – alle, keine oder eine Auswahl, mit eigener Zustandswahl
+
+### Geändert
+- 💶 **Wertberechnung ohne Doppelzählung**: In eigenen Sets steckende Figuren sind im Set-Preis schon enthalten und zählen im Gesamtwert nicht mehr doppelt. Beim Filter „Figuren" (oder „Sets") erscheint weiterhin der volle Wert dieser Gruppe; Stückzahl, Top 10 und bezahlt/Gewinn bleiben unverändert
+- ❓ Die Wertberechnung ist jetzt in der Hilfe und im Handbuch ausführlich erklärt; die Statistik weist den herausgerechneten Betrag offen aus
+
 ## 1.6.8 – Juli 2026
 
 ### Behoben

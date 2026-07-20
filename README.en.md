@@ -25,6 +25,9 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   both a set *and* a figure automatically
 - 📦 Quantities, condition (new/used), notes, image gallery, full-text search,
   sorting and type filter; optional **grid view** (two per row) for browsing
+- 👥 **Add a set's figures with it**: when a set enters the collection, the app
+  asks which of its minifigures are included (all, none or a selection, with
+  their own condition) – without double-counting them in the total value
 - 👥 Set linking: sets know their figures (“👥 3/4 ✔” completeness), figures
   show which of your sets they belong to; missing set figures move to the
   wishlist with a single tap
