@@ -1131,7 +1131,7 @@ function renderCollection() {
           ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
         <div class="qty">
-          <button data-qty="-1" aria-label="Anzahl verringern">−</button>
+          <button data-qty="-1" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? "🗑" : "−"}</button>
           <span data-qty-val>${it.quantity}</span>
           <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
         </div>
@@ -1140,7 +1140,7 @@ function renderCollection() {
         <div class="qty-edit">
           <span class="qty-edit-label">Anzahl</span>
           <div class="qty">
-            <button data-qty="-1" aria-label="Anzahl verringern">−</button>
+            <button data-qty="-1" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? "🗑" : "−"}</button>
             <span data-qty-val>${it.quantity}</span>
             <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
           </div>
@@ -1250,18 +1250,35 @@ function renderCollection() {
       });
     });
 
+    const deleteEntry = async () => {
+      if (!confirm(`"${item.name}" wirklich löschen?`)) return;
+      try {
+        // Erst fragen (solange das Set noch da ist), dann löschen
+        await askRemoveSetFigures(item);
+        await api("/collection/" + id, { method: "DELETE" });
+        loadCollection();
+      } catch (e) { toast(e.message); }
+    };
+
     card.querySelectorAll("[data-qty]").forEach((btn) => {
       btn.addEventListener("click", async (ev) => {
         ev.stopPropagation();
-        const newQty = item.quantity + Number(btn.dataset.qty);
-        if (newQty < 0) return;
-        if (newQty === 0 && !confirm(`"${item.name}" aus der Sammlung entfernen?`)) return;
+        const step = Number(btn.dataset.qty);
+        // Letztes Exemplar: derselbe Ablauf wie der Löschen-Knopf
+        if (step < 0 && item.quantity <= 1) { await deleteEntry(); return; }
+        const newQty = item.quantity + step;
+        if (newQty < 1) return;
         try {
           await api("/collection/" + id, { method: "PATCH", body: { quantity: newQty } });
-          if (newQty === 0) { loadCollection(); return; }
           item.quantity = newQty;
           card.querySelectorAll("[data-qty-val]").forEach((s) => {
             s.textContent = newQty;
+          });
+          // Minus-Knopf wird zum Papierkorb, sobald nur noch eines übrig ist
+          card.querySelectorAll('[data-qty="-1"]').forEach((b) => {
+            b.textContent = newQty <= 1 ? "🗑" : "−";
+            b.setAttribute("aria-label", newQty <= 1
+              ? "Aus der Sammlung löschen" : "Anzahl verringern");
           });
           updateStatsOnly();
         } catch (e) { toast(e.message); }
@@ -1365,15 +1382,7 @@ function renderCollection() {
       } catch (e) { toast(e.message); }
     });
 
-    card.querySelector("[data-delete]").addEventListener("click", async () => {
-      if (!confirm(`"${item.name}" wirklich löschen?`)) return;
-      try {
-        // Erst fragen (solange das Set noch da ist), dann löschen
-        await askRemoveSetFigures(item);
-        await api("/collection/" + id, { method: "DELETE" });
-        loadCollection();
-      } catch (e) { toast(e.message); }
-    });
+    card.querySelector("[data-delete]").addEventListener("click", deleteEntry);
 
     const priceBtn = card.querySelector("[data-price]");
     if (priceBtn) {

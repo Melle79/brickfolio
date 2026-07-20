@@ -608,6 +608,11 @@ die Frage. Der Zustand ist mit dem des Sets vorbelegt und umstellbar; Figuren,
 die mehrfach im Set stecken, werden auch mehrfach erfasst. Ohne
 BrickLink-Schlüssel oder bei Sets ohne Minifiguren erscheint die Frage nicht.
 
+**Papierkorb statt Minus.** Ist von einem Artikel nur noch **ein** Exemplar
+vorhanden, zeigt der Mengenknopf ein 🗑 statt des −. Ein Tipp darauf löscht
+den Eintrag – mit derselben Sicherheitsabfrage wie der Löschen-Knopf und,
+bei Sets, samt Figuren-Frage.
+
 **Beim Löschen genauso.** Wird ein Set aus der Sammlung entfernt, fragt die
 App, ob die dazugehörigen Figuren mitgehen sollen. Vorgeschlagen wird genau
 die Menge, die rechnerisch zu diesem Set gehört: Besitzt ihr eine Figur
