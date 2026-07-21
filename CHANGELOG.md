@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.10 – Juli 2026
+
+### Sonstiges
+- ✅ **Automatisierte Tests** für die fehleranfälligsten Bereiche (Ø-Preis-Fallback, Doppelzählung von Set-Figuren, anteilige Angebotsverteilung, Verbuchen/Rückgängig von Einkaufslisten) samt **CI**, die bei jedem Push und Pull Request läuft
+- 🧹 Aufräumarbeiten im Backend (doppelte Setup-/Me-Routen entfernt, Rechenkern der Angebotsverteilung in eine testbare Funktion gelöst) – keine Änderung am Verhalten
+
 ## 1.6.9 – Juli 2026
 
 ### Neu
