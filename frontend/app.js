@@ -821,7 +821,7 @@ function showTab(name) {
   });
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
-  if (name === "collection") loadCollection();
+  if (name === "collection") loadCollection(true);
   if (name === "wanted") loadWanted();
   if (name === "lists") loadLists();
   if (name === "stats") loadStats();
@@ -1088,10 +1088,23 @@ function renderScanResults(items) {
 }
 
 /* ---------------------------------------------------------------- Sammlung */
-async function loadCollection() {
+async function loadCollection(showSpinner = false) {
   const q = $("search").value;
   const sort = $("sort").value;
   const typeFilter = $("type-filter").value;
+  const list = $("collection-list");
+  // Beim Öffnen des Tabs sofort eine Lade-Anzeige zeigen, damit die Sekunde
+  // bis zum fertigen Aufbau nicht wie ein Hänger wirkt.
+  if (showSpinner) {
+    $("collection-empty").hidden = true;
+    list.setAttribute("aria-busy", "true");
+    list.innerHTML = '<div class="list-loading">'
+      + '<div class="spinner" role="status" aria-label="Sammlung wird geladen"></div>'
+      + '<span>Sammlung wird geladen …</span></div>';
+    // Dem Browser eine Bildaufbau-Runde geben, damit der Spinner sichtbar ist,
+    // bevor der (bei großer Sammlung rechenintensive) Aufbau beginnt.
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
   try {
     const data = await api("/collection?q=" + encodeURIComponent(q)
       + "&sort=" + encodeURIComponent(sort)
@@ -1107,6 +1120,8 @@ async function loadCollection() {
     renderCollection();
   } catch (e) {
     toast(e.message);
+  } finally {
+    list.removeAttribute("aria-busy");
   }
 }
 

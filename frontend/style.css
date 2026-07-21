@@ -99,6 +99,22 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .error { color: var(--red); font-size: 14px; margin-top: 12px; }
 .empty { text-align: center; color: var(--muted); margin-top: 48px; line-height: 1.6; }
 
+/* ---------- Lade-Anzeige (Sammlung) ---------- */
+.list-loading {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; padding: 56px 0; color: var(--muted); font-weight: 700;
+}
+.spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 4px solid var(--line);
+  border-top-color: var(--yellow-dark);
+  /* GPU-Animation: dreht sich weiter, auch wenn der Haupt-Thread kurz baut */
+  animation: bf-spin .8s linear infinite;
+  will-change: transform;
+}
+@keyframes bf-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }
+
 /* ---------- Scan ---------- */
 .scan-hero { margin-top: 12px; }
 .brick-button {

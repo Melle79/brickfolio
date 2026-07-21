@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.12 – Juli 2026
+
+### Verbessert
+- ⏳ **Lade-Anzeige in der Sammlung**: Beim Öffnen des Sammlung-Tabs erscheint sofort ein Spinner „Sammlung wird geladen …", bis die Liste aufgebaut ist – kein irritierender Moment mehr, in dem die Ansicht wie eingefroren wirkt. Die Suchleiste ist dabei bereits nutzbar
+
 ## 1.6.11 – Juli 2026
 
 ### Behoben
