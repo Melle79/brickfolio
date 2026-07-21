@@ -41,6 +41,8 @@ kommen von [BrickLink](https://www.bricklink.com) und
 **Wunschliste**
 - ⭐ Merken aus jedem Scan/Suchergebnis, Ø-Preis-Widgets, „Gekauft"-Übernahme
   in die Sammlung inkl. Zustandswahl
+- 🧩 Figuren, die zu einem eurer Sets gehören und noch fehlen, sind mit „fehlt
+  zu eurem Set" gekennzeichnet – ein Tipp springt direkt zum Set
 
 **Sammlerprofi-Modus** (Rolle, die der Admin pro Benutzer vergibt)
 - 💰 Kaufpreis je Eintrag – automatisch mit dem BrickLink-Ø vom Erfassungstag

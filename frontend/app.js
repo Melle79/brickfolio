@@ -141,6 +141,7 @@ function renderWanted(items) {
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
           ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in eurer Sammlung</span>` : ""}
+          ${it.in_sets && !it.owned ? `<div class="sub in-sets">🧩 fehlt zu eurem Set: ${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
       </div>
       ${needsBlNo && state.bricklinkLookup ? `
@@ -161,6 +162,25 @@ function renderWanted(items) {
   list.querySelectorAll(".card").forEach((card) => {
     const wid = Number(card.dataset.wid);
     const item = items.find((i) => i.id === wid);
+
+    card.querySelectorAll("[data-jump-set]").forEach((b) => {
+      b.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        jumpToSet(b.dataset.jumpSet);
+      });
+    });
+    const moreBtn = card.querySelector("[data-more-sets]");
+    if (moreBtn) {
+      moreBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const span = card.querySelector(".more-sets");
+        span.hidden = !span.hidden;
+        moreBtn.textContent = span.hidden
+          ? `+${span.querySelectorAll(".set-link").length} weitere ▾`
+          : "weniger ▴";
+      });
+    }
+
     const wfixBtn = card.querySelector("[data-wfix-btn]");
     if (wfixBtn) {
       wfixBtn.addEventListener("click", async () => {

@@ -1423,7 +1423,11 @@ def get_wanted(user: dict = Depends(current_user)):
         rows = conn.execute(
             "SELECT w.*, u.username AS added_by_name, "
             "(SELECT c.quantity FROM collection c WHERE c.item_id = w.item_id "
-            "AND c.item_type = w.item_type) AS owned "
+            "AND c.item_type = w.item_type) AS owned, "
+            "(SELECT GROUP_CONCAT(c2.item_id || '|' || c2.name || '|' || sc.qty, ';;') "
+            " FROM set_contents sc JOIN collection c2 "
+            " ON c2.item_type = 'set' AND c2.item_id = sc.set_no "
+            " WHERE sc.fig_no = w.item_id AND w.item_type = 'minifig') AS in_sets "
             "FROM wanted w "
             "LEFT JOIN users u ON u.id = w.added_by "
             "ORDER BY w.added_at DESC").fetchall()

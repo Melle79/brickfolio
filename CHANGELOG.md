@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.16 – Juli 2026
+
+### Neu
+- 🧩 **Wunschliste zeigt fehlende Set-Figuren**: Steht eine Figur auf der Wunschliste, die zu einem Set in eurer Sammlung gehört und die ihr noch nicht habt, wird sie mit „fehlt zu eurem Set" gekennzeichnet – ein Tipp auf das Set springt direkt dorthin
+
 ## 1.6.15 – Juli 2026
 
 ### Behoben

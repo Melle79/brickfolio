@@ -41,6 +41,8 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 **Wishlist**
 - ⭐ Save from any scan/search result, average-price widgets, “bought” hand-off
   into the collection incl. condition choice
+- 🧩 Figures that belong to one of your sets and are still missing are flagged
+  with “missing from your set” – a tap jumps straight to the set
 
 **Collector-Pro mode** (a role the admin grants per user)
 - 💰 Purchase price per entry – pre-filled with the BrickLink average of the
