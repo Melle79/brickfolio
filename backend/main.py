@@ -1950,6 +1950,31 @@ class OfferBody(BaseModel):
     total: float = Field(ge=0)
 
 
+def _distribute_offer_shares(total: float, values: list) -> list:
+    """Verteilt `total` anteilig nach Marktwert auf die Artikel.
+
+    `values` ist der Marktwert je Artikel (Ø-Preis × Menge) in Reihenfolge.
+    Artikel ohne Wert (<= 0) bekommen als Gewicht den Ø der bewerteten
+    Artikel; sind alle ohne Wert, wird gleichmäßig verteilt. Der
+    Rundungsrest landet beim letzten Artikel, sodass die Summe exakt
+    `total` ergibt. Gibt die Anteile in derselben Reihenfolge zurück.
+    """
+    priced = [v for v in values if v > 0]
+    fallback = (sum(priced) / len(priced)) if priced else 1.0
+    weights = [(v if v > 0 else fallback) for v in values]
+    total_w = sum(weights) or 1.0
+    shares = []
+    assigned = 0.0
+    for i, w in enumerate(weights):
+        if i == len(values) - 1:         # Rundungsrest am letzten Artikel
+            share = round(total - assigned, 2)
+        else:
+            share = round(total * w / total_w, 2)
+            assigned = round(assigned + share, 2)
+        shares.append(share)
+    return shares
+
+
 @app.post("/api/lists/{list_id}/offer")
 def distribute_offer(list_id: int, body: OfferBody,
                      user: dict = Depends(dealer_user)):
@@ -1969,23 +1994,11 @@ def distribute_offer(list_id: int, body: OfferBody,
             raise HTTPException(400, "Keine offenen Artikel in der Liste")
 
         # Gewicht = Marktwert passend zum Zustand; ohne Preis: Ø der übrigen
-        raw = [((_unit_price(r["condition"], r["price_new"],
-                             r["price_used"]) or 0) * r["qty"], r)
-               for r in items]
-        priced = [v for v, _ in raw if v > 0]
-        fallback = (sum(priced) / len(priced)) if priced else 1.0
-        weights = [(v if v > 0 else fallback) for v, _ in raw]
-        total_w = sum(weights) or 1.0
-
-        shares = []
-        assigned = 0.0
-        for i, (w, (_, r)) in enumerate(zip(weights, raw)):
-            if i == len(items) - 1:      # Rundungsrest am letzten Artikel
-                share = round(body.total - assigned, 2)
-            else:
-                share = round(body.total * w / total_w, 2)
-                assigned = round(assigned + share, 2)
-            shares.append((share, r["id"]))
+        values = [(_unit_price(r["condition"], r["price_new"],
+                               r["price_used"]) or 0) * r["qty"]
+                  for r in items]
+        share_vals = _distribute_offer_shares(body.total, values)
+        shares = list(zip(share_vals, [r["id"] for r in items]))
         for share, iid in shares:
             conn.execute("UPDATE shopping_items SET paid_price = ? "
                          "WHERE id = ?", (share, iid))
