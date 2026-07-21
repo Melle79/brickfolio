@@ -1,0 +1,4 @@
+# Zusätzliche Pakete nur für Tests (siehe tests/README.md)
+-r requirements.txt
+pytest
+httpx

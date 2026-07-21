@@ -9,12 +9,17 @@ Abgedeckt:
 - `test_unit_price.py` – `_unit_price`: Ø-Stückpreis je Zustand inkl. Fallback
 - `test_set_bound_map.py` – `_set_bound_map`: wie viele Figuren-Exemplare in
   eigenen Sets stecken (Grundlage der Doppelzählungs-Vermeidung)
+- `test_offer_shares.py` – `_distribute_offer_shares`: Gesamtangebot anteilig
+  nach Marktwert verteilen (Rundungsrest, Ø-Fallback)
+- `test_receive_integration.py` – Integrationstest über den echten Endpoint:
+  Einkaufslisten-Artikel »erhalten« (neu/add/replace/manueller Kaufpreis) und
+  per »undo« zurücknehmen
 
 ## Ausführen
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt pytest
+.venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest
 ```
 
