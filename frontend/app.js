@@ -1137,29 +1137,9 @@ function applyCollView() {
   }
 }
 
-function renderCollection() {
-  const list = $("collection-list");
-  const items = state.collection;
-  applyCollView();
-  $("collection-empty").hidden = items.length > 0 || $("search").value.trim() !== "";
-  list.innerHTML = items.map((it) => {
-    const needsBlNo = /^(fig-|manuell-)/.test(it.item_id);
-    return `
-    <div class="card" data-id="${it.id}">
-      <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
-        <span class="qty-badge" data-qty-val>${it.quantity}</span>
-        <div class="card-title">
-          <strong>${esc(it.name)}</strong>
-          <div class="sub" data-sub>${esc(collSubText(it))}</div>
-          ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
-        </div>
-        <div class="qty">
-          <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
-          <span data-qty-val>${it.quantity}</span>
-          <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
-        </div>
-      </div>
+function collCardDetails(it) {
+  const needsBlNo = /^(fig-|manuell-)/.test(it.item_id);
+  return `
       <div class="card-details" hidden>
         <div class="qty-edit">
           <span class="qty-edit-label">Anzahl</span>
@@ -1209,16 +1189,79 @@ function renderCollection() {
         <div class="price-result" data-price-out></div>
         <div class="price-history" data-history></div>
         <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString("de-DE")}</div>
+      </div>`;
+}
+
+function renderCollection() {
+  const list = $("collection-list");
+  const items = state.collection;
+  applyCollView();
+  $("collection-empty").hidden = items.length > 0 || $("search").value.trim() !== "";
+  // Nur die Karten-Köpfe rendern; der (umfangreiche) Detailblock wird erst
+  // beim ersten Aufklappen erzeugt. Das hält das DOM bei großen Sammlungen
+  // schlank, damit Antippen und Suchen sofort reagieren.
+  list.innerHTML = items.map((it) => `
+    <div class="card" data-id="${it.id}">
+      <div class="card-head">
+        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <span class="qty-badge" data-qty-val>${it.quantity}</span>
+        <div class="card-title">
+          <strong>${esc(it.name)}</strong>
+          <div class="sub" data-sub>${esc(collSubText(it))}</div>
+          ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
+        </div>
+        <div class="qty">
+          <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
+          <span data-qty-val>${it.quantity}</span>
+          <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
+        </div>
       </div>
-    </div>`;
-  }).join("");
+    </div>`).join("");
 
   list.querySelectorAll(".card").forEach((card) => {
     const id = Number(card.dataset.id);
     const item = items.find((i) => i.id === id);
-    const details = card.querySelector(".card-details");
-
     const canPrice = state.bricklinkPrices && !/^(fig-|manuell-)/.test(item.item_id);
+
+    const deleteEntry = async () => {
+      if (!confirm(`"${item.name}" wirklich löschen?`)) return;
+      try {
+        // Erst fragen (solange das Set noch da ist), dann löschen
+        await askRemoveSetFigures(item);
+        await api("/collection/" + id, { method: "DELETE" });
+        loadCollection();
+      } catch (e) { toast(e.message); }
+    };
+
+    // Mengen-Knöpfe verdrahten (im Kopf sofort, im Detailbereich nach dem
+    // Aufklappen). `root` grenzt ein, welche Knöpfe gemeint sind.
+    const wireQty = (root) => {
+      root.querySelectorAll("[data-qty]").forEach((btn) => {
+        btn.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const step = Number(btn.dataset.qty);
+          // Letztes Exemplar: derselbe Ablauf wie der Löschen-Knopf
+          if (step < 0 && item.quantity <= 1) { await deleteEntry(); return; }
+          const newQty = item.quantity + step;
+          if (newQty < 1) return;
+          try {
+            await api("/collection/" + id, { method: "PATCH", body: { quantity: newQty } });
+            item.quantity = newQty;
+            card.querySelectorAll("[data-qty-val]").forEach((s) => {
+              s.textContent = newQty;
+            });
+            // Minus-Knopf wird zum Papierkorb, sobald nur noch eines übrig ist
+            card.querySelectorAll('[data-qty="-1"]').forEach((b) => {
+              b.innerHTML = newQty <= 1 ? TRASH_SVG : "−";
+              b.classList.toggle("qty-del", newQty <= 1);
+              b.setAttribute("aria-label", newQty <= 1
+                ? "Aus der Sammlung löschen" : "Anzahl verringern");
+            });
+            updateStatsOnly();
+          } catch (e) { toast(e.message); }
+        });
+      });
+    };
 
     card.querySelectorAll("[data-jump-set]").forEach((b) => {
       b.addEventListener("click", (ev) => {
@@ -1239,9 +1282,18 @@ function renderCollection() {
       });
     }
 
+    wireQty(card.querySelector(".card-head"));
+
     card.querySelector(".card-head").addEventListener("click", (ev) => {
       if (ev.target.closest(".qty") || ev.target.closest(".card-img")
           || ev.target.closest(".set-link")) return;
+      let details = card.querySelector(".card-details");
+      if (!details) {
+        // Detailblock erst jetzt bauen und verdrahten
+        card.insertAdjacentHTML("beforeend", collCardDetails(item));
+        details = card.querySelector(".card-details");
+        wireCollectionDetails(card, item, id, deleteEntry, wireQty);
+      }
       details.hidden = !details.hidden;
       card.classList.toggle("open", !details.hidden);
       if (!details.hidden && canPrice && !details.dataset.priced) {
@@ -1249,171 +1301,141 @@ function renderCollection() {
         loadEntryPrice(card, item, false);
       }
     });
+  });
+}
 
-    card.querySelectorAll("[data-cond]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const cond = btn.dataset.cond;
-        if (cond === item.condition) return;
-        try {
-          const res = await api("/collection/" + id, { method: "PATCH",
-            body: { condition: cond } });
-          if (res.merged) {
-            toast("Mit dem vorhandenen Eintrag in diesem Zustand "
-              + "zusammengeführt ✔");
-            loadCollection();
-            return;
-          }
-          item.condition = cond;
-          card.querySelectorAll("[data-cond]").forEach((b) =>
-            b.classList.toggle("sel", b.dataset.cond === cond));
-          const sub = card.querySelector(".card-head .sub");
-          if (sub) sub.textContent = collSubText(item);
-          updateStatsOnly();
-          toast(cond === "new" ? "Zustand: Neu ✔" : "Zustand: Gebraucht ✔");
-        } catch (e) { toast(e.message); }
-      });
-    });
+function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
+  const details = card.querySelector(".card-details");
 
-    const deleteEntry = async () => {
-      if (!confirm(`"${item.name}" wirklich löschen?`)) return;
+  details.querySelectorAll("[data-cond]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const cond = btn.dataset.cond;
+      if (cond === item.condition) return;
       try {
-        // Erst fragen (solange das Set noch da ist), dann löschen
-        await askRemoveSetFigures(item);
-        await api("/collection/" + id, { method: "DELETE" });
-        loadCollection();
-      } catch (e) { toast(e.message); }
-    };
-
-    card.querySelectorAll("[data-qty]").forEach((btn) => {
-      btn.addEventListener("click", async (ev) => {
-        ev.stopPropagation();
-        const step = Number(btn.dataset.qty);
-        // Letztes Exemplar: derselbe Ablauf wie der Löschen-Knopf
-        if (step < 0 && item.quantity <= 1) { await deleteEntry(); return; }
-        const newQty = item.quantity + step;
-        if (newQty < 1) return;
-        try {
-          await api("/collection/" + id, { method: "PATCH", body: { quantity: newQty } });
-          item.quantity = newQty;
-          card.querySelectorAll("[data-qty-val]").forEach((s) => {
-            s.textContent = newQty;
-          });
-          // Minus-Knopf wird zum Papierkorb, sobald nur noch eines übrig ist
-          card.querySelectorAll('[data-qty="-1"]').forEach((b) => {
-            b.innerHTML = newQty <= 1 ? TRASH_SVG : "−";
-            b.classList.toggle("qty-del", newQty <= 1);
-            b.setAttribute("aria-label", newQty <= 1
-              ? "Aus der Sammlung löschen" : "Anzahl verringern");
-          });
-          updateStatsOnly();
-        } catch (e) { toast(e.message); }
-      });
-    });
-
-    const paidBtn = card.querySelector("[data-paid-save]");
-    if (paidBtn) {
-      paidBtn.addEventListener("click", async () => {
-        const raw = card.querySelector("[data-paid]").value.trim()
-          .replace(",", ".");
-        const paid = raw === "" ? null : Number(raw);
-        if (raw !== "" && (!isFinite(paid) || paid < 0)) {
-          toast("Bitte einen gültigen Betrag eingeben");
+        const res = await api("/collection/" + id, { method: "PATCH",
+          body: { condition: cond } });
+        if (res.merged) {
+          toast("Mit dem vorhandenen Eintrag in diesem Zustand "
+            + "zusammengeführt ✔");
+          loadCollection();
           return;
         }
-        if (raw === "") { toast("Zum Entfernen 0 eintragen"); return; }
-        paidBtn.disabled = true;
-        try {
-          await api("/collection/" + id, { method: "PATCH",
-            body: { paid_price: paid } });
-          item.paid_price = paid;
-          item.paid_source = "manual";
-          item.paid_at = Math.floor(Date.now() / 1000);
-          card.querySelector("[data-paid]").value = fmtPaidInput(paid);
-          card.querySelector("[data-paid-src]").innerHTML = paidSrcIcon(item);
-          card.querySelector("[data-profit]").innerHTML = profitLine(item);
-          toast("Kaufpreis gespeichert ✔");
-        } catch (e) {
-          toast(e.message);
-        } finally {
-          paidBtn.disabled = false;
-        }
-      });
-    }
-
-    const figsBtn = card.querySelector("[data-figs]");
-    if (figsBtn) {
-      figsBtn.addEventListener("click", () => loadSetFigs(card, item, figsBtn));
-    }
-
-    const fixAutoBtn = card.querySelector("[data-fix-auto]");
-    if (fixAutoBtn) {
-      fixAutoBtn.addEventListener("click", async () => {
-        fixAutoBtn.disabled = true;
-        fixAutoBtn.textContent = "Suche …";
-        try {
-          const data = await api("/resolve", { method: "POST",
-            body: { img_url: item.img_url } });
-          const filtered = (data.items || [])
-            .filter((c) => !c.item_type || c.item_type === item.item_type);
-          const best = filtered[0] || (data.items || [])[0];
-          if (!best) {
-            toast("Keine BrickLink-Nummer gefunden – bitte manuell eintragen");
-            return;
-          }
-          await api("/collection/" + id, { method: "PATCH", body: {
-            item_id: best.item_id, name: best.name,
-            img_url: best.img_url || item.img_url,
-            bricklink_url: best.bricklink_url || "",
-          }});
-          toast(`Gefunden: ${best.name} (${best.item_id}, ${best.score} % sicher) ✔`);
-          loadCollection();
-        } catch (e) {
-          toast(e.message);
-        } finally {
-          fixAutoBtn.disabled = false;
-          fixAutoBtn.textContent = "🔍 Automatisch";
-        }
-      });
-    }
-
-    const fixBtn = card.querySelector("[data-fix-btn]");
-    if (fixBtn) {
-      fixBtn.addEventListener("click", async () => {
-        const no = card.querySelector("[data-fix-no]").value.trim();
-        if (!no) return;
-        fixBtn.disabled = true;
-        try {
-          const found = await api(`/lookup/${item.item_type}/${encodeURIComponent(no)}`);
-          await api("/collection/" + id, { method: "PATCH", body: {
-            item_id: found.item_id, name: found.name,
-            img_url: found.img_url, bricklink_url: found.bricklink_url,
-            year: found.year || 0,
-          }});
-          toast(`Aktualisiert: ${found.name} (${found.item_id}) ✔`);
-          loadCollection();
-        } catch (e) {
-          toast(e.message);
-        } finally {
-          fixBtn.disabled = false;
-        }
-      });
-    }
-
-    card.querySelector("[data-save-notes]").addEventListener("click", async () => {
-      try {
-        await api("/collection/" + id, { method: "PATCH",
-          body: { notes: card.querySelector("[data-notes]").value } });
-        toast("Notiz gespeichert ✔");
+        item.condition = cond;
+        card.querySelectorAll("[data-cond]").forEach((b) =>
+          b.classList.toggle("sel", b.dataset.cond === cond));
+        const sub = card.querySelector(".card-head .sub");
+        if (sub) sub.textContent = collSubText(item);
+        updateStatsOnly();
+        toast(cond === "new" ? "Zustand: Neu ✔" : "Zustand: Gebraucht ✔");
       } catch (e) { toast(e.message); }
     });
-
-    card.querySelector("[data-delete]").addEventListener("click", deleteEntry);
-
-    const priceBtn = card.querySelector("[data-price]");
-    if (priceBtn) {
-      priceBtn.addEventListener("click", () => loadEntryPrice(card, item, true));
-    }
   });
+
+  wireQty(details);
+
+  const paidBtn = card.querySelector("[data-paid-save]");
+  if (paidBtn) {
+    paidBtn.addEventListener("click", async () => {
+      const raw = card.querySelector("[data-paid]").value.trim()
+        .replace(",", ".");
+      const paid = raw === "" ? null : Number(raw);
+      if (raw !== "" && (!isFinite(paid) || paid < 0)) {
+        toast("Bitte einen gültigen Betrag eingeben");
+        return;
+      }
+      if (raw === "") { toast("Zum Entfernen 0 eintragen"); return; }
+      paidBtn.disabled = true;
+      try {
+        await api("/collection/" + id, { method: "PATCH",
+          body: { paid_price: paid } });
+        item.paid_price = paid;
+        item.paid_source = "manual";
+        item.paid_at = Math.floor(Date.now() / 1000);
+        card.querySelector("[data-paid]").value = fmtPaidInput(paid);
+        card.querySelector("[data-paid-src]").innerHTML = paidSrcIcon(item);
+        card.querySelector("[data-profit]").innerHTML = profitLine(item);
+        toast("Kaufpreis gespeichert ✔");
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        paidBtn.disabled = false;
+      }
+    });
+  }
+
+  const figsBtn = card.querySelector("[data-figs]");
+  if (figsBtn) {
+    figsBtn.addEventListener("click", () => loadSetFigs(card, item, figsBtn));
+  }
+
+  const fixAutoBtn = card.querySelector("[data-fix-auto]");
+  if (fixAutoBtn) {
+    fixAutoBtn.addEventListener("click", async () => {
+      fixAutoBtn.disabled = true;
+      fixAutoBtn.textContent = "Suche …";
+      try {
+        const data = await api("/resolve", { method: "POST",
+          body: { img_url: item.img_url } });
+        const filtered = (data.items || [])
+          .filter((c) => !c.item_type || c.item_type === item.item_type);
+        const best = filtered[0] || (data.items || [])[0];
+        if (!best) {
+          toast("Keine BrickLink-Nummer gefunden – bitte manuell eintragen");
+          return;
+        }
+        await api("/collection/" + id, { method: "PATCH", body: {
+          item_id: best.item_id, name: best.name,
+          img_url: best.img_url || item.img_url,
+          bricklink_url: best.bricklink_url || "",
+        }});
+        toast(`Gefunden: ${best.name} (${best.item_id}, ${best.score} % sicher) ✔`);
+        loadCollection();
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        fixAutoBtn.disabled = false;
+        fixAutoBtn.textContent = "🔍 Automatisch";
+      }
+    });
+  }
+
+  const fixBtn = card.querySelector("[data-fix-btn]");
+  if (fixBtn) {
+    fixBtn.addEventListener("click", async () => {
+      const no = card.querySelector("[data-fix-no]").value.trim();
+      if (!no) return;
+      fixBtn.disabled = true;
+      try {
+        const found = await api(`/lookup/${item.item_type}/${encodeURIComponent(no)}`);
+        await api("/collection/" + id, { method: "PATCH", body: {
+          item_id: found.item_id, name: found.name,
+          img_url: found.img_url, bricklink_url: found.bricklink_url,
+          year: found.year || 0,
+        }});
+        toast(`Aktualisiert: ${found.name} (${found.item_id}) ✔`);
+        loadCollection();
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        fixBtn.disabled = false;
+      }
+    });
+  }
+
+  card.querySelector("[data-save-notes]").addEventListener("click", async () => {
+    try {
+      await api("/collection/" + id, { method: "PATCH",
+        body: { notes: card.querySelector("[data-notes]").value } });
+      toast("Notiz gespeichert ✔");
+    } catch (e) { toast(e.message); }
+  });
+
+  card.querySelector("[data-delete]").addEventListener("click", deleteEntry);
+
+  const priceBtn = card.querySelector("[data-price]");
+  if (priceBtn) {
+    priceBtn.addEventListener("click", () => loadEntryPrice(card, item, true));
+  }
 }
 
 async function loadEntryPrice(card, item, refresh) {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.13 – Juli 2026
+
+### Verbessert
+- ⚡ **Sammlung öffnet spürbar flüssiger**: Die Karten laden zunächst nur den Kopf; der Detailbereich einer Karte wird erst beim Aufklappen erzeugt. Dadurch entstehen bei großen Sammlungen rund **70 % weniger Seitenelemente**, und die Ansicht reagiert beim Öffnen (Antippen, Suchen) fast sofort statt erst nach ein paar Sekunden
+
 ## 1.6.12 – Juli 2026
 
 ### Verbessert
