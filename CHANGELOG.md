@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.11 – Juli 2026
+
+### Behoben
+- ✅ **Kein doppeltes Nachfragen des Zustands** beim Verbuchen aus einer Liste: „Da! Ab in die Sammlung" übernimmt jetzt direkt den bereits am Listeneintrag gewählten Zustand (neu/gebraucht). Sammlerprofis bestätigen nur noch den Einkaufspreis, alle anderen verbuchen mit einem Klick
+
 ## 1.6.10 – Juli 2026
 
 ### Sonstiges

@@ -2066,82 +2066,106 @@ function renderLists(lists) {
         const row = btn.closest(".fig-row");
         if (row.querySelector("[data-recv-row]")) return;
         const actions = row.querySelector(".fig-actions");
-        actions.hidden = true;
         const dealer2 = state.user && state.user.is_dealer;
-        const chooser = document.createElement("div");
-        chooser.className = "fig-actions";
-        chooser.setAttribute("data-recv-row", "");
-        chooser.style.flexWrap = "wrap";
-        chooser.innerHTML = `
-          ${dealer2 ? `<span class="paid-row buy-paid" style="flex-basis:100%">
-            <span class="paid-label">Preis</span>
-            <input data-recv-paid class="paid-input" inputmode="decimal" placeholder="0,00" value="${listItem && listItem.paid_price != null ? fmtPaidInput(listItem.paid_price) : ""}">
-            <span class="paid-suffix">€</span>
-            <span class="sub">leer = BrickLink-Ø</span></span>` : ""}
-          <button class="mini-btn add" data-rc="used">Gebraucht${listItem && listItem.condition !== "new" ? " ✓" : ""}</button>
-          <button class="mini-btn add" data-rc="new">Neu${listItem && listItem.condition === "new" ? " ✓" : ""}</button>
-          <button class="mini-btn" data-rc-cancel>✕</button>`;
-        actions.after(chooser);
-        chooser.querySelector("[data-rc-cancel]").addEventListener("click",
-          () => { chooser.remove(); actions.hidden = false; });
-        chooser.querySelectorAll("[data-rc]").forEach((b) => {
-          b.addEventListener("click", async () => {
-            const paidEl = chooser.querySelector("[data-recv-paid]");
-            let paid = null;
-            if (paidEl && paidEl.value.trim() !== "") {
-              paid = Number(paidEl.value.trim().replace(",", "."));
-              if (!isFinite(paid) || paid < 0) {
-                toast("Bitte einen gültigen Preis eingeben");
-                return;
+        // Zustand steht am Listeneintrag schon fest – nicht erneut abfragen.
+        const cond = listItem && listItem.condition === "new" ? "new" : "used";
+        const condLabel = cond === "new" ? "Neu" : "Gebraucht";
+
+        const send = async (mode, paid) => {
+          const res = await api(`/lists/items/${iid}/receive`,
+            { method: "POST", body: { condition: cond,
+              paid_price: paid, mode } });
+          if (res.need_mode) return res;
+          toast(res.list_archived
+            ? "In die Sammlung ✔ – Liste abgearbeitet, ab ins Archiv 🎉"
+            : (mode === "replace" ? "Eintrag überschrieben ✔"
+               : (res.merged
+                  ? "Anzahl erhöht, Einkaufspreis gemittelt ✔"
+                  : "In die Sammlung übernommen ✔")));
+          if (listItem) {
+            await askSetFigures(listItem, cond);
+          }
+          loadLists();
+          updateListsTab();
+          return res;
+        };
+
+        // Rückfrage, falls der Artikel in diesem Zustand schon vorhanden ist
+        const askMode = (owned, paid) => {
+          actions.hidden = true;
+          const mc = document.createElement("div");
+          mc.className = "fig-actions";
+          mc.setAttribute("data-recv-row", "");
+          mc.style.flexWrap = "wrap";
+          mc.innerHTML = `
+            <span class="buy-label">Schon ${owned}× in der Sammlung:</span>
+            <button class="mini-btn add" data-rm="add">＋ Zusätzlich</button>
+            <button class="mini-btn" data-rm="replace">Überschreiben</button>
+            <button class="mini-btn" data-rm-cancel>✕</button>`;
+          actions.after(mc);
+          mc.querySelector("[data-rm-cancel]").addEventListener(
+            "click", () => { mc.remove(); actions.hidden = false; });
+          mc.querySelectorAll("[data-rm]").forEach((mb) => {
+            mb.addEventListener("click", async () => {
+              mb.disabled = true;
+              try {
+                await send(mb.dataset.rm, paid);
+              } catch (e2) {
+                toast(e2.message);
+                mb.disabled = false;
               }
-            }
-            b.disabled = true;
-            const send = async (mode) => {
-              const res = await api(`/lists/items/${iid}/receive`,
-                { method: "POST", body: { condition: b.dataset.rc,
-                  paid_price: paid, mode } });
-              if (res.need_mode) return res;
-              toast(res.list_archived
-                ? "In die Sammlung ✔ – Liste abgearbeitet, ab ins Archiv 🎉"
-                : (mode === "replace" ? "Eintrag überschrieben ✔"
-                   : (res.merged
-                      ? "Anzahl erhöht, Einkaufspreis gemittelt ✔"
-                      : "In die Sammlung übernommen ✔")));
-              if (listItem) {
-                await askSetFigures(listItem, b.dataset.rc);
-              }
-              loadLists();
-              updateListsTab();
-              return res;
-            };
-            try {
-              const res = await send(null);
-              if (res.need_mode) {
-                chooser.innerHTML = `
-                  <span class="buy-label">Schon ${res.owned}× in der Sammlung:</span>
-                  <button class="mini-btn add" data-rm="add">＋ Zusätzlich</button>
-                  <button class="mini-btn" data-rm="replace">Überschreiben</button>
-                  <button class="mini-btn" data-rm-cancel>✕</button>`;
-                chooser.querySelector("[data-rm-cancel]").addEventListener(
-                  "click", () => { chooser.remove(); actions.hidden = false; });
-                chooser.querySelectorAll("[data-rm]").forEach((mb) => {
-                  mb.addEventListener("click", async () => {
-                    mb.disabled = true;
-                    try {
-                      await send(mb.dataset.rm);
-                    } catch (e2) {
-                      toast(e2.message);
-                      mb.disabled = false;
-                    }
-                  });
-                });
-              }
-            } catch (e) {
-              toast(e.message);
-              b.disabled = false;
-            }
+            });
           });
-        });
+        };
+
+        const doReceive = async (paid) => {
+          btn.disabled = true;
+          try {
+            const res = await send(null, paid);
+            if (res.need_mode) askMode(res.owned, paid);
+          } catch (e) {
+            toast(e.message);
+            btn.disabled = false;
+            actions.hidden = false;
+          }
+        };
+
+        if (dealer2) {
+          // Profi: Einkaufspreis bestätigen (Zustand ist bereits gewählt)
+          actions.hidden = true;
+          const chooser = document.createElement("div");
+          chooser.className = "fig-actions";
+          chooser.setAttribute("data-recv-row", "");
+          chooser.style.flexWrap = "wrap";
+          chooser.innerHTML = `
+            <span class="paid-row buy-paid" style="flex-basis:100%">
+              <span class="paid-label">Preis</span>
+              <input data-recv-paid class="paid-input" inputmode="decimal" placeholder="0,00" value="${listItem && listItem.paid_price != null ? fmtPaidInput(listItem.paid_price) : ""}">
+              <span class="paid-suffix">€</span>
+              <span class="sub">leer = BrickLink-Ø</span></span>
+            <button class="mini-btn add" data-rc-go>✔ ${condLabel} übernehmen</button>
+            <button class="mini-btn" data-rc-cancel>✕</button>`;
+          actions.after(chooser);
+          chooser.querySelector("[data-rc-cancel]").addEventListener("click",
+            () => { chooser.remove(); actions.hidden = false; });
+          chooser.querySelector("[data-rc-go]").addEventListener("click",
+            async () => {
+              const paidEl = chooser.querySelector("[data-recv-paid]");
+              let paid = null;
+              if (paidEl && paidEl.value.trim() !== "") {
+                paid = Number(paidEl.value.trim().replace(",", "."));
+                if (!isFinite(paid) || paid < 0) {
+                  toast("Bitte einen gültigen Preis eingeben");
+                  return;
+                }
+              }
+              chooser.remove();
+              await doReceive(paid);
+            });
+        } else {
+          // Kein Profi: direkt mit dem angegebenen Zustand verbuchen
+          doReceive(null);
+        }
       });
     });
     card.querySelectorAll("[data-i-undo]").forEach((btn) => {
