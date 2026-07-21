@@ -278,7 +278,14 @@ def price_log(limit: int = 50, user: dict = Depends(dealer_user)):
             "  AND si.item_type = ph.item_type "
             "GROUP BY ph.rowid "
             "ORDER BY ph.ts DESC LIMIT ?", (limit,)).fetchall()
-    return {"entries": [dict(r) for r in rows]}
+        cutoff = int(time.time()) - PRICE_STALE_SECONDS
+        stale = conn.execute(
+            "SELECT COUNT(*) AS c FROM collection WHERE "
+            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+            "AND price_updated_at IS NOT NULL AND price_updated_at < ?",
+            (cutoff,)).fetchone()["c"]
+    return {"entries": [dict(r) for r in rows],
+            "stale_count": stale, "stale_days": PRICE_STALE_SECONDS // 86400}
 
 
 @app.get("/api/update_check")

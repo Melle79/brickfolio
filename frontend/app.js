@@ -2902,6 +2902,17 @@ async function loadPriceLog(limit) {
   box.textContent = "Lade …";
   try {
     const res = await api(`/price_log?limit=${limit}`);
+    const staleEl = $("pricelog-stale");
+    if (staleEl) {
+      const days = res.stale_days || 7;
+      const n = res.stale_count || 0;
+      staleEl.textContent = n > 0
+        ? `🕒 Bei ${n} ${n === 1 ? "Artikel ist" : "Artikeln ist"} in der `
+          + `Sammlung der Preisabruf älter als ${days} Tage `
+          + `– der Hintergrundjob frischt sie nach und nach auf.`
+        : `✔ Alle Sammlungs-Preise sind jünger als ${days} Tage.`;
+      staleEl.hidden = false;
+    }
     if (!res.entries.length) {
       box.textContent = "Noch keine Aufzeichnungen.";
       $("btn-pricelog-more").hidden = true;

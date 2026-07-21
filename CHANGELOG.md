@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.17 – Juli 2026
+
+### Verbessert
+- 🕒 Das **Preis-Protokoll** (Mehr) zeigt jetzt an, bei wie vielen Artikeln in der Sammlung der Preisabruf älter als 7 Tage ist
+
 ## 1.6.16 – Juli 2026
 
 ### Neu
