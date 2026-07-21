@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.15 – Juli 2026
+
+### Behoben
+- 📐 In der **Raster-Ansicht** sind zwei Karten einer Reihe jetzt immer gleich hoch (die kürzere dehnt sich auf die Höhe der höheren), statt unterschiedlich hoch zu stehen
+
 ## 1.6.14 – Juli 2026
 
 ### Verbessert

@@ -634,9 +634,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .qty-edit-label { font-weight: 900; font-size: 15px; }
 
-/* Raster-Layout: zwei Karten pro Reihe */
+/* Raster-Layout: zwei Karten pro Reihe, in einer Reihe stets gleich hoch */
 .results.grid-mode { display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; align-items: start; }
+  gap: 12px; align-items: stretch; }
 .results.grid-mode .card { padding: 10px; }
 .results.grid-mode .card-head {
   flex-direction: column; align-items: stretch; gap: 8px; text-align: center;
