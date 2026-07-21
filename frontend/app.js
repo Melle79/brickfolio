@@ -1099,7 +1099,15 @@ async function loadCollection(showSpinner = false) {
     $("collection-empty").hidden = true;
     list.setAttribute("aria-busy", "true");
     list.innerHTML = '<div class="list-loading">'
-      + '<div class="spinner" role="status" aria-label="Sammlung wird geladen"></div>'
+      + '<svg class="spinner-brick" viewBox="0 0 48 48" width="46" height="46" '
+      + 'role="status" aria-label="Sammlung wird geladen" '
+      + 'xmlns="http://www.w3.org/2000/svg">'
+      + '<g stroke="var(--ink)" stroke-width="2" stroke-linejoin="round">'
+      + '<rect x="11" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
+      + '<rect x="21" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
+      + '<rect x="31" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
+      + '<rect x="8" y="22" width="32" height="14" rx="3" fill="var(--yellow)"/>'
+      + '</g></svg>'
       + '<span>Sammlung wird geladen …</span></div>';
     // Dem Browser eine Bildaufbau-Runde geben, damit der Spinner sichtbar ist,
     // bevor der (bei großer Sammlung rechenintensive) Aufbau beginnt.

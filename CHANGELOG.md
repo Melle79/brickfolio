@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.14 – Juli 2026
+
+### Verbessert
+- 🧱 Die Lade-Anzeige der Sammlung zeigt jetzt einen **drehenden Klemmbaustein** statt eines Kreises
+
+### Behoben
+- 🎯 Die Lade-Anzeige ist in der **Raster-Ansicht** wieder mittig (war nach links versetzt)
+
 ## 1.6.13 – Juli 2026
 
 ### Verbessert

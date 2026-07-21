@@ -103,17 +103,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .list-loading {
   display: flex; flex-direction: column; align-items: center;
   gap: 14px; padding: 56px 0; color: var(--muted); font-weight: 700;
+  /* Im Raster-Modus über beide Spalten spannen, damit sie mittig bleibt */
+  grid-column: 1 / -1;
 }
-.spinner {
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 4px solid var(--line);
-  border-top-color: var(--yellow-dark);
+.spinner-brick {
   /* GPU-Animation: dreht sich weiter, auch wenn der Haupt-Thread kurz baut */
-  animation: bf-spin .8s linear infinite;
+  animation: bf-spin .9s linear infinite;
+  transform-origin: 50% 50%;
   will-change: transform;
 }
 @keyframes bf-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.6s; } }
+@media (prefers-reduced-motion: reduce) { .spinner-brick { animation-duration: 1.8s; } }
 
 /* ---------- Scan ---------- */
 .scan-hero { margin-top: 12px; }
