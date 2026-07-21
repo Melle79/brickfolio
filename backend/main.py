@@ -248,46 +248,6 @@ def login(body: LoginBody):
             "is_admin": bool(row["is_admin"]), "is_dealer": is_dealer}
 
 
-@app.get("/api/setup")
-def setup_status():
-    """Öffentlich: Steht die Ersteinrichtung noch aus?"""
-    with core.db() as conn:
-        count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
-    return {"needed": count == 0}
-
-
-class SetupBody(BaseModel):
-    username: str = Field(min_length=2, max_length=40)
-    password: str = Field(min_length=4, max_length=200)
-
-
-@app.post("/api/setup")
-def setup_create_admin(body: SetupBody):
-    """Legt das erste Admin-Konto an – nur solange keine Benutzer existieren."""
-    username = body.username.strip()
-    if not username:
-        raise HTTPException(400, "Bitte einen Benutzernamen eingeben")
-    with core.db() as conn:
-        count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
-        if count > 0:
-            raise HTTPException(409, "Die Einrichtung ist bereits "
-                                     "abgeschlossen – bitte anmelden")
-        cur = conn.execute(
-            "INSERT INTO users (username, password_hash, is_admin, "
-            "created_at) VALUES (?, ?, 1, ?)",
-            (username, core.hash_password(body.password),
-             int(time.time())))
-        uid = cur.lastrowid
-    token = core.create_token(uid, username, True)
-    return {"token": token, "username": username,
-            "is_admin": True, "is_dealer": False}
-
-
-@app.get("/api/me")
-def me(user: dict = Depends(current_user)):
-    return user
-
-
 _UPDATE_CACHE = {"ts": 0.0, "data": None}
 _UPDATE_URL = ("https://api.github.com/repos/Melle79/brickfolio/"
                "releases/latest")
