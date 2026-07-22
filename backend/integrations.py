@@ -43,21 +43,28 @@ def rebrickable_enabled() -> bool:
 _RB_PATH = {"minifig": "minifigs", "part": "parts", "set": "sets"}
 
 
-def search_catalog(query: str, item_type: str = "minifig", limit: int = 8) -> list:
-    """Textsuche im Rebrickable-Katalog, liefert Vorschläge mit Bild."""
+def search_catalog(query: str, item_type: str = "minifig",
+                   page: int = 1, page_size: int = 20) -> dict:
+    """Textsuche im Rebrickable-Katalog, seitenweise, mit Bild.
+
+    Gibt neben den Treffern die Gesamtzahl (``count``) und ``has_more``
+    zurück, damit die Ergebnisliste seitenweise nachgeladen werden kann.
+    """
     path = _RB_PATH.get(item_type)
     if not path:
         raise ValueError(f"Unbekannter Typ: {item_type}")
     resp = requests.get(
         f"https://rebrickable.com/api/v3/lego/{path}/",
-        params={"search": query, "page_size": limit, "key": setting("rebrickable_key")},
+        params={"search": query, "page": page, "page_size": page_size,
+                "key": setting("rebrickable_key")},
         headers={"User-Agent": USER_AGENT},
         timeout=15,
     )
     resp.raise_for_status()
+    data = resp.json()
 
     items = []
-    for r in resp.json().get("results", []):
+    for r in data.get("results", []):
         year = 0
         if item_type == "minifig":
             item_id = r.get("set_num", "")          # z. B. fig-001234
@@ -88,7 +95,11 @@ def search_catalog(query: str, item_type: str = "minifig", limit: int = 8) -> li
             "year": year,
             "bricklink_url": bl_url,
         })
-    return items
+    return {"items": items,
+            "count": data.get("count", len(items)),
+            "page": page,
+            "page_size": page_size,
+            "has_more": bool(data.get("next"))}
 
 
 # ---------------------------------------------------------------- Brickognize

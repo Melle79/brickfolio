@@ -372,16 +372,17 @@ def bricklink_lookup(item_type: str, item_no: str,
 
 
 @app.get("/api/search")
-def catalog_search(q: str = "", item_type: str = "minifig",
+def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
                    user: dict = Depends(current_user)):
     if not integrations.rebrickable_enabled():
         raise HTTPException(501, "Katalogsuche nicht konfiguriert "
                                  "(REBRICKABLE_KEY in docker-compose setzen)")
     q = q.strip()
     if len(q) < 3:
-        return {"items": []}
+        return {"items": [], "count": 0, "page": 1, "has_more": False}
+    page = max(1, min(page, 200))
     try:
-        return {"items": integrations.search_catalog(q, item_type)}
+        return integrations.search_catalog(q, item_type, page=page)
     except requests.Timeout:
         raise HTTPException(504, "Rebrickable antwortet nicht")
     except requests.HTTPError as e:
@@ -1007,9 +1008,11 @@ def test_settings(user: dict = Depends(admin_user)):
         results["bricklink"] = {"ok": False, "info": "Keine Schlüssel hinterlegt"}
     if integrations.rebrickable_enabled():
         try:
-            hits = integrations.search_catalog("stormtrooper", "minifig", 1)
+            hits = integrations.search_catalog("stormtrooper", "minifig",
+                                               page=1, page_size=1)
             results["rebrickable"] = {"ok": True,
-                                      "info": f"Verbunden – {len(hits)} Treffer im Test"}
+                                      "info": f"Verbunden – {hits['count']} "
+                                              "Treffer im Test"}
         except Exception as e:
             results["rebrickable"] = {"ok": False, "info": scrub(str(e))}
     else:

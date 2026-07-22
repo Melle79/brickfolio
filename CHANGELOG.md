@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.19 – Juli 2026
+
+### Verbessert
+- 🔎 Die **Katalogsuche** zeigt jetzt alle Treffer seitenweise: 20 pro Seite mit Anzeige „X von Y" und einem Knopf **„Weitere Ergebnisse laden"** (statt nur 8 fester Treffer)
+
 ## 1.6.18 – Juli 2026
 
 ### Verbessert

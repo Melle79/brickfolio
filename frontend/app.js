@@ -1558,6 +1558,7 @@ async function updateStatsOnly() {
 const BL_URL_PREFIX = { minifig: "M", part: "P", set: "S" };
 let suggestTimer;
 let manualSelection = null;   // übernommener Vorschlag (Bild + BrickLink-Link)
+let suggestState = null;      // laufende Katalogsuche (für seitenweises Nachladen)
 
 function setupCatalogSearch() {
   $("m-name").addEventListener("input", () => {
@@ -1646,16 +1647,42 @@ async function runCatalogSearch() {
   }
   hint.textContent = "Suche im Katalog …";
   hint.hidden = false;
+  const type = $("m-type").value;
   try {
-    const data = await api(`/search?q=${encodeURIComponent(q)}&item_type=${$("m-type").value}`);
-    renderSuggestions(data.items || []);
+    const data = await api(`/search?q=${encodeURIComponent(q)}`
+      + `&item_type=${type}&page=1`);
+    suggestState = { q, type, page: 1, items: data.items || [],
+                     count: data.count || (data.items || []).length,
+                     hasMore: !!data.has_more };
+    renderSuggestions(suggestState.items,
+      { count: suggestState.count, hasMore: suggestState.hasMore });
     hint.hidden = true;
   } catch (e) {
     hint.textContent = e.message;
   }
 }
 
-function renderSuggestions(items) {
+async function loadMoreSuggestions() {
+  if (!suggestState || !suggestState.hasMore) return;
+  const btn = $("m-suggestions").querySelector("[data-more-suggest]");
+  if (btn) { btn.disabled = true; btn.textContent = "Lade …"; }
+  try {
+    const next = suggestState.page + 1;
+    const data = await api(`/search?q=${encodeURIComponent(suggestState.q)}`
+      + `&item_type=${suggestState.type}&page=${next}`);
+    suggestState.page = next;
+    suggestState.items = suggestState.items.concat(data.items || []);
+    suggestState.count = data.count || suggestState.count;
+    suggestState.hasMore = !!data.has_more;
+    renderSuggestions(suggestState.items,
+      { count: suggestState.count, hasMore: suggestState.hasMore });
+  } catch (e) {
+    toast(e.message);
+    if (btn) { btn.disabled = false; btn.textContent = "Weitere Ergebnisse laden"; }
+  }
+}
+
+function renderSuggestions(items, meta) {
   const box = $("m-suggestions");
   if (!items.length) {
     box.innerHTML = "";
@@ -1664,7 +1691,7 @@ function renderSuggestions(items) {
     hint.hidden = false;
     return;
   }
-  box.innerHTML = items.map((it, i) => {
+  const cards = items.map((it, i) => {
     const base = `${it.item_id}${it.sub ? " · " + it.sub : ""}`;
     return `
     <div class="card" data-sug-id="${esc(it.item_id)}" data-sug-base="${esc(base)}">
@@ -1684,6 +1711,18 @@ function renderSuggestions(items) {
       </div>
     </div>`;
   }).join("");
+
+  let footer = "";
+  if (meta && meta.count) {
+    footer = `<div class="suggest-foot">
+      <span class="suggest-count">${items.length} von ${meta.count} angezeigt</span>
+      ${meta.hasMore ? `<button class="mini-btn" data-more-suggest>Weitere Ergebnisse laden</button>` : ""}
+    </div>`;
+  }
+  box.innerHTML = cards + footer;
+
+  const moreBtn = box.querySelector("[data-more-suggest]");
+  if (moreBtn) moreBtn.addEventListener("click", loadMoreSuggestions);
 
   enrichSuggestions(items);
   wireWantButtons(box, items);
