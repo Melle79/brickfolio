@@ -1617,9 +1617,14 @@ async function runCatalogSearch() {
   const q = $("m-name").value.trim();
   const box = $("m-suggestions");
   const hint = $("m-search-hint");
-  if (q.length < 2) {
+  if (q.length < 3) {
     box.innerHTML = "";
-    hint.hidden = true;
+    if (q.length > 0) {
+      hint.textContent = "Bitte mindestens 3 Zeichen eingeben …";
+      hint.hidden = false;
+    } else {
+      hint.hidden = true;
+    }
     return;
   }
   // Sieht nach BrickLink-Nummer aus? Dann zuerst dort direkt nachschlagen.

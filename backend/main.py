@@ -378,7 +378,7 @@ def catalog_search(q: str = "", item_type: str = "minifig",
         raise HTTPException(501, "Katalogsuche nicht konfiguriert "
                                  "(REBRICKABLE_KEY in docker-compose setzen)")
     q = q.strip()
-    if len(q) < 2:
+    if len(q) < 3:
         return {"items": []}
     try:
         return {"items": integrations.search_catalog(q, item_type)}

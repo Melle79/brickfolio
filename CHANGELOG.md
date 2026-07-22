@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.18 – Juli 2026
+
+### Verbessert
+- 🔎 Die **Katalog-/Namenssuche** (neue Figuren/Sets) startet erst ab **3 Zeichen** – bei kürzerer Eingabe erscheint ein kurzer Hinweis. Das vermeidet unnötige Suchanfragen bei 1–2 Zeichen
+
 ## 1.6.17 – Juli 2026
 
 ### Verbessert
