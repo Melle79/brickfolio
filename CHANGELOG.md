@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.2 – Juli 2026
+
+### Behoben
+- 🖼 Der Knopf **„Namen & Bilder nachladen"** stand ganz am Ende der Liste und war bei vielen fehlenden Figuren praktisch unerreichbar – er steht jetzt **oben**, direkt unter der Überschrift
+- 🔄 `app.js` wurde beim Ausliefern nie neu versioniert; Geräte konnten dadurch eine ältere Programmversion aus dem Zwischenspeicher behalten
+- 🧱 Bilder, die sich nicht laden lassen, zeigen jetzt den Baustein-Platzhalter statt eines kaputten Symbols
+
 ## 1.8.1 – Juli 2026
 
 ### Behoben

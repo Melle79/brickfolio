@@ -51,6 +51,10 @@ const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
 
 function imgSrc(url) { return url ? esc(url) : IMG_PLACEHOLDER; }
 
+/* Für <img>: lädt die Quelle nicht (404, offline), zeigt den Platzhalter
+   statt eines kaputten Bildsymbols. */
+const IMG_FALLBACK = 'onerror="this.onerror=null;this.src=IMG_PLACEHOLDER"';
+
 function fmtEur(value) {
   return Number(value).toLocaleString("de-DE",
     { style: "currency", currency: "EUR" });
@@ -2839,10 +2843,19 @@ function renderMissingFigs(data) {
         von ${s.sets_total} Sets${
           s.est_cost > 0 ? ` · Nachkauf ca. ${fmtEur(s.est_cost)}` : ""}</div>
     </div></div>
+    ${s.details_pending > 0 ? `
+    <div class="mf-pending">
+      <span>ℹ️ Bei ${s.details_pending} ${s.details_pending === 1 ? "Set" : "Sets"}
+        fehlen noch Figuren-Namen und -Bilder (unten nur die Nummer zu sehen).</span>
+      ${s.can_fetch
+        ? `<button class="mini-btn" id="btn-mf-details">🔄 Namen &amp; Bilder nachladen</button>`
+        : `<span class="search-hint">Dafür wird ein BrickLink-Schlüssel benötigt
+            (Mehr → API-Schlüssel).</span>`}
+    </div>` : ""}
     <div class="set-figs">
       ${data.items.map((it, i) => `
       <div class="fig-row" data-mf-row="${i}">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
+        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · <b>${it.missing}× fehlt</b>${
@@ -2857,15 +2870,6 @@ function renderMissingFigs(data) {
         </div>
       </div>`).join("")}
     </div>
-    ${s.details_pending > 0 ? `
-    <div class="mf-pending">
-      <span>ℹ️ Bei ${s.details_pending} ${s.details_pending === 1 ? "Set" : "Sets"}
-        fehlen noch Figuren-Namen und -Bilder (nur die Nummer zu sehen).</span>
-      ${s.can_fetch
-        ? `<button class="mini-btn" id="btn-mf-details">🔄 Namen & Bilder nachladen</button>`
-        : `<span class="search-hint">Dafür wird ein BrickLink-Schlüssel benötigt
-            (Mehr → API-Schlüssel).</span>`}
-    </div>` : ""}
     <div class="card-actions btn-grid" style="margin-top:8px">
       <button class="mini-btn add" id="btn-mf-want-all">☆ Alle auf die Wunschliste</button>
       <button class="mini-btn" id="btn-mf-csv">Als CSV</button>
