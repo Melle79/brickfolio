@@ -377,6 +377,30 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .select-wrap select { width: 100%; padding-left: 32px; }
 .filter-row .select-wrap select { flex: unset; }
 
+/* Suchfeld mit Lupe links und X zum Leeren rechts */
+.search-wrap { position: relative; display: flex; min-width: 0; }
+.search-wrap > svg {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none;
+}
+.search-wrap input {
+  width: 100%; padding-left: 32px; padding-right: 34px; margin-top: 0;
+}
+/* native Browser-Löschtaste aus, wir haben eine eigene */
+.search-wrap input::-webkit-search-cancel-button {
+  -webkit-appearance: none; appearance: none;
+}
+.search-clear {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; padding: 0; border: none; background: transparent;
+  color: var(--muted); font-size: 20px; font-weight: 900; line-height: 1;
+  border-radius: 50%; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+}
+.search-clear.show { display: flex; }
+.search-clear:hover { background: var(--line); color: var(--ink); }
+.filter-row .search-wrap { flex: 3; }
+
 .set-figs { margin-top: 4px; }
 .fig-row {
   display: flex; gap: 10px; padding: 10px 0;

@@ -3349,6 +3349,21 @@ document.addEventListener("DOMContentLoaded", () => {
     searchTimer = setTimeout(loadCollection, 300);
   });
 
+  // X in Suchfeldern: leert das Feld und stößt die zugehörige Suche neu an
+  document.querySelectorAll(".search-clear").forEach((btn) => {
+    const input = $(btn.dataset.clear);
+    if (!input) return;
+    const sync = () => btn.classList.toggle("show", input.value !== "");
+    input.addEventListener("input", sync);
+    btn.addEventListener("click", () => {
+      input.value = "";
+      sync();
+      input.focus();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    sync();
+  });
+
   if (state.token) { refreshMe(); showApp(); } else showLogin();
 
   // Galerie: Tipp auf ein Kartenbild öffnet alle Katalogbilder der Figur

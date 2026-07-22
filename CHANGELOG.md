@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.21 – Juli 2026
+
+### Verbessert
+- 🔍 Suchfelder mit **Lupen-Icon** statt „Suchen"-Text – der Platzhalter lautet jetzt kurz „Name oder Nummer" und wird nicht mehr abgeschnitten
+- 🔍 Auch das Namensfeld beim **manuellen Erfassen** hat jetzt das Lupen-Icon
+- ✕ **Löschen-Knopf** in beiden Suchfeldern: leert die Eingabe mit einem Tipp und stellt die vollständige Liste wieder her
+
 ## 1.6.20 – Juli 2026
 
 ### Verbessert

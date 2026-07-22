@@ -92,7 +92,11 @@
       <div class="name-type-row">
         <div class="nt-name">
           <label for="m-name">Name *</label>
-          <input id="m-name" placeholder="z. B. Battle Droid, Tan">
+          <span class="search-wrap">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+            <input id="m-name" placeholder="z. B. Battle Droid, Tan">
+            <button type="button" class="search-clear" data-clear="m-name" aria-label="Eingabe leeren">×</button>
+          </span>
         </div>
         <div class="nt-type">
           <label for="m-type">Typ</label>
@@ -132,7 +136,11 @@
       <div class="stat-chip"><strong id="stat-value">–</strong><span id="stat-value-sub">Wert (ca.)</span></div>
     </div>
     <div class="filter-row">
-      <input id="search" class="search" type="search" placeholder="Suchen (Name oder Nummer) …">
+      <span class="search-wrap">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input id="search" class="search" type="search" placeholder="Name oder Nummer" aria-label="Sammlung durchsuchen">
+        <button type="button" class="search-clear" data-clear="search" aria-label="Suche leeren">×</button>
+      </span>
       <span class="select-wrap">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3"/></svg>
         <select id="type-filter" aria-label="Typ-Filter">
