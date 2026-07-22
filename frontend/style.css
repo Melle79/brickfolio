@@ -740,7 +740,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   --muted: #9AA6BF;
   --shadow: 0 3px 0 rgba(0, 0, 0, .55);
   --field: #0E1523;
-  --img-bg: #1B2436;
+  /* Katalogfotos haben meist reinweissen Hintergrund – Kachel ebenfalls weiss,
+     damit Foto und Flaeche nahtlos verschmelzen statt eine Kante zu zeigen */
+  --img-bg: #FFFFFF;
   --surface: #1A2334;
   --sheet-bg: #111827;
   --track: #26314A;

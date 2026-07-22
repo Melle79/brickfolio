@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 – Juli 2026
+
+### Behoben
+- 🖼 Im Design „Galaxie" wirkten die **Bildflächen unruhig**: Katalogfotos bringen meist einen weißen Hintergrund mit, der als heller Block auf der dunklen Kachel stand. Die Bildkachel ist dort jetzt weiß, sodass Foto und Fläche nahtlos verschmelzen
+
 ## 1.7.0 – Juli 2026
 
 ### Neu
