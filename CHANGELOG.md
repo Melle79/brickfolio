@@ -5,6 +5,9 @@
 ### Neu
 - 🌌 **Zweites Design „Galaxie"**: ein dunkles, weltraum-inspiriertes Aussehen mit Sternenhimmel und leuchtenden Akzenten – umschaltbar unter **Mehr → Design**. „Klassisch" bleibt Standard, die Auswahl gilt pro Gerät und wird gemerkt
 
+### Behoben
+- 🖨 In den **Druckexporten** (Sammlung, Wunschliste, Verkaufsliste) stand in der Kopfzeile immer „Finn's Brickfolio" – jetzt erscheint dort der eingestellte Anzeigename
+
 ## 1.6.21 – Juli 2026
 
 ### Verbessert

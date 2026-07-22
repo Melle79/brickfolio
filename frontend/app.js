@@ -881,12 +881,18 @@ async function updateListsTab() {
   if (tab.hidden && !$("view-lists").hidden) showTab("scan");
 }
 
+/* Titel der App inkl. Anzeigename – auch für Kopfzeilen im Druck */
+function appTitle() {
+  return (state.ownerName || "Finn") + "'s Brickfolio";
+}
+
 function applyOwnerName(name) {
   if (!name) return;
+  state.ownerName = name;
   document.querySelectorAll(".logo-name").forEach((el) => {
     el.textContent = name.toUpperCase();
   });
-  document.title = name + "'s Brickfolio";
+  document.title = appTitle();
 }
 
 function showLogin() {
@@ -2854,7 +2860,7 @@ function printTable(title, subtitle, headers, rows, cols) {
   const cls = (i) => (cols[i] ? ` class="pc-${cols[i]}"` : "");
   const area = $("print-area");
   area.innerHTML = `<h1>${esc(title)}</h1>`
-    + `<p>${esc(subtitle)} · Stand ${new Date().toLocaleDateString("de-DE")} · Finn's Brickfolio</p>`
+    + `<p>${esc(subtitle)} · Stand ${new Date().toLocaleDateString("de-DE")} · ${esc(appTitle())}</p>`
     + `<table><colgroup>${cols.map((c) => `<col${c ? ` class="pc-${c}"` : ""}>`).join("")}</colgroup>`
     + `<thead><tr>${headers.map((h, i) => `<th${cls(i)}>${esc(h)}</th>`).join("")}</tr></thead>`
     + `<tbody>${rows.map((r) =>
