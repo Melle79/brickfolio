@@ -325,7 +325,11 @@ function applySuggestInfo(info, withDetail) {
           links.push(`<a class="set-link ext" href="https://www.bricklink.com/v2/catalog/catalogitem.page?S=${encodeURIComponent(s.no)}" target="_blank" rel="noopener">`
             + `${esc(s.name)} (${esc(s.no)}${s.qty > 1 ? `, ${s.qty}×` : ""})</a>`);
         });
-        let html = "📦 in Sets: " + links[0];
+        // Gehört zu einem eigenen Set und fehlt noch? Dann deutlich sagen.
+        const missingForOwn = d.in_sets && !(d.owned > 0);
+        el.classList.toggle("missing", !!missingForOwn);
+        let html = (missingForOwn ? "🧩 fehlt zu eurem Set: " : "📦 in Sets: ")
+          + links[0];
         if (links.length > 1) {
           html += `<span class="more-sets" hidden> · ${links.slice(1).join(" · ")}</span> `
             + `<button class="set-link more-toggle" data-more-sets>+${links.length - 1} weitere ▾</button>`;
@@ -2783,6 +2787,166 @@ function printDuplicates() {
     ["num", "name", "cond", "qty", "price", "price"]);
 }
 
+/* ------------------------------------------------- Fehlende Set-Figuren */
+function missingSetLinks(sets) {
+  const links = sets.map((s) =>
+    `<button class="set-link owned" data-jump-set="${esc(s.no)}">`
+    + `${esc(s.name)} (${esc(s.no)}${s.qty > 1 ? `, ${s.qty}×` : ""})</button>`);
+  if (links.length <= 1) return links.join("");
+  return links[0]
+    + `<span class="more-sets" hidden> · ${links.slice(1).join(" · ")}</span> `
+    + `<button class="set-link more-toggle" data-more-sets>+${links.length - 1} weitere ▾</button>`;
+}
+
+async function toggleMissingFigs() {
+  const box = $("missing-figs-box");
+  const btn = $("btn-missing-figs");
+  if (!box.hidden) {
+    box.hidden = true;
+    btn.textContent = "🧩 Fehlende Set-Figuren";
+    return;
+  }
+  btn.disabled = true;
+  try {
+    const data = await api("/missing_set_figs");
+    state.missingFigs = data;
+    renderMissingFigs(data);
+    box.hidden = false;
+    btn.textContent = "🧩 Fehlende ausblenden";
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderMissingFigs(data) {
+  const box = $("missing-figs-box");
+  const s = data.stats;
+  if (!data.items.length) {
+    box.innerHTML = `<div class="card"><div class="price-note">${
+      s.sets_total
+        ? "Alle Figuren eurer Sets sind vollständig ✔"
+        : "Noch keine Sets in der Sammlung."
+    }</div></div>`;
+    return;
+  }
+  box.innerHTML = `
+  <div class="card">
+    <div class="card-head"><div class="card-title">
+      <strong>🧩 Fehlende Set-Figuren</strong>
+      <div class="sub">${s.pieces} Figuren fehlen in ${s.sets_incomplete}
+        von ${s.sets_total} Sets${
+          s.est_cost > 0 ? ` · Nachkauf ca. ${fmtEur(s.est_cost)}` : ""}</div>
+    </div></div>
+    <div class="set-figs">
+      ${data.items.map((it, i) => `
+      <div class="fig-row" data-mf-row="${i}">
+        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
+        <div class="fig-info">
+          <strong>${esc(it.name)}</strong>
+          <div class="sub">${esc(it.item_id)} · <b>${it.missing}× fehlt</b>${
+            it.owned > 0 ? ` (${it.owned} von ${it.needed} da)` : ""}${
+            it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}` : ""}</div>
+          <div class="sub in-sets">📦 für: ${missingSetLinks(it.sets)}</div>
+          ${it.wanted ? `<span class="badge badge-wanted">⭐ auf der Wunschliste</span>` : ""}
+          <div class="fig-actions">
+            ${it.wanted ? "" : `<button class="mini-btn" data-mf-want="${i}">☆ Merken</button>`}
+            <a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>
+          </div>
+        </div>
+      </div>`).join("")}
+    </div>
+    <div class="card-actions btn-grid" style="margin-top:8px">
+      <button class="mini-btn add" id="btn-mf-want-all">☆ Alle auf die Wunschliste</button>
+      <button class="mini-btn" id="btn-mf-csv">Als CSV</button>
+      <button class="mini-btn" id="btn-mf-print">Drucken</button>
+    </div>
+  </div>`;
+
+  box.querySelectorAll("[data-jump-set]").forEach((b) => {
+    b.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      jumpToSet(b.dataset.jumpSet);
+    });
+  });
+  box.querySelectorAll("[data-more-sets]").forEach((mb) => {
+    mb.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const span = mb.closest(".in-sets").querySelector(".more-sets");
+      span.hidden = !span.hidden;
+      mb.textContent = span.hidden
+        ? `+${span.querySelectorAll(".set-link").length} weitere ▾`
+        : "weniger ▴";
+    });
+  });
+  box.querySelectorAll("[data-mf-want]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try {
+        await wantMissingFig(data.items[Number(b.dataset.mfWant)]);
+        toast("Auf die Wunschliste ✔");
+        loadWanted();
+        refreshMissingFigs();
+      } catch (e) { toast(e.message); b.disabled = false; }
+    });
+  });
+  $("btn-mf-want-all").addEventListener("click", async (ev) => {
+    const b = ev.currentTarget;
+    b.disabled = true;
+    const open = data.items.filter((i) => !i.wanted);
+    let done = 0;
+    for (const it of open) {
+      try { await wantMissingFig(it); done += 1; } catch (_) { /* weiter */ }
+    }
+    toast(done ? `${done} auf die Wunschliste ✔` : "Schon alle gemerkt");
+    loadWanted();
+    refreshMissingFigs();
+  });
+  $("btn-mf-csv").addEventListener("click", exportMissingFigsCsv);
+  $("btn-mf-print").addEventListener("click", printMissingFigs);
+}
+
+async function refreshMissingFigs() {
+  try {
+    const data = await api("/missing_set_figs");
+    state.missingFigs = data;
+    renderMissingFigs(data);
+  } catch (e) { toast(e.message); }
+}
+
+function wantMissingFig(it) {
+  return api("/wanted", { method: "POST", body: {
+    item_id: it.item_id, item_type: "minifig", name: it.name,
+    img_url: it.img_url || "", bricklink_url: it.bricklink_url || "",
+  }});
+}
+
+function exportMissingFigsCsv() {
+  const data = state.missingFigs;
+  const rows = [["Nummer", "Name", "Fehlt", "Benötigt", "Vorhanden",
+    "Ø Stück (EUR)", "Für Sets"]];
+  data.items.forEach((it) => rows.push([it.item_id, it.name, it.missing,
+    it.needed, it.owned, numDe(it.unit_price),
+    it.sets.map((s) => `${s.name} (${s.no})`).join(" / ")]));
+  downloadCsv("brickfolio-fehlende-set-figuren.csv", rows);
+  toast("Liste exportiert ✔");
+}
+
+function printMissingFigs() {
+  const data = state.missingFigs;
+  const rows = data.items.map((it) => [it.item_id, it.name, it.missing,
+    it.unit_price ? fmtEur(it.unit_price) : "",
+    it.sets.map((s) => `${s.name} (${s.no})`).join(", ")]);
+  printTable("Fehlende Set-Figuren",
+    `${data.stats.pieces} Figuren fehlen in ${data.stats.sets_incomplete} `
+    + `von ${data.stats.sets_total} Sets`
+    + (data.stats.est_cost > 0
+        ? ` · Nachkauf ca. ${fmtEur(data.stats.est_cost)}` : ""),
+    ["Nummer", "Name", "Fehlt", "Ø Stück", "Für Sets"], rows,
+    ["num", "name", "qty", "price", "name"]);
+}
+
 /* ---------------------------------------------------------------- Passwörter */
 async function changeOwnPassword() {
   const err = $("own-pass-error");
@@ -3232,6 +3396,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) { toast(e.message); }
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
+  $("btn-missing-figs").addEventListener("click", toggleMissingFigs);
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
   $("btn-pricelog-more").addEventListener("click",
     () => loadPriceLog(200));

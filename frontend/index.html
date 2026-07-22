@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=166">
+<link rel="stylesheet" href="/static/style.css?v=167">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -204,7 +204,11 @@
         <button id="btn-toggle-archive" class="mini-btn">📦 Archiv anzeigen</button>
         <button id="btn-duplicates" class="mini-btn">📋 Verkaufsliste (Doppelte)</button>
       </div>
+      <div class="detail-row" style="margin:0 0 4px">
+        <button id="btn-missing-figs" class="mini-btn">🧩 Fehlende Set-Figuren</button>
+      </div>
       <div id="duplicates-box" hidden></div>
+      <div id="missing-figs-box" hidden></div>
     </div>
     <div id="lists-container" class="results"></div>
     <p id="lists-empty" class="empty" hidden>Keine Einkaufslisten vorhanden.</p>

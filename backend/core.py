@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.7.1"
+APP_VERSION = "1.8.0"
 
 
 def hash_password(password: str) -> str:
@@ -273,6 +273,14 @@ def init_db():
         if "is_dealer" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN is_dealer "
                          "INTEGER NOT NULL DEFAULT 0")
+        # Name/Bild der Set-Figuren mitspeichern, damit die Übersicht der
+        # fehlenden Figuren ohne BrickLink-Abruf auskommt
+        sccols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(set_contents)")}
+        if sccols and "name" not in sccols:
+            conn.execute("ALTER TABLE set_contents ADD COLUMN name TEXT")
+        if sccols and "img_url" not in sccols:
+            conn.execute("ALTER TABLE set_contents ADD COLUMN img_url TEXT")
         # Startpunkte für den Preisverlauf aus bereits gespeicherten Preisen
         conn.execute(
             "INSERT INTO price_history (item_id, item_type, ts, price_new, "

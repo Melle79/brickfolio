@@ -53,6 +53,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 📋 **Verkaufsliste**: alle Doppelten mit abgebbarer Menge und Verkaufswert –
   für eigene Sets gebrauchte Figuren bleiben reserviert, von allem anderen
   bleibt ein Behalte-Exemplar
+- 🧩 **Fehlende Set-Figuren**: über alle eigenen Sets hinweg, welche Figuren
+  noch fehlen (mit Anzahl, Sets, Nachkaufpreis) – einzeln oder alle auf die
+  Wunschliste, als CSV oder Druckliste
 - 🗒 Beim Verbuchen von einer Einkaufsliste landet der **Listenname in den
   Notizen** des Sammlungs-Eintrags (Herkunft bleibt nachvollziehbar)
 - 📈 Zusätzliche Statistik: bezahlt gesamt, Gewinn, beste Wertsteigerungen

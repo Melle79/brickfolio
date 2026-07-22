@@ -423,6 +423,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .fig-actions .mini-btn { min-height: 38px; font-size: 13px; padding: 5px 8px; flex: 1; }
 
 .in-sets { color: var(--blue); margin-top: 2px; font-size: 12px; }
+/* Figur gehört zu einem eigenen Set und fehlt dort noch */
+.in-sets.missing { color: var(--red); font-weight: 800; }
 
 .set-link {
   background: none; border: none; padding: 0;

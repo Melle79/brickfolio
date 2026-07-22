@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.0 – Juli 2026
+
+### Neu
+- 🧩 **Übersicht „Fehlende Set-Figuren"** (Listen): zeigt über alle eigenen Sets hinweg, welche Minifiguren noch fehlen – mit Anzahl, zugehörigen Sets, geschätztem Nachkaufpreis und Aktionen (einzeln oder alle auf die Wunschliste, CSV, Drucken). Der Bedarf berücksichtigt, wie oft ihr ein Set besitzt
+- 🔎 **Suchergebnisse markieren fehlende Set-Figuren**: Gehört eine gefundene Figur zu einem eurer Sets und fehlt dort noch, steht statt „in Sets" jetzt deutlich **„fehlt zu eurem Set"** – praktisch beim Stöbern auf dem Flohmarkt
+
+### Sonstiges
+- Set-Inhalte speichern jetzt auch Name und Bild der Figuren, damit die Übersicht ohne BrickLink-Abruf funktioniert (ältere Einträge werden im Hintergrund nachgezogen)
+
 ## 1.7.1 – Juli 2026
 
 ### Behoben

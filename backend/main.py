@@ -1606,8 +1606,10 @@ def _store_set_contents(set_no: str, figs: list):
         conn.execute("DELETE FROM set_contents WHERE set_no = ?", (set_no,))
         for f in figs:
             conn.execute(
-                "INSERT OR REPLACE INTO set_contents (set_no, fig_no, qty) "
-                "VALUES (?, ?, ?)", (set_no, f["item_id"], f.get("qty", 1)))
+                "INSERT OR REPLACE INTO set_contents "
+                "(set_no, fig_no, qty, name, img_url) VALUES (?, ?, ?, ?, ?)",
+                (set_no, f["item_id"], f.get("qty", 1),
+                 f.get("name") or None, f.get("img_url") or None))
         conn.execute(
             "INSERT INTO set_meta (set_no, figs_fetched_at) VALUES (?, ?) "
             "ON CONFLICT(set_no) DO UPDATE SET figs_fetched_at = excluded.figs_fetched_at",
@@ -1684,6 +1686,105 @@ def set_figs_owned(set_no: str, user: dict = Depends(current_user)):
                             "condition": r["condition"],
                             "quantity": r["quantity"], "remove": take})
     return {"items": out}
+
+
+@app.get("/api/missing_set_figs")
+def missing_set_figs(user: dict = Depends(current_user)):
+    """Welche Minifiguren fehlen über alle eigenen Sets hinweg?
+
+    Rechnet rein lokal: Bedarf = Set-Inhalt × Anzahl besessener Sets,
+    summiert über alle Sets. Davon wird der Bestand abgezogen; was übrig
+    bleibt, fehlt. Preise kommen aus der Wunschliste bzw. dem Preisverlauf.
+    """
+    with core.db() as conn:
+        sets = conn.execute(
+            "SELECT item_id, name, quantity FROM collection "
+            "WHERE item_type = 'set'").fetchall()
+        contents = conn.execute(
+            "SELECT set_no, fig_no, qty, name, img_url "
+            "FROM set_contents").fetchall()
+        owned = {r["item_id"]: r["n"] for r in conn.execute(
+            "SELECT item_id, COALESCE(SUM(quantity), 0) AS n FROM collection "
+            "WHERE item_type = 'minifig' GROUP BY item_id")}
+        wanted = {r["item_id"]: r for r in conn.execute(
+            "SELECT item_id, price_new, price_used FROM wanted "
+            "WHERE item_type = 'minifig'")}
+
+        # Namen aus Sammlung/Wunschliste als Rückfall, falls der Set-Inhalt
+        # noch aus einer Version ohne Namensspalte stammt
+        known = {r["item_id"]: r for r in conn.execute(
+            "SELECT item_id, name, img_url FROM collection "
+            "WHERE item_type = 'minifig' "
+            "UNION SELECT item_id, name, img_url FROM wanted "
+            "WHERE item_type = 'minifig'")}
+
+        by_set: dict = {}
+        stale = set()
+        for c in contents:
+            by_set.setdefault(c["set_no"], []).append(c)
+            if not c["name"]:
+                stale.add(c["set_no"])
+
+        need: dict = {}
+        for s in sets:
+            for c in by_set.get(s["item_id"], []):
+                e = need.setdefault(c["fig_no"], {
+                    "needed": 0, "name": None, "img_url": None, "sets": []})
+                e["needed"] += (c["qty"] or 1) * max(1, s["quantity"])
+                e["name"] = e["name"] or c["name"]
+                e["img_url"] = e["img_url"] or c["img_url"]
+                e["sets"].append({"no": s["item_id"], "name": s["name"],
+                                  "qty": c["qty"] or 1})
+
+        items = []
+        est_cost = 0.0
+        incomplete = set()
+        for fig_no, e in need.items():
+            have = owned.get(fig_no, 0)
+            missing = e["needed"] - have
+            if missing <= 0:
+                continue
+            for s in e["sets"]:
+                incomplete.add(s["no"])
+            w = wanted.get(fig_no)
+            price_new = w["price_new"] if w else None
+            price_used = w["price_used"] if w else None
+            if price_new is None and price_used is None:
+                prow = conn.execute(
+                    "SELECT price_new, price_used FROM price_history "
+                    "WHERE item_id = ? AND item_type = 'minifig' "
+                    "ORDER BY ts DESC LIMIT 1", (fig_no,)).fetchone()
+                if prow:
+                    price_new, price_used = prow["price_new"], prow["price_used"]
+            unit = price_used or price_new
+            if unit:
+                est_cost += unit * missing
+            k = known.get(fig_no)
+            items.append({
+                "item_id": fig_no,
+                "name": e["name"] or (k["name"] if k else None) or fig_no,
+                "img_url": e["img_url"] or (k["img_url"] if k else "") or "",
+                "bricklink_url": (
+                    "https://www.bricklink.com/v2/catalog/catalogitem.page?M="
+                    + requests.utils.quote(fig_no)),
+                "needed": e["needed"], "owned": have, "missing": missing,
+                "sets": e["sets"], "wanted": fig_no in wanted,
+                "price_new": price_new, "price_used": price_used,
+                "unit_price": unit,
+            })
+    # Set-Inhalte ohne Namen stammen aus einer älteren Version – im
+    # Hintergrund nachziehen, damit beim nächsten Aufruf Name und Bild da sind
+    owned_nos = {s["item_id"] for s in sets}
+    for set_no in list(stale & owned_nos)[:5]:
+        _maybe_fetch_set_contents_async(set_no)
+
+    items.sort(key=lambda x: x["name"].lower())
+    return {"items": items,
+            "stats": {"figs": len(items),
+                      "pieces": sum(i["missing"] for i in items),
+                      "est_cost": round(est_cost, 2),
+                      "sets_incomplete": len(incomplete),
+                      "sets_total": len(sets)}}
 
 
 @app.get("/api/duplicates")

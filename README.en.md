@@ -53,6 +53,9 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 - 📋 **Sell list**: every duplicate with its giveaway quantity and sale value –
   figures needed for your own sets stay reserved, everything else keeps one
   copy for you
+- 🧩 **Missing set figures**: across all your sets, which minifigures are still
+  missing (count, sets, estimated cost) – add them to the wishlist one by one
+  or all at once, export as CSV or print
 - 🗒 When receiving from a shopping list, the **list name is written into the
   notes** of the collection entry (origin stays traceable)
 - 📈 Extra stats: total paid, profit, best value gains
