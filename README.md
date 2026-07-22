@@ -64,6 +64,8 @@ kommen von [BrickLink](https://www.bricklink.com) und
   CSV-Export und druckfertige Listen
 - 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (Standard „Finn");
   ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
+- 🌌 Zwei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell und
+  „Galaxie" dunkel mit Sternenhimmel – die Wahl gilt pro Gerät
 - 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
   eurem Server
 

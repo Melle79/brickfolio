@@ -64,6 +64,8 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   lists
 - 🏷 Configurable **display name** in logo and title (default “Finn”); ideal
   when several family members each run their own instance
+- 🌌 Two **themes** to choose from (More → Design): light “Classic” and dark
+  “Galaxy” with a starfield – the choice is per device
 - 📲 Installable as a PWA, offline shell, no cloud – everything stays on your
   own server
 

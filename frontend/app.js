@@ -2923,6 +2923,31 @@ async function restoreBackupFile(file) {
   } catch (e) { toast(e.message); }
 }
 
+/* ---------------------------------------------------------------- Design */
+function applyTheme(name) {
+  const galaxy = name === "galaxy";
+  if (galaxy) document.documentElement.dataset.theme = "galaxy";
+  else delete document.documentElement.dataset.theme;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = galaxy ? "#0C1322" : "#FFCF00";
+  document.querySelectorAll("[data-theme-pick]").forEach((b) =>
+    b.classList.toggle("sel",
+      b.dataset.themePick === (galaxy ? "galaxy" : "classic")));
+}
+
+function initThemePicker() {
+  document.querySelectorAll("[data-theme-pick]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const pick = btn.dataset.themePick;
+      try { localStorage.setItem("bf_theme", pick); } catch (_) { /* egal */ }
+      applyTheme(pick);
+    });
+  });
+  let stored = "classic";
+  try { stored = localStorage.getItem("bf_theme") || "classic"; } catch (_) { /* egal */ }
+  applyTheme(stored);
+}
+
 /* ---------------------------------------------------------------- Einstellungen */
 function initCollapsibleCards() {
   document.querySelectorAll("#view-settings .settings-card > h3")
@@ -3139,6 +3164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "";
   };
   initCollapsibleCards();
+  initThemePicker();
   const ownerBtn = $("btn-owner-name");
   if (ownerBtn) {
     ownerBtn.addEventListener("click", async () => {

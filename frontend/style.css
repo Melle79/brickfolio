@@ -16,6 +16,16 @@
   --radius: 14px;
   --shadow: 0 3px 0 rgba(29, 29, 27, .18);
   --font: "Nunito", -apple-system, "SF Pro Rounded", system-ui, sans-serif;
+  /* Flächen – von Themes überschreibbar */
+  --field: #FAFAFB;        /* Eingabefelder */
+  --img-bg: #F4F5F7;       /* Bild-Platzhalter */
+  --surface: #FFFFFF;      /* helle Flächen (Popups, Chips) */
+  --sheet-bg: #F3F4F6;     /* Hilfe-Overlay */
+  --track: #E8EAEE;        /* Balken-Hintergrund */
+  --info-bg: #E8F0FA;      /* Typ-Badge */
+  --toast-bg: #1D1D1B;
+  --toast-fg: #FFFFFF;
+  --page-dots: rgba(29, 29, 27, .05);
 }
 
 * { box-sizing: border-box; }
@@ -27,7 +37,7 @@ body {
   font-weight: 600;
   color: var(--ink);
   background:
-    radial-gradient(circle at 6px 6px, rgba(29,29,27,.05) 2.5px, transparent 3px)
+    radial-gradient(circle at 6px 6px, var(--page-dots) 2.5px, transparent 3px)
     0 0 / 24px 24px,
     var(--plate);
   min-height: 100dvh;
@@ -77,7 +87,7 @@ button { font-family: inherit; }
 label { display: block; font-size: 13px; margin: 14px 0 4px; color: var(--muted); }
 input, textarea, select {
   width: 100%; padding: 12px; font: inherit; font-weight: 600;
-  border: 2px solid var(--line); border-radius: 10px; background: #FAFAFB;
+  border: 2px solid var(--line); border-radius: 10px; background: var(--field);
 }
 select { appearance: none; -webkit-appearance: none; }
 #btn-manual-toggle { margin-top: 24px; }
@@ -164,7 +174,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .card-head { display: flex; gap: 12px; align-items: center; }
 .card-img {
   width: 72px; height: 72px; flex: none; object-fit: contain;
-  background: #F4F5F7; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--img-bg); border-radius: 10px; border: 1px solid var(--line);
 }
 .card-title { flex: 1; min-width: 0; }
 .card-title strong { display: block; font-size: 15px; line-height: 1.3; }
@@ -175,7 +185,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 }
 .badge-score { background: var(--yellow); border: 1.5px solid var(--ink); }
 .badge-low { background: var(--line); border: 1.5px solid var(--muted); }
-.badge-type { background: #E8F0FA; color: var(--blue); border: 1.5px solid var(--blue); margin-left: 6px; }
+.badge-type { background: var(--info-bg); color: var(--blue); border: 1.5px solid var(--blue); margin-left: 6px; }
 
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
 .mini-btn {
@@ -268,7 +278,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .toast {
   position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 92px);
   transform: translateX(-50%); z-index: 50;
-  background: var(--ink); color: #fff; font-weight: 800; font-size: 14.5px;
+  background: var(--toast-bg); color: var(--toast-fg); font-weight: 800; font-size: 14.5px;
   padding: 11px 18px; border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
   max-width: 90vw; text-align: center;
 }
@@ -283,7 +293,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 }
 .lightbox img {
   max-width: 92vw; max-height: 80vh; object-fit: contain;
-  background: #fff; border-radius: var(--radius); padding: 10px;
+  background: var(--surface); border-radius: var(--radius); padding: 10px;
 }
 .lightbox-hint { color: rgba(255,255,255,.75); font-size: 13.5px; font-weight: 700; }
 .fix-input { flex: 2; min-width: 130px; }
@@ -328,7 +338,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 
 .price-history { margin-top: 8px; }
 .history-svg {
-  width: 100%; height: auto; background: #FAFAFB;
+  width: 100%; height: auto; background: var(--field);
   border: 1.5px solid var(--line); border-radius: 10px;
 }
 .hist-label { font-size: 11px; fill: var(--muted); font-family: inherit; font-weight: 700; }
@@ -449,7 +459,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 header .logo-studs.small i { width: 14px; height: 7px; }
 
 header .logo-studs.small i:first-child {
-  background: #fff; box-shadow: inset 0 -2px 0 #D9DCE1;
+  background: var(--surface); box-shadow: inset 0 -2px 0 var(--line);
 }
 
 @media print {
@@ -512,7 +522,7 @@ header .logo-studs.small i:first-child {
 #view-stats .card { margin-bottom: 12px; padding: 14px; }
 .stat-bar-row { margin-bottom: 8px; }
 .stat-bar {
-  height: 10px; background: #E8EAEE; border-radius: 6px;
+  height: 10px; background: var(--track); border-radius: 6px;
   margin-top: 4px; overflow: hidden;
 }
 .stat-bar-fill {
@@ -520,7 +530,7 @@ header .logo-studs.small i:first-child {
 }
 details.help {
   border: 1.5px solid var(--line); border-radius: 10px;
-  padding: 10px 12px; margin-bottom: 8px; background: #fff;
+  padding: 10px 12px; margin-bottom: 8px; background: var(--surface);
 }
 details.help summary {
   font-weight: 800; cursor: pointer; user-select: none;
@@ -560,7 +570,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .help-btn {
   width: 32px; height: 32px; border-radius: 50%;
-  border: 2.5px solid var(--ink); background: #fff;
+  border: 2.5px solid var(--ink); background: var(--surface);
   font-weight: 900; font-size: 17px; line-height: 1;
   margin-left: auto; margin-right: 10px; cursor: pointer;
   box-shadow: var(--shadow); flex-shrink: 0;
@@ -576,7 +586,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   display: flex; padding: 18px 12px;
 }
 .help-sheet {
-  background: var(--bg, #F3F4F6); margin: auto;
+  background: var(--sheet-bg); margin: auto;
   width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
   border: 2.5px solid var(--ink); border-radius: 16px;
   box-shadow: var(--shadow); padding: 14px 16px 18px;
@@ -589,7 +599,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .help-head h3 { margin: 0; }
 .help-close {
   width: 34px; height: 34px; border-radius: 10px;
-  border: 2px solid var(--ink); background: #fff;
+  border: 2px solid var(--ink); background: var(--surface);
   font-weight: 900; font-size: 16px; cursor: pointer;
 }
 .rename-btn { font-size: 13px; text-decoration: none; margin-left: 4px; }
@@ -708,7 +718,102 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 
 /* Mengen-Stepper: letztes Exemplar = Löschen (rot, eigenes Symbol) */
 .qty button.qty-del {
-  background: #fff; border-color: var(--red); color: var(--red);
+  background: var(--surface); border-color: var(--red); color: var(--red);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .qty button.qty-del:active { background: var(--red); color: #fff; }
+
+/* ================= Design „Galaxie" (optional, dunkel) =================
+   Eigenständiges, weltraum-inspiriertes Theme. Bewusst ohne geschützte
+   Logos, Schriften oder Grafiken. Umschaltbar unter Mehr → Design. */
+[data-theme="galaxy"] {
+  color-scheme: dark;
+  --yellow: #FFD52E;
+  --yellow-dark: #C9A200;
+  --red: #FF4D4D;
+  --blue: #4FA8FF;
+  --green: #35D07F;
+  --ink: #EAEEF7;            /* Text und Konturen */
+  --plate: #070B14;
+  --card: #141B2B;
+  --line: #2E3A52;
+  --muted: #9AA6BF;
+  --shadow: 0 3px 0 rgba(0, 0, 0, .55);
+  --field: #0E1523;
+  --img-bg: #1B2436;
+  --surface: #1A2334;
+  --sheet-bg: #111827;
+  --track: #26314A;
+  --info-bg: rgba(79, 168, 255, .16);
+  --toast-bg: #1E2941;
+  --toast-fg: #EAEEF7;
+  --page-dots: rgba(255, 255, 255, .18);
+}
+
+/* Sternenfeld statt Noppen-Raster, dazu ein sanfter Nebel oben */
+[data-theme="galaxy"] body {
+  background:
+    radial-gradient(circle at 6px 6px, var(--page-dots) 1.1px, transparent 1.6px)
+      0 0 / 72px 58px,
+    radial-gradient(circle at 34px 44px, rgba(255,255,255,.10) 1px, transparent 1.5px)
+      0 0 / 116px 94px,
+    radial-gradient(900px 480px at 50% -8%, rgba(79,168,255,.13), transparent 72%),
+    var(--plate);
+}
+
+/* Kopf- und Tab-Leiste dunkel mit leuchtender Kante */
+[data-theme="galaxy"] .topbar {
+  background: #0C1322;
+  border-bottom: 3px solid var(--yellow);
+  box-shadow: 0 2px 18px rgba(79, 168, 255, .18);
+}
+[data-theme="galaxy"] .topbar h1 { color: var(--yellow); }
+[data-theme="galaxy"] .topbar .whoami { color: var(--muted); }
+[data-theme="galaxy"] header .logo-studs.small i:first-child {
+  background: #C7D0E4; box-shadow: inset 0 -2px 0 var(--line);
+}
+[data-theme="galaxy"] .tabbar { background: #0C1322; border-top: 3px solid var(--line); }
+[data-theme="galaxy"] .tab.active { color: var(--yellow); }
+[data-theme="galaxy"] .tab.active svg { stroke: var(--yellow); }
+
+/* Konturen weicher als im hellen Design (dort ist --ink die Kontur) */
+[data-theme="galaxy"] .card,
+[data-theme="galaxy"] .stat-chip,
+[data-theme="galaxy"] .settings-card,
+[data-theme="galaxy"] .login-box,
+[data-theme="galaxy"] .btn,
+[data-theme="galaxy"] .mini-btn,
+[data-theme="galaxy"] .brick-button,
+[data-theme="galaxy"] .brick-studs i,
+[data-theme="galaxy"] .scan-preview img,
+[data-theme="galaxy"] .help-btn,
+[data-theme="galaxy"] .help-close { border-color: var(--line); }
+
+[data-theme="galaxy"] .stat-chip strong { color: var(--yellow); }
+
+/* Auf hellen Flächen (Gelb/Grün) dunkle Schrift statt heller */
+[data-theme="galaxy"] .btn-primary,
+[data-theme="galaxy"] .badge-score,
+[data-theme="galaxy"] .badge-owned,
+[data-theme="galaxy"] .mini-btn.add,
+[data-theme="galaxy"] .qty button.qty-del:active { color: #0B1220; }
+[data-theme="galaxy"] .badge-owned { border-color: var(--line); }
+[data-theme="galaxy"] .qty-badge { color: #0B1220; }
+/* Gelbe Flächen erben sonst die (hier helle) Textfarbe – dunkel erzwingen */
+[data-theme="galaxy"] .qty button,
+[data-theme="galaxy"] .set-link.owned,
+[data-theme="galaxy"] .pl-src.manual { color: #0B1220; border-color: var(--yellow-dark); }
+[data-theme="galaxy"] .qty button.qty-del {
+  background: var(--surface); color: var(--red); border-color: var(--red);
+}
+
+/* color-scheme: dark faerbt Browser-Knopftext sonst weiss – explizit setzen.
+   Reihenfolge: erst allgemein, dann die Sonderfaelle. */
+[data-theme="galaxy"] .btn,
+[data-theme="galaxy"] .mini-btn { color: var(--ink); }
+[data-theme="galaxy"] .mini-btn.link { color: var(--blue); }
+[data-theme="galaxy"] .mini-btn.danger { color: var(--red); }
+[data-theme="galaxy"] .btn-primary,
+[data-theme="galaxy"] .mini-btn.add,
+[data-theme="galaxy"] .mini-btn.cond.sel,
+[data-theme="galaxy"] .cond-mini.sel { color: #0B1220; }

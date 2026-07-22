@@ -14,7 +14,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=164">
+<link rel="stylesheet" href="/static/style.css?v=165">
+<script>
+  /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
+  try {
+    if (localStorage.getItem("bf_theme") === "galaxy") {
+      document.documentElement.dataset.theme = "galaxy";
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.content = "#0C1322";
+    }
+  } catch (e) { /* privater Modus o. Ä. */ }
+</script>
 </head>
 <body>
 
@@ -208,6 +218,16 @@
   <!-- Einstellungen -->
   <main id="view-settings" class="view" hidden>
     <h2>Einstellungen</h2>
+    <div class="settings-card" id="theme-card">
+      <h3>🎨 Design</h3>
+      <div class="detail-row btn-grid">
+        <button class="mini-btn cond" data-theme-pick="classic">🧱 Klassisch</button>
+        <button class="mini-btn cond" data-theme-pick="galaxy">🌌 Galaxie</button>
+      </div>
+      <p class="search-hint">„Galaxie" ist ein dunkles, weltraum-inspiriertes
+        Design. Die Auswahl gilt nur auf diesem Gerät.</p>
+    </div>
+
     <div class="settings-card">
       <h3>📤 Export &amp; Druck</h3>
       <div class="detail-row btn-grid">
