@@ -2857,12 +2857,24 @@ function renderMissingFigs(data) {
         </div>
       </div>`).join("")}
     </div>
+    ${s.details_pending > 0 ? `
+    <div class="mf-pending">
+      <span>ℹ️ Bei ${s.details_pending} ${s.details_pending === 1 ? "Set" : "Sets"}
+        fehlen noch Figuren-Namen und -Bilder (nur die Nummer zu sehen).</span>
+      ${s.can_fetch
+        ? `<button class="mini-btn" id="btn-mf-details">🔄 Namen & Bilder nachladen</button>`
+        : `<span class="search-hint">Dafür wird ein BrickLink-Schlüssel benötigt
+            (Mehr → API-Schlüssel).</span>`}
+    </div>` : ""}
     <div class="card-actions btn-grid" style="margin-top:8px">
       <button class="mini-btn add" id="btn-mf-want-all">☆ Alle auf die Wunschliste</button>
       <button class="mini-btn" id="btn-mf-csv">Als CSV</button>
       <button class="mini-btn" id="btn-mf-print">Drucken</button>
     </div>
   </div>`;
+
+  const detailsBtn = $("btn-mf-details");
+  if (detailsBtn) detailsBtn.addEventListener("click", fetchMissingFigDetails);
 
   box.querySelectorAll("[data-jump-set]").forEach((b) => {
     b.addEventListener("click", (ev) => {
@@ -2905,6 +2917,32 @@ function renderMissingFigs(data) {
   });
   $("btn-mf-csv").addEventListener("click", exportMissingFigsCsv);
   $("btn-mf-print").addEventListener("click", printMissingFigs);
+}
+
+/* Holt die fehlenden Figuren-Details in Häppchen und zeigt den Fortschritt. */
+async function fetchMissingFigDetails() {
+  const btn = $("btn-mf-details");
+  if (btn) btn.disabled = true;
+  let total = 0;
+  try {
+    for (let round = 0; round < 20; round += 1) {
+      if (btn) btn.textContent = `🔄 Lade Details … (${total} Sets)`;
+      const res = await api("/set_contents/refresh?limit=10",
+        { method: "POST" });
+      total += res.updated;
+      if (res.failed && res.failed.length) {
+        toast(`${res.failed.length} Set(s) übersprungen: `
+          + res.failed[0].error);
+      }
+      if (!res.remaining || !res.updated) break;
+    }
+    toast(total ? `Details für ${total} Sets geladen ✔`
+                : "Keine weiteren Details verfügbar");
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    await refreshMissingFigs();
+  }
 }
 
 async function refreshMissingFigs() {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.1 – Juli 2026
+
+### Behoben
+- 🖼 In der Übersicht „Fehlende Set-Figuren" fehlten bei vielen Einträgen **Name und Bild** (nur die Nummer war zu sehen). Ursache: Diese Angaben kommen aus dem gespeicherten Set-Inhalt, der bei älteren Sammlungen noch ohne sie angelegt wurde. Statt sie still im Hintergrund und stark gedrosselt nachzuladen, zeigt die App jetzt offen an, bei wie vielen Sets Details fehlen – mit dem Knopf **„🔄 Namen & Bilder nachladen"**, der sie mit Fortschrittsanzeige holt
+
 ## 1.8.0 – Juli 2026
 
 ### Neu

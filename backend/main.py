@@ -987,15 +987,17 @@ def save_settings(body: SettingsBody, user: dict = Depends(admin_user)):
     return {"ok": True, "changed": changed, "flags": _config_flags()}
 
 
+def scrub(msg: str) -> str:
+    """Schlüssel aus Fehlermeldungen entfernen, bevor sie nach außen gehen."""
+    for name in integrations.SETTING_ENV:
+        value = integrations.setting(name)
+        if value:
+            msg = msg.replace(value, "***")
+    return msg[:200]
+
+
 @app.post("/api/settings/test")
 def test_settings(user: dict = Depends(admin_user)):
-    def scrub(msg: str) -> str:
-        for name in integrations.SETTING_ENV:
-            value = integrations.setting(name)
-            if value:
-                msg = msg.replace(value, "***")
-        return msg[:200]
-
     results = {}
     if integrations.bricklink_enabled():
         try:
@@ -1772,11 +1774,11 @@ def missing_set_figs(user: dict = Depends(current_user)):
                 "price_new": price_new, "price_used": price_used,
                 "unit_price": unit,
             })
-    # Set-Inhalte ohne Namen stammen aus einer älteren Version – im
-    # Hintergrund nachziehen, damit beim nächsten Aufruf Name und Bild da sind
+    # Set-Inhalte ohne Namen stammen aus einer älteren Version. Wie viele
+    # Sets noch Details brauchen, meldet die Antwort mit – nachladen kann
+    # man sie gezielt über /api/set_contents/refresh.
     owned_nos = {s["item_id"] for s in sets}
-    for set_no in list(stale & owned_nos)[:5]:
-        _maybe_fetch_set_contents_async(set_no)
+    pending = sorted(stale & owned_nos)
 
     items.sort(key=lambda x: x["name"].lower())
     return {"items": items,
@@ -1784,7 +1786,40 @@ def missing_set_figs(user: dict = Depends(current_user)):
                       "pieces": sum(i["missing"] for i in items),
                       "est_cost": round(est_cost, 2),
                       "sets_incomplete": len(incomplete),
-                      "sets_total": len(sets)}}
+                      "sets_total": len(sets),
+                      "details_pending": len(pending),
+                      "can_fetch": integrations.bricklink_enabled()}}
+
+
+@app.post("/api/set_contents/refresh")
+def refresh_set_contents(limit: int = 10, user: dict = Depends(current_user)):
+    """Namen und Bilder der Set-Figuren von BrickLink nachladen.
+
+    Arbeitet die Sets ab, deren gespeicherter Inhalt noch keine Namen hat
+    (Altbestand). Läuft bewusst synchron und in Häppchen, damit die App
+    Rückmeldung geben kann, statt still im Hintergrund zu werkeln.
+    """
+    if not integrations.bricklink_enabled():
+        raise HTTPException(501, "BrickLink-API nicht konfiguriert "
+                                 "(Schlüssel unter Mehr → API-Schlüssel)")
+    limit = max(1, min(limit, 25))
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT sc.set_no FROM set_contents sc "
+            "JOIN collection c ON c.item_type = 'set' AND c.item_id = sc.set_no "
+            "WHERE sc.name IS NULL OR sc.name = '' "
+            "ORDER BY sc.set_no").fetchall()
+    todo = [r["set_no"] for r in rows]
+    done, failed = 0, []
+    for set_no in todo[:limit]:
+        try:
+            _store_set_contents(set_no, integrations.bricklink_subsets(set_no))
+            done += 1
+        except Exception as e:                      # einzelne Sets überspringen
+            failed.append({"set_no": set_no, "error": scrub(str(e))[:120]})
+    return {"ok": True, "updated": done,
+            "remaining": max(0, len(todo) - done),
+            "failed": failed}
 
 
 @app.get("/api/duplicates")

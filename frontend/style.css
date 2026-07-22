@@ -422,6 +422,13 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .fig-actions { display: flex; gap: 6px; margin-top: 6px; }
 .fig-actions .mini-btn { min-height: 38px; font-size: 13px; padding: 5px 8px; flex: 1; }
 
+.mf-pending {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 10px;
+  padding: 10px 12px; border: 1.5px dashed var(--line); border-radius: 10px;
+  font-size: 13px; color: var(--muted);
+}
+.mf-pending .mini-btn { flex: none; }
+
 .in-sets { color: var(--blue); margin-top: 2px; font-size: 12px; }
 /* Figur gehört zu einem eigenen Set und fehlt dort noch */
 .in-sets.missing { color: var(--red); font-weight: 800; }
