@@ -89,18 +89,24 @@
     <button id="btn-manual-toggle" class="btn btn-outline">✏️ Manuell erfassen</button>
     <div id="manual-form" class="settings-card" hidden>
       <h3>Manuell erfassen</h3>
-      <label for="m-name">Name *</label>
-      <input id="m-name" placeholder="z. B. Battle Droid, Tan">
+      <div class="name-type-row">
+        <div class="nt-name">
+          <label for="m-name">Name *</label>
+          <input id="m-name" placeholder="z. B. Battle Droid, Tan">
+        </div>
+        <div class="nt-type">
+          <label for="m-type">Typ</label>
+          <select id="m-type">
+            <option value="minifig" selected>Minifigur</option>
+            <option value="part">Einzelteil</option>
+            <option value="set">Set</option>
+          </select>
+        </div>
+      </div>
       <p id="m-search-hint" class="search-hint" hidden></p>
       <div id="m-suggestions" class="results suggestions"></div>
       <label for="m-id">BrickLink-Nr. (optional)</label>
       <input id="m-id" placeholder="z. B. sw0001a" autocapitalize="none">
-      <label for="m-type">Typ</label>
-      <select id="m-type">
-        <option value="minifig" selected>Minifigur</option>
-        <option value="part">Einzelteil</option>
-        <option value="set">Set</option>
-      </select>
       <label for="m-qty">Anzahl</label>
       <input id="m-qty" type="number" min="1" max="999" value="1" inputmode="numeric">
       <label for="m-cond">Zustand</label>

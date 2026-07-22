@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.20 – Juli 2026
+
+### Verbessert
+- 🔎 Katalogsuche: **10 Treffer pro Seite** (statt 20), „Weitere Ergebnisse laden" holt jeweils 10 nach
+- 🏷 Beim manuellen Erfassen steht der **Typ (Minifigur/Teil/Set) jetzt direkt neben dem Namensfeld**
+
 ## 1.6.19 – Juli 2026
 
 ### Verbessert

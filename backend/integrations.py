@@ -44,7 +44,7 @@ _RB_PATH = {"minifig": "minifigs", "part": "parts", "set": "sets"}
 
 
 def search_catalog(query: str, item_type: str = "minifig",
-                   page: int = 1, page_size: int = 20) -> dict:
+                   page: int = 1, page_size: int = 10) -> dict:
     """Textsuche im Rebrickable-Katalog, seitenweise, mit Bild.
 
     Gibt neben den Treffern die Gesamtzahl (``count``) und ``has_more``
