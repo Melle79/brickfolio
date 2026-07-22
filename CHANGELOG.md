@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.3 – Juli 2026
+
+### Neu
+- 🖼 **Bild nachladen** für Einträge in der Sammlung: Fehlt einem Eintrag das Bild (oder passt es nicht), holt ein Knopf im Detailbereich das aktuelle Katalogbild von BrickLink. Bisher ging das nur bei Einträgen ganz ohne BrickLink-Nummer
+
 ## 1.8.2 – Juli 2026
 
 ### Behoben

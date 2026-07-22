@@ -1218,6 +1218,7 @@ function collCardDetails(it) {
         </div>` : ""}
         <div class="detail-row btn-grid">
           <button class="mini-btn" data-save-notes>Notiz speichern</button>
+          ${state.bricklinkLookup && !needsBlNo ? `<button class="mini-btn" data-img-reload>🖼 ${it.img_url ? "Bild erneuern" : "Bild nachladen"}</button>` : ""}
           ${state.bricklinkPrices && !needsBlNo ? `<button class="mini-btn" data-price>↻ Preise aktualisieren</button>` : ""}
           ${priceGuideUrl(it) ? `<a class="mini-btn link" href="${esc(priceGuideUrl(it))}" target="_blank" rel="noopener">Preisverlauf ↗</a>` : ""}
           ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
@@ -1245,7 +1246,7 @@ function renderCollection() {
   list.innerHTML = items.map((it) => `
     <div class="card" data-id="${it.id}">
       <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <span class="qty-badge" data-qty-val>${it.quantity}</span>
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
@@ -1477,6 +1478,37 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
   const priceBtn = card.querySelector("[data-price]");
   if (priceBtn) {
     priceBtn.addEventListener("click", () => loadEntryPrice(card, item, true));
+  }
+
+  // Bild fehlt oder ist falsch: frisch von BrickLink holen
+  const imgBtn = card.querySelector("[data-img-reload]");
+  if (imgBtn) {
+    imgBtn.addEventListener("click", async () => {
+      const label = imgBtn.textContent;
+      imgBtn.disabled = true;
+      imgBtn.textContent = "Lade Bild …";
+      try {
+        const found = await api(`/lookup/${item.item_type}/`
+          + encodeURIComponent(item.item_id));
+        if (!found.img_url) {
+          toast("BrickLink hat zu dieser Nummer kein Bild");
+          return;
+        }
+        await api("/collection/" + id, { method: "PATCH",
+          body: { img_url: found.img_url } });
+        item.img_url = found.img_url;
+        const img = card.querySelector(".card-img");
+        if (img) img.src = found.img_url;
+        imgBtn.textContent = "🖼 Bild erneuern";
+        toast("Bild aktualisiert ✔");
+        return;
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        imgBtn.disabled = false;
+        if (imgBtn.textContent === "Lade Bild …") imgBtn.textContent = label;
+      }
+    });
   }
 }
 
