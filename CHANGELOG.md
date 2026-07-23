@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.5 – Juli 2026
+
+### Sonstiges
+- 📄 Anleitung für **mehrere Instanzen** korrigiert: Empfohlen ist jetzt **eine Aufgabe je Instanz**. Wer alles in eine Aufgabe schreibt, braucht `|| true` am Zeilenende – bricht die erste Zeile mit einem Fehler ab, führt der Aufgabenplaner die zweite sonst nicht mehr aus, und die zweite Instanz bekommt nie ein Lebenszeichen
+
 ## 1.9.4 – Juli 2026
 
 ### Behoben

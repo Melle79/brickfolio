@@ -177,15 +177,24 @@ Geplante Aufgabe → Benutzerdefiniertes Skript
 #### Mehrere Instanzen
 
 Betreibt ihr mehrere Brickfolios (je eigener Ordner mit eigener
-`docker-compose.yml`), genügt **eine** Aufgabe mit mehreren Zeilen:
+`docker-compose.yml`), legt am besten **je Instanz eine eigene Aufgabe** an.
+Das ist der robusteste Weg: Jede läuft unabhängig, und im Aufgabenplaner seht
+ihr pro Instanz, ob sie durchgelaufen ist.
+
+Wollt ihr trotzdem nur **eine** Aufgabe, hängt an jede Zeile `|| true`:
 
 ```sh
-sh /volume1/docker/brickfolio/update-watch.sh
-sh /volume1/docker/nerdfan/update-watch.sh
+sh /volume1/docker/brickfolio/update-watch.sh || true
+sh /volume1/docker/brickfolio-nerdfan/update-watch.sh || true
 ```
 
-Die Instanzen bleiben unabhängig – jede hat ihre eigene Markierung im eigenen
-`data`-Ordner, ein Update bei der einen rührt die andere nicht an.
+> ⚠️ Ohne `|| true` kann die zweite Zeile ausfallen: Bricht die erste mit einem
+> Fehler ab (etwa fehlende Rechte), beendet der Aufgabenplaner das ganze
+> Skript – die zweite Instanz bekommt dann nie ein Lebenszeichen.
+
+Die Instanzen bleiben in jedem Fall unabhängig – jede hat ihre eigene
+Markierung im eigenen `data`-Ordner, ein Update bei der einen rührt die andere
+nicht an.
 
 #### Ablauf
 

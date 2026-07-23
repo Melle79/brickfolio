@@ -178,15 +178,23 @@ User-defined script
 #### Multiple instances
 
 Running several Brickfolios (each in its own folder with its own
-`docker-compose.yml`)? **One** task with multiple lines is enough:
+`docker-compose.yml`)? Prefer **one task per instance**. That is the most
+robust setup: each runs independently, and the task scheduler shows you per
+instance whether it succeeded.
+
+If you would rather use a single task, append `|| true` to every line:
 
 ```sh
-sh /volume1/docker/brickfolio/update-watch.sh
-sh /volume1/docker/nerdfan/update-watch.sh
+sh /volume1/docker/brickfolio/update-watch.sh || true
+sh /volume1/docker/brickfolio-nerdfan/update-watch.sh || true
 ```
 
-They stay independent – each has its own marker in its own `data` folder, so
-updating one leaves the other alone.
+> ⚠️ Without `|| true` the second line may never run: if the first one exits
+> with an error (missing permissions, say), the scheduler aborts the whole
+> script and the second instance never gets a heartbeat.
+
+Either way the instances stay independent – each has its own marker in its own
+`data` folder, so updating one leaves the other alone.
 
 #### Flow
 
