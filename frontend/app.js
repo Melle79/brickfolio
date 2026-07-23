@@ -3324,6 +3324,12 @@ async function pollUpdateStatus() {
     const s = await api("/update/status");
     state.appVersion = s.version;
     state.serverStartedAt = s.started_at;
+    const helperBefore = state.helperActive;
+    state.helperActive = !!s.helper_active;
+    // Helfer erst später eingerichtet? Dann Karte nachziehen.
+    if (helperBefore !== state.helperActive && !$("update-card").hidden) {
+      checkForUpdate(false).then(renderUpdateInfo);
+    }
     if (!s.pending) {
       // Ist der Server neu gestartet? Dann ist das Update durch – die
       // Startzeit ist dafür verlässlicher als die Versionsnummer, denn
@@ -3389,9 +3395,14 @@ function renderUpdateInfo(info) {
     $("ver-latest").textContent = "v" + info.latest;
     $("ver-url").href = info.url || "https://github.com/Melle79/brickfolio/releases";
   }
-  // Direkt-Einspielen nur für Admins anbieten
+  // Direkt einspielen nur anbieten, wenn der Helfer auf dem Server läuft –
+  // sonst würde die App auf ein Update warten, das nie kommt.
+  const admin = !!(state.user && state.user.is_admin);
+  const helper = !!state.helperActive;
   const run = $("update-run");
-  if (run) run.hidden = !(state.user && state.user.is_admin);
+  if (run) run.hidden = !(admin && helper);
+  const hint = $("update-helper-hint");
+  if (hint) hint.hidden = !(admin && !helper);
   const status = $("update-status");
   if (info.error) {
     status.textContent = info.error;

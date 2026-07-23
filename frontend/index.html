@@ -361,7 +361,14 @@
             <button class="mini-btn add" data-update-go="300">In 5 Minuten</button>
           </div>
         </div>
-        <p class="search-hint">Alternativ von Hand auf dem Server:</p>
+        <p class="search-hint" id="update-helper-hint" hidden>
+          💡 <b>Optional:</b> Mit dem Helfer <code>update-watch.sh</code> auf
+          dem Server lässt sich das Update direkt hier auslösen – ohne SSH.
+          Einrichtung (eine Aufgabe, die jede Minute läuft) steht im
+          <a href="https://github.com/Melle79/brickfolio#update-aus-der-app-heraus-optional"
+             target="_blank" rel="noopener">README</a>.
+        </p>
+        <p class="search-hint">Von Hand auf dem Server:</p>
         <pre class="update-cmd">cd /pfad/zu/brickfolio
 sudo bash update.sh</pre>
         <p class="search-hint">…im Brickfolio-Ordner auf dem Server (dort,

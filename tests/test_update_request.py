@@ -36,8 +36,11 @@ def ctx(tmp_path, monkeypatch):
     kid = TestClient(main.app)
     kid.headers["Authorization"] = (
         "Bearer " + core.create_token(kid_id, "kind", False))
+    alive = tmp_path / "update-watch-alive"
+    alive.write_text("")            # Helfer läuft (frisches Lebenszeichen)
     return {"admin": admin, "kid": kid,
-            "flag": str(tmp_path / "update-requested.json")}
+            "flag": str(tmp_path / "update-requested.json"),
+            "alive": alive}
 
 
 def test_no_update_pending_by_default(ctx):
@@ -104,3 +107,32 @@ def test_broken_flag_does_not_break_status(ctx):
     with open(ctx["flag"], "w") as f:
         f.write("kein json")
     assert ctx["kid"].get("/api/update/status").json()["pending"] is False
+
+
+# --------------------------------------------- Helfer auf dem Server
+# Ohne ihn passiert nichts – die App darf dann gar nicht erst anbieten,
+# ein Update auszulösen, sonst wartet sie ewig.
+
+def test_status_reports_running_helper(ctx):
+    assert ctx["kid"].get("/api/update/status").json()["helper_active"] is True
+
+
+def test_status_reports_missing_helper(ctx):
+    ctx["alive"].unlink()
+    body = ctx["kid"].get("/api/update/status").json()
+    assert body["helper_active"] is False
+    assert body["helper_seen_at"] is None
+
+
+def test_status_reports_stale_helper(ctx):
+    old = time.time() - 3600            # letztes Lebenszeichen vor einer Stunde
+    os.utime(ctx["alive"], (old, old))
+    assert ctx["kid"].get("/api/update/status").json()["helper_active"] is False
+
+
+def test_request_refused_without_helper(ctx):
+    ctx["alive"].unlink()
+    r = ctx["admin"].post("/api/update/request", json={"delay": 60})
+    assert r.status_code == 409
+    assert "Helfer" in r.json()["detail"]
+    assert not os.path.exists(ctx["flag"])      # nichts angefordert

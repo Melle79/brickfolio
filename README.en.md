@@ -146,23 +146,58 @@ Roles combine (the admin can grant themselves the pro role).
 
 ### Updating from inside the app (optional)
 
-More → Version & Updates has a button that triggers the update. The app does
-**not** run it itself – it only writes `data/update-requested.json`. A small
-helper on the server picks that up, so the app never needs Docker access
-(which would effectively be root on the host).
+**Entirely optional** – without setup nothing changes and updates keep working
+via `update.sh` over SSH. The button only appears once the helper below is in
+place; until then the app just points to it.
 
-Set it up by running `update-watch.sh` regularly; **once a minute is plenty**
-(the update itself takes one to three minutes anyway):
+**How it works.** The app does **not** run the update itself – it can’t, since
+it lives inside the container. It only writes `data/update-requested.json`. A
+small script on the server picks that up and runs `update.sh`. That way the app
+needs **no Docker access** – handing the socket to a container is effectively
+root on the host.
 
-- **Synology (DSM):** Control Panel → Task Scheduler → Create → Scheduled Task
-  → User-defined script. User `root`, daily with “repeat every 1 minute”,
-  command: `sh /path/to/brickfolio/update-watch.sh`
-- **Linux with cron:** `* * * * * sh /path/to/brickfolio/update-watch.sh`
+#### Setup
 
-Flow: the admin picks now / 1 min / 5 min → every signed-in browser shows a
-countdown (“please finish your edits”), then a lock screen. Once the server is
-back, the browsers reload themselves. While the countdown runs, the admin can
-cancel. Log: `data/update-watch.log`.
+Run `update-watch.sh` regularly. **Once a minute is plenty** – the update
+itself takes one to three minutes anyway.
+
+**Synology (DSM):** Control Panel → Task Scheduler → Create → Scheduled Task →
+User-defined script
+
+| Tab | Setting |
+| --- | --- |
+| General | User: **`root`** (otherwise the script may not run `docker compose`) |
+| Schedule | Daily · start `00:00` · “Continue running within the same day” ✔ · repeat **every minute** · last run time: **`23:59`** |
+| Task Settings | Command: `sh /path/to/brickfolio/update-watch.sh` |
+
+> ⚠️ “Last run time” defaults to `00:59` – the task would then only run during
+> the first hour of the day. Set it to `23:59`.
+
+**Linux with cron:** `* * * * * sh /path/to/brickfolio/update-watch.sh`
+
+#### Multiple instances
+
+Running several Brickfolios (each in its own folder with its own
+`docker-compose.yml`)? **One** task with multiple lines is enough:
+
+```sh
+sh /volume1/docker/brickfolio/update-watch.sh
+sh /volume1/docker/nerdfan/update-watch.sh
+```
+
+They stay independent – each has its own marker in its own `data` folder, so
+updating one leaves the other alone.
+
+#### Flow
+
+The admin picks now / 1 min / 5 min → every signed-in browser shows a countdown
+(“please finish your edits”), then a lock screen. Once the server is back, the
+browsers reload themselves. While the countdown runs, the admin can cancel.
+
+- The helper touches `data/update-watch-alive` on every run. That is how the
+  app knows it is set up – if the heartbeat is older than five minutes, the
+  update is not offered at all.
+- Log of every run: `data/update-watch.log`.
 - Backup: in-app under More → Backup (JSON with all data incl. users and
   price history) **or** simply copy `data/brickfolio.db`.
 

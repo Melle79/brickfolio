@@ -329,6 +329,19 @@ def _update_flag_path() -> str:
     return os.path.join(os.path.dirname(core.DB_PATH), "update-requested.json")
 
 
+# Der Helfer auf dem Server hinterlässt bei jedem Lauf ein Lebenszeichen.
+# Ist es frisch, läuft er – nur dann bietet die App das Update an.
+HELPER_MAX_AGE = 300
+
+
+def _helper_seen_at() -> int | None:
+    path = os.path.join(os.path.dirname(core.DB_PATH), "update-watch-alive")
+    try:
+        return int(os.path.getmtime(path))
+    except OSError:
+        return None
+
+
 def _read_update_flag() -> dict | None:
     try:
         with open(_update_flag_path(), "r") as f:
@@ -353,6 +366,13 @@ def request_update(body: UpdateRequestBody, user: dict = Depends(admin_user)):
     Datenverzeichnis ab. `execute_after` sorgt dafür, dass die Karenzzeit
     auch dann eingehalten wird, wenn der Browser zwischendurch zugeht.
     """
+    seen = _helper_seen_at()
+    if not (seen and int(time.time()) - seen < HELPER_MAX_AGE):
+        # Ohne Helfer würde die App auf ein Update warten, das nie kommt.
+        raise HTTPException(409, "Der Update-Helfer läuft nicht auf dem "
+                                 "Server. Ohne ihn bliebe die App hängen – "
+                                 "siehe README (update-watch.sh als Aufgabe "
+                                 "einrichten).")
     now = int(time.time())
     data = {"requested_at": now, "execute_after": now + body.delay,
             "by": user["name"], "version": core.APP_VERSION}
@@ -378,17 +398,20 @@ def cancel_update(user: dict = Depends(admin_user)):
 @app.get("/api/update/status")
 def update_status(user: dict = Depends(current_user)):
     """Läuft gleich ein Update? Wird von allen Browsern kurz abgefragt."""
+    seen = _helper_seen_at()
+    base = {"version": core.APP_VERSION, "started_at": _STARTED_AT,
+            "helper_seen_at": seen,
+            "helper_active": bool(seen
+                                  and int(time.time()) - seen < HELPER_MAX_AGE)}
     flag = _read_update_flag()
     if not flag:
-        return {"pending": False, "version": core.APP_VERSION,
-                "started_at": _STARTED_AT}
+        return {"pending": False, **base}
     left = int(flag.get("execute_after", 0)) - int(time.time())
     return {"pending": True,
             "seconds_left": max(0, left),
             "execute_after": flag.get("execute_after"),
             "by": flag.get("by", ""),
-            "version": core.APP_VERSION,
-            "started_at": _STARTED_AT}
+            **base}
 
 
 @app.get("/favicon.ico")

@@ -145,24 +145,59 @@ Rollen sind kombinierbar (der Admin kann sich selbst zum Profi machen).
 
 ### Update aus der App heraus (optional)
 
-Mehr → Version & Updates hat einen Knopf zum Einspielen. Die App führt das
-Update **nicht selbst** aus – sie legt nur `data/update-requested.json` ab.
-Ein kleiner Helfer auf dem Server greift das auf. So braucht die App keinen
-Zugriff auf Docker (das wäre faktisch Root auf dem Host).
+**Völlig optional** – ohne Einrichtung ändert sich nichts, Updates laufen wie
+gehabt über `update.sh` per SSH. Der Knopf in der App erscheint erst, wenn der
+Helfer unten eingerichtet ist; vorher steht dort nur ein Hinweis darauf.
 
-Einrichten – `update-watch.sh` regelmäßig aufrufen, **ein Takt von einer
-Minute reicht** (das Update selbst dauert ohnehin ein bis drei Minuten):
+**Wie es funktioniert.** Die App führt das Update **nicht selbst** aus – sie
+kann es gar nicht, denn sie läuft im Container. Sie legt nur die Markierung
+`data/update-requested.json` ab. Ein kleines Skript auf dem Server greift die
+auf und startet `update.sh`. So braucht die App **keinen Docker-Zugriff** –
+den ins Container zu reichen käme faktisch Root auf dem Server gleich.
 
-- **Synology (DSM):** Systemsteuerung → Aufgabenplaner → Erstellen →
-  Geplante Aufgabe → Benutzerdefiniertes Skript. Benutzer `root`,
-  Zeitplan täglich mit „jede 1 Minute wiederholen", Befehl:
-  `sh /pfad/zu/brickfolio/update-watch.sh`
-- **Linux mit cron:** `* * * * * sh /pfad/zu/brickfolio/update-watch.sh`
+#### Einrichten
 
-Ablauf: Admin wählt sofort / 1 Min / 5 Min → alle angemeldeten Browser zeigen
-einen Countdown („bitte Eingaben abschließen"), danach einen Sperrbildschirm.
-Sobald der Server wieder da ist, laden sich die Browser selbst neu. Solange
-der Countdown läuft, kann der Admin abbrechen. Protokoll: `data/update-watch.log`.
+`update-watch.sh` regelmäßig aufrufen lassen. **Ein Takt von einer Minute
+reicht** – das Update selbst dauert ohnehin ein bis drei Minuten.
+
+**Synology (DSM):** Systemsteuerung → Aufgabenplaner → Erstellen →
+Geplante Aufgabe → Benutzerdefiniertes Skript
+
+| Reiter | Einstellung |
+| --- | --- |
+| Allgemein | Benutzer: **`root`** (sonst darf das Skript kein `docker compose`) |
+| Zeitplan | Täglich · Start `00:00` · „Weiterhin innerhalb desselben Tages ausführen" ✔ · Wiederholen: **jede Minute** · Letzte Ausführungszeit: **`23:59`** |
+| Aufgabeneinstellungen | Befehl: `sh /pfad/zu/brickfolio/update-watch.sh` |
+
+> ⚠️ Die „Letzte Ausführungszeit" steht anfangs auf `00:59` – dann liefe die
+> Aufgabe nur in der ersten Stunde des Tages. Unbedingt auf `23:59` stellen.
+
+**Linux mit cron:** `* * * * * sh /pfad/zu/brickfolio/update-watch.sh`
+
+#### Mehrere Instanzen
+
+Betreibt ihr mehrere Brickfolios (je eigener Ordner mit eigener
+`docker-compose.yml`), genügt **eine** Aufgabe mit mehreren Zeilen:
+
+```sh
+sh /volume1/docker/brickfolio/update-watch.sh
+sh /volume1/docker/nerdfan/update-watch.sh
+```
+
+Die Instanzen bleiben unabhängig – jede hat ihre eigene Markierung im eigenen
+`data`-Ordner, ein Update bei der einen rührt die andere nicht an.
+
+#### Ablauf
+
+Admin wählt sofort / 1 Min / 5 Min → alle angemeldeten Browser zeigen einen
+Countdown („bitte Eingaben abschließen"), danach einen Sperrbildschirm. Sobald
+der Server wieder da ist, laden sich die Browser selbst neu. Solange der
+Countdown läuft, kann der Admin abbrechen.
+
+- Der Helfer hinterlässt bei jedem Lauf `data/update-watch-alive`. Daran
+  erkennt die App, dass er eingerichtet ist – fehlt das Lebenszeichen länger
+  als fünf Minuten, wird das Update gar nicht erst angeboten.
+- Protokoll jedes Laufs: `data/update-watch.log`.
 - Sicherung: In-App unter Mehr → Sicherung (JSON mit allen Daten inkl.
   Benutzern und Preisverläufen) **oder** einfach `data/brickfolio.db` kopieren.
 

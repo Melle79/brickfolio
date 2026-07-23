@@ -17,6 +17,12 @@ cd "$(dirname "$0")"
 
 FLAG="data/update-requested.json"
 LOG="data/update-watch.log"
+ALIVE="data/update-watch-alive"
+
+# Lebenszeichen bei JEDEM Lauf – daran erkennt die App, dass der Helfer
+# eingerichtet ist, und bietet den Update-Knopf erst dann an.
+mkdir -p data
+: > "$ALIVE"
 
 [ -f "$FLAG" ] || exit 0
 
