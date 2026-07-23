@@ -76,6 +76,10 @@ kommen von [BrickLink](https://www.bricklink.com) und
   ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
 - 🌌 Zwei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell und
   „Galaxie" dunkel mit Sternenhimmel – die Wahl gilt pro Gerät
+- 🐞 **Fehlerbericht** (Mehr → Fehlerbericht, Admin): Fehler aus allen Geräten
+  melden sich automatisch am eigenen Server und werden gleichartig
+  zusammengefasst. Mit hinterlegtem GitHub-Token legt ein Klick daraus ein
+  Issue an; API-Schlüssel und Token werden vorher aus dem Text entfernt
 - 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
   eurem Server
 
@@ -127,6 +131,7 @@ damit die ganze Pipe mit Rechten läuft).
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | nein | BrickLink-Store-API für Preise & Set-Inhalte ([Key beantragen](https://www.bricklink.com/v2/api/register_consumer.page)) |
 | `BACKUP_KEEP` | nein | Automatische tägliche Sicherungen aufbewahren (Standard 14, 0 = aus) |
 | `REBRICKABLE_KEY` | nein | Rebrickable-API für die Namenssuche ([Key erstellen](https://rebrickable.com/api/)) |
+| `GITHUB_REPO` | nein | Ziel-Repository für Issues aus dem Fehlerbericht (Default `Melle79/brickfolio`) |
 
 Alle API-Keys lassen sich alternativ **in der App** hinterlegen
 (Mehr → API-Schlüssel, nur Admin) – ENV-Variablen dienen als Fallback.

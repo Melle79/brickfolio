@@ -324,6 +324,139 @@ def update_check(force: int = 0, user: dict = Depends(admin_user)):
 _STARTED_AT = int(time.time())
 
 
+# ---------------------------------------------------------------- Fehlerberichte
+
+ERROR_LOG_KEEP = 100          # ältere Einträge fallen automatisch weg
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "Melle79/brickfolio")
+
+
+class ErrorReportBody(BaseModel):
+    message: str = Field(min_length=1, max_length=500)
+    detail: str | None = Field(default=None, max_length=4000)
+    context: str | None = Field(default=None, max_length=500)
+    app_version: str | None = Field(default=None, max_length=40)
+
+
+@app.post("/api/errors")
+def report_error(body: ErrorReportBody, user: dict = Depends(current_user),
+                 request: Request = None):
+    """Einen aufgetretenen Fehler melden – von jedem Gerät der Familie.
+
+    Gleichartige Fehler werden zusammengefasst, damit ein wiederkehrendes
+    Problem nicht die Liste flutet.
+    """
+    import hashlib
+    fp = hashlib.sha256(
+        (body.message + "|" + (body.detail or "")[:400]).encode()).hexdigest()[:32]
+    now = int(time.time())
+    agent = (request.headers.get("User-Agent", "")[:200] if request else "")
+    with core.db() as conn:
+        row = conn.execute("SELECT id FROM error_log WHERE fingerprint = ?",
+                           (fp,)).fetchone()
+        if row:
+            conn.execute("UPDATE error_log SET count = count + 1, last_at = ? "
+                         "WHERE id = ?", (now, row["id"]))
+        else:
+            conn.execute(
+                "INSERT INTO error_log (fingerprint, message, detail, context, "
+                "app_version, user_agent, username, first_at, last_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (fp, body.message[:500], (body.detail or "")[:4000],
+                 body.context, body.app_version or core.APP_VERSION,
+                 agent, user["name"], now, now))
+            conn.execute(
+                "DELETE FROM error_log WHERE issue_url IS NULL AND id NOT IN "
+                "(SELECT id FROM error_log ORDER BY last_at DESC LIMIT ?)",
+                (ERROR_LOG_KEEP,))
+    return {"ok": True}
+
+
+@app.get("/api/errors")
+def list_errors(user: dict = Depends(admin_user)):
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM error_log ORDER BY last_at DESC LIMIT 50").fetchall()
+    return {"items": [dict(r) for r in rows],
+            "can_report": bool(core.get_setting("github_token")),
+            "repo": GITHUB_REPO}
+
+
+@app.delete("/api/errors")
+def clear_errors(user: dict = Depends(admin_user)):
+    with core.db() as conn:
+        conn.execute("DELETE FROM error_log")
+    return {"ok": True}
+
+
+def _issue_body(e: dict) -> str:
+    """Meldung für GitHub – bewusst ohne Benutzernamen und ohne Schlüssel."""
+    when = time.strftime("%d.%m.%Y %H:%M", time.localtime(e["last_at"]))
+    parts = [
+        f"**Fehler:** {e['message']}",
+        "",
+        f"- Version: `{e.get('app_version') or '?'}`",
+        f"- Aufgetreten: {e['count']}×, zuletzt {when}",
+    ]
+    if e.get("context"):
+        parts.append(f"- Stelle: `{e['context']}`")
+    if e.get("user_agent"):
+        parts.append(f"- Browser: `{e['user_agent']}`")
+    if e.get("detail"):
+        parts += ["", "<details><summary>Details</summary>", "",
+                  "```", scrub(e["detail"], 3000), "```", "", "</details>"]
+    parts += ["", "*Automatisch aus Brickfolio gemeldet.*"]
+    return "\n".join(parts)
+
+
+@app.post("/api/errors/{error_id}/issue")
+def create_issue(error_id: int, user: dict = Depends(admin_user)):
+    """Aus einem Fehler ein GitHub-Issue anlegen."""
+    token = core.get_setting("github_token")
+    if not token:
+        raise HTTPException(501, "Kein GitHub-Token hinterlegt "
+                                 "(Mehr → Fehlerbericht).")
+    with core.db() as conn:
+        row = conn.execute("SELECT * FROM error_log WHERE id = ?",
+                           (error_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Fehler nicht gefunden")
+    e = dict(row)
+    if e.get("issue_url"):
+        return {"ok": True, "url": e["issue_url"], "existed": True}
+    try:
+        resp = requests.post(
+            f"https://api.github.com/repos/{GITHUB_REPO}/issues",
+            headers={"Authorization": f"Bearer {token}",
+                     "Accept": "application/vnd.github+json"},
+            json={"title": f"Fehler: {e['message'][:80]}",
+                  "body": _issue_body(e)},
+            timeout=20)
+    except requests.RequestException:
+        raise HTTPException(502, "GitHub nicht erreichbar")
+    if resp.status_code == 401:
+        raise HTTPException(401, "GitHub-Token ungültig oder abgelaufen")
+    if resp.status_code == 403:
+        raise HTTPException(403, "Token darf keine Issues anlegen – "
+                                 "Berechtigung „Issues: Read and write“ nötig")
+    if resp.status_code >= 400:
+        raise HTTPException(502, f"GitHub-Fehler ({resp.status_code})")
+    url = resp.json().get("html_url", "")
+    with core.db() as conn:
+        conn.execute("UPDATE error_log SET issue_url = ? WHERE id = ?",
+                     (url, error_id))
+    return {"ok": True, "url": url, "existed": False}
+
+
+class GithubTokenBody(BaseModel):
+    token: str = Field(default="", max_length=200)
+
+
+@app.post("/api/settings/github_token")
+def set_github_token(body: GithubTokenBody, user: dict = Depends(admin_user)):
+    core.set_setting("github_token", body.token.strip())
+    return {"ok": True, "set": bool(body.token.strip())}
+
+
 def _prices_pending(conn, region: str) -> int:
     """Wie viele Sammlungs-Artikel haben noch Preise aus einem anderen Gebiet?"""
     return conn.execute(
@@ -1155,13 +1288,18 @@ def save_settings(body: SettingsBody, user: dict = Depends(admin_user)):
     return {"ok": True, "changed": changed, "flags": _config_flags()}
 
 
-def scrub(msg: str) -> str:
+def scrub(msg: str, limit: int = 200) -> str:
     """Schlüssel aus Fehlermeldungen entfernen, bevor sie nach außen gehen."""
     for name in integrations.SETTING_ENV:
         value = integrations.setting(name)
         if value:
             msg = msg.replace(value, "***")
-    return msg[:200]
+    # Der GitHub-Token steht nicht in SETTING_ENV, darf aber erst recht nicht
+    # in einem Issue landen, das genau dorthin geschrieben wird.
+    token = core.get_setting("github_token")
+    if token:
+        msg = msg.replace(token, "***")
+    return msg[:limit]
 
 
 @app.post("/api/settings/test")

@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.10.0"
+APP_VERSION = "1.11.0"
 
 
 def hash_password(password: str) -> str:
@@ -198,6 +198,23 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_history_item
                 ON price_history(item_id, item_type, ts);
+            -- Gemeldete Fehler. Gleichartige Fehler werden über den
+            -- fingerprint zusammengefasst und nur hochgezählt.
+            CREATE TABLE IF NOT EXISTS error_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fingerprint TEXT NOT NULL UNIQUE,
+                message TEXT NOT NULL,
+                detail TEXT,
+                context TEXT,
+                app_version TEXT,
+                user_agent TEXT,
+                username TEXT,
+                count INTEGER NOT NULL DEFAULT 1,
+                first_at INTEGER NOT NULL,
+                last_at INTEGER NOT NULL,
+                issue_url TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_error_last ON error_log(last_at);
             -- Der Primärschlüssel (set_no, fig_no) hilft nur bei Suche nach
             -- set_no. Die Sammlung fragt aber je Zeile nach fig_no ("in Sets").
             CREATE INDEX IF NOT EXISTS idx_set_contents_fig

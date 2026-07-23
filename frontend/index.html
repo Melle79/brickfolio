@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=178">
-<link rel="stylesheet" href="/static/style.css?v=178">
+<link rel="stylesheet" href="/static/fonts.css?v=180">
+<link rel="stylesheet" href="/static/style.css?v=180">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -343,6 +343,30 @@
       </div>
     </div>
 
+    <div class="settings-card" id="errors-card" hidden>
+      <h3>🐞 Fehlerbericht</h3>
+      <p class="search-hint">Tritt in der App ein Fehler auf, landet er hier –
+        auch von den Geräten der anderen. Gleichartige Fehler werden
+        zusammengefasst.</p>
+      <div id="errors-list"></div>
+      <div class="detail-row btn-grid" style="margin-top:8px">
+        <button class="mini-btn" id="btn-errors-copy">📋 Bericht kopieren</button>
+        <button class="mini-btn danger" id="btn-errors-clear">Liste leeren</button>
+      </div>
+      <details class="help" style="margin-top:12px">
+        <summary>GitHub-Token für automatische Issues</summary>
+        <p class="search-hint">Mit einem Token kann die App aus einem Fehler
+          direkt ein Issue anlegen. Nutze einen <b>fein granulierten</b> Token
+          (Fine-grained), der <b>nur dieses Repository</b> und dort <b>nur
+          „Issues: Read and write"</b> darf – mehr braucht es nicht, und mehr
+          sollte die App auch nicht können.</p>
+        <label for="github-token">Token</label>
+        <input id="github-token" type="password" autocomplete="off"
+          placeholder="github_pat_… (leer lassen zum Entfernen)">
+        <button class="mini-btn add" id="btn-github-token" style="margin-top:8px">Token speichern</button>
+      </details>
+    </div>
+
     <div class="settings-card" id="price-region-card" hidden>
       <h3>🌍 Preisgebiet</h3>
       <p class="search-hint">Aus welchem Markt sollen die
@@ -477,7 +501,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=178"></script>
+<script src="/static/app.js?v=180"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

@@ -806,6 +806,41 @@ stattdessen eine Bestätigung.
 
 ## 13. Fehlerbehebung
 
+### 13.1 Der Fehlerbericht (Admin)
+
+Geht in der App etwas kaputt, muss niemand mehr aufschreiben, „was da
+stand". Jeder Fehler im Browser wird automatisch im Hintergrund an den
+eigenen Server gemeldet und sammelt sich unter **Mehr → 🐞 Fehlerbericht**
+– auch die von den Geräten der Kinder. Pro Eintrag stehen dort Fehlertext,
+Stelle im Code, wie oft er auftrat, wann zuletzt, welche App-Version und
+welcher Browser; unter „Details" die vollständigen Angaben.
+
+**Gleichartige Fehler werden zusammengefasst.** Ein Fehler, der bei jedem
+Seitenaufruf auftritt, erzeugt keine hundert Einträge, sondern einen mit
+Zähler. Die Liste hält die letzten 100 verschiedenen Fehler.
+
+**Was nicht gemeldet wird:** API-Schlüssel und der GitHub-Token werden aus
+jedem Text entfernt (`***`), bevor er gespeichert oder verschickt wird.
+Die Meldung geht ausschließlich an euren eigenen Server – nach außen geht
+nur, was ihr selbst per Issue verschickt.
+
+**Issue auf Knopfdruck.** Ist ein GitHub-Token hinterlegt, legt „🐙 Issue
+anlegen" aus einem Eintrag direkt ein Issue im Projekt an. Der Knopf wird
+danach zu „Issue ansehen ↗"; ein zweiter Klick legt kein Duplikat an.
+Ohne Token bleibt der Fehlerbericht trotzdem nutzbar – „📋 Bericht
+kopieren" legt die ganze Liste als Text in die Zwischenablage, den man von
+Hand irgendwo einfügen kann. „Liste leeren" räumt auf.
+
+**Den Token anlegen** (einmalig, unter „GitHub-Token" in derselben Karte):
+auf GitHub unter *Settings → Developer settings → Personal access tokens →
+Fine-grained tokens* einen Token erzeugen, als **Repository access** nur
+**dieses eine Repository** wählen und als einzige Berechtigung
+**Issues: Read and write** setzen. Mehr braucht die App nicht – und mehr
+sollte der Token auch nicht können. Er liegt danach in eurer Datenbank
+und wird in der Oberfläche nie wieder angezeigt.
+
+### 13.2 Typische Stolpersteine
+
 **Ein Update greift nicht / alte Oberfläche.** `sudo bash update.sh`
 komplett durchgelaufen? Im Build-Log darf `COPY frontend/` nicht „CACHED"
 sein, wenn sich Frontend-Dateien geändert haben. Welche Version läuft,
@@ -890,6 +925,7 @@ die jeweiligen Nutzungsbedingungen.
 | gelber Set-Link mit ✔ | dieses Set ist in eurer Sammlung |
 | ✔ (ausgegraut) | Listen-Artikel wurde in die Sammlung verbucht |
 | 🛒 | auf eine Einkaufsliste legen |
+| 🐞 | Fehlerbericht (nur Admin, unter „Mehr") |
 
 ### 15.2 Umgebungsvariablen
 
@@ -900,6 +936,7 @@ die jeweiligen Nutzungsbedingungen.
 | `DB_PATH` | Pfad zur SQLite-Datei (Default: `/data/brickfolio.db`) |
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | BrickLink-Store-API (Fallback zu den App-Einstellungen) |
 | `REBRICKABLE_KEY` | Rebrickable-API (Fallback zu den App-Einstellungen) |
+| `GITHUB_REPO` | Ziel-Repository für Issues aus dem Fehlerbericht (Default: `Melle79/brickfolio`) |
 
 ### 15.3 CSV-Import: erkannte Spaltennamen
 

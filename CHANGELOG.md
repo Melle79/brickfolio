@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.11.0 – Juli 2026
+
+### Neu
+- 🐞 **Fehlerbericht** (Mehr → Fehlerbericht, Admin): Läuft in der App etwas schief, wird der Fehler automatisch im Hintergrund gemeldet und landet in dieser Liste – auch von den Geräten der anderen. Gleichartige Fehler werden zusammengefasst und gezählt, statt die Liste zu fluten. Niemand muss mehr beschreiben, „was da stand"
+
+  **Issue auf Knopfdruck:** Ist ein GitHub-Token hinterlegt, legt ein Klick daraus ein Issue im Projekt an – mit Fehlertext, Stelle, App-Version und Browser. Ein zweiter Klick legt kein zweites Issue an, sondern öffnet das vorhandene
+
+  **Sicherheit:** Der Token gehört ein *fine-grained* Token mit **Issues: Read and write** auf **nur diesem einen Repository** zu sein – mehr braucht die App nicht. API-Schlüssel und der GitHub-Token selbst werden aus jedem gemeldeten Text entfernt, bevor er die App verlässt
+
+- 📋 **Bericht kopieren**: Die ganze Liste als Text in der Zwischenablage, falls man sie lieber woanders hinschickt
+
 ## 1.10.0 – Juli 2026
 
 ### Neu

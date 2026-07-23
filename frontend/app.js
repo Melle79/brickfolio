@@ -1006,6 +1006,7 @@ function showApp() {
     applyOwnerName(state.ownerName);
   }).catch(() => {});
   startUpdateWatch();
+  initErrorReporting();
   showTab("scan");
 }
 
@@ -3213,6 +3214,119 @@ function initThemePicker() {
   applyTheme(stored);
 }
 
+/* ------------------------------------------------------------ Fehlerberichte
+   Aufgetretene Fehler landen beim Server, damit der Admin sie sieht – auch
+   die vom Handy der Kinder. Doppelte werden dort zusammengefasst. */
+const errorSeen = new Set();      // pro Sitzung nur einmal senden
+
+/* Schleifen sind hier nicht möglich: Der Aufruf fängt seine eigenen Fehler
+   ab und wirft nie weiter. Ein „gerade beschäftigt"-Riegel würde dagegen
+   echte, gleichzeitig auftretende Fehler verschlucken. */
+async function reportError(message, detail, context) {
+  if (!state.token) return;
+  const key = (message || "") + "|" + (context || "");
+  if (!message || errorSeen.has(key)) return;
+  errorSeen.add(key);
+  try {
+    await api("/errors", { method: "POST", body: {
+      message: String(message).slice(0, 500),
+      detail: detail ? String(detail).slice(0, 4000) : null,
+      context: context ? String(context).slice(0, 500) : null,
+      app_version: state.appVersion || null,
+    }});
+  } catch (_) {
+    /* Melden darf nie selbst stören */
+  }
+}
+
+let errorsState = null;
+
+function errorWhen(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
+    + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+
+function renderErrors() {
+  const box = $("errors-list");
+  const data = errorsState;
+  if (!data) return;
+  if (!data.items.length) {
+    box.innerHTML = `<div class="price-note">Keine Fehler aufgezeichnet ✔</div>`;
+    return;
+  }
+  box.innerHTML = data.items.map((e) => `
+    <div class="fig-row" data-err-row="${e.id}">
+      <div class="fig-info">
+        <strong>${esc(e.message)}</strong>
+        <div class="sub">${e.count}× · zuletzt ${errorWhen(e.last_at)}
+          · v${esc(e.app_version || "?")}${
+            e.context ? " · " + esc(e.context) : ""}</div>
+        ${e.detail ? `<details class="help" style="margin-top:6px">
+          <summary>Details</summary>
+          <pre class="update-cmd" style="white-space:pre-wrap">${esc(e.detail)}</pre>
+        </details>` : ""}
+        ${e.issue_url || data.can_report ? `<div class="fig-actions">
+          ${e.issue_url
+            ? `<a class="mini-btn link" href="${esc(e.issue_url)}" target="_blank" rel="noopener">Issue ansehen ↗</a>`
+            : `<button class="mini-btn add" data-err-issue="${e.id}">🐙 Issue anlegen</button>`}
+        </div>` : ""}
+      </div>
+    </div>`).join("")
+    // Hinweis einmal für die ganze Karte, nicht je Eintrag
+    + (data.can_report ? "" : `<p class="search-hint">Zum Anlegen von Issues
+        fehlt der GitHub-Token – siehe unten.</p>`);
+
+  box.querySelectorAll("[data-err-issue]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      b.textContent = "Lege an …";
+      try {
+        const res = await api(`/errors/${b.dataset.errIssue}/issue`,
+          { method: "POST" });
+        toast(res.existed ? "War schon gemeldet" : "Issue angelegt ✔");
+        loadErrors();
+      } catch (e) {
+        toast(e.message);
+        b.disabled = false;
+        b.textContent = "🐙 Issue anlegen";
+      }
+    });
+  });
+}
+
+async function loadErrors() {
+  try {
+    errorsState = await api("/errors");
+    renderErrors();
+  } catch (_) { /* Karte bleibt leer */ }
+}
+
+function errorsAsText() {
+  const data = errorsState;
+  if (!data || !data.items.length) return "Keine Fehler aufgezeichnet.";
+  return data.items.map((e) =>
+    `## ${e.message}\n`
+    + `- ${e.count}×, zuletzt ${errorWhen(e.last_at)}\n`
+    + `- Version: ${e.app_version || "?"}\n`
+    + (e.context ? `- Stelle: ${e.context}\n` : "")
+    + (e.user_agent ? `- Browser: ${e.user_agent}\n` : "")
+    + (e.detail ? `\n\`\`\`\n${e.detail}\n\`\`\`\n` : "")
+  ).join("\n");
+}
+
+function initErrorReporting() {
+  window.addEventListener("error", (ev) => {
+    reportError(ev.message, ev.error && ev.error.stack,
+      `${ev.filename || "?"}:${ev.lineno || 0}`);
+  });
+  window.addEventListener("unhandledrejection", (ev) => {
+    const r = ev.reason;
+    reportError(r && r.message ? r.message : String(r),
+      r && r.stack, "unhandledrejection");
+  });
+}
+
 /* ---------------------------------------------------------------- Preisgebiet */
 let priceRegionState = null;
 
@@ -3587,6 +3701,8 @@ async function loadSettings() {
       }
     }).catch(() => {});
   }
+  $("errors-card").hidden = !isAdmin;
+  if (isAdmin) loadErrors();
   $("price-region-card").hidden = !isAdmin;
   if (isAdmin) loadPriceRegion();
   $("update-card").hidden = !isAdmin;
@@ -3734,6 +3850,34 @@ document.addEventListener("DOMContentLoaded", () => {
   $("price-region").addEventListener("change", (ev) =>
     savePriceRegion(ev.currentTarget.value));
   $("btn-price-recalc").addEventListener("click", recalcPrices);
+
+  $("btn-errors-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(errorsAsText());
+      toast("Bericht kopiert ✔");
+    } catch (_) {
+      toast("Kopieren nicht möglich – Text bitte von Hand markieren");
+    }
+  });
+  $("btn-errors-clear").addEventListener("click", async () => {
+    if (!confirm("Alle aufgezeichneten Fehler löschen?")) return;
+    try {
+      await api("/errors", { method: "DELETE" });
+      loadErrors();
+    } catch (e) { toast(e.message); }
+  });
+  $("btn-github-token").addEventListener("click", async (ev) => {
+    const btn = ev.currentTarget;
+    btn.disabled = true;
+    try {
+      const res = await api("/settings/github_token", { method: "POST",
+        body: { token: $("github-token").value } });
+      $("github-token").value = "";
+      toast(res.set ? "Token gespeichert ✔" : "Token entfernt");
+      loadErrors();
+    } catch (e) { toast(e.message); }
+    btn.disabled = false;
+  });
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
   $("btn-pricelog-more").addEventListener("click",
     () => loadPriceLog(200));

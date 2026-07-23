@@ -77,6 +77,10 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   when several family members each run their own instance
 - 🌌 Two **themes** to choose from (More → Design): light “Classic” and dark
   “Galaxy” with a starfield – the choice is per device
+- 🐞 **Error report** (More → Error report, admin): errors from every device
+  report themselves to your own server and identical ones are grouped. With a
+  GitHub token stored, one click turns an entry into an issue; API keys and the
+  token are stripped from the text first
 - 📲 Installable as a PWA, offline shell, no cloud – everything stays on your
   own server
 
@@ -128,6 +132,7 @@ whole pipe runs with the right permissions).
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | no | BrickLink Store API for prices & set inventories ([request a key](https://www.bricklink.com/v2/api/register_consumer.page)) |
 | `BACKUP_KEEP` | no | Keep this many automatic daily backups (default 14, 0 = off) |
 | `REBRICKABLE_KEY` | no | Rebrickable API for name search ([create a key](https://rebrickable.com/api/)) |
+| `GITHUB_REPO` | no | Target repository for issues from the error report (default `Melle79/brickfolio`) |
 | `BRICKFOLIO_NAME` | no | Display name in logo/title (default “Finn”); also settable in-app |
 
 All API keys can alternatively be stored **in the app** (More → API keys,
