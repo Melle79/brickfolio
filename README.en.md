@@ -210,9 +210,18 @@ Rebrickable.
 ## Legal
 
 LEGO® is a trademark of the LEGO Group, which does not sponsor, authorise or
-endorse this project. BrickLink and Rebrickable are trademarks of their
-respective owners; their APIs are subject to their respective terms of use.
-This is a private hobby project with no commercial intent.
+endorse this project. BrickLink, Rebrickable and Brickognize are trademarks of
+their respective owners; their APIs are subject to their respective terms of
+use. This is a private hobby project with no commercial intent.
+
+Data and images come from Rebrickable (catalogue search), BrickLink (prices,
+set contents, images) and Brickognize (image recognition – taking a photo
+sends it there). The same notes are shown in the app under
+**More → Sources & legal**.
+
+The **Nunito** typeface (SIL Open Font License 1.1, licence text in
+`frontend/fonts/OFL.txt`) is served locally. No visitor data is sent to font
+CDNs, and the app stays fully usable without an internet connection.
 
 ## Support
 

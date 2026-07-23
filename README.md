@@ -210,9 +210,20 @@ Rebrickable.
 ## Rechtliches
 
 LEGO® ist eine Marke der LEGO Gruppe, die dieses Projekt weder sponsert noch
-autorisiert oder unterstützt. BrickLink und Rebrickable sind Marken ihrer
-jeweiligen Inhaber; für deren APIs gelten die jeweiligen Nutzungsbedingungen.
-Dieses Projekt ist ein privates Hobby-Projekt ohne kommerzielle Absicht.
+autorisiert oder unterstützt. BrickLink, Rebrickable und Brickognize sind
+Marken ihrer jeweiligen Inhaber; für deren APIs gelten die jeweiligen
+Nutzungsbedingungen. Dieses Projekt ist ein privates Hobby-Projekt ohne
+kommerzielle Absicht.
+
+Daten und Bilder stammen von Rebrickable (Katalogsuche), BrickLink (Preise,
+Set-Inhalte, Bilder) und Brickognize (Bilderkennung – beim Abfotografieren
+wird das Foto dorthin übertragen). Dieselben Angaben stehen in der App unter
+**Mehr → Quellen & Rechtliches**.
+
+Die Schrift **Nunito** (SIL Open Font License 1.1, Lizenztext unter
+`frontend/fonts/OFL.txt`) wird lokal ausgeliefert. Es werden also keine
+Besucherdaten an Schrift-CDNs übertragen, und die App bleibt ohne Internet
+vollständig nutzbar.
 
 ## Unterstützen
 

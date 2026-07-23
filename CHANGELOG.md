@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.1 – Juli 2026
+
+### Verbessert
+- 🔒 **Schrift wird jetzt mitgeliefert** statt vom Google-CDN geladen. Damit werden beim Öffnen der App **keine Besucherdaten mehr an Dritte übertragen** – und die App funktioniert auch ohne Internet vollständig, denn bisher fehlte offline die Schrift (Nunito, SIL Open Font License 1.1)
+- ℹ️ Neue Karte **Mehr → Quellen & Rechtliches**: woher Daten und Bilder stammen (Rebrickable, BrickLink, Brickognize), der Hinweis, dass beim Abfotografieren das Foto zur Erkennung übertragen wird, sowie Marken-, Schrift- und Lizenzangaben. Brickognize ist jetzt auch im README genannt
+
 ## 1.9.0 – Juli 2026
 
 ### Neu

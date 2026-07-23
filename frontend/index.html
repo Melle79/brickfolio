@@ -11,10 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=172">
+<link rel="stylesheet" href="/static/fonts.css?v=173">
+<link rel="stylesheet" href="/static/style.css?v=173">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -378,6 +376,29 @@ sudo bash update.sh</pre>
       <p id="update-status" class="search-hint" hidden></p>
     </div>
 
+    <div class="settings-card" id="about-card">
+      <h3>ℹ️ Quellen &amp; Rechtliches</h3>
+      <p class="search-hint">Brickfolio ist ein privates Hobby-Projekt ohne
+        kommerzielle Absicht und läuft auf eurem eigenen Server.</p>
+      <p class="search-hint"><b>Daten &amp; Bilder</b> stammen von
+        <a href="https://rebrickable.com/" target="_blank" rel="noopener">Rebrickable</a>
+        (Katalogsuche),
+        <a href="https://www.bricklink.com/" target="_blank" rel="noopener">BrickLink</a>
+        (Preise, Set-Inhalte, Bilder) und
+        <a href="https://brickognize.com/" target="_blank" rel="noopener">Brickognize</a>
+        (Bilderkennung). Beim Abfotografieren wird das Foto zur Erkennung an
+        Brickognize übertragen. Für die Dienste gelten deren jeweilige
+        Nutzungsbedingungen.</p>
+      <p class="search-hint"><b>LEGO®</b> ist eine Marke der LEGO Gruppe, die
+        dieses Projekt weder sponsert noch autorisiert oder unterstützt.
+        BrickLink, Rebrickable und Brickognize sind Marken ihrer jeweiligen
+        Inhaber.</p>
+      <p class="search-hint"><b>Schrift</b>: Nunito, SIL Open Font License 1.1 –
+        wird lokal ausgeliefert, es werden keine Daten an Dritte übertragen.</p>
+      <p class="search-hint"><b>Programm</b>:
+        <a href="https://github.com/Melle79/brickfolio" target="_blank" rel="noopener">Brickfolio</a>
+        unter MIT-Lizenz.</p>
+    </div>
 
   </main>
 
@@ -441,7 +462,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=172"></script>
+<script src="/static/app.js?v=173"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

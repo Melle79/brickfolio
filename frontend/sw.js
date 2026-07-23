@@ -1,12 +1,17 @@
 /* Brickfolio Service Worker – App-Shell offlinefähig, API immer live */
-const CACHE = "brickfolio-v2";
+const CACHE = "brickfolio-v3";
 const SHELL = [
   "/",
   "/static/style.css",
+  "/static/fonts.css",
   "/static/app.js",
   "/manifest.webmanifest",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
+  // Schrift liegt lokal – so bleibt die App auch ohne Internet vollständig
+  "/static/fonts/nunito-latin-600.woff2",
+  "/static/fonts/nunito-latin-800.woff2",
+  "/static/fonts/nunito-latin-900.woff2",
 ];
 
 self.addEventListener("install", (e) => {
