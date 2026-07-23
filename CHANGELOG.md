@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.7 – Juli 2026
+
+### Behoben
+- 🔄 Nach einem Update **lud sich die App nicht immer selbst neu** und blieb auf dem alten Stand. Der Neustart wurde nur erkannt, solange der Sperrbildschirm sichtbar war – lag der Tab während des Updates im Hintergrund oder war das Handy gesperrt, standen die Zeitgeber still, die Sperre erschien nie und beim Zurückkommen griff die Erkennung nicht mehr. Jetzt merkt sich jede Seite die Startzeit ihres Servers und lädt neu, sobald der Server sich seither neu gestartet hat – unabhängig von der Sperre
+
 ## 1.9.6 – Juli 2026
 
 ### Behoben

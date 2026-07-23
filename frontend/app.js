@@ -3279,7 +3279,7 @@ const UPDATE_WAIT_MS = 5000;      // während der Sperre häufiger
 const UPDATE_GIVEUP_MS = 8 * 60 * 1000;
 let updateTimer = null;
 let updateLockedSince = 0;
-let updateStartedBefore = null;
+let serverStartedKnown = null;   // Startzeit des Servers, von dem diese Seite stammt
 
 function fmtCountdown(sec) {
   const m = Math.floor(sec / 60);
@@ -3307,10 +3307,7 @@ function showUpdateBar(on, text) {
 function showUpdateLock(on) {
   const lock = $("update-lock");
   if (!lock) return;
-  if (on && lock.hidden) {
-    updateLockedSince = Date.now();
-    updateStartedBefore = state.serverStartedAt || null;
-  }
+  if (on && lock.hidden) updateLockedSince = Date.now();
   lock.hidden = !on;
   document.body.style.overflow = on ? "hidden" : "";
 }
@@ -3324,6 +3321,20 @@ async function pollUpdateStatus() {
     const s = await api("/update/status");
     state.appVersion = s.version;
     state.serverStartedAt = s.started_at;
+
+    // Hat der Server seit dem Laden dieser Seite neu gestartet? Dann ist der
+    // Programmcode im Browser veraltet – unabhängig davon, ob die Sperre
+    // sichtbar war. Wichtig für Tabs, die während des Updates im Hintergrund
+    // lagen: dort stehen die Timer still, die Sperre erscheint gar nicht.
+    if (s.started_at) {
+      if (serverStartedKnown === null) {
+        serverStartedKnown = s.started_at;
+      } else if (s.started_at !== serverStartedKnown) {
+        location.reload();
+        return;
+      }
+    }
+
     const helperBefore = state.helperActive;
     state.helperActive = !!s.helper_active;
     state.helperSeenAt = s.helper_seen_at || null;
@@ -3332,15 +3343,11 @@ async function pollUpdateStatus() {
       checkForUpdate(false).then(renderUpdateInfo);
     }
     if (!s.pending) {
-      // Ist der Server neu gestartet? Dann ist das Update durch – die
-      // Startzeit ist dafür verlässlicher als die Versionsnummer, denn
-      // der Container startet auch neu, wenn die Version gleich bleibt.
-      if (!lock.hidden && updateStartedBefore
-          && s.started_at && s.started_at !== updateStartedBefore) {
-        location.reload();
-        return;
-      }
-      if (lock.hidden) { showUpdateBar(false); showUpdateLock(false); }
+      showUpdateBar(false);
+      // Die Sperre bleibt bewusst stehen: Der Helfer löscht die Markierung,
+      // BEVOR er das Update ausführt – der Server geht also erst danach weg.
+      // Aufgehoben wird sie durch das Neuladen nach dem Neustart (siehe oben)
+      // oder nach Zeitablauf durch den Hinweis samt Knopf.
     } else if (s.seconds_left > 0) {
       showUpdateBar(true, `⬆️ Update in ${fmtCountdown(s.seconds_left)}`
         + " – bitte Eingaben abschließen");
