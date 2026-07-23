@@ -944,6 +944,13 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   .results.grid-mode {
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   }
+  /* Eine geöffnete Karte wird auf eine handliche Breite begrenzt und mittig
+     gesetzt – sonst laufen Felder und Knöpfe über den ganzen Bildschirm.
+     Gilt für beide Ansichten: margin-inline zentriert in der Liste (Flex),
+     justify-self im Raster (Grid). */
+  .results .card.open {
+    width: 100%; max-width: 760px; margin-inline: auto; justify-self: center;
+  }
 
   /* Toast nicht mehr über einer unteren Leiste, sondern schlicht unten */
   .toast { bottom: 32px; }

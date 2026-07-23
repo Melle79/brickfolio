@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.14.1 – Juli 2026
+
+### Behoben
+- 🖥 Auf dem Desktop lief eine **geöffnete Sammlungs-Karte** über die ganze Breite – Felder und Knöpfe wirkten riesig. Das Detailformular wird jetzt auf eine handliche Breite begrenzt und mittig gesetzt (beide Ansichten, Liste wie Raster). Am Handy unverändert
+
 ## 1.14.0 – Juli 2026
 
 ### Neu
