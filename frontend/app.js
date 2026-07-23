@@ -1298,6 +1298,7 @@ function collCardDetails(it) {
 }
 
 function renderCollection() {
+  closeCardModal();     // ein offenes Popup gehört zu den alten Karten
   const list = $("collection-list");
   const items = state.collection;
   applyCollView();
@@ -1341,6 +1342,9 @@ function renderCollection() {
     // Mengen-Knöpfe verdrahten (im Kopf sofort, im Detailbereich nach dem
     // Aufklappen). `root` grenzt ein, welche Knöpfe gemeint sind.
     const wireQty = (root) => {
+      // Aktualisiert wird die Karte, in der der Knopf sitzt – die Listen-Karte
+      // oder (beim Popup) die Karte im Overlay.
+      const scope = root.closest(".card") || root;
       root.querySelectorAll("[data-qty]").forEach((btn) => {
         btn.addEventListener("click", async (ev) => {
           ev.stopPropagation();
@@ -1352,11 +1356,11 @@ function renderCollection() {
           try {
             await api("/collection/" + id, { method: "PATCH", body: { quantity: newQty } });
             item.quantity = newQty;
-            card.querySelectorAll("[data-qty-val]").forEach((s) => {
+            scope.querySelectorAll("[data-qty-val]").forEach((s) => {
               s.textContent = newQty;
             });
             // Minus-Knopf wird zum Papierkorb, sobald nur noch eines übrig ist
-            card.querySelectorAll('[data-qty="-1"]').forEach((b) => {
+            scope.querySelectorAll('[data-qty="-1"]').forEach((b) => {
               b.innerHTML = newQty <= 1 ? TRASH_SVG : "−";
               b.classList.toggle("qty-del", newQty <= 1);
               b.setAttribute("aria-label", newQty <= 1
@@ -1392,21 +1396,97 @@ function renderCollection() {
     card.querySelector(".card-head").addEventListener("click", (ev) => {
       if (ev.target.closest(".qty") || ev.target.closest(".card-img")
           || ev.target.closest(".set-link")) return;
-      let details = card.querySelector(".card-details");
-      if (!details) {
-        // Detailblock erst jetzt bauen und verdrahten
-        card.insertAdjacentHTML("beforeend", collCardDetails(item));
-        details = card.querySelector(".card-details");
-        wireCollectionDetails(card, item, id, deleteEntry, wireQty);
-      }
-      details.hidden = !details.hidden;
-      card.classList.toggle("open", !details.hidden);
-      if (!details.hidden && canPrice && !details.dataset.priced) {
-        details.dataset.priced = "1";
-        loadEntryPrice(card, item, false);
-      }
+      openCardModal(item, id, card, deleteEntry, wireQty, canPrice);
     });
   });
+}
+
+/* Detailansicht als Popup. Enthält Kopf UND Details, damit die bestehende
+   Verdrahtung (die sich auf `.card-head .sub`, `[data-price-out]` … stützt)
+   unverändert funktioniert – die Popup-Karte ist einfach die „card". */
+let cardModalKeyHandler = null;
+
+function closeCardModal() {
+  const m = document.getElementById("card-modal");
+  if (m) m.remove();
+  if (cardModalKeyHandler) {
+    document.removeEventListener("keydown", cardModalKeyHandler);
+    cardModalKeyHandler = null;
+  }
+}
+
+function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
+  closeCardModal();
+  const overlay = document.createElement("div");
+  overlay.className = "card-modal-overlay";
+  overlay.id = "card-modal";
+  overlay.innerHTML = `
+    <div class="card-modal">
+      <button class="card-modal-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <div class="card-head">
+          <img class="card-img" src="${imgSrc(item.img_url)}" ${IMG_FALLBACK} data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
+          <span class="qty-badge" data-qty-val>${item.quantity}</span>
+          <div class="card-title">
+            <strong>${esc(item.name)}</strong>
+            <div class="sub" data-sub>${esc(collSubText(item))}</div>
+            ${item.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(item.in_sets)}</div>` : ""}
+          </div>
+          <div class="qty">
+            <button data-qty="-1" class="${item.quantity <= 1 ? "qty-del" : ""}" aria-label="${item.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${item.quantity <= 1 ? TRASH_SVG : "−"}</button>
+            <span data-qty-val>${item.quantity}</span>
+            <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
+          </div>
+        </div>
+        ${collCardDetails(item)}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const inner = overlay.querySelector(".modal-inner");
+  inner.querySelector(".card-details").hidden = false;
+
+  // Verdrahtung – `inner` ist die „card"
+  wireQty(inner.querySelector(".card-head"));
+  wireCollectionDetails(inner, item, id, deleteEntry, wireQty);
+  inner.querySelectorAll("[data-jump-set]").forEach((b) => {
+    b.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      closeCardModal();
+      jumpToSet(b.dataset.jumpSet);
+    });
+  });
+  const moreBtn = inner.querySelector("[data-more-sets]");
+  if (moreBtn) {
+    moreBtn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const span = inner.querySelector(".more-sets");
+      span.hidden = !span.hidden;
+      moreBtn.textContent = span.hidden
+        ? `+${span.querySelectorAll(".set-link").length} weitere ▾` : "weniger ▴";
+    });
+  }
+  if (canPrice) loadEntryPrice(inner, item, false);
+
+  const done = () => {
+    // Die Listen-Karte aus dem (in place geänderten) item nachziehen, damit
+    // Zustand/Menge/Preis dort stimmen, ohne die ganze Liste neu zu laden.
+    if (listCard && listCard.isConnected) {
+      const sub = listCard.querySelector("[data-sub]");
+      if (sub) sub.textContent = collSubText(item);
+      listCard.querySelectorAll("[data-qty-val]").forEach((s) => {
+        s.textContent = item.quantity;
+      });
+      listCard.querySelectorAll('[data-qty="-1"]').forEach((b) => {
+        b.innerHTML = item.quantity <= 1 ? TRASH_SVG : "−";
+        b.classList.toggle("qty-del", item.quantity <= 1);
+      });
+    }
+    closeCardModal();
+  };
+  overlay.querySelector(".card-modal-close").addEventListener("click", done);
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay) done(); });
+  cardModalKeyHandler = (ev) => { if (ev.key === "Escape") done(); };
+  document.addEventListener("keydown", cardModalKeyHandler);
 }
 
 function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {

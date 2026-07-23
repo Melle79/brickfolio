@@ -882,6 +882,37 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .notice-close:hover { background: rgba(0, 87, 166, .12); }
 
+/* ---------- Detail-Popup einer Sammlungs-Karte ---------- */
+.card-modal-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(20, 20, 20, .5);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  display: flex; padding: 18px 12px;
+}
+.card-modal {
+  position: relative; margin: auto;
+  width: 100%; max-width: 640px; max-height: 92vh; display: flex;
+}
+.card-modal .modal-inner {
+  width: 100%; max-height: 92vh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* Im Popup wie im Raster: Kopf-Mengensteuerung aus, „Anzahl"-Zeile an –
+   so bleibt oben rechts Platz für den Schließen-Knopf. */
+.card-modal .modal-inner .card-head { padding-right: 36px; }
+.card-modal .modal-inner .card-head > .qty { display: none; }
+.card-modal .modal-inner .qty-edit {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 12px; padding-bottom: 12px;
+  border-bottom: 1.5px dashed var(--line);
+}
+.card-modal-close {
+  position: absolute; top: 8px; right: 8px; z-index: 3;
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 2px solid var(--ink); background: var(--surface); color: var(--ink);
+  font-weight: 900; font-size: 15px; cursor: pointer; line-height: 1;
+}
+
 /* ======================================================================
    Desktop / breite Bildschirme
    Ab ~960px wird aus der unteren Tab-Leiste eine linke Seitenleiste, der

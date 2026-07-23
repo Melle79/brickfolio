@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.16.0 – Juli 2026
+
+### Neu
+- 🪟 **Artikel öffnen sich als Popup.** Tippt man in der Sammlung eine Karte an, erscheinen die Details jetzt in einem mittigen Fenster über der Liste, statt die Karte an Ort und Stelle aufzuklappen. Das ist gerade auf breiten Bildschirmen deutlich ruhiger – der Rest der Liste bleibt sichtbar, das Detail ist klar im Fokus
+
+  Schließen per **✕**, Klick daneben oder **Esc**. Änderungen (Menge, Zustand, Notiz, Preis) werden beim Schließen direkt in die Liste übernommen. Auf dem Handy füllt das Popup nahezu den Bildschirm
+
 ## 1.15.0 – Juli 2026
 
 ### Neu

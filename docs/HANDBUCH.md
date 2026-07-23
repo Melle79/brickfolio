@@ -306,13 +306,15 @@ nur ihren Kopf auf; der Detailbereich entsteht erst beim Aufklappen.
 Über das **Umschalt-Symbol** rechts neben den Filtern wechselt man
 zwischen **Listenansicht** und **Raster** (zwei Figuren pro Reihe,
 kompakt, mit Mengen-Badge in der Ecke); die Wahl wird pro Gerät gemerkt.
-Im Raster öffnet ein Tipp die Karte über die **volle Breite** und zeigt
-oben zuerst die **Mengeneinstellung**. Zwei Karten einer Reihe sind immer
-**gleich hoch**, auch wenn ein Name umbricht.
+Zwei Karten einer Reihe sind immer **gleich hoch**, auch wenn ein Name
+umbricht.
 
 ### 5.2 Die Karten-Details
 
-Ein Tipp auf eine Karte öffnet die Details:
+Ein Tipp auf eine Karte öffnet die Details als **Popup** – ein mittiges
+Fenster über der Liste, auf dem Handy fast bildschirmfüllend. Schließen
+per **✕**, Klick daneben oder **Esc**; Änderungen sind sofort gespeichert
+und stehen nach dem Schließen auch in der Liste. Im Popup zeigt sich:
 
 - **Menge** (± Stepper) und **Zustand** (Gebraucht/Neu) – Änderungen
   greifen sofort, ohne die Karte zu schließen. **Neu und Gebraucht sind
