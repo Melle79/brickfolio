@@ -1,6 +1,7 @@
 """Brickfolio – externe Dienste: Brickognize (Erkennung) & BrickLink (Preise)."""
 import io
 import os
+import re
 
 import requests
 from PIL import Image, ImageOps
@@ -359,3 +360,97 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
         "used_scope": used,
         "fell_back": bool(wanted) and used == "",
     }
+
+
+# ------------------------------------------------- BrickLink Catalog Change Log
+
+CATALOG_LOG_URL = "https://www.bricklink.com/catalogReqList.asp"
+
+# Kürzel, mit denen BrickLink im Katalog-Link die Artikelart angibt
+_LOG_TYPE = {"S": "set", "M": "minifig", "P": "part", "B": "book",
+             "G": "gear", "C": "catalog", "I": "instruction", "O": "box"}
+
+# Artikel-Link, Nummernwechsel und Zusammenlegung – in einem Ausdruck, damit
+# sie in Dokumentreihenfolge kommen: Der Änderungstext gehört immer zum
+# zuletzt genannten Artikel.
+_RE_LOG = re.compile(
+    r'catalogitem\.page\?(?P<t>[A-Z])=(?P<no>[^"&]+)"'
+    r'|Changed <B>Item No</B> from \{<B>(?P<old>[^<]+)</B>\}'
+    r' to \{<B>(?P<new>[^<]+)</B>\}'
+    r'|<B>Merged</B> from <B>[A-Za-z ]+&nbsp;(?P<merged>[A-Za-z0-9_.\-]+)</B>',
+    re.I)
+_RE_NEXT = re.compile(
+    r'Next Page:</B>\s*<A HREF="(catalogReqList\.asp\?[^"]+)"', re.I)
+
+
+def _log_page(url: str) -> str:
+    resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=20)
+    resp.raise_for_status()
+    return resp.text
+
+
+def _parse_log(html: str, kind: str) -> dict[str, dict]:
+    """Änderungen einer Log-Seite als `{alte_nummer: {...}}`."""
+    found: dict[str, dict] = {}
+    current: tuple[str | None, str] | None = None    # (Art, neue Nummer)
+    for m in _RE_LOG.finditer(html):
+        if m.group("no"):
+            current = (_LOG_TYPE.get(m.group("t").upper()), m.group("no"))
+            continue
+        old = m.group("old") or m.group("merged")
+        if not old or not current:
+            continue
+        # Beim Nummernwechsel steht die neue Nummer im Text selbst, bei der
+        # Zusammenlegung nur in der Überschrift darüber.
+        new_id = m.group("new") or current[1]
+        found[old.lower()] = {"new_id": new_id, "item_type": current[0],
+                              "kind": kind}
+    return found
+
+
+def catalog_number_changes(year: int, month: int,
+                           max_pages: int = 20) -> dict[str, dict]:
+    """Nummernwechsel und Zusammenlegungen eines Monats aus dem Change Log.
+
+    BrickLink bietet dafür keine API, nur die öffentliche Log-Seite. Gelesen
+    wird sie ausschließlich dann, wenn wirklich ein Artikel der Sammlung
+    verschwunden ist – im Normalbetrieb also gar nicht.
+    """
+    changes: dict[str, dict] = {}
+    for action, kind in (("I", "renumbered"), ("M", "merged")):
+        url = (f"{CATALOG_LOG_URL}?viewYear={year}&viewMonth={month}"
+               f"&viewAction={action}")
+        for _ in range(max_pages):
+            html = _log_page(url)
+            changes.update(_parse_log(html, kind))
+            nxt = _RE_NEXT.search(html)
+            if not nxt:
+                break
+            url = "https://www.bricklink.com/" + nxt.group(1)
+    return changes
+
+
+def find_number_change(item_id: str, since: int) -> dict | None:
+    """Sucht die neue Nummer zu `item_id` in den Monaten ab `since` (Epoch).
+
+    Gibt `{"new_id", "item_type", "kind"}` oder None, wenn der Change Log
+    nichts hergibt – dann bleibt es beim Hinweis „Nummer nicht mehr gültig".
+    """
+    import datetime
+    start = datetime.date.fromtimestamp(max(since, 0))
+    today = datetime.date.today()
+    year, month = start.year, start.month
+    needle = item_id.lower()
+    for _ in range(24):
+        if (year, month) > (today.year, today.month):
+            return None
+        try:
+            hit = catalog_number_changes(year, month).get(needle)
+        except Exception:
+            hit = None
+        if hit:
+            return hit
+        month += 1
+        if month > 12:
+            year, month = year + 1, 1
+    return None

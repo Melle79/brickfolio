@@ -839,7 +839,42 @@ Fine-grained tokens* einen Token erzeugen, als **Repository access** nur
 sollte der Token auch nicht können. Er liegt danach in eurer Datenbank
 und wird in der Oberfläche nie wieder angezeigt.
 
-### 13.2 Typische Stolpersteine
+### 13.2 Wenn BrickLink eine Nummer ändert oder löscht
+
+Der BrickLink-Katalog ist nicht in Stein gemeißelt: Nummern werden
+umbenannt, doppelte Einträge zusammengelegt, selten auch gelöscht. Trifft
+das einen Artikel aus eurer Sammlung, würde sein Preis stillschweigend auf
+dem alten Stand einfrieren. Damit das nicht passiert, meldet sich die App.
+
+**Wie sie es merkt.** Für jeden Artikel holt die App ohnehin alle sieben
+Tage die Preise. Antwortet BrickLink für eine Nummer, die früher
+funktioniert hat, plötzlich mit „unbekannt", ist etwas passiert. Eine von
+Hand falsch eingetippte Nummer löst dagegen keinen Hinweis aus – die hat
+nie funktioniert.
+
+**Der Hinweis** erscheint oben im **Scannen**-Tab, also auf dem
+Startbildschirm, und **bleibt dort stehen, bis ihn jemand über das ✕
+wegklickt**. Er verschwindet nicht von selbst und taucht nach dem
+Wegklicken auch nicht wieder auf – wer die Sache gesehen und entschieden
+hat, soll nicht bei jedem Preislauf erneut gefragt werden.
+
+**Die neue Nummer.** Nur wenn wirklich etwas fehlt, schaut die App in den
+öffentlichen [BrickLink Catalog Change
+Log](https://www.bricklink.com/catalogLogs.asp) und sucht dort ab dem
+letzten erfolgreichen Preisabruf nach dem Nummernwechsel oder der
+Zusammenlegung. Im Normalbetrieb wird diese Seite also gar nicht
+angefasst. Wird sie fündig, nennt der Hinweis die neue Nummer und
+**„Nummer übernehmen"** trägt sie überall ein: Sammlung, Wunschliste,
+Einkaufslisten, die Set-Figuren-Verknüpfungen und den Preisverlauf.
+Danach holt die App die Preise unter der neuen Nummer frisch.
+
+**Findet der Log nichts** – etwa weil der Eintrag wirklich gelöscht wurde
+–, bleibt der Hinweis trotzdem stehen, nur eben ohne neue Nummer. Nichts
+geht verloren: Der Artikel bleibt mit seinem letzten bekannten Preis in
+der Sammlung. Ihr könnt die Nummer dann von Hand über „BrickLink-Nr.
+setzen" in den Karten-Details korrigieren.
+
+### 13.3 Typische Stolpersteine
 
 **Ein Update greift nicht / alte Oberfläche.** `sudo bash update.sh`
 komplett durchgelaufen? Im Build-Log darf `COPY frontend/` nicht „CACHED"

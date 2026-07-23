@@ -76,6 +76,10 @@ kommen von [BrickLink](https://www.bricklink.com) und
   ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
 - 🌌 Zwei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell und
   „Galaxie" dunkel mit Sternenhimmel – die Wahl gilt pro Gerät
+- 🔔 **Hinweise auf dem Startbildschirm**: Ändert oder löscht BrickLink eine
+  Nummer aus eurer Sammlung, steht das im Scannen-Tab – und bleibt dort, bis es
+  jemand wegklickt. Die neue Nummer sucht die App im BrickLink Catalog Change
+  Log und trägt sie auf Knopfdruck überall ein
 - 🐞 **Fehlerbericht** (Mehr → Fehlerbericht, Admin): Fehler aus allen Geräten
   melden sich automatisch am eigenen Server und werden gleichartig
   zusammengefasst. Mit hinterlegtem GitHub-Token legt ein Klick daraus ein

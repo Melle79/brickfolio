@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.11.0"
+APP_VERSION = "1.12.0"
 
 
 def hash_password(password: str) -> str:
@@ -215,6 +215,24 @@ def init_db():
                 issue_url TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_error_last ON error_log(last_at);
+            -- Hinweise, die stehen bleiben, bis sie jemand wegklickt –
+            -- etwa wenn BrickLink eine Nummer aus der Sammlung umbenennt
+            -- oder löscht. UNIQUE verhindert, dass derselbe Artikel bei
+            -- jedem Preislauf einen neuen Hinweis erzeugt.
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                kind TEXT NOT NULL,
+                item_type TEXT,
+                item_id TEXT,
+                new_item_id TEXT,
+                title TEXT NOT NULL,
+                body TEXT,
+                created_at INTEGER NOT NULL,
+                dismissed_at INTEGER,
+                UNIQUE(kind, item_type, item_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_notif_open
+                ON notifications(dismissed_at, created_at);
             -- Der Primärschlüssel (set_no, fig_no) hilft nur bei Suche nach
             -- set_no. Die Sammlung fragt aber je Zeile nach fig_no ("in Sets").
             CREATE INDEX IF NOT EXISTS idx_set_contents_fig

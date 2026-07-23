@@ -77,6 +77,10 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   when several family members each run their own instance
 - 🌌 Two **themes** to choose from (More → Design): light “Classic” and dark
   “Galaxy” with a starfield – the choice is per device
+- 🔔 **Notices on the start screen**: if BrickLink renames or removes a number
+  from your collection, it shows up in the Scan tab – and stays there until
+  someone dismisses it. The app looks up the new number in the BrickLink
+  Catalog Change Log and applies it everywhere with one click
 - 🐞 **Error report** (More → Error report, admin): errors from every device
   report themselves to your own server and identical ones are grouped. With a
   GitHub token stored, one click turns an entry into an issue; API keys and the

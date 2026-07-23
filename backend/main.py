@@ -109,6 +109,11 @@ def _price_refresher():
                           f"geladen", flush=True)
         except Exception as e:
             print(f"[brickfolio] Preis-Refresh übersprungen: {e}", flush=True)
+        try:
+            _resolve_gone_items()
+        except Exception as e:
+            print(f"[brickfolio] Change-Log-Abgleich übersprungen: {e}",
+                  flush=True)
         time.sleep(12 * 3600)
 
 
@@ -455,6 +460,132 @@ class GithubTokenBody(BaseModel):
 def set_github_token(body: GithubTokenBody, user: dict = Depends(admin_user)):
     core.set_setting("github_token", body.token.strip())
     return {"ok": True, "set": bool(body.token.strip())}
+
+
+# ------------------------------------------------------- Benachrichtigungen
+
+TYPE_LABEL = {"set": "Set", "minifig": "Figur", "part": "Teil"}
+
+
+def _notify(kind: str, title: str, body: str = "", item_type: str = None,
+            item_id: str = None, new_item_id: str = None) -> None:
+    """Hinweis hinterlegen. Bleibt stehen, bis ihn jemand wegklickt.
+
+    Gibt es ihn schon (gleiche Art, gleicher Artikel), passiert nichts – auch
+    dann nicht, wenn er bereits weggeklickt wurde: Wer den Hinweis gesehen und
+    entschieden hat, soll ihn nicht bei jedem Preislauf erneut bekommen.
+    """
+    with core.db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO notifications (kind, item_type, item_id, "
+            "new_item_id, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (kind, item_type, item_id, new_item_id, title, body,
+             int(time.time())))
+
+
+def _note_item_gone(entry: dict) -> None:
+    """BrickLink kennt eine Nummer aus der Sammlung nicht mehr."""
+    label = TYPE_LABEL.get(entry.get("item_type"), "Artikel")
+    name = entry.get("name") or entry.get("item_id")
+    _notify(
+        "item_gone",
+        f"{label} {entry['item_id']} gibt es bei BrickLink nicht mehr",
+        f"„{name}“ liefert seit dem letzten Preisabruf keine Daten mehr. "
+        "BrickLink hat die Nummer vermutlich geändert oder den Eintrag "
+        "gelöscht. Der Preis bleibt so lange auf dem alten Stand.",
+        entry.get("item_type"), entry["item_id"])
+
+
+def _resolve_gone_items() -> None:
+    """Für verschwundene Nummern die neue im Change Log suchen.
+
+    BrickLink hat dafür keine API, nur die öffentliche Log-Seite – deshalb
+    wird sie nur angefasst, wenn tatsächlich etwas fehlt.
+    """
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM notifications WHERE kind = 'item_gone' "
+            "AND new_item_id IS NULL AND dismissed_at IS NULL LIMIT 5").fetchall()
+    for row in rows:
+        with core.db() as conn:
+            prev = conn.execute(
+                "SELECT MAX(price_updated_at) AS t FROM collection "
+                "WHERE item_id = ?", (row["item_id"],)).fetchone()
+        since = (prev["t"] if prev and prev["t"] else row["created_at"]) - 86400
+        try:
+            hit = integrations.find_number_change(row["item_id"], since)
+        except Exception:
+            continue
+        if not hit:
+            continue
+        label = TYPE_LABEL.get(row["item_type"], "Artikel")
+        was = ("zusammengelegt" if hit["kind"] == "merged" else "umbenannt")
+        with core.db() as conn:
+            conn.execute(
+                "UPDATE notifications SET new_item_id = ?, title = ?, body = ? "
+                "WHERE id = ?",
+                (hit["new_id"],
+                 f"{label} {row['item_id']} heißt bei BrickLink jetzt "
+                 f"{hit['new_id']}",
+                 f"BrickLink hat den Eintrag {was}. Mit „Nummer übernehmen“ "
+                 "wird die neue Nummer überall eingetragen – in Sammlung, "
+                 "Wunschliste und Einkaufslisten – und der Preisabruf "
+                 "funktioniert wieder.",
+                 row["id"]))
+
+
+def _apply_new_number(old_id: str, new_id: str) -> int:
+    """Neue BrickLink-Nummer überall eintragen. Gibt geänderte Zeilen zurück."""
+    changed = 0
+    with core.db() as conn:
+        for table in PRICE_TABLES:
+            cur = conn.execute(
+                f"UPDATE {table} SET item_id = ?, price_updated_at = NULL "
+                "WHERE item_id = ?", (new_id, old_id))
+            changed += cur.rowcount
+        # Set-Verknüpfungen ziehen mit, sonst zeigt „👥 3/4" ins Leere
+        conn.execute("UPDATE set_contents SET fig_no = ? WHERE fig_no = ?",
+                     (new_id, old_id))
+        conn.execute("UPDATE set_contents SET set_no = ? WHERE set_no = ?",
+                     (new_id, old_id))
+        conn.execute("UPDATE price_history SET item_id = ? WHERE item_id = ?",
+                     (new_id, old_id))
+    return changed
+
+
+@app.get("/api/notifications")
+def list_notifications(user: dict = Depends(current_user)):
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM notifications WHERE dismissed_at IS NULL "
+            "ORDER BY created_at DESC LIMIT 20").fetchall()
+    return {"items": [dict(r) for r in rows]}
+
+
+@app.delete("/api/notifications/{note_id}")
+def dismiss_notification(note_id: int, user: dict = Depends(current_user)):
+    with core.db() as conn:
+        conn.execute("UPDATE notifications SET dismissed_at = ? WHERE id = ?",
+                     (int(time.time()), note_id))
+    return {"ok": True}
+
+
+@app.post("/api/notifications/{note_id}/apply")
+def apply_notification(note_id: int, user: dict = Depends(current_user)):
+    """Die im Hinweis genannte neue Nummer übernehmen."""
+    with core.db() as conn:
+        row = conn.execute("SELECT * FROM notifications WHERE id = ?",
+                           (note_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Hinweis nicht gefunden")
+    if not row["new_item_id"]:
+        raise HTTPException(400, "Zu diesem Hinweis ist keine neue Nummer "
+                                 "bekannt")
+    changed = _apply_new_number(row["item_id"], row["new_item_id"])
+    with core.db() as conn:
+        conn.execute("UPDATE notifications SET dismissed_at = ? WHERE id = ?",
+                     (int(time.time()), note_id))
+    return {"ok": True, "changed": changed, "new_item_id": row["new_item_id"]}
 
 
 def _prices_pending(conn, region: str) -> int:
@@ -2673,6 +2804,12 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection",
                 continue
             raise
     if not_found == 2:
+        # Hatte der Artikel schon einmal einen Preis, kannte BrickLink die
+        # Nummer früher – dann ist sie jetzt umbenannt oder gelöscht worden
+        # und das ist ein Hinweis wert. Ohne früheren Preis ist es dagegen
+        # meist eine von Hand falsch eingetippte oder eine Rebrickable-Nummer.
+        if entry.get("price_updated_at"):
+            _note_item_gone(entry)
         raise LookupError("BrickLink kennt diese Nummer nicht – vermutlich eine "
                           "Rebrickable-Nummer (fig-…). „BrickLink-Nr. setzen“ nutzen.")
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.12.0 – Juli 2026
+
+### Neu
+- 🔔 **Hinweise auf dem Startbildschirm**: Ändert oder löscht BrickLink eine Nummer, die in eurer Sammlung steckt, steht das ab jetzt oben im Scannen-Tab – und bleibt dort stehen, bis es jemand wegklickt
+
+  **Wie es auffällt:** Die App holt für jeden Artikel ohnehin alle 7 Tage Preise. Antwortet BrickLink für eine Nummer, die früher funktioniert hat, plötzlich mit „unbekannt", ist sie umbenannt oder gelöscht worden. Eine von Hand falsch eingetippte Nummer löst dagegen keinen Hinweis aus – die hat nie funktioniert
+
+  **Neue Nummer finden:** Nur in diesem Fall schaut die App in den öffentlichen [BrickLink Catalog Change Log](https://www.bricklink.com/catalogLogs.asp) und sucht dort den Nummernwechsel oder die Zusammenlegung. Findet sie ihn, steht im Hinweis die neue Nummer und **„Nummer übernehmen"** trägt sie überall ein: Sammlung, Wunschliste, Einkaufslisten, Set-Verknüpfungen und Preisverlauf. Danach funktioniert der Preisabruf wieder
+
+  **Findet der Log nichts**, bleibt der Hinweis trotzdem stehen – dann eben mit „Nummer gibt es nicht mehr" statt einer neuen Nummer. Der alte Preis bleibt erhalten, es geht nichts verloren
+
+  Ein weggeklickter Hinweis kommt nicht wieder: Wer die Sache gesehen und entschieden hat, soll nicht bei jedem Preislauf erneut gefragt werden
+
 ## 1.11.0 – Juli 2026
 
 ### Neu

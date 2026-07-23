@@ -1007,6 +1007,7 @@ function showApp() {
   }).catch(() => {});
   startUpdateWatch();
   initErrorReporting();
+  loadNotifications();
   showTab("scan");
 }
 
@@ -3324,6 +3325,59 @@ function initErrorReporting() {
     const r = ev.reason;
     reportError(r && r.message ? r.message : String(r),
       r && r.stack, "unhandledrejection");
+  });
+}
+
+/* ------------------------------------------------------- Benachrichtigungen */
+/* Hinweise auf dem Startbildschirm, die stehen bleiben, bis sie jemand
+   wegklickt – etwa wenn BrickLink eine Nummer der Sammlung ändert. */
+
+async function loadNotifications() {
+  try {
+    const data = await api("/notifications");
+    renderNotifications(data.items || []);
+  } catch (_) { /* Hinweise dürfen den Start nie blockieren */ }
+}
+
+function renderNotifications(items) {
+  const box = $("notifications");
+  if (!box) return;
+  box.innerHTML = "";
+  items.forEach((n) => {
+    const card = document.createElement("div");
+    card.className = "notice-card";
+    card.innerHTML = `
+      <button class="notice-close" data-close="${n.id}"
+              title="Hinweis entfernen" aria-label="Hinweis entfernen">✕</button>
+      <div class="notice-title">🔔 ${esc(n.title)}</div>
+      ${n.body ? `<p class="notice-body">${esc(n.body)}</p>` : ""}
+      ${n.new_item_id ? `<button class="btn btn-primary notice-apply"
+          data-apply="${n.id}">Nummer übernehmen</button>` : ""}`;
+    box.appendChild(card);
+  });
+
+  box.querySelectorAll("[data-close]").forEach((b) => {
+    b.onclick = async () => {
+      await api(`/notifications/${b.dataset.close}`, { method: "DELETE" });
+      loadNotifications();
+    };
+  });
+  box.querySelectorAll("[data-apply]").forEach((b) => {
+    b.onclick = async () => {
+      b.disabled = true;
+      b.textContent = "Wird übernommen …";
+      try {
+        const res = await api(`/notifications/${b.dataset.apply}/apply`,
+          { method: "POST" });
+        toast(`Neue Nummer ${res.new_item_id} übernommen`);
+        loadNotifications();
+        loadCollection();
+      } catch (e) {
+        toast(e.message || "Hat nicht geklappt");
+        b.disabled = false;
+        b.textContent = "Nummer übernehmen";
+      }
+    };
   });
 }
 
