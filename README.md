@@ -84,6 +84,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
   melden sich automatisch am eigenen Server und werden gleichartig
   zusammengefasst. Mit hinterlegtem GitHub-Token legt ein Klick daraus ein
   Issue an; API-Schlüssel und Token werden vorher aus dem Text entfernt
+- 🖥 **Reagiert auf die Bildschirmbreite**: auf dem Handy Tab-Leiste unten, am
+  Rechner Seitenleiste links mit breiterem Raster (vier bis fünf Karten pro
+  Reihe) – dieselbe App, nur besser auf die Fläche verteilt
 - 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
   eurem Server
 

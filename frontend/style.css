@@ -880,3 +880,82 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   border-radius: 8px;
 }
 .notice-close:hover { background: rgba(0, 87, 166, .12); }
+
+/* ======================================================================
+   Desktop / breite Bildschirme
+   Ab ~960px wird aus der unteren Tab-Leiste eine linke Seitenleiste, der
+   Inhalt bekommt mehr Breite, und die Raster (Sammlung, Suche) zeigen mehr
+   Karten pro Reihe. Reines Auflösungs-Layout – ohne JavaScript, dieselbe
+   Oberfläche, nur besser auf die Fläche verteilt.
+   ====================================================================== */
+@media (min-width: 960px) {
+  :root { --sidebar-w: 236px; --topbar-h: 56px; }
+
+  /* Kopfzeile oben über die volle Breite, Navigation links, Inhalt rechts */
+  #app {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    min-height: 100dvh;
+  }
+  .topbar { grid-column: 1 / -1; padding-left: 24px; padding-right: 24px; }
+
+  /* Aus der Tab-Leiste wird eine stehende Seitenleiste */
+  .tabbar {
+    grid-column: 1; grid-row: 2;
+    position: sticky; top: var(--topbar-h); align-self: start;
+    height: calc(100dvh - var(--topbar-h));
+    flex-direction: column; justify-content: flex-start; gap: 4px;
+    padding: 14px 12px; padding-bottom: 14px;
+    border-top: none; border-right: 3px solid var(--ink);
+  }
+  .tabbar .tab {
+    flex: 0 0 auto; flex-direction: row; justify-content: flex-start;
+    align-items: center; gap: 13px; width: 100%;
+    padding: 12px 14px; font-size: 15px; border-radius: 12px;
+  }
+  .tabbar .tab svg { width: 22px; height: 22px; flex: none; }
+  .tabbar .tab:hover { background: var(--track); }
+  .tabbar .tab.active { background: var(--yellow); color: var(--ink); }
+  .tabbar .tab.active:hover { background: var(--yellow); }
+  .tabbar .tab.active svg { stroke: var(--red); }
+
+  /* Inhalt: breiter, mittig in der rechten Spalte, kein Platz mehr für die
+     alte untere Leiste nötig */
+  .view {
+    grid-column: 2; grid-row: 2;
+    /* Im Grid würde `margin:0 auto` das Strecken abschalten und die Spalte
+       auf Inhaltsbreite schrumpfen lassen – daher Breite füllen und über
+       justify-self mittig setzen. */
+    width: 100%; max-width: 860px; justify-self: center;
+    padding: 26px 32px 60px;
+  }
+  /* Die Sammlung mit ihrem großen Raster darf die Fläche voll nutzen */
+  #view-collection.view { max-width: 1200px; }
+
+  /* Scannen: Kamera-Fläche und Erfassen-Formular nicht über die ganze
+     Breite ziehen – das wirkt sonst verloren. Ergebnisse dürfen breiter. */
+  .scan-hero, #manual-form, .scan-preview, #btn-manual-toggle {
+    max-width: 620px; margin-left: auto; margin-right: auto;
+  }
+  #btn-manual-toggle { display: block; }
+
+  /* Mehr Karten pro Reihe statt starrer Zweispaltigkeit */
+  .results.grid-mode {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+
+  /* Toast nicht mehr über einer unteren Leiste, sondern schlicht unten */
+  .toast { bottom: 32px; }
+
+  /* Galaxie: Seitenleiste dunkel mit hellem Trennstrich */
+  [data-theme="galaxy"] .tabbar {
+    border-top: none; border-right: 3px solid var(--line);
+  }
+  [data-theme="galaxy"] .tabbar .tab:hover { background: rgba(255,255,255,.06); }
+}
+
+/* Sehr breite Schirme: Inhalt nicht ins Uferlose ziehen */
+@media (min-width: 1500px) {
+  #view-collection.view { max-width: 1320px; }
+}

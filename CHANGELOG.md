@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.14.0 – Juli 2026
+
+### Neu
+- 🖥 **Desktop-Layout.** Auf breiten Bildschirmen (ab 960 px) wird aus der unteren Tab-Leiste eine **linke Seitenleiste** mit beschrifteten Symbolen, und der Inhalt nutzt die Fläche: Kennzahlen und Filter stehen nebeneinander, und die **Sammlung im Raster zeigt vier bis fünf Karten pro Reihe** statt zwei. Auf dem Handy bleibt alles unverändert – dieselbe Oberfläche, nur je nach Bildschirm anders verteilt (reines CSS, kein Umschalten, keine zweite App)
+
+  Die Kamera-Fläche und das Erfassen-Formular bleiben angenehm schmal und mittig, damit sie nicht verloren über die ganze Breite laufen
+
 ## 1.13.0 – Juli 2026
 
 ### Behoben & Neu

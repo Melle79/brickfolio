@@ -85,6 +85,9 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   report themselves to your own server and identical ones are grouped. With a
   GitHub token stored, one click turns an entry into an issue; API keys and the
   token are stripped from the text first
+- 🖥 **Responsive to screen width**: bottom tab bar on phones, a left sidebar
+  with a wider grid (four to five cards per row) on desktop – same app, just
+  laid out to use the space
 - 📲 Installable as a PWA, offline shell, no cloud – everything stays on your
   own server
 

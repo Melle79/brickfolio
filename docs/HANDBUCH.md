@@ -153,6 +153,12 @@ allen Funktionen. Und der **eigene Name** daneben ist antippbar: Dahinter
 liegt das **Profil-Popup** mit Anzeigename ändern, Passwort ändern und
 Abmelden.
 
+> **Handy oder Rechner?** Die Navigation liegt auf dem **Handy als Leiste
+> unten**, auf **breiten Bildschirmen als Seitenleiste links**. Dort nutzt
+> die App die Fläche: Kennzahlen nebeneinander und in der Sammlung vier bis
+> fünf Karten pro Reihe im Raster. Es ist dieselbe App – sie ordnet sich nur
+> je nach Bildschirmbreite anders an, ohne dass man etwas umstellen muss.
+
 Der Tab **Mehr** ist nach Themen sortiert (Karten per Antippen der
 Überschrift auf- und zuklappbar; die App merkt sich den Zustand) – je
 nach Rolle sichtbar:
