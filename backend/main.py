@@ -597,16 +597,37 @@ def _prices_pending(conn, region: str) -> int:
         "AND COALESCE(price_region, '') != ?", (region,)).fetchone()["c"]
 
 
+# Artikel, die zwar abgefragt wurden, aber weder für neu noch für gebraucht
+# einen Preis haben. Meist, weil im gewählten Gebiet nichts verkauft wurde –
+# genau diese profitieren vom Rückfall Europa → weltweit.
+_NO_PRICE = ("item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+             "AND price_updated_at IS NOT NULL "
+             "AND COALESCE(price_new, 0) = 0 AND COALESCE(price_used, 0) = 0")
+
+
+def _prices_missing(conn, before: int = None) -> int:
+    """Sammlungs-Artikel ganz ohne Preis. `before` grenzt auf die ein, die
+    im laufenden Durchgang noch nicht neu versucht wurden."""
+    sql = f"SELECT COUNT(*) AS c FROM collection WHERE {_NO_PRICE}"
+    args: tuple = ()
+    if before is not None:
+        sql += " AND price_updated_at < ?"
+        args = (before,)
+    return conn.execute(sql, args).fetchone()["c"]
+
+
 @app.get("/api/settings/price_region")
 def get_price_region(user: dict = Depends(current_user)):
     """Eingestelltes Preisgebiet, Auswahlliste und offener Nachrechen-Bedarf."""
     region = integrations.price_region()
     with core.db() as conn:
         pending = _prices_pending(conn, region)
+        missing = _prices_missing(conn)
     return {"region": region,
             "options": [{"value": k, "label": v}
                         for k, v in integrations.PRICE_REGIONS.items()],
             "pending": pending,
+            "missing": missing,
             "can_fetch": integrations.bricklink_enabled()}
 
 
@@ -658,6 +679,47 @@ def refresh_prices_region(limit: int = 20, user: dict = Depends(admin_user)):
     with core.db() as conn:
         pending = _prices_pending(conn, region)
     return {"ok": True, "updated": done, "remaining": pending, "failed": failed}
+
+
+@app.post("/api/prices/refresh_missing")
+def refresh_prices_missing(limit: int = 20, user: dict = Depends(admin_user)):
+    """Preislose Artikel erneut abrufen – jetzt mit dem Rückfall Europa → weltweit.
+
+    Jeder Artikel wird pro Durchgang nur einmal versucht: `price_updated_at`
+    wird bei jedem Versuch hochgesetzt (auch ohne Treffer), und gezählt werden
+    nur die, deren Stand älter ist als der Beginn dieses Durchgangs. So dreht
+    sich der Lauf nicht endlos an Artikeln, die wirklich nirgends verkauft
+    wurden.
+    """
+    if not integrations.bricklink_enabled():
+        raise HTTPException(501, "BrickLink-API nicht konfiguriert")
+    limit = max(1, min(limit, 50))
+    started = int(time.time())
+    with core.db() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM collection WHERE {_NO_PRICE} "
+            "AND price_updated_at < ? ORDER BY price_updated_at LIMIT ?",
+            (started, limit)).fetchall()
+    done, filled, failed = 0, 0, []
+    for r in rows:
+        try:
+            res = _fetch_and_store_prices(dict(r), "collection")
+            done += 1
+            if (res.get("new") and res["new"].get("avg")) or \
+               (res.get("used") and res["used"].get("avg")):
+                filled += 1
+        except Exception as e:
+            failed.append({"item_id": r["item_id"], "error": scrub(str(e))[:120]})
+            # Versuch vermerken, sonst bleibt der Artikel im nächsten Häppchen
+            # sofort wieder ganz vorn (z. B. wenn BrickLink die Nummer nicht kennt).
+            with core.db() as conn:
+                conn.execute(
+                    "UPDATE collection SET price_updated_at = ? WHERE id = ?",
+                    (started, r["id"]))
+    with core.db() as conn:
+        remaining = _prices_missing(conn, before=started)
+    return {"ok": True, "updated": done, "filled": filled,
+            "remaining": remaining, "failed": failed}
 
 
 def _update_flag_path() -> str:

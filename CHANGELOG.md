@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.13.0 – Juli 2026
+
+### Behoben & Neu
+- 💶 **Rückfall bei fehlenden Verkäufen jetzt zweistufig – und ein Preis-Bug behoben.** Gibt es im eingestellten Gebiet (z. B. Deutschland) keine Verkäufe, weitet die App den Preis erst auf **Europa** aus und erst dann auf **weltweit**. Bisher ging es direkt von Land auf weltweit
+
+  **Der Bug dahinter:** BrickLink liefert bei „keine Verkäufe" den Durchschnitt als Text `0.0000` – also gerade *nicht* leer. Die App hielt das fälschlich für einen echten Preis und sprang gar nicht erst auf ein breiteres Gebiet. Ergebnis waren Artikel **ganz ohne Preis** (obwohl es woanders Verkäufe gab) und vereinzelte **0,00 €**. Beides ist behoben: geprüft wird jetzt der Zahlenwert
+
+- 🔄 **„Preislose erneut abrufen"** (Mehr → Preisgebiet, Admin): holt für alle Artikel ohne Preis die Bewertung neu – mit dem neuen Rückfall Europa → weltweit. Läuft wie das Umrechnen in Häppchen mit Fortschritt. Artikel, die wirklich nirgends verkauft wurden, bleiben ehrlich als „ohne Preis" stehen, statt den Lauf endlos zu drehen
+
 ## 1.12.0 – Juli 2026
 
 ### Neu

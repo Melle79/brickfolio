@@ -302,6 +302,38 @@ def price_region() -> str:
     return value if value in PRICE_REGIONS else ""
 
 
+def _has_avg(d: dict) -> bool:
+    """Steckt ein echter Durchschnitt in der Antwort?
+
+    Wichtig: Gibt es im gewählten Gebiet keine Verkäufe, liefert BrickLink
+    `avg_price` als String „0.0000" – also gerade *nicht* leer. Ein reiner
+    Wahrheitstest (`not avg_price`) hält das fälschlich für einen Preis und
+    überspringt den Rückfall; deshalb wird hier numerisch geprüft.
+    """
+    try:
+        return float(d.get("avg_price") or 0) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _fallback_chain(wanted: str) -> list[str]:
+    """Gebiete in der Reihenfolge, in der ein Preis gesucht wird.
+
+    Erst das eingestellte Gebiet, dann Europa als Auffangnetz, zuletzt
+    weltweit – jede Stufe breiter als die vorige. Doppelte fallen raus, damit
+    kein Gebiet zweimal abgefragt wird (Europa als Einstellung, oder weltweit
+    als Einstellung ganz ohne Rückfall).
+    """
+    chain: list[str] = []
+    for scope in (wanted, "europe", ""):
+        if scope not in PRICE_REGIONS or scope in chain:
+            continue
+        chain.append(scope)
+        if scope == "":      # weltweit ist am breitesten – danach kommt nichts
+            break
+    return chain
+
+
 def _price_request(bl_type: str, item_no: str, condition: str, scope: str,
                    auth) -> dict:
     params = {"guide_type": "sold", "new_or_used": condition,
@@ -329,8 +361,9 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
 
     `scope` grenzt auf ein Land bzw. eine Region ein; ohne Angabe gilt die
     Einstellung. Gibt es dort keine Verkäufe – bei selteneren Figuren häufig –,
-    wird auf den weltweiten Durchschnitt zurückgefallen, damit kein Artikel
-    ohne Preis dasteht. `used_scope` sagt, was am Ende gezählt hat.
+    wird stufenweise ausgeweitet: erst Europa, dann weltweit, damit kein
+    Artikel ohne Preis dasteht. `used_scope` sagt, welches Gebiet am Ende
+    gezählt hat.
     """
     bl_type = _BL_TYPE.get(item_type.lower())
     if not bl_type:
@@ -343,22 +376,28 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
         wanted = ""
     auth = _bl_auth()
 
-    d = _price_request(bl_type, item_no, condition, wanted, auth)
     used = wanted
-    if wanted and not d.get("avg_price"):
-        d = _price_request(bl_type, item_no, condition, "", auth)
-        used = ""
+    d = {}
+    found = False
+    for step in _fallback_chain(wanted):
+        d = _price_request(bl_type, item_no, condition, step, auth)
+        used = step
+        found = _has_avg(d)
+        if found:
+            break      # erster Treffer mit echtem Durchschnitt gewinnt
 
+    # Ohne echten Treffer die Preisfelder leeren, statt BrickLinks „0.0000"
+    # durchzureichen – sonst hielte der Rest der App die Null für einen Preis.
     return {
         "currency": d.get("currency_code", "EUR"),
-        "min": d.get("min_price"),
-        "avg": d.get("avg_price"),
-        "max": d.get("max_price"),
+        "min": d.get("min_price") if found else None,
+        "avg": d.get("avg_price") if found else None,
+        "max": d.get("max_price") if found else None,
         "times_sold": d.get("unit_quantity"),
         "condition": condition,
         "scope": wanted,
         "used_scope": used,
-        "fell_back": bool(wanted) and used == "",
+        "fell_back": used != wanted,
     }
 
 

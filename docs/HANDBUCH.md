@@ -775,10 +775,13 @@ BrickLink liefert standardmäßig den **weltweiten** Durchschnitt. Unter
 **Mehr → 🌍 Preisgebiet** (Admin) lässt sich stattdessen ein Markt wählen:
 **Deutschland**, **Österreich**, **Schweiz** oder **Europa**.
 
-**Wichtig – der Rückfall:** Gerade bei selteneren Figuren gibt es in einem
-einzelnen Land oft **gar keine Verkäufe**. Findet BrickLink im gewählten
-Gebiet nichts, nimmt die App automatisch den weltweiten Durchschnitt.
+**Wichtig – der zweistufige Rückfall:** Gerade bei selteneren Figuren gibt
+es in einem einzelnen Land oft **gar keine Verkäufe**. Findet BrickLink im
+gewählten Gebiet nichts, weitet die App automatisch aus – **erst auf
+Europa, dann auf weltweit**. Der erste Markt mit echten Verkäufen zählt.
 So bleibt kein Artikel ohne Preis; die Bewertung ist dann eben gemischt.
+(Ist Europa oder weltweit direkt eingestellt, entfällt die jeweils engere
+Stufe.)
 
 **Bestehende Sammlung umstellen.** Nach dem Wechsel stammen alle
 gespeicherten Preise noch aus dem alten Gebiet. Die Karte zeigt deshalb,
@@ -792,6 +795,17 @@ wie viele Artikel betroffen sind, und bietet **🔄 Preise jetzt umrechnen**.
 
 Artikel, die BrickLink nicht kennt, werden übersprungen und abgehakt,
 damit der Lauf nicht an einer Nummer hängen bleibt.
+
+**Artikel ohne Preis nachholen.** Zeigt die Karte „*X* Artikel haben noch
+keinen Preis", waren das im gewählten Gebiet meist Nummern ohne Verkäufe.
+**🔄 Preislose erneut abrufen** holt für genau diese die Bewertung neu –
+mit dem zweistufigen Rückfall Europa → weltweit. Auch das läuft in
+Häppchen. Was danach immer noch keinen Preis hat, wurde wirklich nirgends
+verkauft; solche Artikel bleiben ehrlich als „ohne Preis" stehen, statt
+den Lauf endlos zu wiederholen. (Der frühere Fehler, dass BrickLinks
+„0.0000" bei fehlenden Verkäufen für einen echten Preis gehalten wurde und
+Artikel dadurch grundlos ohne Preis oder mit 0,00 € dastanden, ist seit
+Version 1.13.0 behoben.)
 
 ### 12.2 Das Preis-Protokoll
 

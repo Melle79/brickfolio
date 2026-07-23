@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=181">
-<link rel="stylesheet" href="/static/style.css?v=181">
+<link rel="stylesheet" href="/static/fonts.css?v=182">
+<link rel="stylesheet" href="/static/style.css?v=182">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -373,8 +373,8 @@
       <h3>🌍 Preisgebiet</h3>
       <p class="search-hint">Aus welchem Markt sollen die
         BrickLink-Ø-Preise stammen? Gibt es dort zu einem Artikel keine
-        Verkäufe, nimmt die App automatisch den weltweiten Durchschnitt –
-        sonst stünden seltenere Figuren ohne Preis da.</p>
+        Verkäufe, weitet die App automatisch aus – erst auf Europa, dann
+        weltweit –, sonst stünden seltenere Figuren ohne Preis da.</p>
       <label for="price-region">Preise berechnen für</label>
       <span class="select-wrap">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
@@ -383,6 +383,10 @@
       <p class="search-hint" id="price-region-status"></p>
       <div id="price-region-run" hidden>
         <button class="mini-btn add" id="btn-price-recalc">🔄 Preise jetzt umrechnen</button>
+      </div>
+      <p class="search-hint" id="price-missing-status" hidden></p>
+      <div id="price-missing-run" hidden>
+        <button class="mini-btn add" id="btn-price-fill">🔄 Preislose erneut abrufen</button>
       </div>
     </div>
 
@@ -503,7 +507,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=181"></script>
+<script src="/static/app.js?v=182"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

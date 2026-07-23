@@ -3404,6 +3404,21 @@ function renderPriceRegion() {
     status.textContent = "✅ Alle Preise stammen aus dem eingestellten Gebiet.";
     run.hidden = true;
   }
+
+  // Getrennt davon: Artikel, die (noch) gar keinen Preis haben.
+  const mStatus = $("price-missing-status");
+  const mRun = $("price-missing-run");
+  if (s.missing > 0) {
+    mStatus.hidden = false;
+    const verb = s.missing === 1 ? "hat" : "haben";
+    mStatus.innerHTML = `⚠️ <b>${s.missing} Artikel</b> ${verb} noch keinen`
+      + " Preis – oft, weil im gewählten Gebiet nichts verkauft wurde. Ein"
+      + " erneuter Abruf weitet auf Europa und weltweit aus.";
+    mRun.hidden = false;
+  } else {
+    mStatus.hidden = true;
+    mRun.hidden = true;
+  }
 }
 
 async function loadPriceRegion() {
@@ -3463,6 +3478,37 @@ async function recalcPrices() {
     btn.disabled = false;
     btn.textContent = "🔄 Preise jetzt umrechnen";
     renderPriceRegion();
+    if (!$("view-collection").hidden) loadCollection();
+  }
+}
+
+/* Ruft preislose Artikel erneut ab – jetzt mit Rückfall Europa → weltweit. */
+async function fillMissingPrices() {
+  const btn = $("btn-price-fill");
+  btn.disabled = true;
+  let total = 0, filled = 0;
+  try {
+    for (let round = 0; round < 40; round += 1) {
+      const res = await api("/prices/refresh_missing?limit=20",
+        { method: "POST" });
+      total += res.updated;
+      filled += res.filled;
+      priceRegionState.missing = res.remaining;
+      btn.textContent = `🔄 ${filled} gefunden, ${res.remaining} offen …`;
+      if (res.failed && res.failed.length) {
+        toast(`${res.failed.length} übersprungen: ${res.failed[0].error}`);
+      }
+      if (!res.remaining || !res.updated) break;
+    }
+    toast(total
+      ? `${filled} von ${total} geprüften Artikeln haben jetzt einen Preis`
+      : "Nichts zu tun");
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🔄 Preislose erneut abrufen";
+    loadPriceRegion();     // echten Reststand zeigen (nirgends verkauft bleibt)
     if (!$("view-collection").hidden) loadCollection();
   }
 }
@@ -3904,6 +3950,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("price-region").addEventListener("change", (ev) =>
     savePriceRegion(ev.currentTarget.value));
   $("btn-price-recalc").addEventListener("click", recalcPrices);
+  $("btn-price-fill").addEventListener("click", fillMissingPrices);
 
   $("btn-errors-copy").addEventListener("click", async () => {
     try {

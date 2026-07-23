@@ -39,9 +39,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 💶 BrickLink-Ø-Preise (neu/gebraucht) automatisch im Hintergrund, mit
   eigener **Preisverlaufs-Aufzeichnung** und Chart pro Artikel
 - 🌍 **Preisgebiet wählbar** (Mehr → Preisgebiet): weltweit, Deutschland,
-  Österreich, Schweiz oder Europa – ohne Verkäufe im gewählten Gebiet greift
-  automatisch der weltweite Durchschnitt. Bestehende Preise lassen sich
-  schrittweise umrechnen
+  Österreich, Schweiz oder Europa – ohne Verkäufe im gewählten Gebiet weitet die
+  App zweistufig aus (erst Europa, dann weltweit). Bestehende Preise lassen sich
+  schrittweise umrechnen, preislose Artikel per Knopfdruck neu abrufen
 - 📊 **Statistik-Tab**: Kennzahlen, Wertentwicklung der Gesamtsammlung,
   Aufteilung nach Typ/Zustand, Wert nach Erscheinungsjahr, Top 10
 
