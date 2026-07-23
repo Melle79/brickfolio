@@ -3326,6 +3326,7 @@ async function pollUpdateStatus() {
     state.serverStartedAt = s.started_at;
     const helperBefore = state.helperActive;
     state.helperActive = !!s.helper_active;
+    state.helperSeenAt = s.helper_seen_at || null;
     // Helfer erst später eingerichtet? Dann Karte nachziehen.
     if (helperBefore !== state.helperActive && !$("update-card").hidden) {
       checkForUpdate(false).then(renderUpdateInfo);
@@ -3403,6 +3404,27 @@ function renderUpdateInfo(info) {
   if (run) run.hidden = !(admin && helper);
   const hint = $("update-helper-hint");
   if (hint) hint.hidden = !(admin && !helper);
+  // Sagen, woran es liegt: nie gelaufen (Pfad/Benutzer falsch?) oder
+  // zuletzt vor Stunden (dann stimmt der Zeitplan nicht).
+  const diag = $("update-helper-diag");
+  if (diag) {
+    const seen = state.helperSeenAt;
+    if (!admin || helper) {
+      diag.textContent = "";
+    } else if (!seen) {
+      diag.innerHTML = "<br><b>Stand:</b> Die Aufgabe hat sich hier noch "
+        + "<b>nie</b> gemeldet – meist stimmt der Pfad im Skriptfeld nicht "
+        + "oder sie läuft nicht als <code>root</code>.";
+    } else {
+      const min = Math.floor((Date.now() / 1000 - seen) / 60);
+      const wann = min < 120 ? `vor ${min} Minuten`
+        : `vor ${Math.floor(min / 60)} Stunden`;
+      diag.innerHTML = `<br><b>Stand:</b> Die Aufgabe lief zuletzt <b>${wann}</b>`
+        + " – sie ist also eingerichtet, läuft aber nicht jede Minute."
+        + " Häufigster Grund: „Letzte Ausführungszeit“ steht auf"
+        + " <code>00:59</code> statt <code>23:59</code>.";
+    }
+  }
   const status = $("update-status");
   if (info.error) {
     status.textContent = info.error;

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.2 – Juli 2026
+
+### Verbessert
+- 🔎 Meldet sich der Update-Helfer nicht, sagt die App jetzt **woran es liegt**: entweder „hat sich noch **nie** gemeldet" (dann stimmt meist der Pfad im Skriptfeld nicht oder die Aufgabe läuft nicht als `root`) oder „lief zuletzt **vor X Stunden**" (dann ist sie eingerichtet, läuft aber nicht jede Minute – häufigster Grund: „Letzte Ausführungszeit" steht auf `00:59` statt `23:59`)
+
 ## 1.9.1 – Juli 2026
 
 ### Verbessert
