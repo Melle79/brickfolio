@@ -23,14 +23,17 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 📷 Figuren und Sets direkt mit der Handykamera scannen (Kandidatenliste mit
   Trefferscore) oder per Name/Nummer suchen – reine Nummern werden automatisch
   als Set *und* Figur nachgeschlagen
-- 📦 Mengen, Zustand (neu/gebraucht), Notizen, Bildergalerie, Volltextsuche,
-  Sortierung und Typ-Filter
+- 📦 Mengen, Zustand (neu/gebraucht), Notizen, Bildergalerie, Volltextsuche
+  (mit 🔍-Symbol und ✕ zum Leeren), Sortierung und Typ-Filter
+- 🔎 Katalogsuche ab drei Zeichen, **10 Treffer pro Seite** mit „Weitere
+  Ergebnisse laden" – alle Treffer sind erreichbar
 - 👥 **Figuren beim Set übernehmen**: Beim Hinzufügen eines Sets fragt die App,
   welche der enthaltenen Minifiguren dabei sind (alle, keine oder eine Auswahl,
   inklusive Zustand) – ohne den Gesamtwert doppelt zu zählen
 - 👥 Set-Vernetzung: Sets kennen ihre Figuren („👥 3/4 ✔"-Vollständigkeit),
   Figuren zeigen, in welchen euren Sets sie stecken; fehlende Set-Figuren
   landen mit einem Tipp gesammelt auf der Wunschliste
+- 🖼 **Bild nachladen** je Eintrag, falls es fehlt oder nicht passt
 
 **Preise & Wert**
 - 💶 BrickLink-Ø-Preise (neu/gebraucht) automatisch im Hintergrund, mit

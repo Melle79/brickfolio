@@ -1,6 +1,6 @@
 # Finn's Brickfolio – Das Handbuch
 
-*Version 1.6 · Juli 2026 · für Brickfolio ab Release v1.6.9*
+*Version 1.9 · Juli 2026 · für Brickfolio ab Release v1.9.8*
 
 Brickfolio ist eine selbstgehostete Progressive Web App (PWA) zum Scannen,
 Verwalten und Bewerten einer LEGO®-Sammlung. Dieses Handbuch erklärt jede
@@ -159,6 +159,7 @@ nach Rolle sichtbar:
 
 | Karte | sichtbar für |
 |---|---|
+| 🎨 Design | alle |
 | 📤 Export & Druck | alle |
 | 📈 Preis-Protokoll | Sammlerprofi |
 | 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
@@ -167,6 +168,17 @@ nach Rolle sichtbar:
 | 👥 Benutzer verwalten | Admin |
 | 💾 Sicherung | Admin |
 | 🔄 Version & Updates | Admin |
+| ℹ️ Quellen & Rechtliches | alle |
+
+**🎨 Design** bietet zwei Aussehen: **Klassisch** (hell, LEGO-Farben) und
+**Galaxie** (dunkel, mit Sternenhimmel und leuchtenden Akzenten). Die Wahl
+gilt **pro Gerät** und wird gemerkt – auf dem Handy also unabhängig vom
+Rechner.
+
+**ℹ️ Quellen & Rechtliches** nennt, woher Daten und Bilder stammen
+(Rebrickable, BrickLink, Brickognize), weist darauf hin, dass beim
+Abfotografieren das Foto zur Erkennung übertragen wird, und führt Marken-,
+Schrift- und Programmlizenz auf.
 
 ---
 
@@ -218,7 +230,7 @@ Nummer und – je nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
 keine spiegelnden Verpackungen. Bei Sets funktioniert das Boxbild oder das
 aufgebaute Modell.
 
-### 4.2 Per Suche
+### 4.2 Per Suche (Katalog)
 
 Unter dem Kamerabereich liegt die Textsuche. Sie versteht:
 
@@ -227,6 +239,14 @@ Unter dem Kamerabereich liegt die Textsuche. Sie versteht:
 - **Setnummern** (`75154` oder `75154-1`)
 - **Reine Zahlen** werden automatisch mehrgleisig nachgeschlagen – als Set
   *und* als Figur; die App zeigt, was sie findet.
+
+Die Suche startet **ab drei Zeichen** – bei kürzerer Eingabe erscheint
+ein kurzer Hinweis statt einer Anfrage. Der **Typ** (Minifigur/Teil/Set)
+steht direkt neben dem Namensfeld, damit gezielt gesucht werden kann.
+
+Gefunden werden **10 Treffer pro Seite**; darunter steht „X von Y
+angezeigt" und ein Knopf **Weitere Ergebnisse laden**, der jeweils zehn
+weitere anhängt – so lassen sich alle Treffer durchblättern.
 
 ### 4.3 Aktionen auf jeder Treffer-Karte
 
@@ -246,6 +266,12 @@ Sammlung**, **⭐ auf eurer Wunschliste** und **🛒 auf »Listenname«**, wenn
 der Artikel bereits auf einer aktiven Einkaufsliste eingeplant ist – der
 eingebaute Schutz vor Doppelkäufen und Doppel-Einplanung.
 
+Gehört eine gefundene Figur zu einem **Set aus eurer Sammlung** und fehlt
+dort noch, steht statt „📦 in Sets" deutlich in Rot: **🧩 fehlt zu eurem
+Set: <Setname>**. Auf dem Flohmarkt seht ihr damit sofort, ob ein Fund
+eine Lücke schließt. Besitzt ihr die Figur bereits, bleibt es beim
+normalen Hinweis „in Sets".
+
 ### 4.4 Manuell erfassen
 
 Für alles, was keine BrickLink-Nummer hat (Eigenbauten, Konvolute):
@@ -260,16 +286,22 @@ der eingetragene Kaufpreis und die Notizen funktionieren normal.
 
 ### 5.1 Überblick & Filter
 
-Der Tab **Sammlung** zeigt alle Artikel als Karten. Oben: Volltextsuche,
-Sortierung (Neueste, Name, Wert …) und der Typ-Filter (Alle / Figuren /
-Sets). Die Kennzahlen-Widgets (Stückzahl, Gesamtwert) beziehen sich immer
-auf den aktuellen Filter.
+Der Tab **Sammlung** zeigt alle Artikel als Karten. Oben: Volltextsuche
+(mit 🔍-Symbol im Feld und **✕ zum Leeren**), Sortierung (Neueste, Name,
+Wert …) und der Typ-Filter (Alle / Figuren / Sets). Die Kennzahlen-Widgets
+(Stückzahl, Gesamtwert) beziehen sich immer auf den aktuellen Filter.
+
+Während die Sammlung lädt, dreht sich ein **Klemmbaustein** mit dem
+Hinweis „Sammlung wird geladen …" – die Suchleiste ist dabei schon
+benutzbar. Damit große Sammlungen zügig öffnen, bauen die Karten zunächst
+nur ihren Kopf auf; der Detailbereich entsteht erst beim Aufklappen.
 
 Über das **Umschalt-Symbol** rechts neben den Filtern wechselt man
 zwischen **Listenansicht** und **Raster** (zwei Figuren pro Reihe,
 kompakt, mit Mengen-Badge in der Ecke); die Wahl wird pro Gerät gemerkt.
 Im Raster öffnet ein Tipp die Karte über die **volle Breite** und zeigt
-oben zuerst die **Mengeneinstellung**.
+oben zuerst die **Mengeneinstellung**. Zwei Karten einer Reihe sind immer
+**gleich hoch**, auch wenn ein Name umbricht.
 
 ### 5.2 Die Karten-Details
 
@@ -287,6 +319,15 @@ Ein Tipp auf eine Karte öffnet die Details:
   für einen sofortigen Abruf und der **Preisverlauf** als Chart (blau =
   neu, grün = gebraucht) mit Link zur BrickLink-Preisseite.
 - **Bild antippen** öffnet die Großansicht.
+
+#### Bild fehlt oder passt nicht?
+
+Im Detailbereich sitzt **🖼 Bild nachladen** (bzw. *Bild erneuern*, wenn
+schon eines da ist). Der Knopf holt das aktuelle Katalogbild von BrickLink
+und speichert es dauerhaft. Praktisch bei Einträgen, die ohne Bild in die
+Sammlung gekommen sind – etwa über den CSV-Import.
+
+*(Voraussetzung: hinterlegter BrickLink-Schlüssel.)*
 
 ### 5.3 Sets und ihre Figuren
 
@@ -339,6 +380,9 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
   werden danach sofort neu geholt.
 - Artikel, die ihr schon besitzt, tragen ein Besitz-Badge – praktisch
   gegen Doppelkäufe.
+- Gehört eine gemerkte Figur zu einem **Set aus eurer Sammlung** und fehlt
+  dort noch, steht auf der Karte **🧩 fehlt zu eurem Set: <Setname>**. Ein
+  Tipp auf das Set springt direkt dorthin in die Sammlung.
 
 ---
 
@@ -454,6 +498,31 @@ stehen die Summen. **„Als CSV"** exportiert für die eigene Kalkulation,
 **Sets** selbst sind normal abgebbar – die Reservierung schützt die
 Figuren *für* die Sets, nicht die Sets.
 
+### 8.1 Fehlende Set-Figuren
+
+Das Gegenstück zur Verkaufsliste sitzt daneben: **🧩 Fehlende
+Set-Figuren** zeigt über **alle eigenen Sets hinweg**, welche Minifiguren
+noch fehlen.
+
+Oben steht die Zusammenfassung („6 Figuren fehlen in 2 von 5 Sets ·
+Nachkauf ca. 14,24 €"), darunter je Figur:
+
+- Bild, Name und Nummer
+- **„3× fehlt (1 von 4 da)"** – der Bedarf berücksichtigt, **wie oft ihr
+  ein Set besitzt**: Zwei TIE Fighter mit je zwei Piloten ergeben Bedarf 4
+- **📦 für:** die Sets, die sie brauchen – antippbar, springt zum Set
+- Ø-Preis, sofern bekannt (aus der Wunschliste oder dem Preisverlauf)
+- **☆ Merken** bzw. der Hinweis „⭐ auf der Wunschliste"
+
+Unten: **☆ Alle auf die Wunschliste**, **Als CSV** und **Drucken** – die
+fertige Einkaufsliste zum Vervollständigen.
+
+> **Namen und Bilder fehlen?** Diese Angaben stammen aus dem gespeicherten
+> Set-Inhalt, der in älteren Versionen noch ohne sie angelegt wurde. Steht
+> oben ein Hinweis mit dem Knopf **🔄 Namen & Bilder nachladen**, holt er
+> sie von BrickLink (mit Fortschrittsanzeige). Bei vielen Sets ruhig
+> zweimal drücken.
+
 ---
 
 ## 9. Der Statistik-Tab
@@ -567,8 +636,56 @@ drei bleiben erhalten), holt dann den aktuellen Stand von GitHub (ohne
 git, per Tarball – eure `docker-compose.yml` und der `data/`-Ordner
 bleiben unberührt) und baut den Container neu. Datenbank-Migrationen
 laufen beim Start automatisch und sind idempotent – mehrfaches
-Aktualisieren schadet nie. Der Browser holt sich die neue Oberfläche beim
-normalen Neuladen.
+Aktualisieren schadet nie.
+
+#### Update direkt aus der App *(optional)*
+
+Mit einem kleinen Helfer auf dem Server geht es auch ohne SSH: In der
+Karte **Version & Updates** stehen dann die Knöpfe **Jetzt**, **In 1
+Minute** und **In 5 Minuten**.
+
+So läuft es ab:
+
+1. Alle angemeldeten Browser zeigen oben einen Countdown
+   („Update in 1:00 Minuten – bitte Eingaben abschließen"). Solange er
+   läuft, kann der Admin **abbrechen**.
+2. Danach erscheint überall ein **Sperrbildschirm** „Update wird
+   installiert".
+3. Sobald der Server wieder da ist, **laden sich die Browser selbst neu** –
+   auch dann, wenn der Tab währenddessen im Hintergrund lag.
+
+**Warum ein Helfer?** Die App läuft im Container und kann sich nicht selbst
+neu bauen. Sie legt deshalb nur die Markierung `data/update-requested.json`
+ab; das Skript `update-watch.sh` auf dem Server greift sie auf und startet
+`update.sh`. So braucht die App **keinen Docker-Zugriff** – den ins
+Container zu reichen käme faktisch Root auf dem Server gleich.
+
+**Einrichtung** – `update-watch.sh` jede Minute aufrufen lassen (das Update
+selbst dauert ohnehin ein bis drei Minuten). Auf einer Synology:
+Systemsteuerung → Aufgabenplaner → Erstellen → Geplante Aufgabe →
+Benutzerdefiniertes Skript.
+
+| Reiter | Einstellung |
+|---|---|
+| Allgemein | Benutzer: **`root`** (sonst kein `docker compose`) |
+| Zeitplan | Täglich · Start `00:00` · „Weiterhin innerhalb desselben Tages ausführen" ✔ · jede Minute · Letzte Ausführungszeit: **`23:59`** |
+| Aufgabeneinstellungen | `sh /pfad/zu/brickfolio/update-watch.sh` |
+
+> ⚠️ „Letzte Ausführungszeit" steht anfangs auf `00:59` – dann liefe die
+> Aufgabe nur in der ersten Stunde des Tages. Unbedingt auf `23:59` stellen.
+
+Unter Linux mit cron: `* * * * * sh /pfad/zu/brickfolio/update-watch.sh`
+
+**Mehrere Instanzen:** am besten **je Instanz eine eigene Aufgabe** – so
+seht ihr pro Instanz, ob sie durchgelaufen ist. Wer alles in eine Aufgabe
+schreibt, hängt an jede Zeile `|| true`, sonst bricht ein Fehler in der
+ersten Zeile die zweite mit ab.
+
+**Läuft der Helfer?** Die Karte sagt es: „✅ Update-Helfer läuft" – oder sie
+nennt den Grund, wenn nicht („hat sich noch nie gemeldet" → Pfad oder
+Benutzer prüfen; „lief zuletzt vor X Stunden" → Zeitplan prüfen). Ohne
+Helfer erscheinen die Knöpfe gar nicht erst, damit die App nicht auf ein
+Update wartet, das nie kommt. Protokoll jedes Laufs: `data/update-watch.log`.
 
 ---
 
@@ -648,6 +765,17 @@ nachgetragen, Set-Inhalte (Figuren-Inventare) für neue Sets geladen.
 CSV-Importe und manuelle Nummern (`manuell-…`, `fig-…`) ohne
 BrickLink-Entsprechung bleiben preislos – alles andere versorgt sich
 selbst.
+
+---
+
+### 12.1 Das Preis-Protokoll
+
+**Mehr → 📈 Preis-Protokoll** *(Sammlerprofi)* listet die jüngsten
+Aufzeichnungen mit Zeitpunkt, Artikel, Preisen und Quelle (`auto` oder
+`manuell`). Darüber steht, **bei wie vielen Artikeln der Preisabruf älter
+als sieben Tage ist** – so seht ihr auf einen Blick, wie aktuell die
+Bewertung eurer Sammlung ist. Sind alle Preise frisch, steht dort
+stattdessen eine Bestätigung.
 
 ---
 

@@ -23,14 +23,18 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 - 📷 Scan minifigures and sets straight from the phone camera (candidate list
   with match score) or search by name/number – plain numbers are looked up as
   both a set *and* a figure automatically
-- 📦 Quantities, condition (new/used), notes, image gallery, full-text search,
-  sorting and type filter; optional **grid view** (two per row) for browsing
+- 📦 Quantities, condition (new/used), notes, image gallery, full-text search
+  (with 🔍 icon and ✕ to clear), sorting and type filter; optional **grid
+  view** (two per row) for browsing
+- 🔎 Catalogue search from three characters, **10 hits per page** with “load
+  more results” – every match is reachable
 - 👥 **Add a set's figures with it**: when a set enters the collection, the app
   asks which of its minifigures are included (all, none or a selection, with
   their own condition) – without double-counting them in the total value
 - 👥 Set linking: sets know their figures (“👥 3/4 ✔” completeness), figures
   show which of your sets they belong to; missing set figures move to the
   wishlist with a single tap
+- 🖼 **Reload the image** for an entry if it is missing or wrong
 
 **Prices & value**
 - 💶 BrickLink average prices (new/used) fetched automatically in the

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.9 – Juli 2026
+
+### Sonstiges
+- 📖 **Handbuch und README aktualisiert**: Sie standen noch auf dem Stand von 1.6.9. Ergänzt sind jetzt fehlende Set-Figuren, die Kennzeichnung „fehlt zu eurem Set", Bild nachladen, Design-Auswahl (Klassisch/Galaxie), Quellen & Rechtliches, die Such-Verbesserungen (ab 3 Zeichen, 10 Treffer pro Seite, Lupe und ✕), die Kennzahl im Preis-Protokoll sowie das komplette Kapitel zum Update aus der App heraus samt Einrichtung des Helfers
+
 ## 1.9.8 – Juli 2026
 
 ### Verbessert
