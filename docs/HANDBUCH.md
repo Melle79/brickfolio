@@ -789,6 +789,13 @@ So bleibt kein Artikel ohne Preis; die Bewertung ist dann eben gemischt.
 (Ist Europa oder weltweit direkt eingestellt, entfällt die jeweils engere
 Stufe.)
 
+**Woran man einen ausgewichenen Preis erkennt:** Stammt ein Ø-Preis nicht
+aus dem eingestellten Gebiet, steht eine kleine **Flagge** daneben – 🇪🇺 für
+Europa, 🌍 für weltweit. In der Detail-Preiskarte erklärt ein Tooltip den
+Grund. Preise aus dem eingestellten Gebiet bleiben ohne Flagge, sind also
+auf einen Blick als „echt deutsch" (bzw. österreichisch/schweizerisch)
+erkennbar.
+
 **Bestehende Sammlung umstellen.** Nach dem Wechsel stammen alle
 gespeicherten Preise noch aus dem alten Gebiet. Die Karte zeigt deshalb,
 wie viele Artikel betroffen sind, und bietet **🔄 Preise jetzt umrechnen**.

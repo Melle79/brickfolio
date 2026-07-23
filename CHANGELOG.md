@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.15.0 – Juli 2026
+
+### Neu
+- 🇪🇺 **Flagge, wenn ein Preis nicht aus dem eingestellten Gebiet stammt.** Hat BrickLink im gewählten Land keine Verkäufe und die App ist auf **Europa** oder **weltweit** ausgewichen, steht jetzt eine kleine Flagge neben dem Ø-Preis: 🇪🇺 für Europa, 🌍 für weltweit. So sieht man auf einen Blick, welche Preise „echt deutsch" sind und welche aus einem breiteren Markt kommen
+
+  Die Flagge erscheint sowohl in der Karten-Unterzeile als auch in der Detail-Preiskarte (dort mit Erklärung als Tooltip). Preise aus dem eingestellten Gebiet bleiben ohne Flagge
+
 ## 1.14.1 – Juli 2026
 
 ### Behoben

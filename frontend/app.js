@@ -79,6 +79,45 @@ function fmtEur(value) {
     { style: "currency", currency: "EUR" });
 }
 
+/* Preisgebiete → Flagge/Name. Stammt ein Ø-Preis nicht aus dem eingestellten
+   Gebiet (weil es dort keine Verkäufe gab), zeigt eine Flagge das Gebiet, aus
+   dem er wirklich kommt. */
+const REGION_FLAG = { "": "🌍", DE: "🇩🇪", AT: "🇦🇹", CH: "🇨🇭", europe: "🇪🇺" };
+const REGION_NAME = { "": "weltweit", DE: "Deutschland", AT: "Österreich",
+                      CH: "Schweiz", europe: "Europa" };
+
+function scopeFlag(scope) {
+  return REGION_FLAG[scope ?? ""] || "🌍";
+}
+
+/* Für einen Preis-Datensatz (neu/gebraucht): Flagge als HTML mit Tooltip,
+   aber nur, wenn der Preis aus einem anderen Gebiet stammt als eingestellt. */
+function scopeFlagHtml(d) {
+  if (!d || !d.fell_back) return "";
+  const name = REGION_NAME[d.used_scope ?? ""] || "weltweit";
+  return ` <span class="price-flag" title="Preis aus ${esc(name)} – im`
+    + ` eingestellten Gebiet gab es keine Verkäufe">${scopeFlag(d.used_scope)}`
+    + `</span>`;
+}
+
+/* Der Preis-Datensatz, der in der Karte gezeigt wird – spiegelt unitValue():
+   der Zustand des Eintrags zuerst, sonst der jeweils andere. */
+function shownPriceData(it) {
+  let pd = null;
+  try { pd = it.price_data ? JSON.parse(it.price_data) : null; } catch (_) { pd = null; }
+  if (!pd) return null;
+  const hasAvg = (x) => x && x.avg != null;
+  const primary = it.condition === "new" ? pd.new : pd.used;
+  const other = it.condition === "new" ? pd.used : pd.new;
+  return hasAvg(primary) ? primary : (hasAvg(other) ? other : null);
+}
+
+/* Nur die Flaggen-Emoji (ohne Tooltip) für die eingeklappte Unterzeile. */
+function fallbackFlagText(it) {
+  const d = shownPriceData(it);
+  return d && d.fell_back ? " " + scopeFlag(d.used_scope) : "";
+}
+
 /* Grundangaben (vorhanden / gemerkt / in eigenen Sets) für ALLE sichtbaren
    Treffer holen – das sind reine lokale Abfragen. Die teuren BrickLink-
    Details (Jahr, Preise) bleiben auf die ersten Treffer beschränkt. */
@@ -816,7 +855,7 @@ function collSubText(it) {
   let s = `${it.item_id}`
     + `${it.year > 0 ? " · " + it.year : ""}`
     + ` · ${it.condition === "new" ? "Neu" : "Gebraucht"}`
-    + `${unitValue(it) ? " · Ø " + fmtEur(unitValue(it)) : ""}`;
+    + `${unitValue(it) ? " · Ø " + fmtEur(unitValue(it)) + fallbackFlagText(it) : ""}`;
   if (it.item_type === "set" && it.figs_total > 0) {
     s += ` · 👥 ${it.figs_owned}/${it.figs_total}`
       + `${it.figs_owned === it.figs_total ? " ✔" : ""}`;
@@ -870,7 +909,7 @@ function priceLine(label, d) {
     ? ` <span class="price-range">(${fmtEur(d.min)} – ${fmtEur(d.max)})</span>` : "";
   const sold = d.times_sold != null ? ` · ${d.times_sold}× verkauft` : "";
   return `<div class="price-row"><span class="price-tag">${label}</span> `
-    + `<strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}</div>`;
+    + `<strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}${scopeFlagHtml(d)}</div>`;
 }
 
 function showTab(name) {

@@ -304,6 +304,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   border-radius: 6px; padding: 1px 7px; margin-right: 4px; font-size: 12.5px;
 }
 .price-range { color: var(--muted); }
+.price-flag { cursor: help; font-size: 1.05em; margin-left: 2px; }
 .price-note { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
 .mini-btn.cond { flex: 1; }
 .mini-btn.cond.sel {
