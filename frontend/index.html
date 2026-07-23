@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=174">
-<link rel="stylesheet" href="/static/style.css?v=174">
+<link rel="stylesheet" href="/static/fonts.css?v=175">
+<link rel="stylesheet" href="/static/style.css?v=175">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -359,20 +359,17 @@
             <button class="mini-btn add" data-update-go="300">In 5 Minuten</button>
           </div>
         </div>
-        <p class="search-hint" id="update-helper-hint" hidden>
-          💡 <b>Optional:</b> Mit dem Helfer <code>update-watch.sh</code> auf
-          dem Server lässt sich das Update direkt hier auslösen – ohne SSH.
-          Einrichtung (eine Aufgabe, die jede Minute läuft) steht im
-          <a href="https://github.com/Melle79/brickfolio#update-aus-der-app-heraus-optional"
-             target="_blank" rel="noopener">README</a>.
-          <span id="update-helper-diag"></span>
-        </p>
         <p class="search-hint">Von Hand auf dem Server:</p>
         <pre class="update-cmd">cd /pfad/zu/brickfolio
 sudo bash update.sh</pre>
         <p class="search-hint">…im Brickfolio-Ordner auf dem Server (dort,
           wo die docker-compose.yml liegt).</p>
       </div>
+      <!-- Status des Update-Helfers: immer sichtbar, damit sich die
+           Einrichtung auch ohne anstehendes Update prüfen lässt. -->
+      <p class="search-hint" id="update-helper-hint" hidden>
+        <span id="update-helper-diag"></span>
+      </p>
       <button class="mini-btn" id="btn-update-check">Nach Updates suchen</button>
       <p id="update-status" class="search-hint" hidden></p>
     </div>
@@ -463,7 +460,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=174"></script>
+<script src="/static/app.js?v=175"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

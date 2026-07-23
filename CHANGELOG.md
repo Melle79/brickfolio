@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.6 – Juli 2026
+
+### Behoben
+- 🔎 Der **Status des Update-Helfers** steckte im Block „Update verfügbar" und war damit unsichtbar, solange die App aktuell war – ausgerechnet dann, wenn man die Einrichtung prüfen will. Er steht jetzt **immer** in der Karte „Version & Updates": „✅ Update-Helfer läuft" bzw. der Hinweis, woran es hakt
+
 ## 1.9.5 – Juli 2026
 
 ### Sonstiges
