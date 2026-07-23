@@ -21,8 +21,15 @@ ALIVE="data/update-watch-alive"
 
 # Lebenszeichen bei JEDEM Lauf – daran erkennt die App, dass der Helfer
 # eingerichtet ist, und bietet den Update-Knopf erst dann an.
-mkdir -p data
-: > "$ALIVE"
+# Der data-Ordner gehört root (von Docker angelegt), deshalb braucht es root –
+# für "docker compose" weiter unten ohnehin.
+mkdir -p data 2>/dev/null || true
+if ! : 2>/dev/null > "$ALIVE"; then
+  echo "Kann '$(pwd)/$ALIVE' nicht schreiben." >&2
+  echo "Das Skript muss als root laufen – von Hand also mit 'sudo sh ...'," >&2
+  echo "im Synology-Aufgabenplaner unter Allgemein den Benutzer 'root'." >&2
+  exit 1
+fi
 
 [ -f "$FLAG" ] || exit 0
 

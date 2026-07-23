@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.3 – Juli 2026
+
+### Behoben
+- 🛠 Lief `update-watch.sh` ohne Root-Rechte, brach es mit einem nichtssagenden „Permission denied" ab. Jetzt erklärt es im Klartext, dass es als `root` laufen muss (von Hand mit `sudo`, im Aufgabenplaner unter „Allgemein"). Der `data`-Ordner gehört Docker und damit root – für `docker compose` braucht das Skript diese Rechte ohnehin
+
 ## 1.9.2 – Juli 2026
 
 ### Verbessert
