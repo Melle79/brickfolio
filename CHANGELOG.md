@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.4 – Juli 2026
+
+### Behoben
+- 🔑 Das Lebenszeichen des Update-Helfers wird jetzt ausdrücklich lesbar angelegt (`644`). Je nach Einstellung des Servers legte root es sonst als `600` an – dann hätte die App es nicht gelesen, sobald der Container einmal nicht als root läuft, und hätte fälschlich „Helfer nicht eingerichtet" gemeldet
+
 ## 1.9.3 – Juli 2026
 
 ### Behoben

@@ -30,6 +30,9 @@ if ! : 2>/dev/null > "$ALIVE"; then
   echo "im Synology-Aufgabenplaner unter Allgemein den Benutzer 'root'." >&2
   exit 1
 fi
+# Lesbar für alle: root legt die Datei je nach umask sonst als 600 an, und
+# dann sieht die App sie nicht, falls der Container nicht als root läuft.
+chmod 644 "$ALIVE" 2>/dev/null || true
 
 [ -f "$FLAG" ] || exit 0
 
