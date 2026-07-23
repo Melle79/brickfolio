@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=171">
+<link rel="stylesheet" href="/static/style.css?v=172">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -352,7 +352,16 @@
       <div id="update-hint" hidden>
         <p class="update-banner">⬆️ Update <b id="ver-latest"></b> verfügbar!
           <a id="ver-url" href="#" target="_blank" rel="noopener">Release-Notes ansehen</a></p>
-        <p class="search-hint">Einspielen auf dem Server:</p>
+        <div id="update-run" hidden>
+          <p class="search-hint">Direkt einspielen – die App sperrt sich
+            währenddessen für alle und lädt danach neu:</p>
+          <div class="detail-row btn-grid">
+            <button class="mini-btn add" data-update-go="0">Jetzt</button>
+            <button class="mini-btn add" data-update-go="60">In 1 Minute</button>
+            <button class="mini-btn add" data-update-go="300">In 5 Minuten</button>
+          </div>
+        </div>
+        <p class="search-hint">Alternativ von Hand auf dem Server:</p>
         <pre class="update-cmd">cd /pfad/zu/brickfolio
 sudo bash update.sh</pre>
         <p class="search-hint">…im Brickfolio-Ordner auf dem Server (dort,
@@ -393,6 +402,27 @@ sudo bash update.sh</pre>
   </nav>
 </div>
 
+<!-- Update angekündigt: Hinweis mit Countdown, danach Vollbild-Sperre -->
+<div id="update-bar" class="update-bar" hidden>
+  <span id="update-bar-text"></span>
+  <button class="mini-btn" id="btn-update-abort" hidden>Abbrechen</button>
+</div>
+<div id="update-lock" class="update-lock" hidden>
+  <div class="update-lock-box">
+    <svg class="spinner-brick" viewBox="0 0 48 48" width="64" height="64" role="status" aria-label="Update läuft" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="var(--ink)" stroke-width="2" stroke-linejoin="round">
+        <rect x="11" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>
+        <rect x="21" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>
+        <rect x="31" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>
+        <rect x="8" y="22" width="32" height="14" rx="3" fill="var(--yellow)"/>
+      </g>
+    </svg>
+    <h2>Update wird installiert</h2>
+    <p id="update-lock-text">Die App startet gleich neu – bitte kurz warten.</p>
+    <button class="mini-btn" id="btn-update-reload" hidden>Jetzt neu laden</button>
+  </div>
+</div>
+
 <div id="toast" class="toast" hidden></div>
 <div id="lightbox" class="lightbox" hidden>
   <button id="lb-prev" class="lb-nav" aria-label="Vorheriges Bild">‹</button>
@@ -404,7 +434,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=171"></script>
+<script src="/static/app.js?v=172"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

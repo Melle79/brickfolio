@@ -318,6 +318,79 @@ def update_check(force: int = 0, user: dict = Depends(admin_user)):
     return data
 
 
+# Startzeit dieses Prozesses: ändert sich beim Neustart des Containers und
+# ist damit das verlässliche Signal „Server ist wieder da" – auch dann, wenn
+# die Versionsnummer gleich geblieben ist.
+_STARTED_AT = int(time.time())
+
+
+def _update_flag_path() -> str:
+    """Markierungsdatei im geteilten Datenverzeichnis (Host sieht sie auch)."""
+    return os.path.join(os.path.dirname(core.DB_PATH), "update-requested.json")
+
+
+def _read_update_flag() -> dict | None:
+    try:
+        with open(_update_flag_path(), "r") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return None
+        return data
+    except (OSError, ValueError):
+        return None
+
+
+class UpdateRequestBody(BaseModel):
+    # Karenzzeit, damit laufende Eingaben abgeschlossen werden können
+    delay: int = Field(default=60, ge=0, le=3600)
+
+
+@app.post("/api/update/request")
+def request_update(body: UpdateRequestBody, user: dict = Depends(admin_user)):
+    """Update anfordern. Ausgeführt wird es vom Helfer auf dem Server.
+
+    Die App selbst rührt Docker nicht an – sie legt nur eine Markierung im
+    Datenverzeichnis ab. `execute_after` sorgt dafür, dass die Karenzzeit
+    auch dann eingehalten wird, wenn der Browser zwischendurch zugeht.
+    """
+    now = int(time.time())
+    data = {"requested_at": now, "execute_after": now + body.delay,
+            "by": user["name"], "version": core.APP_VERSION}
+    try:
+        with open(_update_flag_path(), "w") as f:
+            json.dump(data, f)
+    except OSError as e:
+        raise HTTPException(500, f"Markierung nicht schreibbar: {scrub(str(e))}")
+    return {"ok": True, **data}
+
+
+@app.post("/api/update/cancel")
+def cancel_update(user: dict = Depends(admin_user)):
+    try:
+        os.remove(_update_flag_path())
+    except FileNotFoundError:
+        pass
+    except OSError as e:
+        raise HTTPException(500, f"Markierung nicht löschbar: {scrub(str(e))}")
+    return {"ok": True}
+
+
+@app.get("/api/update/status")
+def update_status(user: dict = Depends(current_user)):
+    """Läuft gleich ein Update? Wird von allen Browsern kurz abgefragt."""
+    flag = _read_update_flag()
+    if not flag:
+        return {"pending": False, "version": core.APP_VERSION,
+                "started_at": _STARTED_AT}
+    left = int(flag.get("execute_after", 0)) - int(time.time())
+    return {"pending": True,
+            "seconds_left": max(0, left),
+            "execute_after": flag.get("execute_after"),
+            "by": flag.get("by", ""),
+            "version": core.APP_VERSION,
+            "started_at": _STARTED_AT}
+
+
 @app.get("/favicon.ico")
 def favicon():
     from fastapi.responses import FileResponse

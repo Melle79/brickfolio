@@ -986,6 +986,7 @@ function showApp() {
     state.ownerName = c.owner_name || "Finn";
     applyOwnerName(state.ownerName);
   }).catch(() => {});
+  startUpdateWatch();
   showTab("scan");
 }
 
@@ -3269,6 +3270,106 @@ async function loadPriceLog(limit) {
   }
 }
 
+/* ------------------------------------------------- Update-Ankündigung
+   Der Server ist während des Updates weg – die Sperre muss deshalb hier im
+   Browser laufen. Wir fragen kurz nach, zeigen Countdown bzw. Sperre und
+   laden neu, sobald der Server wieder da ist. */
+const UPDATE_POLL_MS = 20000;     // normale Nachfrage
+const UPDATE_WAIT_MS = 5000;      // während der Sperre häufiger
+const UPDATE_GIVEUP_MS = 8 * 60 * 1000;
+let updateTimer = null;
+let updateLockedSince = 0;
+let updateStartedBefore = null;
+
+function fmtCountdown(sec) {
+  const m = Math.floor(sec / 60);
+  return m > 0 ? `${m}:${String(sec % 60).padStart(2, "0")} Minuten`
+               : `${sec} Sekunden`;
+}
+
+/* Balken ein-/ausblenden und den Inhalt entsprechend nach unten rücken */
+function showUpdateBar(on, text) {
+  const bar = $("update-bar");
+  if (!bar) return;
+  if (on) $("update-bar-text").textContent = text;
+  bar.hidden = !on;
+  document.body.classList.toggle("update-pending", on);
+  if (on) {
+    // Erst im nächsten Frame messen – vorher steht die Höhe (Umbruch!)
+    // noch nicht fest und der Inhalt würde zu wenig verschoben.
+    requestAnimationFrame(() => {
+      document.documentElement.style.setProperty(
+        "--update-bar-h", bar.offsetHeight + "px");
+    });
+  }
+}
+
+function showUpdateLock(on) {
+  const lock = $("update-lock");
+  if (!lock) return;
+  if (on && lock.hidden) {
+    updateLockedSince = Date.now();
+    updateStartedBefore = state.serverStartedAt || null;
+  }
+  lock.hidden = !on;
+  document.body.style.overflow = on ? "hidden" : "";
+}
+
+async function pollUpdateStatus() {
+  const bar = $("update-bar");
+  const lock = $("update-lock");
+  if (!bar || !lock) return;
+  let next = UPDATE_POLL_MS;
+  try {
+    const s = await api("/update/status");
+    state.appVersion = s.version;
+    state.serverStartedAt = s.started_at;
+    if (!s.pending) {
+      // Ist der Server neu gestartet? Dann ist das Update durch – die
+      // Startzeit ist dafür verlässlicher als die Versionsnummer, denn
+      // der Container startet auch neu, wenn die Version gleich bleibt.
+      if (!lock.hidden && updateStartedBefore
+          && s.started_at && s.started_at !== updateStartedBefore) {
+        location.reload();
+        return;
+      }
+      if (lock.hidden) { showUpdateBar(false); showUpdateLock(false); }
+    } else if (s.seconds_left > 0) {
+      showUpdateBar(true, `⬆️ Update in ${fmtCountdown(s.seconds_left)}`
+        + " – bitte Eingaben abschließen");
+      $("btn-update-abort").hidden = !(state.user && state.user.is_admin);
+      next = s.seconds_left <= 30 ? 3000 : UPDATE_POLL_MS;
+    } else {
+      showUpdateBar(false);
+      showUpdateLock(true);
+      next = UPDATE_WAIT_MS;
+    }
+  } catch (_) {
+    // Server nicht erreichbar: läuft das Update gerade, ist das erwartet.
+    if (!lock.hidden) next = UPDATE_WAIT_MS;
+  }
+  if (!lock.hidden) {
+    const waited = Date.now() - updateLockedSince;
+    if (waited > UPDATE_GIVEUP_MS) {
+      $("update-lock-text").textContent =
+        "Das dauert länger als erwartet. Läuft der Update-Helfer auf dem "
+        + "Server? Du kannst es auch von Hand prüfen.";
+      $("btn-update-reload").hidden = false;
+    }
+    next = UPDATE_WAIT_MS;
+  }
+  clearTimeout(updateTimer);
+  updateTimer = setTimeout(pollUpdateStatus, next);
+}
+
+function startUpdateWatch() {
+  clearTimeout(updateTimer);
+  pollUpdateStatus();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) pollUpdateStatus();     // beim Zurückkommen sofort
+  });
+}
+
 async function checkForUpdate(force) {
   if (!(state.user && state.user.is_admin)) return null;
   try {
@@ -3288,6 +3389,9 @@ function renderUpdateInfo(info) {
     $("ver-latest").textContent = "v" + info.latest;
     $("ver-url").href = info.url || "https://github.com/Melle79/brickfolio/releases";
   }
+  // Direkt-Einspielen nur für Admins anbieten
+  const run = $("update-run");
+  if (run) run.hidden = !(state.user && state.user.is_admin);
   const status = $("update-status");
   if (info.error) {
     status.textContent = info.error;
@@ -3485,6 +3589,36 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
   $("btn-pricelog-more").addEventListener("click",
     () => loadPriceLog(200));
+  document.querySelectorAll("[data-update-go]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      const delay = Number(b.dataset.updateGo);
+      const wann = delay ? `in ${delay / 60} Minute(n)` : "sofort";
+      if (!confirm(`Update ${wann} einspielen?\n\n`
+        + "Die App sperrt sich für alle Benutzer und lädt danach neu.")) return;
+      b.disabled = true;
+      try {
+        await api("/update/request", { method: "POST", body: { delay } });
+        toast(delay ? "Update angekündigt ✔" : "Update angefordert ✔");
+        pollUpdateStatus();
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        b.disabled = false;
+      }
+    });
+  });
+  $("btn-update-abort").addEventListener("click", async (ev) => {
+    ev.currentTarget.disabled = true;
+    try {
+      await api("/update/cancel", { method: "POST" });
+      toast("Update abgebrochen");
+      showUpdateBar(false);
+    } catch (e) { toast(e.message); }
+    ev.currentTarget.disabled = false;
+    pollUpdateStatus();
+  });
+  $("btn-update-reload").addEventListener("click", () => location.reload());
+
   $("btn-update-check").addEventListener("click", async (ev) => {
     const btn = ev.currentTarget;
     btn.disabled = true;

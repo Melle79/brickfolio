@@ -142,6 +142,27 @@ Roles combine (the admin can grant themselves the pro role).
 
 - Deploy a new version: replace the files, then
   `docker compose up -d --build` – database migrations run automatically.
+  Easier: run `sudo bash update.sh` in the project folder.
+
+### Updating from inside the app (optional)
+
+More → Version & Updates has a button that triggers the update. The app does
+**not** run it itself – it only writes `data/update-requested.json`. A small
+helper on the server picks that up, so the app never needs Docker access
+(which would effectively be root on the host).
+
+Set it up by running `update-watch.sh` regularly; **once a minute is plenty**
+(the update itself takes one to three minutes anyway):
+
+- **Synology (DSM):** Control Panel → Task Scheduler → Create → Scheduled Task
+  → User-defined script. User `root`, daily with “repeat every 1 minute”,
+  command: `sh /path/to/brickfolio/update-watch.sh`
+- **Linux with cron:** `* * * * * sh /path/to/brickfolio/update-watch.sh`
+
+Flow: the admin picks now / 1 min / 5 min → every signed-in browser shows a
+countdown (“please finish your edits”), then a lock screen. Once the server is
+back, the browsers reload themselves. While the countdown runs, the admin can
+cancel. Log: `data/update-watch.log`.
 - Backup: in-app under More → Backup (JSON with all data incl. users and
   price history) **or** simply copy `data/brickfolio.db`.
 

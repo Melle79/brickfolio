@@ -422,6 +422,37 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .fig-actions { display: flex; gap: 6px; margin-top: 6px; }
 .fig-actions .mini-btn { min-height: 38px; font-size: 13px; padding: 5px 8px; flex: 1; }
 
+/* ---------- Update: Ankündigung und Sperre ---------- */
+.update-bar {
+  position: fixed; left: 0; right: 0; z-index: 40;
+  top: 0; padding: calc(env(safe-area-inset-top) + 9px) 16px 9px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  flex-wrap: wrap;
+  background: var(--yellow); color: var(--ink);
+  border-bottom: 3px solid var(--yellow-dark);
+  font-weight: 900; font-size: 14.5px; text-align: center;
+}
+.update-bar .mini-btn { flex: none; min-height: 34px; padding: 4px 12px; }
+/* Der Balken liegt fest oben – Kopfzeile und Inhalt rücken darunter, damit
+   Logo, Hilfe und Profil erreichbar bleiben. */
+body.update-pending #app { padding-top: var(--update-bar-h, 46px); }
+body.update-pending .topbar { top: var(--update-bar-h, 46px); }
+
+.update-lock {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(20, 22, 28, .82);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.update-lock-box {
+  background: var(--card); border: 2px solid var(--ink);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 28px 24px; text-align: center; max-width: 380px; width: 100%;
+}
+.update-lock-box h2 { margin: 14px 0 6px; font-size: 21px; }
+.update-lock-box p { margin: 0; color: var(--muted); line-height: 1.5; }
+.update-lock-box .mini-btn { margin-top: 16px; flex: none; }
+
 .mf-pending {
   display: flex; flex-direction: column; gap: 8px; margin-top: 10px;
   padding: 10px 12px; border: 1.5px dashed var(--line); border-radius: 10px;

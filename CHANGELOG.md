@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.0 – Juli 2026
+
+### Neu
+- 🚀 **Update aus der App anstoßen** (Mehr → Version & Updates, nur Admin): sofort, in 1 oder in 5 Minuten. Alle angemeldeten Browser zeigen einen Countdown („bitte Eingaben abschließen"), danach einen Sperrbildschirm – und laden sich selbst neu, sobald der Server wieder da ist. Solange der Countdown läuft, lässt sich das Update abbrechen
+
+  Die App führt das Update **nicht selbst** aus: Sie legt nur eine Markierung im Datenverzeichnis ab, die der neue Helfer `update-watch.sh` auf dem Server aufgreift. So braucht die App keinen Docker-Zugriff (das wäre faktisch Root auf dem Server). Einrichtung: das Skript einmal pro Minute aufrufen lassen (Synology-Aufgabenplaner oder cron) – siehe README
+
 ## 1.8.4 – Juli 2026
 
 ### Verbessert

@@ -141,6 +141,28 @@ Rollen sind kombinierbar (der Admin kann sich selbst zum Profi machen).
 
 - Neue Version einspielen: Dateien ersetzen, dann
   `docker compose up -d --build` – Datenbank-Migrationen laufen automatisch.
+  Bequemer geht es mit `sudo bash update.sh` im Projektordner.
+
+### Update aus der App heraus (optional)
+
+Mehr → Version & Updates hat einen Knopf zum Einspielen. Die App führt das
+Update **nicht selbst** aus – sie legt nur `data/update-requested.json` ab.
+Ein kleiner Helfer auf dem Server greift das auf. So braucht die App keinen
+Zugriff auf Docker (das wäre faktisch Root auf dem Host).
+
+Einrichten – `update-watch.sh` regelmäßig aufrufen, **ein Takt von einer
+Minute reicht** (das Update selbst dauert ohnehin ein bis drei Minuten):
+
+- **Synology (DSM):** Systemsteuerung → Aufgabenplaner → Erstellen →
+  Geplante Aufgabe → Benutzerdefiniertes Skript. Benutzer `root`,
+  Zeitplan täglich mit „jede 1 Minute wiederholen", Befehl:
+  `sh /pfad/zu/brickfolio/update-watch.sh`
+- **Linux mit cron:** `* * * * * sh /pfad/zu/brickfolio/update-watch.sh`
+
+Ablauf: Admin wählt sofort / 1 Min / 5 Min → alle angemeldeten Browser zeigen
+einen Countdown („bitte Eingaben abschließen"), danach einen Sperrbildschirm.
+Sobald der Server wieder da ist, laden sich die Browser selbst neu. Solange
+der Countdown läuft, kann der Admin abbrechen. Protokoll: `data/update-watch.log`.
 - Sicherung: In-App unter Mehr → Sicherung (JSON mit allen Daten inkl.
   Benutzern und Preisverläufen) **oder** einfach `data/brickfolio.db` kopieren.
 
