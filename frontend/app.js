@@ -51,6 +51,25 @@ const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
 
 function imgSrc(url) { return url ? esc(url) : IMG_PLACEHOLDER; }
 
+/* Drehender Klemmbaustein als Lade-Anzeige. */
+function brickSpinner(label, size = 46) {
+  return `<svg class="spinner-brick" viewBox="0 0 48 48" width="${size}"`
+    + ` height="${size}" role="status" aria-label="${esc(label)}"`
+    + ' xmlns="http://www.w3.org/2000/svg">'
+    + '<g stroke="var(--ink)" stroke-width="2" stroke-linejoin="round">'
+    + '<rect x="11" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
+    + '<rect x="21" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
+    + '<rect x="31" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
+    + '<rect x="8" y="22" width="32" height="14" rx="3" fill="var(--yellow)"/>'
+    + "</g></svg>";
+}
+
+/* Ganzer Lade-Block: Baustein plus Text, wie in der Sammlung. */
+function brickLoading(text) {
+  return `<div class="list-loading">${brickSpinner(text)}`
+    + `<span>${esc(text)}</span></div>`;
+}
+
 /* Für <img>: lädt die Quelle nicht (404, offline), zeigt den Platzhalter
    statt eines kaputten Bildsymbols. */
 const IMG_FALLBACK = 'onerror="this.onerror=null;this.src=IMG_PLACEHOLDER"';
@@ -1144,17 +1163,7 @@ async function loadCollection(showSpinner = false) {
   if (showSpinner) {
     $("collection-empty").hidden = true;
     list.setAttribute("aria-busy", "true");
-    list.innerHTML = '<div class="list-loading">'
-      + '<svg class="spinner-brick" viewBox="0 0 48 48" width="46" height="46" '
-      + 'role="status" aria-label="Sammlung wird geladen" '
-      + 'xmlns="http://www.w3.org/2000/svg">'
-      + '<g stroke="var(--ink)" stroke-width="2" stroke-linejoin="round">'
-      + '<rect x="11" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
-      + '<rect x="21" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
-      + '<rect x="31" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
-      + '<rect x="8" y="22" width="32" height="14" rx="3" fill="var(--yellow)"/>'
-      + '</g></svg>'
-      + '<span>Sammlung wird geladen …</span></div>';
+    list.innerHTML = brickLoading("Sammlung wird geladen …");
     // Dem Browser eine Bildaufbau-Runde geben, damit der Spinner sichtbar ist,
     // bevor der (bei großer Sammlung rechenintensive) Aufbau beginnt.
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -2539,7 +2548,7 @@ const TYPE_LABELS = { minifig: "Figuren", set: "Sets", part: "Teile" };
 
 async function loadStats() {
   const box = $("stats-view");
-  box.innerHTML = `<p class="empty">Lade Statistik …</p>`;
+  box.innerHTML = brickLoading("Statistik wird geladen …");
   try {
     const data = await api("/stats/dashboard");
     renderStats(data);
@@ -3224,7 +3233,7 @@ function initCollapsibleCards() {
 async function loadPriceLog(limit) {
   const box = $("pricelog-list");
   if (!box) return;
-  box.textContent = "Lade …";
+  box.innerHTML = brickLoading("Protokoll wird geladen …");
   try {
     const res = await api(`/price_log?limit=${limit}`);
     const staleEl = $("pricelog-stale");

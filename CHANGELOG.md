@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.8 – Juli 2026
+
+### Verbessert
+- 🧱 Der **drehende Klemmbaustein** erscheint jetzt auch beim Laden der **Statistik** und des **Preis-Protokolls** – vorher stand dort nur „Lade …"
+
 ## 1.9.7 – Juli 2026
 
 ### Behoben
