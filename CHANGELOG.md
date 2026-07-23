@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.0 – Juli 2026
+
+### Neu
+- 🌍 **Preisgebiet wählbar** (Mehr → Preisgebiet, Admin): weltweit (wie bisher), **Deutschland**, **Österreich**, **Schweiz** oder **Europa**. Damit lassen sich die Ø-Preise am eigenen Markt orientieren statt am weltweiten Durchschnitt
+
+  **Rückfall auf weltweit:** Gerade bei selteneren Figuren gibt es in einem einzelnen Land oft gar keine Verkäufe. Findet BrickLink dort nichts, nimmt die App automatisch den weltweiten Durchschnitt – so bleibt kein Artikel ohne Preis
+
+  **Bestehende Sammlung umstellen:** Nach dem Wechsel zeigt die Karte, wie viele Artikel noch Preise aus dem alten Gebiet haben, und rechnet sie auf Knopfdruck um. Das läuft in Häppchen mit Fortschrittsanzeige, weil jeder Artikel zwei BrickLink-Abrufe kostet und BrickLink ein Tageskontingent hat – bei großen Sammlungen kann man es über mehrere Tage laufen lassen, der Stand bleibt erhalten
+
 ## 1.9.9 – Juli 2026
 
 ### Sonstiges

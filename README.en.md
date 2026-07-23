@@ -39,6 +39,10 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 **Prices & value**
 - 💶 BrickLink average prices (new/used) fetched automatically in the
   background, with a built-in **price-history log** and per-item chart
+- 🌍 **Selectable price region** (More → Price region): worldwide, Germany,
+  Austria, Switzerland or Europe – if there are no sales in the chosen region,
+  the worldwide average is used automatically. Existing prices can be
+  recalculated step by step
 - 📊 **Stats tab**: key figures, overall value trend, split by type/condition,
   value by release year (tap a bar for the year’s details), Top 10
 

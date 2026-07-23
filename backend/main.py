@@ -324,6 +324,78 @@ def update_check(force: int = 0, user: dict = Depends(admin_user)):
 _STARTED_AT = int(time.time())
 
 
+def _prices_pending(conn, region: str) -> int:
+    """Wie viele Sammlungs-Artikel haben noch Preise aus einem anderen Gebiet?"""
+    return conn.execute(
+        "SELECT COUNT(*) AS c FROM collection WHERE "
+        "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+        "AND price_updated_at IS NOT NULL "
+        "AND COALESCE(price_region, '') != ?", (region,)).fetchone()["c"]
+
+
+@app.get("/api/settings/price_region")
+def get_price_region(user: dict = Depends(current_user)):
+    """Eingestelltes Preisgebiet, Auswahlliste und offener Nachrechen-Bedarf."""
+    region = integrations.price_region()
+    with core.db() as conn:
+        pending = _prices_pending(conn, region)
+    return {"region": region,
+            "options": [{"value": k, "label": v}
+                        for k, v in integrations.PRICE_REGIONS.items()],
+            "pending": pending,
+            "can_fetch": integrations.bricklink_enabled()}
+
+
+class PriceRegionBody(BaseModel):
+    region: str = Field(default="", max_length=20)
+
+
+@app.post("/api/settings/price_region")
+def set_price_region(body: PriceRegionBody, user: dict = Depends(admin_user)):
+    if body.region not in integrations.PRICE_REGIONS:
+        raise HTTPException(400, "Unbekanntes Preisgebiet")
+    core.set_setting("price_region", body.region)
+    with core.db() as conn:
+        pending = _prices_pending(conn, body.region)
+    return {"ok": True, "region": body.region, "pending": pending}
+
+
+@app.post("/api/prices/refresh_region")
+def refresh_prices_region(limit: int = 20, user: dict = Depends(admin_user)):
+    """Preise schrittweise auf das eingestellte Gebiet umrechnen.
+
+    Läuft in Häppchen: Jeder Artikel kostet zwei BrickLink-Abrufe (neu und
+    gebraucht), und BrickLink hat ein Tageskontingent. Die Antwort sagt, wie
+    viele noch offen sind – die App ruft so lange nach, wie es sinnvoll ist.
+    """
+    if not integrations.bricklink_enabled():
+        raise HTTPException(501, "BrickLink-API nicht konfiguriert")
+    limit = max(1, min(limit, 50))
+    region = integrations.price_region()
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM collection WHERE "
+            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+            "AND price_updated_at IS NOT NULL "
+            "AND COALESCE(price_region, '') != ? "
+            "ORDER BY price_updated_at LIMIT ?", (region, limit)).fetchall()
+    done, failed = 0, []
+    for r in rows:
+        try:
+            _fetch_and_store_prices(dict(r), "collection")
+            done += 1
+        except Exception as e:
+            failed.append({"item_id": r["item_id"], "error": scrub(str(e))[:120]})
+            # Trotzdem als bearbeitet markieren, sonst hängt der Lauf ewig an
+            # derselben Nummer (z. B. wenn BrickLink sie nicht kennt).
+            with core.db() as conn:
+                conn.execute("UPDATE collection SET price_region = ? WHERE id = ?",
+                             (region, r["id"]))
+    with core.db() as conn:
+        pending = _prices_pending(conn, region)
+    return {"ok": True, "updated": done, "remaining": pending, "failed": failed}
+
+
 def _update_flag_path() -> str:
     """Markierungsdatei im geteilten Datenverzeichnis (Host sieht sie auch)."""
     return os.path.join(os.path.dirname(core.DB_PATH), "update-requested.json")
@@ -2475,12 +2547,16 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection",
 
     now = int(time.time())
     payload = json.dumps({"new": result.get("new"), "used": result.get("used")})
+    # Gebiet mitschreiben, damit nach einer Umstellung erkennbar ist, welche
+    # Preise noch aus dem alten Gebiet stammen.
+    region = integrations.price_region()
     with core.db() as conn:
         conn.execute(
             f"UPDATE {table} SET price_new = ?, price_used = ?, "
-            "price_updated_at = ?, price_data = ? WHERE id = ?",
+            "price_updated_at = ?, price_data = ?, price_region = ? "
+            "WHERE id = ?",
             (avg(result.get("new")), avg(result.get("used")), now, payload,
-             entry["id"]))
+             region, entry["id"]))
     if not entry.get("year"):
         try:
             item = integrations.bricklink_item(entry["item_type"], entry["item_id"])

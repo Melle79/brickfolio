@@ -3213,6 +3213,92 @@ function initThemePicker() {
   applyTheme(stored);
 }
 
+/* ---------------------------------------------------------------- Preisgebiet */
+let priceRegionState = null;
+
+function renderPriceRegion() {
+  const s = priceRegionState;
+  if (!s) return;
+  const status = $("price-region-status");
+  const run = $("price-region-run");
+  if (!s.can_fetch) {
+    status.textContent = "Für Preise wird ein BrickLink-Schlüssel benötigt "
+      + "(Mehr → API-Schlüssel).";
+    run.hidden = true;
+    return;
+  }
+  if (s.pending > 0) {
+    status.innerHTML = `⚠️ <b>${s.pending} Artikel</b> haben noch Preise aus`
+      + " einem anderen Gebiet. Das Umrechnen holt je Artikel zwei Preise von"
+      + " BrickLink – bei vielen Artikeln also in mehreren Durchgängen.";
+    run.hidden = false;
+  } else {
+    status.textContent = "✅ Alle Preise stammen aus dem eingestellten Gebiet.";
+    run.hidden = true;
+  }
+}
+
+async function loadPriceRegion() {
+  try {
+    const s = await api("/settings/price_region");
+    priceRegionState = s;
+    const sel = $("price-region");
+    sel.innerHTML = s.options.map((o) =>
+      `<option value="${esc(o.value)}"${o.value === s.region ? " selected" : ""}>`
+      + `${esc(o.label)}</option>`).join("");
+    renderPriceRegion();
+  } catch (e) { /* Karte bleibt leer */ }
+}
+
+async function savePriceRegion(region) {
+  const sel = $("price-region");
+  sel.disabled = true;
+  try {
+    const res = await api("/settings/price_region",
+      { method: "POST", body: { region } });
+    priceRegionState.region = res.region;
+    priceRegionState.pending = res.pending;
+    sel.value = res.region;          // Anzeige an den Server angleichen
+    renderPriceRegion();
+    toast(res.pending > 0
+      ? `Gebiet gespeichert – ${res.pending} Artikel neu zu berechnen`
+      : "Gebiet gespeichert ✔");
+  } catch (e) {
+    toast(e.message);
+    loadPriceRegion();               // Auswahl zurück auf den echten Stand
+  } finally {
+    sel.disabled = false;
+  }
+}
+
+/* Rechnet in Häppchen um und zeigt den Fortschritt. */
+async function recalcPrices() {
+  const btn = $("btn-price-recalc");
+  btn.disabled = true;
+  let total = 0;
+  try {
+    for (let round = 0; round < 40; round += 1) {
+      const res = await api("/prices/refresh_region?limit=20",
+        { method: "POST" });
+      total += res.updated;
+      priceRegionState.pending = res.remaining;
+      btn.textContent = `🔄 ${total} umgerechnet, ${res.remaining} offen …`;
+      if (res.failed && res.failed.length) {
+        toast(`${res.failed.length} übersprungen: ${res.failed[0].error}`);
+      }
+      if (!res.remaining || !res.updated) break;
+    }
+    toast(total ? `${total} Artikel umgerechnet ✔` : "Nichts zu tun");
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🔄 Preise jetzt umrechnen";
+    renderPriceRegion();
+    if (!$("view-collection").hidden) loadCollection();
+  }
+}
+
 /* ---------------------------------------------------------------- Einstellungen */
 function initCollapsibleCards() {
   document.querySelectorAll("#view-settings .settings-card > h3")
@@ -3501,6 +3587,8 @@ async function loadSettings() {
       }
     }).catch(() => {});
   }
+  $("price-region-card").hidden = !isAdmin;
+  if (isAdmin) loadPriceRegion();
   $("update-card").hidden = !isAdmin;
   if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");
@@ -3643,6 +3731,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
   $("btn-missing-figs").addEventListener("click", toggleMissingFigs);
+  $("price-region").addEventListener("change", (ev) =>
+    savePriceRegion(ev.currentTarget.value));
+  $("btn-price-recalc").addEventListener("click", recalcPrices);
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);
   $("btn-pricelog-more").addEventListener("click",
     () => loadPriceLog(200));

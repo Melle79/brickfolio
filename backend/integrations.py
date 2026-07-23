@@ -284,28 +284,70 @@ def bricklink_supersets(fig_no: str) -> list:
     return sets
 
 
-def price_guide(item_type: str, item_no: str, condition: str = "U") -> dict:
-    """Preisübersicht (verkaufte Artikel, letzte 6 Monate) von BrickLink."""
+# Auswählbare Preisgebiete. Zwei Großbuchstaben = Land (country_code),
+# sonst eine BrickLink-Region. "" bedeutet weltweit (BrickLink-Standard).
+PRICE_REGIONS = {
+    "": "weltweit",
+    "DE": "Deutschland",
+    "AT": "Österreich",
+    "CH": "Schweiz",
+    "europe": "Europa",
+}
+
+
+def price_region() -> str:
+    """Eingestelltes Preisgebiet; unbekannte Werte gelten als weltweit."""
+    value = core.get_setting("price_region") or os.environ.get("PRICE_REGION", "")
+    return value if value in PRICE_REGIONS else ""
+
+
+def _price_request(bl_type: str, item_no: str, condition: str, scope: str,
+                   auth) -> dict:
+    params = {"guide_type": "sold", "new_or_used": condition,
+              "currency_code": "EUR"}
+    if scope:
+        # Länderkürzel und Region schließen sich bei BrickLink gegenseitig aus
+        if len(scope) == 2 and scope.isupper():
+            params["country_code"] = scope
+        else:
+            params["region"] = scope
+    resp = requests.get(
+        f"https://api.bricklink.com/api/store/v1/items/{bl_type}/{item_no}/price",
+        params=params, auth=auth, timeout=20)
+    resp.raise_for_status()
+    payload = resp.json()
+    meta = payload.get("meta", {})
+    if meta.get("code") != 200:
+        raise RuntimeError(meta.get("message", "BrickLink-Fehler"))
+    return payload.get("data", {})
+
+
+def price_guide(item_type: str, item_no: str, condition: str = "U",
+                scope: str | None = None) -> dict:
+    """Preisübersicht (verkaufte Artikel, letzte 6 Monate) von BrickLink.
+
+    `scope` grenzt auf ein Land bzw. eine Region ein; ohne Angabe gilt die
+    Einstellung. Gibt es dort keine Verkäufe – bei selteneren Figuren häufig –,
+    wird auf den weltweiten Durchschnitt zurückgefallen, damit kein Artikel
+    ohne Preis dasteht. `used_scope` sagt, was am Ende gezählt hat.
+    """
     bl_type = _BL_TYPE.get(item_type.lower())
     if not bl_type:
         raise ValueError(f"Unbekannter Typ: {item_type}")
     if bl_type == "SET" and "-" not in item_no:
         item_no = f"{item_no}-1"
 
+    wanted = price_region() if scope is None else scope
+    if wanted not in PRICE_REGIONS:
+        wanted = ""
     auth = _bl_auth()
-    url = f"https://api.bricklink.com/api/store/v1/items/{bl_type}/{item_no}/price"
-    resp = requests.get(
-        url,
-        params={"guide_type": "sold", "new_or_used": condition, "currency_code": "EUR"},
-        auth=auth,
-        timeout=20,
-    )
-    resp.raise_for_status()
-    payload = resp.json()
-    meta = payload.get("meta", {})
-    if meta.get("code") != 200:
-        raise RuntimeError(meta.get("message", "BrickLink-Fehler"))
-    d = payload.get("data", {})
+
+    d = _price_request(bl_type, item_no, condition, wanted, auth)
+    used = wanted
+    if wanted and not d.get("avg_price"):
+        d = _price_request(bl_type, item_no, condition, "", auth)
+        used = ""
+
     return {
         "currency": d.get("currency_code", "EUR"),
         "min": d.get("min_price"),
@@ -313,4 +355,7 @@ def price_guide(item_type: str, item_no: str, condition: str = "U") -> dict:
         "max": d.get("max_price"),
         "times_sold": d.get("unit_quantity"),
         "condition": condition,
+        "scope": wanted,
+        "used_scope": used,
+        "fell_back": bool(wanted) and used == "",
     }

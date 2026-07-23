@@ -167,6 +167,7 @@ nach Rolle sichtbar:
 | 🔑 API-Schlüssel | Admin |
 | 👥 Benutzer verwalten | Admin |
 | 💾 Sicherung | Admin |
+| 🌍 Preisgebiet | Admin |
 | 🔄 Version & Updates | Admin |
 | ℹ️ Quellen & Rechtliches | alle |
 
@@ -768,7 +769,31 @@ selbst.
 
 ---
 
-### 12.1 Das Preis-Protokoll
+### 12.1 Preisgebiet: weltweit oder deutschsprachiger Raum
+
+BrickLink liefert standardmäßig den **weltweiten** Durchschnitt. Unter
+**Mehr → 🌍 Preisgebiet** (Admin) lässt sich stattdessen ein Markt wählen:
+**Deutschland**, **Österreich**, **Schweiz** oder **Europa**.
+
+**Wichtig – der Rückfall:** Gerade bei selteneren Figuren gibt es in einem
+einzelnen Land oft **gar keine Verkäufe**. Findet BrickLink im gewählten
+Gebiet nichts, nimmt die App automatisch den weltweiten Durchschnitt.
+So bleibt kein Artikel ohne Preis; die Bewertung ist dann eben gemischt.
+
+**Bestehende Sammlung umstellen.** Nach dem Wechsel stammen alle
+gespeicherten Preise noch aus dem alten Gebiet. Die Karte zeigt deshalb,
+wie viele Artikel betroffen sind, und bietet **🔄 Preise jetzt umrechnen**.
+
+> Jeder Artikel kostet **zwei BrickLink-Abrufe** (neu und gebraucht), und
+> BrickLink hat ein Tageskontingent. Die App arbeitet deshalb in Häppchen
+> und zeigt den Fortschritt („120 umgerechnet, 340 offen …"). Bei großen
+> Sammlungen ruhig über mehrere Tage laufen lassen – der Stand bleibt
+> erhalten, es wird immer dort weitergemacht, wo aufgehört wurde.
+
+Artikel, die BrickLink nicht kennt, werden übersprungen und abgehakt,
+damit der Lauf nicht an einer Nummer hängen bleibt.
+
+### 12.2 Das Preis-Protokoll
 
 **Mehr → 📈 Preis-Protokoll** *(Sammlerprofi)* listet die jüngsten
 Aufzeichnungen mit Zeitpunkt, Artikel, Preisen und Quelle (`auto` oder

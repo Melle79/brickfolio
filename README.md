@@ -38,6 +38,10 @@ kommen von [BrickLink](https://www.bricklink.com) und
 **Preise & Wert**
 - 💶 BrickLink-Ø-Preise (neu/gebraucht) automatisch im Hintergrund, mit
   eigener **Preisverlaufs-Aufzeichnung** und Chart pro Artikel
+- 🌍 **Preisgebiet wählbar** (Mehr → Preisgebiet): weltweit, Deutschland,
+  Österreich, Schweiz oder Europa – ohne Verkäufe im gewählten Gebiet greift
+  automatisch der weltweite Durchschnitt. Bestehende Preise lassen sich
+  schrittweise umrechnen
 - 📊 **Statistik-Tab**: Kennzahlen, Wertentwicklung der Gesamtsammlung,
   Aufteilung nach Typ/Zustand, Wert nach Erscheinungsjahr, Top 10
 

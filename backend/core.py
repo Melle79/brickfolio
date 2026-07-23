@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.9.9"
+APP_VERSION = "1.10.0"
 
 
 def hash_password(password: str) -> str:
@@ -279,6 +279,12 @@ def init_db():
         if "is_dealer" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN is_dealer "
                          "INTEGER NOT NULL DEFAULT 0")
+        # Aus welchem Preisgebiet stammt der gespeicherte Preis? Damit lässt
+        # sich nach einer Umstellung gezielt nachrechnen, was noch fehlt.
+        for tbl in ("collection", "wanted", "shopping_items"):
+            cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}
+            if cols and "price_region" not in cols:
+                conn.execute(f"ALTER TABLE {tbl} ADD COLUMN price_region TEXT")
         # Name/Bild der Set-Figuren mitspeichern, damit die Übersicht der
         # fehlenden Figuren ohne BrickLink-Abruf auskommt
         sccols = {r[1] for r in conn.execute(
