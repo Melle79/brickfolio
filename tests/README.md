@@ -14,6 +14,12 @@ Abgedeckt:
 - `test_receive_integration.py` – Integrationstest über den echten Endpoint:
   Einkaufslisten-Artikel »erhalten« (neu/add/replace/manueller Kaufpreis) und
   per »undo« zurücknehmen
+- `test_missing_set_figs.py` – `/api/missing_set_figs`: Bedarf (Set-Inhalt ×
+  besessene Sets) minus Bestand, Preis aus Wunschliste bzw. Preisverlauf,
+  Namens-Rückfall bei Altbestand, Kennzahlen
+- `test_catalog_and_pricelog.py` – Katalogsuche (Mindestlänge 3, Seiten) und
+  die Kennzahl »Preisabruf älter als 7 Tage«; dazu, dass die Abzeichen der
+  Suche auch für Treffer jenseits der ersten Seite geliefert werden
 
 ## Ausführen
 

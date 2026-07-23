@@ -1028,7 +1028,10 @@ class SuggestInfoItem(BaseModel):
 
 
 class SuggestInfoBody(BaseModel):
-    items: list[SuggestInfoItem] = Field(max_length=8)
+    # Die Grundangaben (vorhanden? gemerkt? in welchen eigenen Sets?) sind
+    # reine SQLite-Abfragen und dürfen für alle sichtbaren Treffer kommen.
+    # Die teuren BrickLink-Details bleiben unabhängig davon gedeckelt.
+    items: list[SuggestInfoItem] = Field(max_length=60)
 
 
 FIG_SETS_TTL = 30 * 86400

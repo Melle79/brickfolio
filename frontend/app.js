@@ -60,26 +60,37 @@ function fmtEur(value) {
     { style: "currency", currency: "EUR" });
 }
 
+/* Grundangaben (vorhanden / gemerkt / in eigenen Sets) für ALLE sichtbaren
+   Treffer holen – das sind reine lokale Abfragen. Die teuren BrickLink-
+   Details (Jahr, Preise) bleiben auf die ersten Treffer beschränkt. */
+const SUGGEST_INFO_MAX = 60;    // Grenze des Endpoints
+const SUGGEST_DETAIL_MAX = 8;   // teure Abrufe
+
 async function enrichSuggestions(items) {
-  const payload = { items: items.slice(0, 8).map((i) => ({
-    item_id: i.item_id, item_type: i.item_type || "minifig" })) };
-  if (!payload.items.length) return;
+  const all = items.slice(0, SUGGEST_INFO_MAX).map((i) => ({
+    item_id: i.item_id, item_type: i.item_type || "minifig" }));
+  if (!all.length) return;
   try {
-    const info = await api("/suggest_info", { method: "POST", body: payload });
+    const info = await api("/suggest_info",
+      { method: "POST", body: { items: all } });
     applySuggestInfo(info, true);   // gespeicherte Jahre/Preise sofort zeigen
   } catch (_) { /* Badges sind nice-to-have */ }
-  const hasBl = payload.items.some((i) => !/^(fig-|manuell-)/.test(i.item_id));
+
+  const detail = all.slice(0, SUGGEST_DETAIL_MAX);
+  const detailIds = new Set(detail.map((i) => i.item_id));
+  const hasBl = detail.some((i) => !/^(fig-|manuell-)/.test(i.item_id));
   if (state.bricklinkPrices && hasBl) {
     document.querySelectorAll("[data-sug-id]").forEach((card) => {
       const sub = card.querySelector("[data-sug-sub]");
-      if (sub && !/^(fig-|manuell-)/.test(card.dataset.sugId)
+      if (sub && detailIds.has(card.dataset.sugId)
+          && !/^(fig-|manuell-)/.test(card.dataset.sugId)
           && sub.textContent === card.dataset.sugBase) {
         sub.textContent = card.dataset.sugBase + " · lade Jahr & Preise …";
       }
     });
     try {
       const info = await api("/suggest_info?detail=1",
-        { method: "POST", body: payload });
+        { method: "POST", body: { items: detail } });
       applySuggestInfo(info, true);
     } catch (_) { /* dito */ }
     // Ladehinweis entfernen, wo nichts kam

@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.8.3"
+APP_VERSION = "1.8.4"
 
 
 def hash_password(password: str) -> str:
@@ -198,6 +198,12 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_history_item
                 ON price_history(item_id, item_type, ts);
+            -- Der Primärschlüssel (set_no, fig_no) hilft nur bei Suche nach
+            -- set_no. Die Sammlung fragt aber je Zeile nach fig_no ("in Sets").
+            CREATE INDEX IF NOT EXISTS idx_set_contents_fig
+                ON set_contents(fig_no);
+            CREATE INDEX IF NOT EXISTS idx_shopping_items_list
+                ON shopping_items(list_id);
             """
         )
         # Migration: frühere Scans speicherten Brickognize-Typ "fig"

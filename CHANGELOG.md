@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.4 – Juli 2026
+
+### Verbessert
+- ⚡ **Sammlung lädt deutlich schneller**: Ein fehlender Datenbank-Index sorgte dafür, dass die Zuordnung „steckt in diesen Sets" für jeden Eintrag die ganze Set-Tabelle durchsuchen musste. Gemessen bei 800 Figuren und 250 Sets: **49 ms → 3 ms**. Der Index wird beim nächsten Start automatisch angelegt
+
+### Behoben
+- 🔎 In den Suchergebnissen bekamen nur die **ersten 8 Treffer** ihre Kennzeichnung („✔ in Sammlung", „🧩 fehlt zu eurem Set"). Seit der Umstellung auf 10 Treffer pro Seite plus Nachladen fehlte sie damit ausgerechnet bei den späteren Treffern – jetzt werden alle angezeigten gekennzeichnet
+
+### Sonstiges
+- ✅ Testabdeckung von 28 auf **48 Fälle** erweitert: fehlende Set-Figuren, Katalogsuche mit Seiten, Kennzahl „Preisabruf älter als 7 Tage"
+
 ## 1.8.3 – Juli 2026
 
 ### Neu
