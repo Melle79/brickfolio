@@ -1233,15 +1233,31 @@ async function loadCollection(showSpinner = false) {
   }
 }
 
+const ICON_LIST = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"'
+  + ' stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'
+  + '<path d="M8 6h13M8 12h13M8 18h13"/>'
+  + '<circle cx="3.5" cy="6" r="1.3" fill="currentColor" stroke="none"/>'
+  + '<circle cx="3.5" cy="12" r="1.3" fill="currentColor" stroke="none"/>'
+  + '<circle cx="3.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>';
+const ICON_GRID = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"'
+  + ' stroke="currentColor" stroke-width="2" aria-hidden="true">'
+  + '<rect x="3" y="3" width="8" height="8" rx="1.5"/>'
+  + '<rect x="13" y="3" width="8" height="8" rx="1.5"/>'
+  + '<rect x="3" y="13" width="8" height="8" rx="1.5"/>'
+  + '<rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>';
+
 function applyCollView() {
   const list = $("collection-list");
   const btn = $("btn-collview");
   const grid = localStorage.getItem("bf_collview") === "grid";
   if (list) list.classList.toggle("grid-mode", grid);
   if (btn) {
-    btn.textContent = grid ? "▦" : "▤";
-    btn.title = grid ? "Ansicht: Raster (tippen für Liste)"
-                     : "Ansicht: Liste (tippen für Raster)";
+    // Zeigt Symbol und Namen der Ansicht, in die man wechselt
+    btn.innerHTML = (grid ? ICON_LIST : ICON_GRID)
+      + `<span class="vt-label">${grid ? "Liste" : "Raster"}</span>`;
+    btn.title = grid ? "Zur Listenansicht wechseln"
+                     : "Zur Rasteransicht wechseln";
+    btn.setAttribute("aria-label", btn.title);
   }
 }
 
@@ -1269,7 +1285,6 @@ function collCardDetails(it) {
             <input data-paid class="paid-input" inputmode="decimal"
               placeholder="0,00" value="${fmtPaidInput(it.paid_price)}">
             <span class="paid-suffix">€ <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
-            <button class="mini-btn add" data-paid-save>Speichern</button>
           </div>
           <div class="sub profit-line" data-profit>${profitLine(it)}</div>
         </div>` : ""}
@@ -1282,16 +1297,21 @@ function collCardDetails(it) {
           <button class="mini-btn add" data-fix-btn>Übernehmen</button>
           ${it.img_url ? `<button class="mini-btn" data-fix-auto>🔍 Automatisch</button>` : ""}
         </div>` : ""}
+        ${priceGuideUrl(it) || it.bricklink_url ? `
         <div class="detail-row btn-grid">
-          ${state.bricklinkPrices && !needsBlNo ? `<button class="mini-btn" data-price>↻ Preise aktualisieren</button>` : ""}
           ${priceGuideUrl(it) ? `<a class="mini-btn link" href="${esc(priceGuideUrl(it))}" target="_blank" rel="noopener">Preisverlauf ↗</a>` : ""}
           ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
-        </div>
+        </div>` : ""}
         ${it.item_type === "set" && state.bricklinkPrices ? `
         <div class="detail-row">
           <button class="mini-btn" data-figs>👥 Enthaltene Figuren anzeigen</button>
         </div>
         <div class="set-figs" data-figs-out></div>` : ""}
+        ${state.bricklinkPrices && !needsBlNo ? `
+        <div class="price-head">
+          <span>Marktpreise</span>
+          <button class="icon-btn" data-price title="Preise jetzt aktualisieren" aria-label="Preise jetzt aktualisieren">↻</button>
+        </div>` : ""}
         <div class="price-result" data-price-out></div>
         <div class="price-history" data-history></div>
         <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString("de-DE")}</div>
@@ -1308,7 +1328,7 @@ function renderCollection() {
   // beim ersten Aufklappen erzeugt. Das hält das DOM bei großen Sammlungen
   // schlank, damit Antippen und Suchen sofort reagieren.
   list.innerHTML = items.map((it) => `
-    <div class="card" data-id="${it.id}">
+    <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}">
       <div class="card-head">
         <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <span class="qty-badge" data-qty-val>${it.quantity}</span>
@@ -1330,6 +1350,10 @@ function renderCollection() {
     const id = Number(card.dataset.id);
     const item = items.find((i) => i.id === id);
     const canPrice = state.bricklinkPrices && !/^(fig-|manuell-)/.test(item.item_id);
+    // Produktbild als zarter, weich gezeichneter Hintergrund der Karte
+    if (item.img_url) {
+      card.style.setProperty("--bg-img", `url("${item.img_url}")`);
+    }
 
     const deleteEntry = async () => {
       if (!confirm(`"${item.name}" wirklich löschen?`)) return;
@@ -1527,33 +1551,36 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
 
   wireQty(details);
 
-  const paidBtn = card.querySelector("[data-paid-save]");
-  if (paidBtn) {
-    paidBtn.addEventListener("click", async () => {
-      const raw = card.querySelector("[data-paid]").value.trim()
-        .replace(",", ".");
-      const paid = raw === "" ? null : Number(raw);
-      if (raw !== "" && (!isFinite(paid) || paid < 0)) {
+  // Kaufpreis speichert sich beim Verlassen des Feldes (oder mit Enter),
+  // kein eigener Knopf mehr. Nur bei echter Änderung wird gespeichert.
+  const paidEl = card.querySelector("[data-paid]");
+  if (paidEl) {
+    let paidSaved = fmtPaidInput(item.paid_price);
+    const savePaid = async () => {
+      const raw = paidEl.value.trim();
+      if (raw === paidSaved.trim()) return;         // nichts geändert
+      const num = raw === "" ? null : Number(raw.replace(",", "."));
+      if (raw !== "" && (!isFinite(num) || num < 0)) {
         toast("Bitte einen gültigen Betrag eingeben");
+        paidEl.value = paidSaved;                   // ungültig → zurücksetzen
         return;
       }
-      if (raw === "") { toast("Zum Entfernen 0 eintragen"); return; }
-      paidBtn.disabled = true;
       try {
         await api("/collection/" + id, { method: "PATCH",
-          body: { paid_price: paid } });
-        item.paid_price = paid;
-        item.paid_source = "manual";
+          body: { paid_price: num } });
+        item.paid_price = num;
+        item.paid_source = num == null ? "auto" : "manual";
         item.paid_at = Math.floor(Date.now() / 1000);
-        card.querySelector("[data-paid]").value = fmtPaidInput(paid);
-        card.querySelector("[data-paid-src]").innerHTML = paidSrcIcon(item);
+        paidEl.value = fmtPaidInput(num);
+        paidSaved = paidEl.value;
+        card.querySelector("[data-paid-src]").innerHTML =
+          num != null ? paidSrcIcon(item) : "";
         card.querySelector("[data-profit]").innerHTML = profitLine(item);
-        toast("Kaufpreis gespeichert ✔");
-      } catch (e) {
-        toast(e.message);
-      } finally {
-        paidBtn.disabled = false;
-      }
+      } catch (e) { toast(e.message); }
+    };
+    paidEl.addEventListener("blur", savePaid);
+    paidEl.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); paidEl.blur(); }
     });
   }
 
@@ -1651,7 +1678,12 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
 
   const priceBtn = card.querySelector("[data-price]");
   if (priceBtn) {
-    priceBtn.addEventListener("click", () => loadEntryPrice(card, item, true));
+    priceBtn.addEventListener("click", async () => {
+      priceBtn.disabled = true;
+      priceBtn.classList.add("spin");
+      try { await loadEntryPrice(card, item, true); }
+      finally { priceBtn.disabled = false; priceBtn.classList.remove("spin"); }
+    });
   }
 
   // Bild fehlt oder ist falsch: frisch von BrickLink holen (↻ am Bild)

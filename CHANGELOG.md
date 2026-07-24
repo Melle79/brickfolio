@@ -2,12 +2,18 @@
 
 ## 1.18.0 – Juli 2026
 
+### Neu
+- 🖼 **Produktbild als Karten-Hintergrund.** In der Sammlung schimmert das Bild jetzt als weich gezeichneter, dezenter Hintergrund von rechts in die Karte – zur Textseite ausgeblendet, damit alles gut lesbar bleibt. Gibt der Liste einen moderneren Look; Karten ohne Bild bleiben schlicht
+
 ### Verbessert
-- 🧹 **Aufgeräumtes Artikel-Popup.** Weniger Knöpfe, klarere Aufteilung:
+- 🧹 **Aufgeräumtes Artikel-Popup.** Deutlich weniger Knöpfe, klarere Aufteilung:
   - **Notizen speichern sich von selbst** – kurz nach dem Tippen und beim Schließen. Der „Notiz speichern"-Knopf entfällt, ein kurzes „✓ gespeichert" bestätigt
+  - **Kaufpreis** speichert ebenso automatisch beim Verlassen des Feldes (oder mit Enter) – der „Speichern"-Knopf daneben entfällt
   - **Bild erneuern** ist jetzt ein kleines **↻-Symbol direkt am Bild** statt eines eigenen Knopfes
+  - **Preise aktualisieren** sitzt als **↻ direkt am Preisblock** („Marktpreise") statt als großer Knopf
   - **Löschen nur noch an einer Stelle** – der Papierkorb bei der Anzahl. Der zusätzliche „Löschen"-Knopf unten ist weg
-  - Dadurch bleiben in der Aktionsleiste nur noch die wirklich nötigen Knöpfe (Preise aktualisieren, Preisverlauf, BrickLink)
+  - Übrig bleibt in der Aktionsleiste nur noch, was wirklich woanders hinführt (Preisverlauf, BrickLink)
+- 🔀 **Ansichts-Umschalter klarer:** statt des kryptischen ▤/▦-Zeichens jetzt ein eindeutiges Symbol (Liste/Raster) samt Beschriftung auf breiten Schirmen; er zeigt, in welche Ansicht man wechselt
 - 🧾 **Aufgeräumte Karten-Unterzeile:** Nummer und Jahr stehen jetzt in der oberen Zeile, Zustand und Ø-Preis (mit Herkunfts-Flagge) in der Zeile darunter. In den schmaleren, mehrspaltigen Kacheln liest sich das deutlich ruhiger als die bisherige lange Zeile
 
 ### Behoben

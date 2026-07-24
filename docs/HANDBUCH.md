@@ -304,11 +304,13 @@ Hinweis „Sammlung wird geladen …" – die Suchleiste ist dabei schon
 benutzbar. Damit große Sammlungen zügig öffnen, bauen die Karten zunächst
 nur ihren Kopf auf; der Detailbereich entsteht erst beim Aufklappen.
 
-Über das **Umschalt-Symbol** rechts neben den Filtern wechselt man
-zwischen **Listenansicht** und **Raster** (zwei Figuren pro Reihe,
-kompakt, mit Mengen-Badge in der Ecke); die Wahl wird pro Gerät gemerkt.
-Zwei Karten einer Reihe sind immer **gleich hoch**, auch wenn ein Name
-umbricht.
+Über den **Ansichts-Umschalter** rechts neben den Filtern (Symbol plus
+Beschriftung auf breiten Schirmen) wechselt man zwischen **Listenansicht**
+und **Raster** (mehrere Figuren pro Reihe, kompakt, mit Mengen-Badge in der
+Ecke); der Knopf zeigt, in welche Ansicht man wechselt, und die Wahl wird
+pro Gerät gemerkt. In der Liste schimmert das **Produktbild** zudem als
+dezenter Hintergrund in die Karte. Zwei Karten einer Reihe sind immer
+**gleich hoch**, auch wenn ein Name umbricht.
 
 ### 5.2 Die Karten-Details
 
@@ -324,18 +326,23 @@ und stehen nach dem Schließen auch in der Liste. Im Popup zeigt sich:
   Kaufpreis und zustandsgerechtem Wert. Wechselt man den Zustand eines
   Eintrags auf einen bereits vorhandenen, führt die App beide zusammen
   (Mengen und Kaufpreise werden addiert).
-- **Notizen** – Freitext, z. B. Herkunft oder Besonderheiten.
-- **Preise**: aktuelle Ø-Werte (neu/gebraucht), „Preise aktualisieren"
-  für einen sofortigen Abruf und der **Preisverlauf** als Chart (blau =
-  neu, grün = gebraucht) mit Link zur BrickLink-Preisseite.
+- **Kaufpreis** *(Sammlerprofi)* – einfach eintippen; er speichert sich
+  beim Verlassen des Feldes (oder mit Enter) von selbst.
+- **Notizen** – Freitext, z. B. Herkunft oder Besonderheiten; speichern
+  sich automatisch kurz nach dem Tippen (ein „✓ gespeichert" bestätigt).
+- **Preise**: aktuelle Ø-Werte (neu/gebraucht); das **↻** am Preisblock
+  „Marktpreise" holt sie sofort neu, der **Preisverlauf** zeigt sie als
+  Chart (blau = neu, grün = gebraucht) mit Link zur BrickLink-Preisseite.
 - **Bild antippen** öffnet die Großansicht.
+- **Löschen** über den **Papierkorb bei der Anzahl** (erscheint, sobald
+  nur noch eines übrig ist) – mit Sicherheitsabfrage.
 
 #### Bild fehlt oder passt nicht?
 
-Im Detailbereich sitzt **🖼 Bild nachladen** (bzw. *Bild erneuern*, wenn
-schon eines da ist). Der Knopf holt das aktuelle Katalogbild von BrickLink
-und speichert es dauerhaft. Praktisch bei Einträgen, die ohne Bild in die
-Sammlung gekommen sind – etwa über den CSV-Import.
+Unten rechts am Bild sitzt ein kleines **↻-Symbol**. Es holt das aktuelle
+Katalogbild von BrickLink und speichert es dauerhaft – praktisch bei
+Einträgen, die ohne Bild in die Sammlung gekommen sind (etwa über den
+CSV-Import).
 
 *(Voraussetzung: hinterlegter BrickLink-Schlüssel.)*
 
