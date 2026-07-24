@@ -1582,6 +1582,20 @@ def _fig_sets_cached(fig_no: str) -> list:
     return sets
 
 
+@app.get("/api/fig_sets/{fig_no}")
+def fig_sets(fig_no: str, user: dict = Depends(current_user)):
+    """Alle Sets, in denen diese Figur vorkommt (BrickLink-Supersets) – auch
+    solche, die man selbst nicht besitzt. Ohne BrickLink-Nummer oder -Schlüssel
+    gibt es nichts zu holen."""
+    if fig_no.startswith(("fig-", "manuell-")) \
+            or not integrations.bricklink_enabled():
+        return {"sets": []}
+    try:
+        return {"sets": _fig_sets_cached(fig_no)}
+    except Exception:
+        return {"sets": []}
+
+
 @app.post("/api/suggest_info")
 def suggest_info(body: SuggestInfoBody, detail: int = 0,
                  user: dict = Depends(current_user)):

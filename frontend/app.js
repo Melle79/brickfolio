@@ -886,6 +886,72 @@ function inSetLinks(raw) {
     + `<button class="set-link more-toggle" data-more-sets>+${links.length - 1} weitere ▾</button>`;
 }
 
+function parseSetRefs(raw) {
+  if (!raw) return [];
+  return raw.split(";;").map((s) => {
+    const parts = s.split("|");
+    return { no: parts[0], qty: Number(parts[parts.length - 1]) || 1,
+             name: parts.slice(1, -1).join("|") };
+  });
+}
+
+/* Alle Sets einer Figur im Popup: eigene mit ✔ (Sprung in die Sammlung),
+   fremde als BrickLink-Link. Die eigenen stehen sofort da, die vollständige
+   Liste kommt von BrickLink nach (30-Tage-Cache). */
+function renderFigSets(root, item) {
+  const el = root.querySelector("[data-fig-sets]");
+  if (!el) return;
+  const owned = parseSetRefs(item.in_sets);
+
+  const paint = (allSets) => {
+    const seen = new Set();
+    const links = [];
+    owned.forEach((s) => {
+      seen.add(s.no);
+      links.push(`<button class="set-link owned" data-jump-set="${esc(s.no)}">`
+        + `✔ ${esc(s.name)} (${esc(s.no)}${s.qty > 1 ? `, ${s.qty}×` : ""})</button>`);
+    });
+    (allSets || []).forEach((s) => {
+      if (seen.has(s.no)) return;
+      seen.add(s.no);
+      links.push(`<a class="set-link ext" href="https://www.bricklink.com/v2/catalog/catalogitem.page?S=${encodeURIComponent(s.no)}" target="_blank" rel="noopener">`
+        + `${esc(s.name)} (${esc(s.no)}${s.qty > 1 ? `, ${s.qty}×` : ""})</a>`);
+    });
+    if (!links.length) { el.hidden = true; return; }
+    el.hidden = false;
+    let html = `<span class="in-sets-label">📦 Kommt vor in:</span>` + links[0];
+    if (links.length > 1) {
+      html += `<span class="more-sets" hidden> · ${links.slice(1).join(" · ")}</span> `
+        + `<button class="set-link more-toggle" data-more-sets>+${links.length - 1} weitere ▾</button>`;
+    }
+    el.innerHTML = html;
+    el.querySelectorAll("[data-jump-set]").forEach((b) => {
+      b.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        closeCardModal();
+        jumpToSet(b.dataset.jumpSet);
+      });
+    });
+    const mb = el.querySelector("[data-more-sets]");
+    if (mb) {
+      mb.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const span = el.querySelector(".more-sets");
+        span.hidden = !span.hidden;
+        mb.textContent = span.hidden
+          ? `+${span.querySelectorAll(".set-link").length} weitere ▾` : "weniger ▴";
+      });
+    }
+  };
+
+  paint(null);   // eigene Sets sofort anzeigen
+  if (item.item_type === "minifig" && state.bricklinkPrices
+      && !/^(fig-|manuell-)/.test(item.item_id)) {
+    api(`/fig_sets/${encodeURIComponent(item.item_id)}`)
+      .then((d) => paint(d.sets)).catch(() => { /* eigene bleiben stehen */ });
+  }
+}
+
 async function jumpToSet(setNo) {
   showTab("collection");
   $("type-filter").value = "";
@@ -1465,7 +1531,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
             <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
             <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
             ${setFigsText(item) ? `<div class="sub sub-figs">${esc(setFigsText(item))}</div>` : ""}
-            ${item.in_sets ? `<div class="sub in-sets"><span class="in-sets-label">📦 aus Set:</span>${inSetLinks(item.in_sets)}</div>` : ""}
+            ${(item.in_sets || item.item_type === "minifig") ? `<div class="sub in-sets" data-fig-sets hidden></div>` : ""}
           </div>
           <div class="qty">
             <button data-qty="-1" class="${item.quantity <= 1 ? "qty-del" : ""}" aria-label="${item.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${item.quantity <= 1 ? TRASH_SVG : "−"}</button>
@@ -1483,23 +1549,8 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
   // Verdrahtung – `inner` ist die „card"
   wireQty(inner.querySelector(".card-head"));
   wireCollectionDetails(inner, item, id, deleteEntry, wireQty);
-  inner.querySelectorAll("[data-jump-set]").forEach((b) => {
-    b.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      closeCardModal();
-      jumpToSet(b.dataset.jumpSet);
-    });
-  });
-  const moreBtn = inner.querySelector("[data-more-sets]");
-  if (moreBtn) {
-    moreBtn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      const span = inner.querySelector(".more-sets");
-      span.hidden = !span.hidden;
-      moreBtn.textContent = span.hidden
-        ? `+${span.querySelectorAll(".set-link").length} weitere ▾` : "weniger ▴";
-    });
-  }
+  // „Kommt vor in"-Sets (eigene sofort, alle von BrickLink nach)
+  renderFigSets(inner, item);
   if (canPrice) loadEntryPrice(inner, item, false);
 
   const done = () => {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.21.0 – Juli 2026
+
+### Neu
+- 📦 **Im Figur-Popup: alle Sets, in denen die Figur vorkommt** – nicht nur die eigenen. Unter „Kommt vor in:" stehen jetzt auch Sets, die man (noch) nicht besitzt, als BrickLink-Link; die eigenen bleiben als ✔-Badge mit Sprung in die Sammlung. Praktisch, um zu sehen, wo eine Figur sonst noch enthalten ist. Die Liste kommt von BrickLink (30-Tage-Cache), die eigenen Sets erscheinen sofort
+
 ## 1.20.2 – Juli 2026
 
 ### Verbessert
