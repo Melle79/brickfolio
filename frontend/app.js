@@ -1273,7 +1273,7 @@ function collCardDetails(it) {
           </div>
           <div class="sub profit-line" data-profit>${profitLine(it)}</div>
         </div>` : ""}
-        <label>Notizen</label>
+        <label>Notizen <span class="notes-status" data-notes-status aria-live="polite"></span></label>
         <textarea data-notes placeholder="z. B. Zustand, Herkunft, Set …">${esc(it.notes)}</textarea>
         ${needsBlNo && state.bricklinkLookup ? `
         <label>BrickLink-Nr. setzen (für Preise & exakte Variante)</label>
@@ -1283,12 +1283,9 @@ function collCardDetails(it) {
           ${it.img_url ? `<button class="mini-btn" data-fix-auto>🔍 Automatisch</button>` : ""}
         </div>` : ""}
         <div class="detail-row btn-grid">
-          <button class="mini-btn" data-save-notes>Notiz speichern</button>
-          ${state.bricklinkLookup && !needsBlNo ? `<button class="mini-btn" data-img-reload>🖼 ${it.img_url ? "Bild erneuern" : "Bild nachladen"}</button>` : ""}
           ${state.bricklinkPrices && !needsBlNo ? `<button class="mini-btn" data-price>↻ Preise aktualisieren</button>` : ""}
           ${priceGuideUrl(it) ? `<a class="mini-btn link" href="${esc(priceGuideUrl(it))}" target="_blank" rel="noopener">Preisverlauf ↗</a>` : ""}
           ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
-          <button class="mini-btn danger" data-delete>Löschen</button>
         </div>
         ${it.item_type === "set" && state.bricklinkPrices ? `
         <div class="detail-row">
@@ -1430,7 +1427,10 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
       <button class="card-modal-close" aria-label="Schließen">✕</button>
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
-          <img class="card-img" src="${imgSrc(item.img_url)}" ${IMG_FALLBACK} data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
+          <div class="card-img-wrap">
+            <img class="card-img" src="${imgSrc(item.img_url)}" ${IMG_FALLBACK} data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
+            ${state.bricklinkLookup && !/^(fig-|manuell-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
+          </div>
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
           <div class="card-title">
             <strong>${esc(item.name)}</strong>
@@ -1474,6 +1474,9 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
   if (canPrice) loadEntryPrice(inner, item, false);
 
   const done = () => {
+    // Noch nicht gespeicherte Notiz vor dem Schließen sichern
+    const n = inner.querySelector("[data-notes]");
+    if (n && n._flushNotes) n._flushNotes();
     // Die Listen-Karte aus dem (in place geänderten) item nachziehen, damit
     // Zustand/Menge/Preis dort stimmen, ohne die ganze Liste neu zu laden.
     if (listCard && listCard.isConnected) {
@@ -1613,28 +1616,50 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     });
   }
 
-  card.querySelector("[data-save-notes]").addEventListener("click", async () => {
-    try {
-      await api("/collection/" + id, { method: "PATCH",
-        body: { notes: card.querySelector("[data-notes]").value } });
-      toast("Notiz gespeichert ✔");
-    } catch (e) { toast(e.message); }
-  });
+  // Notizen speichern sich von selbst – kurz nach dem Tippen und beim
+  // Verlassen des Feldes; kein eigener Knopf mehr nötig.
+  const notesEl = card.querySelector("[data-notes]");
+  if (notesEl) {
+    const status = card.querySelector("[data-notes-status]");
+    let saved = item.notes || "";
+    let timer = null;
+    const save = async () => {
+      clearTimeout(timer);
+      const val = notesEl.value;
+      if (val === saved) return;
+      try {
+        await api("/collection/" + id, { method: "PATCH", body: { notes: val } });
+        saved = val; item.notes = val;
+        if (status) {
+          status.textContent = "✓ gespeichert";
+          status.classList.add("show");
+          setTimeout(() => status.classList.remove("show"), 1600);
+        }
+      } catch (e) { toast(e.message); }
+    };
+    notesEl.addEventListener("input", () => {
+      if (status) status.classList.remove("show");
+      clearTimeout(timer);
+      timer = setTimeout(save, 800);
+    });
+    notesEl.addEventListener("blur", save);
+    notesEl._flushNotes = save;     // beim Schließen des Popups nachziehen
+  }
 
-  card.querySelector("[data-delete]").addEventListener("click", deleteEntry);
+  const delBtn = card.querySelector("[data-delete]");
+  if (delBtn) delBtn.addEventListener("click", deleteEntry);
 
   const priceBtn = card.querySelector("[data-price]");
   if (priceBtn) {
     priceBtn.addEventListener("click", () => loadEntryPrice(card, item, true));
   }
 
-  // Bild fehlt oder ist falsch: frisch von BrickLink holen
+  // Bild fehlt oder ist falsch: frisch von BrickLink holen (↻ am Bild)
   const imgBtn = card.querySelector("[data-img-reload]");
   if (imgBtn) {
     imgBtn.addEventListener("click", async () => {
-      const label = imgBtn.textContent;
       imgBtn.disabled = true;
-      imgBtn.textContent = "Lade Bild …";
+      imgBtn.classList.add("spin");
       try {
         const found = await api(`/lookup/${item.item_type}/`
           + encodeURIComponent(item.item_id));
@@ -1647,14 +1672,12 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         item.img_url = found.img_url;
         const img = card.querySelector(".card-img");
         if (img) img.src = found.img_url;
-        imgBtn.textContent = "🖼 Bild erneuern";
         toast("Bild aktualisiert ✔");
-        return;
       } catch (e) {
         toast(e.message);
       } finally {
         imgBtn.disabled = false;
-        if (imgBtn.textContent === "Lade Bild …") imgBtn.textContent = label;
+        imgBtn.classList.remove("spin");
       }
     });
   }

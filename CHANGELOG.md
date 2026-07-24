@@ -1,8 +1,13 @@
 # Changelog
 
-## 1.17.2 – Juli 2026
+## 1.18.0 – Juli 2026
 
 ### Verbessert
+- 🧹 **Aufgeräumtes Artikel-Popup.** Weniger Knöpfe, klarere Aufteilung:
+  - **Notizen speichern sich von selbst** – kurz nach dem Tippen und beim Schließen. Der „Notiz speichern"-Knopf entfällt, ein kurzes „✓ gespeichert" bestätigt
+  - **Bild erneuern** ist jetzt ein kleines **↻-Symbol direkt am Bild** statt eines eigenen Knopfes
+  - **Löschen nur noch an einer Stelle** – der Papierkorb bei der Anzahl. Der zusätzliche „Löschen"-Knopf unten ist weg
+  - Dadurch bleiben in der Aktionsleiste nur noch die wirklich nötigen Knöpfe (Preise aktualisieren, Preisverlauf, BrickLink)
 - 🧾 **Aufgeräumte Karten-Unterzeile:** Nummer und Jahr stehen jetzt in der oberen Zeile, Zustand und Ø-Preis (mit Herkunfts-Flagge) in der Zeile darunter. In den schmaleren, mehrspaltigen Kacheln liest sich das deutlich ruhiger als die bisherige lange Zeile
 
 ### Behoben
