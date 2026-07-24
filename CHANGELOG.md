@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.20.2 – Juli 2026
+
+### Verbessert
+- 🧩 **Aufgeräumte Set-/Figuren-Karten:**
+  - Bei **Sets** steht die Figuren-Vollständigkeit (👥 3/4) jetzt auf einer **eigenen Zeile**, statt dass das Icon am Zeilenende hängt und die Zahl darunter umbricht
+  - Bei **Figuren** stehen die zugehörigen Sets („aus Set") nur noch im **Detail-Popup**, nicht mehr auf der Karte – das hält die Liste ruhiger
+
 ## 1.20.1 – Juli 2026
 
 ### Sonstiges

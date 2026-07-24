@@ -860,11 +860,15 @@ function collSubId(it) {
 function collSubMeta(it) {
   let s = it.condition === "new" ? "Neu" : "Gebraucht";
   if (unitValue(it)) s += " · Ø " + fmtEur(unitValue(it)) + fallbackFlagText(it);
-  if (it.item_type === "set" && it.figs_total > 0) {
-    s += ` · 👥 ${it.figs_owned}/${it.figs_total}`
-      + `${it.figs_owned === it.figs_total ? " ✔" : ""}`;
-  }
   return s;
+}
+
+/* Vollständigkeit der Set-Figuren („👥 3/4 ✔") – steht auf einer eigenen
+   Zeile, damit das Icon nicht am Zeilenende umbricht. */
+function setFigsText(it) {
+  if (it.item_type !== "set" || !it.figs_total) return "";
+  return `👥 ${it.figs_owned}/${it.figs_total}`
+    + `${it.figs_owned === it.figs_total ? " ✔" : ""}`;
 }
 
 function inSetLinks(raw) {
@@ -1336,7 +1340,7 @@ function renderCollection() {
           <strong>${esc(it.name)}</strong>
           <div class="sub" data-sub-id>${esc(collSubId(it))}</div>
           <div class="sub" data-sub>${esc(collSubMeta(it))}</div>
-          ${it.in_sets ? `<div class="sub in-sets"><span class="in-sets-label">📦 aus Set:</span>${inSetLinks(it.in_sets)}</div>` : ""}
+          ${setFigsText(it) ? `<div class="sub sub-figs">${esc(setFigsText(it))}</div>` : ""}
         </div>
         <div class="qty">
           <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
@@ -1460,6 +1464,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
             <strong>${esc(item.name)}</strong>
             <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
             <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
+            ${setFigsText(item) ? `<div class="sub sub-figs">${esc(setFigsText(item))}</div>` : ""}
             ${item.in_sets ? `<div class="sub in-sets"><span class="in-sets-label">📦 aus Set:</span>${inSetLinks(item.in_sets)}</div>` : ""}
           </div>
           <div class="qty">
