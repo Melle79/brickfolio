@@ -5,6 +5,9 @@
 ### Verbessert
 - 🧾 **Aufgeräumte Karten-Unterzeile:** Nummer und Jahr stehen jetzt in der oberen Zeile, Zustand und Ø-Preis (mit Herkunfts-Flagge) in der Zeile darunter. In den schmaleren, mehrspaltigen Kacheln liest sich das deutlich ruhiger als die bisherige lange Zeile
 
+### Behoben
+- 👓 **Lesbarkeit im Dunkeldesign:** Die kleinen „Neu"/„Gebraucht"-Preis-Badges hatten weiße Schrift auf gelbem Grund – jetzt dunkel und gut lesbar. Und die Beschriftung im Preisverlauf-Diagramm hatte einen weißen Rand, der auf dunklem Hintergrund „glühte" und die Zahlen verschwimmen ließ – der Rand ist im Dunkeldesign nun selbst dunkel, die Zahlen stehen klar
+
 ## 1.17.1 – Juli 2026
 
 ### Verbessert

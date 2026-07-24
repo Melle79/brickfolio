@@ -302,6 +302,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   display: inline-block; min-width: 86px; font-weight: 900;
   background: var(--yellow); border: 1.5px solid var(--ink);
   border-radius: 6px; padding: 1px 7px; margin-right: 4px; font-size: 12.5px;
+  /* Hintergrund ist in jedem Design hell (gelb/blau) – Schrift daher fest
+     dunkel, sonst erbt sie im Dunkeldesign Weiß und verschwindet. */
+  color: #1D1D1B;
 }
 .price-range { color: var(--muted); }
 .price-flag { cursor: help; font-size: 1.05em; margin-left: 2px; }
@@ -593,12 +596,18 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: clamp(15px, 5.2vw, 24px);
   overflow-wrap: anywhere;
 }
-/* Chart-Labels mit weißem Halo, damit Kurve/Achse nicht überdecken */
+/* Chart-Labels mit Halo, damit Kurve/Achse sie nicht überdecken. Der Halo
+   hat die Farbe des Chart-Hintergrunds, cuttet die Linie also nur weg –
+   im Hellen weiß, im Dunkeln dunkel (sonst „glüht" der weiße Halo). */
 .history-svg .hist-label {
   paint-order: stroke;
   stroke: #fff;
-  stroke-width: 3.5px;
+  stroke-width: 3px;
   stroke-linejoin: round;
+}
+[data-theme="galaxy"] .history-svg .hist-label,
+[data-theme="nova"] .history-svg .hist-label {
+  fill: var(--ink); stroke: rgba(7, 10, 18, .92);
 }
 .update-banner {
   background: var(--yellow); border: 2px solid var(--ink);
