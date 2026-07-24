@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=193">
-<link rel="stylesheet" href="/static/style.css?v=193">
+<link rel="stylesheet" href="/static/fonts.css?v=194">
+<link rel="stylesheet" href="/static/style.css?v=194">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -45,6 +45,9 @@
     <input id="setup-pass2" type="password" autocomplete="new-password">
     <button id="btn-setup" class="btn btn-primary">Admin-Konto anlegen</button>
     <p id="setup-error" class="error" hidden></p>
+    <p class="setup-hint">🌐 Von unterwegs zugreifen? Das lässt sich gleich
+      danach unter <b>Mehr → Externer Zugriff</b> einrichten – optional und
+      jederzeit möglich.</p>
   </div>
   <div class="login-box" id="login-box">
     <div class="logo">
@@ -394,6 +397,32 @@
       </div>
     </div>
 
+    <div class="settings-card" id="external-access-card" hidden>
+      <h3>🌐 Externer Zugriff</h3>
+      <p class="search-hint">Von unterwegs auf Brickfolio zugreifen – ohne
+        Portfreigabe, per <b>Cloudflare Tunnel</b>. Trage Adresse und
+        Tunnel-Token ein; die App baut dir daraus den fertigen
+        <code>docker-compose</code>-Block. <b>Der Token bleibt im Browser</b>
+        und wird nicht gespeichert oder verschickt.</p>
+      <label for="cf-host">Adresse (Public Hostname)</label>
+      <input id="cf-host" placeholder="brickfolio.deine-domain.de" autocapitalize="none">
+      <label for="cf-token">Cloudflare Tunnel-Token</label>
+      <input id="cf-token" placeholder="eyJhIjoi…" autocapitalize="none">
+      <p class="search-hint">Token im <b>Cloudflare Zero Trust</b>-Dashboard
+        unter <i>Networks → Tunnels</i> beim Anlegen kopieren. Als
+        <i>Public Hostname</i> dort <code>http://brickfolio:8300</code> als
+        Service eintragen.</p>
+      <label>Diesen Block in die <code>docker-compose.yml</code> ergänzen:</label>
+      <pre class="code-block" id="cf-snippet" aria-live="polite"></pre>
+      <div class="detail-row btn-grid">
+        <button class="mini-btn add" id="cf-copy">📋 Block kopieren</button>
+      </div>
+      <p class="search-hint">Danach <code>docker compose up -d</code>. Deine App
+        ist dann unter <b id="cf-url">https://…</b> erreichbar. Ausführlich:
+        Handbuch, Kapitel 2.7. <b>Extra-Schloss:</b> im Zero-Trust-Dashboard
+        optional eine Access-Policy davorsetzen.</p>
+    </div>
+
     <div class="settings-card" id="update-card" hidden>
       <h3>🔄 Version &amp; Updates</h3>
       <p class="sub">Installiert: <b id="ver-current">…</b>
@@ -511,7 +540,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=193"></script>
+<script src="/static/app.js?v=194"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

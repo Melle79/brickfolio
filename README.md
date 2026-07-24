@@ -81,6 +81,10 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Nummer aus eurer Sammlung, steht das im Scannen-Tab – und bleibt dort, bis es
   jemand wegklickt. Die neue Nummer sucht die App im BrickLink Catalog Change
   Log und trägt sie auf Knopfdruck überall ein
+- 🌐 **Externer Zugriff per Assistent** (Mehr → Externer Zugriff, Admin): baut
+  aus deinem Cloudflare-Tunnel-Token den fertigen `docker-compose`-Block – Zugriff
+  von unterwegs ohne Portfreigabe. Die App startet den Tunnel nicht selbst (kein
+  Docker-Zugriff), der Token bleibt im Browser
 - 🐞 **Fehlerbericht** (Mehr → Fehlerbericht, Admin): Fehler aus allen Geräten
   melden sich automatisch am eigenen Server und werden gleichartig
   zusammengefasst. Mit hinterlegtem GitHub-Token legt ein Klick daraus ein

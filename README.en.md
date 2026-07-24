@@ -82,6 +82,10 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   from your collection, it shows up in the Scan tab – and stays there until
   someone dismisses it. The app looks up the new number in the BrickLink
   Catalog Change Log and applies it everywhere with one click
+- 🌐 **External-access helper** (More → External access, admin): turns your
+  Cloudflare tunnel token into a ready-to-paste `docker-compose` block – reach the
+  app on the go without port forwarding. The app never starts the tunnel itself
+  (no Docker access); the token stays in the browser
 - 🐞 **Error report** (More → Error report, admin): errors from every device
   report themselves to your own server and identical ones are grouped. With a
   GitHub token stored, one click turns an entry into an issue; API keys and the

@@ -223,6 +223,24 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   margin-top: 12px; font-weight: 900; font-size: 13px; color: var(--muted);
 }
 
+/* Code-Block (z. B. der generierte docker-compose-Ausschnitt) */
+.code-block {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px; line-height: 1.5; white-space: pre; overflow-x: auto;
+  background: var(--field); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; margin: 6px 0;
+}
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: .9em; background: var(--field);
+  border: 1px solid var(--line); border-radius: 5px; padding: 0 4px;
+}
+.setup-hint {
+  font-size: 12.5px; color: var(--muted); margin-top: 14px;
+  line-height: 1.45; text-align: left;
+}
+
 /* „✓ gespeichert" neben dem Notizen-Label, blendet kurz ein */
 .notes-status {
   font-size: 12px; font-weight: 800; color: var(--green);

@@ -3383,6 +3383,53 @@ function applyTheme(name) {
     b.classList.toggle("sel", b.dataset.themePick === name));
 }
 
+/* ------------------------------------------------- Externer Zugriff (Cloudflare)
+   Reiner Generator: baut aus Token und Adresse den docker-compose-Block. Der
+   Token bleibt im Browser – die App kann den Tunnel selbst nicht starten (kein
+   Docker-Zugriff), deshalb erzeugt sie nur die fertige Konfiguration. */
+function cfSnippet() {
+  const host = ($("cf-host").value.trim()) || "brickfolio.deine-domain.de";
+  const token = ($("cf-token").value.trim()) || "DEIN-CLOUDFLARE-TUNNEL-TOKEN";
+  return "  cloudflared:\n"
+    + "    image: cloudflare/cloudflared:latest\n"
+    + "    container_name: brickfolio-tunnel\n"
+    + "    restart: unless-stopped\n"
+    + "    command: tunnel run\n"
+    + "    environment:\n"
+    + `      TUNNEL_TOKEN: "${token}"\n`
+    + `    # Public Hostname im Cloudflare-Dashboard: ${host}\n`
+    + "    #   -> Service: http://brickfolio:8300";
+}
+
+function renderCfSnippet() {
+  const el = $("cf-snippet");
+  if (el) el.textContent = cfSnippet();
+  const url = $("cf-url");
+  if (url) {
+    const host = ($("cf-host").value.trim()) || "brickfolio.deine-domain.de";
+    url.textContent = "https://" + host;
+  }
+}
+
+function initExternalAccess() {
+  ["cf-host", "cf-token"].forEach((id) => {
+    const el = $(id);
+    if (el) el.addEventListener("input", renderCfSnippet);
+  });
+  renderCfSnippet();
+  const copy = $("cf-copy");
+  if (copy) {
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(cfSnippet());
+        toast("Block kopiert ✔");
+      } catch (_) {
+        toast("Kopieren nicht möglich – Block bitte von Hand markieren");
+      }
+    });
+  }
+}
+
 function initThemePicker() {
   document.querySelectorAll("[data-theme-pick]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -3986,6 +4033,7 @@ async function loadSettings() {
   if (isAdmin) loadErrors();
   $("price-region-card").hidden = !isAdmin;
   if (isAdmin) loadPriceRegion();
+  $("external-access-card").hidden = !isAdmin;
   $("update-card").hidden = !isAdmin;
   if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");
@@ -4066,6 +4114,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   initCollapsibleCards();
   initThemePicker();
+  initExternalAccess();
   const ownerBtn = $("btn-owner-name");
   if (ownerBtn) {
     ownerBtn.addEventListener("click", async () => {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.19.0 – Juli 2026
+
+### Neu
+- 🌐 **Externer Zugriff einrichten – direkt in der App** (Mehr → Externer Zugriff, Admin; Hinweis schon in der Ersteinrichtung). Trägt man seine Wunsch-Adresse und den **Cloudflare-Tunnel-Token** ein, baut die App daraus den fertigen `docker-compose`-Block zum Kopieren – so klappt der Zugriff von unterwegs **ohne Portfreigabe**
+
+  **Sicher gedacht:** Die App startet den Tunnel *nicht* selbst (sie hat bewusst keinen Docker-Zugriff), sondern erzeugt nur die Konfiguration. Der Token **bleibt im Browser** und wird weder gespeichert noch verschickt. Details weiter im Handbuch, Kapitel 2.7
+
 ## 1.18.0 – Juli 2026
 
 ### Neu
