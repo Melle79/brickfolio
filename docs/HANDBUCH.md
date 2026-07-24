@@ -188,6 +188,67 @@ wird gemerkt – auf dem Handy also unabhängig vom Rechner.
 Abfotografieren das Foto zur Erkennung übertragen wird, und führt Marken-,
 Schrift- und Programmlizenz auf.
 
+### 2.7 Von unterwegs erreichbar machen (Cloudflare Tunnel)
+
+Standardmäßig läuft Brickfolio nur im **Heimnetz**. Wer auch von unterwegs
+(Handy im Mobilfunknetz, anderer Ort) zugreifen möchte, sollte **keine
+Ports am Router freigeben** – das öffnet den Server dem ganzen Internet.
+Empfohlen ist stattdessen ein **Cloudflare Tunnel**: sicherer, einfacher
+und kostenlos.
+
+**Warum Cloudflare Tunnel**
+
+- **Kein offener Port.** Der Tunnel baut eine *ausgehende* Verbindung zu
+  Cloudflare auf – am Router und NAS muss nichts nach innen freigegeben
+  werden. Das verkleinert die Angriffsfläche enorm.
+- **HTTPS inklusive.** Die App ist über eine eigene (Sub-)Domain
+  verschlüsselt erreichbar, ohne selbst Zertifikate zu pflegen.
+- **Funktioniert hinter CGNAT** und ohne feste öffentliche IP – gerade bei
+  vielen Kabel-/Mobilfunk-Anschlüssen wichtig.
+
+**Voraussetzung:** ein kostenloses Cloudflare-Konto und eine Domain, die
+bei Cloudflare verwaltet wird (eine günstige Domain registrieren oder eine
+vorhandene umziehen).
+
+**Empfohlene Installation** – `cloudflared` als zweiter Container direkt
+neben Brickfolio, gesteuert per Tunnel-Token:
+
+1. Im **Cloudflare Zero Trust**-Dashboard unter *Networks → Tunnels* einen
+   Tunnel anlegen und den angezeigten **Token** kopieren.
+2. Beim Tunnel einen *Public Hostname* eintragen, z. B.
+   `brickfolio.deine-domain.de`, mit Service
+   **`http://brickfolio:8300`** (der Container-Name und Port von oben).
+3. In der `docker-compose.yml` neben dem `brickfolio`-Dienst ergänzen:
+
+   ```yaml
+     cloudflared:
+       image: cloudflare/cloudflared:latest
+       container_name: brickfolio-tunnel
+       restart: unless-stopped
+       command: tunnel run
+       environment:
+         TUNNEL_TOKEN: "hier-den-token-einsetzen"
+   ```
+
+   Beide Container liegen im selben Compose-Netz, daher erreicht
+   `cloudflared` die App unter `http://brickfolio:8300`. Dann
+   `docker compose up -d`.
+
+Danach ist Brickfolio unter `https://brickfolio.deine-domain.de` von
+überall verschlüsselt erreichbar – ganz ohne Portfreigabe. Als PWA lässt
+es sich über diese Adresse auch aufs Handy legen (siehe 2.5).
+
+> **Extra-Schloss (empfohlen):** Im Zero-Trust-Dashboard lässt sich vor die
+> App eine **Access-Policy** setzen – etwa Anmeldung per E-Mail-Einmalcode
+> oder Beschränkung auf bestimmte Adressen. Dann kommt nur an die
+> Login-Seite, wer vorher von Cloudflare bestätigt wurde. Für die eigene
+> Familie genügt oft auch der normale Brickfolio-Login; die Access-Policy
+> ist die zweite Tür für alle, die ganz sichergehen wollen.
+
+**Mehrere Instanzen** (z. B. eine je Familienmitglied): einfach mehrere
+*Public Hostnames* anlegen, die auf die jeweiligen Container-Ports zeigen –
+ein einziger `cloudflared`-Container reicht dafür aus.
+
 ---
 
 ## 3. Benutzer & Rollen
