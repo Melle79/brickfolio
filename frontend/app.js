@@ -3310,15 +3310,16 @@ async function restoreBackupFile(file) {
 }
 
 /* ---------------------------------------------------------------- Design */
+const THEME_COLOR = { classic: "#FFCF00", galaxy: "#0C1322", nova: "#0A0E1A" };
+
 function applyTheme(name) {
-  const galaxy = name === "galaxy";
-  if (galaxy) document.documentElement.dataset.theme = "galaxy";
-  else delete document.documentElement.dataset.theme;
+  if (!THEME_COLOR[name]) name = "classic";
+  if (name === "classic") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = name;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = galaxy ? "#0C1322" : "#FFCF00";
+  if (meta) meta.content = THEME_COLOR[name];
   document.querySelectorAll("[data-theme-pick]").forEach((b) =>
-    b.classList.toggle("sel",
-      b.dataset.themePick === (galaxy ? "galaxy" : "classic")));
+    b.classList.toggle("sel", b.dataset.themePick === name));
 }
 
 function initThemePicker() {

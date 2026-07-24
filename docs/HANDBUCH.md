@@ -177,10 +177,11 @@ nach Rolle sichtbar:
 | 🔄 Version & Updates | Admin |
 | ℹ️ Quellen & Rechtliches | alle |
 
-**🎨 Design** bietet zwei Aussehen: **Klassisch** (hell, LEGO-Farben) und
-**Galaxie** (dunkel, mit Sternenhimmel und leuchtenden Akzenten). Die Wahl
-gilt **pro Gerät** und wird gemerkt – auf dem Handy also unabhängig vom
-Rechner.
+**🎨 Design** bietet drei Aussehen: **Klassisch** (hell, LEGO-Farben),
+**Galaxie** (dunkel, mit Sternenhimmel und leuchtenden Akzenten) und
+**Nova** (modernes Glas-Design – tiefdunkler, blau schimmernder Hintergrund,
+durchscheinende Flächen und blauer Akzent). Die Wahl gilt **pro Gerät** und
+wird gemerkt – auf dem Handy also unabhängig vom Rechner.
 
 **ℹ️ Quellen & Rechtliches** nennt, woher Daten und Bilder stammen
 (Rebrickable, BrickLink, Brickognize), weist darauf hin, dass beim

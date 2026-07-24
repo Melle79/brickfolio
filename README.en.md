@@ -75,8 +75,9 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   lists
 - 🏷 Configurable **display name** in logo and title (default “Finn”); ideal
   when several family members each run their own instance
-- 🌌 Two **themes** to choose from (More → Design): light “Classic” and dark
-  “Galaxy” with a starfield – the choice is per device
+- 🌌 Three **themes** to choose from (More → Design): light “Classic”, dark
+  “Galaxy” with a starfield, and “Nova” – a modern glass design with a blue
+  accent; the choice is per device
 - 🔔 **Notices on the start screen**: if BrickLink renames or removes a number
   from your collection, it shows up in the Scan tab – and stays there until
   someone dismisses it. The app looks up the new number in the BrickLink

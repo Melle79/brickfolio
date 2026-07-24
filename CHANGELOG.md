@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.0 – Juli 2026
+
+### Neu
+- ✨ **Drittes Design „Nova".** Neben „Klassisch" (hell) und „Galaxie" (dunkel, Sternenhimmel) gibt es jetzt ein **modernes Glas-Design**: tiefdunkler, blau schimmernder Hintergrund, durchscheinende Flächen mit weichem Licht, blauer Akzent und sanfte Schatten statt harter Kanten. Zu finden unter **Mehr → 🎨 Design**; die Wahl gilt wie gehabt pro Gerät
+
 ## 1.16.0 – Juli 2026
 
 ### Neu

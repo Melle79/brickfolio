@@ -11,15 +11,17 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=187">
-<link rel="stylesheet" href="/static/style.css?v=187">
+<link rel="stylesheet" href="/static/fonts.css?v=188">
+<link rel="stylesheet" href="/static/style.css?v=188">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
-    if (localStorage.getItem("bf_theme") === "galaxy") {
-      document.documentElement.dataset.theme = "galaxy";
+    var t = localStorage.getItem("bf_theme");
+    var c = { galaxy: "#0C1322", nova: "#0A0E1A" }[t];
+    if (t && t !== "classic") {
+      document.documentElement.dataset.theme = t;
       var m = document.querySelector('meta[name="theme-color"]');
-      if (m) m.content = "#0C1322";
+      if (m && c) m.content = c;
     }
   } catch (e) { /* privater Modus o. Ä. */ }
 </script>
@@ -224,12 +226,14 @@
     <h2>Einstellungen</h2>
     <div class="settings-card" id="theme-card">
       <h3>🎨 Design</h3>
-      <div class="detail-row btn-grid">
+      <div class="detail-row btn-grid theme-picks">
         <button class="mini-btn cond" data-theme-pick="classic">🧱 Klassisch</button>
         <button class="mini-btn cond" data-theme-pick="galaxy">🌌 Galaxie</button>
+        <button class="mini-btn cond" data-theme-pick="nova">✨ Nova</button>
       </div>
       <p class="search-hint">„Galaxie" ist ein dunkles, weltraum-inspiriertes
-        Design. Die Auswahl gilt nur auf diesem Gerät.</p>
+        Design, „Nova" ein modernes Glas-Design mit blauem Akzent. Die Auswahl
+        gilt nur auf diesem Gerät.</p>
     </div>
 
     <div class="settings-card">
@@ -507,7 +511,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=187"></script>
+<script src="/static/app.js?v=188"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

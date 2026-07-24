@@ -74,8 +74,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
   CSV-Export und druckfertige Listen
 - 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (Standard „Finn");
   ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
-- 🌌 Zwei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell und
-  „Galaxie" dunkel mit Sternenhimmel – die Wahl gilt pro Gerät
+- 🌌 Drei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell,
+  „Galaxie" dunkel mit Sternenhimmel und „Nova" – ein modernes Glas-Design
+  mit blauem Akzent; die Wahl gilt pro Gerät
 - 🔔 **Hinweise auf dem Startbildschirm**: Ändert oder löscht BrickLink eine
   Nummer aus eurer Sammlung, steht das im Scannen-Tab – und bleibt dort, bis es
   jemand wegklickt. Die neue Nummer sucht die App im BrickLink Catalog Change
