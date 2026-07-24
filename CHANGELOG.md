@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.1 – Juli 2026
+
+### Verbessert
+- 🖥 In der **Listenansicht** der Sammlung standen auf breiten Bildschirmen die Kacheln einzeln über die volle Breite – mit viel Leerraum in der Mitte. Jetzt liegen sie nebeneinander (adaptiv zwei bis drei Spalten je nach Fensterbreite), sodass mehr auf einen Blick passt. Auf dem Handy unverändert einspaltig
+
 ## 1.17.0 – Juli 2026
 
 ### Neu

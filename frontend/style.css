@@ -980,6 +980,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   .results.grid-mode {
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   }
+  /* Auch die Listenansicht der Sammlung nutzt die Breite: mehrere Zeilen-
+     Karten nebeneinander statt einer pro Reihe (adaptiv 2–3 Spalten). */
+  #collection-list:not(.grid-mode) {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    align-items: stretch;
+  }
+  #collection-list:not(.grid-mode) .list-loading { grid-column: 1 / -1; }
   /* Eine geöffnete Karte wird auf eine handliche Breite begrenzt und mittig
      gesetzt – sonst laufen Felder und Knöpfe über den ganzen Bildschirm.
      Gilt für beide Ansichten: margin-inline zentriert in der Liste (Flex),
