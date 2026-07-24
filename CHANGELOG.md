@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.21.2 – Juli 2026
+
+### Behoben
+- 🚪 Beim **Abmelden** blieb das Profil-Popup offen über dem Login stehen. Es wird jetzt zusammen mit der Abmeldung geschlossen (samt anderer offener Overlays), und der Login-Screen ist frei
+
 ## 1.21.1 – Juli 2026
 
 ### Behoben

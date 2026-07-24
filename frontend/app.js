@@ -1150,6 +1150,13 @@ function logout() {
   state.user = null;
   localStorage.removeItem("bf_token");
   localStorage.removeItem("bf_user");
+  // Offene Overlays schließen – sonst bleiben sie über dem Login stehen
+  closeCardModal();
+  ["profile-overlay", "help-overlay"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
+  });
+  document.body.style.overflow = "";
   showLogin();
 }
 
