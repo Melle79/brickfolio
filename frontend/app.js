@@ -851,11 +851,15 @@ const TRASH_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" `
   + `<path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>`
   + `<path d="M10 11v6M14 11v6"/></svg>`;
 
-function collSubText(it) {
-  let s = `${it.item_id}`
-    + `${it.year > 0 ? " · " + it.year : ""}`
-    + ` · ${it.condition === "new" ? "Neu" : "Gebraucht"}`
-    + `${unitValue(it) ? " · Ø " + fmtEur(unitValue(it)) + fallbackFlagText(it) : ""}`;
+/* Die Unterzeile der Karte steht auf zwei Zeilen: oben Nummer und Jahr,
+   unten Zustand, Ø-Preis (mit Herkunfts-Flagge) und ggf. Set-Figuren. */
+function collSubId(it) {
+  return `${it.item_id}${it.year > 0 ? " · " + it.year : ""}`;
+}
+
+function collSubMeta(it) {
+  let s = it.condition === "new" ? "Neu" : "Gebraucht";
+  if (unitValue(it)) s += " · Ø " + fmtEur(unitValue(it)) + fallbackFlagText(it);
   if (it.item_type === "set" && it.figs_total > 0) {
     s += ` · 👥 ${it.figs_owned}/${it.figs_total}`
       + `${it.figs_owned === it.figs_total ? " ✔" : ""}`;
@@ -1313,7 +1317,8 @@ function renderCollection() {
         <span class="qty-badge" data-qty-val>${it.quantity}</span>
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
-          <div class="sub" data-sub>${esc(collSubText(it))}</div>
+          <div class="sub" data-sub-id>${esc(collSubId(it))}</div>
+          <div class="sub" data-sub>${esc(collSubMeta(it))}</div>
           ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
         <div class="qty">
@@ -1429,7 +1434,8 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
           <div class="card-title">
             <strong>${esc(item.name)}</strong>
-            <div class="sub" data-sub>${esc(collSubText(item))}</div>
+            <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
+            <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
             ${item.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(item.in_sets)}</div>` : ""}
           </div>
           <div class="qty">
@@ -1472,7 +1478,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
     // Zustand/Menge/Preis dort stimmen, ohne die ganze Liste neu zu laden.
     if (listCard && listCard.isConnected) {
       const sub = listCard.querySelector("[data-sub]");
-      if (sub) sub.textContent = collSubText(item);
+      if (sub) sub.textContent = collSubMeta(item);
       listCard.querySelectorAll("[data-qty-val]").forEach((s) => {
         s.textContent = item.quantity;
       });
@@ -1508,8 +1514,8 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         item.condition = cond;
         card.querySelectorAll("[data-cond]").forEach((b) =>
           b.classList.toggle("sel", b.dataset.cond === cond));
-        const sub = card.querySelector(".card-head .sub");
-        if (sub) sub.textContent = collSubText(item);
+        const sub = card.querySelector(".card-head [data-sub]");
+        if (sub) sub.textContent = collSubMeta(item);
         updateStatsOnly();
         toast(cond === "new" ? "Zustand: Neu ✔" : "Zustand: Gebraucht ✔");
       } catch (e) { toast(e.message); }
@@ -1672,7 +1678,7 @@ async function loadEntryPrice(card, item, refresh) {
     if (p.new && p.new.avg != null) item.price_new = p.new.avg;
     if (p.used && p.used.avg != null) item.price_used = p.used.avg;
     const subEl = card.querySelector("[data-sub]");
-    if (subEl) subEl.textContent = collSubText(item);
+    if (subEl) subEl.textContent = collSubMeta(item);
     const profitEl = card.querySelector("[data-profit]");
     if (profitEl) profitEl.innerHTML = profitLine(item);
     if (refresh) updateStatsOnly();   // Wert-Widget mitziehen

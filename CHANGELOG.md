@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.2 – Juli 2026
+
+### Verbessert
+- 🧾 **Aufgeräumte Karten-Unterzeile:** Nummer und Jahr stehen jetzt in der oberen Zeile, Zustand und Ø-Preis (mit Herkunfts-Flagge) in der Zeile darunter. In den schmaleren, mehrspaltigen Kacheln liest sich das deutlich ruhiger als die bisherige lange Zeile
+
 ## 1.17.1 – Juli 2026
 
 ### Verbessert
