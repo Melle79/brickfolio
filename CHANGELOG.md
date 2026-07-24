@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.20.0 – Juli 2026
+
+### Neu
+- 👑 **Weitere Admins ernennen.** In der Benutzerverwaltung (Mehr → 👥 Benutzer verwalten) gibt es jetzt einen **Admin**-Knopf je Benutzer – so lässt sich jemand zum zweiten Admin machen oder die Rechte wieder entziehen. Bisher war nur der erste (bei der Ersteinrichtung angelegte) Benutzer Admin, ohne Möglichkeit, das zu ändern
+
+  **Schutz:** Der **letzte** verbliebene Admin behält seine Rechte – so kann sich niemand versehentlich komplett aussperren
+
 ## 1.19.0 – Juli 2026
 
 ### Neu

@@ -272,6 +272,11 @@ seinen Anzeigenamen selbst, indem er **oben rechts auf seinen Namen
 tippt** (Profil-Popup); der Admin kann Passwörter zurücksetzen und
 Benutzer entfernen.
 
+**Rollen vergeben:** In der Benutzerliste macht der **Admin**-Knopf einen
+Benutzer zum weiteren Admin (👑) oder nimmt die Rechte wieder – der
+**letzte** Admin bleibt aber immer Admin, damit sich niemand aussperrt.
+Der **Profi**-Knopf schaltet den Sammlerprofi-Modus.
+
 **Sammlerprofi-Rolle vergeben (Admin):** In der Benutzerliste den
 **„Profi"**-Knopf antippen – er wird grün („Profi ✔"). Die Rolle wirkt
 sofort, ohne Neuanmeldung; nochmaliges Antippen entzieht sie wieder.

@@ -4045,12 +4045,25 @@ async function loadSettings() {
     $("user-list").innerHTML = users.map((u) => `
       <li>${esc(u.username)}${u.is_admin ? " 👑" : ""}
         <span class="user-actions">
+          <button class="pw ${u.is_admin ? "dealer-on" : ""}" data-admin-user="${u.id}" data-admin-state="${u.is_admin ? 1 : 0}" title="Admin-Rechte">${u.is_admin ? "Admin ✔" : "Admin"}</button>
           <button class="pw ${u.is_dealer ? "dealer-on" : ""}" data-dealer-user="${u.id}" data-dealer-state="${u.is_dealer ? 1 : 0}" title="Sammlerprofi-Modus">${u.is_dealer ? "Profi ✔" : "Profi"}</button>
           <button class="pw" data-pass-user="${u.id}" data-pass-name="${esc(u.username)}">Passwort</button>
           ${u.username !== state.user.username
             ? `<button class="del" data-del-user="${u.id}">Entfernen</button>` : ""}
         </span>
       </li>`).join("");
+    $("user-list").querySelectorAll("[data-admin-user]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const makeAdmin = btn.dataset.adminState !== "1";
+        if (!makeAdmin && !confirm("Admin-Rechte wirklich entziehen?")) return;
+        try {
+          await api(`/users/${btn.dataset.adminUser}/admin`,
+            { method: "POST", body: { is_admin: makeAdmin } });
+          toast(makeAdmin ? "Zum Admin gemacht ✔" : "Admin-Rechte entzogen");
+          refreshMe().then(loadSettings);
+        } catch (e) { toast(e.message); }
+      });
+    });
     $("user-list").querySelectorAll("[data-dealer-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const makeDealer = btn.dataset.dealerState !== "1";

@@ -992,6 +992,31 @@ def set_dealer(user_id: int, body: DealerBody,
     return {"ok": True, "is_dealer": body.is_dealer}
 
 
+class AdminBody(BaseModel):
+    is_admin: bool
+
+
+@app.post("/api/users/{user_id}/admin")
+def set_admin(user_id: int, body: AdminBody, user: dict = Depends(admin_user)):
+    """Admin-Rechte vergeben oder entziehen. Der letzte Admin bleibt Admin,
+    sonst könnte sich niemand mehr um die Instanz kümmern."""
+    with core.db() as conn:
+        row = conn.execute("SELECT id, is_admin FROM users WHERE id = ?",
+                           (user_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "Benutzer nicht gefunden")
+        if row["is_admin"] and not body.is_admin:
+            admins = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE is_admin = 1").fetchone()[0]
+            if admins <= 1:
+                raise HTTPException(
+                    400, "Das ist der einzige Admin – die Rechte lassen sich "
+                         "nicht entziehen. Zuerst jemand anderen zum Admin machen.")
+        conn.execute("UPDATE users SET is_admin = ? WHERE id = ?",
+                     (int(body.is_admin), user_id))
+    return {"ok": True, "is_admin": body.is_admin}
+
+
 @app.post("/api/users/{user_id}/password")
 def reset_user_password(user_id: int, body: PasswordBody,
                         user: dict = Depends(admin_user)):
