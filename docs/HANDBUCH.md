@@ -986,8 +986,8 @@ zeigt Mehr → 🔄 Version & Updates; danach reicht normales Neuladen.
 
 **Preise fehlen bei einzelnen Artikeln.** Manuelle Nummern haben keine
 BrickLink-Entsprechung. Frisch importierte Artikel werden in 40er-Häppchen
-versorgt – Geduld oder in den Details „Preise aktualisieren" drücken.
-Grundsätzlich keine Preise? → Mehr → API-Schlüssel → „Verbindung testen".
+versorgt – Geduld oder im Detail-Popup das **↻** am Preisblock „Marktpreise"
+drücken. Grundsätzlich keine Preise? → Mehr → API-Schlüssel → „Verbindung testen".
 
 **„Nur für Sammlerprofis" (403).** Die Funktion braucht die Profi-Rolle –
 der Admin vergibt sie unter Mehr → Benutzer verwalten.

@@ -41,7 +41,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🌍 **Preisgebiet wählbar** (Mehr → Preisgebiet): weltweit, Deutschland,
   Österreich, Schweiz oder Europa – ohne Verkäufe im gewählten Gebiet weitet die
   App zweistufig aus (erst Europa, dann weltweit). Bestehende Preise lassen sich
-  schrittweise umrechnen, preislose Artikel per Knopfdruck neu abrufen
+  schrittweise umrechnen, preislose Artikel per Knopfdruck neu abrufen. Stammt
+  ein Preis nicht aus dem eingestellten Gebiet, zeigt eine kleine **Flagge**
+  (🇪🇺/🌍), woher er kommt
 - 📊 **Statistik-Tab**: Kennzahlen, Wertentwicklung der Gesamtsammlung,
   Aufteilung nach Typ/Zustand, Wert nach Erscheinungsjahr, Top 10
 
@@ -69,7 +71,8 @@ kommen von [BrickLink](https://www.bricklink.com) und
 
 **Familie & Betrieb**
 - 🔐 Mehrbenutzer mit Token-Login (PBKDF2-gehashte Passwörter), Admin- und
-  Profi-Rollen, eigene Passwort-/Namensänderung
+  Profi-Rollen (Admins können weitere Admins ernennen), eigene
+  Passwort-/Namensänderung
 - 💾 Komplett-**Sicherung** als JSON (herunterladen & wieder einspielen),
   CSV-Export und druckfertige Listen
 - 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (Standard „Finn");
@@ -92,6 +95,8 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🖥 **Reagiert auf die Bildschirmbreite**: auf dem Handy Tab-Leiste unten, am
   Rechner Seitenleiste links mit breiterem Raster (vier bis fünf Karten pro
   Reihe) – dieselbe App, nur besser auf die Fläche verteilt
+- ✨ **Moderne Darstellung**: Artikel öffnen sich als aufgeräumtes Popup, in
+  der Sammlung schimmert das Produktbild als dezenter Kartenhintergrund
 - 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
   eurem Server
 

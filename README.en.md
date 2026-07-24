@@ -42,7 +42,9 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 - 🌍 **Selectable price region** (More → Price region): worldwide, Germany,
   Austria, Switzerland or Europe – with no sales in the chosen region the app
   widens in two steps (Europe first, then worldwide). Existing prices can be
-  recalculated step by step, priceless items re-fetched with one click
+  recalculated step by step, priceless items re-fetched with one click. When a
+  price isn't from the chosen region, a small **flag** (🇪🇺/🌍) shows where it
+  came from
 - 📊 **Stats tab**: key figures, overall value trend, split by type/condition,
   value by release year (tap a bar for the year’s details), Top 10
 
@@ -70,7 +72,7 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 
 **Family & operations**
 - 🔐 Multi-user with token login (PBKDF2-hashed passwords), admin and pro
-  roles, self-service password/name change
+  roles (admins can appoint further admins), self-service password/name change
 - 💾 Full **backup** as JSON (download & restore), CSV export and print-ready
   lists
 - 🏷 Configurable **display name** in logo and title (default “Finn”); ideal
@@ -93,6 +95,8 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 - 🖥 **Responsive to screen width**: bottom tab bar on phones, a left sidebar
   with a wider grid (four to five cards per row) on desktop – same app, just
   laid out to use the space
+- ✨ **Modern look**: items open as a tidy popup, and in the collection the
+  product image shows as a subtle card background
 - 📲 Installable as a PWA, offline shell, no cloud – everything stays on your
   own server
 

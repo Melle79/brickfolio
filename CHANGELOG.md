@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.20.1 – Juli 2026
+
+### Sonstiges
+- 📖 **Handbuch und README aktualisiert.** README nennt jetzt die Preis-Herkunfts-Flagge (🇪🇺/🌍), dass Admins weitere Admins ernennen können und die moderne Darstellung (Detail-Popup, Produktbild als Kartenhintergrund). Im Handbuch sind die Rollen-Vergabe (Admin-/Profi-Knopf), das aufgeräumte Popup und ein Verweis auf das ↻ am Preisblock ergänzt
+
 ## 1.20.0 – Juli 2026
 
 ### Neu
