@@ -1091,7 +1091,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   [data-theme="galaxy"] .tabbar {
     border-top: none; border-right: 3px solid var(--line);
   }
-  [data-theme="galaxy"] .tabbar .tab:hover { background: rgba(255,255,255,.06); }
+  [data-theme="galaxy"] .tabbar .tab:hover:not(.active) { background: rgba(255,255,255,.06); }
 }
 
 /* Sehr breite Schirme: Inhalt nicht ins Uferlose ziehen */
@@ -1238,7 +1238,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   [data-theme="nova"] .tabbar {
     border-top: none; border-right: 1px solid rgba(255, 255, 255, .1);
   }
-  [data-theme="nova"] .tabbar .tab:hover { background: rgba(255, 255, 255, .06); }
+  /* Nicht den aktiven Tab überdecken – sonst legt sich der Schleier über
+     seinen blauen Grund und die dunkle Schrift verschwindet. */
+  [data-theme="nova"] .tabbar .tab:hover:not(.active) { background: rgba(255, 255, 255, .06); }
   /* Der aktive Tab hat hier einen blauen Hintergrund – Text und Icon dunkel,
      sonst verschwinden sie darauf. (Mobil hat der Tab keinen Hintergrund,
      dort bleibt die Schrift blau.) */

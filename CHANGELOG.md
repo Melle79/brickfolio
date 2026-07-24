@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.21.1 – Juli 2026
+
+### Behoben
+- 🖱 **Nova/Galaxie:** Fuhr man in der linken Seitenleiste mit der Maus über den **aktiven** Menüpunkt, verschwand dessen Schrift. Der Hover-Schleier legte sich über den farbigen Hintergrund, sodass die (dunkle) Schrift nicht mehr zu sehen war. Der Hover überdeckt den aktiven Punkt jetzt nicht mehr – er bleibt lesbar
+
 ## 1.21.0 – Juli 2026
 
 ### Neu
