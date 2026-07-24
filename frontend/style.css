@@ -537,6 +537,10 @@ body.update-pending .topbar { top: var(--update-bar-h, 46px); }
 .mf-pending .mini-btn { flex: none; }
 
 .in-sets { color: var(--blue); margin-top: 2px; font-size: 12px; }
+/* Label in eine eigene Zeile, damit die Set-Badges darunter umbrechen
+   statt gequetscht neben dem Text zu kleben. */
+.in-sets-label { display: block; margin-bottom: 3px; }
+.in-sets .set-link.owned { display: inline-block; margin: 0 4px 3px 0; }
 /* Figur gehört zu einem eigenen Set und fehlt dort noch */
 .in-sets.missing { color: var(--red); font-weight: 800; }
 

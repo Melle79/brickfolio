@@ -7,6 +7,9 @@
 
   **Sicher gedacht:** Die App startet den Tunnel *nicht* selbst (sie hat bewusst keinen Docker-Zugriff), sondern erzeugt nur die Konfiguration. Der Token **bleibt im Browser** und wird weder gespeichert noch verschickt. Details weiter im Handbuch, Kapitel 2.7
 
+### Verbessert
+- 🧩 In der Karten-Zeile „aus Set" (bzw. „fehlt zu eurem Set") steht das Label jetzt auf einer eigenen Zeile, die Set-Badges brechen sauber darunter um – gerade in den schmaleren, mehrspaltigen Kacheln liest sich das ruhiger
+
 ## 1.18.0 – Juli 2026
 
 ### Neu

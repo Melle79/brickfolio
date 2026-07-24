@@ -214,7 +214,7 @@ function renderWanted(items) {
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
           ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in eurer Sammlung</span>` : ""}
-          ${it.in_sets && !it.owned ? `<div class="sub in-sets">🧩 fehlt zu eurem Set: ${inSetLinks(it.in_sets)}</div>` : ""}
+          ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">🧩 fehlt zu eurem Set:</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
       </div>
       ${needsBlNo && state.bricklinkLookup ? `
@@ -1336,7 +1336,7 @@ function renderCollection() {
           <strong>${esc(it.name)}</strong>
           <div class="sub" data-sub-id>${esc(collSubId(it))}</div>
           <div class="sub" data-sub>${esc(collSubMeta(it))}</div>
-          ${it.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(it.in_sets)}</div>` : ""}
+          ${it.in_sets ? `<div class="sub in-sets"><span class="in-sets-label">📦 aus Set:</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
         <div class="qty">
           <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
@@ -1460,7 +1460,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
             <strong>${esc(item.name)}</strong>
             <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
             <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
-            ${item.in_sets ? `<div class="sub in-sets">📦 aus Set: ${inSetLinks(item.in_sets)}</div>` : ""}
+            ${item.in_sets ? `<div class="sub in-sets"><span class="in-sets-label">📦 aus Set:</span>${inSetLinks(item.in_sets)}</div>` : ""}
           </div>
           <div class="qty">
             <button data-qty="-1" class="${item.quantity <= 1 ? "qty-del" : ""}" aria-label="${item.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${item.quantity <= 1 ? TRASH_SVG : "−"}</button>
