@@ -1820,6 +1820,7 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
         "year_desc": f"{_year_known}, c.year DESC, c.name COLLATE NOCASE",
         "year_asc": f"{_year_known}, c.year ASC, c.name COLLATE NOCASE",
         "name": "c.name COLLATE NOCASE ASC",
+        "number": "c.item_id COLLATE NOCASE ASC, c.name COLLATE NOCASE",
         "value_desc": f"{_value_known}, {_unit_value} DESC, c.name COLLATE NOCASE",
         "value_asc": f"{_value_known}, {_unit_value} ASC, c.name COLLATE NOCASE",
     }

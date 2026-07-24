@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.0 – Juli 2026
+
+### Neu
+- 🔢 **Sortierung nach BrickLink-Nummer** in der Sammlung (Sortier-Auswahl → „Nummer (A–Z)"). Praktisch, um Figuren/Sets in Nummernreihenfolge durchzugehen
+
 ## 1.22.0 – Juli 2026
 
 ### Neu
