@@ -180,8 +180,11 @@ nach Rolle sichtbar:
 **🎨 Design** bietet drei Aussehen: **Klassisch** (hell, LEGO-Farben),
 **Galaxie** (dunkel, mit Sternenhimmel und leuchtenden Akzenten) und
 **Nova** (modernes Glas-Design – tiefdunkler, blau schimmernder Hintergrund,
-durchscheinende Flächen und blauer Akzent). Die Wahl gilt **pro Gerät** und
-wird gemerkt – auf dem Handy also unabhängig vom Rechner.
+durchscheinende Flächen und blauer Akzent). Die Wahl wird **im Profil
+gespeichert** und gilt damit **auf allen Geräten**, sobald man angemeldet
+ist. Der Admin kann zusätzlich ein **Standard-Design der Instanz** festlegen
+(unter 🎨 Design) – es gilt für den Login-Bildschirm und für Benutzer, die
+noch keine eigene Wahl getroffen haben.
 
 **ℹ️ Quellen & Rechtliches** nennt, woher Daten und Bilder stammen
 (Rebrickable, BrickLink, Brickognize), weist darauf hin, dass beim

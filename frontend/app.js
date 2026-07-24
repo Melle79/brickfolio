@@ -1006,6 +1006,7 @@ async function refreshMe() {
     state.user = { username: me.username, is_admin: me.is_admin,
       is_dealer: me.is_dealer };
     localStorage.setItem("bf_user", JSON.stringify(state.user));
+    applyServerTheme(me);
   } catch (_) { /* 401 wird von api() behandelt */ }
   updateListsTab();
   checkForUpdate(false).then((info) => {
@@ -1056,6 +1057,7 @@ async function checkSetup() {
   try {
     const s = await api("/setup");
     applyOwnerName(s.owner_name);
+    if (s.default_theme) applyTheme(s.default_theme);   // Login-Screen: Instanz-Standard
     $("setup-box").hidden = !s.needed;
     $("login-box").hidden = s.needed;
     if (s.needed) $("setup-user").focus();
@@ -1137,6 +1139,7 @@ async function doLogin() {
       is_dealer: data.is_dealer };
     localStorage.setItem("bf_token", data.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
+    applyServerTheme(data);
     $("login-pass").value = "";
     showApp();
   } catch (e) {
@@ -3493,17 +3496,53 @@ function initExternalAccess() {
   }
 }
 
+/* Markiert den aktuell gewählten Instanz-Standard in der Admin-Auswahl. */
+function markDefaultTheme() {
+  const def = state.defaultTheme || "classic";
+  document.querySelectorAll("[data-default-theme-pick]").forEach((b) =>
+    b.classList.toggle("sel", b.dataset.defaultThemePick === def));
+}
+
+/* Design nach Login/Refresh setzen: eigene Wahl hat Vorrang, sonst der
+   Instanz-Standard, sonst Klassisch. Wird lokal gemerkt (schnelles Zeichnen
+   beim nächsten Start ohne Aufblitzen). */
+function applyServerTheme(data) {
+  state.defaultTheme = data.default_theme || "classic";
+  const eff = data.theme || state.defaultTheme;
+  applyTheme(eff);
+  try { localStorage.setItem("bf_theme", eff); } catch (_) { /* egal */ }
+  markDefaultTheme();
+}
+
 function initThemePicker() {
   document.querySelectorAll("[data-theme-pick]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const pick = btn.dataset.themePick;
-      try { localStorage.setItem("bf_theme", pick); } catch (_) { /* egal */ }
       applyTheme(pick);
+      try { localStorage.setItem("bf_theme", pick); } catch (_) { /* egal */ }
+      // Im Profil merken, damit es auf allen Geräten gilt
+      if (state.token) {
+        api("/me/theme", { method: "POST", body: { theme: pick } }).catch(() => {});
+      }
+    });
+  });
+  // Admin: Standard-Design der Instanz
+  document.querySelectorAll("[data-default-theme-pick]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const pick = btn.dataset.defaultThemePick;
+      try {
+        await api("/settings/default_theme", { method: "POST",
+          body: { theme: pick } });
+        state.defaultTheme = pick;
+        markDefaultTheme();
+        toast("Standard-Design gespeichert ✔");
+      } catch (e) { toast(e.message); }
     });
   });
   let stored = "classic";
   try { stored = localStorage.getItem("bf_theme") || "classic"; } catch (_) { /* egal */ }
   applyTheme(stored);
+  markDefaultTheme();
 }
 
 /* ------------------------------------------------------------ Fehlerberichte
@@ -4064,6 +4103,8 @@ async function loadSettings() {
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
   $("name-card").hidden = !isAdmin;
+  $("default-theme-block").hidden = !isAdmin;
+  if (isAdmin) markDefaultTheme();
   if (isAdmin && $("owner-name")) {
     $("owner-name").value =
       (state.ownerName && state.ownerName !== "Finn") ? state.ownerName : "";

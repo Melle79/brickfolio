@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=200">
-<link rel="stylesheet" href="/static/style.css?v=200">
+<link rel="stylesheet" href="/static/fonts.css?v=201">
+<link rel="stylesheet" href="/static/style.css?v=201">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -235,8 +235,18 @@
         <button class="mini-btn cond" data-theme-pick="nova">✨ Nova</button>
       </div>
       <p class="search-hint">„Galaxie" ist ein dunkles, weltraum-inspiriertes
-        Design, „Nova" ein modernes Glas-Design mit blauem Akzent. Die Auswahl
-        gilt nur auf diesem Gerät.</p>
+        Design, „Nova" ein modernes Glas-Design mit blauem Akzent. Deine Wahl
+        wird in deinem Profil gespeichert und gilt auf allen Geräten.</p>
+      <div id="default-theme-block" hidden>
+        <label>Standard-Design der Instanz</label>
+        <div class="detail-row btn-grid theme-picks">
+          <button class="mini-btn cond" data-default-theme-pick="classic">🧱 Klassisch</button>
+          <button class="mini-btn cond" data-default-theme-pick="galaxy">🌌 Galaxie</button>
+          <button class="mini-btn cond" data-default-theme-pick="nova">✨ Nova</button>
+        </div>
+        <p class="search-hint">Gilt für den Login-Bildschirm und für Benutzer,
+          die noch keine eigene Wahl getroffen haben.</p>
+      </div>
     </div>
 
     <div class="settings-card">
@@ -540,7 +550,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=200"></script>
+<script src="/static/app.js?v=201"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

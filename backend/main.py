@@ -128,13 +128,14 @@ def current_user(request: Request) -> dict:
         raise HTTPException(401, "Sitzung abgelaufen – bitte neu anmelden")
     with core.db() as conn:
         row = conn.execute(
-            "SELECT id, username, is_admin, is_dealer FROM users WHERE id = ?",
-            (int(payload["sub"]),)).fetchone()
+            "SELECT id, username, is_admin, is_dealer, theme FROM users "
+            "WHERE id = ?", (int(payload["sub"]),)).fetchone()
     if not row:
         raise HTTPException(401, "Sitzung ungültig – bitte neu anmelden")
     return {"id": row["id"], "name": row["username"],
             "is_admin": bool(row["is_admin"]),
-            "is_dealer": bool(row["is_dealer"])}
+            "is_dealer": bool(row["is_dealer"]),
+            "theme": row["theme"]}
 
 
 def dealer_user(user: dict = Depends(current_user)) -> dict:
@@ -203,7 +204,8 @@ def setup_status():
     """Öffentlich: Steht die Ersteinrichtung noch aus?"""
     with core.db() as conn:
         count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
-    return {"needed": count == 0, "owner_name": _owner_name()}
+    return {"needed": count == 0, "owner_name": _owner_name(),
+            "default_theme": core.get_setting("default_theme") or "classic"}
 
 
 class SetupBody(BaseModel):
@@ -236,7 +238,9 @@ def setup_create_admin(body: SetupBody):
 @app.get("/api/me")
 def whoami(user: dict = Depends(current_user)):
     return {"username": user["name"], "is_admin": user["is_admin"],
-            "is_dealer": user["is_dealer"]}
+            "is_dealer": user["is_dealer"],
+            "theme": user.get("theme"),
+            "default_theme": core.get_setting("default_theme") or "classic"}
 
 
 @app.post("/api/login")
@@ -249,8 +253,39 @@ def login(body: LoginBody):
         raise HTTPException(401, "Benutzername oder Passwort falsch")
     token = core.create_token(row["id"], row["username"], row["is_admin"])
     is_dealer = bool(row["is_dealer"]) if "is_dealer" in row.keys() else False
+    theme = row["theme"] if "theme" in row.keys() else None
     return {"token": token, "username": row["username"],
-            "is_admin": bool(row["is_admin"]), "is_dealer": is_dealer}
+            "is_admin": bool(row["is_admin"]), "is_dealer": is_dealer,
+            "theme": theme,
+            "default_theme": core.get_setting("default_theme") or "classic"}
+
+
+THEMES = ("classic", "galaxy", "nova")
+
+
+class ThemeBody(BaseModel):
+    theme: str = Field(max_length=20)
+
+
+@app.post("/api/me/theme")
+def set_my_theme(body: ThemeBody, user: dict = Depends(current_user)):
+    """Gewähltes Design im Profil speichern – gilt dann auf allen Geräten."""
+    if body.theme not in THEMES:
+        raise HTTPException(400, "Unbekanntes Design")
+    with core.db() as conn:
+        conn.execute("UPDATE users SET theme = ? WHERE id = ?",
+                     (body.theme, user["id"]))
+    return {"ok": True, "theme": body.theme}
+
+
+@app.post("/api/settings/default_theme")
+def set_default_theme(body: ThemeBody, user: dict = Depends(admin_user)):
+    """Standard-Design der Instanz: gilt für den Login-Bildschirm und für
+    alle Benutzer, die noch keine eigene Wahl getroffen haben."""
+    if body.theme not in THEMES:
+        raise HTTPException(400, "Unbekanntes Design")
+    core.set_setting("default_theme", body.theme)
+    return {"ok": True, "default_theme": body.theme}
 
 
 _UPDATE_CACHE = {"ts": 0.0, "data": None}

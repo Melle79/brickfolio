@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.22.0 – Juli 2026
+
+### Neu
+- 🎨 **Design pro Profil & Standard-Design der Instanz.**
+  - Das gewählte Design wird jetzt **im Profil** gespeichert und gilt **auf allen Geräten**, auf denen man angemeldet ist – nicht mehr nur lokal im Browser
+  - Der **Admin** kann unter Mehr → 🎨 Design ein **Standard-Design** festlegen: Es gilt für den Login-Bildschirm und für Benutzer, die noch keine eigene Wahl getroffen haben
+
 ## 1.21.2 – Juli 2026
 
 ### Behoben
