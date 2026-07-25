@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.4 – Juli 2026
+
+### Behoben
+- 🔎 **Suche zeigt beim ersten Tippen zuverlässig Treffer.** Bei schnellem Tippen konnte eine ältere, langsamere Such-Antwort eine neuere überholen und deren Ergebnisse überschreiben – dann blieb das Feld scheinbar leer oder zeigte zum halb getippten Wort passende Treffer. Jede Suche bekommt jetzt eine laufende Nummer; nur die jeweils **neueste** darf ihr Ergebnis anzeigen, ältere werden verworfen
+
 ## 1.23.3 – Juli 2026
 
 ### Behoben

@@ -1894,6 +1894,7 @@ const BL_URL_PREFIX = { minifig: "M", part: "P", set: "S" };
 let suggestTimer;
 let manualSelection = null;   // übernommener Vorschlag (Bild + BrickLink-Link)
 let suggestState = null;      // laufende Katalogsuche (für seitenweises Nachladen)
+let searchSeq = 0;            // nur die jeweils neueste Suche darf rendern
 
 function setupCatalogSearch() {
   $("m-name").addEventListener("input", () => {
@@ -1913,6 +1914,7 @@ function setupCatalogSearch() {
 }
 
 async function runBricklinkLookup() {
+  const seq = ++searchSeq;
   const no = $("m-id").value.trim();
   const box = $("m-suggestions");
   const hint = $("m-search-hint");
@@ -1920,6 +1922,7 @@ async function runBricklinkLookup() {
   hint.textContent = "Suche bei BrickLink …";
   hint.hidden = false;
   const found = await lookupNumber(no);
+  if (seq !== searchSeq) return;   // überholt – nichts rendern
   if (found.length) {
     renderSuggestions(found);
     hint.hidden = true;
@@ -1950,6 +1953,7 @@ async function lookupNumber(no) {
 }
 
 async function runCatalogSearch() {
+  const seq = ++searchSeq;   // ältere, noch laufende Suchen werden verworfen
   const q = $("m-name").value.trim();
   const box = $("m-suggestions");
   const hint = $("m-search-hint");
@@ -1968,6 +1972,7 @@ async function runCatalogSearch() {
     hint.textContent = "Suche bei BrickLink …";
     hint.hidden = false;
     const found = await lookupNumber(q);
+    if (seq !== searchSeq) return;   // eine neuere Suche läuft schon
     if (found.length) {
       renderSuggestions(found);
       hint.hidden = true;
@@ -1986,6 +1991,7 @@ async function runCatalogSearch() {
   try {
     const data = await api(`/search?q=${encodeURIComponent(q)}`
       + `&item_type=${type}&page=1`);
+    if (seq !== searchSeq) return;   // Ergebnis einer überholten Suche verwerfen
     suggestState = { q, type, page: 1, items: data.items || [],
                      count: data.count || (data.items || []).length,
                      hasMore: !!data.has_more };
@@ -1993,6 +1999,7 @@ async function runCatalogSearch() {
       { count: suggestState.count, hasMore: suggestState.hasMore });
     hint.hidden = true;
   } catch (e) {
+    if (seq !== searchSeq) return;
     hint.textContent = e.message;
   }
 }
