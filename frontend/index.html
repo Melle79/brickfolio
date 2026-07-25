@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=215">
-<link rel="stylesheet" href="/static/style.css?v=215">
+<link rel="stylesheet" href="/static/fonts.css?v=216">
+<link rel="stylesheet" href="/static/style.css?v=216">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -436,6 +436,54 @@
         optional eine Access-Policy davorsetzen.</p>
     </div>
 
+    <div class="settings-card" id="hub-card" hidden>
+      <h3>🤝 Tausch-Netzwerk</h3>
+      <p class="search-hint">Mit einem Brickfolio-Hub verbinden, um deinen
+        <b>abgebbaren</b> Bestand mit Freunden zu teilen. Es wird nur „Abgebbar"
+        veröffentlicht; der Zugangs-Token bleibt auf dem Server.</p>
+
+      <div id="hub-connect-box">
+        <label for="hub-url">Hub-Adresse</label>
+        <input id="hub-url" placeholder="https://brickfolio-hub.name.workers.dev" autocapitalize="none">
+        <label for="hub-token-in">Zugangs-Token (falls vorhanden)</label>
+        <input id="hub-token-in" placeholder="bft_…" autocapitalize="none">
+        <div class="detail-row btn-grid">
+          <button class="mini-btn add" id="hub-connect-token">Mit Token verbinden</button>
+        </div>
+        <p class="search-hint">Noch kein Token? Mit Einladungscode beitreten:</p>
+        <label for="hub-invite-in">Einladungscode</label>
+        <input id="hub-invite-in" placeholder="inv_…" autocapitalize="none">
+        <label for="hub-name-in">Anzeigename im Netzwerk</label>
+        <input id="hub-name-in" placeholder="z. B. Sven" autocapitalize="none">
+        <div class="detail-row btn-grid">
+          <button class="mini-btn add" id="hub-connect-invite">Beitreten</button>
+        </div>
+        <p id="hub-connect-error" class="error" hidden></p>
+      </div>
+
+      <div id="hub-connected-box" hidden>
+        <p class="sub">Verbunden als <b id="hub-member-name"></b>
+          <span id="hub-admin-badge" hidden>· 👑 Hub-Admin</span></p>
+        <p class="search-hint" id="hub-url-line"></p>
+        <p class="search-hint" id="hub-last-publish"></p>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn add" id="hub-publish">📤 Abgebbares veröffentlichen</button>
+          <button class="mini-btn" id="hub-show-offers">👀 Angebote der Freunde</button>
+        </div>
+        <div id="hub-invite-block" hidden>
+          <div class="detail-row btn-grid">
+            <button class="mini-btn" id="hub-make-invite">✉️ Einladung erstellen</button>
+          </div>
+          <p class="search-hint" id="hub-invite-out" hidden></p>
+        </div>
+        <div id="hub-offers" class="results"></div>
+        <p id="hub-status" class="search-hint" hidden></p>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn" id="hub-disconnect">Verbindung trennen</button>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-card" id="update-card" hidden>
       <h3>🔄 Version &amp; Updates</h3>
       <p class="sub">Installiert: <b id="ver-current">…</b>
@@ -553,7 +601,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=215"></script>
+<script src="/static/app.js?v=216"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

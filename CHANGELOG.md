@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.30.0 – Juli 2026
+
+### Neu
+- 🤝 **Tausch-Netzwerk (Stufe 1).** Unter **Mehr → Tausch-Netzwerk** lässt sich die Instanz mit einem Brickfolio-Hub verbinden (per Token oder Einladungscode). Dann kann man den eigenen **abgebbaren** Bestand mit einem Klick **veröffentlichen**, die **Angebote der Freunde** ansehen und – als Hub-Admin – **Einladungen** erstellen. Es wird nur „Abgebbar" geteilt; der Zugangs-Token bleibt server-seitig und geht nie an den Browser. Der Hub selbst ist ein eigenes, schlankes Cloudflare-Projekt (`hub/`), das ohne die Instanzen erreichbar zu machen auskommt
+
 ## 1.29.0 – Juli 2026
 
 ### Verbessert

@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import core
+import hub
 import integrations
 
 app = FastAPI(title="Brickfolio", docs_url=None, redoc_url=None)
@@ -2535,6 +2536,11 @@ def refresh_set_contents(limit: int = 10, user: dict = Depends(current_user)):
 @app.get("/api/duplicates")
 def get_duplicates(user: dict = Depends(dealer_user)):
     """Alles mit Menge > 1: pro Eintrag bleibt eins, der Rest ist abgebbar."""
+    return _duplicate_items()
+
+
+def _duplicate_items() -> dict:
+    """Abgebbarer Bestand (Menge > 1 minus Behalten/Set-Reservierung)."""
     with core.db() as conn:
         rows = conn.execute(
             "SELECT c.*, "
@@ -2592,6 +2598,119 @@ def get_duplicates(user: dict = Depends(dealer_user)):
     return {"items": items,
             "stats": {"pieces": total_pieces,
                       "value": round(total_value, 2)}}
+
+
+# ---------------------------------------------------------------- Tausch-Hub
+
+class HubConnectBody(BaseModel):
+    url: str = Field(min_length=8, max_length=200)
+    token: str | None = Field(default=None, max_length=200)
+    invite_code: str | None = Field(default=None, max_length=200)
+    display_name: str | None = Field(default=None, max_length=80)
+
+
+class HubInviteBody(BaseModel):
+    note: str = Field(default="", max_length=120)
+    expires_in_days: int = Field(default=0, ge=0, le=365)
+
+
+def _hub_status() -> dict:
+    """Verbindungsstatus – ohne den Token nach außen zu geben."""
+    c = hub.config()
+    return {"connected": hub.enabled(), "url": c["url"],
+            "member_id": c["member_id"], "display_name": c["display_name"],
+            "is_admin": c["is_admin"], "last_publish": hub.last_publish()}
+
+
+@app.get("/api/hub")
+def hub_status(user: dict = Depends(current_user)):
+    return _hub_status()
+
+
+@app.post("/api/hub/connect")
+def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
+    url = body.url.strip()
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(400, "Hub-URL muss mit http(s):// beginnen")
+    try:
+        if body.token:
+            hub.connect_with_token(url, body.token.strip())
+        elif body.invite_code and body.display_name:
+            hub.connect_with_invite(url, body.invite_code.strip(),
+                                    body.display_name.strip())
+        else:
+            raise HTTPException(400, "Token oder Einladungscode + Anzeigename nötig")
+        return _hub_status()
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+@app.post("/api/hub/disconnect")
+def hub_disconnect(user: dict = Depends(admin_user)):
+    hub.disconnect()
+    return {"connected": False}
+
+
+@app.post("/api/hub/publish")
+def hub_publish(user: dict = Depends(admin_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    dup = _duplicate_items()["items"]
+    offers = [{
+        "item_id": it["item_id"], "item_type": it["item_type"],
+        "name": it["name"], "img_url": it["img_url"],
+        "bricklink_url": it["bricklink_url"], "condition": it["condition"],
+        "qty": it["surplus"],
+    } for it in dup]
+    try:
+        res = hub.publish(offers)
+        return {"ok": True, "count": res.get("count", len(offers))}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+@app.get("/api/hub/offers")
+def hub_offers(q: str = "", member: str = "",
+               user: dict = Depends(current_user)):
+    if not hub.enabled():
+        return {"offers": []}
+    try:
+        return {"offers": hub.offers({"q": q, "member": member})}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+@app.get("/api/hub/members")
+def hub_members(user: dict = Depends(current_user)):
+    if not hub.enabled():
+        return {"members": []}
+    try:
+        return {"members": hub.members()}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+@app.post("/api/hub/invite")
+def hub_invite(body: HubInviteBody, user: dict = Depends(admin_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    if not hub.config()["is_admin"]:
+        raise HTTPException(403, "Nur Hub-Admins können einladen")
+    try:
+        return hub.create_invite(body.note, body.expires_in_days)
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
 
 # ---------------------------------------------------------------- Einkaufslisten
 

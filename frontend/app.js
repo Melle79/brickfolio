@@ -3826,6 +3826,121 @@ function applyTheme(name) {
     b.classList.toggle("sel", b.dataset.themePick === name));
 }
 
+/* ------------------------------------------------------------- Tausch-Hub */
+let hubWired = false;
+
+async function loadHubCard() {
+  wireHubOnce();
+  try {
+    const s = await api("/hub");
+    renderHubStatus(s);
+  } catch (_) { /* Karte bleibt leer, wenn der Status nicht kommt */ }
+}
+
+function renderHubStatus(s) {
+  const on = s && s.connected;
+  $("hub-connect-box").hidden = on;
+  $("hub-connected-box").hidden = !on;
+  if (!on) return;
+  $("hub-member-name").textContent = s.display_name || "(unbenannt)";
+  $("hub-admin-badge").hidden = !s.is_admin;
+  $("hub-url-line").textContent = s.url;
+  $("hub-invite-block").hidden = !s.is_admin;
+  const lp = s.last_publish;
+  $("hub-last-publish").textContent = lp
+    ? `Zuletzt veröffentlicht: ${lp.count} Angebote am `
+      + new Date(lp.ts * 1000).toLocaleString("de-DE")
+    : "Noch nichts veröffentlicht.";
+}
+
+function wireHubOnce() {
+  if (hubWired) return;
+  hubWired = true;
+  const err = $("hub-connect-error");
+
+  $("hub-connect-token").addEventListener("click", async () => {
+    err.hidden = true;
+    const url = $("hub-url").value.trim();
+    const token = $("hub-token-in").value.trim();
+    if (!url || !token) { err.textContent = "Adresse und Token angeben."; err.hidden = false; return; }
+    try {
+      renderHubStatus(await api("/hub/connect", { method: "POST", body: { url, token } }));
+      toast("Mit dem Hub verbunden 🤝");
+    } catch (e) { err.textContent = e.message; err.hidden = false; }
+  });
+
+  $("hub-connect-invite").addEventListener("click", async () => {
+    err.hidden = true;
+    const url = $("hub-url").value.trim();
+    const invite_code = $("hub-invite-in").value.trim();
+    const display_name = $("hub-name-in").value.trim();
+    if (!url || !invite_code || !display_name) {
+      err.textContent = "Adresse, Einladungscode und Anzeigename angeben.";
+      err.hidden = false; return;
+    }
+    try {
+      renderHubStatus(await api("/hub/connect", { method: "POST",
+        body: { url, invite_code, display_name } }));
+      toast("Dem Netzwerk beigetreten 🤝");
+    } catch (e) { err.textContent = e.message; err.hidden = false; }
+  });
+
+  $("hub-publish").addEventListener("click", async (ev) => {
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      const res = await api("/hub/publish", { method: "POST" });
+      toast(`${res.count} Angebote veröffentlicht 📤`);
+      renderHubStatus(await api("/hub"));
+    } catch (e) { toast(e.message); } finally { b.disabled = false; }
+  });
+
+  $("hub-show-offers").addEventListener("click", () => loadHubOffers());
+
+  $("hub-make-invite").addEventListener("click", async (ev) => {
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      const res = await api("/hub/invite", { method: "POST", body: {} });
+      const out = $("hub-invite-out");
+      out.hidden = false;
+      out.innerHTML = `Einladungscode (einmal gültig): <code>${esc(res.invite_code)}</code>`;
+    } catch (e) { toast(e.message); } finally { b.disabled = false; }
+  });
+
+  $("hub-disconnect").addEventListener("click", async () => {
+    if (!confirm("Verbindung zum Hub trennen? Deine Angebote bleiben dort, bis du sie ersetzt.")) return;
+    try {
+      await api("/hub/disconnect", { method: "POST" });
+      renderHubStatus({ connected: false });
+    } catch (e) { toast(e.message); }
+  });
+}
+
+async function loadHubOffers() {
+  const box = $("hub-offers");
+  box.innerHTML = brickLoading("Angebote werden geladen …");
+  try {
+    const { offers } = await api("/hub/offers");
+    if (!offers.length) {
+      box.innerHTML = `<p class="search-hint">Noch keine Angebote von anderen im Netzwerk.</p>`;
+      return;
+    }
+    box.innerHTML = offers.map((o) => `
+      <div class="card">
+        <div class="card-head">
+          <img class="card-img" src="${imgSrc(o.img_url)}" ${IMG_FALLBACK} data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
+          <div class="card-title">
+            <strong>${esc(o.name)}</strong>
+            <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? "Neu" : "Gebraucht") : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
+            <span class="badge badge-owned">von ${esc(o.display_name)}</span>
+          </div>
+        </div>
+        ${o.bricklink_url ? `<div class="card-actions"><a class="mini-btn link" href="${esc(o.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a></div>` : ""}
+      </div>`).join("");
+  } catch (e) {
+    box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+  }
+}
+
 /* ------------------------------------------------- Externer Zugriff (Cloudflare)
    Reiner Generator: baut aus Token und Adresse den docker-compose-Block. Der
    Token bleibt im Browser – die App kann den Tunnel selbst nicht starten (kein
@@ -4524,6 +4639,8 @@ async function loadSettings() {
   $("price-region-card").hidden = !isAdmin;
   if (isAdmin) loadPriceRegion();
   $("external-access-card").hidden = !isAdmin;
+  $("hub-card").hidden = !isAdmin;
+  if (isAdmin) loadHubCard();
   $("update-card").hidden = !isAdmin;
   if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");
