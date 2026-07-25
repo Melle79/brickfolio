@@ -1753,12 +1753,28 @@ _BL_IMG_CODE = {"minifig": "MN", "part": "PN", "set": "SN"}
 @app.get("/api/images/{item_type}/{item_no}")
 def item_images(item_type: str, item_no: str,
                 user: dict = Depends(current_user)):
-    """Alle bekannten Katalogbilder einer Figur (BrickLink + Rebrickable)."""
+    """Katalogbilder einer Figur (BrickLink + Rebrickable) – ohne Dubletten.
+
+    Meist zeigen die Quellen dasselbe Bild unter leicht anderer URL (Protokoll,
+    ML- vs. ItemImage-Endpunkt). Solche werden zusammengefasst; übrig bleibt
+    ein Bild – oder mehrere nur, wenn sie sich wirklich unterscheiden.
+    """
     urls: list[str] = []
+    seen: set[str] = set()
 
     def add(u):
-        if u and u not in urls:
-            urls.append(u)
+        if not u:
+            return
+        u = u.strip()
+        if u.startswith("//"):
+            u = "https:" + u
+        # Fürs Vergleichen Protokoll weg – dieselbe Datei über http/https/„//"
+        # gilt als gleich.
+        key = u.lower().split("://", 1)[-1]
+        if key in seen:
+            return
+        seen.add(key)
+        urls.append(u)
 
     if item_no.startswith("fig-"):
         if integrations.rebrickable_enabled():
@@ -1767,15 +1783,16 @@ def item_images(item_type: str, item_no: str,
             except Exception:
                 pass
     elif not item_no.startswith("manuell-"):
+        # Das kanonische ItemImage; das ML-Bild ist dasselbe Motiv (kleiner)
+        # und wird weggelassen.
         code = _BL_IMG_CODE.get(item_type.lower())
         if code:
             safe = requests.utils.quote(item_no)
             add(f"https://img.bricklink.com/ItemImage/{code}/0/{safe}.png")
-            add(f"https://img.bricklink.com/ML/{safe}.jpg")
         if integrations.bricklink_enabled():
             try:
                 bl = integrations.bricklink_item(item_type, item_no)
-                add(bl.get("img_url"))
+                add(bl.get("img_url"))   # meist identisch → wird zusammengefasst
             except Exception:
                 pass
     return {"images": urls}

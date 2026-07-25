@@ -463,15 +463,22 @@ function applySuggestInfo(info, withDetail) {
 
 let gallery = { urls: [], idx: 0 };
 
+/* Vergleichsschlüssel: gleiches Bild trotz http/https/„//"-Protokoll. */
+function imgKey(u) {
+  return (u || "").trim().toLowerCase().replace(/^https?:/, "").replace(/^\/\//, "");
+}
+
 function openGallery(startUrl, gid, gtype) {
-  gallery = { urls: [startUrl], idx: 0 };
+  gallery = { urls: startUrl ? [startUrl] : [], idx: 0 };
+  const seen = new Set(gallery.urls.map(imgKey));
   renderGallery();
   $("lightbox").hidden = false;
   if (gid && !gid.startsWith("manuell-")) {
     api(`/images/${encodeURIComponent(gtype || "minifig")}/${encodeURIComponent(gid)}`)
       .then((d) => {
         (d.images || []).forEach((u) => {
-          if (u && !gallery.urls.includes(u)) gallery.urls.push(u);
+          const k = imgKey(u);
+          if (u && !seen.has(k)) { seen.add(k); gallery.urls.push(u); }
         });
         renderGallery();
       })

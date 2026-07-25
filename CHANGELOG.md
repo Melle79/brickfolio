@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.1 – Juli 2026
+
+### Verbessert
+- 🖼 **Keine doppelten Bilder mehr in der Großansicht.** Die Katalogquellen liefern meist dasselbe Motiv unter leicht anderer URL – bisher tauchte es so zwei- bis dreimal in der Galerie auf. Gleiche Bilder werden jetzt zusammengefasst (Protokoll-unabhängig, ohne die redundante ML-Variante); es bleibt eins – mehrere nur, wenn sie sich wirklich unterscheiden
+
 ## 1.23.0 – Juli 2026
 
 ### Neu
