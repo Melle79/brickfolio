@@ -1125,13 +1125,17 @@ def stats_dashboard(user: dict = Depends(current_user)):
             "SELECT item_id, item_type, ts, price_new, price_used "
             "FROM price_history ORDER BY ts").fetchall()
         bound = _set_bound_map(conn)
-        # Summe der eingetragenen Einkaufspreise über alle offenen Listen
-        lrow = conn.execute(
-            "SELECT COALESCE(SUM(si.paid_price), 0) AS paid, "
-            "COUNT(DISTINCT si.list_id) AS lists "
-            "FROM shopping_items si "
-            "JOIN shopping_lists l ON l.id = si.list_id "
-            "WHERE l.archived = 0 AND si.paid_price IS NOT NULL").fetchone()
+        # Einkaufspreise je Liste (offen UND archiviert). Als inventarisiert
+        # markierte Listen bleiben aus der Summe heraus, tauchen im Popup aber
+        # weiter auf, damit man sie wieder mitzählen kann.
+        lrows = conn.execute(
+            "SELECT l.id, l.name, l.archived, l.inventoried, "
+            "COALESCE(SUM(si.paid_price), 0) AS paid "
+            "FROM shopping_lists l "
+            "LEFT JOIN shopping_items si ON si.list_id = l.id "
+            "AND si.paid_price IS NOT NULL "
+            "GROUP BY l.id HAVING paid > 0 "
+            "ORDER BY l.inventoried, l.archived, l.created_at DESC").fetchall()
 
     total_value = 0.0
     paid_sum = 0.0
@@ -1223,8 +1227,16 @@ def stats_dashboard(user: dict = Depends(current_user)):
                        if pieces else 0,
                        "paid": round(paid_sum, 2),
                        "profit": round(value_of_paid_items - paid_sum, 2),
-                       "lists_paid": round(lrow["paid"], 2),
-                       "lists_count": lrow["lists"]},
+                       "lists_paid": round(
+                           sum(r["paid"] for r in lrows
+                               if not r["inventoried"]), 2),
+                       "lists_count": sum(1 for r in lrows
+                                          if not r["inventoried"])},
+            "lists_breakdown": [
+                {"id": r["id"], "name": r["name"],
+                 "archived": bool(r["archived"]),
+                 "inventoried": bool(r["inventoried"]),
+                 "paid": round(r["paid"], 2)} for r in lrows],
             "by_type": {k: {"pieces": v["pieces"],
                             "value": round(v["value"], 2)}
                         for k, v in by_type.items()},
@@ -2684,6 +2696,24 @@ def rename_list(list_id: int, body: RenameListBody,
         conn.execute("UPDATE shopping_lists SET name = ? WHERE id = ?",
                      (name, list_id))
     return {"ok": True, "name": name}
+
+
+class InventoriedBody(BaseModel):
+    inventoried: bool
+
+
+@app.post("/api/lists/{list_id}/inventoried")
+def set_list_inventoried(list_id: int, body: InventoriedBody,
+                         user: dict = Depends(dealer_user)):
+    """Liste als inventarisiert markieren – dann zählt ihr Einkauf nicht mehr
+    in der Statistik-Summe mit (bereits erfasst)."""
+    with core.db() as conn:
+        cur = conn.execute(
+            "UPDATE shopping_lists SET inventoried = ? WHERE id = ?",
+            (int(body.inventoried), list_id))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Liste nicht gefunden")
+    return {"ok": True, "inventoried": body.inventoried}
 
 
 @app.post("/api/lists/{list_id}/archive")

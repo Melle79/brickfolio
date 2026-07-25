@@ -3093,9 +3093,12 @@ function renderStats(data) {
       <div class="stat-chip"><strong>${fmtEur(t.paid)}</strong><span>bezahlt</span></div>
       <div class="stat-chip"><strong class="${profitCls}">${t.profit >= 0 ? "+" : "−"}${fmtEur(Math.abs(t.profit))}</strong><span>Gewinn</span></div>` : ""}
     </div>
-    ${dealer && t.lists_paid > 0 ? `
+    ${dealer && data.lists_breakdown && data.lists_breakdown.length ? `
     <div class="stats-row">
-      <div class="stat-chip"><strong>${fmtEur(t.lists_paid)}</strong><span>Einkauf auf ${t.lists_count === 1 ? "1 Liste" : t.lists_count + " Listen"}</span></div>
+      <div class="stat-chip tappable" data-lists-modal title="Listen anzeigen und verwalten">
+        <strong data-lists-total>${fmtEur(t.lists_paid)}</strong>
+        <span><span data-lists-label>Einkauf auf ${t.lists_count === 1 ? "1 Liste" : t.lists_count + " Listen"}</span> ⚙️</span>
+      </div>
     </div>` : ""}
     ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">
       Bei Figuren, die in euren Sets stecken, zählt ein nur ⚙️ automatisch
@@ -3165,6 +3168,75 @@ function renderStats(data) {
 
   $("stats-view").innerHTML = chips + chart + split + years + top + winners;
   wireYearChart();
+
+  const lm = $("stats-view").querySelector("[data-lists-modal]");
+  if (lm) lm.addEventListener("click", () => openListsPaidModal(data.lists_breakdown, lm));
+}
+
+/* Popup: Einkauf je Liste, mit „inventarisiert"-Haken. Angehakte Listen
+   zählen nicht in die Summe (bereits erfasst). */
+function openListsPaidModal(breakdown, chipEl) {
+  closeCardModal();
+  const rows = breakdown.map((l) => `
+    <label class="lists-paid-row">
+      <input type="checkbox" data-inv="${l.id}" ${l.inventoried ? "checked" : ""}>
+      <span class="lists-paid-name">${esc(l.name)}${l.archived ? ` <span class="badge badge-archived">archiviert</span>` : ""}</span>
+      <b class="lists-paid-sum">${fmtEur(l.paid)}</b>
+    </label>`).join("");
+  const overlay = document.createElement("div");
+  overlay.className = "card-modal-overlay";
+  overlay.id = "card-modal";
+  overlay.innerHTML = `
+    <div class="card-modal">
+      <button class="card-modal-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <h3 style="margin:0 0 2px">Einkauf auf Listen</h3>
+        <div class="price-note" style="margin-bottom:10px">Häkchen bei <b>inventarisiert</b> nimmt eine Liste aus der Summe – sie ist dann ja schon erfasst.</div>
+        <div class="lists-paid-list">${rows}</div>
+        <div class="lists-paid-total">
+          <span>Zählt zusammen</span>
+          <b data-lp-total></b>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const inner = overlay.querySelector(".modal-inner");
+
+  const recalc = () => {
+    const sum = breakdown.reduce((s, l) => s + (l.inventoried ? 0 : l.paid), 0);
+    const n = breakdown.filter((l) => !l.inventoried).length;
+    inner.querySelector("[data-lp-total]").textContent = fmtEur(sum);
+    if (chipEl) {
+      chipEl.querySelector("[data-lists-total]").textContent = fmtEur(sum);
+      chipEl.querySelector("[data-lists-label]").textContent =
+        "Einkauf auf " + (n === 1 ? "1 Liste" : n + " Listen");
+    }
+  };
+  recalc();
+
+  inner.querySelectorAll("[data-inv]").forEach((cb) => {
+    cb.addEventListener("change", async () => {
+      const id = Number(cb.dataset.inv);
+      const l = breakdown.find((x) => x.id === id);
+      const want = cb.checked;
+      cb.disabled = true;
+      try {
+        await api(`/lists/${id}/inventoried`, { method: "POST",
+          body: { inventoried: want } });
+        l.inventoried = want;
+        recalc();
+      } catch (e) {
+        cb.checked = !want;         // Fehler: zurücksetzen
+        toast(e.message);
+      } finally { cb.disabled = false; }
+    });
+  });
+
+  const done = () => closeCardModal();
+  overlay.querySelector(".card-modal-close").addEventListener("click", done);
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay) done(); });
+  cardModalKeyHandler = (ev) => { if (ev.key === "Escape") done(); };
+  document.addEventListener("keydown", cardModalKeyHandler);
 }
 
 function wireYearChart() {

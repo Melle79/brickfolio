@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.26.0"
+APP_VERSION = "1.27.0"
 
 
 def hash_password(password: str) -> str:
@@ -159,6 +159,7 @@ def init_db():
                 name TEXT NOT NULL,
                 archived INTEGER NOT NULL DEFAULT 0,
                 archived_at INTEGER,
+                inventoried INTEGER NOT NULL DEFAULT 0,
                 created_by INTEGER REFERENCES users(id),
                 created_at INTEGER NOT NULL
             );
@@ -315,6 +316,13 @@ def init_db():
         if scols and "condition" not in scols:
             conn.execute("ALTER TABLE shopping_items ADD COLUMN "
                          "condition TEXT NOT NULL DEFAULT 'used'")
+        # Als inventarisiert markierte Listen bleiben aus der Einkaufs-Summe
+        # der Statistik heraus (bereits erfasst).
+        slcols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(shopping_lists)")}
+        if slcols and "inventoried" not in slcols:
+            conn.execute("ALTER TABLE shopping_lists ADD COLUMN "
+                         "inventoried INTEGER NOT NULL DEFAULT 0")
         ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
         if "is_dealer" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN is_dealer "

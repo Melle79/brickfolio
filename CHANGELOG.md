@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.0 – Juli 2026
+
+### Verbessert
+- 📊 **Einkauf auf Listen: archivierte zählen mit + inventarisiert-Haken.** Das Statistik-Feld summiert jetzt den Einkauf über **alle** Listen (offen und archiviert). Ein Tipp auf das Feld öffnet ein Popup mit allen Listen einzeln – dort lässt sich jede Liste als **inventarisiert** abhaken. Abgehakte Listen fallen sofort aus der Summe (sie sind ja bereits erfasst); die Summe und das Feld aktualisieren sich direkt
+
 ## 1.26.0 – Juli 2026
 
 ### Neu

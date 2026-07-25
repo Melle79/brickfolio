@@ -56,14 +56,45 @@ def test_sums_paid_across_open_lists(client):
     assert t["lists_count"] == 2
 
 
-def test_archived_lists_are_excluded(client):
+def test_archived_lists_are_included(client):
     live = _list(client.uid, "offen")
     old = _list(client.uid, "archiviert", archived=1)
     _item(live, 7.00)
-    _item(old, 99.00)
+    _item(old, 93.00)
     t = client.get("/api/stats/dashboard").json()["totals"]
-    assert t["lists_paid"] == 7.0
-    assert t["lists_count"] == 1
+    assert t["lists_paid"] == 100.0        # archivierte zählen jetzt mit
+    assert t["lists_count"] == 2
+
+
+def test_inventoried_lists_are_excluded_but_listed(client):
+    a = _list(client.uid, "A")
+    b = _list(client.uid, "B")
+    _item(a, 10.00)
+    _item(b, 25.00)
+    # B als inventarisiert markieren
+    r = client.post(f"/api/lists/{b}/inventoried", json={"inventoried": True})
+    assert r.status_code == 200
+    data = client.get("/api/stats/dashboard").json()
+    assert data["totals"]["lists_paid"] == 10.0
+    assert data["totals"]["lists_count"] == 1
+    # im Popup-Breakdown taucht B weiter auf (zum Wieder-Mitzählen)
+    ids = {row["name"]: row for row in data["lists_breakdown"]}
+    assert ids["B"]["inventoried"] is True
+    assert len(data["lists_breakdown"]) == 2
+
+
+def test_inventoried_toggle_off_again(client):
+    a = _list(client.uid, "A")
+    _item(a, 10.00)
+    client.post(f"/api/lists/{a}/inventoried", json={"inventoried": True})
+    client.post(f"/api/lists/{a}/inventoried", json={"inventoried": False})
+    t = client.get("/api/stats/dashboard").json()["totals"]
+    assert t["lists_paid"] == 10.0
+
+
+def test_inventoried_unknown_list_404(client):
+    assert client.post("/api/lists/999/inventoried",
+                       json={"inventoried": True}).status_code == 404
 
 
 def test_zero_without_lists(client):
