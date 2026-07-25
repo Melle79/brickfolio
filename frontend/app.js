@@ -463,24 +463,37 @@ function applySuggestInfo(info, withDetail) {
 
 let gallery = { urls: [], idx: 0 };
 
-/* Vergleichsschlüssel: gleiches Bild trotz http/https/„//"-Protokoll. */
+/* Vergleichsschlüssel: dieselbe BrickLink-Figur (egal welcher Endpunkt/
+   Auflösung) gilt als gleiches Bild; sonst nur Protokoll unabhängig. */
 function imgKey(u) {
-  return (u || "").trim().toLowerCase().replace(/^https?:/, "").replace(/^\/\//, "");
+  const k = (u || "").trim().toLowerCase()
+    .replace(/^https?:\/\//, "").replace(/^\/\//, "");
+  const m = k.match(/^img\.bricklink\.com\/.*\/([^/]+?)(?:\.t\d+)?\.(?:png|jpe?g|gif)$/);
+  return m ? "bl:" + m[1] : k;
 }
 
 function openGallery(startUrl, gid, gtype) {
   gallery = { urls: startUrl ? [startUrl] : [], idx: 0 };
-  const seen = new Set(gallery.urls.map(imgKey));
   renderGallery();
   $("lightbox").hidden = false;
   if (gid && !gid.startsWith("manuell-")) {
     api(`/images/${encodeURIComponent(gtype || "minifig")}/${encodeURIComponent(gid)}`)
       .then((d) => {
+        // Backend-Bilder bevorzugen (kanonisch, meist bessere Auflösung),
+        // gleiches Motiv zusammenfassen; das Startbild nur behalten, wenn es
+        // eine wirklich andere Quelle ist.
+        const seen = new Set();
+        const urls = [];
         (d.images || []).forEach((u) => {
           const k = imgKey(u);
-          if (u && !seen.has(k)) { seen.add(k); gallery.urls.push(u); }
+          if (u && !seen.has(k)) { seen.add(k); urls.push(u); }
         });
-        renderGallery();
+        if (startUrl && !seen.has(imgKey(startUrl))) urls.unshift(startUrl);
+        if (urls.length) {
+          gallery.urls = urls;
+          gallery.idx = Math.min(gallery.idx, urls.length - 1);
+          renderGallery();
+        }
       })
       .catch(() => {});
   }

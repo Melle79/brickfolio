@@ -1,6 +1,7 @@
 """Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
 import json
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -1749,15 +1750,29 @@ def resolve_bricklink(body: ResolveBody, user: dict = Depends(current_user)):
 
 _BL_IMG_CODE = {"minifig": "MN", "part": "PN", "set": "SN"}
 
+_BL_IMG_RE = re.compile(
+    r"^img\.bricklink\.com/.*/([^/]+?)(?:\.t\d+)?\.(?:png|jpe?g|gif)$")
+
+
+def _img_key(u: str) -> str:
+    """Vergleichsschlüssel für Bilder. BrickLink liefert dieselbe Figur unter
+    mehreren Endpunkten – alle bekommen über die Artikelnummer denselben
+    Schlüssel, damit nur eins übrig bleibt. Andere Quellen: Protokoll weg."""
+    k = re.sub(r"^https?://", "", u.strip().lower())
+    k = re.sub(r"^//", "", k)
+    m = _BL_IMG_RE.match(k)
+    return "bl:" + m.group(1) if m else k
+
 
 @app.get("/api/images/{item_type}/{item_no}")
 def item_images(item_type: str, item_no: str,
                 user: dict = Depends(current_user)):
     """Katalogbilder einer Figur (BrickLink + Rebrickable) – ohne Dubletten.
 
-    Meist zeigen die Quellen dasselbe Bild unter leicht anderer URL (Protokoll,
-    ML- vs. ItemImage-Endpunkt). Solche werden zusammengefasst; übrig bleibt
-    ein Bild – oder mehrere nur, wenn sie sich wirklich unterscheiden.
+    Dieselbe Figur liefert BrickLink über verschiedene Endpunkte/Auflösungen
+    (ItemImage, ML, das API-`image_url`) – alles dasselbe Motiv. Solche werden
+    über die Artikelnummer zusammengefasst; übrig bleibt ein Bild pro Quelle,
+    mehrere nur, wenn sie sich wirklich unterscheiden.
     """
     urls: list[str] = []
     seen: set[str] = set()
@@ -1768,9 +1783,7 @@ def item_images(item_type: str, item_no: str,
         u = u.strip()
         if u.startswith("//"):
             u = "https:" + u
-        # Fürs Vergleichen Protokoll weg – dieselbe Datei über http/https/„//"
-        # gilt als gleich.
-        key = u.lower().split("://", 1)[-1]
+        key = _img_key(u)
         if key in seen:
             return
         seen.add(key)
@@ -1783,18 +1796,18 @@ def item_images(item_type: str, item_no: str,
             except Exception:
                 pass
     elif not item_no.startswith("manuell-"):
-        # Das kanonische ItemImage; das ML-Bild ist dasselbe Motiv (kleiner)
-        # und wird weggelassen.
+        # Bevorzugt das Bild aus der BrickLink-API (meist bessere Auflösung),
+        # das konstruierte ItemImage als Rückfall – gleiche Nummer, gleiches
+        # Motiv, wird zusammengefasst.
+        if integrations.bricklink_enabled():
+            try:
+                add(integrations.bricklink_item(item_type, item_no).get("img_url"))
+            except Exception:
+                pass
         code = _BL_IMG_CODE.get(item_type.lower())
         if code:
             safe = requests.utils.quote(item_no)
             add(f"https://img.bricklink.com/ItemImage/{code}/0/{safe}.png")
-        if integrations.bricklink_enabled():
-            try:
-                bl = integrations.bricklink_item(item_type, item_no)
-                add(bl.get("img_url"))   # meist identisch → wird zusammengefasst
-            except Exception:
-                pass
     return {"images": urls}
 
 

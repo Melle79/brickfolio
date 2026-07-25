@@ -1,4 +1,5 @@
-"""Katalogbilder werden entdoppelt: gleiche Bilder nur einmal."""
+"""Katalogbilder werden entdoppelt: dieselbe Figur nur einmal, egal über
+welchen BrickLink-Endpunkt/welche Auflösung."""
 import time
 
 import pytest
@@ -23,21 +24,30 @@ def client(tmp_path, monkeypatch):
     return c
 
 
-def test_same_image_collapses_to_one(client, monkeypatch):
-    # API liefert dasselbe Bild wie das konstruierte ItemImage – nur „//".
+def test_img_key_collapses_bricklink_endpoints():
+    # Verschiedene Endpunkte/Auflösungen derselben Nummer → gleicher Schlüssel
+    a = main._img_key("//img.bricklink.com/ItemImage/MN/0/sw0001.png")
+    b = main._img_key("https://img.bricklink.com/ML/sw0001.jpg")
+    c = main._img_key("https://img.bricklink.com/ItemImage/MN/0/sw0001.t1.png")
+    assert a == b == c == "bl:sw0001"
+    # Andere Quelle bleibt eigenständig
+    assert main._img_key("https://cdn.rebrickable.com/x/sw0001.jpg") != a
+
+
+def test_same_figure_collapses_to_one_prefers_api(client, monkeypatch):
+    # API liefert das ML-Bild (andere Auflösung) – dasselbe Motiv wie das
+    # konstruierte ItemImage → nur eins, und zwar das API-Bild.
     monkeypatch.setattr(
         integrations, "bricklink_item",
-        lambda t, n: {"img_url": "//img.bricklink.com/ItemImage/MN/0/sw0001.png"})
+        lambda t, n: {"img_url": "https://img.bricklink.com/ML/sw0001.jpg"})
+    imgs = client.get("/api/images/minifig/sw0001").json()["images"]
+    assert imgs == ["https://img.bricklink.com/ML/sw0001.jpg"]
+
+
+def test_falls_back_to_itemimage_without_api(client, monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: False)
     imgs = client.get("/api/images/minifig/sw0001").json()["images"]
     assert imgs == ["https://img.bricklink.com/ItemImage/MN/0/sw0001.png"]
-
-
-def test_genuinely_different_images_are_kept(client, monkeypatch):
-    monkeypatch.setattr(
-        integrations, "bricklink_item",
-        lambda t, n: {"img_url": "https://example.com/anders.png"})
-    imgs = client.get("/api/images/minifig/sw0001").json()["images"]
-    assert len(imgs) == 2 and "example.com/anders.png" in imgs[1]
 
 
 def test_manual_number_has_no_catalog_images(client):

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.3 – Juli 2026
+
+### Behoben
+- 🖼 **Doppelte Bilder jetzt wirklich weg.** BrickLink liefert dieselbe Figur über mehrere Endpunkte/Auflösungen (ItemImage, ML, das API-Bild) – die vorige Zusammenfassung erkannte nur den Protokoll-Unterschied. Jetzt gelten alle BrickLink-Bilder **derselben Nummer** als dasselbe Motiv; die Großansicht zeigt **ein** Bild und bevorzugt die (meist höher aufgelöste) API-Variante. Wirklich andere Quellen bleiben erhalten
+
 ## 1.23.2 – Juli 2026
 
 ### Verbessert
