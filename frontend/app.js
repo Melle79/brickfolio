@@ -2117,24 +2117,158 @@ function renderSuggestions(items, meta) {
   wireCartButtons(box, items);
 
   box.querySelectorAll("[data-suggest]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const it = items[Number(btn.dataset.suggest)];
-      $("m-name").value = it.name;
-      $("m-id").value = it.item_id;
-      if (it.item_type) $("m-type").value = it.item_type;
-      manualSelection = { item_id: it.item_id, img_url: it.img_url || "",
-                          bricklink_url: it.bricklink_url || "",
-                          year: it.year || 0 };
-      box.innerHTML = "";
-      $("m-search-hint").hidden = true;
-      if (/^fig-/.test(it.item_id) && it.img_url) {
-        resolveBricklinkNo(it);        // automatisch sw-/dis-Nummer suchen
-      } else {
-        toast("Übernommen – unten Anzahl & Zustand prüfen und speichern");
-        $("btn-manual-add").scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+    btn.addEventListener("click", () => takeSuggestion(items[Number(btn.dataset.suggest)]));
+  });
+
+  // Tipp auf die Karte (nicht auf Knopf/Link/Bild) öffnet die Detailansicht
+  box.querySelectorAll("[data-sug-id]").forEach((card, i) => {
+    card.classList.add("tappable");
+    card.addEventListener("click", (ev) => {
+      if (ev.target.closest("button, a, .card-img")) return;
+      openSuggestModal(items[i]);
     });
   });
+}
+
+/* Vorschlag ins manuelle Formular übernehmen (Karte oder Detail-Popup). */
+function takeSuggestion(it) {
+  $("m-name").value = it.name;
+  $("m-id").value = it.item_id;
+  if (it.item_type) $("m-type").value = it.item_type;
+  manualSelection = { item_id: it.item_id, img_url: it.img_url || "",
+                      bricklink_url: it.bricklink_url || "",
+                      year: it.year || 0 };
+  $("m-suggestions").innerHTML = "";
+  $("m-search-hint").hidden = true;
+  if (/^fig-/.test(it.item_id) && it.img_url) {
+    resolveBricklinkNo(it);        // automatisch sw-/dis-Nummer suchen
+  } else {
+    toast("Übernommen – unten Anzahl & Zustand prüfen und speichern");
+    $("btn-manual-add").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+/* Detail-Popup für einen Suchtreffer: Jahr, vorhanden/Wunschliste,
+   Marktpreise, Sets und (bei Minifiguren) die enthaltenen Teile –
+   alles bevor man die Figur übernimmt. */
+function openSuggestModal(it) {
+  closeCardModal();
+  const type = it.item_type || "minifig";
+  const isMini = type === "minifig";
+  const canParts = state.bricklinkPrices && isMini
+    && !/^(fig-|manuell-)/.test(it.item_id);
+  const overlay = document.createElement("div");
+  overlay.className = "card-modal-overlay";
+  overlay.id = "card-modal";
+  overlay.innerHTML = `
+    <div class="card-modal">
+      <button class="card-modal-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <div class="card-head">
+          <div class="card-img-wrap">
+            <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="${esc(type)}" alt="">
+          </div>
+          <div class="card-title">
+            <strong>${esc(it.name)}</strong>
+            <div class="sub" data-sug-meta>${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}</div>
+            <span class="badge badge-owned" data-sug-owned hidden></span>
+          </div>
+        </div>
+        <div class="card-details">
+          ${state.bricklinkPrices ? `<div class="sug-prices" data-sug-prices><span class="price-note">Lade Details …</span></div>` : ""}
+          ${isMini ? `<div class="sub in-sets" data-fig-sets hidden></div>` : ""}
+          ${canParts ? `
+          <div class="detail-row">
+            <button class="mini-btn" data-parts>🧩 Enthaltene Teile anzeigen</button>
+          </div>
+          <div class="set-figs" data-parts-out></div>` : ""}
+          <div class="card-actions suggest-actions">
+            <button class="mini-btn add" data-sug-take>✔ Übernehmen</button>
+            <button class="mini-btn" data-sug-want>☆ Merken</button>
+            ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const inner = overlay.querySelector(".modal-inner");
+
+  const done = () => closeCardModal();
+  overlay.querySelector(".card-modal-close").addEventListener("click", done);
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay) done(); });
+  cardModalKeyHandler = (ev) => { if (ev.key === "Escape") done(); };
+  document.addEventListener("keydown", cardModalKeyHandler);
+
+  const partsBtn = inner.querySelector("[data-parts]");
+  if (partsBtn) {
+    partsBtn.addEventListener("click", () => loadFigParts(inner, it, partsBtn));
+  }
+  inner.querySelector("[data-sug-take]").addEventListener("click", () => {
+    done();
+    takeSuggestion(it);
+  });
+  inner.querySelector("[data-sug-want]").addEventListener("click", async (ev) => {
+    const b = ev.currentTarget;
+    b.disabled = true;
+    try {
+      const res = await api("/wanted", { method: "POST", body: {
+        item_id: it.item_id, item_type: type, name: it.name,
+        img_url: it.img_url || "", bricklink_url: it.bricklink_url || "",
+        year: it.year || 0,
+      }});
+      if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
+      else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
+      else toast("Auf die Wunschliste gesetzt ⭐");
+      b.textContent = "⭐ Gemerkt";
+    } catch (e) { toast(e.message); } finally { b.disabled = false; }
+  });
+  loadSuggestDetail(inner, it);
+}
+
+async function loadSuggestDetail(inner, it) {
+  const type = it.item_type || "minifig";
+  let d = {};
+  try {
+    const info = await api("/suggest_info?detail=1", { method: "POST",
+      body: { items: [{ item_id: it.item_id, item_type: type }] } });
+    d = info[it.item_id] || {};
+  } catch (_) { /* Details sind nice-to-have */ }
+  if (d.in_sets) it.in_sets = d.in_sets;
+  if (d.year && !it.year) it.year = d.year;
+
+  const meta = inner.querySelector("[data-sug-meta]");
+  if (meta) meta.textContent = it.item_id + (it.year > 0 ? " · " + it.year : "");
+
+  const badge = inner.querySelector("[data-sug-owned]");
+  if (badge) {
+    if (d.owned > 0) {
+      badge.textContent = `✔ ${d.owned}× in eurer Sammlung`;
+      badge.hidden = false;
+    } else if (d.wanted) {
+      badge.textContent = "⭐ auf eurer Wunschliste";
+      badge.classList.replace("badge-owned", "badge-wanted");
+      badge.hidden = false;
+    }
+    if (d.on_lists && d.on_lists.length) {
+      const lb = document.createElement("span");
+      lb.className = "badge badge-list";
+      lb.textContent = d.on_lists.length === 1
+        ? `🛒 auf »${d.on_lists[0]}«` : `🛒 auf ${d.on_lists.length} Listen`;
+      badge.after(lb);
+    }
+  }
+
+  const pr = inner.querySelector("[data-sug-prices]");
+  if (pr) {
+    const parts = [];
+    if (d.new != null) parts.push(`Ø neu ${fmtEur(d.new)}`);
+    if (d.used != null) parts.push(`Ø gebr. ${fmtEur(d.used)}`);
+    pr.innerHTML = parts.length
+      ? `<span class="sug-price-label">Marktpreis</span> ${parts.join(" · ")}`
+      : `<span class="price-note">Keine Preisdaten bei BrickLink.</span>`;
+  }
+
+  if (type === "minifig") renderFigSets(inner, it);
 }
 
 async function resolveBricklinkNo(it) {

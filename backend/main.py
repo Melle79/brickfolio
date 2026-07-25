@@ -1596,6 +1596,44 @@ class SuggestInfoBody(BaseModel):
 
 
 FIG_SETS_TTL = 30 * 86400
+COLORS_TTL = 90 * 86400
+_color_cache = {"at": 0, "map": {}}
+
+
+def _bl_color_map() -> dict:
+    """BrickLink-Farben {id: name}, im Speicher und in settings gecacht.
+    Bei Problemen (kein Schlüssel, API weg) lieber leer als laut."""
+    now = int(time.time())
+    if _color_cache["map"] and now - _color_cache["at"] < COLORS_TTL:
+        return _color_cache["map"]
+    raw = core.get_setting("bl_colors")
+    if raw:
+        try:
+            obj = json.loads(raw)
+            if obj.get("map") and now - obj.get("at", 0) < COLORS_TTL:
+                _color_cache.update(at=obj["at"], map=obj["map"])
+                return _color_cache["map"]
+        except ValueError:
+            pass
+    try:
+        cmap = integrations.bricklink_colors()
+    except Exception:
+        # abgelaufener Cache ist besser als gar keine Namen
+        return _color_cache["map"] or (json.loads(raw)["map"] if raw else {})
+    _color_cache.update(at=now, map=cmap)
+    core.set_setting("bl_colors", json.dumps({"at": now, "map": cmap}))
+    return cmap
+
+
+def _fill_part_colors(parts: list) -> list:
+    """Fehlende Farbnamen aus der BrickLink-Farbtabelle ergänzen."""
+    if not any(not p.get("color_name") for p in parts):
+        return parts
+    cmap = _bl_color_map()
+    for p in parts:
+        if not p.get("color_name"):
+            p["color_name"] = cmap.get(str(p.get("color_id")), "")
+    return parts
 
 
 def _fig_sets_cached(fig_no: str) -> list:
@@ -1662,7 +1700,7 @@ def fig_parts(fig_no: str, user: dict = Depends(current_user)):
             or not integrations.bricklink_enabled():
         return {"items": []}
     try:
-        return {"items": _fig_parts_cached(fig_no)}
+        return {"items": _fill_part_colors(_fig_parts_cached(fig_no))}
     except LookupError as e:
         raise HTTPException(404, str(e))
     except requests.Timeout:

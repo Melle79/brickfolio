@@ -70,6 +70,40 @@ def test_empty_without_bricklink(client, monkeypatch):
     assert client.get("/api/fig_parts/sw1213").json()["items"] == []
 
 
+def test_missing_color_name_is_filled_from_bricklink(client, monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(
+        integrations, "bricklink_minifig_parts",
+        lambda no: [{"item_id": "3626c", "item_type": "part", "name": "Kopf",
+                     "color_id": 90, "color_name": "", "qty": 1,
+                     "img_url": "", "bricklink_url": ""}])
+    monkeypatch.setattr(integrations, "bricklink_colors",
+                        lambda: {"90": "Light Nougat", "11": "Black"})
+    main._color_cache.update(at=0, map={})      # Speicher-Cache leeren
+    items = client.get("/api/fig_parts/sw1213").json()["items"]
+    assert items[0]["color_name"] == "Light Nougat"
+
+
+def test_color_map_cached_after_first_fetch(client, monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(
+        integrations, "bricklink_minifig_parts",
+        lambda no: [{"item_id": "x", "item_type": "part", "name": "T",
+                     "color_id": 5, "color_name": "", "qty": 1,
+                     "img_url": "", "bricklink_url": ""}])
+    calls = []
+
+    def colors():
+        calls.append(1)
+        return {"5": "Red"}
+
+    monkeypatch.setattr(integrations, "bricklink_colors", colors)
+    main._color_cache.update(at=0, map={})
+    client.get("/api/fig_parts/sw0001")
+    client.get("/api/fig_parts/sw0002")
+    assert len(calls) == 1          # Farbtabelle nur einmal geholt
+
+
 def test_lookup_error_is_404(client, monkeypatch):
     monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
 

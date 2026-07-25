@@ -287,6 +287,15 @@ code {
 .name-type-row label { margin-top: 14px; }
 
 .suggestions .card { padding: 10px; }
+.suggestions .card.tappable { cursor: pointer; }
+.suggestions .card.tappable:hover { border-color: var(--yellow); }
+/* Detail-Popup eines Suchtreffers */
+.sug-prices { margin-top: 10px; font-size: 14px; font-weight: 700; }
+.sug-price-label {
+  font-size: 11px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted); margin-right: 6px;
+}
+.suggest-actions { flex-wrap: wrap; }
 .suggest-foot {
   display: flex; flex-direction: column; align-items: center;
   gap: 8px; margin-top: 10px;

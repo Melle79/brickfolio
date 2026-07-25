@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.25.0 – Juli 2026
+
+### Neu
+- 🔎 **Detailansicht in der Suche.** Ein Tipp auf einen Suchtreffer öffnet jetzt ein Popup mit allem Wichtigen auf einen Blick: Jahr, Marktpreis (neu/gebraucht), ob die Figur schon in eurer Sammlung oder auf der Wunschliste ist, in welchen Sets sie vorkommt und – bei Minifiguren – die enthaltenen Teile. Übernehmen und Merken gehen direkt aus dem Popup. Die Aktionen an der Karte bleiben für den schnellen Griff erhalten
+
+### Verbessert
+- 🎨 **Teile mit Farbnamen.** Die Teileliste einer Minifigur zeigt jetzt zu jedem Teil den BrickLink-Farbnamen (z. B. „Black", „Light Nougat"). Die Farbtabelle wird einmalig von BrickLink geholt und 90 Tage zwischengespeichert
+
 ## 1.24.0 – Juli 2026
 
 ### Neu

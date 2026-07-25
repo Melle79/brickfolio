@@ -256,6 +256,23 @@ def bricklink_subsets(set_no: str) -> list:
     return figs
 
 
+def bricklink_colors() -> dict:
+    """Alle BrickLink-Farben als {color_id (str): Farbname}."""
+    auth = _bl_auth()
+    resp = requests.get("https://api.bricklink.com/api/store/v1/colors",
+                        auth=auth, timeout=25)
+    resp.raise_for_status()
+    payload = resp.json()
+    if payload.get("meta", {}).get("code") != 200:
+        raise LookupError("BrickLink-Farben nicht abrufbar")
+    out = {}
+    for c in payload.get("data", []):
+        cid = c.get("color_id")
+        if cid is not None:
+            out[str(cid)] = c.get("color_name", "")
+    return out
+
+
 def bricklink_minifig_parts(fig_no: str) -> list:
     """Aus welchen Teilen besteht diese Minifigur? (BrickLink Subsets auf
     MINIFIG). Liefert Teil-Nr., Name, Farbe, Anzahl und ein Bild."""
