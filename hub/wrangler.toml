@@ -1,0 +1,19 @@
+name = "brickfolio-hub"
+main = "src/index.js"
+compatibility_date = "2025-07-01"
+
+# D1-Datenbank. Die database_id kommt aus `wrangler d1 create brickfolio-hub`
+# und wird hier eingetragen.
+[[d1_databases]]
+binding = "DB"
+database_name = "brickfolio-hub"
+database_id = "PLATZHALTER-nach-d1-create-eintragen"
+
+# Öffentlicher Hostname (Subdomain). Läuft NICHT hinter Cloudflare Access –
+# der Hub authentifiziert selbst per Bearer-Token.
+# [[routes]]
+# pattern = "hub.brickfolio.cc/*"
+# zone_name = "brickfolio.cc"
+
+# HUB_BOOTSTRAP_SECRET wird als Secret gesetzt (nicht hier im Klartext):
+#   wrangler secret put HUB_BOOTSTRAP_SECRET
