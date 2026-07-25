@@ -7,7 +7,7 @@ compatibility_date = "2025-07-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "brickfolio-hub"
-database_id = "PLATZHALTER-nach-d1-create-eintragen"
+database_id = "5e56439d-43b7-4699-ad5a-6c36e145171b"
 
 # Öffentlicher Hostname (Subdomain). Läuft NICHT hinter Cloudflare Access –
 # der Hub authentifiziert selbst per Bearer-Token.
