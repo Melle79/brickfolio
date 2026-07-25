@@ -4,6 +4,7 @@ Spricht server-zu-server mit dem Brickfolio-Hub (Cloudflare Worker). Der
 Instanz-Token bleibt hier in der DB (settings) und geht nie an den Browser.
 """
 import json
+import os
 
 import requests
 
@@ -12,13 +13,18 @@ import core
 TIMEOUT = 15
 USER_AGENT = "Brickfolio-Instance/1.0"
 
+# Feste Hub-Adresse für dieses Netzwerk. Über die Umgebung überschreibbar
+# (z. B. später hub.brickfolio.cc), aber kein Eingabefeld in der App.
+HUB_URL = (os.environ.get("HUB_URL")
+           or "https://brickfolio-hub.bfhub.workers.dev").rstrip("/")
+
 
 # ------------------------------------------------------------------ Konfig
 
 def config() -> dict:
-    """Gespeicherte Hub-Verbindung (ohne Token nach außen zu geben)."""
+    """Verbindungs-Info (feste Adresse, Token bleibt intern)."""
     return {
-        "url": core.get_setting("hub_url") or "",
+        "url": HUB_URL,
         "token": core.get_setting("hub_token") or "",
         "member_id": core.get_setting("hub_member_id") or "",
         "display_name": core.get_setting("hub_display_name") or "",
@@ -27,12 +33,10 @@ def config() -> dict:
 
 
 def enabled() -> bool:
-    c = config()
-    return bool(c["url"] and c["token"])
+    return bool(core.get_setting("hub_token"))
 
 
-def _store(url, token, me):
-    core.set_setting("hub_url", url.rstrip("/"))
+def _store(token, me):
     core.set_setting("hub_token", token)
     core.set_setting("hub_member_id", me.get("member_id", ""))
     core.set_setting("hub_display_name", me.get("display_name", ""))
@@ -40,7 +44,7 @@ def _store(url, token, me):
 
 
 def disconnect():
-    for k in ("hub_url", "hub_token", "hub_member_id", "hub_display_name",
+    for k in ("hub_token", "hub_member_id", "hub_display_name",
               "hub_is_admin", "hub_last_publish"):
         core.set_setting(k, "")
 
@@ -72,28 +76,27 @@ class HubError(Exception):
 
 # ------------------------------------------------------------------ Aktionen
 
-def connect_with_token(url: str, token: str) -> dict:
+def connect_with_token(token: str) -> dict:
     """Bestehenden Token prüfen (/v1/me) und speichern."""
-    me = _request("GET", url, "/v1/me", token=token)
-    _store(url, token, me)
+    me = _request("GET", HUB_URL, "/v1/me", token=token)
+    _store(token, me)
     return me
 
 
-def connect_with_invite(url: str, invite_code: str, display_name: str) -> dict:
+def connect_with_invite(invite_code: str, display_name: str) -> dict:
     """Per Einladungscode beitreten, Token erhalten und speichern."""
-    res = _request("POST", url, "/v1/register",
+    res = _request("POST", HUB_URL, "/v1/register",
                    body={"invite_code": invite_code,
                          "display_name": display_name})
-    token = res.get("token", "")
-    _store(url, token, res)
+    _store(res.get("token", ""), res)
     return res
 
 
 def _authed(method, path, body=None):
-    c = config()
-    if not (c["url"] and c["token"]):
+    token = core.get_setting("hub_token")
+    if not token:
         raise HubError(400, "Kein Hub verbunden")
-    return _request(method, c["url"], path, token=c["token"], body=body)
+    return _request(method, HUB_URL, path, token=token, body=body)
 
 
 def publish(offers: list) -> dict:

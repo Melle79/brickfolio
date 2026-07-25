@@ -1048,7 +1048,7 @@ function priceLine(label, d) {
 }
 
 function showTab(name) {
-  ["scan", "collection", "wanted", "lists", "stats", "settings"].forEach((t) => {
+  ["scan", "collection", "wanted", "lists", "stats", "hub", "settings"].forEach((t) => {
     $("view-" + t).hidden = t !== name;
   });
   document.querySelectorAll(".tab").forEach((b) =>
@@ -1057,7 +1057,16 @@ function showTab(name) {
   if (name === "wanted") loadWanted();
   if (name === "lists") loadLists();
   if (name === "stats") loadStats();
+  if (name === "hub") loadHubView();
   if (name === "settings") loadSettings();
+}
+
+/* Tausch-Tab nur zeigen, wenn diese Instanz mit dem Hub verbunden ist. */
+function updateHubTab() {
+  const tab = $("tab-hub");
+  if (!tab) return;
+  tab.hidden = !state.hubConnected;
+  if (tab.hidden && !$("view-hub").hidden) showTab("scan");
 }
 
 /* ---------------------------------------------------------------- Login */
@@ -1180,6 +1189,8 @@ function showApp() {
     state.bricklinkLookup = c.bricklink_lookup;
     state.ownerName = c.owner_name || "Finn";
     applyOwnerName(state.ownerName);
+    state.hubConnected = !!c.hub_connected;
+    updateHubTab();
   }).catch(() => {});
   startUpdateWatch();
   initErrorReporting();
@@ -3826,14 +3837,14 @@ function applyTheme(name) {
     b.classList.toggle("sel", b.dataset.themePick === name));
 }
 
-/* ------------------------------------------------------------- Tausch-Hub */
+/* ---------------------------------------- Tausch-Hub: Verbindung (Einstellungen)
+   Adresse ist fest hinterlegt; hier nur Token (Admin) bzw. Einladungscode. */
 let hubWired = false;
 
 async function loadHubCard() {
-  wireHubOnce();
+  wireHubConnectOnce();
   try {
-    const s = await api("/hub");
-    renderHubStatus(s);
+    renderHubStatus(await api("/hub"));
   } catch (_) { /* Karte bleibt leer, wenn der Status nicht kommt */ }
 }
 
@@ -3841,69 +3852,46 @@ function renderHubStatus(s) {
   const on = s && s.connected;
   $("hub-connect-box").hidden = on;
   $("hub-connected-box").hidden = !on;
+  if (s && s.url) $("hub-url-line").textContent = s.url;
   if (!on) return;
   $("hub-member-name").textContent = s.display_name || "(unbenannt)";
   $("hub-admin-badge").hidden = !s.is_admin;
-  $("hub-url-line").textContent = s.url;
-  $("hub-invite-block").hidden = !s.is_admin;
-  const lp = s.last_publish;
-  $("hub-last-publish").textContent = lp
-    ? `Zuletzt veröffentlicht: ${lp.count} Angebote am `
-      + new Date(lp.ts * 1000).toLocaleString("de-DE")
-    : "Noch nichts veröffentlicht.";
 }
 
-function wireHubOnce() {
+function wireHubConnectOnce() {
   if (hubWired) return;
   hubWired = true;
   const err = $("hub-connect-error");
 
+  const afterConnect = (s, msg) => {
+    renderHubStatus(s);
+    state.hubConnected = true;
+    updateHubTab();
+    toast(msg);
+  };
+
   $("hub-connect-token").addEventListener("click", async () => {
     err.hidden = true;
-    const url = $("hub-url").value.trim();
     const token = $("hub-token-in").value.trim();
-    if (!url || !token) { err.textContent = "Adresse und Token angeben."; err.hidden = false; return; }
+    if (!token) { err.textContent = "Token angeben."; err.hidden = false; return; }
     try {
-      renderHubStatus(await api("/hub/connect", { method: "POST", body: { url, token } }));
-      toast("Mit dem Hub verbunden 🤝");
+      afterConnect(await api("/hub/connect", { method: "POST", body: { token } }),
+        "Mit dem Hub verbunden 🤝");
     } catch (e) { err.textContent = e.message; err.hidden = false; }
   });
 
   $("hub-connect-invite").addEventListener("click", async () => {
     err.hidden = true;
-    const url = $("hub-url").value.trim();
     const invite_code = $("hub-invite-in").value.trim();
     const display_name = $("hub-name-in").value.trim();
-    if (!url || !invite_code || !display_name) {
-      err.textContent = "Adresse, Einladungscode und Anzeigename angeben.";
+    if (!invite_code || !display_name) {
+      err.textContent = "Einladungscode und Anzeigename angeben.";
       err.hidden = false; return;
     }
     try {
-      renderHubStatus(await api("/hub/connect", { method: "POST",
-        body: { url, invite_code, display_name } }));
-      toast("Dem Netzwerk beigetreten 🤝");
+      afterConnect(await api("/hub/connect", { method: "POST",
+        body: { invite_code, display_name } }), "Dem Netzwerk beigetreten 🤝");
     } catch (e) { err.textContent = e.message; err.hidden = false; }
-  });
-
-  $("hub-publish").addEventListener("click", async (ev) => {
-    const b = ev.currentTarget; b.disabled = true;
-    try {
-      const res = await api("/hub/publish", { method: "POST" });
-      toast(`${res.count} Angebote veröffentlicht 📤`);
-      renderHubStatus(await api("/hub"));
-    } catch (e) { toast(e.message); } finally { b.disabled = false; }
-  });
-
-  $("hub-show-offers").addEventListener("click", () => loadHubOffers());
-
-  $("hub-make-invite").addEventListener("click", async (ev) => {
-    const b = ev.currentTarget; b.disabled = true;
-    try {
-      const res = await api("/hub/invite", { method: "POST", body: {} });
-      const out = $("hub-invite-out");
-      out.hidden = false;
-      out.innerHTML = `Einladungscode (einmal gültig): <code>${esc(res.invite_code)}</code>`;
-    } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
 
   $("hub-disconnect").addEventListener("click", async () => {
@@ -3911,7 +3899,58 @@ function wireHubOnce() {
     try {
       await api("/hub/disconnect", { method: "POST" });
       renderHubStatus({ connected: false });
+      state.hubConnected = false;
+      updateHubTab();
     } catch (e) { toast(e.message); }
+  });
+}
+
+/* ------------------------------------------------ Tausch-Hub: Nutzung (Tab) */
+let hubViewWired = false;
+
+async function loadHubView() {
+  wireHubViewOnce();
+  // Veröffentlichen nur für Admins (steuert, was die Instanz preisgibt)
+  $("hub-publish").hidden = !(state.user && state.user.is_admin);
+  try {
+    const s = await api("/hub");
+    $("hub-view-who").textContent = s.display_name
+      ? `Angemeldet als ${s.display_name}` : "";
+    const lp = s.last_publish;
+    const lpEl = $("hub-last-publish");
+    lpEl.hidden = !lp;
+    if (lp) {
+      lpEl.textContent = `Zuletzt veröffentlicht: ${lp.count} Angebote am `
+        + new Date(lp.ts * 1000).toLocaleString("de-DE");
+    }
+  } catch (_) { /* egal */ }
+  loadHubOffers();
+}
+
+function wireHubViewOnce() {
+  if (hubViewWired) return;
+  hubViewWired = true;
+
+  $("hub-publish").addEventListener("click", async (ev) => {
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      const res = await api("/hub/publish", { method: "POST" });
+      toast(`${res.count} Angebote veröffentlicht 📤`);
+      loadHubView();
+    } catch (e) { toast(e.message); } finally { b.disabled = false; }
+  });
+
+  $("hub-refresh-offers").addEventListener("click", () => loadHubOffers());
+
+  $("hub-make-invite").addEventListener("click", async (ev) => {
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      const res = await api("/hub/invite", { method: "POST", body: {} });
+      const out = $("hub-invite-out");
+      out.hidden = false;
+      out.innerHTML = `Einladungscode (einmal gültig, an einen Freund geben): `
+        + `<code>${esc(res.invite_code)}</code>`;
+    } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
 }
 

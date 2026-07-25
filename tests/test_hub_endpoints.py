@@ -38,29 +38,21 @@ def test_status_when_not_connected(client):
 
 
 def test_connect_with_token_sets_status(client, monkeypatch):
-    def fake_connect(url, token):
-        core.set_setting("hub_url", url)
+    def fake_connect(token):
         core.set_setting("hub_token", token)
         core.set_setting("hub_display_name", "Sven")
         core.set_setting("hub_is_admin", "1")
         return {"display_name": "Sven", "is_admin": True}
     monkeypatch.setattr(hub, "connect_with_token", fake_connect)
-    r = client.post("/api/hub/connect",
-                    json={"url": "https://h.example", "token": "bft_x"})
+    r = client.post("/api/hub/connect", json={"token": "bft_x"})
     assert r.status_code == 200
     s = client.get("/api/hub").json()
     assert s["connected"] is True and s["display_name"] == "Sven"
     assert s["is_admin"] is True
 
 
-def test_connect_rejects_bad_url(client):
-    r = client.post("/api/hub/connect",
-                    json={"url": "ftp://example.com", "token": "t"})
-    assert r.status_code == 400
-
-
 def test_connect_requires_token_or_invite(client):
-    r = client.post("/api/hub/connect", json={"url": "https://h.example"})
+    r = client.post("/api/hub/connect", json={})
     assert r.status_code == 400
 
 
@@ -88,10 +80,11 @@ def test_publish_without_connection_400(client, monkeypatch):
 
 
 def test_disconnect_clears(client, monkeypatch):
-    core.set_setting("hub_url", "https://h")
     core.set_setting("hub_token", "t")
+    core.set_setting("hub_display_name", "Sven")
     client.post("/api/hub/disconnect")
-    assert (core.get_setting("hub_url") or "") == ""
+    assert (core.get_setting("hub_token") or "") == ""
+    assert hub.enabled() is False
 
 
 def test_hub_management_is_admin_only(tmp_path, monkeypatch):
@@ -105,8 +98,20 @@ def test_hub_management_is_admin_only(tmp_path, monkeypatch):
                   json={"url": "https://h", "token": "t"}).status_code == 403
 
 
-def test_invite_needs_hub_admin(client, monkeypatch):
+def test_invite_allowed_for_any_connected_user(monkeypatch, tmp_path):
+    # Auch ein Nicht-Instanz-Admin darf einladen, solange verbunden.
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "hub3.db"))
+    core.init_db()
+    uid = _user(is_admin=0, is_dealer=0, name="lena")
+    c = TestClient(main.app)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "lena", False)
     monkeypatch.setattr(hub, "enabled", lambda: True)
-    monkeypatch.setattr(hub, "config", lambda: {"url": "h", "token": "t",
-                        "member_id": "m", "display_name": "Sven", "is_admin": False})
-    assert client.post("/api/hub/invite", json={}).status_code == 403
+    monkeypatch.setattr(hub, "create_invite",
+                        lambda note="", expires_in_days=0: {"invite_code": "inv_x"})
+    r = c.post("/api/hub/invite", json={})
+    assert r.status_code == 200 and r.json()["invite_code"] == "inv_x"
+
+
+def test_invite_without_connection_400(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: False)
+    assert client.post("/api/hub/invite", json={}).status_code == 400

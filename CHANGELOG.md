@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.31.0 – Juli 2026
+
+### Geändert
+- 🤝 **Tausch-Netzwerk umgebaut.** Die Nutzung (Angebote der Freunde, Veröffentlichen, Einladen) hat jetzt einen **eigenen „Tausch"-Tab** – er erscheint, sobald die Instanz verbunden ist. Unter **Mehr → Einstellungen** bleibt nur noch die **Verbindung**. Die **Hub-Adresse ist fest hinterlegt** (kein Eingabefeld mehr) – neue Freunde brauchen nur ihren Einladungscode. **Einladungen kann jeder** angemeldete Nutzer erstellen (nicht mehr nur Admins); der **Token** wird weiterhin nur vom Admin unter Einstellungen eingetragen. Veröffentlichen bleibt Admin-Sache
+
 ## 1.30.0 – Juli 2026
 
 ### Neu

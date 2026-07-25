@@ -169,7 +169,7 @@ async function listMembers(member, env) {
 }
 
 async function createInvite(req, member, env) {
-  if (!member.is_admin) return err(403, "nur für Hub-Admins");
+  // Einladen darf jedes aktive Mitglied – so kann das Netzwerk wachsen.
   const body = await req.json().catch(() => ({}));
   const code = randomToken("inv");
   const days = Number(body.expires_in_days);

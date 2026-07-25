@@ -870,7 +870,8 @@ def config(user: dict = Depends(current_user)):
             "bricklink_lookup": integrations.bricklink_enabled(),
             "catalog_search": integrations.rebrickable_enabled(),
             "offer_percent": _offer_percent(),
-            "owner_name": _owner_name()}
+            "owner_name": _owner_name(),
+            "hub_connected": hub.enabled()}
 
 
 class OfferPercentBody(BaseModel):
@@ -2603,7 +2604,6 @@ def _duplicate_items() -> dict:
 # ---------------------------------------------------------------- Tausch-Hub
 
 class HubConnectBody(BaseModel):
-    url: str = Field(min_length=8, max_length=200)
     token: str | None = Field(default=None, max_length=200)
     invite_code: str | None = Field(default=None, max_length=200)
     display_name: str | None = Field(default=None, max_length=80)
@@ -2629,14 +2629,11 @@ def hub_status(user: dict = Depends(current_user)):
 
 @app.post("/api/hub/connect")
 def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
-    url = body.url.strip()
-    if not url.startswith(("http://", "https://")):
-        raise HTTPException(400, "Hub-URL muss mit http(s):// beginnen")
     try:
         if body.token:
-            hub.connect_with_token(url, body.token.strip())
+            hub.connect_with_token(body.token.strip())
         elif body.invite_code and body.display_name:
-            hub.connect_with_invite(url, body.invite_code.strip(),
+            hub.connect_with_invite(body.invite_code.strip(),
                                     body.display_name.strip())
         else:
             raise HTTPException(400, "Token oder Einladungscode + Anzeigename nötig")
@@ -2699,11 +2696,10 @@ def hub_members(user: dict = Depends(current_user)):
 
 
 @app.post("/api/hub/invite")
-def hub_invite(body: HubInviteBody, user: dict = Depends(admin_user)):
+def hub_invite(body: HubInviteBody, user: dict = Depends(current_user)):
+    # Einladen darf jeder angemeldete Nutzer der verbundenen Instanz.
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
-    if not hub.config()["is_admin"]:
-        raise HTTPException(403, "Nur Hub-Admins können einladen")
     try:
         return hub.create_invite(body.note, body.expires_in_days)
     except hub.HubError as e:
