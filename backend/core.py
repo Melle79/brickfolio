@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.23.4"
+APP_VERSION = "1.24.0"
 
 
 def hash_password(password: str) -> str:
@@ -184,6 +184,11 @@ def init_db():
                 added_at INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS fig_sets (
+                fig_no TEXT PRIMARY KEY,
+                data TEXT NOT NULL,
+                fetched_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS fig_parts (
                 fig_no TEXT PRIMARY KEY,
                 data TEXT NOT NULL,
                 fetched_at INTEGER NOT NULL

@@ -751,6 +751,42 @@ async function loadSetFigs(card, item, btn) {
   }
 }
 
+async function loadFigParts(card, item, btn) {
+  const out = card.querySelector("[data-parts-out]");
+  if (out.dataset.loaded) {
+    out.hidden = !out.hidden;
+    btn.textContent = out.hidden
+      ? "🧩 Enthaltene Teile anzeigen" : "🧩 Teile ausblenden";
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Lade Teile …";
+  try {
+    const data = await api(`/fig_parts/${encodeURIComponent(item.item_id)}`);
+    const parts = data.items || [];
+    out.dataset.loaded = "1";
+    if (!parts.length) {
+      out.innerHTML = `<div class="price-note">Für diese Figur hat BrickLink keine Teileliste.</div>`;
+    } else {
+      out.innerHTML = parts.map((p) => `
+        <div class="fig-row">
+          <img class="card-img fig-img" src="${imgSrc(p.img_url)}" ${IMG_FALLBACK} alt="" loading="lazy">
+          <div class="fig-info">
+            <strong>${esc(p.name)}</strong>
+            <div class="sub">${esc(p.item_id)}${p.color_name ? ` · ${esc(p.color_name)}` : ""}${p.qty > 1 ? ` · ${p.qty}×` : ""}</div>
+            ${p.bricklink_url ? `<div class="fig-actions"><a class="mini-btn link" href="${esc(p.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a></div>` : ""}
+          </div>
+        </div>`).join("");
+    }
+    btn.textContent = "🧩 Teile ausblenden";
+  } catch (e) {
+    toast(e.message);
+    btn.textContent = "🧩 Enthaltene Teile anzeigen";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function markFigOwnership(out, figs) {
   const result = {};
   for (let i = 0; i < figs.length; i += 8) {
@@ -1407,6 +1443,11 @@ function collCardDetails(it) {
           <button class="mini-btn" data-figs>👥 Enthaltene Figuren anzeigen</button>
         </div>
         <div class="set-figs" data-figs-out></div>` : ""}
+        ${it.item_type === "minifig" && state.bricklinkPrices && !needsBlNo ? `
+        <div class="detail-row">
+          <button class="mini-btn" data-parts>🧩 Enthaltene Teile anzeigen</button>
+        </div>
+        <div class="set-figs" data-parts-out></div>` : ""}
         ${state.bricklinkPrices && !needsBlNo ? `
         <div class="price-head">
           <span>Marktpreise</span>
@@ -1673,6 +1714,11 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
   const figsBtn = card.querySelector("[data-figs]");
   if (figsBtn) {
     figsBtn.addEventListener("click", () => loadSetFigs(card, item, figsBtn));
+  }
+
+  const partsBtn = card.querySelector("[data-parts]");
+  if (partsBtn) {
+    partsBtn.addEventListener("click", () => loadFigParts(card, item, partsBtn));
   }
 
   const fixAutoBtn = card.querySelector("[data-fix-auto]");

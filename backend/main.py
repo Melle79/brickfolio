@@ -1361,7 +1361,8 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
 
 BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
                  "shopping_items", "price_history",
-                 "set_contents", "set_meta", "fig_sets", "settings"]
+                 "set_contents", "set_meta", "fig_sets", "fig_parts",
+                 "settings"]
 
 
 class OwnerNameBody(BaseModel):
@@ -1630,6 +1631,44 @@ def fig_sets(fig_no: str, user: dict = Depends(current_user)):
         return {"sets": _fig_sets_cached(fig_no)}
     except Exception:
         return {"sets": []}
+
+
+def _fig_parts_cached(fig_no: str) -> list:
+    """Teile einer Figur, mit 30-Tage-Cache in der DB (analog fig_sets)."""
+    now = int(time.time())
+    with core.db() as conn:
+        row = conn.execute("SELECT data, fetched_at FROM fig_parts "
+                           "WHERE fig_no = ?", (fig_no,)).fetchone()
+    if row and now - row["fetched_at"] < FIG_SETS_TTL:
+        try:
+            return json.loads(row["data"])
+        except ValueError:
+            pass
+    parts = integrations.bricklink_minifig_parts(fig_no)
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO fig_parts (fig_no, data, fetched_at) VALUES (?, ?, ?) "
+            "ON CONFLICT(fig_no) DO UPDATE SET data = excluded.data, "
+            "fetched_at = excluded.fetched_at",
+            (fig_no, json.dumps(parts), now))
+    return parts
+
+
+@app.get("/api/fig_parts/{fig_no}")
+def fig_parts(fig_no: str, user: dict = Depends(current_user)):
+    """Aus welchen Teilen besteht diese Minifigur? (BrickLink-Subsets,
+    30-Tage-Cache). Ohne BrickLink-Nummer oder -Schlüssel gibt es nichts."""
+    if fig_no.startswith(("fig-", "manuell-")) \
+            or not integrations.bricklink_enabled():
+        return {"items": []}
+    try:
+        return {"items": _fig_parts_cached(fig_no)}
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except requests.Timeout:
+        raise HTTPException(504, "BrickLink antwortet nicht")
+    except requests.RequestException:
+        raise HTTPException(502, "BrickLink nicht erreichbar")
 
 
 @app.post("/api/suggest_info")

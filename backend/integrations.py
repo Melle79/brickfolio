@@ -256,6 +256,50 @@ def bricklink_subsets(set_no: str) -> list:
     return figs
 
 
+def bricklink_minifig_parts(fig_no: str) -> list:
+    """Aus welchen Teilen besteht diese Minifigur? (BrickLink Subsets auf
+    MINIFIG). Liefert Teil-Nr., Name, Farbe, Anzahl und ein Bild."""
+    import html as html_mod
+
+    auth = _bl_auth()
+    safe = requests.utils.quote(fig_no)
+    resp = requests.get(
+        f"https://api.bricklink.com/api/store/v1/items/MINIFIG/{safe}/subsets",
+        auth=auth, timeout=25)
+    resp.raise_for_status()
+    payload = resp.json()
+    meta = payload.get("meta", {})
+    if meta.get("code") != 200:
+        raise LookupError(f"Figur '{fig_no}' nicht im BrickLink-Katalog gefunden")
+
+    parts = []
+    for group in payload.get("data", []):
+        for entry in group.get("entries", []):
+            item = entry.get("item", {})
+            if item.get("type") != "PART":
+                continue
+            # Gegenstücke (z. B. die andere Hälfte einer Baugruppe) sind für
+            # den Überblick nur Rauschen.
+            if entry.get("is_counterpart"):
+                continue
+            no = item.get("no", "")
+            color_id = entry.get("color_id", 0)
+            safe_no = requests.utils.quote(no)
+            parts.append({
+                "item_id": no,
+                "item_type": "part",
+                "name": html_mod.unescape(item.get("name", "")),
+                "color_id": color_id,
+                "color_name": html_mod.unescape(entry.get("color_name", "")),
+                "qty": entry.get("quantity", 1),
+                "img_url": (f"https://img.bricklink.com/ItemImage/PN/"
+                            f"{color_id}/{safe_no}.png"),
+                "bricklink_url": ("https://www.bricklink.com/v2/catalog/"
+                                  f"catalogitem.page?P={safe_no}"),
+            })
+    return parts
+
+
 def bricklink_supersets(fig_no: str) -> list:
     """In welchen Sets kommt diese Minifigur vor? (BrickLink Supersets)"""
     import html as html_mod

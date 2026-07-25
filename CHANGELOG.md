@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.24.0 – Juli 2026
+
+### Neu
+- 🧩 **Teile einer Minifigur anzeigen.** Im Popup einer Minifigur gibt es jetzt „Enthaltene Teile anzeigen" – Torso, Kopf, Beine, Zubehör mit Farbe, Anzahl und Bild, jeweils mit Link zu BrickLink. Optional (nur auf Klick), spart Ladezeit und wird 30 Tage zwischengespeichert. Braucht einen BrickLink-Schlüssel und eine echte BrickLink-Nummer
+
 ## 1.23.4 – Juli 2026
 
 ### Behoben
