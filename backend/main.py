@@ -1125,6 +1125,13 @@ def stats_dashboard(user: dict = Depends(current_user)):
             "SELECT item_id, item_type, ts, price_new, price_used "
             "FROM price_history ORDER BY ts").fetchall()
         bound = _set_bound_map(conn)
+        # Summe der eingetragenen Einkaufspreise über alle offenen Listen
+        lrow = conn.execute(
+            "SELECT COALESCE(SUM(si.paid_price), 0) AS paid, "
+            "COUNT(DISTINCT si.list_id) AS lists "
+            "FROM shopping_items si "
+            "JOIN shopping_lists l ON l.id = si.list_id "
+            "WHERE l.archived = 0 AND si.paid_price IS NOT NULL").fetchone()
 
     total_value = 0.0
     paid_sum = 0.0
@@ -1215,7 +1222,9 @@ def stats_dashboard(user: dict = Depends(current_user)):
                        "avg_piece": round(total_value / pieces, 2)
                        if pieces else 0,
                        "paid": round(paid_sum, 2),
-                       "profit": round(value_of_paid_items - paid_sum, 2)},
+                       "profit": round(value_of_paid_items - paid_sum, 2),
+                       "lists_paid": round(lrow["paid"], 2),
+                       "lists_count": lrow["lists"]},
             "by_type": {k: {"pieces": v["pieces"],
                             "value": round(v["value"], 2)}
                         for k, v in by_type.items()},

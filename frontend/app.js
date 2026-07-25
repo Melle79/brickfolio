@@ -3093,6 +3093,10 @@ function renderStats(data) {
       <div class="stat-chip"><strong>${fmtEur(t.paid)}</strong><span>bezahlt</span></div>
       <div class="stat-chip"><strong class="${profitCls}">${t.profit >= 0 ? "+" : "−"}${fmtEur(Math.abs(t.profit))}</strong><span>Gewinn</span></div>` : ""}
     </div>
+    ${dealer && t.lists_paid > 0 ? `
+    <div class="stats-row">
+      <div class="stat-chip"><strong>${fmtEur(t.lists_paid)}</strong><span>Einkauf auf ${t.lists_count === 1 ? "1 Liste" : t.lists_count + " Listen"}</span></div>
+    </div>` : ""}
     ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">
       Bei Figuren, die in euren Sets stecken, zählt ein nur ⚙️ automatisch
       ermittelter Kaufpreis nicht extra – der Set-Preis deckt sie ab

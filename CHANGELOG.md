@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.26.0 – Juli 2026
+
+### Neu
+- 📊 **Einkauf auf Listen in der Statistik.** Ein neues Feld zeigt die Summe aller eingetragenen Einkaufspreise über alle offenen Einkaufslisten zusammen – so sieht man auf einen Blick, wie viel gerade auf den Listen gebunden ist. Archivierte Listen zählen nicht mit. Nur für Sammlerprofis sichtbar
+
 ## 1.25.2 – Juli 2026
 
 ### Behoben
