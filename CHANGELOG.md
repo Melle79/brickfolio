@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.28.0 – Juli 2026
+
+### Neu
+- 📷 **Detail-Popup auch beim Scannen.** Ein Tipp auf ein Scan-Ergebnis öffnet jetzt dieselbe Detailansicht wie in der Suche – mit Jahr, Marktpreis, vorhanden/Wunschliste, Sets und den enthaltenen Teilen. Solange in der Karte ein Formular offen ist (Bezahlt/Zustand), bleibt das Popup zu
+
 ## 1.27.1 – Juli 2026
 
 ### Geändert

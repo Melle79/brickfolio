@@ -1274,6 +1274,18 @@ function renderScanResults(items) {
   wireWantButtons(box, items);
   wireCartButtons(box, items);
 
+  // Tipp auf ein Scan-Ergebnis öffnet die Detailansicht – wie in der Suche.
+  // Nicht bei Knopf/Link/Bild/Eingabefeld und nicht, solange ein Formular
+  // (Bezahlt/Zustand oder Listen-Ablauf) in der Karte offen ist.
+  box.querySelectorAll("[data-sug-id]").forEach((card, i) => {
+    card.classList.add("tappable");
+    card.addEventListener("click", (ev) => {
+      if (ev.target.closest("button, a, input, textarea, select, label, .card-img")) return;
+      if (card.querySelector("[data-cond-row], [data-cart-row]")) return;
+      openSuggestModal(items[i]);
+    });
+  });
+
   box.querySelectorAll("[data-add]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const it = items[Number(btn.dataset.add)];
