@@ -2153,10 +2153,16 @@ function takeSuggestion(it) {
    alles bevor man die Figur übernimmt. */
 function openSuggestModal(it) {
   closeCardModal();
-  const type = it.item_type || "minifig";
+  // Lokale Kopie – die Nummer kann sich beim Auflösen ändern, das soll die
+  // Trefferliste dahinter nicht durcheinanderbringen.
+  const pit = { ...it };
+  const type = pit.item_type || "minifig";
   const isMini = type === "minifig";
+  // Teile lohnen sich, wenn wir eine BrickLink-Nummer haben ODER über das
+  // Bild eine finden können (Namenssuche liefert nur Rebrickable-Nummern).
+  const resolvable = /^fig-/.test(pit.item_id) && !!pit.img_url;
   const canParts = state.bricklinkPrices && isMini
-    && !/^(fig-|manuell-)/.test(it.item_id);
+    && (!/^(fig-|manuell-)/.test(pit.item_id) || resolvable);
   const overlay = document.createElement("div");
   overlay.className = "card-modal-overlay";
   overlay.id = "card-modal";
@@ -2166,11 +2172,11 @@ function openSuggestModal(it) {
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
           <div class="card-img-wrap">
-            <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="${esc(type)}" alt="">
+            <img class="card-img" src="${imgSrc(pit.img_url)}" ${IMG_FALLBACK} data-gid="${esc(pit.item_id)}" data-gtype="${esc(type)}" alt="">
           </div>
           <div class="card-title">
-            <strong>${esc(it.name)}</strong>
-            <div class="sub" data-sug-meta>${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}</div>
+            <strong>${esc(pit.name)}</strong>
+            <div class="sub" data-sug-meta>${esc(pit.item_id)}${pit.year > 0 ? " · " + pit.year : ""}</div>
             <span class="badge badge-owned" data-sug-owned hidden></span>
           </div>
         </div>
@@ -2185,7 +2191,7 @@ function openSuggestModal(it) {
           <div class="card-actions suggest-actions">
             <button class="mini-btn add" data-sug-take>✔ Übernehmen</button>
             <button class="mini-btn" data-sug-want>☆ Merken</button>
-            ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
+            ${pit.bricklink_url ? `<a class="mini-btn link" data-sug-bl href="${esc(pit.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
           </div>
         </div>
       </div>
@@ -2201,20 +2207,26 @@ function openSuggestModal(it) {
 
   const partsBtn = inner.querySelector("[data-parts]");
   if (partsBtn) {
-    partsBtn.addEventListener("click", () => loadFigParts(inner, it, partsBtn));
+    // pit.item_id ist beim Klick evtl. schon zur BrickLink-Nummer aufgelöst
+    partsBtn.addEventListener("click", () => loadFigParts(inner, pit, partsBtn));
+    // Solange die BrickLink-Nummer noch gesucht wird: erst danach klickbar
+    if (/^fig-/.test(pit.item_id)) {
+      partsBtn.disabled = true;
+      partsBtn.textContent = "🧩 Teile (suche Nummer …)";
+    }
   }
   inner.querySelector("[data-sug-take]").addEventListener("click", () => {
     done();
-    takeSuggestion(it);
+    takeSuggestion(pit);
   });
   inner.querySelector("[data-sug-want]").addEventListener("click", async (ev) => {
     const b = ev.currentTarget;
     b.disabled = true;
     try {
       const res = await api("/wanted", { method: "POST", body: {
-        item_id: it.item_id, item_type: type, name: it.name,
-        img_url: it.img_url || "", bricklink_url: it.bricklink_url || "",
-        year: it.year || 0,
+        item_id: pit.item_id, item_type: type, name: pit.name,
+        img_url: pit.img_url || "", bricklink_url: pit.bricklink_url || "",
+        year: pit.year || 0,
       }});
       if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
       else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
@@ -2222,22 +2234,69 @@ function openSuggestModal(it) {
       b.textContent = "⭐ Gemerkt";
     } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
-  loadSuggestDetail(inner, it);
+  loadSuggestDetail(inner, pit);
 }
 
-async function loadSuggestDetail(inner, it) {
-  const type = it.item_type || "minifig";
+/* Details eines Suchtreffers ins Popup laden. Bei Namenssuchen (Rebrickable-
+   Nummer fig-…) wird zuerst über das Bild die BrickLink-Nummer gesucht, damit
+   Preise, Sets und Teile ohne den Umweg über „Übernehmen" erscheinen. */
+async function loadSuggestDetail(inner, pit) {
+  const type = pit.item_type || "minifig";
+  const meta = inner.querySelector("[data-sug-meta]");
+  const pr = inner.querySelector("[data-sug-prices]");
+
+  // 1) BrickLink-Nummer auflösen, falls nötig und möglich
+  if (state.bricklinkPrices && /^fig-/.test(pit.item_id) && pit.img_url) {
+    if (pr) pr.innerHTML = `<span class="price-note">🔎 BrickLink-Nummer wird gesucht …</span>`;
+    try {
+      const data = await api("/resolve", { method: "POST", body: { img_url: pit.img_url } });
+      let cands = (data.items || []).filter((c) => !c.item_type || c.item_type === type);
+      if (!cands.length) cands = data.items || [];
+      const best = cands[0];
+      if (best && best.item_id) {
+        pit.item_id = best.item_id;
+        pit.bricklink_url = best.bricklink_url || pit.bricklink_url;
+        if (best.img_url) pit.img_url = best.img_url;
+        pit._score = best.score;
+        const img = inner.querySelector(".card-img");
+        if (img) {
+          img.dataset.gid = best.item_id;          // Galerie nutzt BrickLink-Bilder
+          if (best.img_url) img.src = imgSrc(best.img_url);
+        }
+        const bl = inner.querySelector("[data-sug-bl]");
+        if (bl && best.bricklink_url) bl.href = best.bricklink_url;
+      }
+    } catch (_) { /* ohne Nummer geht es mit Rebrickable-Daten weiter */ }
+    // Teile-Knopf freigeben – oder entfernen, wenn keine Nummer gefunden wurde
+    const pBtn = inner.querySelector("[data-parts]");
+    if (pBtn) {
+      if (/^fig-/.test(pit.item_id)) {
+        pBtn.closest(".detail-row").remove();
+        const po = inner.querySelector("[data-parts-out]");
+        if (po) po.remove();
+      } else {
+        pBtn.disabled = false;
+        pBtn.textContent = "🧩 Enthaltene Teile anzeigen";
+      }
+    }
+  }
+
+  // 2) Angereicherte Infos zur (ggf. aufgelösten) Nummer holen
   let d = {};
   try {
     const info = await api("/suggest_info?detail=1", { method: "POST",
-      body: { items: [{ item_id: it.item_id, item_type: type }] } });
-    d = info[it.item_id] || {};
+      body: { items: [{ item_id: pit.item_id, item_type: type }] } });
+    d = info[pit.item_id] || {};
   } catch (_) { /* Details sind nice-to-have */ }
-  if (d.in_sets) it.in_sets = d.in_sets;
-  if (d.year && !it.year) it.year = d.year;
+  if (d.in_sets) pit.in_sets = d.in_sets;
+  if (d.year && !pit.year) pit.year = d.year;
 
-  const meta = inner.querySelector("[data-sug-meta]");
-  if (meta) meta.textContent = it.item_id + (it.year > 0 ? " · " + it.year : "");
+  if (meta) {
+    const bits = [pit.item_id];
+    if (pit._score) bits.push(`${pit._score} % sicher`);
+    if (pit.year > 0) bits.push(String(pit.year));
+    meta.textContent = bits.join(" · ");
+  }
 
   const badge = inner.querySelector("[data-sug-owned]");
   if (badge) {
@@ -2258,17 +2317,18 @@ async function loadSuggestDetail(inner, it) {
     }
   }
 
-  const pr = inner.querySelector("[data-sug-prices]");
   if (pr) {
     const parts = [];
     if (d.new != null) parts.push(`Ø neu ${fmtEur(d.new)}`);
     if (d.used != null) parts.push(`Ø gebr. ${fmtEur(d.used)}`);
     pr.innerHTML = parts.length
       ? `<span class="sug-price-label">Marktpreis</span> ${parts.join(" · ")}`
-      : `<span class="price-note">Keine Preisdaten bei BrickLink.</span>`;
+      : `<span class="price-note">${/^fig-/.test(pit.item_id)
+          ? "Keine BrickLink-Nummer gefunden – Preise erst nach dem Übernehmen."
+          : "Keine Preisdaten bei BrickLink."}</span>`;
   }
 
-  if (type === "minifig") renderFigSets(inner, it);
+  if (type === "minifig") renderFigSets(inner, pit);
 }
 
 async function resolveBricklinkNo(it) {

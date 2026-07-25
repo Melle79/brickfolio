@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.25.1 – Juli 2026
+
+### Behoben
+- 🔎 **BrickLink-Daten schon bei der Namenssuche.** Bisher lieferte die Namenssuche nur Rebrickable-Nummern (fig-…), sodass im Detail-Popup weder Preise noch Sets oder Teile erschienen – die kamen erst nach „Übernehmen". Jetzt sucht das Popup selbst die passende BrickLink-Nummer über das Bild (mit Sicherheits-Angabe, z. B. „91 % sicher") und zeigt Preise, Sets und Teile sofort an. „Übernehmen" trägt gleich die gefundene Nummer ein
+
 ## 1.25.0 – Juli 2026
 
 ### Neu
