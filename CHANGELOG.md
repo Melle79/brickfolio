@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.25.2 – Juli 2026
+
+### Behoben
+- 🛒 **Listen-Ablauf in der Suche.** Wollte man einen Suchtreffer auf eine Liste setzen und den Preis eintippen, sprang das Detail-Popup auf. Ursache war der neue „Tipp auf die Karte öffnet Details"-Griff. Jetzt ignoriert er Eingabefelder und bleibt zu, solange in der Karte ein Formular (Preis, Listenauswahl) offen ist
+
 ## 1.25.1 – Juli 2026
 
 ### Behoben

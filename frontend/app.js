@@ -2120,11 +2120,14 @@ function renderSuggestions(items, meta) {
     btn.addEventListener("click", () => takeSuggestion(items[Number(btn.dataset.suggest)]));
   });
 
-  // Tipp auf die Karte (nicht auf Knopf/Link/Bild) öffnet die Detailansicht
+  // Tipp auf die Karte (nicht auf Knopf/Link/Bild/Eingabefeld) öffnet die
+  // Detailansicht. Solange ein Formular in der Karte offen ist (z. B. der
+  // Listen-Ablauf mit Preisfeld), bleibt das Popup zu.
   box.querySelectorAll("[data-sug-id]").forEach((card, i) => {
     card.classList.add("tappable");
     card.addEventListener("click", (ev) => {
-      if (ev.target.closest("button, a, .card-img")) return;
+      if (ev.target.closest("button, a, input, textarea, select, label, .card-img")) return;
+      if (card.querySelector("[data-cart-row]")) return;
       openSuggestModal(items[i]);
     });
   });
