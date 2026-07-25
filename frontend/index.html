@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=203">
-<link rel="stylesheet" href="/static/style.css?v=203">
+<link rel="stylesheet" href="/static/fonts.css?v=204">
+<link rel="stylesheet" href="/static/style.css?v=204">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -231,23 +231,25 @@
     <div class="settings-card" id="theme-card">
       <h3>🎨 Design</h3>
       <div class="detail-row btn-grid theme-picks">
-        <button class="mini-btn cond" data-theme-pick="classic">🧱 Klassisch</button>
-        <button class="mini-btn cond" data-theme-pick="galaxy">🌌 Galaxie</button>
-        <button class="mini-btn cond" data-theme-pick="nova">✨ Nova</button>
+        <div class="theme-opt">
+          <button class="mini-btn cond" data-theme-pick="classic">🧱 Klassisch</button>
+          <button class="theme-default-star" data-default-theme-pick="classic" hidden>☆</button>
+        </div>
+        <div class="theme-opt">
+          <button class="mini-btn cond" data-theme-pick="galaxy">🌌 Galaxie</button>
+          <button class="theme-default-star" data-default-theme-pick="galaxy" hidden>☆</button>
+        </div>
+        <div class="theme-opt">
+          <button class="mini-btn cond" data-theme-pick="nova">✨ Nova</button>
+          <button class="theme-default-star" data-default-theme-pick="nova" hidden>☆</button>
+        </div>
       </div>
       <p class="search-hint">„Galaxie" ist ein dunkles, weltraum-inspiriertes
         Design, „Nova" ein modernes Glas-Design mit blauem Akzent. Deine Wahl
         wird in deinem Profil gespeichert und gilt auf allen Geräten.</p>
-      <div id="default-theme-block" hidden>
-        <label>Standard-Design der Instanz</label>
-        <div class="detail-row btn-grid theme-picks">
-          <button class="mini-btn cond" data-default-theme-pick="classic">🧱 Klassisch</button>
-          <button class="mini-btn cond" data-default-theme-pick="galaxy">🌌 Galaxie</button>
-          <button class="mini-btn cond" data-default-theme-pick="nova">✨ Nova</button>
-        </div>
-        <p class="search-hint">Gilt für den Login-Bildschirm und für Benutzer,
-          die noch keine eigene Wahl getroffen haben.</p>
-      </div>
+      <p class="search-hint" id="default-theme-hint" hidden>⭐ markiert das
+        <b>Standard-Design</b> (Login-Bildschirm und Benutzer ohne eigene Wahl).
+        Tippe den Stern eines Designs, um es zum Standard zu machen.</p>
     </div>
 
     <div class="settings-card">
@@ -551,7 +553,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=203"></script>
+<script src="/static/app.js?v=204"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

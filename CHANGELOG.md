@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.23.2 – Juli 2026
+
+### Verbessert
+- ⭐ **Standard-Design kompakter.** Statt einer zweiten Knopfreihe markiert der Admin das Standard-Design jetzt mit einem **Stern** direkt am jeweiligen Design (⭐ = Standard, ☆ zum Umstellen). Die eigene Design-Wahl bleibt davon unberührt
+
 ## 1.23.1 – Juli 2026
 
 ### Verbessert

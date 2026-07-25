@@ -182,9 +182,11 @@ nach Rolle sichtbar:
 **Nova** (modernes Glas-Design – tiefdunkler, blau schimmernder Hintergrund,
 durchscheinende Flächen und blauer Akzent). Die Wahl wird **im Profil
 gespeichert** und gilt damit **auf allen Geräten**, sobald man angemeldet
-ist. Der Admin kann zusätzlich ein **Standard-Design der Instanz** festlegen
-(unter 🎨 Design) – es gilt für den Login-Bildschirm und für Benutzer, die
-noch keine eigene Wahl getroffen haben.
+ist. Der Admin sieht zusätzlich an jedem Design einen **Stern**: ⭐ markiert
+das **Standard-Design der Instanz**; ein Tipp auf den Stern eines anderen
+Designs macht dieses zum Standard. Er gilt für den Login-Bildschirm und für
+Benutzer, die noch keine eigene Wahl getroffen haben (die eigene Auswahl
+ändert der Stern nicht).
 
 **ℹ️ Quellen & Rechtliches** nennt, woher Daten und Bilder stammen
 (Rebrickable, BrickLink, Brickognize), weist darauf hin, dass beim

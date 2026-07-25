@@ -3503,11 +3503,17 @@ function initExternalAccess() {
   }
 }
 
-/* Markiert den aktuell gewählten Instanz-Standard in der Admin-Auswahl. */
+/* Stern-Bubble: ⭐ am aktuellen Instanz-Standard, ☆ an den übrigen. */
 function markDefaultTheme() {
   const def = state.defaultTheme || "classic";
-  document.querySelectorAll("[data-default-theme-pick]").forEach((b) =>
-    b.classList.toggle("sel", b.dataset.defaultThemePick === def));
+  document.querySelectorAll("[data-default-theme-pick]").forEach((b) => {
+    const on = b.dataset.defaultThemePick === def;
+    b.classList.toggle("on", on);
+    b.textContent = on ? "⭐" : "☆";
+    b.title = on ? "Aktuelles Standard-Design der Instanz"
+                 : "Als Standard-Design festlegen";
+    b.setAttribute("aria-label", b.title);
+  });
 }
 
 /* Design nach Login/Refresh setzen: eigene Wahl hat Vorrang, sonst der
@@ -4110,7 +4116,10 @@ async function loadSettings() {
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
   $("name-card").hidden = !isAdmin;
-  $("default-theme-block").hidden = !isAdmin;
+  document.querySelectorAll(".theme-default-star").forEach((s) => {
+    s.hidden = !isAdmin;
+  });
+  $("default-theme-hint").hidden = !isAdmin;
   if (isAdmin) markDefaultTheme();
   if (isAdmin && $("owner-name")) {
     $("owner-name").value =

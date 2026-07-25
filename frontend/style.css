@@ -427,6 +427,18 @@ code {
 .theme-picks { grid-template-columns: 1fr 1fr 1fr; }
 .theme-picks > :last-child:nth-child(odd) { grid-column: auto; }
 .theme-picks .mini-btn { padding-left: 6px; padding-right: 6px; }
+/* Ein Design + Stern-Bubble (Instanz-Standard) in der Ecke */
+.theme-opt { position: relative; }
+.theme-opt > .mini-btn { width: 100%; }
+.theme-default-star {
+  position: absolute; top: -9px; right: -8px; z-index: 2;
+  width: 26px; height: 26px; border-radius: 999px; padding: 0;
+  border: 2px solid var(--ink); background: var(--card); color: var(--ink);
+  font-size: 14px; line-height: 1; cursor: pointer;
+  display: grid; place-items: center; box-shadow: var(--shadow);
+}
+.theme-default-star.on { background: var(--yellow); }
+.theme-default-star:active { transform: translateY(1px); }
 
 @media screen { #print-area { display: none !important; } }
 @media print {
