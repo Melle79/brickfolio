@@ -2,6 +2,7 @@
 import io
 import os
 import re
+import time
 
 import requests
 from PIL import Image, ImageOps
@@ -416,15 +417,24 @@ def _price_request(bl_type: str, item_no: str, condition: str, scope: str,
     return payload.get("data", {})
 
 
+# Kurzlebiger Cache für Katalog-Preisabfragen (Suche/Scan/Popup). Preise
+# ändern sich kaum im Minutentakt, dieselbe Figur taucht aber oft mehrfach
+# auf – das spart BrickLink-Requests (und schont das Tageslimit). Für
+# gespeicherte Preise (Sammlung/Wunschliste) bleibt use_cache aus, damit das
+# manuelle „↻ Aktualisieren" immer frisch holt.
+_PRICE_CACHE: dict = {}
+PRICE_CACHE_TTL = 20 * 60
+
+
 def price_guide(item_type: str, item_no: str, condition: str = "U",
-                scope: str | None = None) -> dict:
+                scope: str | None = None, use_cache: bool = False) -> dict:
     """Preisübersicht (verkaufte Artikel, letzte 6 Monate) von BrickLink.
 
     `scope` grenzt auf ein Land bzw. eine Region ein; ohne Angabe gilt die
     Einstellung. Gibt es dort keine Verkäufe – bei selteneren Figuren häufig –,
     wird stufenweise ausgeweitet: erst Europa, dann weltweit, damit kein
     Artikel ohne Preis dasteht. `used_scope` sagt, welches Gebiet am Ende
-    gezählt hat.
+    gezählt hat. `use_cache` beschleunigt reine Katalog-Abfragen (kurzer TTL).
     """
     bl_type = _BL_TYPE.get(item_type.lower())
     if not bl_type:
@@ -435,6 +445,13 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     wanted = price_region() if scope is None else scope
     if wanted not in PRICE_REGIONS:
         wanted = ""
+
+    cache_key = (bl_type, item_no, condition, wanted)
+    if use_cache:
+        hit = _PRICE_CACHE.get(cache_key)
+        if hit and time.time() - hit[0] < PRICE_CACHE_TTL:
+            return hit[1]
+
     auth = _bl_auth()
 
     used = wanted
@@ -449,7 +466,7 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
 
     # Ohne echten Treffer die Preisfelder leeren, statt BrickLinks „0.0000"
     # durchzureichen – sonst hielte der Rest der App die Null für einen Preis.
-    return {
+    result = {
         "currency": d.get("currency_code", "EUR"),
         "min": d.get("min_price") if found else None,
         "avg": d.get("avg_price") if found else None,
@@ -460,6 +477,9 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
         "used_scope": used,
         "fell_back": used != wanted,
     }
+    if use_cache:
+        _PRICE_CACHE[cache_key] = (time.time(), result)
+    return result
 
 
 # ------------------------------------------------- BrickLink Catalog Change Log

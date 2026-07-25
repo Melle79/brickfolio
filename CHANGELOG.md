@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.29.0 – Juli 2026
+
+### Verbessert
+- ⚡ **Weniger BrickLink-Abrufe, schnellere Popups.** Drei Optimierungen sparen doppelte Anfragen: (1) Das Detail-Popup nutzt die schon in der Trefferliste geladenen Daten (Jahr, Preise, Sets) wieder, statt sie erneut zu holen. (2) Katalog-Preise werden kurz zwischengespeichert (20 Min) – dieselbe Figur in mehreren Suchen/Scans belastet BrickLink nur einmal. (3) Die per Bild gefundene BrickLink-Nummer wird gemerkt; ein erneutes Öffnen desselben Treffers kommt ohne neue Anfrage aus. Gespeicherte Preise (Sammlung/Wunschliste) holen beim „↻ Aktualisieren" weiterhin frisch
+
 ## 1.28.0 – Juli 2026
 
 ### Neu

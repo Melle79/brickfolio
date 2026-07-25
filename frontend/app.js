@@ -150,6 +150,11 @@ async function enrichSuggestions(items) {
       const info = await api("/suggest_info?detail=1",
         { method: "POST", body: { items: detail } });
       applySuggestInfo(info, true);
+      // Angereicherte Details am Item merken, damit das Detail-Popup sie
+      // nicht ein zweites Mal von BrickLink holen muss.
+      items.forEach((it) => {
+        if (info[it.item_id]) (it._infoById ||= {})[it.item_id] = info[it.item_id];
+      });
     } catch (_) { /* dito */ }
     // Ladehinweis entfernen, wo nichts kam
     document.querySelectorAll("[data-sug-id]").forEach((card) => {
@@ -2249,39 +2254,45 @@ function openSuggestModal(it) {
       b.textContent = "⭐ Gemerkt";
     } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
-  loadSuggestDetail(inner, pit);
+  loadSuggestDetail(inner, pit, it);
 }
 
 /* Details eines Suchtreffers ins Popup laden. Bei Namenssuchen (Rebrickable-
    Nummer fig-…) wird zuerst über das Bild die BrickLink-Nummer gesucht, damit
-   Preise, Sets und Teile ohne den Umweg über „Übernehmen" erscheinen. */
-async function loadSuggestDetail(inner, pit) {
+   Preise, Sets und Teile ohne den Umweg über „Übernehmen" erscheinen.
+   `orig` ist das Item aus der Trefferliste – dort werden aufgelöste Nummer und
+   Details zwischengespeichert, damit erneutes Öffnen ohne neue Abrufe geht. */
+async function loadSuggestDetail(inner, pit, orig) {
   const type = pit.item_type || "minifig";
   const meta = inner.querySelector("[data-sug-meta]");
   const pr = inner.querySelector("[data-sug-prices]");
 
-  // 1) BrickLink-Nummer auflösen, falls nötig und möglich
+  // 1) BrickLink-Nummer auflösen, falls nötig und möglich (Ergebnis gemerkt)
   if (state.bricklinkPrices && /^fig-/.test(pit.item_id) && pit.img_url) {
-    if (pr) pr.innerHTML = `<span class="price-note">🔎 BrickLink-Nummer wird gesucht …</span>`;
-    try {
-      const data = await api("/resolve", { method: "POST", body: { img_url: pit.img_url } });
-      let cands = (data.items || []).filter((c) => !c.item_type || c.item_type === type);
-      if (!cands.length) cands = data.items || [];
-      const best = cands[0];
-      if (best && best.item_id) {
-        pit.item_id = best.item_id;
-        pit.bricklink_url = best.bricklink_url || pit.bricklink_url;
-        if (best.img_url) pit.img_url = best.img_url;
-        pit._score = best.score;
-        const img = inner.querySelector(".card-img");
-        if (img) {
-          img.dataset.gid = best.item_id;          // Galerie nutzt BrickLink-Bilder
-          if (best.img_url) img.src = imgSrc(best.img_url);
-        }
-        const bl = inner.querySelector("[data-sug-bl]");
-        if (bl && best.bricklink_url) bl.href = best.bricklink_url;
+    let best = orig && orig._resolved;
+    if (!best) {
+      if (pr) pr.innerHTML = `<span class="price-note">🔎 BrickLink-Nummer wird gesucht …</span>`;
+      try {
+        const data = await api("/resolve", { method: "POST", body: { img_url: pit.img_url } });
+        let cands = (data.items || []).filter((c) => !c.item_type || c.item_type === type);
+        if (!cands.length) cands = data.items || [];
+        best = cands[0];
+        if (best && best.item_id && orig) orig._resolved = best;   // merken
+      } catch (_) { /* ohne Nummer geht es mit Rebrickable-Daten weiter */ }
+    }
+    if (best && best.item_id) {
+      pit.item_id = best.item_id;
+      pit.bricklink_url = best.bricklink_url || pit.bricklink_url;
+      if (best.img_url) pit.img_url = best.img_url;
+      pit._score = best.score;
+      const img = inner.querySelector(".card-img");
+      if (img) {
+        img.dataset.gid = best.item_id;            // Galerie nutzt BrickLink-Bilder
+        if (best.img_url) img.src = imgSrc(best.img_url);
       }
-    } catch (_) { /* ohne Nummer geht es mit Rebrickable-Daten weiter */ }
+      const bl = inner.querySelector("[data-sug-bl]");
+      if (bl && best.bricklink_url) bl.href = best.bricklink_url;
+    }
     // Teile-Knopf freigeben – oder entfernen, wenn keine Nummer gefunden wurde
     const pBtn = inner.querySelector("[data-parts]");
     if (pBtn) {
@@ -2296,13 +2307,17 @@ async function loadSuggestDetail(inner, pit) {
     }
   }
 
-  // 2) Angereicherte Infos zur (ggf. aufgelösten) Nummer holen
-  let d = {};
-  try {
-    const info = await api("/suggest_info?detail=1", { method: "POST",
-      body: { items: [{ item_id: pit.item_id, item_type: type }] } });
-    d = info[pit.item_id] || {};
-  } catch (_) { /* Details sind nice-to-have */ }
+  // 2) Angereicherte Infos zur (ggf. aufgelösten) Nummer – aus dem Cache der
+  //    Trefferliste, sonst einmal holen und dort ablegen.
+  let d = orig && orig._infoById && orig._infoById[pit.item_id];
+  if (!d) {
+    try {
+      const info = await api("/suggest_info?detail=1", { method: "POST",
+        body: { items: [{ item_id: pit.item_id, item_type: type }] } });
+      d = info[pit.item_id] || {};
+      if (orig) (orig._infoById ||= {})[pit.item_id] = d;
+    } catch (_) { d = {}; }
+  }
   if (d.in_sets) pit.in_sets = d.in_sets;
   if (d.year && !pit.year) pit.year = d.year;
 

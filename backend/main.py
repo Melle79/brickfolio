@@ -1795,7 +1795,8 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
                 if key in info:
                     continue
                 try:
-                    pg = integrations.price_guide(it.item_type, it.item_id, cond)
+                    pg = integrations.price_guide(it.item_type, it.item_id,
+                                                  cond, use_cache=True)
                     if pg.get("avg"):
                         info[key] = float(pg["avg"])
                 except Exception:
@@ -3213,7 +3214,8 @@ def get_price(item_type: str, item_no: str,
     not_found = 0
     for cond, key in (("N", "new"), ("U", "used")):
         try:
-            result[key] = integrations.price_guide(item_type, item_no, cond)
+            result[key] = integrations.price_guide(item_type, item_no, cond,
+                                                   use_cache=True)
         except requests.Timeout:
             raise HTTPException(504, "BrickLink antwortet nicht")
         except requests.HTTPError as e:
