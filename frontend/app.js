@@ -3203,13 +3203,17 @@ function openListsPaidModal(breakdown, chipEl) {
   const inner = overlay.querySelector(".modal-inner");
 
   const recalc = () => {
+    // Popup zählt alle Listen (offen + archiviert), die nicht inventarisiert sind
     const sum = breakdown.reduce((s, l) => s + (l.inventoried ? 0 : l.paid), 0);
-    const n = breakdown.filter((l) => !l.inventoried).length;
     inner.querySelector("[data-lp-total]").textContent = fmtEur(sum);
+    // Übersichts-Feld zählt nur offene, nicht inventarisierte Listen
     if (chipEl) {
-      chipEl.querySelector("[data-lists-total]").textContent = fmtEur(sum);
+      const openSum = breakdown.reduce((s, l) =>
+        s + (!l.archived && !l.inventoried ? l.paid : 0), 0);
+      const openN = breakdown.filter((l) => !l.archived && !l.inventoried).length;
+      chipEl.querySelector("[data-lists-total]").textContent = fmtEur(openSum);
       chipEl.querySelector("[data-lists-label]").textContent =
-        "Einkauf auf " + (n === 1 ? "1 Liste" : n + " Listen");
+        "Einkauf auf " + (openN === 1 ? "1 Liste" : openN + " Listen");
     }
   };
   recalc();

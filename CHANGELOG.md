@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.1 – Juli 2026
+
+### Geändert
+- 📊 **Übersichts-Feld wieder nur offene Listen.** Das Statistik-Feld „Einkauf auf Listen" zählt auf der Übersicht wieder nur die **offenen** Listen. Das Popup bleibt wie es ist: dort stehen alle Listen (auch archivierte) mit dem inventarisiert-Haken und einer eigenen Gesamtsumme
+
 ## 1.27.0 – Juli 2026
 
 ### Verbessert

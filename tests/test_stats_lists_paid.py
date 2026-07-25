@@ -56,14 +56,19 @@ def test_sums_paid_across_open_lists(client):
     assert t["lists_count"] == 2
 
 
-def test_archived_lists_are_included(client):
+def test_archived_excluded_from_chip_but_in_breakdown(client):
     live = _list(client.uid, "offen")
     old = _list(client.uid, "archiviert", archived=1)
     _item(live, 7.00)
     _item(old, 93.00)
-    t = client.get("/api/stats/dashboard").json()["totals"]
-    assert t["lists_paid"] == 100.0        # archivierte zählen jetzt mit
-    assert t["lists_count"] == 2
+    data = client.get("/api/stats/dashboard").json()
+    # Übersichts-Feld: nur offene Listen
+    assert data["totals"]["lists_paid"] == 7.0
+    assert data["totals"]["lists_count"] == 1
+    # Popup-Breakdown: archivierte Liste ist trotzdem dabei
+    names = {r["name"]: r for r in data["lists_breakdown"]}
+    assert names["archiviert"]["archived"] is True
+    assert len(data["lists_breakdown"]) == 2
 
 
 def test_inventoried_lists_are_excluded_but_listed(client):

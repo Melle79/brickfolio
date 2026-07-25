@@ -1227,11 +1227,15 @@ def stats_dashboard(user: dict = Depends(current_user)):
                        if pieces else 0,
                        "paid": round(paid_sum, 2),
                        "profit": round(value_of_paid_items - paid_sum, 2),
+                       # Kennzahl auf der Übersicht: nur offene Listen
+                       # (archivierte sieht man im Popup).
                        "lists_paid": round(
                            sum(r["paid"] for r in lrows
-                               if not r["inventoried"]), 2),
-                       "lists_count": sum(1 for r in lrows
-                                          if not r["inventoried"])},
+                               if not r["inventoried"] and not r["archived"]),
+                           2),
+                       "lists_count": sum(
+                           1 for r in lrows
+                           if not r["inventoried"] and not r["archived"])},
             "lists_breakdown": [
                 {"id": r["id"], "name": r["name"],
                  "archived": bool(r["archived"]),
