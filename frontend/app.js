@@ -1081,6 +1081,7 @@ async function refreshMe() {
     applyServerTheme(me);
   } catch (_) { /* 401 wird von api() behandelt */ }
   updateListsTab();
+  updateManualListBtn();
   checkForUpdate(false).then((info) => {
     if (info && info.update_available && !state.updateToastShown) {
       state.updateToastShown = true;
@@ -1181,6 +1182,7 @@ async function doSetup() {
 
 function showApp() {
   updateListsTab();
+  updateManualListBtn();
   $("view-login").hidden = true;
   $("app").hidden = false;
   $("whoami").textContent = state.user ? state.user.username : "";
@@ -2599,6 +2601,83 @@ async function testApiKeys() {
       `Rebrickable: ${r.rebrickable.ok ? "✅" : "❌"} ${r.rebrickable.info}`;
   } catch (e) {
     out.textContent = e.message;
+  }
+}
+
+/* Aus dem manuellen Formular direkt auf eine Einkaufsliste legen – auch für
+   eigene Figuren, die es in keinem Katalog gibt. */
+function updateManualListBtn() {
+  const b = $("btn-manual-list");
+  if (b) b.hidden = !(state.user && state.user.is_dealer);
+}
+
+async function pickListForManual() {
+  const err = $("manual-error");
+  err.hidden = true;
+  if (!$("m-name").value.trim()) {
+    err.textContent = "Bitte mindestens einen Namen angeben.";
+    err.hidden = false;
+    return;
+  }
+  const box = $("manual-list-pick");
+  if (!box.hidden) { box.hidden = true; return; }   // zweiter Klick schließt
+  let lists = [];
+  try {
+    lists = (await api("/lists")).lists || [];
+  } catch (e) { toast(e.message); return; }
+
+  box.hidden = false;
+  box.innerHTML = lists.map((l) =>
+    `<button class="mini-btn add" data-ml="${l.id}">${esc(l.name)}</button>`).join("")
+    + `<button class="mini-btn" data-ml-new>➕ Neue Liste</button>`
+    + `<button class="mini-btn" data-ml-cancel>Abbrechen</button>`;
+
+  box.querySelectorAll("[data-ml]").forEach((btn) => {
+    btn.addEventListener("click", () => addManualToList(Number(btn.dataset.ml)));
+  });
+  box.querySelector("[data-ml-cancel]").addEventListener("click", () => {
+    box.hidden = true;
+  });
+  box.querySelector("[data-ml-new]").addEventListener("click", async () => {
+    const today = new Date().toLocaleDateString("de-DE",
+      { day: "2-digit", month: "2-digit" });
+    const name = prompt("Name der neuen Liste:", `Flohmarkt ${today}`);
+    if (name == null || !name.trim()) return;
+    try {
+      const res = await api("/lists", { method: "POST",
+        body: { name: name.trim() } });
+      addManualToList(res.id);
+    } catch (e) { toast(e.message); }
+  });
+}
+
+async function addManualToList(listId) {
+  const err = $("manual-error");
+  err.hidden = true;
+  const name = $("m-name").value.trim();
+  const type = $("m-type").value;
+  const { itemId, imgUrl, blUrl, year } = manualIdentity(type);
+  try {
+    const res = await api(`/lists/${listId}/items`, { method: "POST", body: {
+      item_id: itemId, item_type: type, name, img_url: imgUrl,
+      bricklink_url: blUrl, year,
+      qty: Math.max(1, Number($("m-qty").value) || 1),
+      condition: $("m-cond").value,
+    }});
+    toast(res.merged
+      ? `Schon auf der Liste – Anzahl erhöht (jetzt ${res.qty}×)`
+      : "Auf die Liste gesetzt 🛒");
+    $("manual-list-pick").hidden = true;
+    $("m-name").value = ""; $("m-id").value = "";
+    $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
+    $("m-suggestions").innerHTML = "";
+    manualSelection = null;
+    resetCustomImage();
+    if ($("m-custom").checked) suggestCustomId();
+    $("manual-form").hidden = true;
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
   }
 }
 
@@ -5061,8 +5140,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btn-manual-toggle").addEventListener("click", () => {
     const f = $("manual-form");
     f.hidden = !f.hidden;
-    if (!f.hidden) $("m-name").focus();
+    if (!f.hidden) { updateManualListBtn(); $("m-name").focus(); }
   });
+  $("btn-manual-list").addEventListener("click", pickListForManual);
   $("btn-manual-add").addEventListener("click", addManual);
   $("btn-manual-want").addEventListener("click", addManualWanted);
   $("m-custom").addEventListener("change", applyCustomMode);

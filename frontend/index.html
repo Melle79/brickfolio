@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=221">
-<link rel="stylesheet" href="/static/style.css?v=221">
+<link rel="stylesheet" href="/static/fonts.css?v=222">
+<link rel="stylesheet" href="/static/style.css?v=222">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -155,6 +155,8 @@
       <textarea id="m-notes" placeholder="z. B. Herkunft, Set, Besonderheiten"></textarea>
       <button id="btn-manual-add" class="btn btn-primary">Zur Sammlung hinzufügen</button>
       <button id="btn-manual-want" class="btn btn-outline">☆ Auf die Wunschliste</button>
+      <button id="btn-manual-list" class="btn btn-outline" hidden>🛒 Auf eine Liste</button>
+      <div id="manual-list-pick" class="detail-row btn-grid" hidden></div>
       <p id="manual-error" class="error" hidden></p>
     </div>
   </main>
@@ -620,7 +622,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=221"></script>
+<script src="/static/app.js?v=222"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

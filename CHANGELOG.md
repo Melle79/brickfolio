@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.37.0 – Juli 2026
+
+### Neu
+- 🛒 **Aus dem Erfassen direkt auf eine Liste.** Das manuelle Formular hat jetzt „Auf eine Liste" – Liste auswählen oder gleich eine neue anlegen. Das gilt auch für **eigene Figuren**, die es in keinem Katalog gibt (z. B. „noch zu bauen"). Anzahl und Zustand kommen aus dem Formular; ein bereits vorhandener Eintrag wird zusammengefasst. Nur für Sammlerprofis sichtbar
+
 ## 1.36.0 – Juli 2026
 
 ### Verbessert

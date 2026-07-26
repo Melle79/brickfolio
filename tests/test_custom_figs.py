@@ -167,3 +167,33 @@ def test_gaps_are_not_reused(client):
             "INSERT INTO wanted (item_id, item_type, name, added_at) "
             "VALUES ('custom-009', 'minifig', 'B', ?)", (now,))
     assert client.get("/api/next_custom_id").json()["item_id"] == "custom-010"
+
+
+def test_custom_item_can_go_on_a_shopping_list(client):
+    """Eigene Figuren gehören auch auf Einkaufslisten (z. B. „noch bauen")."""
+    now = int(time.time())
+    with core.db() as conn:
+        lid = conn.execute(
+            "INSERT INTO shopping_lists (name, created_at) VALUES ('Bauen', ?)",
+            (now,)).lastrowid
+    r = client.post(f"/api/lists/{lid}/items", json={
+        "item_id": "custom-002", "item_type": "minifig", "name": "Ritter",
+        "img_url": "/uploads/x.jpg", "bricklink_url": "", "qty": 2,
+        "condition": "used"})
+    assert r.status_code == 200 and r.json()["merged"] is False
+    lists = client.get("/api/lists").json()["lists"]
+    item = lists[0]["items"][0]
+    assert item["item_id"] == "custom-002" and item["qty"] == 2
+
+
+def test_custom_list_item_counts_for_next_number(client):
+    """Eine auf der Liste liegende Custom-Nummer wird nicht neu vergeben."""
+    now = int(time.time())
+    with core.db() as conn:
+        lid = conn.execute(
+            "INSERT INTO shopping_lists (name, created_at) VALUES ('L', ?)",
+            (now,)).lastrowid
+    client.post(f"/api/lists/{lid}/items", json={
+        "item_id": "custom-012", "item_type": "minifig", "name": "R",
+        "qty": 1, "condition": "used"})
+    assert client.get("/api/next_custom_id").json()["item_id"] == "custom-013"
