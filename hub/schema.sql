@@ -8,9 +8,25 @@ CREATE TABLE IF NOT EXISTS members (
   token_hash   TEXT NOT NULL UNIQUE,        -- SHA-256 des Instanz-Tokens
   is_admin     INTEGER NOT NULL DEFAULT 0,
   status       TEXT NOT NULL DEFAULT 'active',   -- active | disabled
+  invite_quota INTEGER NOT NULL DEFAULT 3,  -- wie viele Einladungen erlaubt
   created_at   INTEGER NOT NULL,
   last_seen_at INTEGER
 );
+
+-- Wer mehr als sein Kontingent einladen möchte, stellt eine Anfrage; ein
+-- Hub-Admin genehmigt sie (erhöht das Kontingent) oder lehnt ab.
+CREATE TABLE IF NOT EXISTS invite_requests (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  member_id   TEXT NOT NULL,
+  reason      TEXT,
+  want        INTEGER NOT NULL DEFAULT 3,
+  status      TEXT NOT NULL DEFAULT 'pending',   -- pending | approved | denied
+  created_at  INTEGER NOT NULL,
+  decided_at  INTEGER,
+  decided_by  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_invreq_status
+  ON invite_requests(status, created_at);
 
 CREATE TABLE IF NOT EXISTS invites (
   code_hash   TEXT PRIMARY KEY,             -- SHA-256 des Einladungscodes

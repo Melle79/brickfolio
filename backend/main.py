@@ -2914,6 +2914,34 @@ def hub_members(user: dict = Depends(current_user)):
         raise HTTPException(502, "Hub nicht erreichbar")
 
 
+@app.get("/api/hub/invite_quota")
+def hub_invite_quota(user: dict = Depends(current_user)):
+    if not hub.enabled():
+        return {"used": 0, "quota": 0, "left": 0, "pending_request": None}
+    try:
+        return hub.invite_quota()
+    except (hub.HubError, requests.RequestException):
+        return {"used": 0, "quota": 0, "left": 0, "pending_request": None}
+
+
+class InviteRequestBody(BaseModel):
+    want: int = Field(default=3, ge=1, le=50)
+    reason: str = Field(default="", max_length=300)
+
+
+@app.post("/api/hub/invite_request")
+def hub_invite_request(body: InviteRequestBody,
+                       user: dict = Depends(current_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    try:
+        return hub.request_invites(body.want, body.reason)
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
 @app.post("/api/hub/invite")
 def hub_invite(body: HubInviteBody, user: dict = Depends(current_user)):
     # Einladen darf jeder angemeldete Nutzer der verbundenen Instanz.

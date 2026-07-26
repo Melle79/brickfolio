@@ -4281,6 +4281,7 @@ async function loadHubView() {
         + new Date(lp.ts * 1000).toLocaleString("de-DE");
     }
   } catch (_) { /* egal */ }
+  loadInviteQuota();
   loadHubOffers();
 }
 
@@ -4307,8 +4308,50 @@ function wireHubViewOnce() {
       out.hidden = false;
       out.innerHTML = `Einladungscode (einmal gültig, an einen Freund geben): `
         + `<code>${esc(res.invite_code)}</code>`;
-    } catch (e) { toast(e.message); } finally { b.disabled = false; }
+      loadInviteQuota();
+    } catch (e) {
+      // Kontingent aufgebraucht: statt bloßer Fehlermeldung den Weg anbieten
+      if (/Kontingent/.test(e.message)) offerInviteRequest(e.message);
+      else toast(e.message);
+    } finally { b.disabled = false; }
   });
+}
+
+/* Einladungs-Kontingent anzeigen – und ab null den Weg zur Anfrage. */
+async function loadInviteQuota() {
+  const el = $("hub-quota");
+  if (!el) return;
+  try {
+    const q = await api("/hub/invite_quota");
+    if (!q.quota) { el.hidden = true; return; }
+    el.hidden = false;
+    if (q.pending_request) {
+      el.textContent = `✉️ Einladungen: ${q.used} von ${q.quota} vergeben · `
+        + `Anfrage über ${q.pending_request.want} weitere läuft.`;
+    } else if (q.left > 0) {
+      el.textContent = `✉️ Einladungen: noch ${q.left} von ${q.quota} frei.`;
+    } else {
+      el.innerHTML = `✉️ Alle ${q.quota} Einladungen vergeben. `
+        + `<button class="mini-btn" data-req-invites>Mehr anfragen</button>`;
+      el.querySelector("[data-req-invites]")
+        .addEventListener("click", () => offerInviteRequest());
+    }
+  } catch (_) { el.hidden = true; }
+}
+
+/* Anfrage nach mehr Einladungen stellen. */
+async function offerInviteRequest(hint) {
+  const want = prompt((hint ? hint + "\n\n" : "")
+    + "Wie viele zusätzliche Einladungen brauchst du?", "3");
+  if (want == null) return;
+  const n = Math.max(1, Math.min(Number(want) || 3, 50));
+  const reason = prompt("Kurz begründen (optional):", "") || "";
+  try {
+    await api("/hub/invite_request", { method: "POST",
+      body: { want: n, reason } });
+    toast("Anfrage gestellt – ein Hub-Admin entscheidet darüber ✉️");
+    loadInviteQuota();
+  } catch (e) { toast(e.message); }
 }
 
 async function loadHubOffers() {

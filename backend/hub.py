@@ -137,6 +137,17 @@ def create_invite(note: str = "", expires_in_days: int = 0) -> dict:
     return _authed("POST", "/v1/invites", body=body)
 
 
+def invite_quota() -> dict:
+    """Wie viele Einladungen sind noch offen?"""
+    return _authed("GET", "/v1/invites/quota")
+
+
+def request_invites(want: int, reason: str = "") -> dict:
+    """Mehr Einladungen anfragen – ein Hub-Admin entscheidet darüber."""
+    return _authed("POST", "/v1/invite_requests",
+                   body={"want": want, "reason": reason})
+
+
 def last_publish() -> dict | None:
     raw = core.get_setting("hub_last_publish")
     if not raw:

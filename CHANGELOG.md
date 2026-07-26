@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.41.0 – Juli 2026
+
+### Neu
+- ✉️ **Einladungen mit Kontingent.** Jeder darf **3 Einladungen** aussprechen; im Tausch-Tab steht, wie viele noch frei sind. Ist das Kontingent aufgebraucht, lässt sich direkt **mehr anfragen** – ein Hub-Admin genehmigt oder lehnt das in der Konsole ab, bei Genehmigung wächst das Kontingent *(Hub-Issue #4)*
+- 🙋 **Namen im Netzwerk sind eindeutig.** Beim Beitreten wird geprüft, ob der Anzeigename schon vergeben ist (Groß-/Kleinschreibung egal), und er braucht mindestens **4 Zeichen**. Gilt auch beim Umbenennen *(Hub-Issue #4)*
+
 ## 1.40.3 – Juli 2026
 
 ### Behoben

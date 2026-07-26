@@ -65,10 +65,28 @@ async function auth(req, env) {
 
 /* --------------------------------------------------------------- Endpunkte */
 
+const MIN_NAME = 4;
+
+/* Ist der Anzeigename schon vergeben? Groß-/Kleinschreibung ignorieren,
+   damit „Paul" und „paul" nicht nebeneinander stehen. */
+async function nameTaken(env, name, exceptId = null) {
+  const row = await env.DB.prepare(
+    "SELECT id FROM members WHERE lower(display_name) = lower(?)")
+    .bind(name).first();
+  return !!row && row.id !== exceptId;
+}
+
 async function register(req, env) {
   const body = await req.json().catch(() => ({}));
   const name = (body.display_name || "").toString().trim().slice(0, 80);
   if (!name) return err(400, "display_name fehlt");
+  if (name.length < MIN_NAME) {
+    return err(400, `Der Name braucht mindestens ${MIN_NAME} Zeichen`);
+  }
+  if (await nameTaken(env, name)) {
+    return err(409, `Der Name „${name}" ist im Netzwerk schon vergeben – `
+      + "bitte einen anderen wählen");
+  }
 
   let isAdmin = 0;
   const count = (await env.DB.prepare("SELECT COUNT(*) AS c FROM members").first()).c;
@@ -119,6 +137,12 @@ async function updateMe(req, member, env) {
   const body = await req.json().catch(() => ({}));
   const name = (body.display_name || "").toString().trim().slice(0, 80);
   if (!name) return err(400, "display_name fehlt");
+  if (name.length < MIN_NAME) {
+    return err(400, `Der Name braucht mindestens ${MIN_NAME} Zeichen`);
+  }
+  if (await nameTaken(env, name, member.id)) {
+    return err(409, `Der Name „${name}" ist schon vergeben`);
+  }
   await env.DB.prepare("UPDATE members SET display_name = ? WHERE id = ?")
     .bind(name, member.id).run();
   return json({ member_id: member.id, display_name: name,
@@ -190,8 +214,54 @@ async function listMembers(member, env) {
   return json({ members: rows });
 }
 
+const DEFAULT_QUOTA = 3;
+
+/* Wie viele Einladungen hat jemand schon ausgesprochen und wie viele darf er? */
+async function inviteQuota(member, env) {
+  const used = (await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM invites WHERE created_by = ?")
+    .bind(member.id).first()).c || 0;
+  const quota = member.invite_quota == null ? DEFAULT_QUOTA : member.invite_quota;
+  const pending = await env.DB.prepare(
+    "SELECT id, want, created_at FROM invite_requests "
+    + "WHERE member_id = ? AND status = 'pending'").bind(member.id).first();
+  return {
+    used, quota, left: Math.max(0, quota - used),
+    pending_request: pending ? { id: pending.id, want: pending.want,
+                                 created_at: pending.created_at } : null,
+  };
+}
+
+async function getQuota(member, env) {
+  return json(await inviteQuota(member, env));
+}
+
+async function requestMoreInvites(req, member, env) {
+  const body = await req.json().catch(() => ({}));
+  const q = await inviteQuota(member, env);
+  if (q.pending_request) {
+    return err(409, "Es läuft schon eine Anfrage – bitte auf die Antwort warten");
+  }
+  const want = Math.max(1, Math.min(Number(body.want) || DEFAULT_QUOTA, 50));
+  await env.DB.prepare(
+    "INSERT INTO invite_requests (member_id, reason, want, created_at) "
+    + "VALUES (?, ?, ?, ?)")
+    .bind(member.id, body.reason ? String(body.reason).slice(0, 300) : null,
+      want, now()).run();
+  return json({ ok: true, want }, 201);
+}
+
 async function createInvite(req, member, env) {
-  // Einladen darf jedes aktive Mitglied – so kann das Netzwerk wachsen.
+  // Einladen darf jedes aktive Mitglied – begrenzt durch sein Kontingent.
+  const q = await inviteQuota(member, env);
+  if (q.left <= 0) {
+    return json({
+      error: `Dein Kontingent von ${q.quota} Einladungen ist aufgebraucht. `
+        + "Du kannst weitere anfragen.",
+      quota_reached: true, used: q.used, quota: q.quota,
+      pending_request: !!q.pending_request,
+    }, 403);
+  }
   const body = await req.json().catch(() => ({}));
   const code = randomToken("inv");
   const days = Number(body.expires_in_days);
@@ -314,8 +384,49 @@ async function adminDeleteInvite(env, id) {
   return json({ ok: true });
 }
 
+async function adminInviteRequests(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT r.*, m.display_name, m.invite_quota, "
+    + "(SELECT COUNT(*) FROM invites i WHERE i.created_by = r.member_id) AS used "
+    + "FROM invite_requests r LEFT JOIN members m ON m.id = r.member_id "
+    + "ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END, "
+    + "r.created_at DESC LIMIT 200").all()).results || [];
+  return json({ requests: rows });
+}
+
+async function adminDecideInviteRequest(req, member, env, id, approve) {
+  const row = await env.DB.prepare(
+    "SELECT * FROM invite_requests WHERE id = ?").bind(id).first();
+  if (!row) return err(404, "Anfrage nicht gefunden");
+  if (row.status !== "pending") return err(409, "Anfrage ist schon entschieden");
+
+  const body = await req.json().catch(() => ({}));
+  const stmts = [env.DB.prepare(
+    "UPDATE invite_requests SET status = ?, decided_at = ?, decided_by = ? "
+    + "WHERE id = ?")
+    .bind(approve ? "approved" : "denied", now(), member.id, id)];
+  if (approve) {
+    // Genehmigt heißt: das Kontingent wächst um die gewünschte Zahl.
+    const grant = Math.max(1, Math.min(Number(body.grant) || row.want, 50));
+    stmts.push(env.DB.prepare(
+      "UPDATE members SET invite_quota = COALESCE(invite_quota, ?) + ? "
+      + "WHERE id = ?").bind(DEFAULT_QUOTA, grant, row.member_id));
+  }
+  await env.DB.batch(stmts);
+  return json({ ok: true });
+}
+
 async function adminRoute(req, member, env, p, method) {
   if (!member.is_admin) return err(403, "nur für Hub-Admins");
+
+  if (p === "/v1/admin/invite_requests" && method === "GET") {
+    return await adminInviteRequests(env);
+  }
+  let ir = p.match(/^\/v1\/admin\/invite_requests\/(\d+)\/(approve|deny)$/);
+  if (ir && method === "POST") {
+    return await adminDecideInviteRequest(req, member, env, Number(ir[1]),
+                                          ir[2] === "approve");
+  }
 
   if (p === "/v1/admin/overview" && method === "GET") return await adminOverview(env);
   if (p === "/v1/admin/members" && method === "GET") return await adminMembers(env);
@@ -360,6 +471,8 @@ export default {
       if (p === "/v1/offers" && method === "GET") return await listOffers(req, member, env);
       if (p === "/v1/members" && method === "GET") return await listMembers(member, env);
       if (p === "/v1/invites" && method === "POST") return await createInvite(req, member, env);
+      if (p === "/v1/invites/quota" && method === "GET") return await getQuota(member, env);
+      if (p === "/v1/invite_requests" && method === "POST") return await requestMoreInvites(req, member, env);
 
       return err(404, "unbekannter Endpunkt");
     } catch (e) {
