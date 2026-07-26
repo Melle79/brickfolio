@@ -274,6 +274,42 @@ def bricklink_colors() -> dict:
     return out
 
 
+def bricklink_categories() -> dict:
+    """Alle BrickLink-Kategorien als {id (str): (Name, Eltern-ID)}."""
+    auth = _bl_auth()
+    resp = requests.get("https://api.bricklink.com/api/store/v1/categories",
+                        auth=auth, timeout=25)
+    resp.raise_for_status()
+    payload = resp.json()
+    if payload.get("meta", {}).get("code") != 200:
+        raise LookupError("BrickLink-Kategorien nicht abrufbar")
+    out = {}
+    for c in payload.get("data", []):
+        cid = c.get("category_id")
+        if cid is not None:
+            out[str(cid)] = (c.get("category_name", ""),
+                             str(c.get("parent_id") or ""))
+    return out
+
+
+def bricklink_category_id(item_type: str, item_no: str) -> str | None:
+    """Kategorie-ID eines Artikels (für das Thema von Sets und Teilen)."""
+    bl_type = _BL_TYPE.get(item_type.lower())
+    if not bl_type:
+        return None
+    if bl_type == "SET" and "-" not in item_no:
+        item_no = f"{item_no}-1"
+    resp = requests.get(
+        f"https://api.bricklink.com/api/store/v1/items/{bl_type}/{item_no}",
+        auth=_bl_auth(), timeout=20)
+    resp.raise_for_status()
+    payload = resp.json()
+    if payload.get("meta", {}).get("code") != 200:
+        return None
+    cid = payload.get("data", {}).get("category_id")
+    return str(cid) if cid is not None else None
+
+
 def bricklink_minifig_parts(fig_no: str) -> list:
     """Aus welchen Teilen besteht diese Minifigur? (BrickLink Subsets auf
     MINIFIG). Liefert Teil-Nr., Name, Farbe, Anzahl und ein Bild."""

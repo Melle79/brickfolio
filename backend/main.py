@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 import core
 import hub
 import integrations
+import themes
 
 app = FastAPI(title="Brickfolio", docs_url=None, redoc_url=None)
 
@@ -131,14 +132,14 @@ def current_user(request: Request) -> dict:
         raise HTTPException(401, "Sitzung abgelaufen – bitte neu anmelden")
     with core.db() as conn:
         row = conn.execute(
-            "SELECT id, username, is_admin, is_dealer, theme FROM users "
+            "SELECT id, username, is_admin, is_dealer, theme, sort_pref FROM users "
             "WHERE id = ?", (int(payload["sub"]),)).fetchone()
     if not row:
         raise HTTPException(401, "Sitzung ungültig – bitte neu anmelden")
     return {"id": row["id"], "name": row["username"],
             "is_admin": bool(row["is_admin"]),
             "is_dealer": bool(row["is_dealer"]),
-            "theme": row["theme"]}
+            "theme": row["theme"], "sort_pref": row["sort_pref"]}
 
 
 def dealer_user(user: dict = Depends(current_user)) -> dict:
@@ -243,6 +244,7 @@ def whoami(user: dict = Depends(current_user)):
     return {"username": user["name"], "is_admin": user["is_admin"],
             "is_dealer": user["is_dealer"],
             "theme": user.get("theme"),
+            "sort_pref": user.get("sort_pref"),
             "default_theme": core.get_setting("default_theme") or "classic"}
 
 
@@ -257,9 +259,10 @@ def login(body: LoginBody):
     token = core.create_token(row["id"], row["username"], row["is_admin"])
     is_dealer = bool(row["is_dealer"]) if "is_dealer" in row.keys() else False
     theme = row["theme"] if "theme" in row.keys() else None
+    sort_pref = row["sort_pref"] if "sort_pref" in row.keys() else None
     return {"token": token, "username": row["username"],
             "is_admin": bool(row["is_admin"]), "is_dealer": is_dealer,
-            "theme": theme,
+            "theme": theme, "sort_pref": sort_pref,
             "default_theme": core.get_setting("default_theme") or "classic"}
 
 
@@ -1625,6 +1628,57 @@ class SuggestInfoBody(BaseModel):
 
 FIG_SETS_TTL = 30 * 86400
 COLORS_TTL = 90 * 86400
+_category_cache: dict = {"at": 0, "map": {}}
+
+
+def _bl_category_map() -> dict:
+    """BrickLink-Kategorien {id: (Name, Eltern-ID)}, wie die Farben gecacht."""
+    now = int(time.time())
+    if _category_cache["map"] and now - _category_cache["at"] < COLORS_TTL:
+        return _category_cache["map"]
+    raw = core.get_setting("bl_categories")
+    if raw:
+        try:
+            obj = json.loads(raw)
+            if obj.get("map") and now - obj.get("at", 0) < COLORS_TTL:
+                _category_cache.update(at=obj["at"], map=obj["map"])
+                return _category_cache["map"]
+        except ValueError:
+            pass
+    try:
+        cmap = integrations.bricklink_categories()
+    except Exception:
+        return _category_cache["map"] or {}
+    _category_cache.update(at=now, map=cmap)
+    core.set_setting("bl_categories", json.dumps({"at": now, "map": cmap}))
+    return cmap
+
+
+def _top_category(cat_id: str) -> str | None:
+    """Oberste Kategorie zu einer ID – das ist das Thema (z. B. „Star Wars")."""
+    cmap = _bl_category_map()
+    seen = set()
+    cur = str(cat_id)
+    while cur and cur in cmap and cur not in seen:
+        seen.add(cur)
+        name, parent = cmap[cur]
+        if not parent or parent in ("0", "") or parent not in cmap:
+            return name or None
+        cur = parent
+    return None
+
+
+def _theme_from_bricklink(item_id: str, item_type: str) -> str | None:
+    """Thema für Sets/Teile über die BrickLink-Kategorie."""
+    if not integrations.bricklink_enabled():
+        return None
+    if item_id.startswith(("fig-", "manuell-", "custom-")):
+        return None
+    try:
+        cid = integrations.bricklink_category_id(item_type, item_id)
+    except Exception:
+        return None
+    return _top_category(cid) if cid else None
 _color_cache = {"at": 0, "map": {}}
 
 
@@ -1846,6 +1900,70 @@ def _uploads_dir() -> str:
     return d
 
 
+@app.get("/api/themes/status")
+def themes_status(user: dict = Depends(current_user)):
+    """Wie viele Einträge haben noch kein Thema?"""
+    with core.db() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS c FROM collection WHERE (theme IS NULL OR "
+            "theme = '') AND item_id NOT LIKE 'fig-%' "
+            "AND item_id NOT LIKE 'manuell-%' "
+            "AND item_id NOT LIKE 'custom-%'").fetchone()
+    return {"pending": row["c"], "can_fetch": integrations.bricklink_enabled()}
+
+
+@app.post("/api/themes/refresh")
+def refresh_themes(limit: int = 25, user: dict = Depends(current_user)):
+    """Fehlende Themen bestimmen: Minifiguren aus der Nummer (ohne Abruf),
+    Sets und Teile über die BrickLink-Kategorie. Läuft in Häppchen, damit die
+    App Rückmeldung geben kann."""
+    limit = max(1, min(limit, 100))
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT id, item_id, item_type FROM collection "
+            "WHERE (theme IS NULL OR theme = '') "
+            "AND item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+            "AND item_id NOT LIKE 'custom-%' ORDER BY id").fetchall()
+    done = 0
+    for r in rows[:limit]:
+        theme = themes.for_item(r["item_id"], r["item_type"])
+        if not theme:
+            theme = _theme_from_bricklink(r["item_id"], r["item_type"])
+        if not theme:
+            continue
+        with core.db() as conn:
+            conn.execute("UPDATE collection SET theme = ? WHERE id = ?",
+                         (theme, r["id"]))
+        done += 1
+    with core.db() as conn:
+        left = conn.execute(
+            "SELECT COUNT(*) AS c FROM collection WHERE (theme IS NULL OR "
+            "theme = '') AND item_id NOT LIKE 'fig-%' "
+            "AND item_id NOT LIKE 'manuell-%' "
+            "AND item_id NOT LIKE 'custom-%'").fetchone()["c"]
+    return {"ok": True, "updated": done, "remaining": left}
+
+
+# Erlaubte Sortierungen der Sammlung (Reihenfolge wie in der Oberfläche)
+COLLECTION_SORTS = ("added", "year_desc", "year_asc", "name", "number",
+                    "value_desc", "value_asc", "theme")
+
+
+class SortPrefBody(BaseModel):
+    sort: str = Field(min_length=1, max_length=20)
+
+
+@app.post("/api/me/sort")
+def set_sort_pref(body: SortPrefBody, user: dict = Depends(current_user)):
+    """Bevorzugte Sortierung der Sammlung – je Benutzer gespeichert."""
+    if body.sort not in COLLECTION_SORTS:
+        raise HTTPException(400, "Unbekannte Sortierung")
+    with core.db() as conn:
+        conn.execute("UPDATE users SET sort_pref = ? WHERE id = ?",
+                     (body.sort, user["id"]))
+    return {"ok": True, "sort": body.sort}
+
+
 @app.get("/api/next_custom_id")
 def next_custom_id(user: dict = Depends(current_user)):
     """Nächste freie Nummer für eine eigene Figur, z. B. custom-003.
@@ -2027,6 +2145,9 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
         "number": "c.item_id COLLATE NOCASE ASC, c.name COLLATE NOCASE",
         "value_desc": f"{_value_known}, {_unit_value} DESC, c.name COLLATE NOCASE",
         "value_asc": f"{_value_known}, {_unit_value} ASC, c.name COLLATE NOCASE",
+        # Ohne erkanntes Thema ans Ende, innerhalb des Themas nach Name
+        "theme": ("CASE WHEN c.theme IS NULL OR c.theme = '' THEN 1 ELSE 0 END, "
+                  "c.theme COLLATE NOCASE ASC, c.name COLLATE NOCASE ASC"),
     }
     sql += " ORDER BY " + orders.get(sort, orders["added"])
     value_expr = ("CASE WHEN condition = 'new' "
@@ -2095,14 +2216,15 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
         cur = conn.execute(
             "INSERT INTO collection (item_id, item_type, name, img_url, "
             "bricklink_url, quantity, condition, notes, year, paid_price, "
-            "paid_source, paid_at, added_by, added_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "paid_source, paid_at, theme, added_by, added_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (body.item_id, body.item_type, body.name, body.img_url,
              body.bricklink_url, body.quantity, body.condition, body.notes,
              body.year or None, body.paid_price,
              ((body.paid_source or "manual")
               if body.paid_price is not None else None),
              int(time.time()) if body.paid_price is not None else None,
+             themes.for_item(body.item_id, body.item_type),
              user["id"], int(time.time())),
         )
         new_id = cur.lastrowid

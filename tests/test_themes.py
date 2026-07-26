@@ -1,0 +1,149 @@
+"""Tests für Themen (Star Wars, City …) und die Sortierung danach."""
+import time
+
+import pytest
+
+import core
+import integrations
+import main
+import themes
+from fastapi.testclient import TestClient
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "t.db"))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:
+        cur = conn.execute(
+            "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
+            " created_at) VALUES ('sven', 'x', 1, 1, ?)", (now,))
+        uid = cur.lastrowid
+    c = TestClient(main.app)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.uid = uid
+    return c
+
+
+# ------------------------------------------------------ Erkennung aus Nummer
+
+@pytest.mark.parametrize("no,expected", [
+    ("sw1213", "Star Wars"),
+    ("sw0001a", "Star Wars"),
+    ("cty0123", "City"),
+    ("njo0456", "Ninjago"),
+    ("hp123", "Harry Potter"),
+    ("sh0111", "Super Heroes"),
+    ("col123", "Sammelfiguren"),
+])
+def test_theme_from_number(no, expected):
+    assert themes.from_minifig_number(no) == expected
+
+
+def test_longest_prefix_wins():
+    """njo darf nicht als „nj" oder „n" missverstanden werden."""
+    assert themes.from_minifig_number("njo0001") == "Ninjago"
+
+
+def test_unknown_prefix_has_no_theme():
+    assert themes.from_minifig_number("zzz0001") is None
+    assert themes.from_minifig_number("75300-1") is None
+    assert themes.from_minifig_number("") is None
+
+
+def test_only_minifigs_get_a_number_theme():
+    assert themes.for_item("sw1213", "minifig") == "Star Wars"
+    assert themes.for_item("sw1213", "set") is None      # Sets: über Kategorie
+
+
+# ------------------------------------------------------------- beim Anlegen
+
+def test_theme_is_set_when_adding(client):
+    client.post("/api/collection", json={
+        "item_id": "sw1213", "item_type": "minifig", "name": "Yoda",
+        "quantity": 1, "condition": "used"})
+    with core.db() as conn:
+        row = conn.execute(
+            "SELECT theme FROM collection WHERE item_id = 'sw1213'").fetchone()
+    assert row["theme"] == "Star Wars"
+
+
+# ------------------------------------------------------------- Sortierung
+
+def _add(client, item_id, name, item_type="minifig"):
+    client.post("/api/collection", json={
+        "item_id": item_id, "item_type": item_type, "name": name,
+        "quantity": 1, "condition": "used"})
+
+
+def test_sort_by_theme_groups_and_puts_unknown_last(client):
+    _add(client, "sw0002", "Vader")          # Star Wars
+    _add(client, "cty0001", "Polizist")      # City
+    _add(client, "zzz9999", "Rätsel")        # ohne Thema
+    _add(client, "sw0001", "Luke")           # Star Wars
+    items = client.get("/api/collection?sort=theme").json()["items"]
+    assert [i["name"] for i in items] == [
+        "Polizist",            # City
+        "Luke", "Vader",       # Star Wars, darin nach Name
+        "Rätsel",              # ohne Thema ans Ende
+    ]
+
+
+def test_unknown_sort_falls_back(client):
+    _add(client, "sw0001", "Luke")
+    assert client.get("/api/collection?sort=quatsch").status_code == 200
+
+
+# ------------------------------------------------- Einstellung im Profil
+
+def test_sort_pref_is_saved_and_returned(client):
+    assert client.post("/api/me/sort", json={"sort": "theme"}).status_code == 200
+    assert client.get("/api/me").json()["sort_pref"] == "theme"
+
+
+def test_sort_pref_rejects_unknown(client):
+    assert client.post("/api/me/sort",
+                       json={"sort": "hack"}).status_code == 400
+
+
+def test_sort_pref_is_per_user(client, tmp_path):
+    client.post("/api/me/sort", json={"sort": "theme"})
+    now = int(time.time())
+    with core.db() as conn:
+        cur = conn.execute(
+            "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
+            " created_at) VALUES ('paul', 'x', 0, 0, ?)", (now,))
+        other = cur.lastrowid
+    c2 = TestClient(main.app)
+    c2.headers["Authorization"] = "Bearer " + core.create_token(other, "paul", False)
+    assert c2.get("/api/me").json()["sort_pref"] is None   # unberührt
+
+
+# ------------------------------------------------------------ Nachladen
+
+def test_status_counts_missing_themes(client):
+    _add(client, "75300-1", "TIE Fighter", item_type="set")   # kein Nummer-Thema
+    _add(client, "sw0001", "Luke")                            # bekommt Thema
+    assert client.get("/api/themes/status").json()["pending"] == 1
+
+
+def test_refresh_uses_bricklink_category_for_sets(client, monkeypatch):
+    _add(client, "75300-1", "TIE Fighter", item_type="set")
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id",
+                        lambda t, n: "65")
+    monkeypatch.setattr(integrations, "bricklink_categories",
+                        lambda: {"65": ("Episode IV", "12"),
+                                 "12": ("Star Wars", "0")})
+    main._category_cache.update(at=0, map={})
+    res = client.post("/api/themes/refresh").json()
+    assert res["updated"] == 1 and res["remaining"] == 0
+    items = client.get("/api/collection?sort=theme").json()["items"]
+    assert items[0]["theme"] == "Star Wars"      # oberste Kategorie zählt
+
+
+def test_refresh_skips_custom_and_manual(client):
+    _add(client, "custom-001", "Eigenbau")
+    _add(client, "manuell-123", "Handarbeit")
+    assert client.get("/api/themes/status").json()["pending"] == 0

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.39.0 – Juli 2026
+
+### Neu
+- 🗂️ **Sortierung nach Thema.** Die Sammlung lässt sich jetzt nach Thema sortieren (Star Wars, City, Ninjago …). Bei Minifiguren erkennt die App das Thema direkt an der Nummer (`sw…` → Star Wars) – ohne jeden Abruf. Für Sets und Teile kommt es aus der BrickLink-Kategorie; unter **Mehr → Sortierung** lassen sich fehlende Themen per Knopf nachladen. Einträge ohne erkennbares Thema stehen am Ende *(Issue #10)*
+- ↕️ **Standard-Sortierung im Profil.** Unter **Mehr → Sortierung der Sammlung** wählt jeder für sich, womit die Sammlung standardmäßig sortiert wird – gespeichert im eigenen Profil, gilt auf allen Geräten *(Issue #10)*
+
+### Verbessert
+- 🛒 **Set-Figuren zeigen Einkaufslisten.** Beim Blick auf die Figuren eines Sets (Suche, Scan, Sammlung) steht jetzt an jeder Figur, wenn sie schon auf einer offenen Liste liegt – zusätzlich zu „vorhanden" bzw. „auf der Wunschliste" *(Issue #9)*
+
 ## 1.38.0 – Juli 2026
 
 ### Neu

@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=223">
-<link rel="stylesheet" href="/static/style.css?v=223">
+<link rel="stylesheet" href="/static/fonts.css?v=224">
+<link rel="stylesheet" href="/static/style.css?v=224">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -195,6 +195,7 @@
         <option value="number">Nummer (A–Z)</option>
         <option value="value_desc">Wert (hoch → niedrig)</option>
         <option value="value_asc">Wert (niedrig → hoch)</option>
+        <option value="theme">Thema (A–Z)</option>
         </select>
       </span>
       <button id="btn-collview" class="viewtoggle" aria-label="Ansicht wechseln"
@@ -470,6 +471,28 @@
         optional eine Access-Policy davorsetzen.</p>
     </div>
 
+    <div class="settings-card" id="sort-card">
+      <h3>↕️ Sortierung der Sammlung</h3>
+      <p class="search-hint">Womit die Sammlung standardmäßig sortiert wird.
+        Die Auswahl gilt nur für dich und bleibt in deinem Profil gespeichert.</p>
+      <label for="sort-pref">Standard-Sortierung</label>
+      <select id="sort-pref">
+        <option value="added">Zuletzt erfasst</option>
+        <option value="year_desc">Jahr (neu → alt)</option>
+        <option value="year_asc">Jahr (alt → neu)</option>
+        <option value="name">Name (A–Z)</option>
+        <option value="number">Nummer (A–Z)</option>
+        <option value="value_desc">Wert (hoch → niedrig)</option>
+        <option value="value_asc">Wert (niedrig → hoch)</option>
+        <option value="theme">Thema (A–Z)</option>
+      </select>
+      <p class="search-hint" id="theme-pending-hint" hidden>
+        <span id="theme-pending-text"></span>
+        <button class="mini-btn" id="btn-themes-refresh">🔄 Themen nachladen</button>
+      </p>
+      <p id="theme-refresh-status" class="search-hint" hidden></p>
+    </div>
+
     <div class="settings-card" id="hub-card" hidden>
       <h3>🤝 Tausch-Netzwerk</h3>
       <p class="search-hint">Mit dem Netzwerk verbinden, um deinen
@@ -624,7 +647,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=223"></script>
+<script src="/static/app.js?v=224"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

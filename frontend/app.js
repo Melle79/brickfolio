@@ -817,6 +817,19 @@ async function markFigOwnership(out, figs) {
           badge.classList.add("badge-wanted");
           badge.hidden = false;
         }
+        // Liegt die Figur schon auf einer Einkaufsliste? Das ist eine eigene
+        // Information – sie kann zugleich fehlen und bereits eingeplant sein.
+        const old = row.querySelector("[data-fig-list]");
+        if (old) old.remove();
+        if (d.on_lists && d.on_lists.length) {
+          const lb = document.createElement("span");
+          lb.className = "badge badge-list";
+          lb.setAttribute("data-fig-list", "");
+          lb.textContent = d.on_lists.length === 1
+            ? `🛒 auf »${d.on_lists[0]}«`
+            : `🛒 auf ${d.on_lists.length} Listen`;
+          badge.after(lb);
+        }
       });
     } catch (_) { /* Badges sind nice-to-have */ }
   }
@@ -1076,7 +1089,8 @@ async function refreshMe() {
   try {
     const me = await api("/me");
     state.user = { username: me.username, is_admin: me.is_admin,
-      is_dealer: me.is_dealer };
+      is_dealer: me.is_dealer, sortPref: me.sort_pref || "added" };
+    applySortPref();
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     applyServerTheme(me);
   } catch (_) { /* 401 wird von api() behandelt */ }
@@ -1167,7 +1181,8 @@ async function doSetup() {
       body: { username, password: p1 } });
     state.token = data.token;
     state.user = { username: data.username, is_admin: data.is_admin,
-      is_dealer: data.is_dealer };
+      is_dealer: data.is_dealer, sortPref: data.sort_pref || "added" };
+    applySortPref();
     localStorage.setItem("bf_token", data.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     toast(`Willkommen, ${data.username}! 🧱`);
@@ -1212,7 +1227,8 @@ async function doLogin() {
     });
     state.token = data.token;
     state.user = { username: data.username, is_admin: data.is_admin,
-      is_dealer: data.is_dealer };
+      is_dealer: data.is_dealer, sortPref: data.sort_pref || "added" };
+    applySortPref();
     localStorage.setItem("bf_token", data.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     applyServerTheme(data);
@@ -4032,6 +4048,77 @@ function applyTheme(name) {
     b.classList.toggle("sel", b.dataset.themePick === name));
 }
 
+/* ----------------------------------------------- Standard-Sortierung (Profil) */
+let sortCardWired = false;
+
+/* Gespeicherte Sortierung auf die Sammlungs-Ansicht anwenden. */
+function applySortPref() {
+  const pref = state.user && state.user.sortPref;
+  const sel = $("sort");
+  if (sel && pref && [...sel.options].some((o) => o.value === pref)) {
+    sel.value = pref;
+  }
+}
+
+async function loadSortCard() {
+  const sel = $("sort-pref");
+  if (!sel) return;
+  sel.value = (state.user && state.user.sortPref) || "added";
+  if (!sortCardWired) {
+    sortCardWired = true;
+    sel.addEventListener("change", async () => {
+      try {
+        await api("/me/sort", { method: "POST", body: { sort: sel.value } });
+        if (state.user) state.user.sortPref = sel.value;
+        localStorage.setItem("bf_user", JSON.stringify(state.user));
+        $("sort").value = sel.value;      // sofort übernehmen
+        loadCollection();
+        toast("Standard-Sortierung gespeichert ✔");
+      } catch (e) { toast(e.message); }
+    });
+    $("btn-themes-refresh").addEventListener("click", refreshThemes);
+  }
+  loadThemeStatus();
+}
+
+/* Wie viele Einträge haben noch kein Thema? Nur dann lohnt der Knopf. */
+async function loadThemeStatus() {
+  try {
+    const s = await api("/themes/status");
+    const hint = $("theme-pending-hint");
+    hint.hidden = s.pending === 0;
+    if (s.pending > 0) {
+      $("theme-pending-text").textContent =
+        `Bei ${s.pending} ${s.pending === 1 ? "Eintrag" : "Einträgen"} ist das `
+        + "Thema noch unbekannt. ";
+    }
+  } catch (_) { /* Hinweis ist nice-to-have */ }
+}
+
+async function refreshThemes() {
+  const btn = $("btn-themes-refresh");
+  const out = $("theme-refresh-status");
+  btn.disabled = true;
+  out.hidden = false;
+  out.textContent = "Themen werden bestimmt …";
+  try {
+    let total = 0;
+    for (;;) {
+      const res = await api("/themes/refresh?limit=25", { method: "POST" });
+      total += res.updated;
+      out.textContent = `${total} zugeordnet, noch ${res.remaining} offen …`;
+      if (res.remaining === 0 || res.updated === 0) break;
+    }
+    out.textContent = total
+      ? `${total} Einträge haben jetzt ein Thema ✔`
+      : "Für die übrigen Einträge lässt sich kein Thema bestimmen.";
+    loadThemeStatus();
+    loadCollection();
+  } catch (e) {
+    out.textContent = e.message;
+  } finally { btn.disabled = false; }
+}
+
 /* ---------------------------------------- Tausch-Hub: Verbindung (Einstellungen)
    Adresse ist fest hinterlegt; hier nur Token (Admin) bzw. Einladungscode. */
 let hubWired = false;
@@ -4863,6 +4950,7 @@ async function loadSettings() {
   $("price-region-card").hidden = !isAdmin;
   if (isAdmin) loadPriceRegion();
   $("external-access-card").hidden = !isAdmin;
+  loadSortCard();               // Sortierung darf jeder für sich einstellen
   $("hub-card").hidden = !isAdmin;
   if (isAdmin) loadHubCard();
   $("update-card").hidden = !isAdmin;
