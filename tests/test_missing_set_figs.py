@@ -49,6 +49,20 @@ class Api:
                 "price_used) VALUES (?, 'minifig', ?, ?, ?)",
                 (item_id, int(time.time()), price_new, price_used))
 
+    def add_list_item(self, item_id, list_name="Flohmarkt", qty=1,
+                      archived=0, done=0):
+        now = int(time.time())
+        with core.db() as conn:
+            row = conn.execute("SELECT id FROM shopping_lists WHERE name = ?",
+                               (list_name,)).fetchone()
+            lid = row["id"] if row else conn.execute(
+                "INSERT INTO shopping_lists (name, archived, created_at) "
+                "VALUES (?, ?, ?)", (list_name, archived, now)).lastrowid
+            conn.execute(
+                "INSERT INTO shopping_items (list_id, item_id, item_type, "
+                "name, qty, done, added_at) VALUES (?, ?, 'minifig', ?, ?, ?, ?)",
+                (lid, item_id, item_id, qty, done, now))
+
     def get(self):
         r = self.client.get("/api/missing_set_figs")
         assert r.status_code == 200, r.text
@@ -173,3 +187,32 @@ def test_sorted_by_name(api):
     api.add_contents("A-1", "sw0001", qty=1, name="Alpha")
     names = [i["name"] for i in api.get()["items"]]
     assert names == ["Alpha", "Zeta"]
+
+
+# --------------------------------------------- Einkaufslisten-Hinweis (#8)
+
+def test_missing_fig_shows_shopping_list(api):
+    """Steht die fehlende Figur auf einer offenen Liste, gehört das an die
+    Karte – sonst kauft man sie ein zweites Mal."""
+    api.add_set("75300-1", "TIE Fighter")
+    api.add_contents("75300-1", "sw0001", qty=1, name="Pilot")
+    api.add_list_item("sw0001", "Flohmarkt Juli", qty=2)
+    it = api.by_id(api.get(), "sw0001")
+    assert it["on_lists"] == ["Flohmarkt Juli"]
+    assert it["on_lists_qty"] == 2
+
+
+def test_archived_and_done_list_items_are_ignored(api):
+    api.add_set("75300-1", "TIE Fighter")
+    api.add_contents("75300-1", "sw0001", qty=1, name="Pilot")
+    api.add_list_item("sw0001", "Altes", qty=1, archived=1)
+    api.add_list_item("sw0001", "Erledigt", qty=1, done=1)
+    it = api.by_id(api.get(), "sw0001")
+    assert it["on_lists"] == [] and it["on_lists_qty"] == 0
+
+
+def test_without_list_the_field_is_empty(api):
+    api.add_set("75300-1", "TIE Fighter")
+    api.add_contents("75300-1", "sw0001", qty=1, name="Pilot")
+    it = api.by_id(api.get(), "sw0001")
+    assert it["on_lists"] == [] and it["on_lists_qty"] == 0

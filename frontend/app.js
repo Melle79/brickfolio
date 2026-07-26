@@ -136,12 +136,12 @@ async function enrichSuggestions(items) {
 
   const detail = all.slice(0, SUGGEST_DETAIL_MAX);
   const detailIds = new Set(detail.map((i) => i.item_id));
-  const hasBl = detail.some((i) => !/^(fig-|manuell-)/.test(i.item_id));
+  const hasBl = detail.some((i) => !/^(fig-|manuell-|custom-)/.test(i.item_id));
   if (state.bricklinkPrices && hasBl) {
     document.querySelectorAll("[data-sug-id]").forEach((card) => {
       const sub = card.querySelector("[data-sug-sub]");
       if (sub && detailIds.has(card.dataset.sugId)
-          && !/^(fig-|manuell-)/.test(card.dataset.sugId)
+          && !/^(fig-|manuell-|custom-)/.test(card.dataset.sugId)
           && sub.textContent === card.dataset.sugBase) {
         sub.textContent = card.dataset.sugBase + " · lade Jahr & Preise …";
       }
@@ -210,7 +210,7 @@ function renderWanted(items) {
       it.price_new ? "Ø neu " + fmtEur(it.price_new) : "",
       it.price_used ? "Ø gebr. " + fmtEur(it.price_used) : "",
     ].filter(Boolean).join(" · ");
-    const needsBlNo = /^(fig-|manuell-)/.test(it.item_id);
+    const needsBlNo = /^(fig-|manuell-|custom-)/.test(it.item_id);
     return `
     <div class="card" data-wid="${it.id}">
       <div class="card-head">
@@ -527,7 +527,7 @@ function closeGallery() {
 }
 
 function priceGuideUrl(it) {
-  if (/^(fig-|manuell-)/.test(it.item_id)) return "";
+  if (/^(fig-|manuell-|custom-)/.test(it.item_id)) return "";
   const prefix = BL_URL_PREFIX[it.item_type] || "M";
   return `https://www.bricklink.com/v2/catalog/catalogitem.page?${prefix}=${encodeURIComponent(it.item_id)}#T=P`;
 }
@@ -535,6 +535,8 @@ function priceGuideUrl(it) {
 // Nach dem Hinzufügen eines Sets: enthaltene Figuren mit übernehmen?
 async function askSetFigures(item, condition) {
   if ((item.item_type || "") !== "set") return 0;
+  // Eigene und manuelle Sets stehen in keinem Katalog – nicht nachfragen.
+  if (/^(custom-|manuell-)/.test(item.item_id || "")) return 0;
   const overlay = $("setfigs-overlay");
   const body = $("setfigs-body");
   if (!overlay || !body) return 0;
@@ -1007,7 +1009,7 @@ function renderFigSets(root, item) {
 
   paint(null);   // eigene Sets sofort anzeigen
   if (item.item_type === "minifig" && state.bricklinkPrices
-      && !/^(fig-|manuell-)/.test(item.item_id)) {
+      && !/^(fig-|manuell-|custom-)/.test(item.item_id)) {
     api(`/fig_sets/${encodeURIComponent(item.item_id)}`)
       .then((d) => paint(d.sets)).catch(() => { /* eigene bleiben stehen */ });
   }
@@ -1426,7 +1428,7 @@ function applyCollView() {
 }
 
 function collCardDetails(it) {
-  const needsBlNo = /^(fig-|manuell-)/.test(it.item_id);
+  const needsBlNo = /^(fig-|manuell-|custom-)/.test(it.item_id);
   return `
       <div class="card-details" hidden>
         <div class="qty-edit">
@@ -1518,7 +1520,7 @@ function renderCollection() {
   list.querySelectorAll(".card").forEach((card) => {
     const id = Number(card.dataset.id);
     const item = items.find((i) => i.id === id);
-    const canPrice = state.bricklinkPrices && !/^(fig-|manuell-)/.test(item.item_id);
+    const canPrice = state.bricklinkPrices && !/^(fig-|manuell-|custom-)/.test(item.item_id);
     // Produktbild als zarter, weich gezeichneter Hintergrund der Karte
     if (item.img_url) {
       card.style.setProperty("--bg-img", `url("${item.img_url}")`);
@@ -1622,7 +1624,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
         <div class="card-head">
           <div class="card-img-wrap">
             <img class="card-img" src="${imgSrc(item.img_url)}" ${IMG_FALLBACK} data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
-            ${state.bricklinkLookup && !/^(fig-|manuell-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
+            ${state.bricklinkLookup && !/^(fig-|manuell-|custom-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
           </div>
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
           <div class="card-title">
@@ -1967,6 +1969,45 @@ async function updateStatsOnly() {
 const BL_URL_PREFIX = { minifig: "M", part: "P", set: "S" };
 let suggestTimer;
 let manualSelection = null;   // übernommener Vorschlag (Bild + BrickLink-Link)
+let customImgUrl = "";        // hochgeladenes Bild für eine eigene Figur
+
+/* „Eigene Figur"-Modus: Beschriftungen umstellen, Bildfeld ein-/ausblenden
+   und die Katalogsuche stilllegen (Custom-Figuren gibt es dort nicht). */
+function applyCustomMode() {
+  const on = $("m-custom").checked;
+  $("m-custom-box").hidden = !on;
+  $("m-id-label").textContent = on
+    ? "Interne Nummer (optional)" : "BrickLink-Nr. (optional)";
+  $("m-id").placeholder = on ? "z. B. eigen-001" : "z. B. sw0001a";
+  if (on) {
+    $("m-suggestions").innerHTML = "";
+    $("m-search-hint").hidden = true;
+    manualSelection = null;
+  }
+}
+
+function resetCustomImage() {
+  customImgUrl = "";
+  const inp = $("m-img");
+  if (inp) inp.value = "";
+  const prev = $("m-img-preview");
+  if (prev) prev.hidden = true;
+}
+
+async function uploadCustomImage(file) {
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const res = await api("/upload_image", { method: "POST", body: form });
+    customImgUrl = res.url;
+    $("m-img-thumb").src = res.url;
+    $("m-img-preview").hidden = false;
+    toast("Bild hochgeladen ✔");
+  } catch (e) {
+    toast(e.message);
+    resetCustomImage();
+  }
+}
 let suggestState = null;      // laufende Katalogsuche (für seitenweises Nachladen)
 let searchSeq = 0;            // nur die jeweils neueste Suche darf rendern
 
@@ -2028,6 +2069,8 @@ async function lookupNumber(no) {
 
 async function runCatalogSearch() {
   const seq = ++searchSeq;   // ältere, noch laufende Suchen werden verworfen
+  // Eigene Figuren stehen in keinem Katalog – dann gar nicht erst suchen.
+  if ($("m-custom") && $("m-custom").checked) return;
   const q = $("m-name").value.trim();
   const box = $("m-suggestions");
   const hint = $("m-search-hint");
@@ -2193,7 +2236,10 @@ function openSuggestModal(it) {
   // Bild eine finden können (Namenssuche liefert nur Rebrickable-Nummern).
   const resolvable = /^fig-/.test(pit.item_id) && !!pit.img_url;
   const canParts = state.bricklinkPrices && isMini
-    && (!/^(fig-|manuell-)/.test(pit.item_id) || resolvable);
+    && (!/^(fig-|manuell-|custom-)/.test(pit.item_id) || resolvable);
+  // Bei Sets andersherum: die enthaltenen Figuren zeigen
+  const canFigs = state.bricklinkPrices && type === "set"
+    && !/^manuell-/.test(pit.item_id);
   const overlay = document.createElement("div");
   overlay.className = "card-modal-overlay";
   overlay.id = "card-modal";
@@ -2219,6 +2265,11 @@ function openSuggestModal(it) {
             <button class="mini-btn" data-parts>🧩 Enthaltene Teile anzeigen</button>
           </div>
           <div class="set-figs" data-parts-out></div>` : ""}
+          ${canFigs ? `
+          <div class="detail-row">
+            <button class="mini-btn" data-figs>👥 Enthaltene Figuren anzeigen</button>
+          </div>
+          <div class="set-figs" data-figs-out></div>` : ""}
           <div class="card-actions suggest-actions">
             <button class="mini-btn add" data-sug-take>✔ Übernehmen</button>
             <button class="mini-btn" data-sug-want>☆ Merken</button>
@@ -2245,6 +2296,10 @@ function openSuggestModal(it) {
       partsBtn.disabled = true;
       partsBtn.textContent = "🧩 Teile (suche Nummer …)";
     }
+  }
+  const figsBtn = inner.querySelector("[data-figs]");
+  if (figsBtn) {
+    figsBtn.addEventListener("click", () => loadSetFigs(inner, pit, figsBtn));
   }
   inner.querySelector("[data-sug-take]").addEventListener("click", () => {
     done();
@@ -2395,17 +2450,22 @@ async function resolveBricklinkNo(it) {
 }
 
 
-async function addManual() {
-  const err = $("manual-error");
-  err.hidden = true;
-  const name = $("m-name").value.trim();
-  if (!name) {
-    err.textContent = "Bitte mindestens einen Namen angeben.";
-    err.hidden = false;
-    return;
+/* Nummer, Bild und BrickLink-Link aus dem manuellen Formular ableiten.
+   Bei „Eigene Figur" gibt es keine BrickLink-Identität: die Nummer bekommt
+   das Präfix custom-, damit Preis- und Katalogabfragen sie überspringen. */
+function manualIdentity(type) {
+  const raw = $("m-id").value.trim();
+  if ($("m-custom").checked) {
+    const own = raw.replace(/^custom-/i, "")
+      .replace(/[^A-Za-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "");
+    return {
+      itemId: "custom-" + (own || Date.now()),
+      imgUrl: customImgUrl || "",
+      blUrl: "",
+      year: 0,
+    };
   }
-  const type = $("m-type").value;
-  let itemId = $("m-id").value.trim();
+  let itemId = raw;
   let imgUrl = "";
   let blUrl = "";
   let year = 0;
@@ -2417,6 +2477,20 @@ async function addManual() {
     blUrl = `https://www.bricklink.com/v2/catalog/catalogitem.page?${BL_URL_PREFIX[type]}=${encodeURIComponent(itemId)}`;
   }
   if (!itemId) itemId = "manuell-" + Date.now();
+  return { itemId, imgUrl, blUrl, year };
+}
+
+async function addManual() {
+  const err = $("manual-error");
+  err.hidden = true;
+  const name = $("m-name").value.trim();
+  if (!name) {
+    err.textContent = "Bitte mindestens einen Namen angeben.";
+    err.hidden = false;
+    return;
+  }
+  const type = $("m-type").value;
+  const { itemId, imgUrl, blUrl, year } = manualIdentity(type);
   const paidRaw = $("m-paid").value.trim().replace(",", ".");
   let paidPrice = null;
   if (paidRaw) {
@@ -2443,6 +2517,7 @@ async function addManual() {
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
+    resetCustomImage();
     $("manual-form").hidden = true;
     await askSetFigures({ item_id: itemId, item_type: type, name },
                         $("m-cond").value);
@@ -2519,18 +2594,7 @@ async function addManualWanted() {
     return;
   }
   const type = $("m-type").value;
-  let itemId = $("m-id").value.trim();
-  let imgUrl = "";
-  let blUrl = "";
-  let year = 0;
-  if (manualSelection && manualSelection.item_id === itemId) {
-    imgUrl = manualSelection.img_url;
-    blUrl = manualSelection.bricklink_url;
-    year = manualSelection.year || 0;
-  } else if (itemId) {
-    blUrl = `https://www.bricklink.com/v2/catalog/catalogitem.page?${BL_URL_PREFIX[type]}=${encodeURIComponent(itemId)}`;
-  }
-  if (!itemId) itemId = "manuell-" + Date.now();
+  const { itemId, imgUrl, blUrl, year } = manualIdentity(type);
   try {
     const res = await api("/wanted", { method: "POST", body: {
       item_id: itemId, item_type: type, name, img_url: imgUrl,
@@ -2543,6 +2607,7 @@ async function addManualWanted() {
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
+    resetCustomImage();
     $("manual-form").hidden = true;
   } catch (e) {
     err.textContent = e.message;
@@ -3551,6 +3616,7 @@ function renderMissingFigs(data) {
             it.owned > 0 ? ` (${it.owned} von ${it.needed} da)` : ""}${
             it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}` : ""}</div>
           <div class="sub in-sets">📦 für: ${missingSetLinks(it.sets)}</div>
+          ${it.on_lists && it.on_lists.length ? `<span class="badge badge-list">🛒 ${it.on_lists_qty}× auf ${it.on_lists.length === 1 ? `»${esc(it.on_lists[0])}«` : `${it.on_lists.length} Listen`}</span>` : ""}
           ${it.wanted ? `<span class="badge badge-wanted">⭐ auf der Wunschliste</span>` : ""}
           <div class="fig-actions">
             ${it.wanted ? "" : `<button class="mini-btn" data-mf-want="${i}">☆ Merken</button>`}
@@ -3656,10 +3722,11 @@ function wantMissingFig(it) {
 function exportMissingFigsCsv() {
   const data = state.missingFigs;
   const rows = [["Nummer", "Name", "Fehlt", "Benötigt", "Vorhanden",
-    "Ø Stück (EUR)", "Für Sets"]];
+    "Ø Stück (EUR)", "Für Sets", "Auf Liste"]];
   data.items.forEach((it) => rows.push([it.item_id, it.name, it.missing,
     it.needed, it.owned, numDe(it.unit_price),
-    it.sets.map((s) => `${s.name} (${s.no})`).join(" / ")]));
+    it.sets.map((s) => `${s.name} (${s.no})`).join(" / "),
+    (it.on_lists || []).join(" / ")]));
   downloadCsv("brickfolio-fehlende-set-figuren.csv", rows);
   toast("Liste exportiert ✔");
 }
@@ -4979,6 +5046,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("btn-manual-add").addEventListener("click", addManual);
   $("btn-manual-want").addEventListener("click", addManualWanted);
+  $("m-custom").addEventListener("change", applyCustomMode);
+  $("m-img").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) uploadCustomImage(f);
+  });
+  $("m-img-clear").addEventListener("click", resetCustomImage);
   setupCatalogSearch();
   $("file-input").addEventListener("change", (e) => {
     handlePhoto(e.target.files[0]);

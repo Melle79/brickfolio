@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.35.0 – Juli 2026
+
+### Neu
+- 🎨 **Eigene Figuren (Custom).** Im manuellen Erfassen gibt es jetzt den Schalter „Eigene Figur": eine **eigene interne Nummer** vergeben und ein **eigenes Bild hochladen**. Das Bild wird verkleinert und neben der Datenbank gespeichert (landet damit in der Sicherung); EXIF-Daten wie GPS fallen dabei weg. Custom-Artikel werden nicht bei BrickLink gesucht – Preise und Katalogbilder gibt es dafür naturgemäß nicht *(Issue #3)*
+- 👥 **Figuren im Set-Popup.** Tippt man in Suche oder Scan auf ein **Set**, lassen sich dort jetzt die enthaltenen Minifiguren anzeigen – inklusive „schon vorhanden"-Markierung und den gewohnten Knöpfen zum Übernehmen und Merken *(Issue #2)*
+
+### Verbessert
+- 🛒 **Fehlende Set-Figuren zeigen Einkaufslisten.** Steht eine fehlende Figur schon auf einer offenen Liste, steht das jetzt an der Karte („🛒 2× auf »Flohmarkt Juli«") – so kauft man sie nicht ein zweites Mal. Auch im CSV-Export enthalten *(Issue #8)*
+
+### Behoben
+- 🧩 Bei **eigenen und manuellen Sets** fragte die App nach den „enthaltenen Figuren", obwohl es dazu keinen Katalogeintrag geben kann. Die Abfrage entfällt jetzt
+
 ## 1.34.0 – Juli 2026
 
 ### Geändert

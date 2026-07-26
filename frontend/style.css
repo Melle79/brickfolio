@@ -317,6 +317,20 @@ code {
   font-size: 10.5px; font-weight: 800; color: var(--muted);
   border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px;
 }
+/* Eigene Figuren (Custom) im manuellen Formular */
+.custom-toggle {
+  display: flex; align-items: center; gap: 8px; margin: 12px 0 4px;
+  font-weight: 700; cursor: pointer;
+}
+.custom-toggle input { width: 18px; height: 18px; flex: none; }
+.custom-preview {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px;
+}
+.custom-preview img {
+  width: 64px; height: 64px; object-fit: contain; border-radius: 10px;
+  border: 1px solid var(--line); background: #fff;
+}
+
 #hub-invite-out code, #hub-url-line { word-break: break-all; }
 #hub-invite-out code {
   display: inline-block; background: var(--panel, #f2f2f2);

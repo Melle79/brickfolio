@@ -5,6 +5,7 @@ import re
 import sqlite3
 import threading
 import time
+import uuid
 
 import requests
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
@@ -80,7 +81,7 @@ def _price_refresher():
                     with core.db() as conn:
                         rows = conn.execute(
                             f"SELECT * FROM {table} WHERE "
-                            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+                            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
                             "AND (price_updated_at IS NULL OR price_updated_at < ?) "
                             "LIMIT 40", (cutoff,)).fetchall()
                     for row in rows:
@@ -323,7 +324,7 @@ def price_log(limit: int = 50, user: dict = Depends(dealer_user)):
         cutoff = int(time.time()) - PRICE_STALE_SECONDS
         stale = conn.execute(
             "SELECT COUNT(*) AS c FROM collection WHERE "
-            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
             "AND price_updated_at IS NOT NULL AND price_updated_at < ?",
             (cutoff,)).fetchone()["c"]
     return {"entries": [dict(r) for r in rows],
@@ -629,7 +630,7 @@ def _prices_pending(conn, region: str) -> int:
     """Wie viele Sammlungs-Artikel haben noch Preise aus einem anderen Gebiet?"""
     return conn.execute(
         "SELECT COUNT(*) AS c FROM collection WHERE "
-        "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+        "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
         "AND price_updated_at IS NOT NULL "
         "AND COALESCE(price_region, '') != ?", (region,)).fetchone()["c"]
 
@@ -637,7 +638,7 @@ def _prices_pending(conn, region: str) -> int:
 # Artikel, die zwar abgefragt wurden, aber weder für neu noch für gebraucht
 # einen Preis haben. Meist, weil im gewählten Gebiet nichts verkauft wurde –
 # genau diese profitieren vom Rückfall Europa → weltweit.
-_NO_PRICE = ("item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+_NO_PRICE = ("item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
              "AND price_updated_at IS NOT NULL "
              "AND COALESCE(price_new, 0) = 0 AND COALESCE(price_used, 0) = 0")
 
@@ -697,7 +698,7 @@ def refresh_prices_region(limit: int = 20, user: dict = Depends(admin_user)):
     with core.db() as conn:
         rows = conn.execute(
             "SELECT * FROM collection WHERE "
-            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
             "AND price_updated_at IS NOT NULL "
             "AND COALESCE(price_region, '') != ? "
             "ORDER BY price_updated_at LIMIT ?", (region, limit)).fetchall()
@@ -1689,7 +1690,7 @@ def fig_sets(fig_no: str, user: dict = Depends(current_user)):
     """Alle Sets, in denen diese Figur vorkommt (BrickLink-Supersets) – auch
     solche, die man selbst nicht besitzt. Ohne BrickLink-Nummer oder -Schlüssel
     gibt es nichts zu holen."""
-    if fig_no.startswith(("fig-", "manuell-")) \
+    if fig_no.startswith(("fig-", "manuell-", "custom-")) \
             or not integrations.bricklink_enabled():
         return {"sets": []}
     try:
@@ -1723,7 +1724,7 @@ def _fig_parts_cached(fig_no: str) -> list:
 def fig_parts(fig_no: str, user: dict = Depends(current_user)):
     """Aus welchen Teilen besteht diese Minifigur? (BrickLink-Subsets,
     30-Tage-Cache). Ohne BrickLink-Nummer oder -Schlüssel gibt es nichts."""
-    if fig_no.startswith(("fig-", "manuell-")) \
+    if fig_no.startswith(("fig-", "manuell-", "custom-")) \
             or not integrations.bricklink_enabled():
         return {"items": []}
     try:
@@ -1805,7 +1806,7 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
                     pass
 
         todo = [it for it in body.items
-                if not it.item_id.startswith(("fig-", "manuell-"))
+                if not it.item_id.startswith(("fig-", "manuell-", "custom-"))
                 and not all(k in out[it.item_id] for k in ("year", "new", "used"))
                 ][:5]
         if todo:
@@ -1833,6 +1834,53 @@ def scan(file: UploadFile = File(...), user: dict = Depends(current_user)):
     except Exception:
         raise HTTPException(400, "Bild konnte nicht verarbeitet werden")
     return result
+
+
+# ------------------------------------------------- Eigene Bilder (Custom)
+
+def _uploads_dir() -> str:
+    """Ordner für selbst hochgeladene Bilder – liegt neben der Datenbank,
+    landet damit automatisch im Docker-Volume."""
+    d = os.path.join(os.path.dirname(core.DB_PATH), "uploads")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+@app.post("/api/upload_image")
+def upload_image(file: UploadFile = File(...),
+                 user: dict = Depends(current_user)):
+    """Eigenes Bild für eine Custom-Figur speichern.
+
+    Wird verkleinert und als JPEG abgelegt – das begrenzt den Platzbedarf und
+    entfernt nebenbei EXIF-Daten (z. B. GPS aus Handyfotos).
+    """
+    raw = file.file.read()
+    if not raw:
+        raise HTTPException(400, "Kein Bild empfangen")
+    if len(raw) > 25 * 1024 * 1024:
+        raise HTTPException(413, "Bild zu groß (max. 25 MB)")
+    try:
+        data = integrations.prepare_image(raw, max_side=800)
+    except Exception:
+        raise HTTPException(400, "Datei ist kein lesbares Bild")
+    name = f"{uuid.uuid4().hex}.jpg"
+    with open(os.path.join(_uploads_dir(), name), "wb") as f:
+        f.write(data)
+    return {"url": f"/uploads/{name}"}
+
+
+@app.get("/uploads/{name}")
+def serve_upload(name: str):
+    """Hochgeladenes Bild ausliefern. Bewusst ohne Login, damit die Bilder
+    wie andere Katalogbilder eingebettet werden können – der Dateiname ist
+    zufällig und nicht erratbar."""
+    if not re.fullmatch(r"[0-9a-f]{32}\.jpg", name):
+        raise HTTPException(404, "Nicht gefunden")
+    path = os.path.join(_uploads_dir(), name)
+    if not os.path.isfile(path):
+        raise HTTPException(404, "Nicht gefunden")
+    return FileResponse(path, media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=31536000"})
 
 
 class ResolveBody(BaseModel):
@@ -1900,7 +1948,7 @@ def item_images(item_type: str, item_no: str,
                 add(integrations.rebrickable_minifig_image(item_no))
             except Exception:
                 pass
-    elif not item_no.startswith("manuell-"):
+    elif not item_no.startswith(("manuell-", "custom-")):
         # Bevorzugt das Bild aus der BrickLink-API (meist bessere Auflösung),
         # das konstruierte ItemImage als Rückfall – gleiche Nummer, gleiches
         # Motiv, wird zusammengefasst.
@@ -2239,7 +2287,7 @@ def refresh_wanted_prices(wanted_id: int, user: dict = Depends(current_user)):
     if not row:
         raise HTTPException(404, "Eintrag nicht gefunden")
     entry = dict(row)
-    if entry["item_id"].startswith(("fig-", "manuell-")):
+    if entry["item_id"].startswith(("fig-", "manuell-", "custom-")):
         raise HTTPException(400, "Ohne BrickLink-Nummer kein Preis")
     try:
         _fetch_and_store_prices(entry, "wanted", source="manuell")
@@ -2346,6 +2394,9 @@ def _maybe_fetch_set_contents_async(set_no: str):
 @app.get("/api/set_figs/{set_no}")
 def get_set_figs(set_no: str, user: dict = Depends(current_user)):
     """Welche Minifiguren stecken in diesem Set?"""
+    # Eigene/manuelle Sets kennt BrickLink nicht – gar nicht erst anfragen.
+    if set_no.startswith(("custom-", "manuell-")):
+        return {"items": []}
     if not integrations.bricklink_enabled():
         raise HTTPException(501, "BrickLink-API nicht konfiguriert "
                                  "(Schlüssel unter Mehr → API-Schlüssel eintragen)")
@@ -2432,6 +2483,20 @@ def missing_set_figs(user: dict = Depends(current_user)):
             "UNION SELECT item_id, name, img_url FROM wanted "
             "WHERE item_type = 'minifig'")}
 
+        # Steht die fehlende Figur schon auf einer Einkaufsliste (z. B.
+        # „Flohmarkt")? Dann ist sie unterwegs – das gehört an die Karte.
+        on_lists: dict = {}
+        for r in conn.execute(
+                "SELECT i.item_id, l.name AS list_name, i.qty "
+                "FROM shopping_items i "
+                "JOIN shopping_lists l ON l.id = i.list_id "
+                "WHERE i.item_type = 'minifig' AND i.done = 0 "
+                "AND l.archived = 0"):
+            e = on_lists.setdefault(r["item_id"], {"qty": 0, "lists": []})
+            e["qty"] += r["qty"] or 1
+            if r["list_name"] not in e["lists"]:
+                e["lists"].append(r["list_name"])
+
         by_set: dict = {}
         stale = set()
         for c in contents:
@@ -2485,6 +2550,8 @@ def missing_set_figs(user: dict = Depends(current_user)):
                 "sets": e["sets"], "wanted": fig_no in wanted,
                 "price_new": price_new, "price_used": price_used,
                 "unit_price": unit,
+                "on_lists": on_lists.get(fig_no, {}).get("lists", []),
+                "on_lists_qty": on_lists.get(fig_no, {}).get("qty", 0),
             })
     # Set-Inhalte ohne Namen stammen aus einer älteren Version. Wie viele
     # Sets noch Details brauchen, meldet die Antwort mit – nachladen kann
@@ -3182,7 +3249,7 @@ def _maybe_fetch_prices_async(entry_id: int, item_id: str,
     """Preise für einen neuen/korrigierten Eintrag im Hintergrund holen."""
     if table not in PRICE_TABLES or not integrations.bricklink_enabled():
         return
-    if item_id.startswith(("fig-", "manuell-")):
+    if item_id.startswith(("fig-", "manuell-", "custom-")):
         return
 
     def run():
@@ -3300,7 +3367,7 @@ def entry_price(entry_id: int, refresh: int = 0,
     if not row:
         raise HTTPException(404, "Eintrag nicht gefunden")
     entry = dict(row)
-    if entry["item_id"].startswith(("fig-", "manuell-")):
+    if entry["item_id"].startswith(("fig-", "manuell-", "custom-")):
         raise HTTPException(400, "Ohne BrickLink-Nummer kein Preis – "
                                  "„BrickLink-Nr. setzen“ in den Details nutzen.")
 

@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=219">
-<link rel="stylesheet" href="/static/style.css?v=219">
+<link rel="stylesheet" href="/static/fonts.css?v=220">
+<link rel="stylesheet" href="/static/style.css?v=220">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -124,8 +124,23 @@
       </div>
       <p id="m-search-hint" class="search-hint" hidden></p>
       <div id="m-suggestions" class="results suggestions"></div>
-      <label for="m-id">BrickLink-Nr. (optional)</label>
+      <label class="custom-toggle">
+        <input type="checkbox" id="m-custom">
+        🎨 Eigene Figur (Custom) – eigene Nummer und eigenes Bild
+      </label>
+      <label for="m-id" id="m-id-label">BrickLink-Nr. (optional)</label>
       <input id="m-id" placeholder="z. B. sw0001a" autocapitalize="none">
+      <div id="m-custom-box" hidden>
+        <label for="m-img">Eigenes Bild (optional)</label>
+        <input id="m-img" type="file" accept="image/*">
+        <div id="m-img-preview" class="custom-preview" hidden>
+          <img id="m-img-thumb" alt="Vorschau">
+          <button type="button" class="mini-btn" id="m-img-clear">Bild entfernen</button>
+        </div>
+        <p class="search-hint">Ohne eigene Nummer wird automatisch eine
+          vergeben. Custom-Figuren werden nicht bei BrickLink gesucht –
+          Preise und Katalogbilder gibt es dafür nicht.</p>
+      </div>
       <label for="m-qty">Anzahl</label>
       <input id="m-qty" type="number" min="1" max="999" value="1" inputmode="numeric">
       <label for="m-cond">Zustand</label>
@@ -604,7 +619,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=219"></script>
+<script src="/static/app.js?v=220"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">
