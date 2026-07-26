@@ -13,9 +13,21 @@ const OFFER_FIELDS = ["item_id", "item_type", "name", "img_url",
 /* ----------------------------------------------------------------- Helfer */
 
 const now = () => Math.floor(Date.now() / 1000);
+
+/* CORS: Die Admin-Konsole ist eine eigene Seite auf anderer Domain und ruft
+   den Hub direkt aus dem Browser. Geschützt wird über den Bearer-Token, nicht
+   über Cookies – deshalb ist „*" hier unbedenklich (kein Credential-Modus). */
+const CORS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  "access-control-allow-headers": "authorization,content-type",
+  "access-control-max-age": "86400",
+};
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
-    status, headers: { "content-type": "application/json; charset=utf-8" },
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", ...CORS },
   });
 const err = (status, message) => json({ error: message }, status);
 
@@ -192,6 +204,136 @@ async function createInvite(req, member, env) {
   return json({ invite_code: code, expires_at: exp }, 201);   // Code nur einmal
 }
 
+/* ------------------------------------------------------- Admin (Konsole) */
+
+async function adminOverview(env) {
+  const m = await env.DB.prepare(
+    "SELECT COUNT(*) AS total, "
+    + "SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active, "
+    + "SUM(CASE WHEN is_admin = 1 THEN 1 ELSE 0 END) AS admins "
+    + "FROM members").first();
+  const o = await env.DB.prepare("SELECT COUNT(*) AS c FROM offers").first();
+  const i = await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM invites WHERE redeemed_by IS NULL "
+    + "AND (expires_at IS NULL OR expires_at > ?)").bind(now()).first();
+  return json({
+    members: m.total || 0, active: m.active || 0, admins: m.admins || 0,
+    offers: o.c || 0, open_invites: i.c || 0,
+  });
+}
+
+async function adminMembers(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT m.id, m.display_name, m.is_admin, m.status, m.created_at, "
+    + "m.last_seen_at, "
+    + "(SELECT COUNT(*) FROM offers o WHERE o.member_id = m.id) AS offer_count "
+    + "FROM members m ORDER BY m.status, m.display_name COLLATE NOCASE").all()
+  ).results || [];
+  return json({ members: rows });
+}
+
+async function adminUpdateMember(req, member, env, id) {
+  const body = await req.json().catch(() => ({}));
+  const row = await env.DB.prepare("SELECT * FROM members WHERE id = ?")
+    .bind(id).first();
+  if (!row) return err(404, "Mitglied nicht gefunden");
+
+  const sets = [];
+  const args = [];
+  if (typeof body.display_name === "string") {
+    const name = body.display_name.trim().slice(0, 80);
+    if (!name) return err(400, "display_name darf nicht leer sein");
+    sets.push("display_name = ?"); args.push(name);
+  }
+  if (typeof body.is_admin === "boolean") {
+    // Den letzten Admin nicht entrechten – sonst sperrt man sich selbst aus.
+    if (!body.is_admin && row.is_admin) {
+      const c = await env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM members WHERE is_admin = 1 "
+        + "AND status = 'active'").first();
+      if ((c.c || 0) <= 1) return err(400, "Das ist der letzte Admin");
+    }
+    sets.push("is_admin = ?"); args.push(body.is_admin ? 1 : 0);
+  }
+  if (typeof body.status === "string") {
+    const st = body.status === "disabled" ? "disabled" : "active";
+    if (st === "disabled" && row.is_admin) {
+      const c = await env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM members WHERE is_admin = 1 "
+        + "AND status = 'active'").first();
+      if ((c.c || 0) <= 1) return err(400, "Das ist der letzte aktive Admin");
+    }
+    sets.push("status = ?"); args.push(st);
+  }
+  if (!sets.length) return err(400, "Nichts zu ändern");
+
+  args.push(id);
+  await env.DB.prepare(`UPDATE members SET ${sets.join(", ")} WHERE id = ?`)
+    .bind(...args).run();
+  return json({ ok: true });
+}
+
+async function adminDeleteMember(member, env, id) {
+  const row = await env.DB.prepare("SELECT * FROM members WHERE id = ?")
+    .bind(id).first();
+  if (!row) return err(404, "Mitglied nicht gefunden");
+  if (row.id === member.id) return err(400, "Sich selbst kann man nicht löschen");
+  if (row.is_admin) {
+    const c = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM members WHERE is_admin = 1").first();
+    if ((c.c || 0) <= 1) return err(400, "Das ist der letzte Admin");
+  }
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM offers WHERE member_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM messages WHERE from_member = ? OR to_member = ?")
+      .bind(id, id),
+    env.DB.prepare("DELETE FROM members WHERE id = ?").bind(id),
+  ]);
+  return json({ ok: true });
+}
+
+async function adminInvites(env) {
+  // Der Klartext-Code ist nicht gespeichert (nur Hash) – der Hash dient als ID.
+  const rows = (await env.DB.prepare(
+    "SELECT i.code_hash AS id, i.note, i.expires_at, i.created_at, "
+    + "i.redeemed_at, c.display_name AS created_by_name, "
+    + "r.display_name AS redeemed_by_name "
+    + "FROM invites i "
+    + "LEFT JOIN members c ON c.id = i.created_by "
+    + "LEFT JOIN members r ON r.id = i.redeemed_by "
+    + "ORDER BY i.created_at DESC LIMIT 200").all()).results || [];
+  return json({ invites: rows });
+}
+
+async function adminDeleteInvite(env, id) {
+  const res = await env.DB.prepare("DELETE FROM invites WHERE code_hash = ?")
+    .bind(id).run();
+  if (!res.meta || res.meta.changes === 0) {
+    return err(404, "Einladung nicht gefunden");
+  }
+  return json({ ok: true });
+}
+
+async function adminRoute(req, member, env, p, method) {
+  if (!member.is_admin) return err(403, "nur für Hub-Admins");
+
+  if (p === "/v1/admin/overview" && method === "GET") return await adminOverview(env);
+  if (p === "/v1/admin/members" && method === "GET") return await adminMembers(env);
+  if (p === "/v1/admin/invites" && method === "GET") return await adminInvites(env);
+
+  let m = p.match(/^\/v1\/admin\/members\/([^/]+)$/);
+  if (m) {
+    const id = decodeURIComponent(m[1]);
+    if (method === "PATCH") return await adminUpdateMember(req, member, env, id);
+    if (method === "DELETE") return await adminDeleteMember(member, env, id);
+  }
+  m = p.match(/^\/v1\/admin\/invites\/([^/]+)$/);
+  if (m && method === "DELETE") {
+    return await adminDeleteInvite(env, decodeURIComponent(m[1]));
+  }
+  return err(404, "unbekannter Admin-Endpunkt");
+}
+
 /* ------------------------------------------------------------------ Router */
 
 export default {
@@ -201,12 +343,15 @@ export default {
     const method = req.method;
 
     try {
+      if (method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
       if (p === "/" || p === "/v1/health") return json({ ok: true, service: "brickfolio-hub" });
       if (p === "/v1/register" && method === "POST") return await register(req, env);
 
       // ab hier: Auth nötig
       const member = await auth(req, env);
       if (!member) return err(401, "Token fehlt oder ungültig");
+
+      if (p.startsWith("/v1/admin/")) return await adminRoute(req, member, env, p, method);
 
       if (p === "/v1/me" && method === "GET") return await me(member);
       if (p === "/v1/me" && method === "PATCH") return await updateMe(req, member, env);

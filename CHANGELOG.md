@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.33.0 – Juli 2026
+
+### Neu
+- 🛠️ **Admin-Endpunkte im Tausch-Hub.** Der Hub kann jetzt verwaltet werden: Mitglieder auflisten, umbenennen, Admin-Rechte vergeben/entziehen, deaktivieren/aktivieren und löschen (samt ihrer Angebote); Einladungen einsehen und zurückziehen; dazu eine Übersicht mit Kennzahlen. Schutzregeln: der **letzte Admin** kann nicht entrechtet, deaktiviert oder gelöscht werden, und niemand kann sich **selbst** löschen. Bedient wird das über die separate **Admin-Konsole** (eigenes, privates Projekt) – die Brickfolio-App bleibt davon unberührt
+
 ## 1.32.0 – Juli 2026
 
 ### Neu
