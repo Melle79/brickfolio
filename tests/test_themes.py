@@ -147,3 +147,51 @@ def test_refresh_skips_custom_and_manual(client):
     _add(client, "custom-001", "Eigenbau")
     _add(client, "manuell-123", "Handarbeit")
     assert client.get("/api/themes/status").json()["pending"] == 0
+
+
+# ------------------------------------------- Nachziehen bestehender Daten
+
+def test_migration_fills_themes_for_existing_minifigs(tmp_path, monkeypatch):
+    """Nach einem Update sollen vorhandene Figuren sofort ihr Thema haben –
+    sonst steht die ganze Sammlung unter „Ohne Thema"."""
+    db = tmp_path / "old.db"
+    monkeypatch.setattr(core, "DB_PATH", str(db))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:                      # Zustand „vor dem Update"
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, added_at) VALUES ('sw1213', 'minifig', 'Yoda', 1, "
+            "'used', ?)", (now,))
+        conn.execute(
+            "INSERT INTO wanted (item_id, item_type, name, added_at) "
+            "VALUES ('njo0456', 'minifig', 'Kai', ?)", (now,))
+        conn.execute("UPDATE collection SET theme = NULL")
+        conn.execute("UPDATE wanted SET theme = NULL")
+
+    core.init_db()                               # Update läuft erneut
+
+    with core.db() as conn:
+        c = conn.execute(
+            "SELECT theme FROM collection WHERE item_id = 'sw1213'").fetchone()
+        w = conn.execute(
+            "SELECT theme FROM wanted WHERE item_id = 'njo0456'").fetchone()
+    assert c["theme"] == "Star Wars"
+    assert w["theme"] == "Ninjago"
+
+
+def test_migration_leaves_sets_alone(tmp_path, monkeypatch):
+    """Sets bekommen ihr Thema erst über die BrickLink-Kategorie."""
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "s.db"))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, added_at) VALUES ('75300-1', 'set', 'TIE', 1, "
+            "'used', ?)", (now,))
+    core.init_db()
+    with core.db() as conn:
+        row = conn.execute(
+            "SELECT theme FROM collection WHERE item_id = '75300-1'").fetchone()
+    assert row["theme"] is None

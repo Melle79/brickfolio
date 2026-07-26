@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.40.1 – Juli 2026
+
+### Behoben
+- 🗂️ **Themen fehlten nach dem Update.** Bestehende Einträge hatten noch kein Thema, sodass die ganze Sammlung unter „Ohne Thema" stand. Beim Update ordnet die App vorhandene Minifiguren jetzt automatisch zu (das Thema steckt in der Nummer). Sets und Teile holt man weiterhin per „Themen nachladen" unter **Mehr → Sortierung**
+
 ## 1.40.0 – Juli 2026
 
 ### Verbessert

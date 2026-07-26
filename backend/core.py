@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.40.0"
+APP_VERSION = "1.40.1"
 
 
 def hash_password(password: str) -> str:
@@ -328,6 +328,19 @@ def init_db():
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}
             if cols and "theme" not in cols:
                 conn.execute(f"ALTER TABLE {tbl} ADD COLUMN theme TEXT")
+        # Bestehende Minifiguren gleich zuordnen: das Thema steckt in der
+        # Nummer (sw… = Star Wars), das braucht keinen Abruf. Sets und Teile
+        # holt man bei Bedarf über „Themen nachladen“ nach.
+        import themes
+        for tbl in ("collection", "wanted"):
+            rows = conn.execute(
+                f"SELECT id, item_id FROM {tbl} WHERE item_type = 'minifig' "
+                "AND (theme IS NULL OR theme = '')").fetchall()
+            for r in rows:
+                t = themes.from_minifig_number(r["item_id"])
+                if t:
+                    conn.execute(f"UPDATE {tbl} SET theme = ? WHERE id = ?",
+                                 (t, r["id"]))
         ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
         # Bevorzugte Sortierung der Sammlung, je Benutzer
         if "sort_pref" not in ucols:
