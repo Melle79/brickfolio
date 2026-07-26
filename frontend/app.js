@@ -1535,6 +1535,12 @@ function collCardHtml(it) {
 
 const THEME_NONE = "Ohne Thema";
 
+function themeIcon(name) {
+  if (name === THEME_NONE) return "❔";
+  if (name === "Custom") return "🎨";       // wie der Schalter beim Erfassen
+  return "🗂️";
+}
+
 /* Zugeklappte Themen merken, damit die Ansicht nach dem Neuladen bleibt. */
 function collapsedThemes() {
   try {
@@ -1569,7 +1575,7 @@ function renderThemeGroups(list, items) {
     <section class="theme-group${isClosed ? " closed" : ""}" data-theme="${esc(g.name)}">
       <button class="theme-head" aria-expanded="${!isClosed}">
         <span class="theme-caret" aria-hidden="true">▾</span>
-        <span class="theme-name">${g.name === THEME_NONE ? "❔" : "🗂️"} ${esc(g.name)}</span>
+        <span class="theme-name">${themeIcon(g.name)} ${esc(g.name)}</span>
         <span class="theme-count">${g.items.length} ${g.items.length === 1 ? "Eintrag" : "Einträge"}${
           g.pieces !== g.items.length ? ` · ${g.pieces} Stück` : ""}${
           g.value > 0 ? ` · ${fmtEur(g.value)}` : ""}</span>

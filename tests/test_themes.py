@@ -195,3 +195,35 @@ def test_migration_leaves_sets_alone(tmp_path, monkeypatch):
         row = conn.execute(
             "SELECT theme FROM collection WHERE item_id = '75300-1'").fetchone()
     assert row["theme"] is None
+
+
+# --------------------------------------------------------- eigene Figuren
+
+def test_custom_items_get_custom_theme():
+    assert themes.for_item("custom-001", "minifig") == "Custom"
+    assert themes.for_item("custom-mein-set", "set") == "Custom"
+    # manuelle Alt-Einträge bleiben ohne Thema
+    assert themes.for_item("manuell-123", "minifig") is None
+
+
+def test_custom_theme_when_adding(client):
+    _add(client, "custom-001", "Eigenbau")
+    items = client.get("/api/collection?sort=theme").json()["items"]
+    assert items[0]["theme"] == "Custom"
+
+
+def test_migration_fills_custom_theme(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "cm.db"))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, added_at) VALUES ('custom-002', 'minifig', 'Drache', "
+            "1, 'used', ?)", (now,))
+        conn.execute("UPDATE collection SET theme = NULL")
+    core.init_db()
+    with core.db() as conn:
+        row = conn.execute(
+            "SELECT theme FROM collection WHERE item_id = 'custom-002'").fetchone()
+    assert row["theme"] == "Custom"

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.40.2 – Juli 2026
+
+### Behoben
+- 🎨 **Eigene Figuren stehen jetzt unter „Custom".** Sie landeten bisher unter „Ohne Thema", obwohl sie ein eigenes Thema haben. Bestehende Einträge werden beim Update zugeordnet
+
 ## 1.40.1 – Juli 2026
 
 ### Behoben

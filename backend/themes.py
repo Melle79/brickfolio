@@ -88,8 +88,15 @@ def from_minifig_number(item_id: str) -> str | None:
     return None
 
 
+CUSTOM_THEME = "Custom"
+
+
 def for_item(item_id: str, item_type: str) -> str | None:
     """Thema, soweit es sich ohne Abruf bestimmen lässt."""
+    # Eigene Figuren sind ihr eigenes Thema – sie stehen in keinem Katalog,
+    # gehören aber trotzdem nicht unter „Ohne Thema".
+    if (item_id or "").startswith("custom-"):
+        return CUSTOM_THEME
     if (item_type or "").lower() == "minifig":
         return from_minifig_number(item_id)
     return None
