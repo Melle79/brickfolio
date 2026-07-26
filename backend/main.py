@@ -2614,8 +2614,15 @@ class HubInviteBody(BaseModel):
     expires_in_days: int = Field(default=0, ge=0, le=365)
 
 
-def _hub_status() -> dict:
-    """Verbindungsstatus – ohne den Token nach außen zu geben."""
+def _hub_status(refresh: bool = False) -> dict:
+    """Verbindungsstatus – ohne den Token nach außen zu geben. `refresh` holt
+    Name/Admin-Status live vom Hub (best-effort, damit Änderungen am Hub – etwa
+    ein umbenanntes Konto – auch ohne Reconnect ankommen)."""
+    if refresh and hub.enabled():
+        try:
+            hub.refresh()
+        except Exception:
+            pass                        # Cache bleibt, wenn der Hub grad klemmt
     c = hub.config()
     return {"connected": hub.enabled(), "url": c["url"],
             "member_id": c["member_id"], "display_name": c["display_name"],
@@ -2623,8 +2630,25 @@ def _hub_status() -> dict:
 
 
 @app.get("/api/hub")
-def hub_status(user: dict = Depends(current_user)):
-    return _hub_status()
+def hub_status(refresh: int = 0, user: dict = Depends(current_user)):
+    return _hub_status(refresh=bool(refresh))
+
+
+class HubRenameBody(BaseModel):
+    display_name: str = Field(min_length=1, max_length=80)
+
+
+@app.post("/api/hub/rename")
+def hub_rename(body: HubRenameBody, user: dict = Depends(admin_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    try:
+        hub.rename(body.display_name.strip())
+        return _hub_status()
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
 
 
 @app.post("/api/hub/connect")

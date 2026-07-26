@@ -3844,7 +3844,7 @@ let hubWired = false;
 async function loadHubCard() {
   wireHubConnectOnce();
   try {
-    renderHubStatus(await api("/hub"));
+    renderHubStatus(await api("/hub?refresh=1"));
   } catch (_) { /* Karte bleibt leer, wenn der Status nicht kommt */ }
 }
 
@@ -3856,6 +3856,8 @@ function renderHubStatus(s) {
   if (!on) return;
   $("hub-member-name").textContent = s.display_name || "(unbenannt)";
   $("hub-admin-badge").hidden = !s.is_admin;
+  const rn = $("hub-rename-in");
+  if (rn && !rn.value) rn.value = s.display_name || "";
 }
 
 function wireHubConnectOnce() {
@@ -3894,6 +3896,17 @@ function wireHubConnectOnce() {
     } catch (e) { err.textContent = e.message; err.hidden = false; }
   });
 
+  $("hub-rename-btn").addEventListener("click", async (ev) => {
+    const display_name = $("hub-rename-in").value.trim();
+    if (!display_name) { toast("Bitte einen Namen eingeben"); return; }
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      renderHubStatus(await api("/hub/rename", { method: "POST",
+        body: { display_name } }));
+      toast("Anzeigename geändert ✔");
+    } catch (e) { toast(e.message); } finally { b.disabled = false; }
+  });
+
   $("hub-disconnect").addEventListener("click", async () => {
     if (!confirm("Verbindung zum Hub trennen? Deine Angebote bleiben dort, bis du sie ersetzt.")) return;
     try {
@@ -3913,7 +3926,7 @@ async function loadHubView() {
   // Veröffentlichen nur für Admins (steuert, was die Instanz preisgibt)
   $("hub-publish").hidden = !(state.user && state.user.is_admin);
   try {
-    const s = await api("/hub");
+    const s = await api("/hub?refresh=1");
     $("hub-view-who").textContent = s.display_name
       ? `Angemeldet als ${s.display_name}` : "";
     const lp = s.last_publish;

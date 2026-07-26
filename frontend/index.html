@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=217">
-<link rel="stylesheet" href="/static/style.css?v=217">
+<link rel="stylesheet" href="/static/fonts.css?v=218">
+<link rel="stylesheet" href="/static/style.css?v=218">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -478,6 +478,11 @@
       <div id="hub-connected-box" hidden>
         <p class="sub">Verbunden als <b id="hub-member-name"></b>
           <span id="hub-admin-badge" hidden>· 👑 Hub-Admin</span></p>
+        <label for="hub-rename-in">Anzeigename ändern</label>
+        <div class="detail-row">
+          <input id="hub-rename-in" placeholder="z. B. Sven" autocapitalize="none">
+          <button class="mini-btn add" id="hub-rename-btn">Speichern</button>
+        </div>
         <p class="search-hint">Nutzung im <b>Tausch</b>-Tab.</p>
         <div class="detail-row btn-grid">
           <button class="mini-btn" id="hub-disconnect">Verbindung trennen</button>
@@ -606,7 +611,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=217"></script>
+<script src="/static/app.js?v=218"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

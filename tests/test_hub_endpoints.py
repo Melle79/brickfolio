@@ -115,3 +115,30 @@ def test_invite_allowed_for_any_connected_user(monkeypatch, tmp_path):
 def test_invite_without_connection_400(client, monkeypatch):
     monkeypatch.setattr(hub, "enabled", lambda: False)
     assert client.post("/api/hub/invite", json={}).status_code == 400
+
+
+def test_rename_updates_display_name(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+
+    def fake_rename(name):
+        core.set_setting("hub_display_name", name)
+        return {"display_name": name}
+    monkeypatch.setattr(hub, "rename", fake_rename)
+    r = client.post("/api/hub/rename", json={"display_name": "Sven"})
+    assert r.status_code == 200 and r.json()["display_name"] == "Sven"
+
+
+def test_rename_without_connection_400(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: False)
+    assert client.post("/api/hub/rename",
+                       json={"display_name": "Sven"}).status_code == 400
+
+
+def test_status_refresh_swallows_hub_errors(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+
+    def boom():
+        raise RuntimeError("Hub weg")
+    monkeypatch.setattr(hub, "refresh", boom)
+    # trotz Fehler beim Auffrischen liefert der Status 200
+    assert client.get("/api/hub?refresh=1").status_code == 200

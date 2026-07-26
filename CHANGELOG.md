@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.32.0 – Juli 2026
+
+### Neu
+- 🏷️ **Anzeigenamen im Tausch-Netzwerk ändern.** Unter **Mehr → Tausch-Netzwerk** gibt es jetzt ein Feld „Anzeigename ändern" – kein SQL mehr nötig. Zusätzlich frischt die App den Namen beim Öffnen **live vom Hub** auf, sodass Änderungen (auch am Hub selbst) ohne Neu-Verbinden ankommen
+
 ## 1.31.0 – Juli 2026
 
 ### Geändert

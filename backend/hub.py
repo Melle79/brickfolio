@@ -51,12 +51,12 @@ def disconnect():
 
 # ------------------------------------------------------------------ HTTP
 
-def _request(method, url, path, token=None, body=None):
+def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):
     headers = {"user-agent": USER_AGENT}
     if token:
         headers["authorization"] = "Bearer " + token
     resp = requests.request(method, url.rstrip("/") + path, headers=headers,
-                            json=body, timeout=TIMEOUT)
+                            json=body, timeout=timeout)
     try:
         data = resp.json()
     except ValueError:
@@ -92,11 +92,28 @@ def connect_with_invite(invite_code: str, display_name: str) -> dict:
     return res
 
 
-def _authed(method, path, body=None):
+def _authed(method, path, body=None, timeout=TIMEOUT):
     token = core.get_setting("hub_token")
     if not token:
         raise HubError(400, "Kein Hub verbunden")
-    return _request(method, HUB_URL, path, token=token, body=body)
+    return _request(method, HUB_URL, path, token=token, body=body,
+                    timeout=timeout)
+
+
+def refresh():
+    """Aktuellen Anzeigenamen/Admin-Status vom Hub holen und Cache auffrischen.
+    Kurzer Timeout, weil best-effort (Statusanzeige)."""
+    me = _authed("GET", "/v1/me", timeout=6)
+    core.set_setting("hub_display_name", me.get("display_name", ""))
+    core.set_setting("hub_is_admin", "1" if me.get("is_admin") else "0")
+    return me
+
+
+def rename(display_name: str) -> dict:
+    """Anzeigenamen am Hub ändern und Cache aktualisieren."""
+    me = _authed("PATCH", "/v1/me", body={"display_name": display_name})
+    core.set_setting("hub_display_name", me.get("display_name", display_name))
+    return me
 
 
 def publish(offers: list) -> dict:

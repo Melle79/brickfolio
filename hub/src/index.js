@@ -103,6 +103,16 @@ async function me(member) {
   });
 }
 
+async function updateMe(req, member, env) {
+  const body = await req.json().catch(() => ({}));
+  const name = (body.display_name || "").toString().trim().slice(0, 80);
+  if (!name) return err(400, "display_name fehlt");
+  await env.DB.prepare("UPDATE members SET display_name = ? WHERE id = ?")
+    .bind(name, member.id).run();
+  return json({ member_id: member.id, display_name: name,
+                is_admin: !!member.is_admin });
+}
+
 async function rotateToken(member, env) {
   const token = randomToken("bft");
   await env.DB.prepare("UPDATE members SET token_hash = ? WHERE id = ?")
@@ -199,6 +209,7 @@ export default {
       if (!member) return err(401, "Token fehlt oder ungültig");
 
       if (p === "/v1/me" && method === "GET") return await me(member);
+      if (p === "/v1/me" && method === "PATCH") return await updateMe(req, member, env);
       if (p === "/v1/token/rotate" && method === "POST") return await rotateToken(member, env);
       if (p === "/v1/offers" && method === "PUT") return await putOffers(req, member, env);
       if (p === "/v1/offers" && method === "GET") return await listOffers(req, member, env);
