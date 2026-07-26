@@ -1510,16 +1510,10 @@ function collCardDetails(it) {
       </div>`;
 }
 
-function renderCollection() {
-  closeCardModal();     // ein offenes Popup gehört zu den alten Karten
-  const list = $("collection-list");
-  const items = state.collection;
-  applyCollView();
-  $("collection-empty").hidden = items.length > 0 || $("search").value.trim() !== "";
-  // Nur die Karten-Köpfe rendern; der (umfangreiche) Detailblock wird erst
-  // beim ersten Aufklappen erzeugt. Das hält das DOM bei großen Sammlungen
-  // schlank, damit Antippen und Suchen sofort reagieren.
-  list.innerHTML = items.map((it) => `
+/* Kopf einer Sammlungs-Karte. Der (umfangreiche) Detailblock entsteht erst
+   beim Aufklappen – das hält das DOM bei großen Sammlungen schlank. */
+function collCardHtml(it) {
+  return `
     <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}">
       <div class="card-head">
         <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
@@ -1536,7 +1530,78 @@ function renderCollection() {
           <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
         </div>
       </div>
-    </div>`).join("");
+    </div>`;
+}
+
+const THEME_NONE = "Ohne Thema";
+
+/* Zugeklappte Themen merken, damit die Ansicht nach dem Neuladen bleibt. */
+function collapsedThemes() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("bf_themes_closed") || "[]"));
+  } catch (_) { return new Set(); }
+}
+
+function storeCollapsedThemes(set) {
+  localStorage.setItem("bf_themes_closed", JSON.stringify([...set]));
+}
+
+/* Bei Sortierung „Thema" wird nach Thema gruppiert – jede Gruppe eine
+   aufklappbare Karte mit Stückzahl und Wert. */
+function renderThemeGroups(list, items) {
+  const groups = [];
+  const byName = new Map();
+  items.forEach((it) => {
+    const key = it.theme || THEME_NONE;
+    let g = byName.get(key);
+    if (!g) { g = { name: key, items: [], pieces: 0, value: 0 }; byName.set(key, g); groups.push(g); }
+    g.items.push(it);
+    g.pieces += it.quantity;
+    const unit = it.condition === "new"
+      ? (it.price_new ?? it.price_used) : (it.price_used ?? it.price_new);
+    if (unit) g.value += unit * it.quantity;
+  });
+
+  const closed = collapsedThemes();
+  list.innerHTML = groups.map((g) => {
+    const isClosed = closed.has(g.name);
+    return `
+    <section class="theme-group${isClosed ? " closed" : ""}" data-theme="${esc(g.name)}">
+      <button class="theme-head" aria-expanded="${!isClosed}">
+        <span class="theme-caret" aria-hidden="true">▾</span>
+        <span class="theme-name">${g.name === THEME_NONE ? "❔" : "🗂️"} ${esc(g.name)}</span>
+        <span class="theme-count">${g.items.length} ${g.items.length === 1 ? "Eintrag" : "Einträge"}${
+          g.pieces !== g.items.length ? ` · ${g.pieces} Stück` : ""}${
+          g.value > 0 ? ` · ${fmtEur(g.value)}` : ""}</span>
+      </button>
+      <div class="theme-body">${g.items.map(collCardHtml).join("")}</div>
+    </section>`;
+  }).join("");
+
+  list.querySelectorAll(".theme-head").forEach((head) => {
+    head.addEventListener("click", () => {
+      const sec = head.closest(".theme-group");
+      const name = sec.dataset.theme;
+      const nowClosed = !sec.classList.contains("closed");
+      sec.classList.toggle("closed", nowClosed);
+      head.setAttribute("aria-expanded", String(!nowClosed));
+      const set = collapsedThemes();
+      nowClosed ? set.add(name) : set.delete(name);
+      storeCollapsedThemes(set);
+    });
+  });
+}
+
+function renderCollection() {
+  closeCardModal();     // ein offenes Popup gehört zu den alten Karten
+  const list = $("collection-list");
+  const items = state.collection;
+  applyCollView();
+  $("collection-empty").hidden = items.length > 0 || $("search").value.trim() !== "";
+  const grouped = $("sort").value === "theme" && items.length > 0;
+  list.classList.toggle("by-theme", grouped);
+  if (grouped) renderThemeGroups(list, items);
+  else list.innerHTML = items.map(collCardHtml).join("");
 
   list.querySelectorAll(".card").forEach((card) => {
     const id = Number(card.dataset.id);

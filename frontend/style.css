@@ -317,6 +317,42 @@ code {
   font-size: 10.5px; font-weight: 800; color: var(--muted);
   border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px;
 }
+/* ------------------------------------------------- Themenkarten (Sammlung) */
+.theme-group {
+  background: var(--card); border: 2px solid var(--ink);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  margin-bottom: 12px; overflow: hidden;
+}
+.theme-head {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: none; border: 0; border-radius: 0;
+  font: inherit; color: inherit; cursor: pointer; text-align: left;
+}
+.theme-head:hover { background: var(--plate); }
+.theme-caret {
+  display: inline-block; transition: transform .15s; font-size: 13px;
+  color: var(--muted);
+}
+.theme-group.closed .theme-caret { transform: rotate(-90deg); }
+.theme-name { font-weight: 800; font-size: 16px; }
+.theme-count {
+  margin-left: auto; color: var(--muted); font-size: 12.5px;
+  font-weight: 700; text-align: right;
+}
+.theme-body {
+  display: flex; flex-direction: column; gap: 10px; padding: 0 10px 12px;
+}
+/* Zugeklappt schlägt jedes Layout – auch die Spalten-Regeln fürs Desktop,
+   die sonst wegen höherer Spezifität gewinnen würden. */
+.theme-group.closed .theme-body,
+#collection-list.by-theme .theme-group.closed .theme-body { display: none; }
+
+/* Beim Gruppieren trägt die Themenkarte das Layout, nicht die Liste selbst */
+#collection-list.by-theme { display: block; }
+#collection-list.by-theme.grid-mode .theme-body {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
 /* Eigene Figuren (Custom) im manuellen Formular */
 .custom-toggle {
   display: flex; align-items: center; gap: 8px; margin: 12px 0 4px;
@@ -1137,6 +1173,16 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
     align-items: stretch;
   }
   #collection-list:not(.grid-mode) .list-loading { grid-column: 1 / -1; }
+  /* Gruppiert nach Thema: die Spalten gehören in die Themenkarte */
+  #collection-list.by-theme:not(.grid-mode) { display: block; }
+  #collection-list.by-theme:not(.grid-mode) .theme-body {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    align-items: stretch;
+  }
+  #collection-list.by-theme.grid-mode .theme-body {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
   /* Eine geöffnete Karte wird auf eine handliche Breite begrenzt und mittig
      gesetzt – sonst laufen Felder und Knöpfe über den ganzen Bildschirm.
      Gilt für beide Ansichten: margin-inline zentriert in der Liste (Flex),

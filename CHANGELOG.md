@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.40.0 – Juli 2026
+
+### Verbessert
+- 🗂️ **Themen als aufklappbare Karten.** Bei der Sortierung „Thema" wird die Sammlung jetzt nicht nur sortiert, sondern in **Themenkarten gruppiert**: je Thema eine Karte mit Anzahl und Wert, die sich zuklappen lässt. Welche Themen zugeklappt sind, merkt sich die App. Am Rechner stehen die Karten innerhalb eines Themas weiterhin mehrspaltig
+
 ## 1.39.0 – Juli 2026
 
 ### Neu
