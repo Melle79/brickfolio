@@ -1846,6 +1846,27 @@ def _uploads_dir() -> str:
     return d
 
 
+@app.get("/api/next_custom_id")
+def next_custom_id(user: dict = Depends(current_user)):
+    """Nächste freie Nummer für eine eigene Figur, z. B. custom-003.
+
+    Schaut in Sammlung, Wunschliste und Einkaufslisten nach der höchsten
+    bereits vergebenen Zahl – so bleiben Nummern auch dann eindeutig, wenn
+    ein Eintrag wieder gelöscht wurde.
+    """
+    highest = 0
+    with core.db() as conn:
+        for table in ("collection", "wanted", "shopping_items"):
+            for r in conn.execute(
+                    f"SELECT item_id FROM {table} "
+                    "WHERE item_id LIKE 'custom-%'"):
+                m = re.fullmatch(r"custom-0*(\d+)", r["item_id"])
+                if m:
+                    highest = max(highest, int(m.group(1)))
+    return {"item_id": f"custom-{highest + 1:03d}",
+            "number": f"{highest + 1:03d}"}
+
+
 @app.post("/api/upload_image")
 def upload_image(file: UploadFile = File(...),
                  user: dict = Depends(current_user)):

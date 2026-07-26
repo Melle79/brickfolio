@@ -1977,12 +1977,29 @@ function applyCustomMode() {
   const on = $("m-custom").checked;
   $("m-custom-box").hidden = !on;
   $("m-id-label").textContent = on
-    ? "Interne Nummer (optional)" : "BrickLink-Nr. (optional)";
-  $("m-id").placeholder = on ? "z. B. eigen-001" : "z. B. sw0001a";
+    ? "Interne Nummer" : "BrickLink-Nr. (optional)";
+  $("m-id").placeholder = on ? "wird vergeben …" : "z. B. sw0001a";
   if (on) {
     $("m-suggestions").innerHTML = "";
     $("m-search-hint").hidden = true;
     manualSelection = null;
+    suggestCustomId();
+  } else if (/^custom-/.test($("m-id").value)) {
+    $("m-id").value = "";        // Vorschlag beim Zurückschalten wegräumen
+  }
+}
+
+/* Nächste freie Nummer vorschlagen – überschreibbar, falls jemand ein
+   eigenes Schema führt. */
+async function suggestCustomId() {
+  const field = $("m-id");
+  if (field.value.trim() && !/^custom-/.test(field.value.trim())) return;
+  try {
+    const res = await api("/next_custom_id");
+    field.value = res.item_id;
+    field.placeholder = "z. B. " + res.item_id;
+  } catch (_) {
+    field.placeholder = "z. B. eigen-001";
   }
 }
 
@@ -2518,6 +2535,7 @@ async function addManual() {
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
     resetCustomImage();
+    if ($("m-custom").checked) suggestCustomId();   // nächste Nummer bereit
     $("manual-form").hidden = true;
     await askSetFigures({ item_id: itemId, item_type: type, name },
                         $("m-cond").value);
@@ -2608,6 +2626,7 @@ async function addManualWanted() {
     $("m-suggestions").innerHTML = "";
     manualSelection = null;
     resetCustomImage();
+    if ($("m-custom").checked) suggestCustomId();   // nächste Nummer bereit
     $("manual-form").hidden = true;
   } catch (e) {
     err.textContent = e.message;

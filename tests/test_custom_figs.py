@@ -119,3 +119,51 @@ def test_custom_sets_do_not_query_bricklink(client, monkeypatch):
     assert client.get("/api/set_figs/custom-mein-set").json()["items"] == []
     assert client.get("/api/set_figs/manuell-123").json()["items"] == []
     assert called == []
+
+
+# ------------------------------------------------- fortlaufende Nummern
+
+def test_first_custom_number_is_001(client):
+    assert client.get("/api/next_custom_id").json()["item_id"] == "custom-001"
+
+
+def test_counts_up_across_tables(client):
+    """Sammlung, Wunschliste und Einkaufslisten zählen gemeinsam hoch."""
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, added_at) VALUES ('custom-001', 'minifig', 'A', 1, "
+            "'used', ?)", (now,))
+        conn.execute(
+            "INSERT INTO wanted (item_id, item_type, name, added_at) "
+            "VALUES ('custom-004', 'minifig', 'B', ?)", (now,))
+        lid = conn.execute(
+            "INSERT INTO shopping_lists (name, created_at) VALUES ('L', ?)",
+            (now,)).lastrowid
+        conn.execute(
+            "INSERT INTO shopping_items (list_id, item_id, item_type, name, "
+            "added_at) VALUES (?, 'custom-007', 'minifig', 'C', ?)", (lid, now))
+    assert client.get("/api/next_custom_id").json()["item_id"] == "custom-008"
+
+
+def test_own_scheme_does_not_break_counting(client):
+    """Selbst vergebene Namen ohne Zahl stören die Zählung nicht."""
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, added_at) VALUES ('custom-ritter-blau', 'minifig', "
+            "'A', 1, 'used', ?)", (now,))
+    assert client.get("/api/next_custom_id").json()["item_id"] == "custom-001"
+
+
+def test_gaps_are_not_reused(client):
+    """Gezählt wird ab der höchsten Nummer, Lücken bleiben frei – sonst gäbe
+    es zwei Figuren mit derselben internen Nummer in Notizen/Ausdrucken."""
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO wanted (item_id, item_type, name, added_at) "
+            "VALUES ('custom-009', 'minifig', 'B', ?)", (now,))
+    assert client.get("/api/next_custom_id").json()["item_id"] == "custom-010"

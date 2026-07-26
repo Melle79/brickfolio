@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.36.0 – Juli 2026
+
+### Verbessert
+- 🔢 **Custom-Nummern vergibt die App.** Beim Einschalten von „Eigene Figur" steht die nächste freie Nummer schon im Feld (`custom-001`, `-002` …) – überschreibbar, falls du ein eigenes Schema führst. Nach dem Speichern liegt die nächste sofort bereit, praktisch beim Erfassen mehrerer Figuren am Stück. Gezählt wird über Sammlung, Wunschliste und Einkaufslisten hinweg; Lücken werden nicht neu vergeben, damit eine Nummer eindeutig bleibt
+
 ## 1.35.0 – Juli 2026
 
 ### Neu
