@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.34.0 – Juli 2026
+
+### Geändert
+- 🧹 **Verwaltung raus aus der App.** Die Hub-Verwaltung wandert vollständig in die separate Admin-Konsole. In den Einstellungen bleibt nur noch das **Beitreten per Einladungscode** und das Trennen der Verbindung – das Eintragen eines Admin-Tokens und das Umbenennen sind entfallen. Einladungen erstellt weiterhin jeder im **Tausch**-Tab
+
 ## 1.33.0 – Juli 2026
 
 ### Neu

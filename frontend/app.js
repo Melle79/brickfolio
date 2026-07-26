@@ -3856,8 +3856,6 @@ function renderHubStatus(s) {
   if (!on) return;
   $("hub-member-name").textContent = s.display_name || "(unbenannt)";
   $("hub-admin-badge").hidden = !s.is_admin;
-  const rn = $("hub-rename-in");
-  if (rn && !rn.value) rn.value = s.display_name || "";
 }
 
 function wireHubConnectOnce() {
@@ -3872,16 +3870,6 @@ function wireHubConnectOnce() {
     toast(msg);
   };
 
-  $("hub-connect-token").addEventListener("click", async () => {
-    err.hidden = true;
-    const token = $("hub-token-in").value.trim();
-    if (!token) { err.textContent = "Token angeben."; err.hidden = false; return; }
-    try {
-      afterConnect(await api("/hub/connect", { method: "POST", body: { token } }),
-        "Mit dem Hub verbunden 🤝");
-    } catch (e) { err.textContent = e.message; err.hidden = false; }
-  });
-
   $("hub-connect-invite").addEventListener("click", async () => {
     err.hidden = true;
     const invite_code = $("hub-invite-in").value.trim();
@@ -3894,17 +3882,6 @@ function wireHubConnectOnce() {
       afterConnect(await api("/hub/connect", { method: "POST",
         body: { invite_code, display_name } }), "Dem Netzwerk beigetreten 🤝");
     } catch (e) { err.textContent = e.message; err.hidden = false; }
-  });
-
-  $("hub-rename-btn").addEventListener("click", async (ev) => {
-    const display_name = $("hub-rename-in").value.trim();
-    if (!display_name) { toast("Bitte einen Namen eingeben"); return; }
-    const b = ev.currentTarget; b.disabled = true;
-    try {
-      renderHubStatus(await api("/hub/rename", { method: "POST",
-        body: { display_name } }));
-      toast("Anzeigename geändert ✔");
-    } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
 
   $("hub-disconnect").addEventListener("click", async () => {

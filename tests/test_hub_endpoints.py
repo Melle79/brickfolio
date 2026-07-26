@@ -117,21 +117,10 @@ def test_invite_without_connection_400(client, monkeypatch):
     assert client.post("/api/hub/invite", json={}).status_code == 400
 
 
-def test_rename_updates_display_name(client, monkeypatch):
-    monkeypatch.setattr(hub, "enabled", lambda: True)
-
-    def fake_rename(name):
-        core.set_setting("hub_display_name", name)
-        return {"display_name": name}
-    monkeypatch.setattr(hub, "rename", fake_rename)
-    r = client.post("/api/hub/rename", json={"display_name": "Sven"})
-    assert r.status_code == 200 and r.json()["display_name"] == "Sven"
-
-
-def test_rename_without_connection_400(client, monkeypatch):
-    monkeypatch.setattr(hub, "enabled", lambda: False)
+def test_rename_endpoint_is_gone(client):
+    """Umbenennen gehört in die Admin-Konsole, nicht in die App."""
     assert client.post("/api/hub/rename",
-                       json={"display_name": "Sven"}).status_code == 400
+                       json={"display_name": "Sven"}).status_code == 404
 
 
 def test_status_refresh_swallows_hub_errors(client, monkeypatch):

@@ -109,11 +109,6 @@ def refresh():
     return me
 
 
-def rename(display_name: str) -> dict:
-    """Anzeigenamen am Hub ändern und Cache aktualisieren."""
-    me = _authed("PATCH", "/v1/me", body={"display_name": display_name})
-    core.set_setting("hub_display_name", me.get("display_name", display_name))
-    return me
 
 
 def publish(offers: list) -> dict:

@@ -2634,21 +2634,6 @@ def hub_status(refresh: int = 0, user: dict = Depends(current_user)):
     return _hub_status(refresh=bool(refresh))
 
 
-class HubRenameBody(BaseModel):
-    display_name: str = Field(min_length=1, max_length=80)
-
-
-@app.post("/api/hub/rename")
-def hub_rename(body: HubRenameBody, user: dict = Depends(admin_user)):
-    if not hub.enabled():
-        raise HTTPException(400, "Kein Hub verbunden")
-    try:
-        hub.rename(body.display_name.strip())
-        return _hub_status()
-    except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
-    except requests.RequestException:
-        raise HTTPException(502, "Hub nicht erreichbar")
 
 
 @app.post("/api/hub/connect")
