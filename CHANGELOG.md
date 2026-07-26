@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.40.3 – Juli 2026
+
+### Behoben
+- ↕️ **Sortierung merkt sich die letzte Auswahl.** Bisher wurde nur gespeichert, was man unter **Mehr → Sortierung** einstellte – die Auswahl direkt in der Sammlung war nach dem Neuladen wieder weg. Jetzt landet jede Umstellung im Profil, und beide Stellen zeigen immer dasselbe
+
 ## 1.40.2 – Juli 2026
 
 ### Behoben

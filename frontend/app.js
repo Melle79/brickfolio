@@ -4129,6 +4129,26 @@ function applySortPref() {
   if (sel && pref && [...sel.options].some((o) => o.value === pref)) {
     sel.value = pref;
   }
+  const card = $("sort-pref");
+  if (card && pref) card.value = pref;
+}
+
+/* Sortierung im Profil merken. Wird sowohl von der Sammlung als auch von
+   der Einstellungskarte benutzt – beide zeigen danach dasselbe. */
+async function saveSortPref(sort, quiet = true) {
+  if (!state.user || state.user.sortPref === sort) return;
+  state.user.sortPref = sort;
+  localStorage.setItem("bf_user", JSON.stringify(state.user));
+  const card = $("sort-pref");
+  if (card) card.value = sort;
+  const sel = $("sort");
+  if (sel) sel.value = sort;
+  try {
+    await api("/me/sort", { method: "POST", body: { sort } });
+    if (!quiet) toast("Standard-Sortierung gespeichert ✔");
+  } catch (e) {
+    if (!quiet) toast(e.message);
+  }
 }
 
 async function loadSortCard() {
@@ -4138,14 +4158,8 @@ async function loadSortCard() {
   if (!sortCardWired) {
     sortCardWired = true;
     sel.addEventListener("change", async () => {
-      try {
-        await api("/me/sort", { method: "POST", body: { sort: sel.value } });
-        if (state.user) state.user.sortPref = sel.value;
-        localStorage.setItem("bf_user", JSON.stringify(state.user));
-        $("sort").value = sel.value;      // sofort übernehmen
-        loadCollection();
-        toast("Standard-Sortierung gespeichert ✔");
-      } catch (e) { toast(e.message); }
+      await saveSortPref(sel.value, false);
+      loadCollection();
     });
     $("btn-themes-refresh").addEventListener("click", refreshThemes);
   }
@@ -5386,7 +5400,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.querySelectorAll(".tab").forEach((b) =>
     b.addEventListener("click", () => showTab(b.dataset.tab)));
-  $("sort").addEventListener("change", loadCollection);
+  // Die zuletzt gewählte Sortierung gilt als persönliche Einstellung und
+  // wird im Profil gespeichert – auf dem nächsten Gerät steht sie genauso.
+  $("sort").addEventListener("change", () => {
+    loadCollection();
+    saveSortPref($("sort").value);
+  });
   $("type-filter").addEventListener("change", loadCollection);
   const collViewBtn = $("btn-collview");
   if (collViewBtn) {
