@@ -1242,6 +1242,8 @@ function logout() {
 /* ---------------------------------------------------------------- Scannen */
 async function handlePhoto(file) {
   if (!file) return;
+  lastScanFile = file;          // fürs Anlegen einer eigenen Figur aufheben
+  updateScanCustomBtns();
   const url = URL.createObjectURL(file);
   $("preview-img").src = url;
   $("scan-preview").hidden = false;
@@ -1264,7 +1266,8 @@ function renderScanResults(items) {
   const box = $("scan-results");
   if (!items.length) {
     box.innerHTML = `<p class="empty">Keine Übereinstimmung gefunden.<br>
-      Versucht es mit besserem Licht und neutralem Hintergrund.</p>`;
+      Versucht es mit besserem Licht und neutralem Hintergrund –
+      oder legt sie unten als <b>eigene Figur</b> mit diesem Foto an.</p>`;
     return;
   }
   box.innerHTML = items.map((it, i) => {
@@ -1972,6 +1975,32 @@ const BL_URL_PREFIX = { minifig: "M", part: "P", set: "S" };
 let suggestTimer;
 let manualSelection = null;   // übernommener Vorschlag (Bild + BrickLink-Link)
 let customImgUrl = "";        // hochgeladenes Bild für eine eigene Figur
+let lastScanFile = null;      // zuletzt fotografiertes Bild (für Custom-Figuren)
+
+/* Die beiden „Foto vom Scan"-Knöpfe erscheinen erst, wenn wirklich eines da
+   ist – einer unter dem Scan, einer im Custom-Bereich des Formulars. */
+function updateScanCustomBtns() {
+  const a = $("btn-scan-custom");
+  if (a) a.hidden = !lastScanFile;
+  const b = $("m-img-from-scan");
+  if (b) b.hidden = !lastScanFile;
+}
+
+/* Aus dem Scan heraus eine eigene Figur anlegen: Formular öffnen, in den
+   Custom-Modus schalten und das Foto gleich als Bild übernehmen. */
+async function customFromScan() {
+  if (!lastScanFile) return;
+  const form = $("manual-form");
+  form.hidden = false;
+  updateManualListBtn();
+  if (!$("m-custom").checked) {
+    $("m-custom").checked = true;
+    applyCustomMode();
+  }
+  await uploadCustomImage(lastScanFile);
+  $("m-name").focus();
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 /* „Eigene Figur"-Modus: Beschriftungen umstellen, Bildfeld ein-/ausblenden
    und die Katalogsuche stilllegen (Custom-Figuren gibt es dort nicht). */
@@ -1986,6 +2015,7 @@ function applyCustomMode() {
     $("m-search-hint").hidden = true;
     manualSelection = null;
     suggestCustomId();
+    updateScanCustomBtns();
   } else if (/^custom-/.test($("m-id").value)) {
     $("m-id").value = "";        // Vorschlag beim Zurückschalten wegräumen
   }
@@ -5151,6 +5181,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (f) uploadCustomImage(f);
   });
   $("m-img-clear").addEventListener("click", resetCustomImage);
+  $("btn-scan-custom").addEventListener("click", customFromScan);
+  $("m-img-from-scan").addEventListener("click", () => {
+    if (lastScanFile) uploadCustomImage(lastScanFile);
+  });
   setupCatalogSearch();
   $("file-input").addEventListener("change", (e) => {
     handlePhoto(e.target.files[0]);

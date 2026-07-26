@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=222">
-<link rel="stylesheet" href="/static/style.css?v=222">
+<link rel="stylesheet" href="/static/fonts.css?v=223">
+<link rel="stylesheet" href="/static/style.css?v=223">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -101,6 +101,7 @@
 
     <div id="scan-results" class="results"></div>
 
+    <button id="btn-scan-custom" class="btn btn-outline" hidden>🎨 Eigene Figur mit diesem Foto</button>
     <button id="btn-manual-toggle" class="btn btn-outline">✏️ Manuell erfassen</button>
     <div id="manual-form" class="settings-card" hidden>
       <h3>Manuell erfassen</h3>
@@ -133,6 +134,7 @@
       <div id="m-custom-box" hidden>
         <label for="m-img">Eigenes Bild (optional)</label>
         <input id="m-img" type="file" accept="image/*">
+        <button type="button" class="mini-btn" id="m-img-from-scan" hidden>📷 Foto vom Scan verwenden</button>
         <div id="m-img-preview" class="custom-preview" hidden>
           <img id="m-img-thumb" alt="Vorschau">
           <button type="button" class="mini-btn" id="m-img-clear">Bild entfernen</button>
@@ -622,7 +624,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=222"></script>
+<script src="/static/app.js?v=223"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

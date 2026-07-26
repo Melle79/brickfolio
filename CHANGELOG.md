@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.38.0 – Juli 2026
+
+### Neu
+- 📷 **Scan-Foto für eigene Figuren nutzen.** Wird beim Scannen nichts erkannt – bei Eigenbauten der Normalfall –, steht darunter jetzt „🎨 Eigene Figur mit diesem Foto". Ein Klick öffnet das Formular im Custom-Modus, übernimmt das eben gemachte Foto als Bild und vergibt die nächste Nummer; es bleibt nur noch der Name zu tippen. Im Custom-Bereich gibt es zusätzlich „📷 Foto vom Scan verwenden", falls man das Bild später doch noch möchte
+
 ## 1.37.0 – Juli 2026
 
 ### Neu
