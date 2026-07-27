@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS members (
   is_admin     INTEGER NOT NULL DEFAULT 0,
   status       TEXT NOT NULL DEFAULT 'active',   -- active | disabled
   invite_quota INTEGER NOT NULL DEFAULT 3,  -- wie viele Einladungen erlaubt
+  public_key   TEXT,                        -- für Ende-zu-Ende-Nachrichten
   created_at   INTEGER NOT NULL,
   last_seen_at INTEGER
 );
@@ -57,14 +58,50 @@ CREATE TABLE IF NOT EXISTS offers (
 CREATE INDEX IF NOT EXISTS idx_offers_member ON offers(member_id);
 CREATE INDEX IF NOT EXISTS idx_offers_item   ON offers(item_id, item_type);
 
--- Postfach (Stufe 3) – Struktur schon da, wird später genutzt.
+-- Angebotsabgaben: „Ich hätte Interesse an deinem Yoda.“ Der Hub kennt nur
+-- die Beteiligten und den Artikel – der Text steckt in den Nachrichten und
+-- ist Ende-zu-Ende verschlüsselt.
+CREATE TABLE IF NOT EXISTS trades (
+  id           TEXT PRIMARY KEY,            -- trd_…
+  from_member  TEXT NOT NULL,
+  to_member    TEXT NOT NULL,
+  item_id      TEXT NOT NULL,
+  item_name    TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'open',  -- open|accepted|declined|closed
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_trades_parties
+  ON trades(to_member, from_member, updated_at);
+
+-- Briefkasten: verschlüsselte Umschläge. Sie verschwinden, sobald der
+-- Empfänger sie geholt UND der Absender die Zustellung gesehen hat.
 CREATE TABLE IF NOT EXISTS messages (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  trade_id    TEXT NOT NULL,
   from_member TEXT NOT NULL,
   to_member   TEXT NOT NULL,
-  item_id     TEXT,                         -- optionaler Bezug auf ein Angebot
-  body        TEXT NOT NULL,
+  box         TEXT NOT NULL,                -- verschlüsselter Umschlag
   created_at  INTEGER NOT NULL,
-  read_at     INTEGER
+  fetched_at  INTEGER,                      -- vom Empfänger geholt
+  acked_at    INTEGER                       -- vom Absender als zugestellt gesehen
 );
-CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_member, read_at);
+CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_member, fetched_at);
+CREATE INDEX IF NOT EXISTS idx_msg_trade ON messages(trade_id, id);
+
+-- Meldungen. Wer meldet, gibt den Verlauf selbst frei (entschlüsselt auf der
+-- eigenen Instanz) – der Hub kann Nachrichten nicht von sich aus lesen.
+CREATE TABLE IF NOT EXISTS reports (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  trade_id    TEXT,
+  reporter    TEXT NOT NULL,
+  against     TEXT NOT NULL,
+  reason      TEXT NOT NULL,
+  disclosed   TEXT,                         -- freiwillig offengelegter Verlauf
+  status      TEXT NOT NULL DEFAULT 'open', -- open|handled
+  created_at  INTEGER NOT NULL,
+  handled_at  INTEGER,
+  handled_by  TEXT,
+  note        TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at);

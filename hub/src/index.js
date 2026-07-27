@@ -274,7 +274,198 @@ async function createInvite(req, member, env) {
   return json({ invite_code: code, expires_at: exp }, 201);   // Code nur einmal
 }
 
+/* --------------------------------- Schlüssel, Handel, Nachrichten (E2E) */
+
+async function putKey(req, member, env) {
+  const body = await req.json().catch(() => ({}));
+  const key = (body.public_key || "").toString().trim().slice(0, 200);
+  if (!key) return err(400, "public_key fehlt");
+  await env.DB.prepare("UPDATE members SET public_key = ? WHERE id = ?")
+    .bind(key, member.id).run();
+  return json({ ok: true });
+}
+
+async function getKey(env, memberId) {
+  const row = await env.DB.prepare(
+    "SELECT id, display_name, public_key FROM members "
+    + "WHERE id = ? AND status = 'active'").bind(memberId).first();
+  if (!row) return err(404, "Mitglied nicht gefunden");
+  if (!row.public_key) {
+    return err(409, `${row.display_name} kann noch keine verschlüsselten `
+      + "Nachrichten empfangen (Instanz muss sich einmal melden)");
+  }
+  return json({ member_id: row.id, display_name: row.display_name,
+                public_key: row.public_key });
+}
+
+/* Angebotsabgabe eröffnen: Artikel + erste (verschlüsselte) Nachricht. */
+async function createTrade(req, member, env) {
+  const body = await req.json().catch(() => ({}));
+  const to = (body.to || "").toString();
+  const itemId = (body.item_id || "").toString().slice(0, 60);
+  const itemName = (body.item_name || "").toString().slice(0, 200);
+  const box = (body.box || "").toString();
+  if (!to || !itemId || !box) return err(400, "to, item_id und box nötig");
+  if (to === member.id) return err(400, "An sich selbst geht nicht");
+
+  const other = await env.DB.prepare(
+    "SELECT id FROM members WHERE id = ? AND status = 'active'")
+    .bind(to).first();
+  if (!other) return err(404, "Mitglied nicht gefunden");
+
+  const id = randomToken("trd");
+  const t = now();
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO trades (id, from_member, to_member, item_id, item_name, "
+      + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .bind(id, member.id, to, itemId, itemName, t, t),
+    env.DB.prepare(
+      "INSERT INTO messages (trade_id, from_member, to_member, box, created_at)"
+      + " VALUES (?, ?, ?, ?, ?)").bind(id, member.id, to, box, t),
+  ]);
+  return json({ ok: true, trade_id: id }, 201);
+}
+
+async function listTrades(member, env) {
+  const rows = (await env.DB.prepare(
+    "SELECT t.*, "
+    + "f.display_name AS from_name, o.display_name AS to_name, "
+    + "(SELECT COUNT(*) FROM messages m WHERE m.trade_id = t.id "
+    + " AND m.to_member = ? AND m.fetched_at IS NULL) AS unread "
+    + "FROM trades t "
+    + "LEFT JOIN members f ON f.id = t.from_member "
+    + "LEFT JOIN members o ON o.id = t.to_member "
+    + "WHERE t.from_member = ? OR t.to_member = ? "
+    + "ORDER BY t.updated_at DESC LIMIT 200")
+    .bind(member.id, member.id, member.id).all()).results || [];
+  return json({ trades: rows });
+}
+
+async function sendMessage(req, member, env, tradeId) {
+  const body = await req.json().catch(() => ({}));
+  const box = (body.box || "").toString();
+  if (!box) return err(400, "box fehlt");
+  const t = await env.DB.prepare(
+    "SELECT * FROM trades WHERE id = ?").bind(tradeId).first();
+  if (!t) return err(404, "Vorgang nicht gefunden");
+  if (t.from_member !== member.id && t.to_member !== member.id) {
+    return err(403, "Nicht beteiligt");
+  }
+  const to = t.from_member === member.id ? t.to_member : t.from_member;
+  const ts = now();
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO messages (trade_id, from_member, to_member, box, created_at)"
+      + " VALUES (?, ?, ?, ?, ?)").bind(tradeId, member.id, to, box, ts),
+    env.DB.prepare("UPDATE trades SET updated_at = ? WHERE id = ?")
+      .bind(ts, tradeId),
+  ]);
+  return json({ ok: true }, 201);
+}
+
+/* Nachrichten abholen. Dabei gilt die Abmachung aus dem Konzept: Umschläge
+   bleiben nur so lange liegen, bis beide Seiten sie gesehen haben – der
+   Empfänger holt sie ab, der Absender sieht die Zustellung. Danach löscht
+   der Hub sie sofort. */
+async function fetchMessages(member, env, tradeId) {
+  const t = await env.DB.prepare("SELECT * FROM trades WHERE id = ?")
+    .bind(tradeId).first();
+  if (!t) return err(404, "Vorgang nicht gefunden");
+  if (t.from_member !== member.id && t.to_member !== member.id) {
+    return err(403, "Nicht beteiligt");
+  }
+  const ts = now();
+
+  // Für mich bestimmte Umschläge – die bekomme ich genau einmal.
+  const incoming = (await env.DB.prepare(
+    "SELECT id, from_member, box, created_at FROM messages "
+    + "WHERE trade_id = ? AND to_member = ? ORDER BY id")
+    .bind(tradeId, member.id).all()).results || [];
+  // Meine eigenen: nur der Zustellstatus, kein Inhalt nötig.
+  const mine = (await env.DB.prepare(
+    "SELECT id, created_at, fetched_at FROM messages "
+    + "WHERE trade_id = ? AND from_member = ? ORDER BY id")
+    .bind(tradeId, member.id).all()).results || [];
+
+  const stmts = [];
+  if (incoming.length) {
+    stmts.push(env.DB.prepare(
+      "UPDATE messages SET fetched_at = COALESCE(fetched_at, ?) "
+      + "WHERE trade_id = ? AND to_member = ?").bind(ts, tradeId, member.id));
+  }
+  // Zugestellte eigene Nachrichten sind hiermit quittiert -> löschen.
+  stmts.push(env.DB.prepare(
+    "UPDATE messages SET acked_at = COALESCE(acked_at, ?) "
+    + "WHERE trade_id = ? AND from_member = ? AND fetched_at IS NOT NULL")
+    .bind(ts, tradeId, member.id));
+  stmts.push(env.DB.prepare(
+    "DELETE FROM messages WHERE fetched_at IS NOT NULL "
+    + "AND acked_at IS NOT NULL"));
+  await env.DB.batch(stmts);
+
+  return json({ messages: incoming, sent: mine });
+}
+
+async function setTradeStatus(req, member, env, tradeId) {
+  const body = await req.json().catch(() => ({}));
+  const status = ["accepted", "declined", "closed", "open"]
+    .includes(body.status) ? body.status : null;
+  if (!status) return err(400, "Unbekannter Status");
+  const t = await env.DB.prepare("SELECT * FROM trades WHERE id = ?")
+    .bind(tradeId).first();
+  if (!t) return err(404, "Vorgang nicht gefunden");
+  if (t.from_member !== member.id && t.to_member !== member.id) {
+    return err(403, "Nicht beteiligt");
+  }
+  await env.DB.prepare("UPDATE trades SET status = ?, updated_at = ? "
+    + "WHERE id = ?").bind(status, now(), tradeId).run();
+  return json({ ok: true, status });
+}
+
+/* Melden. Der Verlauf kommt entschlüsselt von der meldenden Instanz – nur
+   sie kann ihn lesen und entscheidet, was sie offenlegt. */
+async function createReport(req, member, env) {
+  const body = await req.json().catch(() => ({}));
+  const against = (body.against || "").toString();
+  const reason = (body.reason || "").toString().trim().slice(0, 1000);
+  if (!against || !reason) return err(400, "against und reason nötig");
+  if (against === member.id) return err(400, "Sich selbst melden geht nicht");
+  const disclosed = body.disclosed
+    ? JSON.stringify(body.disclosed).slice(0, 20000) : null;
+  await env.DB.prepare(
+    "INSERT INTO reports (trade_id, reporter, against, reason, disclosed, "
+    + "created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(body.trade_id || null, member.id, against, reason, disclosed, now())
+    .run();
+  return json({ ok: true }, 201);
+}
+
 /* ------------------------------------------------------- Admin (Konsole) */
+
+async function adminReports(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT r.*, a.display_name AS reporter_name, "
+    + "b.display_name AS against_name FROM reports r "
+    + "LEFT JOIN members a ON a.id = r.reporter "
+    + "LEFT JOIN members b ON b.id = r.against "
+    + "ORDER BY CASE r.status WHEN 'open' THEN 0 ELSE 1 END, "
+    + "r.created_at DESC LIMIT 200").all()).results || [];
+  return json({ reports: rows });
+}
+
+async function adminHandleReport(req, member, env, id) {
+  const body = await req.json().catch(() => ({}));
+  const res = await env.DB.prepare(
+    "UPDATE reports SET status = 'handled', handled_at = ?, handled_by = ?, "
+    + "note = ? WHERE id = ? AND status = 'open'")
+    .bind(now(), member.id,
+      body.note ? String(body.note).slice(0, 500) : null, id).run();
+  if (!res.meta || res.meta.changes === 0) {
+    return err(404, "Meldung nicht gefunden oder schon erledigt");
+  }
+  return json({ ok: true });
+}
 
 async function adminOverview(env) {
   const m = await env.DB.prepare(
@@ -422,6 +613,11 @@ async function adminRoute(req, member, env, p, method) {
   if (p === "/v1/admin/invite_requests" && method === "GET") {
     return await adminInviteRequests(env);
   }
+  if (p === "/v1/admin/reports" && method === "GET") return await adminReports(env);
+  const rm = p.match(/^\/v1\/admin\/reports\/(\d+)\/handle$/);
+  if (rm && method === "POST") {
+    return await adminHandleReport(req, member, env, Number(rm[1]));
+  }
   let ir = p.match(/^\/v1\/admin\/invite_requests\/(\d+)\/(approve|deny)$/);
   if (ir && method === "POST") {
     return await adminDecideInviteRequest(req, member, env, Number(ir[1]),
@@ -470,6 +666,17 @@ export default {
       if (p === "/v1/offers" && method === "PUT") return await putOffers(req, member, env);
       if (p === "/v1/offers" && method === "GET") return await listOffers(req, member, env);
       if (p === "/v1/members" && method === "GET") return await listMembers(member, env);
+      if (p === "/v1/key" && method === "PUT") return await putKey(req, member, env);
+      if (p === "/v1/trades" && method === "POST") return await createTrade(req, member, env);
+      if (p === "/v1/trades" && method === "GET") return await listTrades(member, env);
+      if (p === "/v1/reports" && method === "POST") return await createReport(req, member, env);
+      let km = p.match(/^\/v1\/key\/([^/]+)$/);
+      if (km && method === "GET") return await getKey(env, decodeURIComponent(km[1]));
+      let tm = p.match(/^\/v1\/trades\/([^/]+)\/messages$/);
+      if (tm && method === "POST") return await sendMessage(req, member, env, tm[1]);
+      if (tm && method === "GET") return await fetchMessages(member, env, tm[1]);
+      tm = p.match(/^\/v1\/trades\/([^/]+)\/status$/);
+      if (tm && method === "POST") return await setTradeStatus(req, member, env, tm[1]);
       if (p === "/v1/invites" && method === "POST") return await createInvite(req, member, env);
       if (p === "/v1/invites/quota" && method === "GET") return await getQuota(member, env);
       if (p === "/v1/invite_requests" && method === "POST") return await requestMoreInvites(req, member, env);
