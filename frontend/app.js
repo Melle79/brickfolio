@@ -1475,6 +1475,11 @@ function collCardDetails(it) {
           </div>
           <div class="sub profit-line" data-profit>${profitLine(it)}</div>
         </div>` : ""}
+        ${state.hubConnected ? `
+        <label class="share-toggle">
+          <input type="checkbox" data-share ${it.shared ? "checked" : ""}>
+          🤝 In der Tauschbörse anbieten
+        </label>` : ""}
         <label>Notizen <span class="notes-status" data-notes-status aria-live="polite"></span></label>
         <textarea data-notes placeholder="z. B. Zustand, Herkunft, Set …">${esc(it.notes)}</textarea>
         ${needsBlNo && state.bricklinkLookup ? `
@@ -1830,6 +1835,24 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     paidEl.addEventListener("blur", savePaid);
     paidEl.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") { ev.preventDefault(); paidEl.blur(); }
+    });
+  }
+
+  const shareBox = card.querySelector("[data-share]");
+  if (shareBox) {
+    shareBox.addEventListener("change", async () => {
+      const want = shareBox.checked;
+      shareBox.disabled = true;
+      try {
+        await api(`/collection/${id}/share`, { method: "POST",
+          body: { shared: want } });
+        item.shared = want ? 1 : 0;
+        toast(want ? "Kommt in die Tauschbörse 🤝"
+                   : "Aus der Tauschbörse genommen");
+      } catch (e) {
+        shareBox.checked = !want;
+        toast(e.message);
+      } finally { shareBox.disabled = false; }
     });
   }
 
@@ -4267,8 +4290,13 @@ let hubViewWired = false;
 
 async function loadHubView() {
   wireHubViewOnce();
+  showHubTab(hubTab);
   // Veröffentlichen nur für Admins (steuert, was die Instanz preisgibt)
   $("hub-publish").hidden = !(state.user && state.user.is_admin);
+  syncTrades().then(() => api("/hub/trades")
+    .then((d) => markUnread((d.trades || [])
+      .reduce((s, t) => s + (t.unread || 0), 0)))
+    .catch(() => {}));
   try {
     const s = await api("/hub?refresh=1");
     $("hub-view-who").textContent = s.display_name
@@ -4285,9 +4313,207 @@ async function loadHubView() {
   loadHubOffers();
 }
 
+/* ------------------------------------------- Vorgänge, Chat, Melden (E2E) */
+let hubTab = "offers";
+let openTradeId = null;
+
+function showHubTab(name) {
+  hubTab = name;
+  ["offers", "trades", "share"].forEach((t) => {
+    $("hubpane-" + t).hidden = t !== name;
+  });
+  document.querySelectorAll("[data-hubtab]").forEach((b) =>
+    b.classList.toggle("sel", b.dataset.hubtab === name));
+  if (name === "trades") loadTrades();
+  if (name === "share") loadShareView();
+}
+
+/* Ungelesene Nachrichten am Unter-Tab anzeigen. */
+function markUnread(n) {
+  const b = $("hub-unread");
+  if (!b) return;
+  b.hidden = !n;
+  b.textContent = n;
+}
+
+async function syncTrades(quiet = true) {
+  try {
+    const res = await api("/hub/trades/sync", { method: "POST" });
+    if (!quiet) {
+      toast(res.new_messages
+        ? `${res.new_messages} neue Nachricht(en) 📬` : "Nichts Neues");
+    }
+    return res;
+  } catch (e) {
+    if (!quiet) toast(e.message);
+    return null;
+  }
+}
+
+async function loadTrades() {
+  const box = $("hub-trades");
+  box.innerHTML = brickLoading("Vorgänge werden geladen …");
+  await syncTrades();
+  try {
+    const { trades } = await api("/hub/trades");
+    markUnread(trades.reduce((s, t) => s + (t.unread || 0), 0));
+    if (!trades.length) {
+      box.innerHTML = `<p class="search-hint">Noch keine Vorgänge. Melde bei
+        einem Angebot „Interesse" an – daraus wird ein Gespräch.</p>`;
+      return;
+    }
+    box.innerHTML = trades.map((t) => `
+      <div class="card trade-row-item" data-trade="${esc(t.id)}">
+        <div class="card-head">
+          <div class="card-title">
+            <strong>${esc(t.item_name || t.item_id)}</strong>
+            <div class="sub">${t.direction === "out" ? "→ an" : "← von"}
+              ${esc(t.other_name || "?")} · ${tradeStatusText(t.status)}</div>
+            ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
+            ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
+          </div>
+        </div>
+      </div>`).join("");
+    box.querySelectorAll("[data-trade]").forEach((el) => {
+      el.addEventListener("click", () => openTrade(el.dataset.trade));
+    });
+  } catch (e) {
+    box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+  }
+}
+
+function tradeStatusText(s) {
+  return { open: "offen", accepted: "angenommen ✔",
+           declined: "abgelehnt", closed: "abgeschlossen" }[s] || s;
+}
+
+async function openTrade(id) {
+  openTradeId = id;
+  const ov = $("trade-overlay");
+  ov.hidden = false;
+  document.body.style.overflow = "hidden";
+  await renderTrade();
+}
+
+async function renderTrade() {
+  try {
+    const { trade, messages } = await api(`/hub/trades/${openTradeId}`);
+    $("trade-title").textContent = trade.item_name || trade.item_id;
+    $("trade-sub").textContent =
+      `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
+      + ` · ${tradeStatusText(trade.status)}`;
+    const box = $("trade-msgs");
+    box.innerHTML = messages.map((m) => `
+      <div class="trade-msg${m.mine ? " mine" : ""}">
+        ${esc(m.body)}
+        <span class="when">${new Date(m.created_at * 1000)
+          .toLocaleString("de-DE")}${m.mine ? (m.delivered ? " · zugestellt ✓" : " · unterwegs …") : ""}</span>
+      </div>`).join("");
+    box.scrollTop = box.scrollHeight;
+    loadTrades();          // Zähler auffrischen
+  } catch (e) { toast(e.message); }
+}
+
+function closeTrade() {
+  $("trade-overlay").hidden = true;
+  document.body.style.overflow = "";
+  openTradeId = null;
+}
+
+/* Auswahl: was biete ich an? */
+async function loadShareView() {
+  $("hub-publish").hidden = !(state.user && state.user.is_admin);
+  const box = $("hub-share-list");
+  box.innerHTML = brickLoading("Auswahl wird geladen …");
+  try {
+    const s = await api("/share/status");
+    $("hub-share-info").textContent = s.shared
+      ? `${s.shared} Artikel ausgewählt (Vorschlag aus der Abgabeliste: ${s.suggested}).`
+      : `Noch nichts ausgewählt. Vorschlag aus der Abgabeliste: ${s.suggested} Artikel.`;
+    const { items } = await api("/collection?sort=name");
+    const chosen = items.filter((i) => i.shared);
+    box.innerHTML = chosen.length ? chosen.map((it) => `
+      <div class="card">
+        <div class="card-head">
+          <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} alt="" loading="lazy">
+          <div class="card-title">
+            <strong>${esc(it.name)}</strong>
+            <div class="sub">${esc(it.item_id)} · ${it.quantity}× · ${it.condition === "new" ? "Neu" : "Gebraucht"}</div>
+          </div>
+          <button class="mini-btn" data-unshare="${it.id}">Entfernen</button>
+        </div>
+      </div>`).join("")
+      : `<p class="search-hint">Nichts ausgewählt – veröffentlicht wird dann nichts.</p>`;
+    box.querySelectorAll("[data-unshare]").forEach((b) => {
+      b.addEventListener("click", async () => {
+        try {
+          await api(`/collection/${b.dataset.unshare}/share`, { method: "POST",
+            body: { shared: false } });
+          loadShareView();
+        } catch (e) { toast(e.message); }
+      });
+    });
+  } catch (e) {
+    box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+  }
+}
+
 function wireHubViewOnce() {
   if (hubViewWired) return;
   hubViewWired = true;
+
+  document.querySelectorAll("[data-hubtab]").forEach((b) => {
+    b.addEventListener("click", () => showHubTab(b.dataset.hubtab));
+  });
+  $("hub-sync").addEventListener("click", async () => {
+    await syncTrades(false);
+    loadTrades();
+  });
+  $("hub-share-dupes").addEventListener("click", async () => {
+    try {
+      const r = await api("/share/from_duplicates", { method: "POST" });
+      toast(`${r.added} Artikel übernommen`);
+      loadShareView();
+    } catch (e) { toast(e.message); }
+  });
+  $("hub-share-clear").addEventListener("click", async () => {
+    if (!confirm("Die ganze Auswahl leeren?")) return;
+    try {
+      await api("/share/clear", { method: "POST" });
+      loadShareView();
+    } catch (e) { toast(e.message); }
+  });
+
+  // Chat
+  $("trade-close").addEventListener("click", closeTrade);
+  $("trade-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("trade-overlay")) closeTrade();
+  });
+  const send = async () => {
+    const inp = $("trade-input");
+    const text = inp.value.trim();
+    if (!text || !openTradeId) return;
+    inp.value = "";
+    try {
+      await api(`/hub/trades/${openTradeId}/messages`, { method: "POST",
+        body: { text } });
+      renderTrade();
+    } catch (e) { toast(e.message); inp.value = text; }
+  };
+  $("trade-send").addEventListener("click", send);
+  $("trade-input").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") { ev.preventDefault(); send(); }
+  });
+  const setStatus = async (status) => {
+    try {
+      await api(`/hub/trades/${openTradeId}/status`, { method: "POST",
+        body: { status } });
+      renderTrade();
+    } catch (e) { toast(e.message); }
+  };
+  $("trade-accept").addEventListener("click", () => setStatus("accepted"));
+  $("trade-decline").addEventListener("click", () => setStatus("declined"));
+  $("trade-report").addEventListener("click", reportTrade);
 
   $("hub-publish").addEventListener("click", async (ev) => {
     const b = ev.currentTarget; b.disabled = true;
@@ -4354,6 +4580,38 @@ async function offerInviteRequest(hint) {
   } catch (e) { toast(e.message); }
 }
 
+/* Interesse an einem fremden Angebot anmelden – daraus wird ein Gespräch. */
+async function startInterest(o) {
+  const text = prompt(
+    `Nachricht an ${o.who} zu „${o.n}":`,
+    `Hallo ${o.who}, hättest du Interesse, den ${o.n} zu tauschen?`);
+  if (text == null || !text.trim()) return;
+  try {
+    const res = await api("/hub/trades", { method: "POST", body: {
+      to: o.m, item_id: o.i, item_name: o.n, text: text.trim() } });
+    toast("Angefragt – das Gespräch steht unter Meine Vorgänge 💬");
+    showHubTab("trades");
+    openTrade(res.trade_id);
+  } catch (e) { toast(e.message); }
+}
+
+/* Melden. Der Verlauf geht nur mit, wenn man ausdrücklich zustimmt – sonst
+   sieht der Hub-Admin nur die Begründung. */
+async function reportTrade() {
+  if (!openTradeId) return;
+  const reason = prompt("Was ist vorgefallen? (geht an den Hub-Admin)");
+  if (reason == null || reason.trim().length < 3) return;
+  const include = confirm(
+    "Den Nachrichtenverlauf mitschicken?\n\n"
+    + "OK = Verlauf wird entschlüsselt angehängt, damit der Admin die Sache "
+    + "beurteilen kann.\nAbbrechen = nur deine Begründung wird gemeldet.");
+  try {
+    await api(`/hub/trades/${openTradeId}/report`, { method: "POST",
+      body: { reason: reason.trim(), include_history: include } });
+    toast("Gemeldet – ein Hub-Admin schaut sich das an ⚑");
+  } catch (e) { toast(e.message); }
+}
+
 async function loadHubOffers() {
   const box = $("hub-offers");
   box.innerHTML = brickLoading("Angebote werden geladen …");
@@ -4373,8 +4631,16 @@ async function loadHubOffers() {
             <span class="badge badge-owned">von ${esc(o.display_name)}</span>
           </div>
         </div>
-        ${o.bricklink_url ? `<div class="card-actions"><a class="mini-btn link" href="${esc(o.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a></div>` : ""}
+        <div class="card-actions">
+          <button class="mini-btn add" data-interest='${esc(JSON.stringify({m: o.member_id, i: o.item_id, n: o.name, who: o.display_name}))}'>💬 Interesse</button>
+          ${o.bricklink_url ? `<a class="mini-btn link" href="${esc(o.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
+        </div>
       </div>`).join("");
+
+    box.querySelectorAll("[data-interest]").forEach((btn) => {
+      btn.addEventListener("click", () => startInterest(
+        JSON.parse(btn.dataset.interest)));
+    });
   } catch (e) {
     box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
   }

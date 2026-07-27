@@ -2878,17 +2878,65 @@ def hub_disconnect(user: dict = Depends(admin_user)):
     return {"connected": False}
 
 
+class ShareBody(BaseModel):
+    shared: bool
+
+
+@app.post("/api/collection/{entry_id}/share")
+def set_shared(entry_id: int, body: ShareBody,
+               user: dict = Depends(current_user)):
+    """Einzelnen Eintrag für die Tauschbörse an- oder abwählen."""
+    with core.db() as conn:
+        cur = conn.execute("UPDATE collection SET shared = ? WHERE id = ?",
+                           (1 if body.shared else 0, entry_id))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Eintrag nicht gefunden")
+    return {"ok": True, "shared": body.shared}
+
+
+@app.get("/api/share/status")
+def share_status(user: dict = Depends(current_user)):
+    """Wie viele Einträge sind fürs Netzwerk ausgewählt – und wie viele wären
+    nach der Abgabeliste vorgeschlagen?"""
+    with core.db() as conn:
+        chosen = conn.execute(
+            "SELECT COUNT(*) AS c FROM collection WHERE shared = 1").fetchone()["c"]
+    return {"shared": chosen, "suggested": len(_duplicate_items()["items"])}
+
+
+@app.post("/api/share/from_duplicates")
+def share_from_duplicates(user: dict = Depends(current_user)):
+    """Bequemlichkeit: alles aus der Abgabeliste auswählen."""
+    ids = [it["id"] for it in _duplicate_items()["items"]]
+    with core.db() as conn:
+        for i in ids:
+            conn.execute("UPDATE collection SET shared = 1 WHERE id = ?", (i,))
+    return {"ok": True, "added": len(ids)}
+
+
+@app.post("/api/share/clear")
+def share_clear(user: dict = Depends(current_user)):
+    """Auswahl komplett zurücknehmen."""
+    with core.db() as conn:
+        conn.execute("UPDATE collection SET shared = 0")
+    return {"ok": True}
+
+
 @app.post("/api/hub/publish")
 def hub_publish(user: dict = Depends(admin_user)):
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
-    dup = _duplicate_items()["items"]
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT id, item_id, item_type, name, img_url, bricklink_url, "
+            "condition, quantity FROM collection WHERE shared = 1 "
+            "ORDER BY name COLLATE NOCASE").fetchall()
     offers = [{
-        "item_id": it["item_id"], "item_type": it["item_type"],
-        "name": it["name"], "img_url": it["img_url"],
-        "bricklink_url": it["bricklink_url"], "condition": it["condition"],
-        "qty": it["surplus"],
-    } for it in dup]
+        "item_id": r["item_id"], "item_type": r["item_type"],
+        "name": r["name"], "img_url": r["img_url"],
+        "bricklink_url": r["bricklink_url"], "condition": r["condition"],
+        "qty": r["quantity"],
+    } for r in rows]
     try:
         res = hub.publish(offers)
         return {"ok": True, "count": res.get("count", len(offers))}

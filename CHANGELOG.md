@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.42.0 – Juli 2026
+
+### Neu
+- 💬 **Tauschen mit Nachrichten.** An jedem fremden Angebot steht jetzt „Interesse" – daraus wird ein Gespräch. Der neue Bereich **Meine Vorgänge** zeigt alle Anfragen mit ungelesen-Zähler; im Gespräch lässt sich schreiben, annehmen, ablehnen und melden. **Nachrichten sind Ende-zu-Ende verschlüsselt**: Der Hub kann sie nicht lesen und löscht sie, sobald beide Seiten sie haben – der Verlauf bleibt auf den Instanzen *(Hub-Issue #2)*
+- 🎯 **Selbst auswählen, was in die Börse kommt.** Statt automatisch der ganzen Abgabeliste bestimmst du pro Artikel: Karte in der Sammlung öffnen → „🤝 In der Tauschbörse anbieten". Unter **Tausch → Meine Auswahl** siehst du alles Ausgewählte, kannst die Abgabeliste mit einem Klick übernehmen und dann veröffentlichen
+- ⚑ **Melden.** Läuft etwas schief, lässt sich das Gegenüber melden. Der Nachrichtenverlauf geht **nur mit, wenn du zustimmst** – deine Instanz entschlüsselt ihn dafür selbst. Ohne Zustimmung sieht der Hub-Admin nur deine Begründung
+
 ## 1.41.0 – Juli 2026
 
 ### Neu

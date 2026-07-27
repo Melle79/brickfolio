@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.41.0"
+APP_VERSION = "1.42.0"
 
 
 def hash_password(password: str) -> str:
@@ -348,6 +348,12 @@ def init_db():
         if slcols and "inventoried" not in slcols:
             conn.execute("ALTER TABLE shopping_lists ADD COLUMN "
                          "inventoried INTEGER NOT NULL DEFAULT 0")
+        # Was stelle ich ins Tausch-Netzwerk? Bewusst eine eigene Markierung –
+        # „abgebbar“ (Menge > 1) ist nur ein Vorschlag, entscheiden tut man.
+        ccols = {r[1] for r in conn.execute("PRAGMA table_info(collection)")}
+        if ccols and "shared" not in ccols:
+            conn.execute("ALTER TABLE collection ADD COLUMN shared "
+                         "INTEGER NOT NULL DEFAULT 0")
         # Thema (Star Wars, City …) für die Sortierung der Sammlung
         for tbl in ("collection", "wanted"):
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}

@@ -56,14 +56,21 @@ def test_connect_requires_token_or_invite(client):
     assert r.status_code == 400
 
 
-def test_publish_maps_duplicates_to_offers(client, monkeypatch):
-    # Ein Duplikat (Menge 2 -> 1 abgebbar) anlegen
+def _add_item(item_id="sw1213", name="Yoda", qty=2, shared=0):
     now = int(time.time())
     with core.db() as conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO collection (item_id, item_type, name, img_url, "
-            "bricklink_url, quantity, condition, added_at) VALUES "
-            "('sw1213', 'minifig', 'Yoda', 'i', 'b', 2, 'used', ?)", (now,))
+            "bricklink_url, quantity, condition, shared, added_at) VALUES "
+            "(?, 'minifig', ?, 'i', 'b', ?, 'used', ?, ?)",
+            (item_id, name, qty, shared, now))
+        return cur.lastrowid
+
+
+def test_publish_sends_only_chosen_items(client, monkeypatch):
+    """Veröffentlicht wird die Auswahl – nicht automatisch alles Abgebbare."""
+    _add_item("sw1213", "Yoda", qty=2, shared=1)
+    _add_item("sw0552", "Vader", qty=3, shared=0)      # nicht ausgewählt
     captured = {}
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "publish",
@@ -71,7 +78,41 @@ def test_publish_maps_duplicates_to_offers(client, monkeypatch):
     r = client.post("/api/hub/publish")
     assert r.status_code == 200 and r.json()["count"] == 1
     o = captured["offers"][0]
-    assert o["item_id"] == "sw1213" and o["qty"] == 1 and o["name"] == "Yoda"
+    assert o["item_id"] == "sw1213" and o["name"] == "Yoda" and o["qty"] == 2
+
+
+def test_publish_without_selection_is_empty(client, monkeypatch):
+    _add_item(shared=0)
+    captured = {}
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "publish",
+                        lambda offers: captured.update(offers=offers) or {"count": 0})
+    assert client.post("/api/hub/publish").json()["count"] == 0
+    assert captured["offers"] == []
+
+
+def test_share_toggle(client):
+    eid = _add_item(shared=0)
+    assert client.post(f"/api/collection/{eid}/share",
+                       json={"shared": True}).status_code == 200
+    assert client.get("/api/share/status").json()["shared"] == 1
+    client.post(f"/api/collection/{eid}/share", json={"shared": False})
+    assert client.get("/api/share/status").json()["shared"] == 0
+
+
+def test_share_unknown_entry_404(client):
+    assert client.post("/api/collection/999/share",
+                       json={"shared": True}).status_code == 404
+
+
+def test_share_from_duplicates_and_clear(client):
+    _add_item("sw1213", "Yoda", qty=2)        # abgebbar: 1
+    _add_item("sw0552", "Vader", qty=1)       # nicht abgebbar
+    r = client.post("/api/share/from_duplicates").json()
+    assert r["added"] == 1
+    assert client.get("/api/share/status").json()["shared"] == 1
+    client.post("/api/share/clear")
+    assert client.get("/api/share/status").json()["shared"] == 0
 
 
 def test_publish_without_connection_400(client, monkeypatch):

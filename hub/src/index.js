@@ -446,6 +446,36 @@ async function createReport(req, member, env) {
 
 /* ------------------------------------------------------- Admin (Konsole) */
 
+async function adminOffers(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT o.*, m.display_name, m.status AS member_status FROM offers o "
+    + "LEFT JOIN members m ON m.id = o.member_id "
+    + "ORDER BY m.display_name COLLATE NOCASE, o.name COLLATE NOCASE "
+    + "LIMIT 1000").all()).results || [];
+  return json({ offers: rows });
+}
+
+/* Angebote löschen – einzeln, alle eines Mitglieds oder verwaiste (deren
+   Mitglied es nicht mehr gibt). */
+async function adminDeleteOffers(req, env, memberId) {
+  const url = new URL(req.url);
+  const itemId = url.searchParams.get("item_id");
+  let res;
+  if (memberId === "orphans") {
+    res = await env.DB.prepare(
+      "DELETE FROM offers WHERE member_id NOT IN (SELECT id FROM members)")
+      .run();
+  } else if (itemId) {
+    res = await env.DB.prepare(
+      "DELETE FROM offers WHERE member_id = ? AND item_id = ?")
+      .bind(memberId, itemId).run();
+  } else {
+    res = await env.DB.prepare("DELETE FROM offers WHERE member_id = ?")
+      .bind(memberId).run();
+  }
+  return json({ ok: true, deleted: res.meta ? res.meta.changes : 0 });
+}
+
 async function adminReports(env) {
   const rows = (await env.DB.prepare(
     "SELECT r.*, a.display_name AS reporter_name, "
@@ -615,6 +645,11 @@ async function adminRoute(req, member, env, p, method) {
 
   if (p === "/v1/admin/invite_requests" && method === "GET") {
     return await adminInviteRequests(env);
+  }
+  if (p === "/v1/admin/offers" && method === "GET") return await adminOffers(env);
+  const om = p.match(/^\/v1\/admin\/offers\/([^/]+)$/);
+  if (om && method === "DELETE") {
+    return await adminDeleteOffers(req, env, decodeURIComponent(om[1]));
   }
   if (p === "/v1/admin/reports" && method === "GET") return await adminReports(env);
   const rm = p.match(/^\/v1\/admin\/reports\/(\d+)\/handle$/);
