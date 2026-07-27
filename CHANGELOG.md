@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.48.2 – Juli 2026
+
+### Behoben
+- 📐 **Auf dem Rechner waren die Kacheln beim Scannen verschieden breit.** Kamera-Fläche und Erfassen-Formular waren enger gehalten als Ergebnis und Knöpfe, dadurch sprangen die Kanten von Block zu Block. Jetzt stehen alle auf der breiteren Spur bündig untereinander; am Handy ändert sich nichts
+
 ## 1.48.1 – Juli 2026
 
 ### Verbessert

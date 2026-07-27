@@ -1192,11 +1192,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   /* Die Sammlung mit ihrem großen Raster darf die Fläche voll nutzen */
   #view-collection.view { max-width: 1200px; }
 
-  /* Scannen: Kamera-Fläche und Erfassen-Formular nicht über die ganze
-     Breite ziehen – das wirkt sonst verloren. Ergebnisse dürfen breiter. */
-  .scan-hero, #manual-form, .scan-preview, #btn-manual-toggle {
-    max-width: 620px; margin-left: auto; margin-right: auto;
-  }
+  /* Scannen: alle Blöcke untereinander auf derselben Breite. Vorher war die
+     Kamera-Fläche schmaler gehalten als die Ergebnisse – dadurch sprangen die
+     Kanten von Block zu Block. */
   #btn-manual-toggle { display: block; }
 
   /* Mehr Karten pro Reihe statt starrer Zweispaltigkeit */
