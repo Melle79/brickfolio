@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.43.0 – Juli 2026
+
+### Verbessert
+- 🔄 **Nachrichten kommen von selbst an.** Kein „Abrufen" mehr nötig: Im offenen Gespräch lädt die App alle 8 Sekunden nach, in der Vorgangsliste alle 20, sonst einmal pro Minute für den Zähler am Tausch-Tab. Kommt etwas an, während du woanders bist, meldet ein kurzer Hinweis das. Im Hintergrund (anderes Fenster, Bildschirm aus) pausiert alles und läuft beim Zurückkommen sofort wieder an
+- ⚡ **Sparsamer Abgleich.** Geholt wird nur, wo der Hub Post gemeldet hat – nicht mehr für jeden Vorgang einzeln. Das hält das automatische Nachladen auch bei vielen Vorgängen günstig
+
 ## 1.42.0 – Juli 2026
 
 ### Neu

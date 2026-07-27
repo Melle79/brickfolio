@@ -172,3 +172,32 @@ def test_status_refresh_swallows_hub_errors(client, monkeypatch):
     monkeypatch.setattr(hub, "refresh", boom)
     # trotz Fehler beim Auffrischen liefert der Status 200
     assert client.get("/api/hub?refresh=1").status_code == 200
+
+
+# ------------------------------------------------- sparsamer Abgleich
+
+def test_sync_only_fetches_where_something_waits(client, monkeypatch):
+    """Regelmäßiges Nachladen darf nicht für jeden Vorgang eine eigene
+    Anfrage kosten – geholt wird nur, wo der Hub Post gemeldet hat."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "trades", lambda: [
+        {"id": "trd_a", "from_member": "mem_me", "to_member": "mem_x",
+         "to_name": "X", "from_name": "Ich", "item_id": "sw1", "item_name": "A",
+         "status": "open", "created_at": 1, "updated_at": 1, "unread": 0},
+        {"id": "trd_b", "from_member": "mem_y", "to_member": "mem_me",
+         "to_name": "Ich", "from_name": "Y", "item_id": "sw2", "item_name": "B",
+         "status": "open", "created_at": 1, "updated_at": 1, "unread": 2},
+    ])
+    fetched = []
+    monkeypatch.setattr(hub, "fetch_messages",
+                        lambda tid: fetched.append(tid) or {"messages": [], "sent": []})
+    client.post("/api/hub/trades/sync")
+    assert fetched == ["trd_b"]              # nur der mit Post
+
+    fetched.clear()
+    client.post("/api/hub/trades/sync?focus=trd_a")
+    assert set(fetched) == {"trd_a", "trd_b"}   # offenes Gespräch kommt dazu

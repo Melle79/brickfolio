@@ -1073,6 +1073,7 @@ function showTab(name) {
   if (name === "lists") loadLists();
   if (name === "stats") loadStats();
   if (name === "hub") loadHubView();
+  else updatePolling();          // außerhalb des Tausch-Tabs ruhiger takten
   if (name === "settings") loadSettings();
 }
 
@@ -1083,6 +1084,12 @@ function updateHubTab() {
   tab.hidden = !state.hubConnected;
   if (tab.hidden && !$("view-hub").hidden) showTab("scan");
 }
+
+/* Nach dem Zurückkommen (Tab/App wieder im Vordergrund) sofort nachsehen,
+   statt bis zum nächsten Takt zu warten. */
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.hubConnected) pollTrades();
+});
 
 /* ---------------------------------------------------------------- Login */
 async function refreshMe() {
@@ -1210,6 +1217,8 @@ function showApp() {
     applyOwnerName(state.ownerName);
     state.hubConnected = !!c.hub_connected;
     updateHubTab();
+    updatePolling();
+    if (state.hubConnected) refreshUnread();
   }).catch(() => {});
   startUpdateWatch();
   initErrorReporting();
@@ -4326,6 +4335,7 @@ function showHubTab(name) {
     b.classList.toggle("sel", b.dataset.hubtab === name));
   if (name === "trades") loadTrades();
   if (name === "share") loadShareView();
+  updatePolling();
 }
 
 /* Ungelesene Nachrichten am Unter-Tab anzeigen. */
@@ -4336,9 +4346,10 @@ function markUnread(n) {
   b.textContent = n;
 }
 
-async function syncTrades(quiet = true) {
+async function syncTrades(quiet = true, focus = "") {
   try {
-    const res = await api("/hub/trades/sync", { method: "POST" });
+    const q = focus ? `?focus=${encodeURIComponent(focus)}` : "";
+    const res = await api("/hub/trades/sync" + q, { method: "POST" });
     if (!quiet) {
       toast(res.new_messages
         ? `${res.new_messages} neue Nachricht(en) 📬` : "Nichts Neues");
@@ -4350,13 +4361,64 @@ async function syncTrades(quiet = true) {
   }
 }
 
-async function loadTrades() {
+/* Automatisches Nachladen. Drei Takte, je nachdem wo man gerade ist:
+   im offenen Gespräch schnell, in der Vorgangsliste gemächlich, sonst nur
+   ab und zu für den Zähler am Tab. Bei verborgenem Fenster pausiert alles. */
+let pollTimer = null;
+let pollEvery = 0;
+
+function setPolling(seconds) {
+  if (pollEvery === seconds) return;
+  pollEvery = seconds;
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (!seconds) return;
+  pollTimer = setInterval(pollTrades, seconds * 1000);
+}
+
+async function pollTrades() {
+  if (document.hidden || !state.hubConnected) return;
+  const res = await syncTrades(true, openTradeId || "");
+  if (!res) return;
+  if (openTradeId) renderTrade(true);
+  else if (hubTab === "trades" && !$("view-hub").hidden) loadTrades(true);
+  else refreshUnread();
+  if (res.new_messages && !openTradeId) {
+    toast(`${res.new_messages} neue Nachricht(en) 📬`);
+  }
+}
+
+async function refreshUnread() {
+  try {
+    const d = await api("/hub/trades");
+    markUnread((d.trades || []).reduce((s, t) => s + (t.unread || 0), 0));
+  } catch (_) { /* Zähler ist nice-to-have */ }
+}
+
+/* Takt an die Ansicht anpassen. */
+function updatePolling() {
+  if (!state.hubConnected) { setPolling(0); return; }
+  if (openTradeId) setPolling(8);                       // Gespräch offen
+  else if (hubTab === "trades" && !$("view-hub").hidden) setPolling(20);
+  else setPolling(60);                                  // nur der Zähler
+}
+
+let tradesSig = "";
+
+async function loadTrades(quiet = false) {
   const box = $("hub-trades");
-  box.innerHTML = brickLoading("Vorgänge werden geladen …");
-  await syncTrades();
+  if (!quiet) {
+    box.innerHTML = brickLoading("Vorgänge werden geladen …");
+    await syncTrades();
+  }
   try {
     const { trades } = await api("/hub/trades");
     markUnread(trades.reduce((s, t) => s + (t.unread || 0), 0));
+    // Beim Hintergrund-Nachladen nur zeichnen, wenn sich wirklich etwas
+    // geändert hat – sonst flackert die Liste im Takt.
+    const sig = JSON.stringify(trades.map((t) =>
+      [t.id, t.status, t.unread, t.updated_at, t.last_body]));
+    if (quiet && sig === tradesSig) return;
+    tradesSig = sig;
     if (!trades.length) {
       box.innerHTML = `<p class="search-hint">Noch keine Vorgänge. Melde bei
         einem Angebot „Interesse" an – daraus wird ein Gespräch.</p>`;
@@ -4389,35 +4451,49 @@ function tradeStatusText(s) {
 
 async function openTrade(id) {
   openTradeId = id;
+  tradeSig = "";
   const ov = $("trade-overlay");
   ov.hidden = false;
   document.body.style.overflow = "hidden";
+  await syncTrades(true, id);       // gleich den neuesten Stand holen
   await renderTrade();
+  updatePolling();
 }
 
-async function renderTrade() {
+let tradeSig = "";
+
+async function renderTrade(quiet = false) {
   try {
     const { trade, messages } = await api(`/hub/trades/${openTradeId}`);
+    // Nur neu zeichnen, wenn sich etwas geändert hat: sonst springt beim
+    // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
+    const sig = JSON.stringify([trade.status, messages.map((m) =>
+      [m.id, m.delivered])]);
+    if (quiet && sig === tradeSig) return;
+    const box = $("trade-msgs");
+    const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    tradeSig = sig;
     $("trade-title").textContent = trade.item_name || trade.item_id;
     $("trade-sub").textContent =
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
-    const box = $("trade-msgs");
     box.innerHTML = messages.map((m) => `
       <div class="trade-msg${m.mine ? " mine" : ""}">
         ${esc(m.body)}
         <span class="when">${new Date(m.created_at * 1000)
           .toLocaleString("de-DE")}${m.mine ? (m.delivered ? " · zugestellt ✓" : " · unterwegs …") : ""}</span>
       </div>`).join("");
-    box.scrollTop = box.scrollHeight;
-    loadTrades();          // Zähler auffrischen
-  } catch (e) { toast(e.message); }
+    if (!quiet || atBottom) box.scrollTop = box.scrollHeight;
+    refreshUnread();
+  } catch (e) { if (!quiet) toast(e.message); }
 }
 
 function closeTrade() {
   $("trade-overlay").hidden = true;
   document.body.style.overflow = "";
   openTradeId = null;
+  updatePolling();
+  if (hubTab === "trades" && !$("view-hub").hidden) loadTrades(true);
 }
 
 /* Auswahl: was biete ich an? */

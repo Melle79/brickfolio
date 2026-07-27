@@ -3013,8 +3013,15 @@ def _sync_trade(trade_id: str) -> int:
 
 
 @app.post("/api/hub/trades/sync")
-def hub_sync_trades(user: dict = Depends(current_user)):
-    """Vorgänge und neue Nachrichten vom Hub holen."""
+def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
+    """Vorgänge und neue Nachrichten vom Hub holen.
+
+    Abgeholt wird nur, wo es sich lohnt: Der Hub sagt je Vorgang, wie viele
+    Umschläge für uns bereitliegen. Ohne das würde regelmäßiges Nachladen mit
+    jedem Vorgang eine eigene Anfrage kosten. `focus` holt zusätzlich einen
+    bestimmten Vorgang (das offene Gespräch – dort interessiert auch der
+    Zustellstatus der eigenen Nachrichten).
+    """
     if not hub.enabled():
         return {"trades": 0, "new_messages": 0}
     try:
@@ -3039,7 +3046,8 @@ def hub_sync_trades(user: dict = Depends(current_user)):
                      t["item_id"], t["item_name"], t["status"],
                      t["created_at"], t["updated_at"]))
         for t in remote:
-            new_msgs += _sync_trade(t["id"])
+            if t.get("unread") or t["id"] == focus:
+                new_msgs += _sync_trade(t["id"])
         return {"trades": len(remote), "new_messages": new_msgs}
     except hub.HubError as e:
         raise HTTPException(502, f"Hub: {e.message}")
