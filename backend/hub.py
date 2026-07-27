@@ -148,6 +148,48 @@ def request_invites(want: int, reason: str = "") -> dict:
                    body={"want": want, "reason": reason})
 
 
+# ------------------------------------------------- Handel & Nachrichten
+
+def put_key(public_key: str) -> dict:
+    return _authed("PUT", "/v1/key", body={"public_key": public_key})
+
+
+def member_key(member_id: str) -> dict:
+    return _authed("GET", f"/v1/key/{member_id}")
+
+
+def create_trade(to: str, item_id: str, item_name: str, box: str) -> dict:
+    return _authed("POST", "/v1/trades", body={
+        "to": to, "item_id": item_id, "item_name": item_name, "box": box})
+
+
+def trades() -> list:
+    return _authed("GET", "/v1/trades").get("trades", [])
+
+
+def send_message(trade_id: str, box: str) -> dict:
+    return _authed("POST", f"/v1/trades/{trade_id}/messages", body={"box": box})
+
+
+def fetch_messages(trade_id: str) -> dict:
+    return _authed("GET", f"/v1/trades/{trade_id}/messages")
+
+
+def set_trade_status(trade_id: str, status: str) -> dict:
+    return _authed("POST", f"/v1/trades/{trade_id}/status",
+                   body={"status": status})
+
+
+def report(against: str, reason: str, trade_id: str = "",
+           disclosed: list | None = None) -> dict:
+    body = {"against": against, "reason": reason}
+    if trade_id:
+        body["trade_id"] = trade_id
+    if disclosed:
+        body["disclosed"] = disclosed
+    return _authed("POST", "/v1/reports", body=body)
+
+
 def last_publish() -> dict | None:
     raw = core.get_setting("hub_last_publish")
     if not raw:

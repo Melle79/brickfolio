@@ -315,7 +315,7 @@ async function createTrade(req, member, env) {
 
   const id = randomToken("trd");
   const t = now();
-  await env.DB.batch([
+  const res = await env.DB.batch([
     env.DB.prepare(
       "INSERT INTO trades (id, from_member, to_member, item_id, item_name, "
       + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -324,7 +324,9 @@ async function createTrade(req, member, env) {
       "INSERT INTO messages (trade_id, from_member, to_member, box, created_at)"
       + " VALUES (?, ?, ?, ?, ?)").bind(id, member.id, to, box, t),
   ]);
-  return json({ ok: true, trade_id: id }, 201);
+  // Die Absender-Instanz braucht die ID, um später die Zustellung zu erkennen.
+  const msgId = res[1] && res[1].meta ? res[1].meta.last_row_id : null;
+  return json({ ok: true, trade_id: id, message_id: msgId }, 201);
 }
 
 async function listTrades(member, env) {
@@ -354,14 +356,15 @@ async function sendMessage(req, member, env, tradeId) {
   }
   const to = t.from_member === member.id ? t.to_member : t.from_member;
   const ts = now();
-  await env.DB.batch([
+  const res = await env.DB.batch([
     env.DB.prepare(
       "INSERT INTO messages (trade_id, from_member, to_member, box, created_at)"
       + " VALUES (?, ?, ?, ?, ?)").bind(tradeId, member.id, to, box, ts),
     env.DB.prepare("UPDATE trades SET updated_at = ? WHERE id = ?")
       .bind(ts, tradeId),
   ]);
-  return json({ ok: true }, 201);
+  const msgId = res[0] && res[0].meta ? res[0].meta.last_row_id : null;
+  return json({ ok: true, message_id: msgId }, 201);
 }
 
 /* Nachrichten abholen. Dabei gilt die Abmachung aus dem Konzept: Umschläge

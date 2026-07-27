@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import core
+import crypto_box
 import hub
 import integrations
 import themes
@@ -2831,6 +2832,9 @@ def _hub_status(refresh: bool = False) -> dict:
     if refresh and hub.enabled():
         try:
             hub.refresh()
+            # Instanzen aus früheren Versionen haben noch keinen Schlüssel
+            # hinterlegt – das holen wir hier beiläufig nach.
+            _ensure_key_published()
         except Exception:
             pass                        # Cache bleibt, wenn der Hub grad klemmt
     c = hub.config()
@@ -2856,6 +2860,11 @@ def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
                                     body.display_name.strip())
         else:
             raise HTTPException(400, "Token oder Einladungscode + Anzeigename nötig")
+        # Schlüssel gleich hinterlegen, damit uns andere sofort schreiben können
+        try:
+            _ensure_key_published()
+        except Exception:
+            pass
         return _hub_status()
     except hub.HubError as e:
         raise HTTPException(502, f"Hub: {e.message}")
@@ -2908,6 +2917,235 @@ def hub_members(user: dict = Depends(current_user)):
         return {"members": []}
     try:
         return {"members": hub.members()}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+# ------------------------------------------------- Tausch-Vorgänge (E2E)
+
+def _ensure_key_published():
+    """Öffentlichen Schlüssel beim Hub hinterlegen (einmalig, danach gemerkt)."""
+    if core.get_setting("hub_key_sent") == crypto_box.public_key():
+        return
+    hub.put_key(crypto_box.public_key())
+    core.set_setting("hub_key_sent", crypto_box.public_key())
+
+
+def _sync_trade(trade_id: str) -> int:
+    """Nachrichten eines Vorgangs holen, entschlüsseln und lokal ablegen.
+    Gibt zurück, wie viele neu waren."""
+    data = hub.fetch_messages(trade_id)
+    new = 0
+    with core.db() as conn:
+        for m in data.get("messages", []):
+            exists = conn.execute(
+                "SELECT 1 FROM trade_messages WHERE trade_id = ? AND hub_id = ?"
+                " AND mine = 0", (trade_id, m["id"])).fetchone()
+            if exists:
+                continue
+            try:
+                body = crypto_box.open_box(m["box"])
+            except Exception:
+                body = "(Nachricht konnte nicht entschlüsselt werden)"
+            conn.execute(
+                "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
+                "created_at, delivered) VALUES (?, ?, 0, ?, ?, 1)",
+                (trade_id, m["id"], body, m["created_at"]))
+            new += 1
+        # Zustellstatus der eigenen Nachrichten nachziehen
+        for s in data.get("sent", []):
+            if s.get("fetched_at"):
+                conn.execute(
+                    "UPDATE trade_messages SET delivered = 1 "
+                    "WHERE trade_id = ? AND hub_id = ? AND mine = 1",
+                    (trade_id, s["id"]))
+    return new
+
+
+@app.post("/api/hub/trades/sync")
+def hub_sync_trades(user: dict = Depends(current_user)):
+    """Vorgänge und neue Nachrichten vom Hub holen."""
+    if not hub.enabled():
+        return {"trades": 0, "new_messages": 0}
+    try:
+        _ensure_key_published()
+        me = hub.config()["member_id"]
+        remote = hub.trades()
+        new_msgs = 0
+        with core.db() as conn:
+            for t in remote:
+                mine = t["from_member"] == me
+                other_id = t["to_member"] if mine else t["from_member"]
+                other_name = (t.get("to_name") if mine
+                              else t.get("from_name")) or "?"
+                conn.execute(
+                    "INSERT INTO trades (id, direction, other_id, other_name, "
+                    "item_id, item_name, status, created_at, updated_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "ON CONFLICT(id) DO UPDATE SET status = excluded.status, "
+                    "updated_at = excluded.updated_at, "
+                    "other_name = excluded.other_name",
+                    (t["id"], "out" if mine else "in", other_id, other_name,
+                     t["item_id"], t["item_name"], t["status"],
+                     t["created_at"], t["updated_at"]))
+        for t in remote:
+            new_msgs += _sync_trade(t["id"])
+        return {"trades": len(remote), "new_messages": new_msgs}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+@app.get("/api/hub/trades")
+def hub_trades(user: dict = Depends(current_user)):
+    """Lokale Vorgangsliste – funktioniert auch, wenn der Hub gerade klemmt."""
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT t.*, (SELECT COUNT(*) FROM trade_messages m "
+            " WHERE m.trade_id = t.id AND m.mine = 0 "
+            " AND (t.read_at IS NULL OR m.created_at > t.read_at)) AS unread, "
+            "(SELECT body FROM trade_messages m WHERE m.trade_id = t.id "
+            " ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_body "
+            "FROM trades t ORDER BY t.updated_at DESC").fetchall()
+    return {"trades": [dict(r) for r in rows]}
+
+
+@app.get("/api/hub/trades/{trade_id}")
+def hub_trade_detail(trade_id: str, user: dict = Depends(current_user)):
+    with core.db() as conn:
+        t = conn.execute("SELECT * FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+        if not t:
+            raise HTTPException(404, "Vorgang nicht gefunden")
+        msgs = conn.execute(
+            "SELECT id, mine, body, created_at, delivered FROM trade_messages "
+            "WHERE trade_id = ? ORDER BY created_at, id", (trade_id,)).fetchall()
+        conn.execute("UPDATE trades SET read_at = ? WHERE id = ?",
+                     (int(time.time()), trade_id))
+    return {"trade": dict(t), "messages": [dict(m) for m in msgs]}
+
+
+class TradeStartBody(BaseModel):
+    to: str = Field(min_length=1, max_length=80)
+    item_id: str = Field(min_length=1, max_length=60)
+    item_name: str = Field(default="", max_length=200)
+    text: str = Field(min_length=1, max_length=2000)
+
+
+@app.post("/api/hub/trades")
+def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
+    """Interesse an einem Angebot anmelden – mit erster Nachricht."""
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    try:
+        _ensure_key_published()
+        key = hub.member_key(body.to)["public_key"]
+        box = crypto_box.seal(key, body.text)
+        res = hub.create_trade(body.to, body.item_id, body.item_name, box)
+        tid = res["trade_id"]
+        now_ts = int(time.time())
+        with core.db() as conn:
+            conn.execute(
+                "INSERT INTO trades (id, direction, other_id, other_name, "
+                "item_id, item_name, status, created_at, updated_at, read_at) "
+                "VALUES (?, 'out', ?, ?, ?, ?, 'open', ?, ?, ?)",
+                (tid, body.to, "", body.item_id, body.item_name,
+                 now_ts, now_ts, now_ts))
+            conn.execute(
+                "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
+                "created_at) VALUES (?, ?, 1, ?, ?)",
+                (tid, res.get("message_id"), body.text, now_ts))
+        return {"ok": True, "trade_id": tid}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+class TradeMessageBody(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+
+
+@app.post("/api/hub/trades/{trade_id}/messages")
+def hub_send_message(trade_id: str, body: TradeMessageBody,
+                     user: dict = Depends(current_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    with core.db() as conn:
+        t = conn.execute("SELECT other_id FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+    if not t:
+        raise HTTPException(404, "Vorgang nicht gefunden")
+    try:
+        key = hub.member_key(t["other_id"])["public_key"]
+        sent = hub.send_message(trade_id, crypto_box.seal(key, body.text))
+        now_ts = int(time.time())
+        with core.db() as conn:
+            conn.execute(
+                "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
+                "created_at) VALUES (?, ?, 1, ?, ?)",
+                (trade_id, sent.get("message_id"), body.text, now_ts))
+            conn.execute("UPDATE trades SET updated_at = ?, read_at = ? "
+                         "WHERE id = ?", (now_ts, now_ts, trade_id))
+        return {"ok": True}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+class TradeStatusBody(BaseModel):
+    status: str = Field(pattern="^(open|accepted|declined|closed)$")
+
+
+@app.post("/api/hub/trades/{trade_id}/status")
+def hub_trade_status(trade_id: str, body: TradeStatusBody,
+                     user: dict = Depends(current_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    try:
+        hub.set_trade_status(trade_id, body.status)
+        with core.db() as conn:
+            conn.execute("UPDATE trades SET status = ? WHERE id = ?",
+                         (body.status, trade_id))
+        return {"ok": True, "status": body.status}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+
+
+class TradeReportBody(BaseModel):
+    reason: str = Field(min_length=3, max_length=1000)
+    include_history: bool = True
+
+
+@app.post("/api/hub/trades/{trade_id}/report")
+def hub_report_trade(trade_id: str, body: TradeReportBody,
+                     user: dict = Depends(current_user)):
+    """Gegenüber melden. Der Verlauf wird nur mitgeschickt, wenn man das
+    ausdrücklich will – er ist sonst für niemanden lesbar."""
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    with core.db() as conn:
+        t = conn.execute("SELECT * FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+        if not t:
+            raise HTTPException(404, "Vorgang nicht gefunden")
+        msgs = conn.execute(
+            "SELECT mine, body, created_at FROM trade_messages "
+            "WHERE trade_id = ? ORDER BY created_at, id", (trade_id,)).fetchall()
+    disclosed = None
+    if body.include_history:
+        me = hub.config()["display_name"] or "ich"
+        disclosed = [{"von": me if m["mine"] else t["other_name"],
+                      "text": m["body"], "ts": m["created_at"]} for m in msgs]
+    try:
+        hub.report(t["other_id"], body.reason, trade_id, disclosed)
+        return {"ok": True}
     except hub.HubError as e:
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:

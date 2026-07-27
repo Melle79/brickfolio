@@ -184,6 +184,31 @@ def init_db():
                 done_by INTEGER REFERENCES users(id),
                 added_at INTEGER NOT NULL
             );
+            -- Tausch-Vorgänge und Nachrichten. Der Hub löscht Umschläge nach
+            -- der Zustellung; der lesbare Verlauf lebt hier weiter.
+            CREATE TABLE IF NOT EXISTS trades (
+                id          TEXT PRIMARY KEY,      -- trd_… vom Hub
+                direction   TEXT NOT NULL,         -- out (ich frage) | in
+                other_id    TEXT NOT NULL,         -- Member-ID des Gegenübers
+                other_name  TEXT NOT NULL,
+                item_id     TEXT NOT NULL,
+                item_name   TEXT NOT NULL,
+                status      TEXT NOT NULL DEFAULT 'open',
+                created_at  INTEGER NOT NULL,
+                updated_at  INTEGER NOT NULL,
+                read_at     INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS trade_messages (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                trade_id   TEXT NOT NULL,
+                hub_id     INTEGER,               -- ID im Hub (für Dubletten)
+                mine       INTEGER NOT NULL,      -- 1 = von mir
+                body       TEXT NOT NULL,         -- entschlüsselter Text
+                created_at INTEGER NOT NULL,
+                delivered  INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_tmsg
+                ON trade_messages(trade_id, created_at);
             CREATE TABLE IF NOT EXISTS fig_sets (
                 fig_no TEXT PRIMARY KEY,
                 data TEXT NOT NULL,
