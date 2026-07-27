@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.45.1 – Juli 2026
+
+### Behoben
+- 💶 **Werte der Themenkarten stimmen wieder.** Die Karten zählten Figuren voll mit, die in eigenen Sets stecken – dadurch lagen sie über der Gesamtsumme im Kopf (die diese Figuren zu Recht herausrechnet). Der Wert je Eintrag kommt jetzt vom Server und folgt überall derselben Regel; Karten und Kopfsumme passen zusammen *(Issue #11)*
+
 ## 1.45.0 – Juli 2026
 
 ### Neu

@@ -2190,7 +2190,24 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
                 stats["in_sets_value"] = round(dedup, 2)
                 stats["total_value"] = round(
                     max(0.0, (stats["total_value"] or 0) - dedup), 2)
-    return {"items": [dict(r) for r in rows], "stats": stats}
+
+        # Wert je Eintrag mitliefern – nach derselben Regel wie die Kopfsumme.
+        # Sonst rechnet die Oberfläche (z. B. die Themenkarten) anders als der
+        # Kopf, und die Summen passen nicht zusammen.
+        bound = _set_bound_map(conn) if not item_type else {}
+        items = []
+        for r in rows:
+            d = dict(r)
+            unit = _unit_price(d["condition"], d["price_new"], d["price_used"])
+            in_sets = bound.get(d["id"], 0) if d["item_type"] == "minifig" else 0
+            d["unit_price"] = unit
+            d["bound_qty"] = in_sets
+            d["value"] = round((unit or 0) * d["quantity"], 2) if unit else None
+            d["net_value"] = (round((unit or 0)
+                                    * max(0, d["quantity"] - in_sets), 2)
+                              if unit else None)
+            items.append(d)
+    return {"items": items, "stats": stats}
 
 
 @app.post("/api/collection")

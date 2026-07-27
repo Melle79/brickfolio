@@ -1585,9 +1585,9 @@ function renderThemeGroups(list, items) {
     if (!g) { g = { name: key, items: [], pieces: 0, value: 0 }; byName.set(key, g); groups.push(g); }
     g.items.push(it);
     g.pieces += it.quantity;
-    const unit = it.condition === "new"
-      ? (it.price_new ?? it.price_used) : (it.price_used ?? it.price_new);
-    if (unit) g.value += unit * it.quantity;
+    // net_value kommt vom Server und folgt derselben Regel wie die Kopfsumme:
+    // Figuren, die in eigenen Sets stecken, zählen nicht doppelt.
+    if (it.net_value) g.value += it.net_value;
   });
 
   const closed = collapsedThemes();
