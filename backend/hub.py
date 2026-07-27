@@ -40,16 +40,14 @@ def blocked() -> bool:
     return core.get_setting("hub_blocked") == "1"
 
 
-def instance_code() -> str:
-    return core.get_setting("hub_instance_code") or ""
-
-
 def _remember_instance(data: dict):
     """Kennung und Geheimnis der Installation merken.
 
-    Die beiden überleben bewusst das Trennen vom Netzwerk und liegen in den
-    Einstellungen – also in der Sicherung. Nach einer Neuinstallation samt
-    Rücksicherung ist es für den Hub wieder dieselbe Instanz.
+    Beides ist nichts für die Oberfläche – es liegt still in den Einstellungen
+    und geht nur beim Beitritt wieder an den Hub. Weil die Einstellungen in der
+    Sicherung stecken, ist eine neu aufgesetzte und zurückgesicherte
+    Installation für den Hub wieder dieselbe Instanz. Sichtbar wird die Kennung
+    dort, wo man sie braucht: in der Admin-Konsole.
     """
     code = (data.get("instance_code") or "").strip()
     if code:

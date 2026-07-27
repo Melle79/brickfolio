@@ -302,14 +302,16 @@ def test_disconnect_clears_block_and_key_state(client):
 
 # ------------------------------------------------- Instanz-Kennung
 
-def test_instance_code_is_kept_and_shown(client, monkeypatch):
+def test_instance_code_is_kept_but_stays_out_of_the_app(client, monkeypatch):
+    """Gemerkt ja, angezeigt nein – in der App wäre die Kennung nur Rätselraten;
+    gebraucht wird sie in der Admin-Konsole."""
     monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
         201, {"member_id": "mem_1", "display_name": "Paul", "token": "bft_1",
               "instance_code": "BF-ABCD-EFGH-K",
               "instance_secret": "ins_geheim"}))
     hub.connect_with_invite("inv_x", "Paul")
-    assert hub.instance_code() == "BF-ABCD-EFGH-K"
-    assert client.get("/api/hub").json()["instance_code"] == "BF-ABCD-EFGH-K"
+    assert core.get_setting("hub_instance_code") == "BF-ABCD-EFGH-K"
+    assert "instance_code" not in client.get("/api/hub").json()
 
 
 def test_instance_claim_travels_with_a_new_join(client, monkeypatch):
@@ -336,7 +338,7 @@ def test_disconnect_keeps_the_instance_identity(client):
     core.set_setting("hub_instance_secret", "ins_geheim")
     core.set_setting("hub_token", "bft_x")
     hub.disconnect()
-    assert hub.instance_code() == "BF-ABCD-EFGH-K"
+    assert core.get_setting("hub_instance_code") == "BF-ABCD-EFGH-K"
     assert core.get_setting("hub_instance_secret") == "ins_geheim"
 
 
@@ -355,7 +357,7 @@ def test_existing_member_gets_the_code_on_refresh(client, monkeypatch):
         200, {"display_name": "Paul", "is_admin": False,
               "instance_code": "BF-ZZZZ-YYYY-M", "instance_secret": "ins_neu"}))
     hub.refresh()
-    assert hub.instance_code() == "BF-ZZZZ-YYYY-M"
+    assert core.get_setting("hub_instance_code") == "BF-ZZZZ-YYYY-M"
     assert core.get_setting("hub_instance_secret") == "ins_neu"
 
 

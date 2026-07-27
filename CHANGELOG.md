@@ -1,9 +1,14 @@
 # Changelog
 
+## 1.48.1 – Juli 2026
+
+### Verbessert
+- 🙈 **Die Instanz-Kennung steht nicht mehr in der App.** Dort ist sie nur eine Nummer ohne Zusammenhang – gebraucht wird sie in der Admin-Konsole, und dort steht sie auch. Gemerkt und beim Beitritt mitgeschickt wird sie unverändert
+
 ## 1.48.0 – Juli 2026
 
 ### Neu
-- 🏠 **Jede Instanz hat jetzt eine Kennung.** Bei der Erstanmeldung vergibt der Hub eine ablesbare Nummer im Format `BF-4K7P-2M9X-C` – mit Prüfzeichen, damit ein Zahlendreher beim Abtippen auffällt statt still danebenzugreifen. Sie steht in der Tausch-Ansicht und liegt in der Sicherung: Nach einer Neuinstallation samt Rücksicherung ist es für den Hub wieder dieselbe Instanz
+- 🏠 **Jede Instanz hat jetzt eine Kennung.** Bei der Erstanmeldung vergibt der Hub eine ablesbare Nummer im Format `BF-4K7P-2M9X-C` – mit Prüfzeichen, damit ein Zahlendreher beim Abtippen auffällt statt still danebenzugreifen. Sie liegt still in den Einstellungen und damit in der Sicherung: Nach einer Neuinstallation samt Rücksicherung ist es für den Hub wieder dieselbe Instanz
 - 📜 **Der Hub kennt die Vorgeschichte einer Installation.** In der Admin-Konsole steht unter „Instanzen", unter welchem Namen sich eine Instanz erstmals angemeldet hat und welche Konten seither dazugehörten. Wer den Zugang verliert, lässt sich damit sicher zuordnen und freischalten
 - 🚫 **Eine Sperre gilt der Installation, nicht nur dem Namen.** Bisher genügten eine neue Einladung und ein anderer Name, um zurückzukommen. Meldet sich dieselbe Instanz erneut an, wird sie erkannt und abgewiesen – mit Angabe ihrer Kennung, damit klar ist, worüber der Hub-Admin entscheidet. Freischalten geht per Kennung, auch abgetippt
 

@@ -4319,11 +4319,6 @@ async function loadHubView() {
     $("hub-view-who").textContent = s.display_name
       ? `Angemeldet als ${s.display_name}` : "";
     $("hub-blocked").hidden = !s.blocked;
-    // Die Kennung dieser Installation – die braucht der Hub-Admin, wenn er
-    // dich zuordnen oder wieder freischalten soll.
-    $("hub-instance").hidden = !s.instance_code;
-    $("hub-instance").textContent = s.instance_code
-      ? `Instanz-Kennung: ${s.instance_code}` : "";
     const lp = s.last_publish;
     const lpEl = $("hub-last-publish");
     lpEl.hidden = !lp;
