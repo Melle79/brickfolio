@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.46.1 – Juli 2026
+
+### Behoben
+- ⚑ **Das Meldefenster verschwand hinter dem Gespräch.** Beide Fenster lagen auf derselben Ebene, also gewann das später im Dokument stehende – das Meldefenster ging auf, war aber nicht zu sehen. Jetzt tritt das Gespräch zur Seite, das Meldefenster steht allein da, und nach dem Absenden oder Abbrechen ist das Gespräch wieder da
+- 💬 **Rückmeldungen waren in Fenstern unsichtbar.** Kurzhinweise („Gemeldet – ein Hub-Admin schaut sich das an") lagen unter den Fenstern und damit ausgerechnet dort verborgen, wo sie ausgelöst wurden
+
 ## 1.46.0 – Juli 2026
 
 ### Neu

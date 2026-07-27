@@ -4503,6 +4503,7 @@ async function renderTrade(quiet = false) {
 
 function closeTrade() {
   $("trade-overlay").hidden = true;
+  $("report-overlay").hidden = true;   // hing es noch daran, geht es mit
   document.body.style.overflow = "";
   openTradeId = null;
   updatePolling();
@@ -4795,13 +4796,21 @@ function openReport() {
   if (!openTradeId) return;
   $("report-reason").value = "";
   $("report-history").checked = true;
+  // Das Gespräch tritt zur Seite, bleibt aber der offene Vorgang – nach dem
+  // Melden (oder Abbrechen) kommt es wieder. Sonst stünden zwei Fenster
+  // übereinander, samt zweier Schließen-Knöpfe.
+  $("trade-overlay").hidden = true;
   $("report-overlay").hidden = false;
   $("report-reason").focus();
 }
 
-function closeReport() { $("report-overlay").hidden = true; }
+function closeReport() {
+  $("report-overlay").hidden = true;
+  if (openTradeId) $("trade-overlay").hidden = false;
+}
 
 async function sendReport() {
+  if (!openTradeId) { closeReport(); return; }
   const reason = $("report-reason").value.trim();
   if (reason.length < 3) { toast("Bitte kurz beschreiben, was war"); return; }
   const btn = $("report-send");

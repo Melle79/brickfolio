@@ -462,7 +462,9 @@ code {
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 92px);
-  transform: translateX(-50%); z-index: 50;
+  /* über allen Fenstern – sonst bleibt die Rückmeldung zu einer Aktion
+     ausgerechnet dort unsichtbar, wo sie ausgelöst wurde */
+  transform: translateX(-50%); z-index: 110;
   background: var(--toast-bg); color: var(--toast-fg); font-weight: 800; font-size: 14.5px;
   padding: 11px 18px; border-radius: 999px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
   max-width: 90vw; text-align: center;
@@ -1110,6 +1112,10 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   display: flex; padding: 18px 12px;
 }
+/* Fenster, die aus einem anderen Fenster heraus aufgehen (Melden aus dem
+   Chat), müssen darüber liegen – sonst entscheidet die Reihenfolge im HTML,
+   und das Meldefenster verschwände hinter dem Gespräch. */
+.card-modal-overlay.stacked { z-index: 80; }
 .card-modal {
   position: relative; margin: auto;
   width: 100%; max-width: 640px; max-height: 92vh; display: flex;
