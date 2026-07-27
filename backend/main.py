@@ -2858,7 +2858,8 @@ def _hub_status(refresh: bool = False) -> dict:
     c = hub.config()
     return {"connected": hub.enabled(), "url": c["url"],
             "member_id": c["member_id"], "display_name": c["display_name"],
-            "is_admin": c["is_admin"], "last_publish": hub.last_publish()}
+            "is_admin": c["is_admin"], "last_publish": hub.last_publish(),
+            "blocked": hub.blocked()}
 
 
 @app.get("/api/hub")

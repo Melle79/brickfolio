@@ -51,9 +51,13 @@ function bearer(req) {
 async function auth(req, env) {
   const tok = bearer(req);
   if (!tok) return null;
+  // Bewusst ohne Status-Filter: ein gesperrter Zugang soll als „gesperrt"
+  // erkennbar sein und nicht wie ein kaputter Token aussehen – sonst sucht
+  // die Gegenseite den Fehler bei sich und verbindet sich womöglich neu.
   const row = await env.DB.prepare(
-    "SELECT * FROM members WHERE token_hash = ? AND status = 'active'")
+    "SELECT * FROM members WHERE token_hash = ?")
     .bind(await sha256(tok)).first();
+  if (row && row.status !== "active") return { blocked: true };
   if (row) {
     // last_seen best-effort, nicht blockierend fürs Ergebnis
     env.DB.prepare("UPDATE members SET last_seen_at = ? WHERE id = ?")
@@ -604,6 +608,10 @@ async function adminDeleteMember(member, env, id) {
     env.DB.prepare("DELETE FROM offers WHERE member_id = ?").bind(id),
     env.DB.prepare("DELETE FROM trade_messages WHERE from_member = ? OR to_member = ?")
       .bind(id, id),
+    // Ohne das bliebe beim Gegenüber eine Unterhaltung ohne Namen stehen,
+    // zu der es weder Nachrichten noch einen Gesprächspartner gibt.
+    env.DB.prepare("DELETE FROM trades WHERE from_member = ? OR to_member = ?")
+      .bind(id, id),
     env.DB.prepare("DELETE FROM members WHERE id = ?").bind(id),
   ]);
   return json({ ok: true });
@@ -718,6 +726,10 @@ export default {
       // ab hier: Auth nötig
       const member = await auth(req, env);
       if (!member) return err(401, "Token fehlt oder ungültig");
+      if (member.blocked) {
+        return json({ error: "Dein Zugang zum Tausch-Netzwerk wurde gesperrt. "
+          + "Wende dich an den Hub-Admin.", blocked: true }, 403);
+      }
 
       if (p.startsWith("/v1/admin/")) return await adminRoute(req, member, env, p, method);
 

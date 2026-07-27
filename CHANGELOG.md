@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.47.0 – Juli 2026
+
+### Verbessert
+- 🚫 **Eine Sperre sieht jetzt aus wie eine Sperre.** Wer vom Hub-Admin aus dem Netzwerk genommen wurde, bekam bisher bei jeder Aktion „Token fehlt oder ungültig" – das klang nach einem kaputten Zugang und legte nahe, die Verbindung zu trennen und neu zu verbinden, was gar nicht klappen kann. Der Hub unterscheidet nun zwischen gesperrt und unbekannt, und die Tausch-Ansicht erklärt die Lage: bisherige Unterhaltungen bleiben lesbar, und nach einer Freischaltung geht es ohne Neuverbinden weiter
+
+### Behoben
+- 🧹 **Beim Löschen eines Mitglieds blieben leere Unterhaltungen zurück.** Angebote und Nachrichten wurden entfernt, die Gespräche selbst nicht – beim Gegenüber stand danach eine Unterhaltung ohne Gesprächspartner. Sie gehen jetzt mit
+- 🔑 **Nach einem Neubeitritt kam der Schlüssel nicht beim Hub an.** Die Instanz hielt sich für schon gemeldet und war für neue Nachrichten unerreichbar. Beim Verbinden und beim Trennen wird der Stand jetzt zurückgesetzt
+
 ## 1.46.1 – Juli 2026
 
 ### Behoben

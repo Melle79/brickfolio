@@ -36,16 +36,26 @@ def enabled() -> bool:
     return bool(core.get_setting("hub_token"))
 
 
+def blocked() -> bool:
+    return core.get_setting("hub_blocked") == "1"
+
+
 def _store(token, me):
     core.set_setting("hub_token", token)
     core.set_setting("hub_member_id", me.get("member_id", ""))
     core.set_setting("hub_display_name", me.get("display_name", ""))
     core.set_setting("hub_is_admin", "1" if me.get("is_admin") else "0")
+    core.set_setting("hub_blocked", "")
+    # Der Schlüssel gilt beim Hub je Mitglied. Wer sich neu anmeldet, ist dort
+    # ein neues Mitglied – ohne diese Zeile hielte sich die Instanz für schon
+    # gemeldet und bliebe für Nachrichten unerreichbar.
+    core.set_setting("hub_key_sent", "")
 
 
 def disconnect():
     for k in ("hub_token", "hub_member_id", "hub_display_name",
-              "hub_is_admin", "hub_last_publish"):
+              "hub_is_admin", "hub_last_publish", "hub_blocked",
+              "hub_key_sent"):
         core.set_setting(k, "")
 
 
@@ -63,7 +73,14 @@ def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):
         data = {}
     if not resp.ok:
         msg = data.get("error") if isinstance(data, dict) else None
+        if isinstance(data, dict) and data.get("blocked"):
+            # Der Zugang ist gesperrt, nicht kaputt. Das merken wir uns, damit
+            # die App es sagen kann – der Token bleibt liegen, denn nach einer
+            # Freischaltung geht damit alles weiter.
+            core.set_setting("hub_blocked", "1")
         raise HubError(resp.status_code, msg or f"Hub-Fehler {resp.status_code}")
+    if token and core.get_setting("hub_blocked"):
+        core.set_setting("hub_blocked", "")     # Freischaltung bemerkt
     return data
 
 

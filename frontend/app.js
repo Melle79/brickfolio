@@ -4318,6 +4318,7 @@ async function loadHubView() {
     const s = await api("/hub?refresh=1");
     $("hub-view-who").textContent = s.display_name
       ? `Angemeldet als ${s.display_name}` : "";
+    $("hub-blocked").hidden = !s.blocked;
     const lp = s.last_publish;
     const lpEl = $("hub-last-publish");
     lpEl.hidden = !lp;

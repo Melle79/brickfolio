@@ -232,6 +232,74 @@ def test_share_status_without_hub_says_state_unknown(client, monkeypatch):
     assert s["known_state"] is False and s["stale"] == []
 
 
+# ------------------------------------------------- Gesperrter Zugang
+
+class _Resp:
+    def __init__(self, status, payload):
+        self.status_code = status
+        self.ok = status < 400
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+
+def test_blocked_access_is_remembered_and_shown(client, monkeypatch):
+    """Ein gesperrter Zugang ist nicht dasselbe wie ein kaputter Token –
+    die App soll das sagen können, ohne den Token wegzuwerfen."""
+    core.set_setting("hub_token", "bft_x")
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        403, {"error": "Dein Zugang wurde gesperrt.", "blocked": True}))
+    with pytest.raises(hub.HubError) as e:
+        hub.refresh()
+    assert e.value.status == 403
+    assert hub.blocked() is True
+    s = client.get("/api/hub").json()
+    assert s["blocked"] is True and s["connected"] is True   # Token bleibt
+    assert (core.get_setting("hub_token") or "") == "bft_x"
+
+
+def test_unblocking_is_noticed_on_next_call(client, monkeypatch):
+    core.set_setting("hub_token", "bft_x")
+    core.set_setting("hub_blocked", "1")
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        200, {"display_name": "Paul", "is_admin": False}))
+    hub.refresh()
+    assert hub.blocked() is False
+    assert client.get("/api/hub").json()["blocked"] is False
+
+
+def test_plain_401_does_not_claim_a_block(client, monkeypatch):
+    """Ein unbekannter Token ist ein anderer Fall – nicht als Sperre ausgeben."""
+    core.set_setting("hub_token", "bft_x")
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        401, {"error": "Token fehlt oder ungültig"}))
+    with pytest.raises(hub.HubError):
+        hub.refresh()
+    assert hub.blocked() is False
+
+
+def test_new_connection_resends_the_key(client, monkeypatch):
+    """Beim Hub hängt der Schlüssel am Mitglied. Wer neu beitritt, ist dort ein
+    neues Mitglied – sonst hielte sich die Instanz für gemeldet und wäre für
+    Nachrichten unerreichbar."""
+    core.set_setting("hub_key_sent", "alterSchluessel")
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        201, {"member_id": "mem_neu", "display_name": "Paul",
+              "token": "bft_neu"}))
+    hub.connect_with_invite("inv_x", "Paul")
+    assert (core.get_setting("hub_key_sent") or "") == ""
+
+
+def test_disconnect_clears_block_and_key_state(client):
+    core.set_setting("hub_token", "bft_x")
+    core.set_setting("hub_blocked", "1")
+    core.set_setting("hub_key_sent", "k")
+    hub.disconnect()
+    assert hub.blocked() is False
+    assert (core.get_setting("hub_key_sent") or "") == ""
+
+
 # ------------------------------------------------- Vorgänge löschen / entfallen
 
 def _trade(tid="trd_a", direction="out"):
