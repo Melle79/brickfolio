@@ -4441,7 +4441,8 @@ async function loadTrades(quiet = false) {
           <div class="card-title">
             <strong>${esc(t.item_name || t.item_id)}</strong>
             <div class="sub">${t.direction === "out" ? "→ an" : "← von"}
-              ${esc(t.other_name || "?")} · ${tradeStatusText(t.status)}</div>
+              ${esc(t.other_name || "?")} · ${tradeStatusText(t.status)}
+              ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
           </div>
@@ -4478,7 +4479,7 @@ async function renderTrade(quiet = false) {
     const { trade, messages } = await api(`/hub/trades/${openTradeId}`);
     // Nur neu zeichnen, wenn sich etwas geändert hat: sonst springt beim
     // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
-    const sig = JSON.stringify([trade.status, messages.map((m) =>
+    const sig = JSON.stringify([trade.status, trade.item_gone, messages.map((m) =>
       [m.id, m.delivered])]);
     if (quiet && sig === tradeSig) return;
     const box = $("trade-msgs");
@@ -4488,6 +4489,7 @@ async function renderTrade(quiet = false) {
     $("trade-sub").textContent =
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
+    $("trade-gone").hidden = !trade.item_gone;
     box.innerHTML = messages.map((m) => `
       <div class="trade-msg${m.mine ? " mine" : ""}">
         ${esc(m.body)}
@@ -4514,23 +4516,46 @@ async function loadShareView() {
   box.innerHTML = brickLoading("Auswahl wird geladen …");
   try {
     const s = await api("/share/status");
+    const wartet = s.known_state ? s.items.filter((i) => !i.published).length : 0;
     $("hub-share-info").textContent = s.shared
-      ? `${s.shared} Artikel ausgewählt (Vorschlag aus der Abgabeliste: ${s.suggested}).`
+      ? `${s.shared} Artikel ausgewählt (Vorschlag aus der Abgabeliste: `
+        + `${s.suggested})`
+        + (s.known_state
+          ? ` · ${s.published} veröffentlicht, ${wartet} wartet auf das `
+            + `Veröffentlichen.`
+          : ".")
       : `Noch nichts ausgewählt. Vorschlag aus der Abgabeliste: ${s.suggested} Artikel.`;
-    const { items } = await api("/collection?sort=name");
-    const chosen = items.filter((i) => i.shared);
-    box.innerHTML = chosen.length ? chosen.map((it) => `
+
+    // Was noch im Hub steht, aber nicht mehr ausgewählt ist, verschwindet
+    // beim nächsten Veröffentlichen – das gehört gesagt, nicht verschwiegen.
+    const stale = (s.stale || []).length ? `
+      <p class="warn-line">Im Netzwerk stehen noch
+        ${s.stale.length} Artikel, die hier nicht mehr ausgewählt sind
+        (${s.stale.map((o) => esc(o.name || o.item_id)).slice(0, 3).join(", ")}${s.stale.length > 3 ? " …" : ""}).
+        Sie verschwinden beim nächsten Veröffentlichen.</p>` : "";
+
+    box.innerHTML = s.items.length ? stale + s.items.map((it) => `
       <div class="card">
         <div class="card-head">
           <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(it.name)}</strong>
-            <div class="sub">${esc(it.item_id)} · ${it.quantity}× · ${it.condition === "new" ? "Neu" : "Gebraucht"}</div>
+            <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
+              ${it.condition === "new" ? "Neu" : "Gebraucht"}</div>
+            ${s.known_state ? `<span class="badge ${it.published ? "badge-owned" : "badge-wanted"}">${
+              it.published ? `veröffentlicht (${it.published_qty}×)` : "noch nicht veröffentlicht"}</span>` : ""}
           </div>
           <button class="mini-btn" data-unshare="${it.id}">Entfernen</button>
         </div>
+        ${it.quantity > 1 ? `
+        <label class="share-qty">Zum Tausch anbieten:
+          <select data-shareqty="${it.id}">
+            ${Array.from({ length: it.quantity }, (_, n) => n + 1).map((n) =>
+              `<option value="${n}"${n === it.share_qty ? " selected" : ""}>${n}×</option>`).join("")}
+          </select>
+        </label>` : ""}
       </div>`).join("")
-      : `<p class="search-hint">Nichts ausgewählt – veröffentlicht wird dann nichts.</p>`;
+      : stale + `<p class="search-hint">Nichts ausgewählt – veröffentlicht wird dann nichts.</p>`;
     box.querySelectorAll("[data-unshare]").forEach((b) => {
       b.addEventListener("click", async () => {
         try {
@@ -4538,6 +4563,16 @@ async function loadShareView() {
             body: { shared: false } });
           loadShareView();
         } catch (e) { toast(e.message); }
+      });
+    });
+    box.querySelectorAll("[data-shareqty]").forEach((sel) => {
+      sel.addEventListener("change", async () => {
+        try {
+          await api(`/collection/${sel.dataset.shareqty}/share`, {
+            method: "POST",
+            body: { shared: true, qty: Number(sel.value) } });
+          toast("Menge gemerkt – beim Veröffentlichen wird sie übernommen");
+        } catch (e) { toast(e.message); loadShareView(); }
       });
     });
   } catch (e) {
@@ -4595,12 +4630,26 @@ function wireHubViewOnce() {
     try {
       await api(`/hub/trades/${openTradeId}/status`, { method: "POST",
         body: { status } });
-      renderTrade();
+      // Ablehnen beendet das Gespräch – dann soll das Fenster auch zugehen,
+      // sonst steht man vor einem Chat, in dem es nichts mehr zu sagen gibt.
+      if (status === "declined") { toast("Abgelehnt"); closeTrade(); }
+      else renderTrade();
     } catch (e) { toast(e.message); }
   };
   $("trade-accept").addEventListener("click", () => setStatus("accepted"));
   $("trade-decline").addEventListener("click", () => setStatus("declined"));
   $("trade-report").addEventListener("click", openReport);
+  $("trade-delete").addEventListener("click", async () => {
+    if (!openTradeId) return;
+    if (!confirm("Diese Unterhaltung endgültig löschen? Auch beim Gegenüber "
+      + "verschwindet sie aus dem Hub.")) return;
+    try {
+      await api(`/hub/trades/${openTradeId}`, { method: "DELETE" });
+      closeTrade();
+      tradesSig = "";
+      loadTrades();
+    } catch (e) { toast(e.message); }
+  });
 
   // Anfrage-Fenster
   $("interest-close").addEventListener("click", closeInterest);

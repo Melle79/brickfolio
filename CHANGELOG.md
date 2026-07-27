@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.46.0 – Juli 2026
+
+### Neu
+- 🔢 **Menge je Angebot wählbar.** Bei mehrfach vorhandenen Figuren lässt sich in „Meine Auswahl" einstellen, wie viele davon ins Netzwerk gehen – die übrigen bleiben unsichtbar. Ohne Angabe wie bisher alle *(Hub-Issue #10)*
+- 🗑 **Unterhaltungen löschen.** Im Gespräch gibt es einen Löschen-Knopf; der Vorgang verschwindet hier und im Hub, samt der Umschläge beim Gegenüber *(Hub-Issue #7)*
+
+### Verbessert
+- 📤 **Man sieht, was schon veröffentlicht ist.** Jeder Artikel in der Auswahl trägt jetzt „veröffentlicht" oder „noch nicht veröffentlicht", die Kopfzeile zählt beides. Angebote, die im Hub stehen, hier aber nicht mehr ausgewählt sind, werden oben angezeigt – sie fallen beim nächsten Veröffentlichen weg *(Hub-Issue #9)*
+- 🚫 **Zurückgezogene Angebote sind erkennbar.** Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht das an der Vorgangsliste und über dem Gesprächsverlauf, statt still weiterzulaufen *(Hub-Issue #8)*
+
+### Behoben
+- ✖ Nach „Ablehnen" blieb das Gesprächsfenster offen stehen; es schließt sich jetzt *(Hub-Issue #6)*
+
 ## 1.45.1 – Juli 2026
 
 ### Behoben

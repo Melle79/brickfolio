@@ -2898,28 +2898,67 @@ def hub_disconnect(user: dict = Depends(admin_user)):
 
 class ShareBody(BaseModel):
     shared: bool
+    qty: int | None = Field(default=None, ge=1, le=9999)
 
 
 @app.post("/api/collection/{entry_id}/share")
 def set_shared(entry_id: int, body: ShareBody,
                user: dict = Depends(current_user)):
-    """Einzelnen Eintrag für die Tauschbörse an- oder abwählen."""
+    """Einzelnen Eintrag für die Tauschbörse an- oder abwählen. `qty` sagt,
+    wie viele Exemplare angeboten werden – ohne Angabe alle vorhandenen."""
     with core.db() as conn:
-        cur = conn.execute("UPDATE collection SET shared = ? WHERE id = ?",
-                           (1 if body.shared else 0, entry_id))
-        if cur.rowcount == 0:
+        row = conn.execute("SELECT quantity FROM collection WHERE id = ?",
+                           (entry_id,)).fetchone()
+        if not row:
             raise HTTPException(404, "Eintrag nicht gefunden")
-    return {"ok": True, "shared": body.shared}
+        qty = body.qty
+        if qty is not None:
+            qty = max(1, min(qty, row["quantity"]))
+        conn.execute("UPDATE collection SET shared = ?, share_qty = ? "
+                     "WHERE id = ?",
+                     (1 if body.shared else 0,
+                      qty if body.shared else None, entry_id))
+    return {"ok": True, "shared": body.shared, "qty": qty}
+
+
+def _shared_rows(conn):
+    return conn.execute(
+        "SELECT id, item_id, item_type, name, img_url, bricklink_url, "
+        "condition, quantity, share_qty FROM collection WHERE shared = 1 "
+        "ORDER BY name COLLATE NOCASE").fetchall()
 
 
 @app.get("/api/share/status")
 def share_status(user: dict = Depends(current_user)):
-    """Wie viele Einträge sind fürs Netzwerk ausgewählt – und wie viele wären
-    nach der Abgabeliste vorgeschlagen?"""
+    """Was ist ausgewählt, was davon ist schon veröffentlicht – und was liegt
+    noch beim Hub, das beim nächsten Veröffentlichen verschwindet?"""
     with core.db() as conn:
-        chosen = conn.execute(
-            "SELECT COUNT(*) AS c FROM collection WHERE shared = 1").fetchone()["c"]
-    return {"shared": chosen, "suggested": len(_duplicate_items()["items"])}
+        rows = _shared_rows(conn)
+    chosen = [{"id": r["id"], "item_id": r["item_id"], "name": r["name"],
+               "item_type": r["item_type"], "img_url": r["img_url"],
+               "condition": r["condition"], "quantity": r["quantity"],
+               "share_qty": r["share_qty"] or r["quantity"]} for r in rows]
+
+    published, stale, live = [], [], None
+    if hub.enabled():
+        try:
+            live = hub.offers({"mine": "1"})
+        except Exception:
+            live = None
+    if live is not None:
+        by_item = {o["item_id"]: o for o in live}
+        for c in chosen:
+            o = by_item.get(c["item_id"])
+            c["published"] = bool(o)
+            c["published_qty"] = o["qty"] if o else None
+            if o:
+                published.append(c["item_id"])
+        chosen_ids = {c["item_id"] for c in chosen}
+        stale = [{"item_id": o["item_id"], "name": o["name"], "qty": o["qty"]}
+                 for o in live if o["item_id"] not in chosen_ids]
+    return {"shared": len(chosen), "suggested": len(_duplicate_items()["items"]),
+            "items": chosen, "known_state": live is not None,
+            "published": len(published), "stale": stale}
 
 
 @app.post("/api/share/from_duplicates")
@@ -2973,10 +3012,7 @@ def hub_publish(user: dict = Depends(admin_user)):
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
     with core.db() as conn:
-        rows = conn.execute(
-            "SELECT id, item_id, item_type, name, img_url, bricklink_url, "
-            "condition, quantity FROM collection WHERE shared = 1 "
-            "ORDER BY name COLLATE NOCASE").fetchall()
+        rows = _shared_rows(conn)
     offers = []
     for r in rows:
         thumb = _offer_thumb(r["img_url"])
@@ -2987,7 +3023,8 @@ def hub_publish(user: dict = Depends(admin_user)):
             "img_url": "" if thumb else (r["img_url"] or ""),
             "img_data": thumb,
             "bricklink_url": r["bricklink_url"], "condition": r["condition"],
-            "qty": r["quantity"],
+            # Nur so viele anbieten, wie ausgewählt (Standard: alle)
+            "qty": min(r["share_qty"] or r["quantity"], r["quantity"]),
         })
     try:
         res = hub.publish(offers)
@@ -3097,6 +3134,11 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                     (t["id"], "out" if mine else "in", other_id, other_name,
                      t["item_id"], t["item_name"], t["status"],
                      t["created_at"], t["updated_at"]))
+                # Nur bei Anfragen an andere sagt der Hub etwas darüber, ob
+                # das Angebot noch steht – bei eingehenden ist es mein eigenes.
+                if mine and "item_available" in t:
+                    conn.execute("UPDATE trades SET item_gone = ? WHERE id = ?",
+                                 (0 if t["item_available"] else 1, t["id"]))
         for t in remote:
             if t.get("unread") or t["id"] == focus:
                 new_msgs += _sync_trade(t["id"])
@@ -3203,6 +3245,25 @@ def hub_send_message(trade_id: str, body: TradeMessageBody,
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
+
+
+@app.delete("/api/hub/trades/{trade_id}")
+def hub_delete_trade(trade_id: str, user: dict = Depends(current_user)):
+    """Unterhaltung löschen – hier und, soweit erreichbar, auch im Hub.
+    Lokal wird auch dann gelöscht, wenn der Hub gerade klemmt; beim nächsten
+    Abgleich käme der Vorgang sonst wieder zurück, deshalb der Versuch zuerst."""
+    if hub.enabled():
+        try:
+            hub.delete_trade(trade_id)
+        except hub.HubError as e:
+            if e.status != 404:
+                raise HTTPException(502, f"Hub: {e.message}")
+        except requests.RequestException:
+            raise HTTPException(502, "Hub nicht erreichbar")
+    with core.db() as conn:
+        conn.execute("DELETE FROM trade_messages WHERE trade_id = ?", (trade_id,))
+        conn.execute("DELETE FROM trades WHERE id = ?", (trade_id,))
+    return {"ok": True}
 
 
 class TradeStatusBody(BaseModel):

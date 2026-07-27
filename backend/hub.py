@@ -180,6 +180,10 @@ def set_trade_status(trade_id: str, status: str) -> dict:
                    body={"status": status})
 
 
+def delete_trade(trade_id: str) -> dict:
+    return _authed("DELETE", f"/v1/trades/{trade_id}")
+
+
 def report(against: str, reason: str, trade_id: str = "",
            disclosed: list | None = None) -> dict:
     body = {"against": against, "reason": reason}

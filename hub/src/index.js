@@ -337,7 +337,11 @@ async function listTrades(member, env) {
     "SELECT t.*, "
     + "f.display_name AS from_name, o.display_name AS to_name, "
     + "(SELECT COUNT(*) FROM trade_messages m WHERE m.trade_id = t.id "
-    + " AND m.to_member = ? AND m.fetched_at IS NULL) AS unread "
+    + " AND m.to_member = ? AND m.fetched_at IS NULL) AS unread, "
+    // Wird der Artikel überhaupt noch angeboten? Sonst läuft das Gespräch
+    // über etwas, das inzwischen weg ist – das gehört sichtbar gemacht.
+    + "(SELECT COUNT(*) FROM offers ofr WHERE ofr.member_id = t.to_member "
+    + " AND ofr.item_id = t.item_id) AS item_available "
     + "FROM trades t "
     + "LEFT JOIN members f ON f.id = t.from_member "
     + "LEFT JOIN members o ON o.id = t.to_member "
@@ -427,6 +431,22 @@ async function setTradeStatus(req, member, env, tradeId) {
   await env.DB.prepare("UPDATE trades SET status = ?, updated_at = ? "
     + "WHERE id = ?").bind(status, now(), tradeId).run();
   return json({ ok: true, status });
+}
+
+/* Unterhaltung löschen. Beide Seiten dürfen das; die Umschläge gehen mit.
+   Der lesbare Verlauf liegt ohnehin auf den Instanzen. */
+async function deleteTrade(member, env, tradeId) {
+  const t = await env.DB.prepare("SELECT * FROM trades WHERE id = ?")
+    .bind(tradeId).first();
+  if (!t) return err(404, "Vorgang nicht gefunden");
+  if (t.from_member !== member.id && t.to_member !== member.id) {
+    return err(403, "Nicht beteiligt");
+  }
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM trade_messages WHERE trade_id = ?").bind(tradeId),
+    env.DB.prepare("DELETE FROM trades WHERE id = ?").bind(tradeId),
+  ]);
+  return json({ ok: true });
 }
 
 /* Melden. Der Verlauf kommt entschlüsselt von der meldenden Instanz – nur
@@ -718,6 +738,8 @@ export default {
       if (tm && method === "GET") return await fetchMessages(member, env, tm[1]);
       tm = p.match(/^\/v1\/trades\/([^/]+)\/status$/);
       if (tm && method === "POST") return await setTradeStatus(req, member, env, tm[1]);
+      tm = p.match(/^\/v1\/trades\/([^/]+)$/);
+      if (tm && method === "DELETE") return await deleteTrade(member, env, tm[1]);
       if (p === "/v1/invites" && method === "POST") return await createInvite(req, member, env);
       if (p === "/v1/invites/quota" && method === "GET") return await getQuota(member, env);
       if (p === "/v1/invite_requests" && method === "POST") return await requestMoreInvites(req, member, env);

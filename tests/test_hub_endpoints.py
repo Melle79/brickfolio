@@ -174,6 +174,135 @@ def test_status_refresh_swallows_hub_errors(client, monkeypatch):
     assert client.get("/api/hub?refresh=1").status_code == 200
 
 
+# ------------------------------------------------- Menge und Veröffentlichung
+
+def test_share_qty_limits_published_amount(client, monkeypatch):
+    """Von drei Yodas darf ich auch nur einen anbieten."""
+    eid = _add_item("sw1213", "Yoda", qty=3)
+    client.post(f"/api/collection/{eid}/share", json={"shared": True, "qty": 1})
+    captured = {}
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "publish",
+                        lambda offers: captured.update(offers=offers) or {"count": len(offers)})
+    client.post("/api/hub/publish")
+    assert captured["offers"][0]["qty"] == 1
+
+
+def test_share_qty_cannot_exceed_stock(client):
+    eid = _add_item("sw1213", "Yoda", qty=2)
+    r = client.post(f"/api/collection/{eid}/share",
+                    json={"shared": True, "qty": 9}).json()
+    assert r["qty"] == 2
+
+
+def test_share_qty_defaults_to_all(client, monkeypatch):
+    eid = _add_item("sw1213", "Yoda", qty=4)
+    client.post(f"/api/collection/{eid}/share", json={"shared": True})
+    captured = {}
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "publish",
+                        lambda offers: captured.update(offers=offers) or {"count": 1})
+    client.post("/api/hub/publish")
+    assert captured["offers"][0]["qty"] == 4
+
+
+def test_share_status_marks_published_and_stale(client, monkeypatch):
+    """Die Auswahl zeigt, was schon draußen ist – und was im Hub übrig blieb."""
+    eid = _add_item("sw1213", "Yoda", qty=2)
+    _add_item("sw0552", "Vader", qty=1, shared=1)
+    client.post(f"/api/collection/{eid}/share", json={"shared": True, "qty": 1})
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "offers", lambda params=None: [
+        {"item_id": "sw1213", "name": "Yoda", "qty": 1},
+        {"item_id": "old1", "name": "Altes Angebot", "qty": 5},
+    ])
+    s = client.get("/api/share/status").json()
+    assert s["known_state"] is True and s["published"] == 1
+    by_id = {i["item_id"]: i for i in s["items"]}
+    assert by_id["sw1213"]["published"] is True
+    assert by_id["sw1213"]["published_qty"] == 1
+    assert by_id["sw0552"]["published"] is False
+    assert [o["item_id"] for o in s["stale"]] == ["old1"]
+
+
+def test_share_status_without_hub_says_state_unknown(client, monkeypatch):
+    _add_item("sw1213", "Yoda", qty=1, shared=1)
+    monkeypatch.setattr(hub, "enabled", lambda: False)
+    s = client.get("/api/share/status").json()
+    assert s["known_state"] is False and s["stale"] == []
+
+
+# ------------------------------------------------- Vorgänge löschen / entfallen
+
+def _trade(tid="trd_a", direction="out"):
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO trades (id, direction, other_id, other_name, item_id,"
+            " item_name, status, created_at, updated_at) VALUES "
+            "(?, ?, 'mem_x', 'X', 'sw1', 'A', 'open', 1, 1)", (tid, direction))
+        conn.execute("INSERT INTO trade_messages (trade_id, mine, body, "
+                     "created_at) VALUES (?, 1, 'hallo', 1)", (tid,))
+
+
+def test_delete_trade_removes_locally_and_in_hub(client, monkeypatch):
+    _trade()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    gone = []
+    monkeypatch.setattr(hub, "delete_trade",
+                        lambda tid: gone.append(tid) or {"ok": True})
+    assert client.delete("/api/hub/trades/trd_a").status_code == 200
+    assert gone == ["trd_a"]
+    assert client.get("/api/hub/trades").json()["trades"] == []
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) c FROM trade_messages").fetchone()["c"] == 0
+
+
+def test_delete_trade_tolerates_missing_hub_entry(client, monkeypatch):
+    _trade()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+
+    def boom(tid):
+        raise hub.HubError(404, "Vorgang nicht gefunden")
+    monkeypatch.setattr(hub, "delete_trade", boom)
+    assert client.delete("/api/hub/trades/trd_a").status_code == 200
+    assert client.get("/api/hub/trades").json()["trades"] == []
+
+
+def test_delete_trade_keeps_entry_when_hub_errors(client, monkeypatch):
+    """Bei einem echten Hub-Fehler darf lokal nichts verschwinden – sonst wäre
+    der Vorgang beim nächsten Abgleich wieder da, nur ohne Verlauf."""
+    _trade()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+
+    def boom(tid):
+        raise hub.HubError(500, "kaputt")
+    monkeypatch.setattr(hub, "delete_trade", boom)
+    assert client.delete("/api/hub/trades/trd_a").status_code == 502
+    assert len(client.get("/api/hub/trades").json()["trades"]) == 1
+
+
+def test_sync_marks_item_as_gone(client, monkeypatch):
+    """Nimmt das Gegenüber das Angebot zurück, steht das am Vorgang."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "fetch_messages",
+                        lambda tid: {"messages": [], "sent": []})
+    base = {"id": "trd_a", "from_member": "mem_me", "to_member": "mem_x",
+            "to_name": "X", "from_name": "Ich", "item_id": "sw1",
+            "item_name": "A", "status": "open", "created_at": 1,
+            "updated_at": 1, "unread": 0}
+    monkeypatch.setattr(hub, "trades", lambda: [dict(base, item_available=1)])
+    client.post("/api/hub/trades/sync")
+    assert client.get("/api/hub/trades").json()["trades"][0]["item_gone"] == 0
+
+    monkeypatch.setattr(hub, "trades", lambda: [dict(base, item_available=0)])
+    client.post("/api/hub/trades/sync")
+    assert client.get("/api/hub/trades").json()["trades"][0]["item_gone"] == 1
+
+
 # ------------------------------------------------- sparsamer Abgleich
 
 def test_sync_only_fetches_where_something_waits(client, monkeypatch):

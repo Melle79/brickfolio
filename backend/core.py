@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.45.1"
+APP_VERSION = "1.46.0"
 
 
 def hash_password(password: str) -> str:
@@ -353,6 +353,16 @@ def init_db():
         ccols = {r[1] for r in conn.execute("PRAGMA table_info(collection)")}
         if ccols and "shared" not in ccols:
             conn.execute("ALTER TABLE collection ADD COLUMN shared "
+                         "INTEGER NOT NULL DEFAULT 0")
+        # Wie viele Exemplare biete ich an? NULL = alle vorhandenen.
+        if ccols and "share_qty" not in ccols:
+            conn.execute("ALTER TABLE collection ADD COLUMN share_qty INTEGER")
+
+        tcols = {r["name"] for r in
+                 conn.execute("PRAGMA table_info(trades)").fetchall()}
+        # Steht der Artikel beim Gegenüber überhaupt noch drin?
+        if tcols and "item_gone" not in tcols:
+            conn.execute("ALTER TABLE trades ADD COLUMN item_gone "
                          "INTEGER NOT NULL DEFAULT 0")
         # Thema (Star Wars, City …) für die Sortierung der Sammlung
         for tbl in ("collection", "wanted"):

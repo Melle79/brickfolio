@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=235">
-<link rel="stylesheet" href="/static/style.css?v=235">
+<link rel="stylesheet" href="/static/fonts.css?v=236">
+<link rel="stylesheet" href="/static/style.css?v=236">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -353,6 +353,8 @@
           <strong id="trade-title"></strong>
           <div class="sub" id="trade-sub"></div>
         </div>
+        <p class="warn-line" id="trade-gone" hidden>⚠ Dieser Artikel wird
+          nicht mehr angeboten.</p>
         <div id="trade-msgs" class="trade-msgs"></div>
         <div class="detail-row">
           <input id="trade-input" placeholder="Nachricht schreiben …" maxlength="2000">
@@ -362,6 +364,7 @@
           <button class="mini-btn" id="trade-accept">✔ Annehmen</button>
           <button class="mini-btn" id="trade-decline">✖ Ablehnen</button>
           <button class="mini-btn danger" id="trade-report">⚑ Melden</button>
+          <button class="mini-btn danger" id="trade-delete">🗑 Löschen</button>
         </div>
         <p class="search-hint">🔒 Nachrichten sind Ende-zu-Ende verschlüsselt –
           der Hub kann sie nicht lesen und löscht sie nach der Zustellung.</p>
@@ -756,7 +759,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=235"></script>
+<script src="/static/app.js?v=236"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">
