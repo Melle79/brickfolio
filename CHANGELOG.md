@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.44.0 – Juli 2026
+
+### Verbessert
+- 💬 **Angebot antippen genügt.** Ein Tipp auf die Karte öffnet direkt das Anfrage-Fenster – die vorgeschlagene Nachricht steht dort in einem richtigen Textfeld und lässt sich vor dem Senden anpassen. Keine Browser-Abfragen mehr
+- ↩️ **Bestehende Gespräche gehen sofort auf.** Hast du zu einem Angebot schon Interesse bekundet, landest du beim Antippen gleich im Chat statt in einer neuen Anfrage
+- ⚑ **Melden mit eigenem Fenster.** Begründung und der Haken „Verlauf mitschicken" stehen jetzt zusammen in einem Dialog – vorher waren es zwei Browser-Abfragen hintereinander
+
 ## 1.43.0 – Juli 2026
 
 ### Verbessert

@@ -1091,6 +1091,14 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden && state.hubConnected) pollTrades();
 });
 
+/* Escape schließt das oberste Tausch-Fenster. */
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  if (!$("report-overlay").hidden) { closeReport(); return; }
+  if (!$("interest-overlay").hidden) { closeInterest(); return; }
+  if (!$("trade-overlay").hidden) closeTrade();
+});
+
 /* ---------------------------------------------------------------- Login */
 async function refreshMe() {
   try {
@@ -4589,7 +4597,23 @@ function wireHubViewOnce() {
   };
   $("trade-accept").addEventListener("click", () => setStatus("accepted"));
   $("trade-decline").addEventListener("click", () => setStatus("declined"));
-  $("trade-report").addEventListener("click", reportTrade);
+  $("trade-report").addEventListener("click", openReport);
+
+  // Anfrage-Fenster
+  $("interest-close").addEventListener("click", closeInterest);
+  $("interest-cancel").addEventListener("click", closeInterest);
+  $("interest-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("interest-overlay")) closeInterest();
+  });
+  $("interest-send").addEventListener("click", sendInterest);
+
+  // Melde-Fenster
+  $("report-close").addEventListener("click", closeReport);
+  $("report-cancel").addEventListener("click", closeReport);
+  $("report-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("report-overlay")) closeReport();
+  });
+  $("report-send").addEventListener("click", sendReport);
 
   $("hub-publish").addEventListener("click", async (ev) => {
     const b = ev.currentTarget; b.disabled = true;
@@ -4656,36 +4680,84 @@ async function offerInviteRequest(hint) {
   } catch (e) { toast(e.message); }
 }
 
-/* Interesse an einem fremden Angebot anmelden – daraus wird ein Gespräch. */
-async function startInterest(o) {
-  const text = prompt(
-    `Nachricht an ${o.who} zu „${o.n}":`,
-    `Hallo ${o.who}, hättest du Interesse, den ${o.n} zu tauschen?`);
-  if (text == null || !text.trim()) return;
+/* Tipp auf ein Angebot: Läuft schon ein Gespräch dazu, geht es direkt auf –
+   sonst das Fenster für die Anfrage. */
+let interestOffer = null;
+
+async function openOffer(o) {
+  try {
+    const { trades } = await api("/hub/trades");
+    const existing = trades.find((t) =>
+      t.other_id === o.m && t.item_id === o.i);
+    if (existing) {
+      showHubTab("trades");
+      openTrade(existing.id);
+      return;
+    }
+  } catch (_) { /* ohne Liste einfach das Anfrage-Fenster zeigen */ }
+  openInterest(o);
+}
+
+function openInterest(o) {
+  interestOffer = o;
+  $("interest-name").textContent = o.n;
+  $("interest-sub").textContent = `${o.id_} · von ${o.who}`;
+  $("interest-img").src = imgSrc(o.img);
+  // Vorschlag steht im Feld – anpassbar, nicht in einem Systemfenster
+  $("interest-text").value =
+    `Hallo ${o.who}, hättest du Interesse, den ${o.n} zu tauschen?`;
+  $("interest-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  const ta = $("interest-text");
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+function closeInterest() {
+  $("interest-overlay").hidden = true;
+  document.body.style.overflow = "";
+  interestOffer = null;
+}
+
+async function sendInterest() {
+  const o = interestOffer;
+  const text = $("interest-text").value.trim();
+  if (!o || !text) { toast("Bitte eine Nachricht schreiben"); return; }
+  const btn = $("interest-send");
+  btn.disabled = true;
   try {
     const res = await api("/hub/trades", { method: "POST", body: {
-      to: o.m, item_id: o.i, item_name: o.n, text: text.trim() } });
+      to: o.m, item_id: o.i, item_name: o.n, text } });
+    closeInterest();
     toast("Angefragt – das Gespräch steht unter Meine Vorgänge 💬");
     showHubTab("trades");
     openTrade(res.trade_id);
-  } catch (e) { toast(e.message); }
+  } catch (e) { toast(e.message); } finally { btn.disabled = false; }
 }
 
 /* Melden. Der Verlauf geht nur mit, wenn man ausdrücklich zustimmt – sonst
    sieht der Hub-Admin nur die Begründung. */
-async function reportTrade() {
+function openReport() {
   if (!openTradeId) return;
-  const reason = prompt("Was ist vorgefallen? (geht an den Hub-Admin)");
-  if (reason == null || reason.trim().length < 3) return;
-  const include = confirm(
-    "Den Nachrichtenverlauf mitschicken?\n\n"
-    + "OK = Verlauf wird entschlüsselt angehängt, damit der Admin die Sache "
-    + "beurteilen kann.\nAbbrechen = nur deine Begründung wird gemeldet.");
+  $("report-reason").value = "";
+  $("report-history").checked = true;
+  $("report-overlay").hidden = false;
+  $("report-reason").focus();
+}
+
+function closeReport() { $("report-overlay").hidden = true; }
+
+async function sendReport() {
+  const reason = $("report-reason").value.trim();
+  if (reason.length < 3) { toast("Bitte kurz beschreiben, was war"); return; }
+  const btn = $("report-send");
+  btn.disabled = true;
   try {
-    await api(`/hub/trades/${openTradeId}/report`, { method: "POST",
-      body: { reason: reason.trim(), include_history: include } });
+    await api(`/hub/trades/${openTradeId}/report`, { method: "POST", body: {
+      reason, include_history: $("report-history").checked } });
+    closeReport();
     toast("Gemeldet – ein Hub-Admin schaut sich das an ⚑");
-  } catch (e) { toast(e.message); }
+  } catch (e) { toast(e.message); } finally { btn.disabled = false; }
 }
 
 async function loadHubOffers() {
@@ -4698,7 +4770,7 @@ async function loadHubOffers() {
       return;
     }
     box.innerHTML = offers.map((o) => `
-      <div class="card">
+      <div class="card tappable" data-offer-card>
         <div class="card-head">
           <img class="card-img" src="${imgSrc(o.img_url)}" ${IMG_FALLBACK} data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
           <div class="card-title">
@@ -4708,14 +4780,21 @@ async function loadHubOffers() {
           </div>
         </div>
         <div class="card-actions">
-          <button class="mini-btn add" data-interest='${esc(JSON.stringify({m: o.member_id, i: o.item_id, n: o.name, who: o.display_name}))}'>💬 Interesse</button>
+          <button class="mini-btn add" data-interest>💬 Interesse</button>
           ${o.bricklink_url ? `<a class="mini-btn link" href="${esc(o.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
         </div>
       </div>`).join("");
 
-    box.querySelectorAll("[data-interest]").forEach((btn) => {
-      btn.addEventListener("click", () => startInterest(
-        JSON.parse(btn.dataset.interest)));
+    // Ganze Karte antippbar – nicht nur der Knopf
+    box.querySelectorAll("[data-offer-card]").forEach((card, i) => {
+      const o = offers[i];
+      const data = { m: o.member_id, i: o.item_id, n: o.name,
+                     who: o.display_name, img: o.img_url,
+                     id_: o.item_id };
+      card.addEventListener("click", (ev) => {
+        if (ev.target.closest("a, .card-img")) return;
+        openOffer(data);
+      });
     });
   } catch (e) {
     box.innerHTML = `<p class="error">${esc(e.message)}</p>`;

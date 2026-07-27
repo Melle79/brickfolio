@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=230">
-<link rel="stylesheet" href="/static/style.css?v=230">
+<link rel="stylesheet" href="/static/fonts.css?v=231">
+<link rel="stylesheet" href="/static/style.css?v=231">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -290,6 +290,54 @@
       <div id="hub-share-list" class="results"></div>
     </section>
   </main>
+
+  <!-- Interesse an einem Angebot anmelden -->
+  <div id="interest-overlay" class="card-modal-overlay" hidden>
+    <div class="card-modal">
+      <button class="card-modal-close" id="interest-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <div class="card-head">
+          <img class="card-img" id="interest-img" alt="">
+          <div class="card-title">
+            <strong id="interest-name"></strong>
+            <div class="sub" id="interest-sub"></div>
+          </div>
+        </div>
+        <label for="interest-text">Deine Nachricht</label>
+        <textarea id="interest-text" rows="4" maxlength="2000"></textarea>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn add" id="interest-send">💬 Anfrage senden</button>
+          <button class="mini-btn" id="interest-cancel">Abbrechen</button>
+        </div>
+        <p class="search-hint">🔒 Die Nachricht ist Ende-zu-Ende verschlüsselt –
+          nur ihr beide könnt sie lesen.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Melden -->
+  <div id="report-overlay" class="card-modal-overlay" hidden>
+    <div class="card-modal">
+      <button class="card-modal-close" id="report-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <h3 style="margin:0 0 6px">⚑ Melden</h3>
+        <label for="report-reason">Was ist vorgefallen?</label>
+        <textarea id="report-reason" rows="3" maxlength="1000"
+          placeholder="Kurz beschreiben – das liest ein Hub-Admin"></textarea>
+        <label class="share-toggle">
+          <input type="checkbox" id="report-history" checked>
+          Nachrichtenverlauf mitschicken
+        </label>
+        <p class="search-hint">Ohne Haken sieht der Admin nur deine Begründung.
+          Mit Haken entschlüsselt deine Instanz den Verlauf und legt ihn
+          offen – der Hub selbst kann ihn nicht lesen.</p>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn danger" id="report-send">Meldung absenden</button>
+          <button class="mini-btn" id="report-cancel">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Chat zu einem Vorgang -->
   <div id="trade-overlay" class="card-modal-overlay" hidden>
@@ -703,7 +751,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=230"></script>
+<script src="/static/app.js?v=231"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">
