@@ -321,7 +321,7 @@ async function createTrade(req, member, env) {
       + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
       .bind(id, member.id, to, itemId, itemName, t, t),
     env.DB.prepare(
-      "INSERT INTO messages (trade_id, from_member, to_member, box, created_at)"
+      "INSERT INTO trade_messages (trade_id, from_member, to_member, box, created_at)"
       + " VALUES (?, ?, ?, ?, ?)").bind(id, member.id, to, box, t),
   ]);
   // Die Absender-Instanz braucht die ID, um später die Zustellung zu erkennen.
@@ -333,7 +333,7 @@ async function listTrades(member, env) {
   const rows = (await env.DB.prepare(
     "SELECT t.*, "
     + "f.display_name AS from_name, o.display_name AS to_name, "
-    + "(SELECT COUNT(*) FROM messages m WHERE m.trade_id = t.id "
+    + "(SELECT COUNT(*) FROM trade_messages m WHERE m.trade_id = t.id "
     + " AND m.to_member = ? AND m.fetched_at IS NULL) AS unread "
     + "FROM trades t "
     + "LEFT JOIN members f ON f.id = t.from_member "
@@ -358,7 +358,7 @@ async function sendMessage(req, member, env, tradeId) {
   const ts = now();
   const res = await env.DB.batch([
     env.DB.prepare(
-      "INSERT INTO messages (trade_id, from_member, to_member, box, created_at)"
+      "INSERT INTO trade_messages (trade_id, from_member, to_member, box, created_at)"
       + " VALUES (?, ?, ?, ?, ?)").bind(tradeId, member.id, to, box, ts),
     env.DB.prepare("UPDATE trades SET updated_at = ? WHERE id = ?")
       .bind(ts, tradeId),
@@ -382,28 +382,28 @@ async function fetchMessages(member, env, tradeId) {
 
   // Für mich bestimmte Umschläge – die bekomme ich genau einmal.
   const incoming = (await env.DB.prepare(
-    "SELECT id, from_member, box, created_at FROM messages "
+    "SELECT id, from_member, box, created_at FROM trade_messages "
     + "WHERE trade_id = ? AND to_member = ? ORDER BY id")
     .bind(tradeId, member.id).all()).results || [];
   // Meine eigenen: nur der Zustellstatus, kein Inhalt nötig.
   const mine = (await env.DB.prepare(
-    "SELECT id, created_at, fetched_at FROM messages "
+    "SELECT id, created_at, fetched_at FROM trade_messages "
     + "WHERE trade_id = ? AND from_member = ? ORDER BY id")
     .bind(tradeId, member.id).all()).results || [];
 
   const stmts = [];
   if (incoming.length) {
     stmts.push(env.DB.prepare(
-      "UPDATE messages SET fetched_at = COALESCE(fetched_at, ?) "
+      "UPDATE trade_messages SET fetched_at = COALESCE(fetched_at, ?) "
       + "WHERE trade_id = ? AND to_member = ?").bind(ts, tradeId, member.id));
   }
   // Zugestellte eigene Nachrichten sind hiermit quittiert -> löschen.
   stmts.push(env.DB.prepare(
-    "UPDATE messages SET acked_at = COALESCE(acked_at, ?) "
+    "UPDATE trade_messages SET acked_at = COALESCE(acked_at, ?) "
     + "WHERE trade_id = ? AND from_member = ? AND fetched_at IS NOT NULL")
     .bind(ts, tradeId, member.id));
   stmts.push(env.DB.prepare(
-    "DELETE FROM messages WHERE fetched_at IS NOT NULL "
+    "DELETE FROM trade_messages WHERE fetched_at IS NOT NULL "
     + "AND acked_at IS NOT NULL"));
   await env.DB.batch(stmts);
 
@@ -549,7 +549,7 @@ async function adminDeleteMember(member, env, id) {
   }
   await env.DB.batch([
     env.DB.prepare("DELETE FROM offers WHERE member_id = ?").bind(id),
-    env.DB.prepare("DELETE FROM messages WHERE from_member = ? OR to_member = ?")
+    env.DB.prepare("DELETE FROM trade_messages WHERE from_member = ? OR to_member = ?")
       .bind(id, id),
     env.DB.prepare("DELETE FROM members WHERE id = ?").bind(id),
   ]);

@@ -76,7 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_trades_parties
 
 -- Briefkasten: verschlüsselte Umschläge. Sie verschwinden, sobald der
 -- Empfänger sie geholt UND der Absender die Zustellung gesehen hat.
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE IF NOT EXISTS trade_messages (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   trade_id    TEXT NOT NULL,
   from_member TEXT NOT NULL,
@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS messages (
   fetched_at  INTEGER,                      -- vom Empfänger geholt
   acked_at    INTEGER                       -- vom Absender als zugestellt gesehen
 );
-CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_member, fetched_at);
-CREATE INDEX IF NOT EXISTS idx_msg_trade ON messages(trade_id, id);
+CREATE INDEX IF NOT EXISTS idx_msg_to ON trade_messages(to_member, fetched_at);
+CREATE INDEX IF NOT EXISTS idx_msg_trade ON trade_messages(trade_id, id);
 
 -- Meldungen. Wer meldet, gibt den Verlauf selbst frei (entschlüsselt auf der
 -- eigenen Instanz) – der Hub kann Nachrichten nicht von sich aus lesen.

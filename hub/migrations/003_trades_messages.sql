@@ -1,13 +1,10 @@
 -- Angebotsabgaben, verschlüsselte Nachrichten und Meldungen (Issue #2)
 --
--- Einmalig auf eine bestehende Hub-Datenbank anwenden:
---   npx wrangler d1 execute brickfolio-hub --remote --file=migrations/003_trades_messages.sql
+-- Gefahrlos wiederholbar: legt nur an, löscht nichts. Die alte, nie benutzte
+-- messages-Tabelle aus Stufe 1 bleibt einfach liegen – die neuen Umschläge
+-- stehen bewusst in trade_messages.
 --
--- Die alte, ungenutzte messages-Tabelle (Stufe-1-Platzhalter) wird ersetzt.
-
-ALTER TABLE members ADD COLUMN public_key TEXT;
-
-DROP TABLE IF EXISTS messages;
+--   npx wrangler d1 execute brickfolio-hub --remote --file=migrations/003_trades_messages.sql
 
 CREATE TABLE IF NOT EXISTS trades (
   id           TEXT PRIMARY KEY,
@@ -22,7 +19,7 @@ CREATE TABLE IF NOT EXISTS trades (
 CREATE INDEX IF NOT EXISTS idx_trades_parties
   ON trades(to_member, from_member, updated_at);
 
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE IF NOT EXISTS trade_messages (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   trade_id    TEXT NOT NULL,
   from_member TEXT NOT NULL,
@@ -32,8 +29,8 @@ CREATE TABLE IF NOT EXISTS messages (
   fetched_at  INTEGER,
   acked_at    INTEGER
 );
-CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_member, fetched_at);
-CREATE INDEX IF NOT EXISTS idx_msg_trade ON messages(trade_id, id);
+CREATE INDEX IF NOT EXISTS idx_msg_to ON trade_messages(to_member, fetched_at);
+CREATE INDEX IF NOT EXISTS idx_msg_trade ON trade_messages(trade_id, id);
 
 CREATE TABLE IF NOT EXISTS reports (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,

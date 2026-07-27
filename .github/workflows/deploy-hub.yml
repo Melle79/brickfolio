@@ -38,6 +38,25 @@ jobs:
         with:
           node-version: "20"
 
+      # Erst die Datenbank, dann den Code: sonst läuft neuer Code gegen ein
+      # altes Schema (fehlende Tabelle = Fehler in der Oberfläche).
+      # Schon angewandte Schritte melden „duplicate column“ o. Ä. – das ist
+      # erwartet und darf den Lauf nicht abbrechen.
+      - name: Datenbank-Erweiterungen anwenden
+        if: steps.check.outputs.ready == 'true'
+        working-directory: hub
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          shopt -s nullglob
+          for f in migrations/*.sql; do
+            echo "::group::$f"
+            npx --yes wrangler@4 d1 execute brickfolio-hub --remote --file="$f" \
+              || echo "::notice::$f war schon angewandt (oder teilweise) – weiter"
+            echo "::endgroup::"
+          done
+
       - name: Worker veröffentlichen
         if: steps.check.outputs.ready == 'true'
         working-directory: hub
