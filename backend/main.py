@@ -1,4 +1,5 @@
 """Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
+import base64
 import json
 import os
 import re
@@ -2922,6 +2923,34 @@ def share_clear(user: dict = Depends(current_user)):
     return {"ok": True}
 
 
+THUMB_MAX_CHARS = 30000       # Obergrenze je Vorschaubild (Base64)
+
+
+def _offer_thumb(img_url: str) -> str | None:
+    """Kleines Vorschaubild für eigene Bilder.
+
+    Custom-Figuren haben nur einen lokalen Pfad (/uploads/…) – der zeigt beim
+    Empfänger auf dessen eigene Instanz und wäre dort wertlos. Deshalb reist
+    bei ihnen ein verkleinertes Bild als Daten-URL mit; alles andere hat eine
+    öffentliche BrickLink-/Rebrickable-Adresse und braucht das nicht.
+    """
+    if not img_url or not img_url.startswith("/uploads/"):
+        return None
+    name = os.path.basename(img_url)
+    if not re.fullmatch(r"[0-9a-f]{32}\.jpg", name):
+        return None
+    path = os.path.join(_uploads_dir(), name)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "rb") as f:
+            small = integrations.prepare_image(f.read(), max_side=200)
+    except Exception:
+        return None
+    data = "data:image/jpeg;base64," + base64.b64encode(small).decode()
+    return data if len(data) <= THUMB_MAX_CHARS else None
+
+
 @app.post("/api/hub/publish")
 def hub_publish(user: dict = Depends(admin_user)):
     if not hub.enabled():
@@ -2931,12 +2960,18 @@ def hub_publish(user: dict = Depends(admin_user)):
             "SELECT id, item_id, item_type, name, img_url, bricklink_url, "
             "condition, quantity FROM collection WHERE shared = 1 "
             "ORDER BY name COLLATE NOCASE").fetchall()
-    offers = [{
-        "item_id": r["item_id"], "item_type": r["item_type"],
-        "name": r["name"], "img_url": r["img_url"],
-        "bricklink_url": r["bricklink_url"], "condition": r["condition"],
-        "qty": r["quantity"],
-    } for r in rows]
+    offers = []
+    for r in rows:
+        thumb = _offer_thumb(r["img_url"])
+        offers.append({
+            "item_id": r["item_id"], "item_type": r["item_type"],
+            "name": r["name"],
+            # Lokale Pfade nicht mitschicken – sie gelten nur bei uns
+            "img_url": "" if thumb else (r["img_url"] or ""),
+            "img_data": thumb,
+            "bricklink_url": r["bricklink_url"], "condition": r["condition"],
+            "qty": r["quantity"],
+        })
     try:
         res = hub.publish(offers)
         return {"ok": True, "count": res.get("count", len(offers))}

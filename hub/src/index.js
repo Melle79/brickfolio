@@ -7,8 +7,7 @@
  */
 
 const MAX_OFFERS = 2000;              // Obergrenze je Instanz (Missbrauchsschutz)
-const OFFER_FIELDS = ["item_id", "item_type", "name", "img_url",
-  "bricklink_url", "condition", "qty", "note"];
+const MAX_THUMB = 30000;              // Vorschaubild einer eigenen Figur
 
 /* ----------------------------------------------------------------- Helfer */
 
@@ -166,8 +165,8 @@ async function putOffers(req, member, env) {
   const stmts = [env.DB.prepare("DELETE FROM offers WHERE member_id = ?").bind(member.id)];
   const ins = env.DB.prepare(
     "INSERT OR REPLACE INTO offers (member_id, item_id, item_type, name, "
-    + "img_url, bricklink_url, condition, qty, note, updated_at) "
-    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    + "img_url, img_data, bricklink_url, condition, qty, note, updated_at) "
+    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
   let n = 0;
   for (const o of list) {
     if (!o || !o.item_id || !o.name) continue;
@@ -176,6 +175,10 @@ async function putOffers(req, member, env) {
       String(o.item_type || "minifig").slice(0, 20),
       String(o.name).slice(0, 200),
       o.img_url ? String(o.img_url).slice(0, 400) : null,
+      // Eigene Figuren bringen ihr Bild mit – es gibt keine öffentliche
+      // Adresse dafür. Größe begrenzt, damit der Hub dünn bleibt.
+      o.img_data && String(o.img_data).length <= MAX_THUMB
+        ? String(o.img_data) : null,
       o.bricklink_url ? String(o.bricklink_url).slice(0, 400) : null,
       o.condition ? String(o.condition).slice(0, 10) : null,
       Number(o.qty) > 0 ? Math.min(Number(o.qty), 9999) : 1,

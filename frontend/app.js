@@ -4327,7 +4327,7 @@ async function loadHubView() {
     }
   } catch (_) { /* egal */ }
   loadInviteQuota();
-  loadHubOffers();
+  // Die Liste lädt showHubTab() weiter oben – hier nicht doppelt anstoßen.
 }
 
 /* ------------------------------------------- Vorgänge, Chat, Melden (E2E) */
@@ -4341,6 +4341,9 @@ function showHubTab(name) {
   });
   document.querySelectorAll("[data-hubtab]").forEach((b) =>
     b.classList.toggle("sel", b.dataset.hubtab === name));
+  // Angebote beim Zurückwechseln neu laden – sonst stünde dort noch der
+  // Stand von vorhin, ohne die inzwischen gestarteten Gespräche.
+  if (name === "offers") loadHubOffers();
   if (name === "trades") loadTrades();
   if (name === "share") loadShareView();
   updatePolling();
@@ -4625,6 +4628,15 @@ function wireHubViewOnce() {
   });
 
   $("hub-refresh-offers").addEventListener("click", () => loadHubOffers());
+  // Suche im Netzwerk – kurz abwarten, damit nicht jeder Tastendruck fragt
+  let hubSearchTimer;
+  $("hub-search").addEventListener("input", () => {
+    clearTimeout(hubSearchTimer);
+    hubSearchTimer = setTimeout(loadHubOffers, 350);
+  });
+  $("hub-search").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") { clearTimeout(hubSearchTimer); loadHubOffers(); }
+  });
 
   $("hub-make-invite").addEventListener("click", async (ev) => {
     const b = ev.currentTarget; b.disabled = true;
@@ -4685,16 +4697,9 @@ async function offerInviteRequest(hint) {
 let interestOffer = null;
 
 async function openOffer(o) {
-  try {
-    const { trades } = await api("/hub/trades");
-    const existing = trades.find((t) =>
-      t.other_id === o.m && t.item_id === o.i);
-    if (existing) {
-      showHubTab("trades");
-      openTrade(existing.id);
-      return;
-    }
-  } catch (_) { /* ohne Liste einfach das Anfrage-Fenster zeigen */ }
+  // Beim Laden der Angebote schon ermittelt – kein zweiter Abruf nötig
+  const known = tradeByOffer.get(offerKey(o.m, o.i));
+  if (known) { showHubTab("trades"); openTrade(known.id); return; }
   openInterest(o);
 }
 
@@ -4702,7 +4707,7 @@ function openInterest(o) {
   interestOffer = o;
   $("interest-name").textContent = o.n;
   $("interest-sub").textContent = `${o.id_} · von ${o.who}`;
-  $("interest-img").src = imgSrc(o.img);
+  $("interest-img").src = o.img || IMG_PLACEHOLDER;
   // Vorschlag steht im Feld – anpassbar, nicht in einem Systemfenster
   $("interest-text").value =
     `Hallo ${o.who}, hättest du Interesse, den ${o.n} zu tauschen?`;
@@ -4760,36 +4765,58 @@ async function sendReport() {
   } catch (e) { toast(e.message); } finally { btn.disabled = false; }
 }
 
+let hubSearchSeq = 0;
+let tradeByOffer = new Map();      // "mitglied|artikel" -> laufender Vorgang
+
+function offerKey(memberId, itemId) { return memberId + "|" + itemId; }
+
 async function loadHubOffers() {
+  const seq = ++hubSearchSeq;      // ältere Suchen dürfen nicht überholen
   const box = $("hub-offers");
+  const q = ($("hub-search") ? $("hub-search").value : "").trim();
   box.innerHTML = brickLoading("Angebote werden geladen …");
   try {
-    const { offers } = await api("/hub/offers");
+    // Angebote und eigene Vorgänge zusammen holen, damit an der Karte gleich
+    // steht, wo schon ein Gespräch läuft.
+    const [offerRes, tradeRes] = await Promise.all([
+      api("/hub/offers" + (q ? `?q=${encodeURIComponent(q)}` : "")),
+      api("/hub/trades").catch(() => ({ trades: [] })),
+    ]);
+    const { offers } = offerRes;
+    tradeByOffer = new Map((tradeRes.trades || []).map((t) =>
+      [offerKey(t.other_id, t.item_id), t]));
+    if (seq !== hubSearchSeq) return;
     if (!offers.length) {
-      box.innerHTML = `<p class="search-hint">Noch keine Angebote von anderen im Netzwerk.</p>`;
+      box.innerHTML = `<p class="search-hint">${q
+        ? `Nichts gefunden zu „${esc(q)}".`
+        : "Noch keine Angebote von anderen im Netzwerk."}</p>`;
       return;
     }
-    box.innerHTML = offers.map((o) => `
+    box.innerHTML = offers.map((o) => {
+      const t = tradeByOffer.get(offerKey(o.member_id, o.item_id));
+      return `
       <div class="card tappable" data-offer-card>
         <div class="card-head">
-          <img class="card-img" src="${imgSrc(o.img_url)}" ${IMG_FALLBACK} data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
+          <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url)}" ${IMG_FALLBACK} data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(o.name)}</strong>
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? "Neu" : "Gebraucht") : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
             <span class="badge badge-owned">von ${esc(o.display_name)}</span>
+            ${t ? `<span class="badge badge-wanted">💬 angefragt · ${tradeStatusText(t.status)}${t.unread ? ` · ${t.unread} neu` : ""}</span>` : ""}
           </div>
         </div>
         <div class="card-actions">
-          <button class="mini-btn add" data-interest>💬 Interesse</button>
+          <button class="mini-btn add" data-interest>${t ? "💬 Gespräch öffnen" : "💬 Interesse"}</button>
           ${o.bricklink_url ? `<a class="mini-btn link" href="${esc(o.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
 
     // Ganze Karte antippbar – nicht nur der Knopf
     box.querySelectorAll("[data-offer-card]").forEach((card, i) => {
       const o = offers[i];
       const data = { m: o.member_id, i: o.item_id, n: o.name,
-                     who: o.display_name, img: o.img_url,
+                     who: o.display_name, img: o.img_data || o.img_url,
                      id_: o.item_id };
       card.addEventListener("click", (ev) => {
         if (ev.target.closest("a, .card-img")) return;

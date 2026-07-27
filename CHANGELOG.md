@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.45.0 – Juli 2026
+
+### Neu
+- 🖼️ **Eigene Figuren zeigen ihr Bild im Netzwerk.** Bisher blieb bei Custom-Artikeln beim Gegenüber nur ein Platzhalter – ihr Bild liegt ja auf der eigenen Instanz. Jetzt reist ein verkleinertes Vorschaubild mit dem Angebot mit. Für BrickLink-Artikel ändert sich nichts, die haben ohnehin eine öffentliche Adresse
+- 🔎 **Suche im Tausch-Netzwerk.** Über den Angeboten steht ein Suchfeld – es findet über Name und Nummer, auch bei eigenen Figuren
+
+### Verbessert
+- 💬 **Angefragt steht an der Karte.** Läuft zu einem Angebot schon ein Gespräch, zeigt die Karte das direkt an („angefragt · offen", samt ungelesenen Nachrichten) und der Knopf heißt „Gespräch öffnen" – man muss nicht erst hineinklicken
+
+### Behoben
+- 🔄 Beim Zurückwechseln auf „Angebote" blieb der alte Stand stehen; inzwischen gestartete Gespräche fehlten dort
+
 ## 1.44.0 – Juli 2026
 
 ### Verbessert

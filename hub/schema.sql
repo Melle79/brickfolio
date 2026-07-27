@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS offers (
   item_type     TEXT NOT NULL,
   name          TEXT NOT NULL,
   img_url       TEXT,
+  img_data      TEXT,                       -- kleines Bild für eigene Figuren
   bricklink_url TEXT,
   condition     TEXT,
   qty           INTEGER NOT NULL DEFAULT 1,

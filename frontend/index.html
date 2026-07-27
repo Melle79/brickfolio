@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=231">
-<link rel="stylesheet" href="/static/style.css?v=231">
+<link rel="stylesheet" href="/static/fonts.css?v=234">
+<link rel="stylesheet" href="/static/style.css?v=234">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -259,6 +259,11 @@
 
     <!-- Angebote der anderen -->
     <section id="hubpane-offers">
+      <span class="search-wrap">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input id="hub-search" class="search" type="search" placeholder="Im Netzwerk suchen – Name oder Nummer" aria-label="Angebote durchsuchen">
+        <button type="button" class="search-clear" data-clear="hub-search" aria-label="Suche leeren">×</button>
+      </span>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="hub-refresh-offers">🔄 Aktualisieren</button>
         <button class="mini-btn" id="hub-make-invite">✉️ Freund einladen</button>
@@ -751,7 +756,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=231"></script>
+<script src="/static/app.js?v=234"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">
