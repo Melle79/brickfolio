@@ -300,6 +300,76 @@ def test_disconnect_clears_block_and_key_state(client):
     assert (core.get_setting("hub_key_sent") or "") == ""
 
 
+# ------------------------------------------------- Instanz-Kennung
+
+def test_instance_code_is_kept_and_shown(client, monkeypatch):
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        201, {"member_id": "mem_1", "display_name": "Paul", "token": "bft_1",
+              "instance_code": "BF-ABCD-EFGH-K",
+              "instance_secret": "ins_geheim"}))
+    hub.connect_with_invite("inv_x", "Paul")
+    assert hub.instance_code() == "BF-ABCD-EFGH-K"
+    assert client.get("/api/hub").json()["instance_code"] == "BF-ABCD-EFGH-K"
+
+
+def test_instance_claim_travels_with_a_new_join(client, monkeypatch):
+    """Nach einem Neubeitritt soll der Hub dieselbe Installation wiedererkennen
+    – sonst hilft die Kennung beim Zuordnen nichts."""
+    core.set_setting("hub_instance_code", "BF-ABCD-EFGH-K")
+    core.set_setting("hub_instance_secret", "ins_geheim")
+    sent = {}
+
+    def fake(method, url, **kw):
+        sent.update(kw.get("json") or {})
+        return _Resp(201, {"member_id": "m", "display_name": "Paul",
+                           "token": "bft_2", "instance_code": "BF-ABCD-EFGH-K"})
+    monkeypatch.setattr(hub.requests, "request", fake)
+    hub.connect_with_invite("inv_y", "Paul")
+    assert sent["instance_code"] == "BF-ABCD-EFGH-K"
+    assert sent["instance_secret"] == "ins_geheim"
+
+
+def test_disconnect_keeps_the_instance_identity(client):
+    """Trennen löst das Konto, nicht die Installation – sonst wäre die Instanz
+    nach einem Neubeitritt nicht mehr zuzuordnen."""
+    core.set_setting("hub_instance_code", "BF-ABCD-EFGH-K")
+    core.set_setting("hub_instance_secret", "ins_geheim")
+    core.set_setting("hub_token", "bft_x")
+    hub.disconnect()
+    assert hub.instance_code() == "BF-ABCD-EFGH-K"
+    assert core.get_setting("hub_instance_secret") == "ins_geheim"
+
+
+def test_instance_identity_is_part_of_the_backup(client):
+    """Sie liegt in den Einstellungen – und die sind in der Sicherung."""
+    core.set_setting("hub_instance_code", "BF-ABCD-EFGH-K")
+    dump = client.get("/api/backup").json()
+    names = {r["name"] for r in dump["tables"]["settings"]}
+    assert "hub_instance_code" in names
+
+
+def test_existing_member_gets_the_code_on_refresh(client, monkeypatch):
+    """Instanzen von vor der Kennung bekommen sie beim nächsten Abgleich."""
+    core.set_setting("hub_token", "bft_x")
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        200, {"display_name": "Paul", "is_admin": False,
+              "instance_code": "BF-ZZZZ-YYYY-M", "instance_secret": "ins_neu"}))
+    hub.refresh()
+    assert hub.instance_code() == "BF-ZZZZ-YYYY-M"
+    assert core.get_setting("hub_instance_secret") == "ins_neu"
+
+
+def test_later_refresh_without_secret_keeps_the_old_one(client, monkeypatch):
+    """Das Geheimnis kommt nur einmal – ein leeres Feld darf es nicht löschen."""
+    core.set_setting("hub_token", "bft_x")
+    core.set_setting("hub_instance_secret", "ins_alt")
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
+        200, {"display_name": "Paul", "is_admin": False,
+              "instance_code": "BF-ZZZZ-YYYY-M", "instance_secret": None}))
+    hub.refresh()
+    assert core.get_setting("hub_instance_secret") == "ins_alt"
+
+
 # ------------------------------------------------- Vorgänge löschen / entfallen
 
 def _trade(tid="trd_a", direction="out"):

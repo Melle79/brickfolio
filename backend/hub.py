@@ -40,6 +40,34 @@ def blocked() -> bool:
     return core.get_setting("hub_blocked") == "1"
 
 
+def instance_code() -> str:
+    return core.get_setting("hub_instance_code") or ""
+
+
+def _remember_instance(data: dict):
+    """Kennung und Geheimnis der Installation merken.
+
+    Die beiden überleben bewusst das Trennen vom Netzwerk und liegen in den
+    Einstellungen – also in der Sicherung. Nach einer Neuinstallation samt
+    Rücksicherung ist es für den Hub wieder dieselbe Instanz.
+    """
+    code = (data.get("instance_code") or "").strip()
+    if code:
+        core.set_setting("hub_instance_code", code)
+    secret = (data.get("instance_secret") or "").strip()
+    if secret:
+        core.set_setting("hub_instance_secret", secret)
+
+
+def _instance_claim() -> dict:
+    """Womit sich diese Installation beim Hub zu erkennen gibt."""
+    code = core.get_setting("hub_instance_code") or ""
+    secret = core.get_setting("hub_instance_secret") or ""
+    if not code or not secret:
+        return {}
+    return {"instance_code": code, "instance_secret": secret}
+
+
 def _store(token, me):
     core.set_setting("hub_token", token)
     core.set_setting("hub_member_id", me.get("member_id", ""))
@@ -73,7 +101,8 @@ def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):
         data = {}
     if not resp.ok:
         msg = data.get("error") if isinstance(data, dict) else None
-        if isinstance(data, dict) and data.get("blocked"):
+        if (isinstance(data, dict) and data.get("blocked")
+                and core.get_setting("hub_token")):
             # Der Zugang ist gesperrt, nicht kaputt. Das merken wir uns, damit
             # die App es sagen kann – der Token bleibt liegen, denn nach einer
             # Freischaltung geht damit alles weiter.
@@ -95,17 +124,23 @@ class HubError(Exception):
 
 def connect_with_token(token: str) -> dict:
     """Bestehenden Token prüfen (/v1/me) und speichern."""
-    me = _request("GET", HUB_URL, "/v1/me", token=token)
+    me = _request("GET", HUB_URL, "/v1/me?instance=1", token=token)
     _store(token, me)
+    _remember_instance(me)
     return me
 
 
 def connect_with_invite(invite_code: str, display_name: str) -> dict:
-    """Per Einladungscode beitreten, Token erhalten und speichern."""
-    res = _request("POST", HUB_URL, "/v1/register",
-                   body={"invite_code": invite_code,
-                         "display_name": display_name})
+    """Per Einladungscode beitreten, Token erhalten und speichern.
+
+    Kennt diese Installation schon eine Instanz-Kennung, geht sie mit: der Hub
+    führt die Vorgeschichte dann fort, statt eine neue Instanz anzulegen.
+    """
+    body = {"invite_code": invite_code, "display_name": display_name}
+    body.update(_instance_claim())
+    res = _request("POST", HUB_URL, "/v1/register", body=body)
     _store(res.get("token", ""), res)
+    _remember_instance(res)
     return res
 
 
@@ -120,9 +155,10 @@ def _authed(method, path, body=None, timeout=TIMEOUT):
 def refresh():
     """Aktuellen Anzeigenamen/Admin-Status vom Hub holen und Cache auffrischen.
     Kurzer Timeout, weil best-effort (Statusanzeige)."""
-    me = _authed("GET", "/v1/me", timeout=6)
+    me = _authed("GET", "/v1/me?instance=1", timeout=6)
     core.set_setting("hub_display_name", me.get("display_name", ""))
     core.set_setting("hub_is_admin", "1" if me.get("is_admin") else "0")
+    _remember_instance(me)      # Instanzen von vor der Kennung holen sie hier
     return me
 
 

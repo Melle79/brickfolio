@@ -2,6 +2,21 @@
 -- Dünne Austausch-Schicht: NUR freigegebene Angebote, Identitäten und (später)
 -- Postfach. KEINE Sammlungen, keine Bilder-Blobs, kein Volltext.
 
+-- Eine Instanz ist die Installation bei jemandem zu Hause – sie bleibt
+-- dieselbe, auch wenn das Mitgliedskonto wechselt (Neubeitritt, anderer
+-- Name). Die Kennung wird bei der Erstanmeldung vergeben und liegt auf der
+-- Instanz; das Geheimnis weist nach, dass sie wirklich diese Instanz ist.
+CREATE TABLE IF NOT EXISTS instances (
+  id           TEXT PRIMARY KEY,            -- inst_…
+  code         TEXT NOT NULL UNIQUE,        -- BF-XXXX-XXXX-P (ablesbar)
+  secret_hash  TEXT NOT NULL,
+  first_name   TEXT NOT NULL,               -- Name bei der Erstanmeldung
+  blocked      INTEGER NOT NULL DEFAULT 0,  -- kein Neubeitritt mehr
+  note         TEXT,
+  created_at   INTEGER NOT NULL,
+  last_seen_at INTEGER
+);
+
 CREATE TABLE IF NOT EXISTS members (
   id           TEXT PRIMARY KEY,            -- öffentliche Member-ID (mem_…)
   display_name TEXT NOT NULL,
@@ -10,9 +25,11 @@ CREATE TABLE IF NOT EXISTS members (
   status       TEXT NOT NULL DEFAULT 'active',   -- active | disabled
   invite_quota INTEGER NOT NULL DEFAULT 3,  -- wie viele Einladungen erlaubt
   public_key   TEXT,                        -- für Ende-zu-Ende-Nachrichten
+  instance_id  TEXT,                        -- welche Installation dahintersteht
   created_at   INTEGER NOT NULL,
   last_seen_at INTEGER
 );
+CREATE INDEX IF NOT EXISTS idx_members_instance ON members(instance_id);
 
 -- Wer mehr als sein Kontingent einladen möchte, stellt eine Anfrage; ein
 -- Hub-Admin genehmigt sie (erhöht das Kontingent) oder lehnt ab.

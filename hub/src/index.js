@@ -42,6 +42,39 @@ async function sha256(text) {
   return [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
+/* --------------------------------------------------- Instanz-Kennung
+   Menschenlesbare Nummer, die man am Telefon durchgeben oder in die Konsole
+   tippen kann: BF-XXXX-XXXX-P. Das Alphabet lässt 0/O und 1/I/L weg, damit
+   sich Ziffern und Buchstaben nicht verwechseln lassen. Es hat 31 Zeichen –
+   eine Primzahl, deshalb erkennt die gewichtete Prüfsumme jeden einzelnen
+   Zifferndreher und jede Vertauschung zweier Nachbarn. */
+const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+function codeCheckChar(chars) {
+  let sum = 0;
+  chars.forEach((c, i) => { sum += (i + 1) * CODE_ALPHABET.indexOf(c); });
+  return CODE_ALPHABET[sum % CODE_ALPHABET.length];
+}
+
+function makeInstanceCode() {
+  const b = new Uint8Array(8);
+  crypto.getRandomValues(b);
+  const chars = [...b].map((x) => CODE_ALPHABET[x % CODE_ALPHABET.length]);
+  const body = chars.join("");
+  return `BF-${body.slice(0, 4)}-${body.slice(4)}-${codeCheckChar(chars)}`;
+}
+
+/* Tippfehler abfangen, bevor irgendwo gesucht wird. Gibt die normalisierte
+   Kennung zurück oder null. */
+function normalizeInstanceCode(raw) {
+  const s = String(raw || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+  if (!/^BF[0-9A-Z]{9}$/.test(s)) return null;
+  const chars = s.slice(2, 10).split("");
+  if (chars.some((c) => CODE_ALPHABET.indexOf(c) < 0)) return null;
+  if (s[10] !== codeCheckChar(chars)) return null;
+  return `BF-${s.slice(2, 6)}-${s.slice(6, 10)}-${s[10]}`;
+}
+
 function bearer(req) {
   const h = req.headers.get("authorization") || "";
   const m = h.match(/^Bearer\s+(.+)$/i);
@@ -79,6 +112,22 @@ async function nameTaken(env, name, exceptId = null) {
   return !!row && row.id !== exceptId;
 }
 
+/* Meldet sich hier eine schon bekannte Installation? Die Instanz schickt
+   Kennung und Geheimnis mit; ohne das Geheimnis zählt die Kennung nicht –
+   sonst könnte man sich fremde Vorgeschichte anhängen. */
+async function knownInstance(env, body) {
+  const code = normalizeInstanceCode(body.instance_code);
+  if (!code) return { none: true };
+  const row = await env.DB.prepare("SELECT * FROM instances WHERE code = ?")
+    .bind(code).first();
+  if (!row) return { none: true };          // unbekannt: wie eine neue Instanz
+  const secret = (body.instance_secret || "").toString();
+  if (!secret || await sha256(secret) !== row.secret_hash) {
+    return { bad: true };
+  }
+  return { row };
+}
+
 async function register(req, env) {
   const body = await req.json().catch(() => ({}));
   const name = (body.display_name || "").toString().trim().slice(0, 80);
@@ -86,6 +135,17 @@ async function register(req, env) {
   if (name.length < MIN_NAME) {
     return err(400, `Der Name braucht mindestens ${MIN_NAME} Zeichen`);
   }
+
+  const inst = await knownInstance(env, body);
+  if (inst.bad) {
+    return err(403, "Instanz-Kennung und Geheimnis passen nicht zusammen");
+  }
+  if (inst.row && inst.row.blocked) {
+    return json({ error: "Diese Instanz ist im Netzwerk gesperrt. Ein "
+      + `Hub-Admin kann sie unter der Kennung ${inst.row.code} wieder `
+      + "freischalten.", blocked: true, instance_code: inst.row.code }, 403);
+  }
+
   if (await nameTaken(env, name)) {
     return err(409, `Der Name „${name}" ist im Netzwerk schon vergeben – `
       + "bitte einen anderen wählen");
@@ -114,10 +174,30 @@ async function register(req, env) {
   const id = randomToken("mem");
   const token = randomToken("bft");           // brickfolio token
   const t = now();
+
+  // Kennung: entweder die schon bekannte weiterführen oder eine neue
+  // ausstellen. Das Geheimnis geht nur beim Ausstellen einmal hinaus.
+  let instanceId, instanceCode, instanceSecret = null;
+  if (inst.row) {
+    instanceId = inst.row.id;
+    instanceCode = inst.row.code;
+    await env.DB.prepare("UPDATE instances SET last_seen_at = ? WHERE id = ?")
+      .bind(t, instanceId).run();
+  } else {
+    instanceId = randomToken("inst");
+    instanceCode = makeInstanceCode();
+    instanceSecret = randomToken("ins");
+    await env.DB.prepare(
+      "INSERT INTO instances (id, code, secret_hash, first_name, created_at, "
+      + "last_seen_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(instanceId, instanceCode, await sha256(instanceSecret), name, t, t)
+      .run();
+  }
+
   await env.DB.prepare(
-    "INSERT INTO members (id, display_name, token_hash, is_admin, created_at) "
-    + "VALUES (?, ?, ?, ?, ?)")
-    .bind(id, name, await sha256(token), isAdmin, t).run();
+    "INSERT INTO members (id, display_name, token_hash, is_admin, instance_id, "
+    + "created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(id, name, await sha256(token), isAdmin, instanceId, t).run();
 
   if (!isAdmin && count > 0) {
     const code = (body.invite_code || "").toString().trim();
@@ -125,14 +205,43 @@ async function register(req, env) {
       "UPDATE invites SET redeemed_by = ?, redeemed_at = ? WHERE code_hash = ?")
       .bind(id, t, await sha256(code)).run();
   }
-  // Token wird NUR hier einmal ausgeliefert.
-  return json({ member_id: id, display_name: name, is_admin: !!isAdmin, token }, 201);
+  // Token und Instanz-Geheimnis werden NUR hier einmal ausgeliefert.
+  return json({ member_id: id, display_name: name, is_admin: !!isAdmin, token,
+                instance_code: instanceCode,
+                instance_secret: instanceSecret }, 201);
 }
 
-async function me(member) {
+async function me(req, member, env) {
+  // Mitglieder von vor der Instanz-Kennung bekommen sie hier nachgereicht –
+  // das Geheimnis geht dabei genau einmal hinaus. Deshalb nur, wenn die
+  // Instanz selbst fragt: Die Admin-Konsole ruft /v1/me mit demselben Token
+  // auf und würde das Geheimnis sonst wegschnappen, ohne es zu speichern.
+  const isInstance = new URL(req.url).searchParams.get("instance") === "1";
+  let code = null, secret = null;
+  if (member.instance_id) {
+    const row = await env.DB.prepare("SELECT code FROM instances WHERE id = ?")
+      .bind(member.instance_id).first();
+    code = row ? row.code : null;
+  } else if (!isInstance) {
+    code = null;                       // anlegen tut das nur die Instanz
+  } else {
+    const id = randomToken("inst");
+    code = makeInstanceCode();
+    secret = randomToken("ins");
+    const t = now();
+    await env.DB.batch([
+      env.DB.prepare(
+        "INSERT INTO instances (id, code, secret_hash, first_name, created_at, "
+        + "last_seen_at) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(id, code, await sha256(secret), member.display_name, t, t),
+      env.DB.prepare("UPDATE members SET instance_id = ? WHERE id = ?")
+        .bind(id, member.id),
+    ]);
+  }
   return json({
     member_id: member.id, display_name: member.display_name,
     is_admin: !!member.is_admin, created_at: member.created_at,
+    instance_code: code, instance_secret: isInstance ? secret : null,
   });
 }
 
@@ -546,11 +655,59 @@ async function adminOverview(env) {
 async function adminMembers(env) {
   const rows = (await env.DB.prepare(
     "SELECT m.id, m.display_name, m.is_admin, m.status, m.created_at, "
-    + "m.last_seen_at, "
+    + "m.last_seen_at, m.instance_id, i.code AS instance_code, "
+    + "i.first_name AS instance_first_name, i.blocked AS instance_blocked, "
     + "(SELECT COUNT(*) FROM offers o WHERE o.member_id = m.id) AS offer_count "
-    + "FROM members m ORDER BY m.status, m.display_name COLLATE NOCASE").all()
+    + "FROM members m LEFT JOIN instances i ON i.id = m.instance_id "
+    + "ORDER BY m.status, m.display_name COLLATE NOCASE").all()
   ).results || [];
   return json({ members: rows });
+}
+
+/* Installationen mit ihrer Vorgeschichte: unter welchen Namen war diese
+   Instanz schon im Netzwerk? Damit lässt sich jemand wiedererkennen, der
+   unter neuem Namen zurückkommt – und einer, der seinen Zugang verloren
+   hat, sicher zuordnen und freischalten. */
+async function adminInstances(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT i.*, "
+    + "(SELECT COUNT(*) FROM members m WHERE m.instance_id = i.id) AS member_count "
+    + "FROM instances i ORDER BY i.created_at DESC LIMIT 500").all()).results || [];
+  const hist = (await env.DB.prepare(
+    "SELECT instance_id, id, display_name, status, created_at "
+    + "FROM members WHERE instance_id IS NOT NULL "
+    + "ORDER BY created_at").all()).results || [];
+  const byInst = {};
+  hist.forEach((m) => { (byInst[m.instance_id] ||= []).push(m); });
+  rows.forEach((i) => { i.members = byInst[i.id] || []; });
+  return json({ instances: rows });
+}
+
+async function adminUpdateInstance(req, env, id) {
+  const body = await req.json().catch(() => ({}));
+  // Die Kennung wird auch abgetippt – Schreibweise und Prüfzeichen hier
+  // begradigen, damit „bf pan6 5g93 k" genauso findet.
+  const code = normalizeInstanceCode(id);
+  const row = await env.DB.prepare(
+    "SELECT * FROM instances WHERE id = ? OR code = ?")
+    .bind(id, code || id).first();
+  if (!row) {
+    return err(404, code || !/^BF/i.test(id) ? "Instanz nicht gefunden"
+      : "Diese Kennung stimmt nicht – bitte noch einmal prüfen");
+  }
+  const sets = [];
+  const args = [];
+  if (typeof body.blocked === "boolean") {
+    sets.push("blocked = ?"); args.push(body.blocked ? 1 : 0);
+  }
+  if (typeof body.note === "string") {
+    sets.push("note = ?"); args.push(body.note.slice(0, 300) || null);
+  }
+  if (!sets.length) return err(400, "Nichts zu ändern");
+  args.push(row.id);
+  await env.DB.prepare(`UPDATE instances SET ${sets.join(", ")} WHERE id = ?`)
+    .bind(...args).run();
+  return json({ ok: true, code: row.code });
 }
 
 async function adminUpdateMember(req, member, env, id) {
@@ -585,6 +742,13 @@ async function adminUpdateMember(req, member, env, id) {
       if ((c.c || 0) <= 1) return err(400, "Das ist der letzte aktive Admin");
     }
     sets.push("status = ?"); args.push(st);
+    // Die Sperre gilt der Installation, nicht bloß dem Namen – sonst wäre sie
+    // mit einer neuen Einladung und einem anderen Namen umgangen. Beim
+    // Freischalten fällt sie zusammen mit dem Konto wieder weg.
+    if (row.instance_id) {
+      await env.DB.prepare("UPDATE instances SET blocked = ? WHERE id = ?")
+        .bind(st === "disabled" ? 1 : 0, row.instance_id).run();
+    }
   }
   if (!sets.length) return err(400, "Nichts zu ändern");
 
@@ -695,6 +859,11 @@ async function adminRoute(req, member, env, p, method) {
 
   if (p === "/v1/admin/overview" && method === "GET") return await adminOverview(env);
   if (p === "/v1/admin/members" && method === "GET") return await adminMembers(env);
+  if (p === "/v1/admin/instances" && method === "GET") return await adminInstances(env);
+  const im = p.match(/^\/v1\/admin\/instances\/([^/]+)$/);
+  if (im && method === "PATCH") {
+    return await adminUpdateInstance(req, env, decodeURIComponent(im[1]));
+  }
   if (p === "/v1/admin/invites" && method === "GET") return await adminInvites(env);
 
   let m = p.match(/^\/v1\/admin\/members\/([^/]+)$/);
@@ -733,7 +902,7 @@ export default {
 
       if (p.startsWith("/v1/admin/")) return await adminRoute(req, member, env, p, method);
 
-      if (p === "/v1/me" && method === "GET") return await me(member);
+      if (p === "/v1/me" && method === "GET") return await me(req, member, env);
       if (p === "/v1/me" && method === "PATCH") return await updateMe(req, member, env);
       if (p === "/v1/token/rotate" && method === "POST") return await rotateToken(member, env);
       if (p === "/v1/offers" && method === "PUT") return await putOffers(req, member, env);
