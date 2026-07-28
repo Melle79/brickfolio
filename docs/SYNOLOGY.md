@@ -44,6 +44,14 @@ services:
 **Weiter → Weiter → Fertig.** Der Container Manager lädt das Image und startet
 es. Beim ersten Mal dauert das ein bis zwei Minuten (rund 75 MB).
 
+> **Lieber über die Suche?** Das Image liegt auch auf Docker Hub, und das
+> durchsucht der Container Manager von Haus aus: **Registrierung** öffnen,
+> nach `brickfolio` suchen, `melle79/brickfolio` herunterladen, Marke
+> `latest` wählen. Danach unter **Container → Erstellen** das Image auswählen,
+> Port `8300` und den Ordner `/docker/brickfolio/data` auf `/data` legen.
+> Das Projekt oben ist trotzdem der bequemere Weg – dort steht alles in einem
+> Rutsch drin und bleibt für Updates erhalten.
+
 ### 3. Aufrufen
 
 `http://<NAS-IP>:8300` – der Einrichtungsassistent übernimmt ab hier.

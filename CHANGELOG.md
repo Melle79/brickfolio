@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.49.1 – Juli 2026
+
+*An der App selbst ändert sich nichts – nur daran, wie man sie bekommt.*
+
+### Neu
+- 🐳 **Das Image liegt jetzt auch auf Docker Hub** (`melle79/brickfolio`), zusätzlich zur GitHub-Registry. Damit findet Synologys Container Manager es über die eingebaute Suche – die GitHub-Registry lässt sich nicht durchsuchen
+- 📘 **Synology-Anleitung ohne Konsole** ([`docs/SYNOLOGY.md`](docs/SYNOLOGY.md)): Container Manager → Projekt → YAML einfügen, dazu Aktualisieren und die üblichen Stolpersteine (belegter Port, Rechte auf `data`, ARM-Modelle)
+
 ## 1.49.0 – Juli 2026
 
 ### Neu
