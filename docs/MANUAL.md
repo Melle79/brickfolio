@@ -301,6 +301,45 @@ that address it can also be put on your phone as a PWA (see 2.5).
 *public hostnames* pointing at the respective container ports – a single
 `cloudflared` container is enough for that.
 
+### 2.8 How the app is secured – and what it is not built for
+
+Brickfolio is built for the **home network**. If you forward a port on your
+router, you should know what protects you and what does not.
+
+**What is there:**
+
+- **Every data access requires a login.** Only the start page, signing in,
+  the initial setup and the image files themselves are open (and their names
+  are random and cannot be guessed).
+- **Passwords** are stored as PBKDF2-SHA256 with 200,000 rounds and a
+  per-user salt – not in plain text, not as a simple hash.
+- **Password guessing is throttled**: ten failed attempts per account and per
+  origin, then a 15-minute pause. The correct password does not count during
+  that time either – otherwise someone who just guessed it would slip
+  through. A successful login resets the counters.
+- **Security headers**: the page cannot be put inside someone else's frame,
+  the browser must not guess file types, and a content policy only allows
+  scripts from the app itself.
+- **Uploaded images** are re-encoded – that strips EXIF data (GPS from phone
+  photos, for instance) and makes sure nothing other than an image is stored.
+- **Roles**: purchase prices, list management, users, keys and backup all sit
+  behind pro or admin rights.
+
+**What is missing – and why a port forward is still a bad idea:**
+
+- **No encryption.** The app speaks `http`. Through a port forward, the
+  password and the session token would travel the internet **in the clear**.
+  That is the most serious point.
+- **Passwords may be short** (at least eight characters since v1.57.0, four
+  before that). Fine at home, thin for the open internet.
+- **No second factor**, no sign-in through an external provider.
+- **Sessions last 90 days** and live in browser storage.
+
+**The recommendation** therefore stays the **Cloudflare Tunnel** (2.7): it
+brings encryption, opens no port, and with an access policy there is even a
+second door in front. If you want a port forward anyway, at the very least
+use a long, unique password and restrict access to known addresses.
+
 ---
 
 ## 3. Users & roles

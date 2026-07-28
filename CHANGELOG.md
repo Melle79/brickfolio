@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.57.0 – Juli 2026
+
+### Neu
+- 🛡 **Passwortraten wird gebremst.** Bisher konnte man beliebig oft raten – im Heimnetz verschmerzbar, bei einer Portfreigabe nicht. Jetzt: zehn Fehlversuche je Konto **und** je Herkunft, danach 15 Minuten Pause. Gezählt wird je Konto, damit ein Adresswechsel nichts bringt; eine geglückte Anmeldung setzt die Zähler zurück, damit sich eine Familie hinter einer Adresse nicht selbst aussperrt. Bewusst **kein** hartes Kontosperren – sonst könnte ein Fremder jeden mit Absicht aussperren
+- 🔒 **Schutz-Header** für den Browser: kein Einbetten in fremde Rahmen, kein Raten von Dateitypen, Skripte nur aus der App selbst. Die Regeln lassen Katalogbilder von BrickLink und Rebrickable ausdrücklich zu
+
+### Verbessert
+- 🔑 **Passwörter brauchen jetzt acht statt vier Zeichen.** Betrifft nur neu gesetzte Passwörter; bestehende Anmeldungen laufen weiter
+- 📖 Neuer Abschnitt **„Wie die App abgesichert ist – und wofür sie nicht gebaut ist"** in beiden Handbüchern: was greift, was fehlt (vor allem: die App spricht `http`, über eine Portfreigabe ginge das Passwort im Klartext durchs Netz) und warum der Cloudflare-Tunnel die Empfehlung bleibt
+
 ## 1.56.0 – Juli 2026
 
 ### Neu

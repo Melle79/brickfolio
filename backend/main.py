@@ -35,6 +35,37 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 @app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Grundschutz im Browser.
+
+    Kostet nichts und nimmt drei Angriffswege aus dem Spiel: fremde Seiten
+    dürfen die App nicht in einen Rahmen stecken (Klickfallen), der Browser
+    darf Dateitypen nicht raten, und Adressen fließen nicht an fremde Seiten
+    ab. Die Regeln für Inhalte lassen Bilder von BrickLink und Rebrickable
+    ausdrücklich zu – ohne sie bliebe der halbe Katalog leer.
+    """
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    if not request.url.path.startswith("/api/"):
+        response.headers.setdefault("Content-Security-Policy", "; ".join([
+            "default-src 'self'",
+            # Katalogbilder liegen bei BrickLink und Rebrickable
+            "img-src 'self' data: https://img.bricklink.com "
+            "https://cdn.rebrickable.com https://*.bricklink.com "
+            "https://*.rebrickable.com",
+            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self'",
+            "connect-src 'self'",
+            "frame-ancestors 'self'",
+            "base-uri 'self'",
+            "form-action 'self'",
+        ]))
+    return response
+
+
+@app.middleware("http")
 async def cache_control(request: Request, call_next):
     """Wie lange dürfen Browser Frontend-Dateien behalten?
 
@@ -193,7 +224,7 @@ class LoginBody(BaseModel):
 
 class UserBody(BaseModel):
     username: str = Field(min_length=2, max_length=60)
-    password: str = Field(min_length=4, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
     is_admin: bool = False
 
 
@@ -244,7 +275,7 @@ def setup_status():
 
 class SetupBody(BaseModel):
     username: str = Field(min_length=2, max_length=40)
-    password: str = Field(min_length=4, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
 
 
 @app.post("/api/setup")
@@ -278,14 +309,77 @@ def whoami(user: dict = Depends(current_user)):
             "default_theme": core.get_setting("default_theme") or "classic"}
 
 
+# --------------------------------------------- Schutz vor Passwortraten
+#
+# Ohne Bremse kann jemand beliebig oft raten – im Heimnetz verschmerzbar, bei
+# einer Portfreigabe nicht. Gezählt wird je Konto *und* je Herkunft:
+#
+#   je Konto   – dagegen hilft dem Angreifer kein Wechsel der Adresse
+#   je Herkunft– dagegen hilft ihm keine Liste von Benutzernamen
+#
+# Bewusst kein hartes Sperren des Kontos: Sonst könnte ein Fremder jeden
+# aussperren, indem er absichtlich falsch rät. Nach der Wartezeit geht es
+# von selbst weiter.
+LOGIN_MAX = 10                 # Fehlversuche
+LOGIN_WINDOW = 15 * 60         # innerhalb dieser Zeit (Sekunden)
+_login_fails: dict = {}
+
+
+def _login_key(request: Request) -> str:
+    """Herkunft der Anfrage. Hinter einem Tunnel steht die echte Adresse im
+    Header – der ist fälschbar, taugt also nur als grobe Streuung; die
+    eigentliche Bremse ist die Zählung je Konto."""
+    fwd = request.headers.get("cf-connecting-ip") or \
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    return fwd or (request.client.host if request.client else "?")
+
+
+def _login_blocked(*schluessel) -> int:
+    """Wie viele Sekunden muss noch gewartet werden? 0 = freie Bahn."""
+    jetzt = time.time()
+    wartezeit = 0
+    for s in schluessel:
+        versuche = [t for t in _login_fails.get(s, []) if jetzt - t < LOGIN_WINDOW]
+        _login_fails[s] = versuche
+        if len(versuche) >= LOGIN_MAX:
+            wartezeit = max(wartezeit, int(LOGIN_WINDOW - (jetzt - versuche[0])))
+    return wartezeit
+
+
+def _login_failed(*schluessel):
+    jetzt = time.time()
+    for s in schluessel:
+        _login_fails.setdefault(s, []).append(jetzt)
+    # Nicht unbegrenzt wachsen lassen – abgelaufene Einträge wegräumen.
+    if len(_login_fails) > 2000:
+        for s in list(_login_fails):
+            _login_fails[s] = [t for t in _login_fails[s]
+                               if jetzt - t < LOGIN_WINDOW]
+            if not _login_fails[s]:
+                del _login_fails[s]
+
+
 @app.post("/api/login")
-def login(body: LoginBody):
+def login(body: LoginBody, request: Request):
+    name = body.username.strip()
+    keys = (f"u:{name.lower()}", f"i:{_login_key(request)}")
+    warte = _login_blocked(*keys)
+    if warte:
+        raise HTTPException(429, "Zu viele Fehlversuche – bitte "
+                                 f"{max(1, warte // 60)} Minuten warten")
     with core.db() as conn:
         row = conn.execute(
-            "SELECT * FROM users WHERE username = ?", (body.username.strip(),)
+            "SELECT * FROM users WHERE username = ?", (name,)
         ).fetchone()
     if not row or not core.verify_password(body.password, row["password_hash"]):
+        _login_failed(*keys)
         raise HTTPException(401, "Benutzername oder Passwort falsch")
+    # Geglückt: beide Zähler zurücksetzen. Auch den für die Herkunft – sonst
+    # sperrt eine Familie hinter einer Adresse sich gegenseitig aus, wenn
+    # jemand ein paarmal danebentippt. Wer sich erfolgreich anmeldet, hat
+    # gültige Zugangsdaten; wer keine hat, kommt nie an diese Stelle.
+    for k in keys:
+        _login_fails.pop(k, None)
     token = core.create_token(row["id"], row["username"], row["is_admin"])
     is_dealer = bool(row["is_dealer"]) if "is_dealer" in row.keys() else False
     theme = row["theme"] if "theme" in row.keys() else None
@@ -1022,12 +1116,12 @@ def delete_user(user_id: int, user: dict = Depends(admin_user)):
 
 
 class PasswordBody(BaseModel):
-    password: str = Field(min_length=4, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
 
 
 class OwnPasswordBody(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
-    new_password: str = Field(min_length=4, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
 
 
 class UsernameBody(BaseModel):

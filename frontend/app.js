@@ -1392,8 +1392,8 @@ async function doSetup() {
     err.hidden = false;
     return;
   }
-  if (p1.length < 4) {
-    err.textContent = tr("Das Passwort braucht mindestens 4 Zeichen");
+  if (p1.length < 8) {
+    err.textContent = tr("Das Passwort braucht mindestens 8 Zeichen");
     err.hidden = false;
     return;
   }
@@ -6017,9 +6017,10 @@ async function loadSettings() {
     });
     $("user-list").querySelectorAll("[data-pass-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const pw = prompt(`Neues Passwort für "${btn.dataset.passName}" (mind. 4 Zeichen):`);
+        const pw = prompt(tr("Neues Passwort für {name} (mind. 8 Zeichen):",
+          { name: btn.dataset.passName }));
         if (pw == null) return;
-        if (pw.length < 4) { toast("Bitte mindestens 4 Zeichen"); return; }
+        if (pw.length < 8) { toast("Bitte mindestens 8 Zeichen"); return; }
         try {
           await api(`/users/${btn.dataset.passUser}/password`,
             { method: "POST", body: { password: pw } });

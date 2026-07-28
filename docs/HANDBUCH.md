@@ -304,6 +304,47 @@ es sich über diese Adresse auch aufs Handy legen (siehe 2.5).
 *Public Hostnames* anlegen, die auf die jeweiligen Container-Ports zeigen –
 ein einziger `cloudflared`-Container reicht dafür aus.
 
+### 2.8 Wie die App abgesichert ist – und wofür sie nicht gebaut ist
+
+Brickfolio ist für das **Heimnetz** gebaut. Wer den Port am Router
+freigibt, sollte wissen, was dann greift und was nicht.
+
+**Was da ist:**
+
+- **Jeder Datenzugriff verlangt eine Anmeldung.** Offen sind nur die
+  Startseite, das Anmelden, die Ersteinrichtung und die Bilddateien selbst
+  (deren Namen zufällig und nicht erratbar sind).
+- **Passwörter** liegen als PBKDF2-SHA256 mit 200.000 Runden und eigenem
+  Salz je Benutzer – nicht im Klartext, nicht als einfacher Hash.
+- **Passwortraten wird gebremst**: zehn Fehlversuche je Konto und je
+  Herkunft, danach 15 Minuten Pause. Auch das richtige Passwort zählt in
+  dieser Zeit nicht – sonst käme jemand durch, der es gerade erraten hat.
+  Eine geglückte Anmeldung setzt die Zähler zurück.
+- **Schutz-Header**: Die Seite lässt sich nicht in einen fremden Rahmen
+  stecken, der Browser darf Dateitypen nicht raten, und eine
+  Inhaltsrichtlinie erlaubt Skripte nur aus der App selbst.
+- **Hochgeladene Bilder** werden neu kodiert – das entfernt EXIF-Daten
+  (etwa GPS aus Handyfotos) und verhindert, dass etwas anderes als ein Bild
+  gespeichert wird.
+- **Rollen**: Kaufpreise, Listenverwaltung, Benutzer, Schlüssel und
+  Sicherung hängen an Profi- bzw. Admin-Rechten.
+
+**Was fehlt – und warum eine Portfreigabe trotzdem keine gute Idee ist:**
+
+- **Keine Verschlüsselung.** Die App spricht `http`. Über eine Portfreigabe
+  gingen Passwort und Sitzungs-Token **im Klartext** durchs Internet. Das
+  ist der schwerwiegendste Punkt.
+- **Passwörter dürfen kurz sein** (mindestens acht Zeichen seit v1.57.0,
+  vorher vier). Für zu Hause in Ordnung, für das offene Internet dünn.
+- **Kein zweiter Faktor**, keine Anmeldung über einen fremden Dienst.
+- **Sitzungen gelten 90 Tage** und liegen im Browser-Speicher.
+
+**Die Empfehlung** ist deshalb unverändert der **Cloudflare Tunnel** (2.7):
+Er bringt Verschlüsselung mit, öffnet keinen Port, und mit einer
+Access-Policy steht sogar eine zweite Tür davor. Wer trotzdem eine
+Portfreigabe machen will, sollte mindestens ein langes, einmaliges Passwort
+vergeben und den Zugang auf bekannte Adressen einschränken.
+
 ---
 
 ## 3. Benutzer & Rollen
