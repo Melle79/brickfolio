@@ -117,15 +117,18 @@ alle Befehle per SSH mit `sudo` ausführen.
 
 Beim ersten Aufruf im Browser wählst du Benutzername und Passwort für das
 **Admin-Konto** – danach bist du angemeldet, und ein Assistent führt in
-sechs Schritten durch den Rest:
+sieben Schritten durch den Rest:
 
 1. **Anzeigename** – der Name in Logo und Fenstertitel („Finn's Brickfolio")
-2. **Rebrickable-Schlüssel** – für die Suche nach Namen, mit Direktlink
-3. **BrickLink-Zugang** – die vier Werte für Preise und Set-Inhalte
-4. **Verbindung prüfen** – ein echter Testabruf bei beiden Diensten; so
+2. **Preisgebiet und Währung** – aus welchem Markt die Ø-Preise kommen und
+   in welcher Währung; vorausgewählt ist, was zu den Spracheinstellungen des
+   Browsers passt (siehe Kapitel 13.1)
+3. **Rebrickable-Schlüssel** – für die Suche nach Namen, mit Direktlink
+4. **BrickLink-Zugang** – die vier Werte für Preise und Set-Inhalte
+5. **Verbindung prüfen** – ein echter Testabruf bei beiden Diensten; so
    fällt ein verdrehter Schlüssel sofort auf und nicht erst beim ersten Scan
-5. **Tausch-Netzwerk** – falls dich jemand eingeladen hat (siehe Kapitel 12)
-6. **Fertig**
+6. **Tausch-Netzwerk** – falls dich jemand eingeladen hat (siehe Kapitel 12)
+7. **Fertig**
 
 **Jeder Schritt ist überspringbar**, und unten steht „Assistent beenden und
 direkt loslegen". Ohne Schlüssel funktioniert alles außer Preisen,
@@ -223,7 +226,7 @@ nach Rolle sichtbar:
 | 🔑 API-Schlüssel | Admin |
 | 👥 Benutzer verwalten | Admin |
 | 💾 Sicherung | Admin |
-| 🌍 Preisgebiet | Admin |
+| 🌍 Preisgebiet & Währung | Admin |
 | 🔄 Version & Updates | Admin |
 | ℹ️ Quellen & Rechtliches | alle |
 
@@ -1188,19 +1191,43 @@ selbst.
 
 ---
 
-### 13.1 Preisgebiet: weltweit oder deutschsprachiger Raum
+### 13.1 Preisgebiet und Währung
 
-BrickLink liefert standardmäßig den **weltweiten** Durchschnitt. Unter
-**Mehr → 🌍 Preisgebiet** (Admin) lässt sich stattdessen ein Markt wählen:
-**Deutschland**, **Österreich**, **Schweiz** oder **Europa**.
+BrickLink liefert standardmäßig den **weltweiten** Durchschnitt in Euro.
+Unter **Mehr → 🌍 Preisgebiet** (Admin) lassen sich beide Seiten einstellen:
+
+**Gebiet** – 21 Länder (Deutschland, Österreich, Schweiz, Großbritannien,
+Irland, USA, Kanada, Australien, Neuseeland, Niederlande, Belgien,
+Frankreich, Italien, Spanien, Portugal, Polen, Tschechien, Schweden,
+Dänemark, Norwegen, Finnland), sieben Regionen (Europa, Nordamerika,
+Südamerika, Asien, Ozeanien, Afrika, Naher Osten) oder weltweit.
+
+**Währung** – Euro, Britisches Pfund, US-Dollar, Schweizer Franken,
+Kanadischer und Australischer Dollar, Neuseeland-Dollar, Schwedische,
+Dänische und Norwegische Krone, Złoty, Tschechische Krone. Umgerechnet
+wird bei **BrickLink**: Die App schickt den Währungscode mit und speichert,
+was zurückkommt. Sie führt keine eigenen Kurse – es gibt also nichts, was
+veralten könnte.
+
+Beides ist **unabhängig** voneinander: Wer in Deutschland wohnt, aber am
+britischen Markt kauft, stellt Gebiet auf Großbritannien und die Währung
+auf Euro – oder umgekehrt.
+
+**Beim ersten Start** fragt der Einrichtungsassistent (Schritt 2) beides
+ab und schlägt vor, was zu den Spracheinstellungen des Browsers passt:
+`en-GB` führt zu Großbritannien und Pfund, `en-US` zu den USA und Dollar,
+`de-DE` zu Deutschland und Euro. Wer das Land umstellt, bekommt die
+passende Währung mitgezogen – eine danach von Hand gewählte Währung bleibt
+stehen.
 
 **Wichtig – der zweistufige Rückfall:** Gerade bei selteneren Figuren gibt
 es in einem einzelnen Land oft **gar keine Verkäufe**. Findet BrickLink im
-gewählten Gebiet nichts, weitet die App automatisch aus – **erst auf
-Europa, dann auf weltweit**. Der erste Markt mit echten Verkäufen zählt.
-So bleibt kein Artikel ohne Preis; die Bewertung ist dann eben gemischt.
-(Ist Europa oder weltweit direkt eingestellt, entfällt die jeweils engere
-Stufe.)
+gewählten Gebiet nichts, weitet die App automatisch aus – **erst auf die
+zugehörige Region, dann auf weltweit**. Die zweite Stufe richtet sich nach
+dem Land: für die USA also Nordamerika, für Australien Ozeanien, für
+Europa Europa. Der erste Markt mit echten Verkäufen zählt. So bleibt kein
+Artikel ohne Preis; die Bewertung ist dann eben gemischt. (Ist eine Region
+oder weltweit direkt eingestellt, entfällt die jeweils engere Stufe.)
 
 **Woran man einen ausgewichenen Preis erkennt:** Stammt ein Ø-Preis nicht
 aus dem eingestellten Gebiet, steht eine kleine **Flagge** daneben – 🇪🇺 für
@@ -1210,8 +1237,10 @@ auf einen Blick als „echt deutsch" (bzw. österreichisch/schweizerisch)
 erkennbar.
 
 **Bestehende Sammlung umstellen.** Nach dem Wechsel stammen alle
-gespeicherten Preise noch aus dem alten Gebiet. Die Karte zeigt deshalb,
-wie viele Artikel betroffen sind, und bietet **🔄 Preise jetzt umrechnen**.
+gespeicherten Preise noch aus dem alten Gebiet – **oder aus der alten
+Währung**. Beides zählt gleich: Die Karte zeigt, wie viele Artikel
+betroffen sind, und bietet **🔄 Preise jetzt umrechnen**. Bis dahin stünden
+sonst alte Beträge unter neuem Zeichen, und das wäre schlicht falsch.
 
 > Jeder Artikel kostet **zwei BrickLink-Abrufe** (neu und gebraucht), und
 > BrickLink hat ein Tageskontingent. Die App arbeitet deshalb in Häppchen

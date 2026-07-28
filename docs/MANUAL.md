@@ -116,17 +116,20 @@ On the first visit in the browser you pick a username and password for the
 (German or English) – the choice goes into the profile of the account you are
 about to create, so it applies on every device.
 
-After that you are signed in, and a wizard walks you through the rest in six
+After that you are signed in, and a wizard walks you through the rest in seven
 steps:
 
 1. **Display name** – the name in the logo and window title ("Finn's
    Brickfolio")
-2. **Rebrickable key** – for search by name, with a direct link
-3. **BrickLink access** – the four values for prices and set contents
-4. **Test the connection** – a real test call to both services, so a mixed-up
+2. **Price region and currency** – which market the average prices come from
+   and in which currency; preselected is what matches your browser's language
+   settings (see chapter 13.1)
+3. **Rebrickable key** – for search by name, with a direct link
+4. **BrickLink access** – the four values for prices and set contents
+5. **Test the connection** – a real test call to both services, so a mixed-up
    key shows up now and not at your first scan
-5. **Trading network** – if somebody invited you (see chapter 12)
-6. **Done**
+6. **Trading network** – if somebody invited you (see chapter 12)
+7. **Done**
 
 **Every step can be skipped**, and at the bottom there is "Finish the wizard
 and get started". Without keys everything works except prices, set contents
@@ -219,7 +222,7 @@ heading; the app remembers the state) – visible depending on your role:
 | 🔑 API keys | Admin |
 | 👥 Manage users | Admin |
 | 💾 Backup | Admin |
-| 🌍 Price region | Admin |
+| 🌍 Price region & currency | Admin |
 | 🔄 Version & updates | Admin |
 | ℹ️ Sources & legal | everyone |
 
@@ -1147,18 +1150,41 @@ price – everything else looks after itself.
 
 ---
 
-### 13.1 Price region: worldwide or German-speaking countries
+### 13.1 Price region and currency
 
-By default BrickLink delivers the **worldwide** average. Under **More →
-🌍 Price region** (admin) you can pick a market instead: **Germany**,
-**Austria**, **Switzerland** or **Europe**.
+By default BrickLink delivers the **worldwide** average in euros. Under
+**More → 🌍 Price region** (admin) you can set both sides:
+
+**Region** – 21 countries (Germany, Austria, Switzerland, United Kingdom,
+Ireland, United States, Canada, Australia, New Zealand, Netherlands, Belgium,
+France, Italy, Spain, Portugal, Poland, Czechia, Sweden, Denmark, Norway,
+Finland), seven regions (Europe, North America, South America, Asia, Oceania,
+Africa, Middle East) or worldwide.
+
+**Currency** – euro, British pound, US dollar, Swiss franc, Canadian and
+Australian dollar, New Zealand dollar, Swedish, Danish and Norwegian krone,
+złoty, Czech koruna. The conversion happens **at BrickLink**: the app sends the
+currency code along and stores what comes back. It keeps no exchange rates of
+its own – so there is nothing that could go stale.
+
+The two are **independent**: if you live in Germany but buy on the British
+market, set the region to United Kingdom and the currency to euro – or the
+other way round.
+
+**On first start** the setup wizard (step 2) asks for both and suggests what
+matches your browser's language settings: `en-GB` leads to United Kingdom and
+pound, `en-US` to United States and dollar, `de-DE` to Germany and euro.
+Changing the country pulls the matching currency along – a currency you then
+pick by hand stays put.
 
 **Important – the two-step fallback:** especially with rarer figures there are
 often **no sales at all** in a single country. If BrickLink finds nothing in
-the chosen region, the app widens automatically – **first to Europe, then
-worldwide**. The first market with real sales counts. That way no item is left
-without a price; the valuation is simply mixed then. (If Europe or worldwide is
-set directly, the narrower step is skipped.)
+the chosen region, the app widens automatically – **first to the surrounding
+region, then worldwide**. The second step follows the country: North America
+for the United States, Oceania for Australia, Europe for Europe. The first
+market with real sales counts. That way no item is left without a price; the
+valuation is simply mixed then. (If a region or worldwide is set directly, the
+narrower step is skipped.)
 
 **How to spot a fallback price:** if an average price does not come from the
 region you set, a small **flag** sits next to it – 🇪🇺 for Europe, 🌍 for
@@ -1167,8 +1193,10 @@ region you set stay without a flag, so at a glance you can tell which ones are
 "really German" (or Austrian/Swiss).
 
 **Converting an existing collection.** After a change, all stored prices still
-come from the old region. The card therefore shows how many items are affected
-and offers **🔄 Recalculate prices now**.
+come from the old region – **or from the old currency**. Both count the same:
+the card shows how many items are affected and offers **🔄 Recalculate prices
+now**. Until then old amounts would sit under a new symbol, and that would
+simply be wrong.
 
 > Every item costs **two BrickLink calls** (new and used), and BrickLink has a
 > daily quota. So the app works in small portions and shows the progress ("120

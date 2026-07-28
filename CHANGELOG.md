@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.60.0-beta.1 – Juli 2026
+
+> **Beta.** Währung und die neuen Preisgebiete sind neu und wollen im Alltag
+> gesehen werden, bevor sie als stabil gelten.
+
+### Neu
+- 🌍 **21 Länder und sieben Regionen als Preisgebiet.** Bisher gab es nur den
+  deutschsprachigen Raum plus Europa und weltweit. Jetzt sind Großbritannien,
+  USA, Kanada, Australien, Neuseeland und die übrigen europäischen Märkte
+  dabei, dazu Nordamerika, Südamerika, Asien, Ozeanien, Afrika und Naher Osten
+- 💱 **Währung wählbar** – Euro, Britisches Pfund, US-Dollar, Schweizer
+  Franken, Kanadischer und Australischer Dollar, Neuseeland-Dollar,
+  Schwedische, Dänische und Norwegische Krone, Złoty, Tschechische Krone.
+  Umgerechnet wird bei **BrickLink**: Die App schickt den Währungscode mit und
+  speichert, was zurückkommt – keine eigenen Kurse, nichts, was veralten kann
+- 🧭 **Der Einrichtungsassistent fragt beides beim ersten Start ab** (neuer
+  Schritt 2) und **schlägt vor, was zu den Spracheinstellungen des Browsers
+  passt**: `en-GB` → Großbritannien und Pfund, `en-US` → USA und Dollar,
+  `de-DE` → Deutschland und Euro. Wer das Land wechselt, bekommt die passende
+  Währung mitgezogen – eine danach von Hand gewählte bleibt stehen
+
+### Verbessert
+- 🎯 **Der Rückfall folgt jetzt dem Land.** Findet BrickLink im gewählten Land
+  keine Verkäufe, kam bisher immer Europa als zweite Stufe – auch für die USA.
+  Jetzt ist es die zugehörige Region: Nordamerika für die USA und Kanada,
+  Ozeanien für Australien und Neuseeland, Europa für Europa
+- 💶 **Beträge stehen überall in der eingestellten Währung**, auch die Zeichen
+  neben den Eingabefeldern („Bezahlt £")
+- 🔄 **Ein Wechsel der Währung macht die Preise genauso fällig wie ein Wechsel
+  des Gebiets.** Sonst stünden alte Beträge unter neuem Zeichen – falsch, und
+  von außen nicht erkennbar. Bestände aus älteren Versionen gelten als Euro
+  und bleiben dadurch unangetastet
+
+### Behoben
+- 🌐 **Deutsche Reste in der englischen Oberfläche.** Rund 90 Textstellen, die
+  erst mit echten Daten sichtbar werden – Themen-Gruppen, Preiskarte,
+  Einkaufslisten, Verkaufsliste, fehlende Set-Figuren, Einladungen, der
+  Cloudflare-Block und die Rückfragen vor dem Löschen. Ebenfalls übersetzt:
+  Datums- und Uhrzeitangaben, die fest auf `de-DE` standen
+- 🌐 Attribute, die erst zur Laufzeit gesetzt werden (Tooltips am Mengenknopf,
+  am Design-Stern, am Umbenennen-Stift), wurden vom Übersetzer nicht erfasst –
+  sie blieben deutsch, egal welche Sprache eingestellt war
+- 🌐 Sätze, die in der Vorlage über zwei Zeilen laufen, fanden ihren
+  Katalogeintrag nicht mehr
+
+### Für Entwickler
+- Neue Spalte `price_currency` in `collection`, `wanted` und `shopping_items`
+  (Migration läuft von selbst). `NULL` gilt als Euro
+- `/api/settings/price_region` liefert zusätzlich `currency`, `currencies` und
+  `suggested` (Land → Währung) und nimmt `currency` entgegen
+- `/api/config` nennt `currency` und `price_region`
+- 17 neue Tests in `tests/test_currency.py` (306 gesamt)
+
 ## 1.58.2 – Juli 2026
 
 ### Neu

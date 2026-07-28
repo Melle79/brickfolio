@@ -402,13 +402,80 @@ def bricklink_supersets(fig_no: str) -> list:
 
 
 # Auswählbare Preisgebiete. Zwei Großbuchstaben = Land (country_code),
-# sonst eine BrickLink-Region. "" bedeutet weltweit (BrickLink-Standard).
+# sonst eine BrickLink-Region (die Namen sind von BrickLink vorgegeben).
+# "" bedeutet weltweit (BrickLink-Standard).
 PRICE_REGIONS = {
     "": "weltweit",
+    # Länder
     "DE": "Deutschland",
     "AT": "Österreich",
     "CH": "Schweiz",
+    "GB": "Großbritannien",
+    "IE": "Irland",
+    "US": "USA",
+    "CA": "Kanada",
+    "AU": "Australien",
+    "NZ": "Neuseeland",
+    "NL": "Niederlande",
+    "BE": "Belgien",
+    "FR": "Frankreich",
+    "IT": "Italien",
+    "ES": "Spanien",
+    "PT": "Portugal",
+    "PL": "Polen",
+    "CZ": "Tschechien",
+    "SE": "Schweden",
+    "DK": "Dänemark",
+    "NO": "Norwegen",
+    "FI": "Finnland",
+    # Regionen
     "europe": "Europa",
+    "north_america": "Nordamerika",
+    "south_america": "Südamerika",
+    "asia": "Asien",
+    "oceania": "Ozeanien",
+    "africa": "Afrika",
+    "middle_east": "Naher Osten",
+}
+
+# Zu welcher Region gehört ein Land? Bestimmt die zweite Stufe des Rückfalls:
+# Wer für die USA rechnet, soll bei einer seltenen Figur Nordamerika bekommen
+# und nicht Europa.
+LAND_REGION = {
+    "DE": "europe", "AT": "europe", "CH": "europe", "GB": "europe",
+    "IE": "europe", "NL": "europe", "BE": "europe", "FR": "europe",
+    "IT": "europe", "ES": "europe", "PT": "europe", "PL": "europe",
+    "CZ": "europe", "SE": "europe", "DK": "europe", "NO": "europe",
+    "FI": "europe",
+    "US": "north_america", "CA": "north_america",
+    "AU": "oceania", "NZ": "oceania",
+}
+
+# Währungen, in denen BrickLink Preise liefern kann. Der Schlüssel ist der
+# ISO-Code, den die API erwartet.
+CURRENCIES = {
+    "EUR": "Euro (€)",
+    "GBP": "Britisches Pfund (£)",
+    "USD": "US-Dollar ($)",
+    "CHF": "Schweizer Franken (CHF)",
+    "CAD": "Kanadischer Dollar (C$)",
+    "AUD": "Australischer Dollar (A$)",
+    "NZD": "Neuseeland-Dollar (NZ$)",
+    "SEK": "Schwedische Krone (kr)",
+    "DKK": "Dänische Krone (kr)",
+    "NOK": "Norwegische Krone (kr)",
+    "PLN": "Złoty (zł)",
+    "CZK": "Tschechische Krone (Kč)",
+}
+
+# Welche Währung passt zu welchem Land? Nur als Vorschlag – umstellen lässt
+# sich beides unabhängig voneinander.
+LAND_WAEHRUNG = {
+    "DE": "EUR", "AT": "EUR", "IE": "EUR", "NL": "EUR", "BE": "EUR",
+    "FR": "EUR", "IT": "EUR", "ES": "EUR", "PT": "EUR", "FI": "EUR",
+    "CH": "CHF", "GB": "GBP", "US": "USD", "CA": "CAD", "AU": "AUD",
+    "NZ": "NZD", "SE": "SEK", "DK": "DKK", "NO": "NOK", "PL": "PLN",
+    "CZ": "CZK",
 }
 
 
@@ -416,6 +483,13 @@ def price_region() -> str:
     """Eingestelltes Preisgebiet; unbekannte Werte gelten als weltweit."""
     value = core.get_setting("price_region") or os.environ.get("PRICE_REGION", "")
     return value if value in PRICE_REGIONS else ""
+
+
+def currency() -> str:
+    """Eingestellte Währung. BrickLink rechnet selbst um, deshalb genügt es,
+    den Code mitzuschicken – ohne eigene Kurse und ohne zweite Quelle."""
+    value = core.get_setting("currency") or os.environ.get("CURRENCY", "")
+    return value if value in CURRENCIES else "EUR"
 
 
 def _has_avg(d: dict) -> bool:
@@ -435,14 +509,16 @@ def _has_avg(d: dict) -> bool:
 def _fallback_chain(wanted: str) -> list[str]:
     """Gebiete in der Reihenfolge, in der ein Preis gesucht wird.
 
-    Erst das eingestellte Gebiet, dann Europa als Auffangnetz, zuletzt
-    weltweit – jede Stufe breiter als die vorige. Doppelte fallen raus, damit
-    kein Gebiet zweimal abgefragt wird (Europa als Einstellung, oder weltweit
-    als Einstellung ganz ohne Rückfall).
+    Erst das eingestellte Gebiet, dann die zugehörige Region als Auffangnetz,
+    zuletzt weltweit – jede Stufe breiter als die vorige. Die zweite Stufe
+    richtet sich nach dem Land: für die USA also Nordamerika, nicht Europa.
+    Doppelte fallen raus, damit kein Gebiet zweimal abgefragt wird (Europa als
+    Einstellung, oder weltweit als Einstellung ganz ohne Rückfall).
     """
+    breiter = LAND_REGION.get(wanted)
     chain: list[str] = []
-    for scope in (wanted, "europe", ""):
-        if scope not in PRICE_REGIONS or scope in chain:
+    for scope in (wanted, breiter, ""):
+        if scope is None or scope not in PRICE_REGIONS or scope in chain:
             continue
         chain.append(scope)
         if scope == "":      # weltweit ist am breitesten – danach kommt nichts
@@ -451,9 +527,9 @@ def _fallback_chain(wanted: str) -> list[str]:
 
 
 def _price_request(bl_type: str, item_no: str, condition: str, scope: str,
-                   auth) -> dict:
+                   auth, waehrung: str = "EUR") -> dict:
     params = {"guide_type": "sold", "new_or_used": condition,
-              "currency_code": "EUR"}
+              "currency_code": waehrung}
     if scope:
         # Länderkürzel und Region schließen sich bei BrickLink gegenseitig aus
         if len(scope) == 2 and scope.isupper():
@@ -481,14 +557,17 @@ PRICE_CACHE_TTL = 20 * 60
 
 
 def price_guide(item_type: str, item_no: str, condition: str = "U",
-                scope: str | None = None, use_cache: bool = False) -> dict:
+                scope: str | None = None, use_cache: bool = False,
+                waehrung: str | None = None) -> dict:
     """Preisübersicht (verkaufte Artikel, letzte 6 Monate) von BrickLink.
 
     `scope` grenzt auf ein Land bzw. eine Region ein; ohne Angabe gilt die
     Einstellung. Gibt es dort keine Verkäufe – bei selteneren Figuren häufig –,
-    wird stufenweise ausgeweitet: erst Europa, dann weltweit, damit kein
-    Artikel ohne Preis dasteht. `used_scope` sagt, welches Gebiet am Ende
-    gezählt hat. `use_cache` beschleunigt reine Katalog-Abfragen (kurzer TTL).
+    wird stufenweise ausgeweitet: erst die zugehörige Region, dann weltweit,
+    damit kein Artikel ohne Preis dasteht. `used_scope` sagt, welches Gebiet am
+    Ende gezählt hat. `waehrung` überschreibt die eingestellte Währung –
+    BrickLink rechnet dann selbst um. `use_cache` beschleunigt reine
+    Katalog-Abfragen (kurzer TTL).
     """
     bl_type = _BL_TYPE.get(item_type.lower())
     if not bl_type:
@@ -500,7 +579,11 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     if wanted not in PRICE_REGIONS:
         wanted = ""
 
-    cache_key = (bl_type, item_no, condition, wanted)
+    waehrung = currency() if waehrung is None else waehrung
+    if waehrung not in CURRENCIES:
+        waehrung = "EUR"
+
+    cache_key = (bl_type, item_no, condition, wanted, waehrung)
     if use_cache:
         hit = _PRICE_CACHE.get(cache_key)
         if hit and time.time() - hit[0] < PRICE_CACHE_TTL:
@@ -512,7 +595,7 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     d = {}
     found = False
     for step in _fallback_chain(wanted):
-        d = _price_request(bl_type, item_no, condition, step, auth)
+        d = _price_request(bl_type, item_no, condition, step, auth, waehrung)
         used = step
         found = _has_avg(d)
         if found:
@@ -521,7 +604,7 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     # Ohne echten Treffer die Preisfelder leeren, statt BrickLinks „0.0000"
     # durchzureichen – sonst hielte der Rest der App die Null für einen Preis.
     result = {
-        "currency": d.get("currency_code", "EUR"),
+        "currency": d.get("currency_code", waehrung),
         "min": d.get("min_price") if found else None,
         "avg": d.get("avg_price") if found else None,
         "max": d.get("max_price") if found else None,

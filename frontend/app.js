@@ -8,6 +8,9 @@ const state = {
   bricklinkPrices: false,
   catalogSearch: false,
   bricklinkLookup: false,
+  // Zuletzt bekannte Währung: Sie steht schon beim ersten Zeichnen fest,
+  // sonst blitzten die Beträge kurz in Euro auf, bevor /config antwortet.
+  currency: localStorage.getItem("bf_currency") || "EUR",
   collection: [],
 };
 
@@ -43,6 +46,9 @@ function tr(text, vars) {
   }
   return out;
 }
+
+/* Datum und Uhrzeit in der Schreibweise der gewählten Sprache. */
+function dateLocale() { return lang === "en" ? "en-GB" : "de-DE"; }
 
 /* Welche Sprache gilt? Profil zuerst, sonst der Browser, sonst Deutsch. */
 function pickLang() {
@@ -108,8 +114,13 @@ function translateTree(root = document.body) {
     if (n.parentElement && n.parentElement.dataset.i18nDone) continue;
     const roh = n.nodeValue;
     const kern = roh.trim();
-    if (kern.length < 2 || !dict[kern]) continue;
-    treffer.push([n, roh.replace(kern, dict[kern])]);
+    if (kern.length < 2) continue;
+    // Zeilenumbrüche im Quelltext sind Einrückung, kein Text: Ein Satz, der
+    // in der Vorlage über zwei Zeilen läuft, soll denselben Schlüssel haben
+    // wie derselbe Satz in einer Zeile.
+    const wert = dict[kern] || dict[kern.replace(/\s+/g, " ")];
+    if (!wert) continue;
+    treffer.push([n, roh.replace(kern, wert)]);
   }
   treffer.forEach(([n, wert]) => {
     if (!i18nVorher.has(n)) i18nVorher.set(n, ["text", n.nodeValue]);
@@ -287,9 +298,53 @@ function brickLoading(text) {
    statt eines kaputten Bildsymbols. */
 const IMG_FALLBACK = 'onerror="this.onerror=null;this.src=IMG_PLACEHOLDER"';
 
+/* Geldbeträge in der eingestellten Währung. BrickLink liefert die Preise
+   bereits umgerechnet, hier wird also nur noch geschrieben – kein eigener
+   Kurs, keine zweite Quelle, nichts, was veralten könnte. */
 function fmtEur(value) {
-  return Number(value).toLocaleString("de-DE",
-    { style: "currency", currency: "EUR" });
+  const w = state.currency || "EUR";
+  try {
+    return Number(value).toLocaleString(dateLocale(),
+      { style: "currency", currency: w });
+  } catch (_) {
+    return Number(value).toFixed(2) + " " + w;
+  }
+}
+
+/* Nur das Zeichen – für Eingabefelder („Bezahlt €"), wo der Betrag daneben
+   steht und nicht mitformatiert wird. */
+function curSymbol() {
+  const w = state.currency || "EUR";
+  try {
+    const s = (0).toLocaleString(dateLocale(), { style: "currency",
+      currency: w, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return s.replace(/[0-9\s\u00a0.,]/g, "") || w;
+  } catch (_) { return w; }
+}
+
+/* Währung merken und alles nachziehen, was schon gezeichnet ist. */
+function setCurrency(w) {
+  const neu = w || "EUR";
+  const anders = neu !== state.currency;
+  state.currency = neu;
+  localStorage.setItem("bf_currency", neu);
+  applyCurrency();
+  return anders;
+}
+
+/* Zeichen überall nachziehen, wo es fest im Dokument steht. Läuft nach dem
+   Laden der Einstellungen und nach jedem Wechsel. */
+function applyCurrency() {
+  const z = curSymbol();
+  document.querySelectorAll("[data-cur]").forEach((el) => {
+    if (el.firstChild && el.firstChild.nodeType === 3) {
+      el.firstChild.nodeValue = el.firstChild.nodeValue.replace(/\S+/, z);
+    } else {
+      el.textContent = z;
+    }
+  });
+  const paid = document.querySelector('label[for="m-paid"]');
+  if (paid) paid.textContent = tr("Bezahlt {cur} (optional)", { cur: z });
 }
 
 /* Preisgebiete → Flagge/Name. Stammt ein Ø-Preis nicht aus dem eingestellten
@@ -393,7 +448,7 @@ function wireWantButtons(box, items) {
         if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
         else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
         else toast("Auf die Wunschliste gesetzt ⭐");
-        btn.textContent = "⭐ Gemerkt";
+        btn.textContent = tr("⭐ Gemerkt");
       } catch (e) {
         toast(e.message);
       } finally {
@@ -432,7 +487,7 @@ function renderWanted(items) {
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
           ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in eurer Sammlung</span>` : ""}
-          ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">🧩 fehlt zu eurem Set:</span>${inSetLinks(it.in_sets)}</div>` : ""}
+          ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">${esc(tr("🧩 fehlt zu eurem Set:"))}</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
       </div>
       ${needsBlNo && state.bricklinkLookup ? `
@@ -500,7 +555,7 @@ function renderWanted(items) {
     if (wfixAuto) {
       wfixAuto.addEventListener("click", async () => {
         wfixAuto.disabled = true;
-        wfixAuto.textContent = "Suche …";
+        wfixAuto.textContent = tr("Suche …");
         try {
           const data = await api("/resolve", { method: "POST",
             body: { img_url: item.img_url } });
@@ -538,7 +593,7 @@ function renderWanted(items) {
         ${dealer ? `<span class="paid-row buy-paid">
           <span class="paid-label">Preis</span>
           <input data-buy-paid class="paid-input" inputmode="decimal" placeholder="0,00">
-          <span class="paid-suffix">€</span>
+          <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
           <span class="sub">leer = BrickLink-Ø</span>
         </span>` : ""}
         <button class="mini-btn add" data-buy-cond="used">Gebraucht</button>
@@ -574,7 +629,7 @@ function renderWanted(items) {
         () => renderWanted(items));
     });
     card.querySelector("[data-del]").addEventListener("click", async () => {
-      if (!confirm(`"${item.name}" von der Wunschliste löschen?`)) return;
+      if (!confirm(tr("„{name}“ von der Wunschliste löschen?", { name: item.name }))) return;
       try {
         await api("/wanted/" + wid, { method: "DELETE" });
         loadWanted();
@@ -620,7 +675,8 @@ function applySuggestInfo(info, withDetail) {
         // Gehört zu einem eigenen Set und fehlt noch? Dann deutlich sagen.
         const missingForOwn = d.in_sets && !(d.owned > 0);
         el.classList.toggle("missing", !!missingForOwn);
-        let html = (missingForOwn ? "🧩 fehlt zu eurem Set: " : "📦 in Sets: ")
+        let html = (missingForOwn ? tr("🧩 fehlt zu eurem Set:") + " "
+          : tr("📦 in Sets:") + " ")
           + links[0];
         if (links.length > 1) {
           html += `<span class="more-sets" hidden> · ${links.slice(1).join(" · ")}</span> `
@@ -857,7 +913,8 @@ async function askRemoveSetFigures(item) {
             <span class="sub">${esc(f.item_id)} ·
               ${f.condition === "new" ? tr("Neu") : tr("Gebraucht")} ·
               ${f.remove}× entfernen${f.quantity > f.remove
-                ? ` (von ${f.quantity}, ${f.quantity - f.remove} bleiben)`
+                ? " " + tr("(von {q}, {rest} bleiben)",
+                    { q: f.quantity, rest: f.quantity - f.remove })
                 : ""}</span>
           </span>
         </label>`).join("")}
@@ -883,7 +940,7 @@ async function askRemoveSetFigures(item) {
         .filter((b) => b.checked).map((b) => figs[Number(b.dataset.fig)]);
       if (!chosen.length) return finish(0);
       btn.disabled = true;
-      btn.textContent = "Entferne …";
+      btn.textContent = tr("Entferne …");
       let done = 0;
       for (const f of chosen) {
         const rest = f.quantity - f.remove;
@@ -943,7 +1000,7 @@ async function loadSetFigs(card, item, btn) {
       if (missing.length) {
         const mrow = document.createElement("div");
         mrow.className = "fig-missing-row";
-        mrow.innerHTML = `<button class="mini-btn" data-want-missing>☆ ${missing.length} fehlende auf die Wunschliste</button>`;
+        mrow.innerHTML = `<button class="mini-btn" data-want-missing>${esc(tr("☆ {n} fehlende auf die Wunschliste", { n: missing.length }))}</button>`;
         out.appendChild(mrow);
         mrow.querySelector("[data-want-missing]").addEventListener("click",
           async (ev) => {
@@ -1076,7 +1133,7 @@ function wireFigActions(out, figs) {
               condition: b.dataset.fc,
             }});
             toast(res.merged
-              ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
+              ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
               : `Zur Sammlung hinzugefügt ✔ (${b.dataset.fc === "new" ? tr("Neu") : tr("Gebraucht")})`);
             area.innerHTML = orig;
             wireFigActions(out, figs);
@@ -1117,7 +1174,7 @@ function fmtPaidInput(v) {
 
 function paidSrcIcon(it) {
   const date = it.paid_at
-    ? new Date(it.paid_at * 1000).toLocaleDateString("de-DE") : "";
+    ? new Date(it.paid_at * 1000).toLocaleDateString(dateLocale()) : "";
   return it.paid_source === "manual"
     ? `<span title="manuell eingetragen${date ? " am " + date : ""}">✏️</span>`
     : `<span title="automatisch: BrickLink-Ø${date ? " vom " + date : ""}">⚙️</span>`;
@@ -1126,11 +1183,12 @@ function paidSrcIcon(it) {
 function profitLine(it) {
   if (it.paid_price == null) return "";
   const value = unitValue(it) ? unitValue(it) * it.quantity : null;
-  let s = `Bezahlt ${fmtEur(it.paid_price)}`;
+  let s = tr("Bezahlt {sum}", { sum: fmtEur(it.paid_price) });
   if (value != null) {
     const diff = value - it.paid_price;
     const cls = diff >= 0 ? "profit-pos" : "profit-neg";
-    s += ` · Wert ${fmtEur(value)} · <span class="${cls}">`
+    s += esc(tr(" · Wert {wert} · ", { wert: fmtEur(value) }))
+      + `<span class="${cls}">`
       + `${diff >= 0 ? "+" : "−"}${fmtEur(Math.abs(diff))}</span>`;
   }
   return s;
@@ -1211,7 +1269,8 @@ function renderFigSets(root, item) {
     });
     if (!links.length) { el.hidden = true; return; }
     el.hidden = false;
-    let html = `<span class="in-sets-label">📦 Kommt vor in:</span>` + links[0];
+    let html = `<span class="in-sets-label">${esc(tr("📦 Kommt vor in:"))}</span>`
+      + links[0];
     if (links.length > 1) {
       html += `<span class="more-sets" hidden> · ${links.slice(1).join(" · ")}</span> `
         + `<button class="set-link more-toggle" data-more-sets>+${links.length - 1} weitere ▾</button>`;
@@ -1269,11 +1328,12 @@ function unitValue(it) {
 
 function priceLine(label, d) {
   if (!d || !d.avg) {
-    return `<div class="price-row"><span class="price-tag">${label}</span> keine Verkäufe</div>`;
+    return `<div class="price-row"><span class="price-tag">${label}</span> ${esc(tr("keine Verkäufe"))}</div>`;
   }
   const range = (d.min != null && d.max != null)
     ? ` <span class="price-range">(${fmtEur(d.min)} – ${fmtEur(d.max)})</span>` : "";
-  const sold = d.times_sold != null ? ` · ${d.times_sold}× verkauft` : "";
+  const sold = d.times_sold != null
+    ? " · " + tr("{n}× verkauft", { n: d.times_sold }) : "";
   return `<div class="price-row"><span class="price-tag">${label}</span> `
     + `<strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}${scopeFlagHtml(d)}</div>`;
 }
@@ -1445,7 +1505,7 @@ async function doSetup() {
    Schritt ist überspringbar – die App ist ohne Schlüssel benutzbar (Scannen
    braucht keinen), deshalb darf hier nichts blockieren. */
 
-const WIZ_LAST = 6;
+const WIZ_LAST = 7;
 let wizStep = 1;
 
 function startWizard() {
@@ -1454,6 +1514,41 @@ function startWizard() {
   wizStep = 1;
   showWizStep();
   wireWizardOnce();
+  ladeWizGebiet();
+}
+
+/* Welches Land steckt in den Browsereinstellungen? „en-GB" → GB. Ohne
+   Länderteil bleibt nur die Sprache: Deutsch spricht für Deutschland,
+   Englisch – mangels besserem Anhaltspunkt – für Großbritannien. */
+function browserLand() {
+  for (const l of navigator.languages || [navigator.language || ""]) {
+    const teile = String(l).split("-");
+    const land = teile.length > 1 ? teile[teile.length - 1].toUpperCase() : "";
+    if (land.length === 2) return land;
+  }
+  const kurz = String(navigator.language || "de").slice(0, 2).toLowerCase();
+  return kurz === "en" ? "GB" : kurz.toUpperCase();
+}
+
+/* Gebiet und Währung im Assistenten vorbelegen. Nichts wird hier gespeichert
+   – erst „Weiter" schreibt die Auswahl weg. */
+async function ladeWizGebiet() {
+  try {
+    const s = await api("/settings/price_region");
+    const land = browserLand();
+    const kennt = s.options.some((o) => o.value === land);
+    const gebiet = s.region || (kennt ? land : "");
+    const waehrung = s.currency !== "EUR" ? s.currency
+      : (s.suggested[gebiet] || s.suggested[land] || "EUR");
+    fuelleAuswahl($("wiz-region"), s.options, gebiet);
+    fuelleAuswahl($("wiz-currency"), s.currencies, waehrung);
+    // Land gewechselt? Dann die passende Währung mitziehen – wer bewusst
+    // eine andere wählt, wird danach nicht mehr überstimmt.
+    $("wiz-region").addEventListener("change", (ev) => {
+      const w = s.suggested[ev.currentTarget.value];
+      if (w) $("wiz-currency").value = w;
+    });
+  } catch (_) { /* ohne Liste bleibt der Schritt leer und überspringbar */ }
 }
 
 function showWizStep() {
@@ -1484,8 +1579,15 @@ async function saveWizStep() {
       state.ownerName = name;
       applyOwnerName(name);
     }
-  } else if (wizStep === 2 || wizStep === 3) {
-    const fields = wizStep === 2
+  } else if (wizStep === 2) {
+    const sel = $("wiz-region");
+    if (sel && sel.options.length) {
+      const res = await api("/settings/price_region", { method: "POST",
+        body: { region: sel.value, currency: $("wiz-currency").value } });
+      setCurrency(res.currency);
+    }
+  } else if (wizStep === 3 || wizStep === 4) {
+    const fields = wizStep === 3
       ? { rebrickable_key: "wiz-rb" }
       : { bl_consumer_key: "wiz-bck", bl_consumer_secret: "wiz-bcs",
           bl_token: "wiz-bt", bl_token_secret: "wiz-bts" };
@@ -1500,11 +1602,11 @@ async function saveWizStep() {
       state.bricklinkLookup = res.flags.bricklink_lookup;
       state.catalogSearch = res.flags.catalog_search;
     }
-  } else if (wizStep === 5) {
+  } else if (wizStep === 6) {
     const invite_code = $("wiz-invite").value.trim();
     const display_name = $("wiz-hubname").value.trim();
     if (invite_code) {
-      if (!display_name) throw new Error("Bitte auch einen Anzeigenamen angeben.");
+      if (!display_name) throw new Error(tr("Bitte auch einen Anzeigenamen angeben."));
       await api("/hub/connect", { method: "POST",
         body: { invite_code, display_name } });
       state.hubConnected = true;
@@ -1549,7 +1651,7 @@ function wireWizardOnce() {
   $("wiz-test").addEventListener("click", async () => {
     const out = $("wiz-test-out");
     out.hidden = false;
-    out.textContent = "Teste …";
+    out.textContent = tr("Teste …");
     try {
       const r = await api("/settings/test", { method: "POST" });
       out.innerHTML =
@@ -1573,6 +1675,7 @@ function showApp() {
     state.bricklinkLookup = c.bricklink_lookup;
     state.ownerName = c.owner_name || "Finn";
     applyOwnerName(state.ownerName);
+    setCurrency(c.currency);
     state.hubConnected = !!c.hub_connected;
     updateHubTab();
     updatePolling();
@@ -1843,7 +1946,7 @@ function renderScanResults(items) {
       row.setAttribute("data-cond-row", "");
       row.innerHTML = `
         <input data-add-paid class="paid-input" inputmode="decimal"
-          placeholder="Bezahlt € (optional)" style="grid-column:1/-1">
+          placeholder="${esc(tr("Bezahlt {cur} (optional)", { cur: curSymbol() }))}" style="grid-column:1/-1">
         <span class="buy-label" style="grid-column:1/-1">Zustand wählen (wird sofort gespeichert):</span>
         <button class="mini-btn add" data-c="used">Gebraucht</button>
         <button class="mini-btn add" data-c="new">Neu</button>
@@ -1875,7 +1978,7 @@ function renderScanResults(items) {
               condition: b.dataset.c, paid_price: paidPrice,
             }});
             toast(res.merged
-              ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
+              ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
               : `Zur Sammlung hinzugefügt ✔ (${b.dataset.c === "new" ? tr("Neu") : tr("Gebraucht")})`);
             row.remove();
             await askSetFigures(it, b.dataset.c);
@@ -1916,8 +2019,8 @@ async function loadCollection(showSpinner = false) {
     $("stat-value").textContent = data.stats.total_value
       ? fmtEur(data.stats.total_value) : "–";
     $("stat-value-sub").textContent = data.stats.unpriced > 0
-      ? `Wert · ${data.stats.unpriced} ohne Preis`
-      : "Wert (BrickLink Ø)";
+      ? tr("Wert · {n} ohne Preis", { n: data.stats.unpriced })
+      : tr("Wert (BrickLink Ø)");
     renderCollection();
   } catch (e) {
     toast(e.message);
@@ -1961,7 +2064,7 @@ function collCardDetails(it) {
         <div class="qty-edit">
           <span class="qty-edit-label">Anzahl</span>
           <div class="qty">
-            <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
+            <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${esc(it.quantity <= 1 ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"))}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
             <span data-qty-val>${it.quantity}</span>
             <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
           </div>
@@ -1977,7 +2080,7 @@ function collCardDetails(it) {
             <span class="paid-label">Bezahlt</span>
             <input data-paid class="paid-input" inputmode="decimal"
               placeholder="0,00" value="${fmtPaidInput(it.paid_price)}">
-            <span class="paid-suffix">€ <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
+            <span class="paid-suffix" data-cur>${esc(curSymbol())} <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
           </div>
           <div class="sub profit-line" data-profit>${profitLine(it)}</div>
         </div>` : ""}
@@ -2017,7 +2120,7 @@ function collCardDetails(it) {
         </div>` : ""}
         <div class="price-result" data-price-out></div>
         <div class="price-history" data-history></div>
-        <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString("de-DE")}</div>
+        <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString(dateLocale())}</div>
       </div>`;
 }
 
@@ -2036,7 +2139,7 @@ function collCardHtml(it) {
           ${setFigsText(it) ? `<div class="sub sub-figs">${esc(setFigsText(it))}</div>` : ""}
         </div>
         <div class="qty">
-          <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${it.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
+          <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${esc(it.quantity <= 1 ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"))}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
           <span data-qty-val>${it.quantity}</span>
           <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
         </div>
@@ -2087,8 +2190,10 @@ function renderThemeGroups(list, items) {
       <button class="theme-head" aria-expanded="${!isClosed}">
         <span class="theme-caret" aria-hidden="true">▾</span>
         <span class="theme-name">${themeIcon(g.name)} ${esc(g.name)}</span>
-        <span class="theme-count">${g.items.length} ${g.items.length === 1 ? "Eintrag" : "Einträge"}${
-          g.pieces !== g.items.length ? ` · ${g.pieces} Stück` : ""}${
+        <span class="theme-count">${esc(g.items.length === 1
+          ? tr("1 Eintrag") : tr("{n} Einträge", { n: g.items.length }))}${
+          g.pieces !== g.items.length
+            ? esc(tr(" · {n} Stück", { n: g.pieces })) : ""}${
           g.value > 0 ? ` · ${fmtEur(g.value)}` : ""}</span>
       </button>
       <div class="theme-body">${g.items.map(collCardHtml).join("")}</div>
@@ -2130,7 +2235,7 @@ function renderCollection() {
     }
 
     const deleteEntry = async () => {
-      if (!confirm(`"${item.name}" wirklich löschen?`)) return;
+      if (!confirm(tr("„{name}“ wirklich löschen?", { name: item.name }))) return;
       try {
         // Erst fragen (solange das Set noch da ist), dann löschen
         await askRemoveSetFigures(item);
@@ -2164,7 +2269,7 @@ function renderCollection() {
               b.innerHTML = newQty <= 1 ? TRASH_SVG : "−";
               b.classList.toggle("qty-del", newQty <= 1);
               b.setAttribute("aria-label", newQty <= 1
-                ? "Aus der Sammlung löschen" : "Anzahl verringern");
+                ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"));
             });
             updateStatsOnly();
           } catch (e) { toast(e.message); }
@@ -2238,7 +2343,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
             ${(item.in_sets || item.item_type === "minifig") ? `<div class="sub in-sets" data-fig-sets hidden></div>` : ""}
           </div>
           <div class="qty">
-            <button data-qty="-1" class="${item.quantity <= 1 ? "qty-del" : ""}" aria-label="${item.quantity <= 1 ? "Aus der Sammlung löschen" : "Anzahl verringern"}">${item.quantity <= 1 ? TRASH_SVG : "−"}</button>
+            <button data-qty="-1" class="${item.quantity <= 1 ? "qty-del" : ""}" aria-label="${esc(item.quantity <= 1 ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"))}">${item.quantity <= 1 ? TRASH_SVG : "−"}</button>
             <span data-qty-val>${item.quantity}</span>
             <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
           </div>
@@ -2376,7 +2481,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
   if (fixAutoBtn) {
     fixAutoBtn.addEventListener("click", async () => {
       fixAutoBtn.disabled = true;
-      fixAutoBtn.textContent = "Suche …";
+      fixAutoBtn.textContent = tr("Suche …");
       try {
         const data = await api("/resolve", { method: "POST",
           body: { img_url: item.img_url } });
@@ -2399,7 +2504,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         toast(e.message);
       } finally {
         fixAutoBtn.disabled = false;
-        fixAutoBtn.textContent = "🔍 Automatisch";
+        fixAutoBtn.textContent = tr("🔍 Automatisch");
       }
     });
   }
@@ -2510,10 +2615,11 @@ async function loadEntryPrice(card, item, refresh) {
       return loadEntryPrice(card, item, true);
     }
     const stand = p.updated_at
-      ? new Date(p.updated_at * 1000).toLocaleDateString("de-DE") : "";
-    out.innerHTML = priceLine("Neu", p.new) + priceLine("Gebraucht", p.used)
-      + `<div class="price-note">Ø-Verkaufspreise, letzte 6 Monate (BrickLink)`
-      + `${stand ? " · Stand " + stand : ""}</div>`;
+      ? new Date(p.updated_at * 1000).toLocaleDateString(dateLocale()) : "";
+    out.innerHTML = priceLine(tr("Neu"), p.new) + priceLine(tr("Gebraucht"), p.used)
+      + `<div class="price-note">`
+      + esc(tr("Ø-Verkaufspreise, letzte 6 Monate (BrickLink)"))
+      + `${stand ? esc(tr(" · Stand {d}", { d: stand })) : ""}</div>`;
     // Frische Preise sofort in Karte und Rechnung übernehmen
     if (p.new && p.new.avg != null) item.price_new = p.new.avg;
     if (p.used && p.used.avg != null) item.price_used = p.used.avg;
@@ -2557,7 +2663,7 @@ function historyChart(pts) {
     .map((p) => `${x(p.ts).toFixed(1)},${y(p[key]).toFixed(1)}`).join(" ");
   const dots = (key, color) => pts.filter((p) => p[key]).map((p) =>
     `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p[key]).toFixed(1)}" r="3.5" fill="${color}"/>`).join("");
-  const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString("de-DE",
+  const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale(),
     { day: "2-digit", month: "2-digit", year: "2-digit" });
   return `
   <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="Preisverlauf">
@@ -2583,8 +2689,8 @@ async function updateStatsOnly() {
     $("stat-value").textContent = data.stats.total_value
       ? fmtEur(data.stats.total_value) : "–";
     $("stat-value-sub").textContent = data.stats.unpriced > 0
-      ? `Wert · ${data.stats.unpriced} ohne Preis`
-      : "Wert (BrickLink Ø)";
+      ? tr("Wert · {n} ohne Preis", { n: data.stats.unpriced })
+      : tr("Wert (BrickLink Ø)");
   } catch (_) { /* still */ }
 }
 
@@ -2710,7 +2816,8 @@ async function runBricklinkLookup() {
     hint.hidden = true;
   } else {
     box.innerHTML = "";
-    hint.textContent = `"${no}" nicht im BrickLink-Katalog gefunden`;
+    hint.textContent = tr("„{no}“ nicht im BrickLink-Katalog gefunden",
+      { no });
   }
 }
 
@@ -2769,7 +2876,7 @@ async function runCatalogSearch() {
     hint.hidden = true;
     return;
   }
-  hint.textContent = "Suche im Katalog …";
+  hint.textContent = tr("Suche im Katalog …");
   hint.hidden = false;
   const type = $("m-type").value;
   try {
@@ -2791,7 +2898,7 @@ async function runCatalogSearch() {
 async function loadMoreSuggestions() {
   if (!suggestState || !suggestState.hasMore) return;
   const btn = $("m-suggestions").querySelector("[data-more-suggest]");
-  if (btn) { btn.disabled = true; btn.textContent = "Lade …"; }
+  if (btn) { btn.disabled = true; btn.textContent = tr("Lade …"); }
   try {
     const next = suggestState.page + 1;
     const data = await api(`/search?q=${encodeURIComponent(suggestState.q)}`
@@ -2804,7 +2911,7 @@ async function loadMoreSuggestions() {
       { count: suggestState.count, hasMore: suggestState.hasMore });
   } catch (e) {
     toast(e.message);
-    if (btn) { btn.disabled = false; btn.textContent = "Weitere Ergebnisse laden"; }
+    if (btn) { btn.disabled = false; btn.textContent = tr("Weitere Ergebnisse laden"); }
   }
 }
 
@@ -2841,7 +2948,7 @@ function renderSuggestions(items, meta) {
   let footer = "";
   if (meta && meta.count) {
     footer = `<div class="suggest-foot">
-      <span class="suggest-count">${items.length} von ${meta.count} angezeigt</span>
+      <span class="suggest-count">${esc(tr("{n} von {max} angezeigt", { n: items.length, max: meta.count }))}</span>
       ${meta.hasMore ? `<button class="mini-btn" data-more-suggest>Weitere Ergebnisse laden</button>` : ""}
     </div>`;
   }
@@ -2984,7 +3091,7 @@ function openSuggestModal(it) {
       if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
       else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
       else toast("Auf die Wunschliste gesetzt ⭐");
-      b.textContent = "⭐ Gemerkt";
+      b.textContent = tr("⭐ Gemerkt");
     } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
   loadSuggestDetail(inner, pit, it);
@@ -3178,7 +3285,7 @@ async function addManual() {
       paid_price: paidPrice,
     }});
     toast(res.merged
-      ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
+      ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
       : "Zur Sammlung hinzugefügt ✔");
     $("m-name").value = ""; $("m-id").value = "";
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
@@ -3212,8 +3319,9 @@ async function loadApiKeys() {
       input.value = "";
       const info = data[name] || {};
       input.placeholder = info.set
-        ? `gespeichert: ${info.masked}${info.from_env ? " (aus docker-compose)" : ""}`
-        : "nicht gesetzt";
+        ? tr("gespeichert: {wert}", { wert: info.masked })
+          + (info.from_env ? " " + tr("(aus docker-compose)") : "")
+        : tr("nicht gesetzt");
     }
   } catch (e) { toast(e.message); }
 }
@@ -3240,7 +3348,7 @@ async function saveApiKeys() {
 
 async function testApiKeys() {
   const out = $("keys-status");
-  out.textContent = "Teste Verbindungen …";
+  out.textContent = tr("Teste Verbindungen …");
   out.hidden = false;
   try {
     const r = await api("/settings/test", { method: "POST" });
@@ -3287,7 +3395,7 @@ async function pickListForManual() {
     box.hidden = true;
   });
   box.querySelector("[data-ml-new]").addEventListener("click", async () => {
-    const today = new Date().toLocaleDateString("de-DE",
+    const today = new Date().toLocaleDateString(dateLocale(),
       { day: "2-digit", month: "2-digit" });
     const name = prompt("Name der neuen Liste:", `Flohmarkt ${today}`);
     if (name == null || !name.trim()) return;
@@ -3313,7 +3421,7 @@ async function addManualToList(listId) {
       condition: $("m-cond").value,
     }});
     toast(res.merged
-      ? `Schon auf der Liste – Anzahl erhöht (jetzt ${res.qty}×)`
+      ? tr("Schon auf der Liste – Anzahl erhöht (jetzt {n}×)", { n: res.qty })
       : "Auf die Liste gesetzt 🛒");
     $("manual-list-pick").hidden = true;
     $("m-name").value = ""; $("m-id").value = "";
@@ -3412,7 +3520,7 @@ function renderLists(lists) {
     <div class="card list-card" data-lid="${l.id}">
       <div class="card-head">
         <div class="card-title">
-          <strong>${state.showArchive ? "📦 " : "🛒 "}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="Liste umbenennen">✏️</button>` : ""}</strong>
+          <strong>${state.showArchive ? "📦 " : "🛒 "}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="${esc(tr("Liste umbenennen"))}">✏️</button>` : ""}</strong>
           <div class="sub">${esc(tr("{n} Artikel · {offen} offen · Marktwert ca. {wert} (je Zustand)",
             { n: l.stats.count, offen: l.stats.open, wert: fmtEur(l.stats.est) }))}${
             l.stats.paid_sum > 0 ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(l.stats.paid_sum) })) : ""}</div>
@@ -3505,7 +3613,7 @@ function renderLists(lists) {
         <span class="paid-row buy-paid">
           <span class="paid-label">Gesamt</span>
           <input data-offer-total class="paid-input" inputmode="decimal" placeholder="0,00">
-          <span class="paid-suffix">€</span>
+          <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
           ${suggestion > 0 ? `<button class="set-link offer-suggest" data-offer-suggest>Vorschlag: ${fmtEur(suggestion)}</button>` : ""}
         </span>
         <button class="mini-btn add" data-offer-go>Verteilen</button>
@@ -3562,7 +3670,8 @@ function renderLists(lists) {
     });
     const lDel = card.querySelector("[data-l-del]");
     if (lDel) lDel.addEventListener("click", async () => {
-      if (!confirm(`Liste "${list.name}" mitsamt Artikeln löschen?`)) return;
+      if (!confirm(tr("Liste „{name}“ mitsamt Artikeln löschen?",
+        { name: list.name }))) return;
       try {
         await api("/lists/" + lid, { method: "DELETE" });
         loadLists();
@@ -3686,7 +3795,7 @@ function renderLists(lists) {
             <span class="paid-row buy-paid" style="flex-basis:100%">
               <span class="paid-label">Preis</span>
               <input data-recv-paid class="paid-input" inputmode="decimal" placeholder="0,00" value="${listItem && listItem.paid_price != null ? fmtPaidInput(listItem.paid_price) : ""}">
-              <span class="paid-suffix">€</span>
+              <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
               <span class="sub">leer = BrickLink-Ø</span></span>
             <button class="mini-btn add" data-rc-go>✔ ${condLabel} übernehmen</button>
             <button class="mini-btn" data-rc-cancel>✕</button>`;
@@ -3743,7 +3852,7 @@ function listItemRow(it, dealer) {
     ? `${it.condition === "new" ? tr("Ø neu") : tr("Ø gebr.")} `
       + fmtEur(condPrice) : "";
   const doneInfo = it.done
-    ? `<div class="sub done-note">✔ in Sammlung${it.done_by_name ? " von " + esc(it.done_by_name) : ""}${it.done_at ? " am " + new Date(it.done_at * 1000).toLocaleDateString("de-DE") : ""}</div>`
+    ? `<div class="sub done-note">✔ in Sammlung${it.done_by_name ? " von " + esc(it.done_by_name) : ""}${it.done_at ? " am " + new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) : ""}</div>`
     : "";
   return `
   <div class="fig-row ${it.done ? "done" : ""}" data-iid="${it.id}">
@@ -3760,7 +3869,7 @@ function listItemRow(it, dealer) {
       <div class="paid-row" style="margin-top:6px">
         <span class="paid-label">Einkauf</span>
         <input data-ip="${it.id}" class="paid-input" inputmode="decimal" placeholder="0,00" value="${it.paid_price != null ? fmtPaidInput(it.paid_price) : ""}">
-        <span class="paid-suffix">€</span>
+        <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
         <button class="mini-btn add" data-ip-save="${it.id}" style="flex:1;min-height:38px">✓</button>
       </div>` : ""}
       <div class="fig-actions">
@@ -3783,7 +3892,7 @@ async function addToList(list, it, condition, paidPrice) {
     const res = await api(`/lists/${list.id}/items`, { method: "POST",
       body });
     const suffix = cond === "new" ? " (Neu)" : "";
-    toast(res.merged ? `Menge erhöht in "${list.name}" 🛒${suffix}`
+    toast(res.merged ? tr("Menge erhöht in „{name}“ 🛒", { name: list.name }) + suffix
                      : `Auf "${list.name}" gesetzt 🛒${suffix}`);
   } catch (e) { toast(e.message); }
 }
@@ -3810,7 +3919,7 @@ function wireCartButtons(box, items) {
       let priceVal = "";
       const priceField = () => `
         <input data-cl-price inputmode="decimal" value="${esc(priceVal)}"
-          placeholder="Einkauf € (optional)" style="grid-column:1/-1">`;
+          placeholder="${esc(tr("Einkauf {cur} (optional)", { cur: curSymbol() }))}" style="grid-column:1/-1">`;
       const wirePriceField = () => {
         const inp = row.querySelector("[data-cl-price]");
         if (inp) inp.addEventListener("input", () => {
@@ -3838,7 +3947,7 @@ function wireCartButtons(box, items) {
       };
 
       const renderNew = () => {
-        const today = new Date().toLocaleDateString("de-DE",
+        const today = new Date().toLocaleDateString(dateLocale(),
           { day: "2-digit", month: "2-digit" });
         row.innerHTML = `
           ${condChips()}${priceField()}
@@ -4136,7 +4245,7 @@ function totalChart(pts) {
   const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
   const line = pts.map((p) => `${x(p.ts).toFixed(1)},${y(p.value).toFixed(1)}`)
     .join(" ");
-  const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString("de-DE",
+  const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale(),
     { day: "2-digit", month: "2-digit", year: "2-digit" });
   return `
   <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="Wertentwicklung">
@@ -4207,7 +4316,8 @@ async function importCsvFile(file) {
   try {
     const res = await api("/import/csv", { method: "POST",
       body: { csv: text } });
-    let msg = `Import fertig: ${res.created} neu, ${res.merged} zusammengeführt`;
+    let msg = tr("Import fertig: {neu} neu, {zus} zusammengeführt",
+      { neu: res.created, zus: res.merged });
     if (res.error_count) msg += `, ${res.error_count} Fehler`;
     toast(msg + " ✔");
     if (res.errors && res.errors.length) {
@@ -4223,7 +4333,7 @@ async function toggleDuplicates() {
   const box = $("duplicates-box");
   if (!box.hidden) {
     box.hidden = true;
-    $("btn-duplicates").textContent = "📋 Verkaufsliste (Doppelte)";
+    $("btn-duplicates").textContent = tr("📋 Verkaufsliste (Doppelte)");
     return;
   }
   try {
@@ -4246,8 +4356,8 @@ function renderDuplicates(data) {
   <div class="card">
     <div class="card-head"><div class="card-title">
       <strong>📋 Verkaufsliste – Doppelte</strong>
-      <div class="sub">${data.stats.pieces} Stück abgebbar
-        · Verkaufswert ca. ${fmtEur(data.stats.value)}
+      <div class="sub">${esc(tr("{n} Stück abgebbar · Verkaufswert ca. {wert}",
+        { n: data.stats.pieces, wert: fmtEur(data.stats.value) }))}
         <span class="search-hint">(1 Exemplar bleibt immer · für eigene Sets gebrauchte Figuren zusätzlich reserviert)</span></div>
     </div></div>
     <div class="set-figs">
@@ -4259,7 +4369,7 @@ function renderDuplicates(data) {
           <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}
             · ${it.quantity}× vorhanden${
               it.set_reserved > 0
-                ? ` (${it.set_reserved}× für Sets reserviert)`
+                ? " " + tr("({n}× für Sets reserviert)", { n: it.set_reserved })
                 : (it.reserved > 0 ? ` (1 behalten)` : "")
             } → <b>${it.surplus}× abgebbar</b>
             ${it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}${it.surplus > 1 ? " → " + fmtEur(it.value) : ""}` : ""}</div>
@@ -4293,7 +4403,8 @@ function printDuplicates() {
     it.surplus, it.unit_price ? fmtEur(it.unit_price) : "",
     it.value ? fmtEur(it.value) : ""]);
   printTable("Verkaufsliste – Doppelte",
-    `${data.stats.pieces} Stück abgebbar · Verkaufswert ca. ${fmtEur(data.stats.value)}`,
+    tr("{n} Stück abgebbar · Verkaufswert ca. {wert}",
+      { n: data.stats.pieces, wert: fmtEur(data.stats.value) }),
     ["Nummer", "Name", "Zustand", "Abgebbar", "Ø Stück", "Wert"], rows,
     ["num", "name", "cond", "qty", "price", "price"]);
 }
@@ -4346,9 +4457,10 @@ function renderMissingFigs(data) {
   <div class="card">
     <div class="card-head"><div class="card-title">
       <strong>🧩 Fehlende Set-Figuren</strong>
-      <div class="sub">${s.pieces} Figuren fehlen in ${s.sets_incomplete}
-        von ${s.sets_total} Sets${
-          s.est_cost > 0 ? ` · Nachkauf ca. ${fmtEur(s.est_cost)}` : ""}</div>
+      <div class="sub">${esc(tr("{n} Figuren fehlen in {offen} von {ges} Sets",
+        { n: s.pieces, offen: s.sets_incomplete, ges: s.sets_total }))}${
+          s.est_cost > 0 ? esc(tr(" · Nachkauf ca. {wert}",
+            { wert: fmtEur(s.est_cost) })) : ""}</div>
     </div></div>
     ${s.details_pending > 0 ? `
     <div class="mf-pending">
@@ -4366,7 +4478,8 @@ function renderMissingFigs(data) {
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · <b>${it.missing}× fehlt</b>${
-            it.owned > 0 ? ` (${it.owned} von ${it.needed} da)` : ""}${
+            it.owned > 0 ? " " + esc(tr("({n} von {max} da)",
+              { n: it.owned, max: it.needed })) : ""}${
             it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}` : ""}</div>
           <div class="sub in-sets">📦 für: ${missingSetLinks(it.sets)}</div>
           ${it.on_lists && it.on_lists.length ? `<span class="badge badge-list">🛒 ${it.on_lists_qty}× auf ${it.on_lists.length === 1 ? `»${esc(it.on_lists[0])}«` : `${it.on_lists.length} Listen`}</span>` : ""}
@@ -4423,7 +4536,8 @@ function renderMissingFigs(data) {
     for (const it of open) {
       try { await wantMissingFig(it); done += 1; } catch (_) { /* weiter */ }
     }
-    toast(done ? `${done} auf die Wunschliste ✔` : "Schon alle gemerkt");
+    toast(done ? tr("{n} auf die Wunschliste ✔", { n: done })
+      : tr("Schon alle gemerkt"));
     loadWanted();
     refreshMissingFigs();
   });
@@ -4448,7 +4562,7 @@ async function fetchMissingFigDetails() {
       }
       if (!res.remaining || !res.updated) break;
     }
-    toast(total ? `Details für ${total} Sets geladen ✔`
+    toast(total ? tr("Details für {n} Sets geladen ✔", { n: total })
                 : "Keine weiteren Details verfügbar");
   } catch (e) {
     toast(e.message);
@@ -4490,7 +4604,9 @@ function printMissingFigs() {
     it.unit_price ? fmtEur(it.unit_price) : "",
     it.sets.map((s) => `${s.name} (${s.no})`).join(", ")]);
   printTable("Fehlende Set-Figuren",
-    `${data.stats.pieces} Figuren fehlen in ${data.stats.sets_incomplete} `
+    tr("{n} Figuren fehlen in {offen} von {ges} Sets",
+      { n: data.stats.pieces, offen: data.stats.sets_incomplete,
+        ges: data.stats.sets_total })
     + `von ${data.stats.sets_total} Sets`
     + (data.stats.est_cost > 0
         ? ` · Nachkauf ca. ${fmtEur(data.stats.est_cost)}` : ""),
@@ -4538,7 +4654,7 @@ function downloadCsv(filename, rows) {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
-const _dateDe = (ts) => new Date(ts * 1000).toLocaleDateString("de-DE");
+const _dateDe = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale());
 
 async function exportCollectionCsv() {
   const data = await api("/collection?q=&sort=name");
@@ -4575,7 +4691,7 @@ function printTable(title, subtitle, headers, rows, cols) {
   const cls = (i) => (cols[i] ? ` class="pc-${cols[i]}"` : "");
   const area = $("print-area");
   area.innerHTML = `<h1>${esc(title)}</h1>`
-    + `<p>${esc(subtitle)} · Stand ${new Date().toLocaleDateString("de-DE")} · ${esc(appTitle())}</p>`
+    + `<p>${esc(subtitle)} · Stand ${new Date().toLocaleDateString(dateLocale())} · ${esc(appTitle())}</p>`
     + `<table><colgroup>${cols.map((c) => `<col${c ? ` class="pc-${c}"` : ""}>`).join("")}</colgroup>`
     + `<thead><tr>${headers.map((h, i) => `<th${cls(i)}>${esc(h)}</th>`).join("")}</tr></thead>`
     + `<tbody>${rows.map((r) =>
@@ -4589,7 +4705,8 @@ async function printCollection() {
     it.year > 0 ? it.year : "", it.quantity,
     it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
     unitValue(it) ? fmtEur(unitValue(it)) : ""]);
-  const sub = `${data.stats.total} Stück (${data.stats.unique_items} verschiedene)`
+  const sub = tr("{n} Stück ({v} verschiedene)",
+    { n: data.stats.total, v: data.stats.unique_items })
     + (data.stats.total_value ? ` · Gesamtwert ca. ${fmtEur(data.stats.total_value)}` : "");
   printTable("Deine LEGO-Sammlung", sub,
     ["Nummer", "Name", "Jahr", "Anz.", "Zustand", "Ø Preis"], rows,
@@ -4602,8 +4719,9 @@ async function printWanted() {
     it.year > 0 ? it.year : "",
     it.price_used ? fmtEur(it.price_used) : "",
     it.price_new ? fmtEur(it.price_new) : ""]);
-  const sub = `${data.stats.count} Wünsche`
-    + (data.stats.est_cost ? ` · geschätzt ${fmtEur(data.stats.est_cost)} (gebraucht)` : "");
+  const sub = tr("{n} Wünsche", { n: data.stats.count })
+    + (data.stats.est_cost ? tr(" · geschätzt {wert} (gebraucht)",
+      { wert: fmtEur(data.stats.est_cost) }) : "");
   printTable("Deine Wunschliste", sub,
     ["Nummer", "Name", "Jahr", "Ø gebr.", "Ø neu"], rows,
     ["num", "name", "year", "price", "price"]);
@@ -4634,8 +4752,10 @@ async function restoreBackupFile(file) {
     return;
   }
   const when = data.created_at
-    ? new Date(data.created_at * 1000).toLocaleString("de-DE") : "unbekannt";
-  if (!confirm(`Sicherung vom ${when} einspielen?\n\nACHTUNG: ALLE aktuellen Daten werden ersetzt!`)) return;
+    ? new Date(data.created_at * 1000).toLocaleString(dateLocale())
+    : tr("unbekannt");
+  if (!confirm(tr("Sicherung vom {wann} einspielen?", { wann: when })
+    + "\n\n" + tr("ACHTUNG: ALLE aktuellen Daten werden ersetzt!"))) return;
   try {
     const res = await api("/restore", { method: "POST", body: data });
     const n = res.restored && res.restored.collection;
@@ -4712,8 +4832,9 @@ async function loadThemeStatus() {
     hint.hidden = s.pending === 0;
     if (s.pending > 0) {
       $("theme-pending-text").textContent =
-        `Bei ${s.pending} ${s.pending === 1 ? "Eintrag" : "Einträgen"} ist das `
-        + "Thema noch unbekannt. ";
+        (s.pending === 1 ? tr("Bei 1 Eintrag ist das Thema noch unbekannt.")
+          : tr("Bei {n} Einträgen ist das Thema noch unbekannt.",
+            { n: s.pending })) + " ";
     }
   } catch (_) { /* Hinweis ist nice-to-have */ }
 }
@@ -4729,12 +4850,13 @@ async function refreshThemes() {
     for (;;) {
       const res = await api("/themes/refresh?limit=25", { method: "POST" });
       total += res.updated;
-      out.textContent = `${total} zugeordnet, noch ${res.remaining} offen …`;
+      out.textContent = tr("{n} zugeordnet, noch {rest} offen …",
+        { n: total, rest: res.remaining });
       if (res.remaining === 0 || res.updated === 0) break;
     }
     out.textContent = total
-      ? `${total} Einträge haben jetzt ein Thema ✔`
-      : "Für die übrigen Einträge lässt sich kein Thema bestimmen.";
+      ? tr("{n} Einträge haben jetzt ein Thema ✔", { n: total })
+      : tr("Für die übrigen Einträge lässt sich kein Thema bestimmen.");
     loadThemeStatus();
     loadCollection();
   } catch (e) {
@@ -4790,7 +4912,8 @@ function wireHubConnectOnce() {
   });
 
   $("hub-disconnect").addEventListener("click", async () => {
-    if (!confirm("Verbindung zum Hub trennen? Deine Angebote bleiben dort, bis du sie ersetzt.")) return;
+    if (!confirm(tr("Verbindung zum Hub trennen? Deine Angebote bleiben "
+      + "dort, bis du sie ersetzt."))) return;
     try {
       await api("/hub/disconnect", { method: "POST" });
       renderHubStatus({ connected: false });
@@ -4815,14 +4938,14 @@ async function loadHubView() {
   try {
     const s = await api("/hub?refresh=1");
     $("hub-view-who").textContent = s.display_name
-      ? `Angemeldet als ${s.display_name}` : "";
+      ? tr("Angemeldet als {name}", { name: s.display_name }) : "";
     $("hub-blocked").hidden = !s.blocked;
     const lp = s.last_publish;
     const lpEl = $("hub-last-publish");
     lpEl.hidden = !lp;
     if (lp) {
-      lpEl.textContent = `Zuletzt veröffentlicht: ${lp.count} Angebote am `
-        + new Date(lp.ts * 1000).toLocaleString("de-DE");
+      lpEl.textContent = tr("Zuletzt veröffentlicht: {n} Angebote am {wann}",
+        { n: lp.count, wann: new Date(lp.ts * 1000).toLocaleString(dateLocale()) });
     }
   } catch (_) { /* egal */ }
   loadInviteQuota();
@@ -4930,8 +5053,9 @@ async function loadTrades(quiet = false) {
     if (quiet && sig === tradesSig) return;
     tradesSig = sig;
     if (!trades.length) {
-      box.innerHTML = `<p class="search-hint">Noch keine Vorgänge. Melde bei
-        einem Angebot „Interesse" an – daraus wird ein Gespräch.</p>`;
+      box.innerHTML = `<p class="search-hint">${esc(tr("Noch keine Vorgänge. "
+        + "Melde bei einem Angebot „Interesse“ an – daraus wird ein "
+        + "Gespräch."))}</p>`;
       return;
     }
     box.innerHTML = trades.map((t) => `
@@ -4993,7 +5117,7 @@ async function renderTrade(quiet = false) {
       <div class="trade-msg${m.mine ? " mine" : ""}">
         ${esc(m.body)}
         <span class="when">${new Date(m.created_at * 1000)
-          .toLocaleString("de-DE")}${m.mine ? (m.delivered ? " · zugestellt ✓" : " · unterwegs …") : ""}</span>
+          .toLocaleString(dateLocale())}${m.mine ? (m.delivered ? " · zugestellt ✓" : " · unterwegs …") : ""}</span>
       </div>`).join("");
     if (!quiet || atBottom) box.scrollTop = box.scrollHeight;
     refreshUnread();
@@ -5018,13 +5142,14 @@ async function loadShareView() {
     const s = await api("/share/status");
     const wartet = s.known_state ? s.items.filter((i) => !i.published).length : 0;
     $("hub-share-info").textContent = s.shared
-      ? `${s.shared} Artikel ausgewählt (Vorschlag aus der Abgabeliste: `
-        + `${s.suggested})`
+      ? tr("{n} Artikel ausgewählt (Vorschlag aus der Abgabeliste: {v})",
+        { n: s.shared, v: s.suggested })
         + (s.known_state
-          ? ` · ${s.published} veröffentlicht, ${wartet} wartet auf das `
-            + `Veröffentlichen.`
+          ? tr(" · {n} veröffentlicht, {wartet} wartet auf das Veröffentlichen.",
+            { n: s.published, wartet })
           : ".")
-      : `Noch nichts ausgewählt. Vorschlag aus der Abgabeliste: ${s.suggested} Artikel.`;
+      : tr("Noch nichts ausgewählt. Vorschlag aus der Abgabeliste: {n} Artikel.",
+        { n: s.suggested });
 
     // Was noch im Hub steht, aber nicht mehr ausgewählt ist, verschwindet
     // beim nächsten Veröffentlichen – das gehört gesagt, nicht verschwiegen.
@@ -5043,7 +5168,8 @@ async function loadShareView() {
             <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
               ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}</div>
             ${s.known_state ? `<span class="badge ${it.published ? "badge-owned" : "badge-wanted"}">${
-              it.published ? `veröffentlicht (${it.published_qty}×)` : "noch nicht veröffentlicht"}</span>` : ""}
+              it.published ? tr("veröffentlicht ({n}×)", { n: it.published_qty })
+                : tr("noch nicht veröffentlicht")}</span>` : ""}
           </div>
           <button class="mini-btn" data-unshare="${it.id}">Entfernen</button>
         </div>
@@ -5099,7 +5225,7 @@ function wireHubViewOnce() {
     } catch (e) { toast(e.message); }
   });
   $("hub-share-clear").addEventListener("click", async () => {
-    if (!confirm("Die ganze Auswahl leeren?")) return;
+    if (!confirm(tr("Die ganze Auswahl leeren?"))) return;
     try {
       await api("/share/clear", { method: "POST" });
       loadShareView();
@@ -5141,8 +5267,8 @@ function wireHubViewOnce() {
   $("trade-report").addEventListener("click", openReport);
   $("trade-delete").addEventListener("click", async () => {
     if (!openTradeId) return;
-    if (!confirm("Diese Unterhaltung endgültig löschen? Auch beim Gegenüber "
-      + "verschwindet sie aus dem Hub.")) return;
+    if (!confirm(tr("Diese Unterhaltung endgültig löschen? Auch beim "
+      + "Gegenüber verschwindet sie aus dem Hub."))) return;
     try {
       await api(`/hub/trades/${openTradeId}`, { method: "DELETE" });
       closeTrade();
@@ -5193,8 +5319,8 @@ function wireHubViewOnce() {
       const res = await api("/hub/invite", { method: "POST", body: {} });
       const out = $("hub-invite-out");
       out.hidden = false;
-      out.innerHTML = `Einladungscode (einmal gültig, an einen Freund geben): `
-        + `<code>${esc(res.invite_code)}</code>`;
+      out.innerHTML = esc(tr("Einladungscode (einmal gültig, an einen "
+        + "Freund geben):")) + ` <code>${esc(res.invite_code)}</code>`;
       loadInviteQuota();
     } catch (e) {
       // Kontingent aufgebraucht: statt bloßer Fehlermeldung den Weg anbieten
@@ -5213,13 +5339,16 @@ async function loadInviteQuota() {
     if (!q.quota) { el.hidden = true; return; }
     el.hidden = false;
     if (q.pending_request) {
-      el.textContent = `✉️ Einladungen: ${q.used} von ${q.quota} vergeben · `
-        + `Anfrage über ${q.pending_request.want} weitere läuft.`;
+      el.textContent = tr("✉️ Einladungen: {n} von {max} vergeben · Anfrage "
+        + "über {want} weitere läuft.",
+        { n: q.used, max: q.quota, want: q.pending_request.want });
     } else if (q.left > 0) {
-      el.textContent = `✉️ Einladungen: noch ${q.left} von ${q.quota} frei.`;
+      el.textContent = tr("✉️ Einladungen: noch {n} von {max} frei.",
+        { n: q.left, max: q.quota });
     } else {
-      el.innerHTML = `✉️ Alle ${q.quota} Einladungen vergeben. `
-        + `<button class="mini-btn" data-req-invites>Mehr anfragen</button>`;
+      el.innerHTML = esc(tr("✉️ Alle {max} Einladungen vergeben.",
+        { max: q.quota })) + " "
+        + `<button class="mini-btn" data-req-invites>${esc(tr("Mehr anfragen"))}</button>`;
       el.querySelector("[data-req-invites]")
         .addEventListener("click", () => offerInviteRequest());
     }
@@ -5255,11 +5384,12 @@ async function openOffer(o) {
 function openInterest(o) {
   interestOffer = o;
   $("interest-name").textContent = o.n;
-  $("interest-sub").textContent = `${o.id_} · von ${o.who}`;
+  $("interest-sub").textContent = o.id_ + " · " + tr("von {name}", { name: o.who });
   $("interest-img").src = o.img || IMG_PLACEHOLDER;
   // Vorschlag steht im Feld – anpassbar, nicht in einem Systemfenster
   $("interest-text").value =
-    `Hallo ${o.who}, hättest du Interesse, den ${o.n} zu tauschen?`;
+    tr("Hallo {name}, hättest du Interesse, den {was} zu tauschen?",
+      { name: o.who, was: o.n });
   $("interest-overlay").hidden = false;
   document.body.style.overflow = "hidden";
   const ta = $("interest-text");
@@ -5390,8 +5520,8 @@ async function loadHubOffers() {
    Token bleibt im Browser – die App kann den Tunnel selbst nicht starten (kein
    Docker-Zugriff), deshalb erzeugt sie nur die fertige Konfiguration. */
 function cfSnippet() {
-  const host = ($("cf-host").value.trim()) || "brickfolio.deine-domain.de";
-  const token = ($("cf-token").value.trim()) || "DEIN-CLOUDFLARE-TUNNEL-TOKEN";
+  const host = ($("cf-host").value.trim()) || tr("brickfolio.deine-domain.de");
+  const token = ($("cf-token").value.trim()) || tr("DEIN-CLOUDFLARE-TUNNEL-TOKEN");
   return "  cloudflared:\n"
     + "    image: cloudflare/cloudflared:latest\n"
     + "    container_name: brickfolio-tunnel\n"
@@ -5399,7 +5529,7 @@ function cfSnippet() {
     + "    command: tunnel run\n"
     + "    environment:\n"
     + `      TUNNEL_TOKEN: "${token}"\n`
-    + `    # Public Hostname im Cloudflare-Dashboard: ${host}\n`
+    + `    # ${tr("Public Hostname im Cloudflare-Dashboard")}: ${host}\n`
     + "    #   -> Service: http://brickfolio:8300";
 }
 
@@ -5408,7 +5538,7 @@ function renderCfSnippet() {
   if (el) el.textContent = cfSnippet();
   const url = $("cf-url");
   if (url) {
-    const host = ($("cf-host").value.trim()) || "brickfolio.deine-domain.de";
+    const host = ($("cf-host").value.trim()) || tr("brickfolio.deine-domain.de");
     url.textContent = "https://" + host;
   }
 }
@@ -5439,8 +5569,8 @@ function markDefaultTheme() {
     const on = b.dataset.defaultThemePick === def;
     b.classList.toggle("on", on);
     b.textContent = on ? "⭐" : "☆";
-    b.title = on ? "Aktuelles Standard-Design der Instanz"
-                 : "Als Standard-Design festlegen";
+    b.title = on ? tr("Aktuelles Standard-Design der Instanz")
+                 : tr("Als Standard-Design festlegen");
     b.setAttribute("aria-label", b.title);
   });
 }
@@ -5546,8 +5676,8 @@ let errorsState = null;
 
 function errorWhen(ts) {
   const d = new Date(ts * 1000);
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
-    + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString(dateLocale(), { day: "2-digit", month: "2-digit" })
+    + " " + d.toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" });
 }
 
 function renderErrors() {
@@ -5583,7 +5713,7 @@ function renderErrors() {
   box.querySelectorAll("[data-err-issue]").forEach((b) => {
     b.addEventListener("click", async () => {
       b.disabled = true;
-      b.textContent = "Lege an …";
+      b.textContent = tr("Lege an …");
       try {
         const res = await api(`/errors/${b.dataset.errIssue}/issue`,
           { method: "POST" });
@@ -5698,9 +5828,10 @@ function renderPriceRegion() {
     return;
   }
   if (s.pending > 0) {
-    status.innerHTML = `⚠️ <b>${s.pending} Artikel</b> haben noch Preise aus`
-      + " einem anderen Gebiet. Das Umrechnen holt je Artikel zwei Preise von"
-      + " BrickLink – bei vielen Artikeln also in mehreren Durchgängen.";
+    status.innerHTML = "⚠️ <b>" + esc(tr("{n} Artikel", { n: s.pending }))
+      + "</b> " + esc(tr("haben noch Preise aus einem anderen Gebiet. Das "
+        + "Umrechnen holt je Artikel zwei Preise von BrickLink – bei vielen "
+        + "Artikeln also in mehreren Durchgängen."));
     run.hidden = false;
   } else {
     status.textContent = tr("✅ Alle Preise stammen aus dem eingestellten Gebiet.");
@@ -5712,10 +5843,11 @@ function renderPriceRegion() {
   const mRun = $("price-missing-run");
   if (s.missing > 0) {
     mStatus.hidden = false;
-    const verb = s.missing === 1 ? "hat" : "haben";
-    mStatus.innerHTML = `⚠️ <b>${s.missing} Artikel</b> ${verb} noch keinen`
-      + " Preis – oft, weil im gewählten Gebiet nichts verkauft wurde. Ein"
-      + " erneuter Abruf weitet auf Europa und weltweit aus.";
+    mStatus.innerHTML = "⚠️ <b>" + esc(s.missing === 1 ? tr("1 Artikel")
+      : tr("{n} Artikel", { n: s.missing })) + "</b> "
+      + esc(tr("hat/haben noch keinen Preis – oft, weil im gewählten Gebiet "
+        + "nichts verkauft wurde. Ein erneuter Abruf weitet auf Europa und "
+        + "weltweit aus."));
     mRun.hidden = false;
   } else {
     mStatus.hidden = true;
@@ -5723,36 +5855,49 @@ function renderPriceRegion() {
   }
 }
 
+/* Auswahlliste füllen. Die Namen der Gebiete und Währungen kommen vom
+   Server auf Deutsch – also durch denselben Katalog wie alles andere. */
+function fuelleAuswahl(sel, optionen, gewaehlt) {
+  sel.innerHTML = optionen.map((o) =>
+    `<option value="${esc(o.value)}"${o.value === gewaehlt ? " selected" : ""}>`
+    + `${esc(tr(o.label))}</option>`).join("");
+}
+
 async function loadPriceRegion() {
   try {
     const s = await api("/settings/price_region");
     priceRegionState = s;
-    const sel = $("price-region");
-    sel.innerHTML = s.options.map((o) =>
-      `<option value="${esc(o.value)}"${o.value === s.region ? " selected" : ""}>`
-      + `${esc(o.label)}</option>`).join("");
+    fuelleAuswahl($("price-region"), s.options, s.region);
+    fuelleAuswahl($("price-currency"), s.currencies, s.currency);
+    setCurrency(s.currency);
     renderPriceRegion();
   } catch (e) { /* Karte bleibt leer */ }
 }
 
-async function savePriceRegion(region) {
+async function savePriceRegion(region, waehrung) {
   const sel = $("price-region");
-  sel.disabled = true;
+  const wsel = $("price-currency");
+  sel.disabled = wsel.disabled = true;
   try {
-    const res = await api("/settings/price_region",
-      { method: "POST", body: { region } });
+    const body = { region };
+    if (waehrung) body.currency = waehrung;
+    const res = await api("/settings/price_region", { method: "POST", body });
     priceRegionState.region = res.region;
+    priceRegionState.currency = res.currency;
     priceRegionState.pending = res.pending;
     sel.value = res.region;          // Anzeige an den Server angleichen
+    wsel.value = res.currency;
+    setCurrency(res.currency);
     renderPriceRegion();
     toast(res.pending > 0
-      ? `Gebiet gespeichert – ${res.pending} Artikel neu zu berechnen`
-      : "Gebiet gespeichert ✔");
+      ? tr("Gespeichert – {n} Artikel neu zu berechnen", { n: res.pending })
+      : tr("Gespeichert ✔"));
+    if (!$("view-collection").hidden) loadCollection();
   } catch (e) {
     toast(e.message);
     loadPriceRegion();               // Auswahl zurück auf den echten Stand
   } finally {
-    sel.disabled = false;
+    sel.disabled = wsel.disabled = false;
   }
 }
 
@@ -5767,14 +5912,16 @@ async function recalcPrices() {
         { method: "POST" });
       total += res.updated;
       priceRegionState.pending = res.remaining;
-      btn.textContent = `🔄 ${total} umgerechnet, ${res.remaining} offen …`;
+      btn.textContent = tr("🔄 {n} umgerechnet, {rest} offen …",
+        { n: total, rest: res.remaining });
       if (res.failed && res.failed.length) {
         toast(tr("{n} übersprungen: {grund}",
       { n: res.failed.length, grund: res.failed[0].error }));
       }
       if (!res.remaining || !res.updated) break;
     }
-    toast(total ? `${total} Artikel umgerechnet ✔` : "Nichts zu tun");
+    toast(total ? tr("{n} Artikel umgerechnet ✔", { n: total })
+      : tr("Nichts zu tun"));
   } catch (e) {
     toast(e.message);
   } finally {
@@ -5805,13 +5952,14 @@ async function fillMissingPrices() {
       if (!res.remaining || !res.updated) break;
     }
     toast(total
-      ? `${filled} von ${total} geprüften Artikeln haben jetzt einen Preis`
+      ? tr("{n} von {max} geprüften Artikeln haben jetzt einen Preis",
+        { n: filled, max: total })
       : "Nichts zu tun");
   } catch (e) {
     toast(e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "🔄 Preislose erneut abrufen";
+    btn.textContent = tr("🔄 Preislose erneut abrufen");
     loadPriceRegion();     // echten Reststand zeigen (nirgends verkauft bleibt)
     if (!$("view-collection").hidden) loadCollection();
   }
@@ -5861,16 +6009,16 @@ async function loadPriceLog(limit) {
     }
     box.innerHTML = res.entries.map((e) => {
       const d = new Date(e.ts * 1000);
-      const when = d.toLocaleDateString("de-DE",
+      const when = d.toLocaleDateString(dateLocale(),
         { day: "2-digit", month: "2-digit" }) + " "
-        + d.toLocaleTimeString("de-DE",
+        + d.toLocaleTimeString(dateLocale(),
           { hour: "2-digit", minute: "2-digit" });
       const prices = [
-        e.price_new != null ? "neu " + fmtEur(e.price_new) : null,
-        e.price_used != null ? "gebr. " + fmtEur(e.price_used) : null,
+        e.price_new != null ? tr("neu") + " " + fmtEur(e.price_new) : null,
+        e.price_used != null ? tr("gebr.") + " " + fmtEur(e.price_used) : null,
       ].filter(Boolean).join(" · ");
       const src = e.source === "manuell"
-        ? `<span class="pl-src manual">manuell</span>`
+        ? `<span class="pl-src manual">${esc(tr("manuell"))}</span>`
         : e.source === "auto"
           ? `<span class="pl-src">auto</span>` : "";
       return `<div class="pl-row">
@@ -5965,7 +6113,8 @@ async function pollUpdateStatus() {
       // Aufgehoben wird sie durch das Neuladen nach dem Neustart (siehe oben)
       // oder nach Zeitablauf durch den Hinweis samt Knopf.
     } else if (s.seconds_left > 0) {
-      showUpdateBar(true, `⬆️ Update in ${fmtCountdown(s.seconds_left)}`
+      showUpdateBar(true, tr("⬆️ Update in {zeit}",
+        { zeit: fmtCountdown(s.seconds_left) })
         + " – bitte Eingaben abschließen");
       $("btn-update-abort").hidden = !(state.user && state.user.is_admin);
       next = s.seconds_left <= 30 ? 3000 : UPDATE_POLL_MS;
@@ -6107,7 +6256,7 @@ async function loadSettings() {
         block.hidden = false;
         $("backup-select").innerHTML = b.files.map((f) => {
           const time = f.mtime
-            ? " · " + new Date(f.mtime * 1000).toLocaleTimeString("de-DE",
+            ? " · " + new Date(f.mtime * 1000).toLocaleTimeString(dateLocale(),
                 { hour: "2-digit", minute: "2-digit" }) + " Uhr"
             : "";
           const label = f.name.replace("brickfolio-", "").replace(".db", "")
@@ -6146,7 +6295,7 @@ async function loadSettings() {
     $("user-list").querySelectorAll("[data-admin-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const makeAdmin = btn.dataset.adminState !== "1";
-        if (!makeAdmin && !confirm("Admin-Rechte wirklich entziehen?")) return;
+        if (!makeAdmin && !confirm(tr("Admin-Rechte wirklich entziehen?"))) return;
         try {
           await api(`/users/${btn.dataset.adminUser}/admin`,
             { method: "POST", body: { is_admin: makeAdmin } });
@@ -6182,7 +6331,7 @@ async function loadSettings() {
     });
     $("user-list").querySelectorAll("[data-del-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm("Benutzer wirklich entfernen?")) return;
+        if (!confirm(tr("Benutzer wirklich entfernen?"))) return;
         try { await api("/users/" + btn.dataset.delUser, { method: "DELETE" }); loadSettings(); }
         catch (e) { toast(e.message); }
       });
@@ -6296,8 +6445,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
   $("btn-missing-figs").addEventListener("click", toggleMissingFigs);
+  // Beide Felder schicken immer beides mit: Wer nur die Währung ändert,
+  // soll das Gebiet nicht zurücksetzen (und umgekehrt).
   $("price-region").addEventListener("change", (ev) =>
-    savePriceRegion(ev.currentTarget.value));
+    savePriceRegion(ev.currentTarget.value, $("price-currency").value));
+  $("price-currency").addEventListener("change", (ev) =>
+    savePriceRegion($("price-region").value, ev.currentTarget.value));
   $("btn-price-recalc").addEventListener("click", recalcPrices);
   $("btn-price-fill").addEventListener("click", fillMissingPrices);
 
@@ -6310,7 +6463,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
   $("btn-errors-clear").addEventListener("click", async () => {
-    if (!confirm("Alle aufgezeichneten Fehler löschen?")) return;
+    if (!confirm(tr("Alle aufgezeichneten Fehler löschen?"))) return;
     try {
       await api("/errors", { method: "DELETE" });
       loadErrors();
@@ -6334,9 +6487,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll("[data-update-go]").forEach((b) => {
     b.addEventListener("click", async () => {
       const delay = Number(b.dataset.updateGo);
-      const wann = delay ? `in ${delay / 60} Minute(n)` : "sofort";
-      if (!confirm(`Update ${wann} einspielen?\n\n`
-        + "Die App sperrt sich für alle Benutzer und lädt danach neu.")) return;
+      const wann = delay ? tr("in {n} Minute(n)", { n: delay / 60 })
+        : tr("sofort");
+      if (!confirm(tr("Update {wann} einspielen?", { wann }) + "\n\n"
+        + tr("Die App sperrt sich für alle Benutzer und lädt danach neu."))) return;
       b.disabled = true;
       try {
         await api("/update/request", { method: "POST", body: { delay } });
@@ -6417,15 +6571,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     const name = $("backup-select").value;
     if (!name) return;
     const label = name.replace("brickfolio-", "").replace(".db", "");
-    if (!confirm(`Wirklich den Stand vom ${label} wiederherstellen?\n\n`
-      + `Alle aktuellen Daten werden durch diesen Tagesstand ersetzt. `
-      + `Der jetzige Stand wird vorher automatisch als zusätzliche `
-      + `Sicherung weggeschrieben.`)) return;
+    if (!confirm(tr("Wirklich den Stand vom {wann} wiederherstellen?",
+      { wann: label }) + "\n\n"
+      + tr("Alle aktuellen Daten werden durch diesen Tagesstand ersetzt. "
+        + "Der jetzige Stand wird vorher automatisch als zusätzliche "
+        + "Sicherung weggeschrieben."))) return;
     try {
       const res = await api("/backup_restore_file", { method: "POST",
         body: { name } });
-      alert(`Stand ${label} wiederhergestellt.\n`
-        + `Sicherheitskopie: ${res.safety}\n\nDie App lädt jetzt neu.`);
+      alert(tr("Stand {wann} wiederhergestellt.", { wann: label }) + "\n"
+        + tr("Sicherheitskopie: {name}", { name: res.safety })
+        + "\n\n" + tr("Die App lädt jetzt neu."));
       location.reload();
     } catch (e) { toast(e.message); }
   });
@@ -6630,24 +6786,24 @@ function updateInstallCard() {
   const go = $("install-go");
   const text = $("install-text");
   if (installPrompt) {
-    text.textContent = tr("Ein Tipp, und Brickfolio startet künftig wie eine ")
-      + "eigene App – ohne Adresszeile, mit eigenem Symbol.";
+    text.textContent = tr("Ein Tipp, und Brickfolio startet künftig wie eine "
+      + "eigene App – ohne Adresszeile, mit eigenem Symbol.");
     go.hidden = false;
     card.hidden = false;
   } else if (isIOS()) {
     // Safari kennt keinen Knopf dafür – hier hilft nur der Weg über „Teilen".
-    text.innerHTML = "In Safari unten auf <b>Teilen</b> tippen (das Quadrat "
-      + "mit dem Pfeil nach oben), dann <b>„Zum Home-Bildschirm“</b>. "
-      + "Danach startet Brickfolio wie eine eigene App.";
+    text.innerHTML = tr("In Safari unten auf <b>Teilen</b> tippen (das "
+      + "Quadrat mit dem Pfeil nach oben), dann <b>„Zum Home-Bildschirm“</b>. "
+      + "Danach startet Brickfolio wie eine eigene App.");
     go.hidden = true;
     card.hidden = false;
   } else if (!window.isSecureContext) {
     // Ohne HTTPS lässt kein Browser das Hinzufügen zu – das ist der Grund,
     // nicht ein fehlendes Feature. Also sagen, woran es liegt.
-    text.innerHTML = "Dafür muss die App über <b>https</b> erreichbar sein – "
-      + "über eine reine <b>http</b>-Adresse im Heimnetz erlauben die Browser "
-      + "das Hinzufügen nicht. Einen verschlüsselten Zugang richtet der "
-      + "Assistent unter <b>Mehr → Externer Zugriff</b> ein.";
+    text.innerHTML = tr("Dafür muss die App über <b>https</b> erreichbar "
+      + "sein – über eine reine <b>http</b>-Adresse im Heimnetz erlauben die "
+      + "Browser das Hinzufügen nicht. Einen verschlüsselten Zugang richtet "
+      + "der Assistent unter <b>Mehr → Externer Zugriff</b> ein.");
     go.hidden = true;
     card.hidden = false;
   } else {

@@ -970,13 +970,23 @@ def apply_notification(note_id: int, user: dict = Depends(current_user)):
     return {"ok": True, "changed": changed, "new_item_id": row["new_item_id"]}
 
 
-def _prices_pending(conn, region: str) -> int:
-    """Wie viele Sammlungs-Artikel haben noch Preise aus einem anderen Gebiet?"""
+# Preise, die nicht mehr zur Einstellung passen – nach Gebiet *oder*
+# Währung. Beides steckt in derselben Bedingung, damit „umrechnen" nach einem
+# Wechsel der Währung genauso greift wie nach einem Wechsel des Gebiets. Alte
+# Bestände haben keine Währung gespeichert; die galten immer als Euro.
+_STALE = ("item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+          "AND item_id NOT LIKE 'custom-%' AND price_updated_at IS NOT NULL "
+          "AND (COALESCE(price_region, '') != ? "
+          "OR COALESCE(price_currency, 'EUR') != ?)")
+
+
+def _prices_pending(conn, region: str, waehrung: str = None) -> int:
+    """Wie viele Sammlungs-Artikel haben noch Preise aus einem anderen Gebiet
+    oder in einer anderen Währung?"""
+    waehrung = integrations.currency() if waehrung is None else waehrung
     return conn.execute(
-        "SELECT COUNT(*) AS c FROM collection WHERE "
-        "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
-        "AND price_updated_at IS NOT NULL "
-        "AND COALESCE(price_region, '') != ?", (region,)).fetchone()["c"]
+        f"SELECT COUNT(*) AS c FROM collection WHERE {_STALE}",
+        (region, waehrung)).fetchone()["c"]
 
 
 # Artikel, die zwar abgefragt wurden, aber weder für neu noch für gebraucht
@@ -1000,14 +1010,19 @@ def _prices_missing(conn, before: int = None) -> int:
 
 @app.get("/api/settings/price_region")
 def get_price_region(user: dict = Depends(current_user)):
-    """Eingestelltes Preisgebiet, Auswahlliste und offener Nachrechen-Bedarf."""
+    """Gebiet, Währung, Auswahllisten und offener Nachrechen-Bedarf."""
     region = integrations.price_region()
+    waehrung = integrations.currency()
     with core.db() as conn:
-        pending = _prices_pending(conn, region)
+        pending = _prices_pending(conn, region, waehrung)
         missing = _prices_missing(conn)
     return {"region": region,
+            "currency": waehrung,
             "options": [{"value": k, "label": v}
                         for k, v in integrations.PRICE_REGIONS.items()],
+            "currencies": [{"value": k, "label": v}
+                           for k, v in integrations.CURRENCIES.items()],
+            "suggested": integrations.LAND_WAEHRUNG,
             "pending": pending,
             "missing": missing,
             "can_fetch": integrations.bricklink_enabled()}
@@ -1015,16 +1030,23 @@ def get_price_region(user: dict = Depends(current_user)):
 
 class PriceRegionBody(BaseModel):
     region: str = Field(default="", max_length=20)
+    currency: str | None = Field(default=None, max_length=3)
 
 
 @app.post("/api/settings/price_region")
 def set_price_region(body: PriceRegionBody, user: dict = Depends(admin_user)):
     if body.region not in integrations.PRICE_REGIONS:
         raise HTTPException(400, "Unbekanntes Preisgebiet")
+    if body.currency is not None and body.currency not in integrations.CURRENCIES:
+        raise HTTPException(400, "Unbekannte Währung")
     core.set_setting("price_region", body.region)
+    if body.currency is not None:
+        core.set_setting("currency", body.currency)
+    waehrung = integrations.currency()
     with core.db() as conn:
-        pending = _prices_pending(conn, body.region)
-    return {"ok": True, "region": body.region, "pending": pending}
+        pending = _prices_pending(conn, body.region, waehrung)
+    return {"ok": True, "region": body.region, "currency": waehrung,
+            "pending": pending}
 
 
 @app.post("/api/prices/refresh_region")
@@ -1039,13 +1061,12 @@ def refresh_prices_region(limit: int = 20, user: dict = Depends(admin_user)):
         raise HTTPException(501, "BrickLink-API nicht konfiguriert")
     limit = max(1, min(limit, 50))
     region = integrations.price_region()
+    waehrung = integrations.currency()
     with core.db() as conn:
         rows = conn.execute(
-            "SELECT * FROM collection WHERE "
-            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
-            "AND price_updated_at IS NOT NULL "
-            "AND COALESCE(price_region, '') != ? "
-            "ORDER BY price_updated_at LIMIT ?", (region, limit)).fetchall()
+            f"SELECT * FROM collection WHERE {_STALE} "
+            "ORDER BY price_updated_at LIMIT ?",
+            (region, waehrung, limit)).fetchall()
     done, failed = 0, []
     for r in rows:
         try:
@@ -1056,10 +1077,11 @@ def refresh_prices_region(limit: int = 20, user: dict = Depends(admin_user)):
             # Trotzdem als bearbeitet markieren, sonst hängt der Lauf ewig an
             # derselben Nummer (z. B. wenn BrickLink sie nicht kennt).
             with core.db() as conn:
-                conn.execute("UPDATE collection SET price_region = ? WHERE id = ?",
-                             (region, r["id"]))
+                conn.execute("UPDATE collection SET price_region = ?, "
+                             "price_currency = ? WHERE id = ?",
+                             (region, waehrung, r["id"]))
     with core.db() as conn:
-        pending = _prices_pending(conn, region)
+        pending = _prices_pending(conn, region, waehrung)
     return {"ok": True, "updated": done, "remaining": pending, "failed": failed}
 
 
@@ -1216,6 +1238,8 @@ def config(user: dict = Depends(current_user)):
             "catalog_search": integrations.rebrickable_enabled(),
             "offer_percent": _offer_percent(),
             "owner_name": _owner_name(),
+            "currency": integrations.currency(),
+            "price_region": integrations.price_region(),
             "hub_connected": hub.enabled()}
 
 
@@ -4227,13 +4251,14 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection",
     # Gebiet mitschreiben, damit nach einer Umstellung erkennbar ist, welche
     # Preise noch aus dem alten Gebiet stammen.
     region = integrations.price_region()
+    waehrung = integrations.currency()
     with core.db() as conn:
         conn.execute(
             f"UPDATE {table} SET price_new = ?, price_used = ?, "
-            "price_updated_at = ?, price_data = ?, price_region = ? "
-            "WHERE id = ?",
+            "price_updated_at = ?, price_data = ?, price_region = ?, "
+            "price_currency = ? WHERE id = ?",
             (avg(result.get("new")), avg(result.get("used")), now, payload,
-             region, entry["id"]))
+             region, waehrung, entry["id"]))
     if not entry.get("year"):
         try:
             item = integrations.bricklink_item(entry["item_type"], entry["item_id"])

@@ -8,11 +8,13 @@ import integrations
 
 
 def _mock_request(monkeypatch, calls):
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append((item_no, scope))
         return {"currency_code": "EUR", "avg_price": "5", "unit_quantity": 3}
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
+    monkeypatch.setattr(integrations, "currency", lambda: "EUR")
 
 
 def test_second_cached_call_skips_bricklink(monkeypatch):

@@ -105,8 +105,27 @@
       <input id="wiz-owner" maxlength="40" placeholder="Finn" autocapitalize="words">
     </div>
 
-    <!-- 2: Rebrickable -->
+    <!-- 2: Preisgebiet und Währung -->
     <div class="wiz-step" data-step="2" hidden>
+      <h3>🌍 Preise und Währung</h3>
+      <p class="search-hint">Aus welchem Markt sollen die Ø-Preise von
+        BrickLink stammen, und in welcher Währung? Vorausgewählt ist, was zu
+        den Einstellungen deines Browsers passt. Findet BrickLink im
+        gewählten Land keine Verkäufe, weitet die App von selbst aus – erst
+        auf die Region, dann weltweit. Später änderbar unter
+        <b>Mehr → Preisgebiet</b>.</p>
+      <label for="wiz-region">Preise berechnen für</label>
+      <span class="select-wrap"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
+        <select id="wiz-region"></select>
+      </span>
+      <label for="wiz-currency">Währung</label>
+      <span class="select-wrap"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h5M9.5 14.5h5"/></svg>
+        <select id="wiz-currency"></select>
+      </span>
+    </div>
+
+    <!-- 3: Rebrickable -->
+    <div class="wiz-step" data-step="3" hidden>
       <h3>🔎 Katalogsuche (Rebrickable)</h3>
       <p class="search-hint">Damit findet die App Figuren und Sets über den
         Namen. Der Schlüssel ist kostenlos: Konto anlegen, Profil öffnen,
@@ -118,8 +137,8 @@
              placeholder="leer lassen und später nachtragen">
     </div>
 
-    <!-- 3: BrickLink -->
-    <div class="wiz-step" data-step="3" hidden>
+    <!-- 4: BrickLink -->
+    <div class="wiz-step" data-step="4" hidden>
       <h3>💶 Preise und Set-Inhalte (BrickLink)</h3>
       <p class="search-hint">Vier Werte, die BrickLink dir auf einer Seite
         anzeigt, nachdem du dort ein Konto hast. Ohne sie funktioniert alles
@@ -136,8 +155,8 @@
       <input id="wiz-bts" autocapitalize="none" autocomplete="off" spellcheck="false">
     </div>
 
-    <!-- 4: Prüfen -->
-    <div class="wiz-step" data-step="4" hidden>
+    <!-- 5: Prüfen -->
+    <div class="wiz-step" data-step="5" hidden>
       <h3>✅ Kurz nachsehen, ob es klappt</h3>
       <p class="search-hint">Ein echter Testabruf bei beiden Diensten – so
         merkst du jetzt, ob ein Schlüssel verdreht ist, und nicht erst beim
@@ -146,8 +165,8 @@
       <p id="wiz-test-out" class="search-hint" hidden></p>
     </div>
 
-    <!-- 5: Hub -->
-    <div class="wiz-step" data-step="5" hidden>
+    <!-- 6: Hub -->
+    <div class="wiz-step" data-step="6" hidden>
       <h3>🤝 Tausch-Netzwerk</h3>
       <p class="search-hint">Falls dich jemand eingeladen hat: Code eintragen
         und beitreten. Ohne Einladung überspringen – nachholen geht jederzeit
@@ -159,8 +178,8 @@
       <p id="wiz-hub-out" class="search-hint" hidden></p>
     </div>
 
-    <!-- 6: Fertig -->
-    <div class="wiz-step" data-step="6" hidden>
+    <!-- 7: Fertig -->
+    <div class="wiz-step" data-step="7" hidden>
       <h3>🎉 Los geht's</h3>
       <p class="search-hint">Alles Weitere findest du unter <b>Mehr</b>:
         Benutzer anlegen, Sicherung, Design, externer Zugriff. Die Hilfe
@@ -677,13 +696,19 @@
     <div class="settings-card" id="price-region-card" hidden>
       <h3>🌍 Preisgebiet</h3>
       <p class="search-hint">Aus welchem Markt sollen die
-        BrickLink-Ø-Preise stammen? Gibt es dort zu einem Artikel keine
-        Verkäufe, weitet die App automatisch aus – erst auf Europa, dann
-        weltweit –, sonst stünden seltenere Figuren ohne Preis da.</p>
+        BrickLink-Ø-Preise stammen, und in welcher Währung? Gibt es im
+        gewählten Gebiet zu einem Artikel keine Verkäufe, weitet die App
+        automatisch aus – erst auf die zugehörige Region, dann weltweit –,
+        sonst stünden seltenere Figuren ohne Preis da. Nach einer Umstellung
+        müssen die gespeicherten Preise einmal neu geholt werden.</p>
       <label for="price-region">Preise berechnen für</label>
       <span class="select-wrap">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
         <select id="price-region"></select>
+      </span>
+      <label for="price-currency">Währung</label>
+      <span class="select-wrap"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h5M9.5 14.5h5"/></svg>
+        <select id="price-currency"></select>
       </span>
       <p class="search-hint" id="price-region-status"></p>
       <div id="price-region-run" hidden>
@@ -1075,7 +1100,7 @@ sudo bash update.sh</pre>
         nach <i>neu</i> und <i>gebraucht</i>. Verwendet wird immer der Preis,
         der zum eingetragenen <b>Zustand</b> passt; fehlt er, springt die App
         auf den anderen Wert aus. Artikel ohne Preisdaten (z. B. manuell
-        erfasste Eigenbauten) zählen mit 0 € und stehen als
+        erfasste Eigenbauten) zählen mit null und stehen als
         <i>„ohne Preis"</i> unter dem Wert-Widget.</p>
         <p><b>Die Rechnung.</b> Wert eines Eintrags = Ø-Preis × Menge.
         Der Gesamtwert ist die Summe über alle Einträge – mit einer

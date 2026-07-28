@@ -177,7 +177,8 @@ def test_refresh_missing_skips_unknown_number(ctx, monkeypatch):
 def test_price_guide_falls_back_via_europe_to_worldwide(monkeypatch):
     calls = []
 
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append(scope)
         if scope in ("DE", "europe"):
             return {}                       # weder DE noch Europa haben Verkäufe
@@ -186,7 +187,8 @@ def test_price_guide_falls_back_via_europe_to_worldwide(monkeypatch):
 
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
-    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE")
+    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE",
+                                   waehrung="EUR")
     assert calls == ["DE", "europe", ""]    # erst DE, dann Europa, dann weltweit
     assert out["avg"] == "4"
     assert out["used_scope"] == "" and out["fell_back"] is True
@@ -196,7 +198,8 @@ def test_price_guide_stops_at_europe_when_it_has_data(monkeypatch):
     """Hat Europa einen Preis, wird weltweit gar nicht erst gefragt."""
     calls = []
 
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append(scope)
         if scope == "DE":
             return {"avg_price": "0.0000", "unit_quantity": 0}   # keine Verkäufe
@@ -204,7 +207,8 @@ def test_price_guide_stops_at_europe_when_it_has_data(monkeypatch):
 
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
-    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE")
+    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE",
+                                   waehrung="EUR")
     assert calls == ["DE", "europe"]        # bei Europa ist Schluss
     assert out["avg"] == "5" and out["used_scope"] == "europe"
 
@@ -214,7 +218,8 @@ def test_zero_avg_string_is_not_treated_as_price(monkeypatch):
     Rückfall muss trotzdem greifen (das war der Bug hinter den 0,00-€-Fällen)."""
     calls = []
 
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append(scope)
         if scope == "DE":
             return {"avg_price": "0.0000", "min_price": "0.0000",
@@ -223,7 +228,8 @@ def test_zero_avg_string_is_not_treated_as_price(monkeypatch):
 
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
-    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE")
+    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE",
+                                   waehrung="EUR")
     assert calls[0] == "DE" and out["avg"] == "7"
     assert out["fell_back"] is True
 
@@ -232,38 +238,44 @@ def test_europe_setting_does_not_query_europe_twice(monkeypatch):
     """Ist Europa eingestellt, folgt direkt weltweit – kein doppelter Abruf."""
     calls = []
 
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append(scope)
         return {}                           # nirgends Verkäufe
 
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
-    integrations.price_guide("minifig", "sw0001", "U", scope="europe")
+    integrations.price_guide("minifig", "sw0001", "U", scope="europe",
+                                   waehrung="EUR")
     assert calls == ["europe", ""]
 
 
 def test_worldwide_setting_has_no_fallback(monkeypatch):
     calls = []
 
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append(scope)
         return {}
 
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
-    integrations.price_guide("minifig", "sw0001", "U", scope="")
+    integrations.price_guide("minifig", "sw0001", "U", scope="",
+                                   waehrung="EUR")
     assert calls == [""]                    # weltweit ist schon am breitesten
 
 
 def test_price_guide_keeps_region_when_data_exists(monkeypatch):
     calls = []
 
-    def fake_request(bl_type, item_no, condition, scope, auth):
+    def fake_request(bl_type, item_no, condition, scope, auth,
+                     waehrung="EUR"):
         calls.append(scope)
         return {"currency_code": "EUR", "avg_price": "3.5", "unit_quantity": 2}
 
     monkeypatch.setattr(integrations, "_price_request", fake_request)
     monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
-    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE")
+    out = integrations.price_guide("minifig", "sw0001", "U", scope="DE",
+                                   waehrung="EUR")
     assert calls == ["DE"]                  # kein zweiter Abruf noetig
     assert out["used_scope"] == "DE" and out["fell_back"] is False

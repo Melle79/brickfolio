@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.58.2"
+APP_VERSION = "1.60.0-beta.1"
 
 
 def hash_password(password: str) -> str:
@@ -418,10 +418,14 @@ def init_db():
             conn.execute("ALTER TABLE users ADD COLUMN totp_last INTEGER")
         # Aus welchem Preisgebiet stammt der gespeicherte Preis? Damit lässt
         # sich nach einer Umstellung gezielt nachrechnen, was noch fehlt.
+        # Dasselbe für die Währung: Wer von Euro auf Pfund umstellt, hat sonst
+        # alte Beträge im neuen Zeichen stehen – falsch, und nicht erkennbar.
         for tbl in ("collection", "wanted", "shopping_items"):
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}
             if cols and "price_region" not in cols:
                 conn.execute(f"ALTER TABLE {tbl} ADD COLUMN price_region TEXT")
+            if cols and "price_currency" not in cols:
+                conn.execute(f"ALTER TABLE {tbl} ADD COLUMN price_currency TEXT")
         # Name/Bild der Set-Figuren mitspeichern, damit die Übersicht der
         # fehlenden Figuren ohne BrickLink-Abruf auskommt
         sccols = {r[1] for r in conn.execute(
