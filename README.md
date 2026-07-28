@@ -136,6 +136,34 @@ fertig. Schritt für Schritt in [`docs/SYNOLOGY.md`](docs/SYNOLOGY.md).
 Per SSH geht es genauso – Ordner unter `/volume1/docker/brickfolio` anlegen
 und die Befehle oben mit `sudo` ausführen.
 
+### Andere NAS-Systeme und Rechner
+
+Es ist ein gewöhnliches OCI-Image auf zwei öffentlichen Registries – überall
+dort, wo Container laufen, läuft auch Brickfolio. Dasselbe YAML wie oben,
+nur an anderer Stelle eingefügt:
+
+| System | Wo das YAML hingehört |
+|---|---|
+| **QNAP** | Container Station → *Anwendungen* → Erstellen |
+| **UGREEN** | Docker → *Projekt* → Erstellen |
+| **TerraMaster** | Docker Manager → *Compose* |
+| **Asustor** | Portainer (aus App Central) → *Stacks* |
+| **Unraid** | Docker-Reiter, oder *Compose Manager* aus den Community Apps |
+| **TrueNAS SCALE** | Apps → *Custom App* (YAML) |
+| **OpenMediaVault** | omv-extras → Compose → *Files* |
+| **Linux / Raspberry Pi / Mac / Windows** | Ordner anlegen, `docker compose up -d` |
+
+Gebaut wird für **amd64** und **arm64**. Sehr alte 32-Bit-ARM-Geräte
+(`armv7`, z. B. ältere Einsteiger-NAS) werden nicht unterstützt.
+
+Wer keine Compose-Oberfläche hat, kommt auch so ans Ziel:
+
+```bash
+docker run -d --name brickfolio --restart unless-stopped \
+  -p 8300:8300 -v /pfad/zu/data:/data \
+  ghcr.io/melle79/brickfolio:latest
+```
+
 ### Selbst bauen (statt fertiges Image)
 
 Nur nötig, wenn du eigene Änderungen einspielen willst:
