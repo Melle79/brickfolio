@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.49.3 – Juli 2026
+
+*Nur Doku – an der App ändert sich nichts.*
+
+### Behoben
+- 📄 **„Ohne Internet vollständig nutzbar" stimmte nicht.** Der Satz stand im Absatz über die lokal ausgelieferte Schrift und war dort gemeint, las sich aber als Aussage über die ganze App. Ohne Internet fallen Scannen, Namenssuche, Preise, Set-Inhalte, Katalogbilder, Update-Prüfung und Tausch-Netzwerk aus. Beide READMEs sagen jetzt aufgeschlüsselt, was geht und was nicht
+- 📄 **„Ohne Konto bei Dritten" stimmte auch nicht** – für Preise und Namenssuche braucht es eigene Zugänge bei BrickLink und Rebrickable, was das Handbuch zwei Kapitel später selbst beschreibt. Präzisiert: Es gibt keinen Brickfolio-Dienst, bei dem man sich anmelden müsste
+
 ## 1.49.2 – Juli 2026
 
 *An der App ändert sich nichts – die Doku holt auf.*

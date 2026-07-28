@@ -340,9 +340,29 @@ wird das Foto dorthin übertragen). Dieselben Angaben stehen in der App unter
 **Mehr → Quellen & Rechtliches**.
 
 Die Schrift **Nunito** (SIL Open Font License 1.1, Lizenztext unter
-`frontend/fonts/OFL.txt`) wird lokal ausgeliefert. Es werden also keine
-Besucherdaten an Schrift-CDNs übertragen, und die App bleibt ohne Internet
-vollständig nutzbar.
+`frontend/fonts/OFL.txt`) wird lokal ausgeliefert – es werden also keine
+Besucherdaten an Schrift-CDNs übertragen, und die Oberfläche sieht auch dann
+richtig aus, wenn der Server keine Internetverbindung hat.
+
+### Was ohne Internet funktioniert
+
+Die Sammlung liegt vollständig auf eurem Server, die Oberfläche ebenso. Ist
+der Server im Heimnetz erreichbar, aber ohne Internet, geht weiter:
+
+- Sammlung, Wunschliste und Einkaufslisten ansehen und bearbeiten
+- manuell erfassen, eigene Figuren samt eigenem Bild
+- Statistik, CSV-Export und Drucklisten
+- Sicherung herunterladen und einspielen
+
+Auf das Internet angewiesen sind dagegen alle Funktionen, die nach außen
+fragen: **Scannen** (Brickognize), **Namenssuche** (Rebrickable), **Preise
+und Set-Inhalte** (BrickLink), die **Katalogbilder** (sie liegen auf deren
+Servern – selbst hochgeladene Bilder nicht), die **Update-Prüfung** und das
+**Tausch-Netzwerk**.
+
+Ist gar kein Server erreichbar, lädt die installierte PWA zwar noch ihre
+Oberfläche aus dem Zwischenspeicher, zeigt aber keine Daten – die kommen
+immer live vom eigenen Server, nichts davon liegt im Browser.
 
 ## Unterstützen
 

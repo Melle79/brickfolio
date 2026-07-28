@@ -332,8 +332,29 @@ sends it there). The same notes are shown in the app under
 **More → Sources & legal**.
 
 The **Nunito** typeface (SIL Open Font License 1.1, licence text in
-`frontend/fonts/OFL.txt`) is served locally. No visitor data is sent to font
-CDNs, and the app stays fully usable without an internet connection.
+`frontend/fonts/OFL.txt`) is served locally – so no visitor data goes to font
+CDNs, and the interface still looks right when the server has no internet
+connection.
+
+### What works without internet
+
+Your collection and the interface both live on your own server. If the server
+is reachable on the local network but has no internet, these keep working:
+
+- browsing and editing the collection, wishlist and shopping lists
+- manual entry, including custom figures with your own picture
+- statistics, CSV export and print lists
+- downloading and restoring a backup
+
+Everything that asks the outside world needs internet: **scanning**
+(Brickognize), **search by name** (Rebrickable), **prices and set contents**
+(BrickLink), the **catalogue images** (they are hosted on their servers –
+images you uploaded yourself are not), the **update check** and the **trading
+network**.
+
+With no server reachable at all, the installed PWA still loads its interface
+from the cache but shows no data – data always comes live from your own
+server, none of it is kept in the browser.
 
 ## Support
 

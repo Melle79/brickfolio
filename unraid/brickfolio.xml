@@ -19,7 +19,7 @@
 
     Features: camera scanning and catalogue search, quantities and condition, BrickLink average prices with your own price history and charts, wishlist, shopping lists for flea markets with proportional offer splitting, duplicates/sell list, statistics, CSV export and print lists, multi-user with roles, JSON backup, three themes, installable as a PWA. Optionally several instances can connect to a small trading hub to swap items, with end-to-end encrypted messages.
 
-    Everything stays on your server - no cloud, no third-party account. The database lives in the /data path below.
+    Your collection stays on your server - there is no Brickfolio service in between and no account to sign up for. The database lives in the /data path below. The app only reaches out where it has to: image recognition, catalogue search and prices; without internet the collection, lists, statistics and export keep working, scanning and prices do not.
 
     LEGO is a trademark of the LEGO Group, which does not sponsor, authorise or endorse this project. Private hobby project, no commercial intent.
   </Overview>

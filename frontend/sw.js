@@ -8,7 +8,8 @@ const SHELL = [
   "/manifest.webmanifest",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
-  // Schrift liegt lokal – so bleibt die App auch ohne Internet vollständig
+  // Schrift liegt lokal – ohne Internet sieht die Oberfläche trotzdem richtig
+  // aus. Daten kommen immer live vom eigenen Server (/api/ wird nie gecacht).
   "/static/fonts/nunito-latin-600.woff2",
   "/static/fonts/nunito-latin-800.woff2",
   "/static/fonts/nunito-latin-900.woff2",

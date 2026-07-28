@@ -41,9 +41,15 @@ werden automatisch geholt und fortlaufend aufgezeichnet – daraus entstehen
 Preisverläufe pro Artikel und die Wertentwicklung der Gesamtsammlung.
 
 **Eure Daten bleiben bei euch.** Alles läuft in einem einzigen
-Docker-Container auf eurem eigenen Server (FastAPI + SQLite), ohne Cloud,
-ohne Konto bei Dritten. Mehrere Familienmitglieder teilen sich eine
+Docker-Container auf eurem eigenen Server (FastAPI + SQLite). Es gibt keinen
+Brickfolio-Dienst dazwischen, bei dem ihr euch anmelden müsstet, und eure
+Sammlung liegt nirgendwo sonst. Mehrere Familienmitglieder teilen sich eine
 Datenbank, jeder mit eigenem Login.
+
+Nach außen fragt die App nur dort, wo sie muss: beim Scannen (Brickognize),
+bei der Namenssuche (Rebrickable) und für Preise und Set-Inhalte
+(BrickLink). Für die beiden letzten braucht ihr eigene kostenlose Zugänge –
+siehe 2.4. Ohne sie läuft alles andere weiter.
 
 Wer mag, verbindet seine Instanz zusätzlich mit dem **Tausch-Netzwerk**
 (Kapitel 12) – dann sind auch mehrere Haushalte untereinander erreichbar.
