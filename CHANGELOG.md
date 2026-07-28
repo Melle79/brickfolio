@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.51.0 – Juli 2026
+
+### Verbessert
+- ⚡ **Der zweite Start geht deutlich flotter.** Versionierte Dateien und die Schriften (228 kB) darf der Browser jetzt dauerhaft behalten, statt sie bei jedem Öffnen neu beim Server zu erfragen. Das spart rund zehn Rückfragen pro Start – am Handy und über den Tunnel der spürbare Teil, im Heimnetz kaum messbar
+- 🏷️ **Die Versionsmarke setzt die App selbst ein.** `?v=` an den Adressen von `app.js`, `style.css` und `fonts.css` kommt jetzt aus der Versionsnummer der Instanz. Eine neue Version erneuert damit automatisch alle Adressen – vorher war das eine Zahl, die von Hand hochgesetzt werden musste. Genau darauf beruht das dauerhafte Cachen: Vergessen kann man es nicht mehr
+
 ## 1.50.1 – Juli 2026
 
 ### Verbessert

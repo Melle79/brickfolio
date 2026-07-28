@@ -11,7 +11,7 @@ import uuid
 import requests
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -36,10 +36,27 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 @app.middleware("http")
 async def cache_control(request: Request, call_next):
-    """Frontend-Dateien immer beim Server revalidieren (Updates sofort sichtbar)."""
+    """Wie lange dürfen Browser Frontend-Dateien behalten?
+
+    Adressen mit Versionsmarke (`/static/app.js?v=1.50.2`) dürfen sie
+    dauerhaft behalten: Die Marke setzt die Startseite aus APP_VERSION ein,
+    eine neue Version ergibt also eine neue Adresse. Das spart bei jedem
+    Start mehrere Rückfragen – am Handy der spürbare Teil.
+
+    Alles ohne Marke – die Startseite selbst, sw.js, das Manifest, Symbole –
+    muss beim Server nachfragen, sonst käme ein Update nie an.
+    """
     response = await call_next(request)
     path = request.url.path
-    if (path == "/" or path.startswith("/static/")
+    # Schriftdateien tragen ihren Schnitt im Namen und ändern sich nie – ein
+    # anderer Schnitt hieße eine andere Datei. Sie dürfen deshalb ohne Marke
+    # dauerhaft bleiben; das spart bei jedem Start sechs Rückfragen.
+    versioniert = (request.query_params.get("v")
+                   or path.startswith("/static/fonts/"))
+    if path.startswith("/static/") and versioniert:
+        response.headers["Cache-Control"] = \
+            "public, max-age=31536000, immutable"
+    elif (path == "/" or path.startswith("/static/")
             or path in ("/sw.js", "/manifest.webmanifest")):
         response.headers["Cache-Control"] = "no-cache"
     return response
@@ -4055,4 +4072,14 @@ def service_worker():
 
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+    """Startseite mit eingesetzter Versionsnummer.
+
+    Die Marke `?v=` an den Adressen von app.js, style.css und fonts.css kommt
+    aus APP_VERSION, statt in der Datei zu stehen. Damit erneuert jede neue
+    Version den Zwischenspeicher der Browser von selbst – und niemand kann
+    vergessen, die Zahl von Hand hochzusetzen. Genau darauf beruht das lange
+    Cachen der versionierten Dateien (siehe cache_control).
+    """
+    with open(os.path.join(FRONTEND_DIR, "index.html"), encoding="utf-8") as f:
+        html = f.read().replace("__APPVERSION__", core.APP_VERSION)
+    return HTMLResponse(html)
