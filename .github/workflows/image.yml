@@ -47,6 +47,11 @@ jobs:
       # Marken: `main` folgt dem Entwicklungsstand, `latest` und die
       # Versionsnummern entstehen nur aus Releases – wer `latest` einsetzt,
       # bekommt also nichts Halbfertiges.
+      #
+      # Vorabversionen sind ausdrücklich ausgenommen: Ein als Prerelease
+      # veröffentlichtes 1.60.0-beta.1 hat `latest` mitgenommen und wäre so
+      # bei allen gelandet, die einfach `latest` ziehen. Betas bekommen
+      # deshalb ihre eigene Marke `beta`; wer sie sehen will, holt sie sich.
       - name: Marken festlegen
         id: meta
         uses: docker/metadata-action@v5
@@ -58,7 +63,8 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.release.prerelease == false }}
+            type=raw,value=beta,enable=${{ github.event_name == 'release' && github.event.release.prerelease == true }}
 
       - name: Bauen und veröffentlichen
         uses: docker/build-push-action@v6

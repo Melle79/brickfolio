@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.60.0-beta.1 – Juli 2026
+## 1.60.0-beta.2 – Juli 2026
 
 > **Beta.** Währung und die neuen Preisgebiete sind neu und wollen im Alltag
 > gesehen werden, bevor sie als stabil gelten.
@@ -44,6 +44,12 @@
   sie blieben deutsch, egal welche Sprache eingestellt war
 - 🌐 Sätze, die in der Vorlage über zwei Zeilen laufen, fanden ihren
   Katalogeintrag nicht mehr
+
+### Behoben (beta.2)
+- 🏷 **Eine Vorabversion nahm die Marke `latest` mit.** Der Release-Ablauf
+  unterschied Release und Prerelease nicht – ein als Beta veröffentlichtes
+  Image wäre bei allen gelandet, die einfach `latest` ziehen. Betas tragen
+  jetzt die eigene Marke `beta`; `latest` bleibt der letzten stabilen Version
 
 ### Für Entwickler
 - Neue Spalte `price_currency` in `collection`, `wanted` und `shopping_items`
