@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.49.2 – Juli 2026
+
+*An der App ändert sich nichts – die Doku holt auf.*
+
+### Verbessert
+- 📖 **Handbuch auf Stand.** Es beschrieb noch v1.20.1. Neu: ein ganzes Kapitel zum **Tausch-Netzwerk** (was wo liegt, beitreten, anbieten mit Menge, Gespräche, Melden, gesperrter Zugang), der **Einrichtungsassistent**, **eigene Figuren (Custom)**, **Themenkarten** und die gemerkte Sortierung, die **Detailansicht mit Teileliste**, das Statistik-Feld **„Einkauf auf Listen"** samt „inventarisiert"
+- 📦 **Installation und Updates neu beschrieben** – fertiges Image statt Quellcode bauen, Container-Oberfläche statt SSH, `update.sh` erkennt die Betriebsart selbst
+- 🇬🇧 **Englisches README nachgezogen**: Schnellstart, Assistent, Tausch-Netzwerk, Tabelle für andere NAS-Hersteller
+
 ## 1.49.1 – Juli 2026
 
 *An der App selbst ändert sich nichts – nur daran, wie man sie bekommt.*

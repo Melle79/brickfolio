@@ -35,6 +35,15 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   show which of your sets they belong to; missing set figures move to the
   wishlist with a single tap
 - 🖼 **Reload the image** for an entry if it is missing or wrong
+- 🔎 **Detail view everywhere**: tapping a search or scan hit opens a popup
+  with year, theme, prices and – for minifigures – the **parts they contain,
+  with colour names**
+- 🎨 **Custom figures**: home-made builds with a number the app assigns for
+  you (`custom-001`, `-002` …) and your own picture – optionally the photo
+  straight from the scan. They live under the “Custom” theme
+- 🗂️ **Theme cards**: sorted by theme, the collection shows collapsible cards
+  (Star Wars, City, Custom …) with count and value per theme. The last sort
+  order is remembered per profile
 
 **Prices & value**
 - 💶 BrickLink average prices (new/used) fetched automatically in the
@@ -53,6 +62,23 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   into the collection incl. condition choice
 - 🧩 Figures that belong to one of your sets and are still missing are flagged
   with “missing from your set” – a tap jumps straight to the set
+
+**Trading network** (optional, invite only)
+- 🤝 Several Brickfolio instances connect through a small **trading hub**:
+  everyone publishes the items they want to pass on and sees what the others
+  offer – searchable by name and number
+- 🔢 **You pick what goes in**, and how many: out of three identical figures
+  you can offer just one. Each item shows whether it is already published
+- 💬 **Messages are end-to-end encrypted** (X25519 + AES-256-GCM). The hub
+  cannot read them and deletes them once delivered; the readable history stays
+  on the instances involved. In an open chat new messages arrive on their own
+- ✉️ **Invitations with a quota**: everyone may invite three friends and can
+  request more. Nobody gets in without an invite
+- ⚑ **Reporting**: if something goes wrong, a report reaches the hub admin –
+  optionally with the conversation, which the reporting instance decrypts and
+  discloses voluntarily
+- 🖼️ Custom figures travel with a **downscaled thumbnail** so the other side
+  doesn’t just see a placeholder
 
 **Collector-Pro mode** (a role the admin grants per user)
 - 💰 Purchase price per entry – pre-filled with the BrickLink average of the
@@ -112,32 +138,68 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 
 ## Quick start (Docker)
 
+No source code, no build – two commands:
+
 ```bash
-git clone https://github.com/Melle79/brickfolio.git
-cd brickfolio
-cp docker-compose.example.yml docker-compose.yml
-docker compose up -d --build
+mkdir brickfolio && cd brickfolio
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+docker compose up -d
 ```
 
-Open `http://<server>:8300` – on first visit the app walks you through
-**initial setup** (create the admin account). The database is stored
-persistently at `./data/brickfolio.db`.
+Open `http://<server>:8300` – on first visit a **setup wizard** walks you
+through everything: admin account, display name, API keys (with a test
+button) and, if you have one, your invite to the trading network. Every step
+can be skipped; anything can be added later under *More*. The database is
+stored persistently at `./data/brickfolio.db`.
 
-**Without git** (e.g. on a Synology NAS where git is usually missing) – grab
-the latest release as an archive:
+The image (`ghcr.io/melle79/brickfolio:latest`, mirrored as
+`melle79/brickfolio:latest` on Docker Hub) is built for **amd64** (Synology,
+Intel NAS, PC) and **arm64** (Raspberry Pi, ARM NAS).
+
+### Synology NAS
+
+No shell needed: **Container Manager → Project → Create**, paste the YAML,
+done. Step by step in [`docs/SYNOLOGY.md`](docs/SYNOLOGY.md) (in German).
+Over SSH it works just as well – create `/volume1/docker/brickfolio` and run
+the commands above with `sudo`.
+
+### Other NAS systems and computers
+
+It is an ordinary OCI image on two public registries – it runs wherever
+containers run. Same YAML as above, just pasted somewhere else:
+
+| System | Where the YAML goes |
+|---|---|
+| **QNAP** | Container Station → *Applications* → Create |
+| **UGREEN** | Docker → *Project* → Create |
+| **TerraMaster** | Docker Manager → *Compose* |
+| **Asustor** | Portainer (from App Central) → *Stacks* |
+| **Unraid** | Docker tab, or *Compose Manager* from Community Apps |
+| **TrueNAS SCALE** | Apps → *Custom App* (YAML) |
+| **OpenMediaVault** | omv-extras → Compose → *Files* |
+| **Linux / Raspberry Pi / Mac / Windows** | create a folder, `docker compose up -d` |
+
+Very old 32-bit ARM devices (`armv7`) are not supported.
+
+Without a compose UI:
+
+```bash
+docker run -d --name brickfolio --restart unless-stopped \
+  -p 8300:8300 -v /path/to/data:/data \
+  ghcr.io/melle79/brickfolio:latest
+```
+
+### Building it yourself (instead of the ready-made image)
+
+Only needed if you want to run your own changes:
 
 ```bash
 mkdir brickfolio && cd brickfolio
 curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
 cp docker-compose.example.yml docker-compose.yml
+sed -i 's|image: ghcr.io/melle79/brickfolio:latest|build: .|' docker-compose.yml
 docker compose up -d --build
 ```
-
-### Synology NAS
-
-Create a folder at `/volume1/docker/brickfolio` and run the commands over SSH
-with `sudo` (for the curl variant use `sudo sh -c 'curl … | tar …'` so the
-whole pipe runs with the right permissions).
 
 ## Configuration
 
@@ -169,9 +231,11 @@ Roles combine (the admin can grant themselves the pro role).
 
 ## Updates & backup
 
-- Deploy a new version: replace the files, then
-  `docker compose up -d --build` – database migrations run automatically.
-  Easier: run `sudo bash update.sh` in the project folder.
+- Deploy a new version: `docker compose pull && docker compose up -d` –
+  database migrations run automatically. `sudo bash update.sh` in the project
+  folder does the same and takes a database snapshot first; it detects on its
+  own whether the installation uses the ready-made image or builds from
+  source.
 
 ### Updating from inside the app (optional)
 

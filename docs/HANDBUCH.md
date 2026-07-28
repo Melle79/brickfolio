@@ -19,10 +19,11 @@ Funktion – vom ersten Start bis zum Flohmarkt-Einsatz.
 9. [Der Statistik-Tab](#9-der-statistik-tab)
 10. [CSV-Import, Export & Druck](#10-csv-import-export--druck)
 11. [Sicherung, Wiederherstellung & Updates](#11-sicherung-wiederherstellung--updates)
-12. [Die Preis-Automatik im Detail](#12-die-preis-automatik-im-detail)
-13. [Fehlerbehebung](#13-fehlerbehebung)
-14. [FAQ](#14-faq)
-15. [Anhang](#15-anhang)
+12. [Das Tausch-Netzwerk](#12-das-tausch-netzwerk)
+13. [Die Preis-Automatik im Detail](#13-die-preis-automatik-im-detail)
+14. [Fehlerbehebung](#14-fehlerbehebung)
+15. [FAQ](#15-faq)
+16. [Anhang](#16-anhang)
 
 ---
 
@@ -44,6 +45,12 @@ Docker-Container auf eurem eigenen Server (FastAPI + SQLite), ohne Cloud,
 ohne Konto bei Dritten. Mehrere Familienmitglieder teilen sich eine
 Datenbank, jeder mit eigenem Login.
 
+Wer mag, verbindet seine Instanz zusätzlich mit dem **Tausch-Netzwerk**
+(Kapitel 12) – dann sind auch mehrere Haushalte untereinander erreichbar.
+Auch dabei bleibt die Sammlung zu Hause: Nach außen geht nur, was jemand
+ausdrücklich zum Tausch anbietet, und Nachrichten sind Ende-zu-Ende
+verschlüsselt.
+
 **Technik in einem Satz:** Python-Backend (FastAPI) mit SQLite-Datenbank,
 Vanilla-JS-Frontend ohne Build-Schritt, installierbar als PWA auf dem
 Homescreen.
@@ -62,16 +69,32 @@ Homescreen.
 
 ### 2.2 Installation
 
+Es gibt ein fertiges Image – nichts zu bauen, kein Quellcode nötig:
+
 ```bash
-git clone https://github.com/Melle79/brickfolio.git
-cd brickfolio
-cp docker-compose.example.yml docker-compose.yml
-docker compose up -d --build
+mkdir brickfolio && cd brickfolio
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+docker compose up -d
 ```
 
 Danach ist die App unter `http://<server>:8300` erreichbar. Die Datenbank
 liegt persistent unter `./data/brickfolio.db` – dieser Ordner überlebt
 Updates und Container-Neubauten.
+
+Das Image gibt es auf zwei Registries (inhaltlich gleich, nimm eine):
+`ghcr.io/melle79/brickfolio:latest` und `melle79/brickfolio:latest`. Gebaut
+wird für **amd64** (Intel/AMD, die meisten NAS) und **arm64** (Raspberry Pi,
+ARM-NAS, Apple Silicon). Sehr alte 32-Bit-ARM-Geräte werden nicht
+unterstützt.
+
+**Ohne Konsole**, z. B. auf einer Synology: Die Oberfläche des Container
+Managers nimmt dasselbe YAML entgegen. Schritt für Schritt steht das in
+[`SYNOLOGY.md`](SYNOLOGY.md); für andere Hersteller listet das README, wo
+die jeweilige Maske sitzt.
+
+**Selbst bauen** (nur nötig für eigene Änderungen): Quellcode holen und in
+der `docker-compose.yml` die Zeile `image: …` durch `build: .` ersetzen,
+dann `docker compose up -d --build`.
 
 **Port ändern / mehrere Instanzen:** Der erreichbare Port ist die *erste*
 Zahl im `ports`-Mapping der `docker-compose.yml` – `"8301:8300"` macht die
@@ -81,33 +104,35 @@ für getrennte Sammlungen oder eine Testinstallation: eigener Ordner,
 eigener `container_name`, eigener Port – jede Instanz hat ihren eigenen
 `data/`-Ordner und damit ihre eigene Datenbank.
 
-**Ohne git** (viele NAS-Systeme, etwa Synology, haben kein git an Bord)
-lädt man den aktuellen Stand als Archiv:
-
-```bash
-mkdir brickfolio && cd brickfolio
-curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
-cp docker-compose.example.yml docker-compose.yml
-docker compose up -d --build
-```
-
 **Synology-Hinweis:** Ordner unter `/volume1/docker/brickfolio` anlegen und
-alle Befehle per SSH mit `sudo` ausführen – bei der curl-Variante als
-`sudo sh -c 'curl … | tar …'`, damit die gesamte Pipe mit Rechten läuft.
+alle Befehle per SSH mit `sudo` ausführen.
 
-### 2.3 Erster Start: die Ersteinrichtung
+### 2.3 Erster Start: der Einrichtungsassistent
 
-Beim ersten Aufruf im Browser begrüßt dich Brickfolio mit der
-**Ersteinrichtung**: Benutzername und Passwort für das Admin-Konto wählen,
-„Admin-Konto anlegen" – du bist direkt angemeldet. Der Bildschirm
-erscheint nur, solange noch kein Benutzer existiert; danach kommt immer
-der normale Login.
+Beim ersten Aufruf im Browser wählst du Benutzername und Passwort für das
+**Admin-Konto** – danach bist du angemeldet, und ein Assistent führt in
+sechs Schritten durch den Rest:
+
+1. **Anzeigename** – der Name in Logo und Fenstertitel („Finn's Brickfolio")
+2. **Rebrickable-Schlüssel** – für die Suche nach Namen, mit Direktlink
+3. **BrickLink-Zugang** – die vier Werte für Preise und Set-Inhalte
+4. **Verbindung prüfen** – ein echter Testabruf bei beiden Diensten; so
+   fällt ein verdrehter Schlüssel sofort auf und nicht erst beim ersten Scan
+5. **Tausch-Netzwerk** – falls dich jemand eingeladen hat (siehe Kapitel 12)
+6. **Fertig**
+
+**Jeder Schritt ist überspringbar**, und unten steht „Assistent beenden und
+direkt loslegen". Ohne Schlüssel funktioniert alles außer Preisen,
+Set-Inhalten und der Namenssuche – das **Scannen braucht keinen einzigen
+Schlüssel**. Nachtragen lässt sich alles unter *Mehr → API-Schlüssel*.
+
+Der Assistent läuft genau einmal, direkt nach dem Anlegen des Admin-Kontos.
 
 *Für unbeaufsichtigte Setups:* Sind die Umgebungsvariablen
 `ADMIN_USER`/`ADMIN_PASSWORD` gesetzt, legt Brickfolio den Admin beim
-allerersten Start automatisch an und überspringt die Ersteinrichtung.
-
-Als Nächstes: die API-Schlüssel einrichten.
+allerersten Start automatisch an; dann entfällt der Assistent und die
+Schlüssel kommen entweder aus Umgebungsvariablen oder aus *Mehr →
+API-Schlüssel*.
 
 ### 2.4 API-Schlüssel einrichten (Admin)
 
@@ -169,6 +194,8 @@ nach Rolle sichtbar:
 | 📤 Export & Druck | alle |
 | 📈 Preis-Protokoll | Sammlerprofi |
 | 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
+| ↕️ Sortierung der Sammlung | alle |
+| 🤝 Tausch-Netzwerk (verbinden/trennen) | Admin |
 | 🏷 Anzeigename | Admin |
 | 🔑 API-Schlüssel | Admin |
 | 👥 Benutzer verwalten | Admin |
@@ -327,6 +354,13 @@ Gefunden werden **10 Treffer pro Seite**; darunter steht „X von Y
 angezeigt" und ein Knopf **Weitere Ergebnisse laden**, der jeweils zehn
 weitere anhängt – so lassen sich alle Treffer durchblättern.
 
+**Detailansicht.** Ein Tipp auf einen Treffer – aus der Suche **wie aus dem
+Scan** – öffnet ein Popup mit allem, was bekannt ist: Bild in groß, Jahr,
+Thema, Ø-Preise neu/gebraucht, BrickLink-Link. Bei **Minifiguren** lässt
+sich dort „Enthaltene Teile" aufklappen: jedes Teil mit Nummer, Anzahl und
+**Farbnamen** – praktisch, um am Stand eine unvollständige Figur zu
+beurteilen. Die Knöpfe zum Übernehmen sind dieselben wie auf der Karte.
+
 ### 4.3 Aktionen auf jeder Treffer-Karte
 
 - **＋ Zur Sammlung** – fragt den **Zustand** (Gebraucht/Neu) ab und
@@ -354,10 +388,32 @@ normalen Hinweis „in Sets".
 ### 4.4 Manuell erfassen
 
 Für alles, was keine BrickLink-Nummer hat (Eigenbauten, Konvolute):
-**✏️ Manuell erfassen** mit freiem Namen, eigener Nummer (z. B.
-`manuell-01`), Typ, Menge, Zustand, optionalem **„Bezahlt €"** (Kaufpreis)
-und Notizen. Solche Einträge bekommen keine automatischen Marktpreise –
-der eingetragene Kaufpreis und die Notizen funktionieren normal.
+**✏️ Manuell erfassen** mit freiem Namen, eigener Nummer, Typ, Menge,
+Zustand, optionalem **„Bezahlt €"** (Kaufpreis) und Notizen. Solche
+Einträge bekommen keine automatischen Marktpreise – der eingetragene
+Kaufpreis und die Notizen funktionieren normal.
+
+Beim Tippen des Namens schlägt die App parallel Katalogtreffer vor; passt
+einer, übernimmt ein Tipp Nummer und Bild.
+
+*(Profi)* **„🛒 Auf eine Liste"** legt den Eintrag direkt auf eine
+Einkaufsliste – auch für Eigenbauten, die in keinem Katalog stehen.
+
+### 4.5 Eigene Figuren (Custom)
+
+Der Schalter **„🎨 Eigene Figur (Custom)"** im manuellen Formular ist für
+Eigenbauten gedacht:
+
+- Die **Nummer vergibt die App fortlaufend** (`custom-001`, `-002`, …),
+  überschreibbar, wenn ihr ein eigenes Schema führt.
+- **Eigenes Bild**: hochladen – oder, wenn beim Scannen nichts erkannt
+  wurde, mit **„📷 Foto vom Scan verwenden"** direkt das eben gemachte
+  Foto nehmen. Auf der Scan-Seite gibt es dafür auch den Knopf
+  **„🎨 Eigene Figur mit diesem Foto"**.
+- Custom-Figuren werden **nicht** bei BrickLink gesucht; Preise und
+  Katalogbilder gibt es dafür nicht.
+- In der Sammlung stehen sie unter dem Thema **„Custom"**.
+- Im Tausch-Netzwerk reist ihr Bild verkleinert mit (siehe Kapitel 12).
 
 ---
 
@@ -374,6 +430,21 @@ Während die Sammlung lädt, dreht sich ein **Klemmbaustein** mit dem
 Hinweis „Sammlung wird geladen …" – die Suchleiste ist dabei schon
 benutzbar. Damit große Sammlungen zügig öffnen, bauen die Karten zunächst
 nur ihren Kopf auf; der Detailbereich entsteht erst beim Aufklappen.
+
+**Sortierung nach Thema.** Wählt man bei der Sortierung „Thema", zeigt die
+Sammlung **aufklappbare Themenkarten** – Star Wars, City, Harry Potter,
+Custom, „Ohne Thema" – jeweils mit Anzahl und Wert. Das Thema leitet die
+App bei Minifiguren aus dem Nummernpräfix ab (`sw…` → Star Wars) und holt
+es bei Sets von BrickLink; unter *Mehr* lässt es sich für Bestandsdaten
+nachziehen.
+
+> Der Wert einer Themenkarte rechnet Figuren, die in euren eigenen Sets
+> stecken, nur anteilig mit – genau wie die Gesamtsumme oben. Sonst läge
+> die Summe der Karten über dem Gesamtwert.
+
+**Die zuletzt gewählte Sortierung merkt sich das Profil** – sie gilt beim
+nächsten Öffnen wieder, auch auf einem anderen Gerät. Der Standard lässt
+sich unter *Mehr → Sortierung der Sammlung* festlegen.
 
 Über den **Ansichts-Umschalter** rechts neben den Filtern (Symbol plus
 Beschriftung auf breiten Schirmen) wechselt man zwischen **Listenansicht**
@@ -631,6 +702,13 @@ Für alle sichtbar (📊 in der Tab-Leiste), lädt beim Öffnen automatisch:
   das Spitzenjahr ist beschriftet, Antippen zeigt Details.
 - **Top 10 nach Wert** mit Bildern – und für Profis die **besten
   Wertsteigerungen** (aktueller Wert minus Kaufpreis, Top 5).
+- **Einkauf auf Listen** *(Profi)*: die Summe aller eingetragenen
+  Einkaufspreise. Auf der Übersicht zählen bewusst nur **offene** Listen –
+  das ist das Geld, das gerade „unterwegs" ist. Ein Tipp öffnet ein Popup
+  mit **allen** Listen, auch den archivierten, einzeln aufgeschlüsselt.
+  Dort lässt sich je Liste **„inventarisiert"** ankreuzen: Was verbucht und
+  in die Sammlung übernommen wurde, fällt aus der Rechnung heraus, ohne
+  dass die Liste gelöscht werden muss.
 
 ---
 
@@ -673,7 +751,7 @@ Die Regeln – bewusst gutmütig:
   Zeilennummer gemeldet („3 neu, 1 zusammengeführt, 2 Fehler").
 
 Namen, Bilder, Preise, Jahre und Set-Inhalte holt die App nach dem Import
-automatisch im Hintergrund nach (siehe Kapitel 12) – bei großen Importen
+automatisch im Hintergrund nach (siehe Kapitel 13) – bei großen Importen
 dauert das einige Zeit.
 
 ---
@@ -720,11 +798,25 @@ sudo bash update.sh
 ```
 
 Das Skript legt zuerst einen **Datenbank-Schnappschuss** an (die letzten
-drei bleiben erhalten), holt dann den aktuellen Stand von GitHub (ohne
-git, per Tarball – eure `docker-compose.yml` und der `data/`-Ordner
-bleiben unberührt) und baut den Container neu. Datenbank-Migrationen
-laufen beim Start automatisch und sind idempotent – mehrfaches
-Aktualisieren schadet nie.
+drei bleiben erhalten) und erkennt dann an eurer `docker-compose.yml`, wie
+die Installation läuft:
+
+- steht dort `image: ghcr.io/…`, zieht es das neue Image (Sekunden)
+- steht dort `build: .`, holt es den Quellcode von GitHub und baut neu
+
+Eure `docker-compose.yml` und der `data/`-Ordner bleiben in beiden Fällen
+unberührt. Datenbank-Migrationen laufen beim Start automatisch und sind
+idempotent – mehrfaches Aktualisieren schadet nie.
+
+Wer das Skript nicht hat (Installation direkt über die Container-Oberfläche),
+kommt genauso ans Ziel:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Auf einer Synology geht das auch ohne Konsole: *Container Manager → Projekt
+→ brickfolio → Aktion → Erstellen neu starten*.
 
 #### Update direkt aus der App *(optional)*
 
@@ -777,7 +869,114 @@ Update wartet, das nie kommt. Protokoll jedes Laufs: `data/update-watch.log`.
 
 ---
 
-## 12. Die Preis-Automatik im Detail
+## 12. Das Tausch-Netzwerk
+
+Mehrere Brickfolio-Instanzen – etwa in einer Familie oder einem
+Freundeskreis – können sich verbinden: Jeder veröffentlicht die Artikel,
+die er abgeben möchte, sieht die Angebote der anderen und schreibt
+Nachrichten dazu. Alles freiwillig; ohne Verbindung fehlt der Tab schlicht.
+
+### 12.1 Was wo liegt
+
+Vermittelt wird über einen kleinen **Hub**. Wichtig für das Verständnis:
+
+- Im Hub liegen **nur die veröffentlichten Angebote** und die
+  Vorgangsdaten. Eure Sammlung, Preise, Notizen und Einkaufslisten
+  verlassen die eigene Instanz **nicht**.
+- **Nachrichten sind Ende-zu-Ende verschlüsselt.** Der Hub kann sie nicht
+  lesen; er bewahrt sie nur auf, bis die Gegenseite sie abholt, und löscht
+  sie dann. Der lesbare Verlauf lebt auf den beteiligten Instanzen weiter –
+  auch dann, wenn der Hub die Umschläge längst gelöscht hat.
+
+### 12.2 Beitreten
+
+Zum Mitmachen braucht es einen **Einladungscode** von jemandem, der schon
+dabei ist. Eintragen unter **Mehr → Tausch-Netzwerk**: Code und den
+gewünschten Anzeigenamen im Netzwerk eingeben, „Beitreten". Der Assistent
+beim allerersten Start (2.3) fragt dasselbe ab.
+
+Der Anzeigename ist netzwerkweit eindeutig und mindestens vier Zeichen
+lang. Ändern lässt er sich nur über den Hub-Admin.
+
+**Selbst einladen** darf jedes verbundene Mitglied: im Tausch-Tab
+„✉️ Freund einladen". Jeder hat ein Kontingent von **drei** Einladungen und
+kann beim Hub-Admin mehr anfragen. Der Code gilt einmal.
+
+### 12.3 Was ich anbiete
+
+Der Tab **Tausch** hat drei Bereiche. Unter **📤 Meine Auswahl** steht, was
+ins Netzwerk geht:
+
+- Einzelne Artikel wählst du in der **Sammlung** aus: Karte öffnen →
+  „🤝 In der Tauschbörse anbieten".
+- „➕ Abgebbare übernehmen" holt in einem Rutsch alles aus der
+  Verkaufsliste (Doppelte, siehe Kapitel 8).
+- Bei mehrfach vorhandenen Figuren wählst du die **Menge**, die angeboten
+  wird – von drei Yodas also auch nur einen.
+- An jedem Artikel steht, ob er **schon veröffentlicht** ist oder noch
+  wartet. Was im Hub steht, hier aber nicht mehr ausgewählt ist, wird oben
+  gemeldet – es verschwindet beim nächsten Veröffentlichen.
+
+Sichtbar wird die Auswahl erst durch **„📤 Auswahl veröffentlichen"**
+(Admin). Bis dahin ändert sich im Netzwerk nichts. Custom-Figuren reisen
+mit einem verkleinerten Vorschaubild mit, damit beim Gegenüber kein
+Platzhalter steht.
+
+### 12.4 Angebote und Gespräche
+
+Unter **🔎 Angebote** stehen die Artikel der anderen, mit Suchfeld über
+Name und Nummer. Ein Tipp auf eine Karte öffnet das Anfrage-Fenster mit
+einer vorgeschlagenen Nachricht, die du überschreiben kannst. Läuft zu dem
+Angebot schon ein Gespräch, geht stattdessen direkt der Chat auf – an der
+Karte steht das auch dran („angefragt · offen").
+
+Unter **💬 Meine Vorgänge** liegen alle Gespräche. Im offenen Chat kommen
+neue Nachrichten **von selbst** an, ohne „Abrufen". An eigenen Nachrichten
+steht „unterwegs …" bzw. „zugestellt ✓".
+
+Im Gespräch gibt es außerdem:
+
+- **✔ Annehmen** / **✖ Ablehnen** – Ablehnen schließt das Fenster
+- **🗑 Löschen** – entfernt die Unterhaltung hier und im Hub, samt der
+  Umschläge beim Gegenüber
+- **⚑ Melden** – siehe unten
+
+Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
+über dem Verlauf **„nicht mehr angeboten"**.
+
+### 12.5 Melden
+
+Läuft etwas schief, geht über „⚑ Melden" eine Meldung an den Hub-Admin.
+Der Haken **„Nachrichtenverlauf mitschicken"** ist dabei die einzige
+Möglichkeit, wie ein Verlauf jemals lesbar wird: Deine Instanz entschlüsselt
+ihn und legt ihn freiwillig offen. Ohne Haken sieht der Admin nur deine
+Begründung. Eine Hintertür im Hub gibt es nicht.
+
+### 12.6 Wenn der Zugang gesperrt wurde
+
+Ein Hub-Admin kann Zugänge sperren. Dann steht im Tausch-Tab ein deutlicher
+Hinweis. Was das bedeutet:
+
+- Angebote und neue Nachrichten sind nicht mehr möglich, und die eigenen
+  Angebote verschwinden für alle anderen.
+- **Bisherige Unterhaltungen bleiben lesbar** – sie liegen ja lokal.
+- Es geht **nichts verloren**. Nach einer Freischaltung läuft alles weiter,
+  ohne neu zu verbinden; in der Sperrzeit eingegangene Nachrichten werden
+  nachgeliefert.
+
+Deshalb der Rat auf dem Hinweis: **nicht die Verbindung trennen.** Trennen
+löst das Konto, und der Weg zurück wird umständlicher.
+
+### 12.7 Verwaltung
+
+Mitglieder verwalten, Einladungsanfragen entscheiden, Meldungen ansehen,
+Angebote aufräumen – das läuft **nicht** in der App, sondern in einer
+separaten Admin-Konsole. Das hält Verwaltungsrechte aus der Familien-App
+heraus.
+
+---
+
+## 13. Die Preis-Automatik im Detail
 
 Damit klar ist, was wann von allein passiert:
 
@@ -912,7 +1111,7 @@ stattdessen eine Bestätigung.
 
 ---
 
-## 13. Fehlerbehebung
+## 14. Fehlerbehebung
 
 ### 13.1 Der Fehlerbericht (Admin)
 
@@ -1018,7 +1217,7 @@ der Bauanleitung nutzen.
 
 ---
 
-## 14. FAQ
+## 15. FAQ
 
 **Braucht Brickfolio Internet?** Für Scannen, Preise und Suche: ja (die
 APIs liegen im Netz). Die eigenen Daten bleiben trotzdem komplett auf
@@ -1053,7 +1252,7 @@ die jeweiligen Nutzungsbedingungen.
 
 ---
 
-## 15. Anhang
+## 16. Anhang
 
 ### 15.1 Symbole auf einen Blick
 

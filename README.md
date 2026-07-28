@@ -34,6 +34,15 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Figuren zeigen, in welchen euren Sets sie stecken; fehlende Set-Figuren
   landen mit einem Tipp gesammelt auf der Wunschliste
 - 🖼 **Bild nachladen** je Eintrag, falls es fehlt oder nicht passt
+- 🔎 **Detailansicht überall**: Ein Tipp auf einen Such- oder Scan-Treffer
+  öffnet ein Popup mit Jahr, Thema, Preisen und – bei Minifiguren – den
+  **enthaltenen Teilen samt Farbnamen**
+- 🎨 **Eigene Figuren (Custom)**: Eigenbauten mit selbst vergebener Nummer
+  (die App zählt `custom-001`, `-002` … weiter) und eigenem Bild – wahlweise
+  direkt das Foto aus dem Scan. Sie stehen in der Sammlung unter „Custom"
+- 🗂️ **Themenkarten**: Sortiert nach Thema zeigt die Sammlung aufklappbare
+  Karten (Star Wars, City, Custom …) mit Anzahl und Wert je Thema. Die zuletzt
+  gewählte Sortierung merkt sich das Profil
 
 **Preise & Wert**
 - 💶 BrickLink-Ø-Preise (neu/gebraucht) automatisch im Hintergrund, mit
@@ -52,6 +61,25 @@ kommen von [BrickLink](https://www.bricklink.com) und
   in die Sammlung inkl. Zustandswahl
 - 🧩 Figuren, die zu einem eurer Sets gehören und noch fehlen, sind mit „fehlt
   zu eurem Set" gekennzeichnet – ein Tipp springt direkt zum Set
+
+**Tausch-Netzwerk** (optional, mit Einladung)
+- 🤝 Mehrere Brickfolio-Instanzen verbinden sich über einen kleinen
+  **Tausch-Hub**: Jeder veröffentlicht die Artikel, die er abgeben möchte,
+  und sieht die Angebote der anderen – mit Suche über Name und Nummer
+- 🔢 **Selbst auswählen, was hineinkommt**, samt Menge: Von drei gleichen
+  Figuren lässt sich auch nur eine anbieten. An jedem Artikel steht, ob er
+  schon veröffentlicht ist
+- 💬 **Nachrichten Ende-zu-Ende verschlüsselt** (X25519 + AES-256-GCM). Der
+  Hub kann sie nicht lesen und löscht sie, sobald sie zugestellt sind; der
+  lesbare Verlauf bleibt auf den beteiligten Instanzen. Im offenen Gespräch
+  kommen neue Nachrichten von selbst an
+- ✉️ **Einladungen mit Kontingent**: Jeder darf drei Freunde einladen und
+  kann mehr anfragen. Ohne Einladung kommt niemand hinein
+- ⚑ **Meldefunktion**: Läuft etwas schief, geht eine Meldung an den
+  Hub-Admin – auf Wunsch mit dem Gesprächsverlauf, den die meldende Instanz
+  selbst entschlüsselt und freiwillig offenlegt
+- 🖼️ Eigene Figuren reisen mit **verkleinertem Vorschaubild**, damit beim
+  Gegenüber kein Platzhalter steht
 
 **Sammlerprofi-Modus** (Rolle, die der Admin pro Benutzer vergibt)
 - 💰 Kaufpreis je Eintrag – automatisch mit dem BrickLink-Ø vom Erfassungstag
