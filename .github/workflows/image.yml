@@ -70,3 +70,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Ohne das steht auf der Docker-Hub-Seite nichts – wer dort landet,
+      # sieht ein Image ohne jede Erklärung.
+      - name: Beschreibung auf Docker Hub aktualisieren
+        if: vars.DOCKERHUB_USER != '' && github.event_name == 'release'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ vars.DOCKERHUB_USER }}/brickfolio
+          short-description: ${{ github.event.repository.description }}
+          readme-filepath: ./docs/DOCKERHUB.md

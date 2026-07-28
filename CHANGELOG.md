@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.51.1 – Juli 2026
+
+### Verbessert
+- 🤝 **Höflicher gegenüber Brickognize.** Die Bilderkennung stellt jemand kostenlos bereit. Brickfolio meldete sich dort bisher als „Brickfolio/1.0" – jetzt mit der echten Version und einem Link zum Projekt, damit man uns erreichen kann, statt bei Auffälligkeiten nur sperren zu können
+- 🐳 **Die Docker-Hub-Seite war leer.** Wer dort landete, sah ein Image ohne jede Erklärung. Sie bekommt jetzt bei jedem Release automatisch Kurzbeschreibung und eine eigene Übersichtsseite
+
 ## 1.51.0 – Juli 2026
 
 ### Verbessert

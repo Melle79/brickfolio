@@ -7,10 +7,15 @@ import time
 import requests
 from PIL import Image, ImageOps
 
-BRICKOGNIZE_URL = "https://api.brickognize.com/predict/"
-USER_AGENT = "Brickfolio/1.0 (self-hosted minifig manager)"
-
 import core
+
+BRICKOGNIZE_URL = "https://api.brickognize.com/predict/"
+# Echte Version und ein Kontaktweg: Brickognize stellt seine Erkennung
+# kostenlos bereit. Wenn Brickfolio dort einmal auffällt, soll man uns
+# erreichen können, statt nur sperren zu müssen.
+USER_AGENT = (f"Brickfolio/{core.APP_VERSION} "
+              "(self-hosted LEGO collection manager; "
+              "+https://github.com/Melle79/brickfolio)")
 
 # API-Schlüssel: in der App gespeicherte Werte (DB) haben Vorrang,
 # ENV-Variablen aus docker-compose dienen als Startwerte.
