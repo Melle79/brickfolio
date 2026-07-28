@@ -171,6 +171,23 @@ gesetzt werden (siehe README), die App-Einstellungen haben Vorrang.
 
 ### 2.5 Als App aufs Handy (PWA)
 
+Läuft Brickfolio auf einem Handy noch im Browser, steht auf der Scan-Seite
+oben die Karte **„📲 Auf den Startbildschirm"**. Was sie anbietet, hängt vom
+Gerät ab:
+
+- **Android und andere Chromium-Browser**: „Jetzt hinzufügen" löst die
+  Installation direkt aus.
+- **iPhone und iPad**: Safari kennt keinen Knopf dafür – die Karte erklärt
+  den Weg über *Teilen → „Zum Home-Bildschirm"*.
+- **Über eine reine `http`-Adresse im Heimnetz** erlaubt kein Browser das
+  Hinzufügen. Dann sagt die Karte genau das und verweist auf *Mehr →
+  Externer Zugriff* (2.7), womit sich ein verschlüsselter Zugang einrichten
+  lässt.
+
+Sobald die App vom Startbildschirm läuft, verschwindet die Karte von selbst –
+sie erkennt den Anzeigemodus. „Nicht mehr anzeigen" blendet sie dauerhaft
+aus, pro Gerät.
+
 Brickfolio im Handy-Browser öffnen → Teilen-Menü → **„Zum Home-Bildschirm"**
 (iOS/Safari) bzw. **„App installieren"** (Android/Chrome). Danach startet
 Brickfolio wie eine native App im Vollbild – inklusive Kamerazugriff fürs

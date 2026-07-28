@@ -125,8 +125,10 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Reihe) – dieselbe App, nur besser auf die Fläche verteilt
 - ✨ **Moderne Darstellung**: Artikel öffnen sich als aufgeräumtes Popup, in
   der Sammlung schimmert das Produktbild als dezenter Kartenhintergrund
-- 📲 Als PWA installierbar, Offline-Shell, keine Cloud – alles bleibt auf
-  eurem Server
+- 📲 Als PWA installierbar – auf dem Handy bietet die Scan-Seite das Ablegen
+  **auf dem Startbildschirm** an (auf Android per Knopf, auf dem iPhone mit
+  Anleitung) und blendet den Hinweis aus, sobald es liegt. Offline-Shell,
+  keine Cloud – alles bleibt auf eurem Server
 
 ## Screenshots
 

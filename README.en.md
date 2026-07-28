@@ -123,7 +123,9 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   laid out to use the space
 - ✨ **Modern look**: items open as a tidy popup, and in the collection the
   product image shows as a subtle card background
-- 📲 Installable as a PWA, offline shell, no cloud – everything stays on your
+- 📲 Installable as a PWA – on a phone the scan page offers to put it **on the
+  home screen** (a button on Android, instructions on iPhone) and hides the
+  hint once it is there. Offline shell, no cloud – everything stays on your
   own server
 
 ## Screenshots

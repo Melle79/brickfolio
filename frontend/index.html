@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=243">
-<link rel="stylesheet" href="/static/style.css?v=243">
+<link rel="stylesheet" href="/static/fonts.css?v=244">
+<link rel="stylesheet" href="/static/style.css?v=244">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -174,6 +174,14 @@
   <main id="view-scan" class="view">
     <!-- Hinweise, die stehen bleiben, bis sie jemand wegklickt -->
     <div id="notifications"></div>
+    <div id="install-card" class="settings-card install-card" hidden>
+      <h3>📲 Auf den Startbildschirm</h3>
+      <p class="search-hint" id="install-text"></p>
+      <div class="detail-row btn-grid">
+        <button class="mini-btn add" id="install-go" hidden>Jetzt hinzufügen</button>
+        <button class="mini-btn" id="install-hide">Nicht mehr anzeigen</button>
+      </div>
+    </div>
     <div class="scan-hero">
       <button id="btn-camera" class="brick-button" data-scan-drop>
         <span class="brick-studs"><i></i><i></i></span>
@@ -857,7 +865,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=243"></script>
+<script src="/static/app.js?v=244"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

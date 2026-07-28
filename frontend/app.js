@@ -1330,6 +1330,7 @@ function wireWizardOnce() {
 function showApp() {
   updateListsTab();
   updateManualListBtn();
+  updateInstallCard();
   $("view-login").hidden = true;
   $("app").hidden = false;
   $("whoami").textContent = state.user ? state.user.username : "";
@@ -6144,4 +6145,98 @@ document.addEventListener("DOMContentLoaded", () => {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
+  wireInstallCard();
 });
+
+/* --------------------------------------- „Auf den Startbildschirm"
+
+   Ob die App aus dem Browser oder vom Startbildschirm läuft, verrät der
+   Anzeigemodus – auf iOS über ein eigenes Merkmal, das Apple nie ersetzt hat.
+   Anbieten lässt sich das Hinzufügen aber nur dort, wo der Browser es
+   erlaubt: Chromium meldet sich vorher mit `beforeinstallprompt`, Safari
+   kennt keinen solchen Weg – dort bleibt nur die Anleitung. */
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+}
+
+function isIOS() {
+  const ua = navigator.userAgent;
+  // iPad meldet sich seit iPadOS 13 als Macintosh – am Touch erkennbar.
+  return /iPhone|iPod|iPad/.test(ua)
+    || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+let installPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (ev) => {
+  ev.preventDefault();            // eigenen Zeitpunkt wählen
+  installPrompt = ev;
+  updateInstallCard();
+});
+
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  updateInstallCard();
+  toast("Brickfolio liegt jetzt auf dem Startbildschirm 📲");
+});
+
+function updateInstallCard() {
+  const card = $("install-card");
+  if (!card) return;
+  const touch = window.matchMedia("(pointer: coarse)").matches;
+  // Nichts anbieten, wenn es schon liegt, weggeklickt wurde, oder am Rechner:
+  // dort bietet der Browser das Installieren ohnehin in der Adresszeile an.
+  if (isStandalone() || localStorage.getItem("bf_install_hidden") || !touch) {
+    card.hidden = true;
+    return;
+  }
+
+  const go = $("install-go");
+  const text = $("install-text");
+  if (installPrompt) {
+    text.textContent = "Ein Tipp, und Brickfolio startet künftig wie eine "
+      + "eigene App – ohne Adresszeile, mit eigenem Symbol.";
+    go.hidden = false;
+    card.hidden = false;
+  } else if (isIOS()) {
+    // Safari kennt keinen Knopf dafür – hier hilft nur der Weg über „Teilen".
+    text.innerHTML = "In Safari unten auf <b>Teilen</b> tippen (das Quadrat "
+      + "mit dem Pfeil nach oben), dann <b>„Zum Home-Bildschirm“</b>. "
+      + "Danach startet Brickfolio wie eine eigene App.";
+    go.hidden = true;
+    card.hidden = false;
+  } else if (!window.isSecureContext) {
+    // Ohne HTTPS lässt kein Browser das Hinzufügen zu – das ist der Grund,
+    // nicht ein fehlendes Feature. Also sagen, woran es liegt.
+    text.innerHTML = "Dafür muss die App über <b>https</b> erreichbar sein – "
+      + "über eine reine <b>http</b>-Adresse im Heimnetz erlauben die Browser "
+      + "das Hinzufügen nicht. Einen verschlüsselten Zugang richtet der "
+      + "Assistent unter <b>Mehr → Externer Zugriff</b> ein.";
+    go.hidden = true;
+    card.hidden = false;
+  } else {
+    card.hidden = true;           // Browser meldet sich vielleicht noch
+  }
+}
+
+function wireInstallCard() {
+  const go = $("install-go");
+  if (!go) return;
+  go.addEventListener("click", async () => {
+    if (!installPrompt) return;
+    go.disabled = true;
+    try {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+    } catch (_) { /* abgebrochen – dann bleibt die Karte stehen */ }
+    installPrompt = null;         // gilt nur einmal
+    go.disabled = false;
+    updateInstallCard();
+  });
+  $("install-hide").addEventListener("click", () => {
+    localStorage.setItem("bf_install_hidden", "1");
+    updateInstallCard();
+  });
+}

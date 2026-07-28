@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.50.0 – Juli 2026
+
+### Neu
+- 📲 **„Auf den Startbildschirm" auf der Scan-Seite.** Die App erkennt, ob sie vom Startbildschirm oder aus dem Browser läuft, und bietet das Hinzufügen nur dort an, wo es fehlt – auf Android und anderen Chromium-Browsern mit einem Knopf, der die Installation direkt auslöst. Sobald sie liegt, verschwindet die Karte von selbst
+- 🍎 **Auf dem iPhone mit Anleitung**, weil Safari keinen Knopf dafür kennt: Teilen → „Zum Home-Bildschirm", in zwei Sätzen erklärt
+- 🔒 **Und wenn es gar nicht geht, steht warum da**: Über eine reine `http`-Adresse im Heimnetz erlauben Browser das Hinzufügen nicht. Statt eines toten Knopfes gibt es den Hinweis auf *Mehr → Externer Zugriff*
+- 🙈 „Nicht mehr anzeigen" merkt sich das Gerät dauerhaft
+
 ## 1.49.3 – Juli 2026
 
 *Nur Doku – an der App ändert sich nichts.*

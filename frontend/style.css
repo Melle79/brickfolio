@@ -95,6 +95,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   outline: 3px solid var(--blue); outline-offset: 1px;
 }
 
+.install-card { margin-bottom: 12px; }
+.install-card h3 { margin: 0 0 6px; font-size: 17px; }
+
 /* ---------- Einrichtungsassistent ---------- */
 #view-wizard { display: grid; place-items: center; min-height: 100dvh; padding: 24px; }
 .wizard-box {
