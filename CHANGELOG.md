@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.56.0 – Juli 2026
+
+### Neu
+- 📖 **Das Handbuch gibt es auf Englisch** ([`docs/MANUAL.md`](docs/MANUAL.md)) – alle 16 Kapitel, rund 60 kB, von der Installation über den Flohmarkt-Ablauf bis zur Preis-Automatik. Beide Fassungen verlinken einander, und die Hilfe in der App zeigt je nach Sprache das passende
+- Damit ist die Übersetzung rund: Oberfläche, Hilfe, Fehlermeldungen des Servers, READMEs und Handbuch
+
+### Behoben
+- 🔢 Im deutschen Handbuch stimmten **acht Unterkapitel-Nummern** nicht mehr mit ihrem Kapitel überein (12.1 unter Kapitel 13, 15.1 unter Kapitel 16 …) – Reste der Umnummerierung, als das Tausch-Kapitel dazukam
+
 ## 1.55.2 – Juli 2026
 
 *Nur Doku – an der App ändert sich nichts.*

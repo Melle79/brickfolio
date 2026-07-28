@@ -15,7 +15,7 @@ kommen von [BrickLink](https://www.bricklink.com) und
 [Rebrickable](https://rebrickable.com) (eigene API-Keys nötig, siehe unten).
 
 > 📖 Das ausführliche **Benutzerhandbuch** liegt unter
-> [`docs/HANDBUCH.md`](docs/HANDBUCH.md).
+> [`docs/HANDBUCH.md`](docs/HANDBUCH.md) · [🇬🇧 English manual](docs/MANUAL.md).
 
 ## Funktionen
 

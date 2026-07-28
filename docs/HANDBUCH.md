@@ -1,6 +1,6 @@
 # Finn's Brickfolio – Das Handbuch
 
-*Version 1.9 · Juli 2026 · für Brickfolio ab Release v1.9.8*
+*Juli 2026 · [🇬🇧 English version](MANUAL.md)*
 
 Brickfolio ist eine selbstgehostete Progressive Web App (PWA) zum Scannen,
 Verwalten und Bewerten einer LEGO®-Sammlung. Dieses Handbuch erklärt jede
@@ -1107,7 +1107,7 @@ selbst.
 
 ---
 
-### 12.1 Preisgebiet: weltweit oder deutschsprachiger Raum
+### 13.1 Preisgebiet: weltweit oder deutschsprachiger Raum
 
 BrickLink liefert standardmäßig den **weltweiten** Durchschnitt. Unter
 **Mehr → 🌍 Preisgebiet** (Admin) lässt sich stattdessen ein Markt wählen:
@@ -1152,7 +1152,7 @@ den Lauf endlos zu wiederholen. (Der frühere Fehler, dass BrickLinks
 Artikel dadurch grundlos ohne Preis oder mit 0,00 € dastanden, ist seit
 Version 1.13.0 behoben.)
 
-### 12.2 Das Preis-Protokoll
+### 13.2 Das Preis-Protokoll
 
 **Mehr → 📈 Preis-Protokoll** *(Sammlerprofi)* listet die jüngsten
 Aufzeichnungen mit Zeitpunkt, Artikel, Preisen und Quelle (`auto` oder
@@ -1165,7 +1165,7 @@ stattdessen eine Bestätigung.
 
 ## 14. Fehlerbehebung
 
-### 13.1 Der Fehlerbericht (Admin)
+### 14.1 Der Fehlerbericht (Admin)
 
 Geht in der App etwas kaputt, muss niemand mehr aufschreiben, „was da
 stand". Jeder Fehler im Browser wird automatisch im Hintergrund an den
@@ -1198,7 +1198,7 @@ Fine-grained tokens* einen Token erzeugen, als **Repository access** nur
 sollte der Token auch nicht können. Er liegt danach in eurer Datenbank
 und wird in der Oberfläche nie wieder angezeigt.
 
-### 13.2 Wenn BrickLink eine Nummer ändert oder löscht
+### 14.2 Wenn BrickLink eine Nummer ändert oder löscht
 
 Der BrickLink-Katalog ist nicht in Stein gemeißelt: Nummern werden
 umbenannt, doppelte Einträge zusammengelegt, selten auch gelöscht. Trifft
@@ -1233,7 +1233,7 @@ geht verloren: Der Artikel bleibt mit seinem letzten bekannten Preis in
 der Sammlung. Ihr könnt die Nummer dann von Hand über „BrickLink-Nr.
 setzen" in den Karten-Details korrigieren.
 
-### 13.3 Typische Stolpersteine
+### 14.3 Typische Stolpersteine
 
 **Ein Update greift nicht / alte Oberfläche.** `sudo bash update.sh`
 komplett durchgelaufen? Im Build-Log darf `COPY frontend/` nicht „CACHED"
@@ -1306,7 +1306,7 @@ die jeweiligen Nutzungsbedingungen.
 
 ## 16. Anhang
 
-### 15.1 Symbole auf einen Blick
+### 16.1 Symbole auf einen Blick
 
 | Symbol | Bedeutung |
 |---|---|
@@ -1321,7 +1321,7 @@ die jeweiligen Nutzungsbedingungen.
 | 🛒 | auf eine Einkaufsliste legen |
 | 🐞 | Fehlerbericht (nur Admin, unter „Mehr") |
 
-### 15.2 Umgebungsvariablen
+### 16.2 Umgebungsvariablen
 
 | Variable | Bedeutung |
 |---|---|
@@ -1332,7 +1332,7 @@ die jeweiligen Nutzungsbedingungen.
 | `REBRICKABLE_KEY` | Rebrickable-API (Fallback zu den App-Einstellungen) |
 | `GITHUB_REPO` | Ziel-Repository für Issues aus dem Fehlerbericht (Default: `Melle79/brickfolio`) |
 
-### 15.3 CSV-Import: erkannte Spaltennamen
+### 16.3 CSV-Import: erkannte Spaltennamen
 
 | Feld | erkannte Namen |
 |---|---|

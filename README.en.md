@@ -14,8 +14,8 @@ for anyone who buys and sells at flea markets.
 metadata come from [BrickLink](https://www.bricklink.com) and
 [Rebrickable](https://rebrickable.com) (your own API keys required, see below).
 
-> 📖 The full **user manual** (German) lives at
-> [`docs/HANDBUCH.md`](docs/HANDBUCH.md).
+> 📖 The full **user manual** lives at [`docs/MANUAL.md`](docs/MANUAL.md)
+> · [🇩🇪 deutsche Fassung](docs/HANDBUCH.md).
 
 ## Features
 

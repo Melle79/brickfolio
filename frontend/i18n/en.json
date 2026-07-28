@@ -105,7 +105,7 @@
  "Das Archiv ist nur für Sammlerprofis": "The archive is for Collector-Pros only",
  "Das Passwort braucht mindestens 4 Zeichen": "The password needs at least 4 characters",
  "Das aktuelle Passwort ist falsch": "The current password is wrong",
- "Das ausführliche Handbuch mit allen Funktionen: <a href=\"https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md\" target=\"_blank\" rel=\"noopener\">docs/HANDBUCH.md auf GitHub</a>": "The full manual with every feature (in German): <a href=\"https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md\" target=\"_blank\" rel=\"noopener\">docs/HANDBUCH.md on GitHub</a>",
+ "Das ausführliche Handbuch mit allen Funktionen: <a href=\"https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md\" target=\"_blank\" rel=\"noopener\">docs/HANDBUCH.md auf GitHub</a>": "The full manual with every feature: <a href=\"https://github.com/Melle79/brickfolio/blob/main/docs/MANUAL.md\" target=\"_blank\" rel=\"noopener\">docs/MANUAL.md on GitHub</a>",
  "Das ist keine gültige Brickfolio-Sicherung": "That is not a valid Brickfolio backup",
  "Das kostet keinen doppelten Wert: Solche Figuren gelten als „im Set enthalten\" und werden im Gesamtwert nicht zweimal gezählt (siehe nächster Abschnitt). Ohne BrickLink-Schlüssel oder bei Sets ohne Minifiguren erscheint die Frage nicht.": "That does not cost double: such figures count as \"included in the set\" and are not counted twice in the total (see the next section). Without a BrickLink key, or for sets without minifigures, the question does not appear.",
  "Datei ist kein lesbares Bild": "The file is not a readable image",
