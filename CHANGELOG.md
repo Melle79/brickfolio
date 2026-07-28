@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.50.1 – Juli 2026
+
+### Verbessert
+- 🗜️ **Antworten werden komprimiert – das ändert für große Sammlungen alles.** Bisher ging jede Antwort unkomprimiert über die Leitung. Gemessen an 2150 Artikeln: die Sammlung schrumpft von **1978 kB auf 29 kB**, `app.js` von 250 auf 64 kB, `style.css` von 57 auf 14 kB. Spürbar vor allem im Heimnetz und über Mobilfunk – hinter dem Cloudflare-Tunnel hatte Cloudflare das bisher aufgefangen, direkt am NAS niemand
+- ⚡ Die Aufstellung, welche Figuren in eigenen Sets stecken, wurde beim Laden der Sammlung **zweimal** berechnet – jetzt einmal
+
 ## 1.50.0 – Juli 2026
 
 ### Neu
