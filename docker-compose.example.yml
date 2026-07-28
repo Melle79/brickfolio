@@ -1,6 +1,9 @@
 services:
   brickfolio:
-    build: .
+    # Fertiges Image – nichts zu bauen, kein Quellcode nötig.
+    # Wer lieber selbst baut (eigene Änderungen), ersetzt die Zeile durch:
+    #   build: .
+    image: ghcr.io/melle79/brickfolio:latest
     container_name: brickfolio
     restart: unless-stopped
     ports:
@@ -8,8 +11,8 @@ services:
     volumes:
       - ./data:/data
     # Alle Umgebungsvariablen sind optional – ohne sie führt die App beim
-    # ersten Aufruf durch die Ersteinrichtung im Browser (empfohlen) und
-    # die API-Schlüssel werden in der App hinterlegt (Mehr → API-Schlüssel).
+    # ersten Aufruf durch die Ersteinrichtung im Browser (empfohlen) – die
+    # API-Schlüssel fragt der Assistent dort gleich mit ab.
     # Zum Aktivieren: den environment-Block einkommentieren.
     #
     # environment:

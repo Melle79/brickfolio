@@ -112,32 +112,42 @@ kommen von [BrickLink](https://www.bricklink.com) und
 
 ## Schnellstart (Docker)
 
+Kein Quellcode, kein Bauen – zwei Befehle:
+
 ```bash
-git clone https://github.com/Melle79/brickfolio.git
-cd brickfolio
-cp docker-compose.example.yml docker-compose.yml
-docker compose up -d --build
+mkdir brickfolio && cd brickfolio
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+docker compose up -d
 ```
 
-Aufrufen: `http://<server>:8300` – beim ersten Besuch führt die App durch
-die **Ersteinrichtung** (Admin-Konto anlegen). Die Datenbank liegt
-persistent unter `./data/brickfolio.db`.
+Aufrufen: `http://<server>:8300` – beim ersten Besuch führt der
+**Einrichtungsassistent** durch alles Nötige: Admin-Konto, Anzeigename,
+API-Schlüssel (mit Prüfen-Knopf) und, falls vorhanden, die Einladung ins
+Tausch-Netzwerk. Überspringen geht überall; nachholen lässt sich alles unter
+*Mehr*. Die Datenbank liegt persistent unter `./data/brickfolio.db`.
 
-**Ohne git** (z. B. auf Synology-NAS, wo git meist fehlt) – das neueste
-Release als Archiv laden:
+Das Image (`ghcr.io/melle79/brickfolio:latest`) gibt es für **amd64**
+(Synology, Intel-NAS, PC) und **arm64** (Raspberry Pi, ARM-NAS).
+
+### Synology NAS
+
+Ordner unter `/volume1/docker/brickfolio` anlegen und die Befehle per SSH
+mit `sudo` ausführen.
+
+### Selbst bauen (statt fertiges Image)
+
+Nur nötig, wenn du eigene Änderungen einspielen willst:
 
 ```bash
 mkdir brickfolio && cd brickfolio
 curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
 cp docker-compose.example.yml docker-compose.yml
+sed -i 's|image: ghcr.io/melle79/brickfolio:latest|build: .|' docker-compose.yml
 docker compose up -d --build
 ```
 
-### Synology NAS
-
-Ordner unter `/volume1/docker/brickfolio` anlegen und die Befehle per SSH
-mit `sudo` ausführen (bei der curl-Variante: `sudo sh -c 'curl … | tar …'`,
-damit die ganze Pipe mit Rechten läuft).
+(Auf Synology läuft die curl-Zeile mit Rechten am besten als
+`sudo sh -c 'curl … | tar …'`, damit die ganze Pipe erfasst ist.)
 
 ## Konfiguration
 
@@ -168,9 +178,11 @@ Rollen sind kombinierbar (der Admin kann sich selbst zum Profi machen).
 
 ## Updates & Backup
 
-- Neue Version einspielen: Dateien ersetzen, dann
-  `docker compose up -d --build` – Datenbank-Migrationen laufen automatisch.
-  Bequemer geht es mit `sudo bash update.sh` im Projektordner.
+- Neue Version einspielen: `docker compose pull && docker compose up -d` –
+  Datenbank-Migrationen laufen automatisch. `sudo bash update.sh` im
+  Projektordner macht dasselbe und legt vorher einen Datenbank-Schnappschuss
+  an; es erkennt selbst, ob die Installation ein fertiges Image benutzt oder
+  aus dem Quellcode baut.
 
 ### Update aus der App heraus (optional)
 

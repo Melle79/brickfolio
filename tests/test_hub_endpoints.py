@@ -470,3 +470,24 @@ def test_sync_only_fetches_where_something_waits(client, monkeypatch):
     fetched.clear()
     client.post("/api/hub/trades/sync?focus=trd_a")
     assert set(fetched) == {"trd_a", "trd_b"}   # offenes Gespräch kommt dazu
+
+
+# ------------------------------------------------- Einrichtung / Schlüsseltest
+
+def test_partial_bricklink_keys_name_what_is_missing(client, monkeypatch):
+    """Vier Werte gehören zusammen. Wer zwei einträgt, soll nicht „keine
+    Schlüssel" lesen – sonst sucht er den Fehler an der falschen Stelle."""
+    import integrations
+    monkeypatch.setattr(integrations, "setting",
+                        lambda n: {"bl_consumer_key": "ck",
+                                   "bl_consumer_secret": "cs"}.get(n, ""))
+    r = client.post("/api/settings/test").json()
+    assert r["bricklink"]["ok"] is False
+    assert r["bricklink"]["info"] == "Es fehlt noch: Token, Token Secret"
+
+
+def test_no_bricklink_keys_says_so_plainly(client, monkeypatch):
+    import integrations
+    monkeypatch.setattr(integrations, "setting", lambda n: "")
+    r = client.post("/api/settings/test").json()
+    assert r["bricklink"]["info"] == "Keine Schlüssel hinterlegt"

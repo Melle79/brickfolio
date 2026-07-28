@@ -1601,7 +1601,11 @@ def test_settings(user: dict = Depends(admin_user)):
         except Exception as e:
             results["bricklink"] = {"ok": False, "info": scrub(str(e))}
     else:
-        results["bricklink"] = {"ok": False, "info": "Keine Schlüssel hinterlegt"}
+        missing = integrations.bricklink_missing()
+        results["bricklink"] = {
+            "ok": False,
+            "info": "Keine Schlüssel hinterlegt" if len(missing) == 4
+                    else "Es fehlt noch: " + ", ".join(missing)}
     if integrations.rebrickable_enabled():
         try:
             hits = integrations.search_catalog("stormtrooper", "minifig",

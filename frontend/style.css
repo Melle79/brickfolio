@@ -95,6 +95,26 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   outline: 3px solid var(--blue); outline-offset: 1px;
 }
 
+/* ---------- Einrichtungsassistent ---------- */
+#view-wizard { display: grid; place-items: center; min-height: 100dvh; padding: 24px; }
+.wizard-box {
+  width: 100%; max-width: 430px; background: var(--card);
+  border: 2px solid var(--ink); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 28px 24px;
+}
+.wiz-step-of { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.wiz-step h3 { margin: 0 0 6px; font-size: 18px; }
+.wiz-link { font-weight: 800; color: var(--blue); }
+/* Zurück/Überspringen/Weiter nebeneinander – die .btn-Grundform ist auf
+   volle Breite ausgelegt, hier teilen sie sich die Zeile. */
+.wiz-nav { display: flex; gap: 8px; }
+.wiz-nav .btn { flex: 1; }
+.wiz-quit {
+  display: block; width: 100%; margin-top: 14px; padding: 4px;
+  background: none; border: 0; color: var(--muted);
+  font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer;
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: block; width: 100%; margin-top: 18px; padding: 13px;

@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finn's Brickfolio">
-<link rel="stylesheet" href="/static/fonts.css?v=241">
-<link rel="stylesheet" href="/static/style.css?v=241">
+<link rel="stylesheet" href="/static/fonts.css?v=242">
+<link rel="stylesheet" href="/static/style.css?v=242">
 <script>
   /* Design vor dem ersten Zeichnen setzen, damit nichts aufblitzt */
   try {
@@ -62,6 +62,99 @@
     <input id="login-pass" type="password" autocomplete="current-password">
     <button id="btn-login" class="btn btn-primary">Anmelden</button>
     <p id="login-error" class="error" hidden></p>
+  </div>
+</section>
+
+<!-- ===== Einrichtungsassistent (nur beim allerersten Start) ===== -->
+<section id="view-wizard" class="view" hidden>
+  <div class="wizard-box">
+    <div class="logo">
+      <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
+      <h1 id="wiz-title">Fast fertig 🧱</h1>
+      <p id="wiz-step-of" class="wiz-step-of"></p>
+    </div>
+
+    <!-- 1: Anzeigename -->
+    <div class="wiz-step" data-step="1" hidden>
+      <h3>🏷 Wem gehört die Sammlung?</h3>
+      <p class="search-hint">Der Name steht im Logo und im Fenstertitel –
+        „<span id="wiz-name-preview">Finn</span>'s Brickfolio". Später
+        änderbar unter <b>Mehr → Anzeigename</b>.</p>
+      <label for="wiz-owner">Name</label>
+      <input id="wiz-owner" maxlength="40" placeholder="Finn" autocapitalize="words">
+    </div>
+
+    <!-- 2: Rebrickable -->
+    <div class="wiz-step" data-step="2" hidden>
+      <h3>🔎 Katalogsuche (Rebrickable)</h3>
+      <p class="search-hint">Damit findet die App Figuren und Sets über den
+        Namen. Der Schlüssel ist kostenlos: Konto anlegen, Profil öffnen,
+        Schlüssel kopieren.</p>
+      <p><a href="https://rebrickable.com/api/" target="_blank" rel="noopener noreferrer"
+            class="wiz-link">Schlüssel bei Rebrickable holen ↗</a></p>
+      <label for="wiz-rb">Rebrickable Key</label>
+      <input id="wiz-rb" autocapitalize="none" autocomplete="off" spellcheck="false"
+             placeholder="leer lassen und später nachtragen">
+    </div>
+
+    <!-- 3: BrickLink -->
+    <div class="wiz-step" data-step="3" hidden>
+      <h3>💶 Preise und Set-Inhalte (BrickLink)</h3>
+      <p class="search-hint">Vier Werte, die BrickLink dir auf einer Seite
+        anzeigt, nachdem du dort ein Konto hast. Ohne sie funktioniert alles
+        außer Preisen und Set-Inhalten.</p>
+      <p><a href="https://www.bricklink.com/v2/api/register_consumer.page"
+            target="_blank" rel="noopener noreferrer" class="wiz-link">Zugang bei BrickLink beantragen ↗</a></p>
+      <label for="wiz-bck">Consumer Key</label>
+      <input id="wiz-bck" autocapitalize="none" autocomplete="off" spellcheck="false">
+      <label for="wiz-bcs">Consumer Secret</label>
+      <input id="wiz-bcs" autocapitalize="none" autocomplete="off" spellcheck="false">
+      <label for="wiz-bt">Token</label>
+      <input id="wiz-bt" autocapitalize="none" autocomplete="off" spellcheck="false">
+      <label for="wiz-bts">Token Secret</label>
+      <input id="wiz-bts" autocapitalize="none" autocomplete="off" spellcheck="false">
+    </div>
+
+    <!-- 4: Prüfen -->
+    <div class="wiz-step" data-step="4" hidden>
+      <h3>✅ Kurz nachsehen, ob es klappt</h3>
+      <p class="search-hint">Ein echter Testabruf bei beiden Diensten – so
+        merkst du jetzt, ob ein Schlüssel verdreht ist, und nicht erst beim
+        ersten Scan.</p>
+      <button class="btn btn-outline" id="wiz-test">Verbindung prüfen</button>
+      <p id="wiz-test-out" class="search-hint" hidden></p>
+    </div>
+
+    <!-- 5: Hub -->
+    <div class="wiz-step" data-step="5" hidden>
+      <h3>🤝 Tausch-Netzwerk</h3>
+      <p class="search-hint">Falls dich jemand eingeladen hat: Code eintragen
+        und beitreten. Ohne Einladung überspringen – nachholen geht jederzeit
+        unter <b>Mehr → Tausch-Netzwerk</b>.</p>
+      <label for="wiz-invite">Einladungscode</label>
+      <input id="wiz-invite" placeholder="inv_…" autocapitalize="none">
+      <label for="wiz-hubname">Anzeigename im Netzwerk</label>
+      <input id="wiz-hubname" placeholder="z. B. Sven" autocapitalize="none">
+      <p id="wiz-hub-out" class="search-hint" hidden></p>
+    </div>
+
+    <!-- 6: Fertig -->
+    <div class="wiz-step" data-step="6" hidden>
+      <h3>🎉 Los geht's</h3>
+      <p class="search-hint">Alles Weitere findest du unter <b>Mehr</b>:
+        Benutzer anlegen, Sicherung, Design, externer Zugriff. Die Hilfe
+        (❓ oben rechts) erklärt jeden Bereich.</p>
+      <p class="search-hint">Tipp fürs Erste: Im Tab <b>Scannen</b> eine Figur
+        fotografieren – das braucht keinen einzigen Schlüssel.</p>
+    </div>
+
+    <p id="wiz-error" class="error" hidden></p>
+    <div class="wiz-nav">
+      <button class="btn btn-outline" id="wiz-back" hidden>Zurück</button>
+      <button class="btn btn-outline" id="wiz-skip">Überspringen</button>
+      <button class="btn btn-primary" id="wiz-next">Weiter</button>
+    </div>
+    <button class="wiz-quit" id="wiz-quit">Assistent beenden und direkt loslegen</button>
   </div>
 </section>
 
@@ -764,7 +857,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
-<script src="/static/app.js?v=241"></script>
+<script src="/static/app.js?v=242"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">
     <div class="help-head">

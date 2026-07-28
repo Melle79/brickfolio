@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.49.0 – Juli 2026
+
+### Neu
+- 📦 **Fertiges Docker-Image.** Kein Klonen, kein Bauen: `docker compose up -d` zieht `ghcr.io/melle79/brickfolio:latest` – für amd64 (Synology, Intel-NAS, PC) und arm64 (Raspberry Pi, ARM-NAS). Aus „Quellcode holen, minutenlang bauen" wird ein Download. `latest` entsteht nur aus Releases, `main` folgt dem Entwicklungsstand
+- 🧭 **Einrichtungsassistent beim allerersten Start.** Nach dem Admin-Konto führen sechs Schritte durch Anzeigename, Rebrickable-Schlüssel, BrickLink-Zugang, einen echten Verbindungstest und – falls vorhanden – die Einladung ins Tausch-Netzwerk. Jeder Schritt ist überspringbar; ohne Schlüssel funktioniert das Scannen ohnehin
+- 🔁 **`update.sh` erkennt die Betriebsart selbst**: fertiges Image nachziehen oder wie bisher aus dem Quellcode bauen. Bestehende Installationen ändern nichts
+
+### Verbessert
+- 🔑 **Unvollständige BrickLink-Schlüssel werden benannt.** Der Verbindungstest sagte „Keine Schlüssel hinterlegt", auch wenn schon zwei der vier Werte eingetragen waren. Jetzt steht dort, welche fehlen
+
 ## 1.48.2 – Juli 2026
 
 ### Behoben

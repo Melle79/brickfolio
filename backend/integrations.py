@@ -33,9 +33,22 @@ def _bl_auth():
                   setting("bl_token"), setting("bl_token_secret"))
 
 
+BL_KEYS = ("bl_consumer_key", "bl_consumer_secret",
+           "bl_token", "bl_token_secret")
+
+BL_LABELS = {"bl_consumer_key": "Consumer Key",
+             "bl_consumer_secret": "Consumer Secret",
+             "bl_token": "Token", "bl_token_secret": "Token Secret"}
+
+
 def bricklink_enabled() -> bool:
-    return all(setting(k) for k in ("bl_consumer_key", "bl_consumer_secret",
-                                    "bl_token", "bl_token_secret"))
+    return all(setting(k) for k in BL_KEYS)
+
+
+def bricklink_missing() -> list:
+    """Welche der vier Werte fehlen noch? Alle vier gehören zusammen – wer
+    zwei einträgt, soll nicht „keine Schlüssel" zu lesen bekommen."""
+    return [BL_LABELS[k] for k in BL_KEYS if not setting(k)]
 
 
 def rebrickable_enabled() -> bool:

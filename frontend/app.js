@@ -1201,13 +1201,130 @@ async function doSetup() {
     localStorage.setItem("bf_token", data.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     toast(`Willkommen, ${data.username}! 🧱`);
-    showApp();
+    startWizard();
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;
   } finally {
     $("btn-setup").disabled = false;
   }
+}
+
+/* ------------------------------------------- Einrichtungsassistent
+   Läuft genau einmal, direkt nach dem Anlegen des Admin-Kontos. Jeder
+   Schritt ist überspringbar – die App ist ohne Schlüssel benutzbar (Scannen
+   braucht keinen), deshalb darf hier nichts blockieren. */
+
+const WIZ_LAST = 6;
+let wizStep = 1;
+
+function startWizard() {
+  $("view-login").hidden = true;
+  $("view-wizard").hidden = false;
+  wizStep = 1;
+  showWizStep();
+  wireWizardOnce();
+}
+
+function showWizStep() {
+  document.querySelectorAll("#view-wizard .wiz-step").forEach((el) => {
+    el.hidden = Number(el.dataset.step) !== wizStep;
+  });
+  $("wiz-step-of").textContent = `Schritt ${wizStep} von ${WIZ_LAST}`;
+  $("wiz-back").hidden = wizStep === 1;
+  $("wiz-skip").hidden = wizStep === WIZ_LAST;
+  $("wiz-next").textContent = wizStep === WIZ_LAST ? "Loslegen" : "Weiter";
+  $("wiz-error").hidden = true;
+}
+
+function endWizard() {
+  $("view-wizard").hidden = true;
+  showApp();
+}
+
+/* Speichert, was der aktuelle Schritt eingesammelt hat. Leere Felder sind
+   kein Fehler – dann wurde der Schritt eben nicht ausgefüllt. */
+async function saveWizStep() {
+  if (wizStep === 1) {
+    const name = $("wiz-owner").value.trim();
+    if (name) {
+      await api("/settings/owner_name", { method: "POST", body: { name } });
+      state.ownerName = name;
+      applyOwnerName(name);
+    }
+  } else if (wizStep === 2 || wizStep === 3) {
+    const fields = wizStep === 2
+      ? { rebrickable_key: "wiz-rb" }
+      : { bl_consumer_key: "wiz-bck", bl_consumer_secret: "wiz-bcs",
+          bl_token: "wiz-bt", bl_token_secret: "wiz-bts" };
+    const body = {};
+    for (const [name, id] of Object.entries(fields)) {
+      const v = $(id).value.trim();
+      if (v) body[name] = v;
+    }
+    if (Object.keys(body).length) {
+      const res = await api("/settings", { method: "PUT", body });
+      state.bricklinkPrices = res.flags.bricklink_prices;
+      state.bricklinkLookup = res.flags.bricklink_lookup;
+      state.catalogSearch = res.flags.catalog_search;
+    }
+  } else if (wizStep === 5) {
+    const invite_code = $("wiz-invite").value.trim();
+    const display_name = $("wiz-hubname").value.trim();
+    if (invite_code) {
+      if (!display_name) throw new Error("Bitte auch einen Anzeigenamen angeben.");
+      await api("/hub/connect", { method: "POST",
+        body: { invite_code, display_name } });
+      state.hubConnected = true;
+    }
+  }
+}
+
+let wizWired = false;
+
+function wireWizardOnce() {
+  if (wizWired) return;
+  wizWired = true;
+
+  $("wiz-owner").addEventListener("input", () => {
+    $("wiz-name-preview").textContent = $("wiz-owner").value.trim() || "Finn";
+  });
+
+  $("wiz-next").addEventListener("click", async () => {
+    const btn = $("wiz-next");
+    btn.disabled = true;
+    try {
+      await saveWizStep();
+      if (wizStep === WIZ_LAST) { endWizard(); return; }
+      wizStep += 1;
+      showWizStep();
+    } catch (e) {
+      $("wiz-error").textContent = e.message;
+      $("wiz-error").hidden = false;
+    } finally { btn.disabled = false; }
+  });
+
+  $("wiz-skip").addEventListener("click", () => {
+    wizStep = Math.min(wizStep + 1, WIZ_LAST);
+    showWizStep();
+  });
+  $("wiz-back").addEventListener("click", () => {
+    wizStep = Math.max(wizStep - 1, 1);
+    showWizStep();
+  });
+  $("wiz-quit").addEventListener("click", endWizard);
+
+  $("wiz-test").addEventListener("click", async () => {
+    const out = $("wiz-test-out");
+    out.hidden = false;
+    out.textContent = "Teste …";
+    try {
+      const r = await api("/settings/test", { method: "POST" });
+      out.innerHTML =
+        `BrickLink: ${r.bricklink.ok ? "✅" : "❌"} ${esc(r.bricklink.info)}<br>`
+        + `Rebrickable: ${r.rebrickable.ok ? "✅" : "❌"} ${esc(r.rebrickable.info)}`;
+    } catch (e) { out.textContent = e.message; }
+  });
 }
 
 function showApp() {
