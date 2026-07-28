@@ -181,6 +181,17 @@ containers run. Same YAML as above, just pasted somewhere else:
 
 Very old 32-bit ARM devices (`armv7`) are not supported.
 
+**Unraid** has it easier: under *Docker → Settings → Template Repositories*
+add this address –
+
+```
+https://github.com/Melle79/brickfolio
+```
+
+– and Brickfolio appears under *Docker → Add Container* in the template
+picker, with the port, the `/data` path and the optional keys pre-filled.
+The template lives in [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
+
 Without a compose UI:
 
 ```bash

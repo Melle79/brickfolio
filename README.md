@@ -184,6 +184,17 @@ nur an anderer Stelle eingefügt:
 Gebaut wird für **amd64** und **arm64**. Sehr alte 32-Bit-ARM-Geräte
 (`armv7`, z. B. ältere Einsteiger-NAS) werden nicht unterstützt.
 
+**Unraid** hat es bequemer: Unter *Docker → Einstellungen →
+Template Repositories* diese Adresse eintragen –
+
+```
+https://github.com/Melle79/brickfolio
+```
+
+– danach steht Brickfolio unter *Docker → Add Container* in der
+Vorlagen-Auswahl, mit vorbelegtem Port, `/data`-Pfad und den optionalen
+Schlüsseln. Die Vorlage liegt in [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
+
 Wer keine Compose-Oberfläche hat, kommt auch so ans Ziel:
 
 ```bash

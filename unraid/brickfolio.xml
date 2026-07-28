@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Brickfolio</Name>
+  <Beta>false</Beta>
+  <Category>Productivity: Tools:Utilities</Category>
+  <Repository>melle79/brickfolio:latest</Repository>
+  <Registry>https://hub.docker.com/r/melle79/brickfolio</Registry>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Shell>sh</Shell>
+  <GitHub>https://github.com/Melle79/brickfolio</GitHub>
+  <ReadMe>https://github.com/Melle79/brickfolio/blob/main/README.en.md</ReadMe>
+  <Support>https://github.com/Melle79/brickfolio/issues</Support>
+  <Project>https://github.com/Melle79/brickfolio</Project>
+  <Overview>
+    Self-hosted PWA for scanning, managing and valuing a LEGO collection - built for a whole family sharing one database, with an optional collector mode for people who buy and sell at flea markets.
+
+    Photo to recognition to collection: photograph a minifigure or set with your phone, tap the match, done. Recognition uses the free Brickognize API; names, prices and set contents come from Rebrickable and BrickLink (your own free API keys, entered in a setup wizard on first start - the app also works without them, just without prices and name search).
+
+    Features: camera scanning and catalogue search, quantities and condition, BrickLink average prices with your own price history and charts, wishlist, shopping lists for flea markets with proportional offer splitting, duplicates/sell list, statistics, CSV export and print lists, multi-user with roles, JSON backup, three themes, installable as a PWA. Optionally several instances can connect to a small trading hub to swap items, with end-to-end encrypted messages.
+
+    Everything stays on your server - no cloud, no third-party account. The database lives in the /data path below.
+
+    LEGO is a trademark of the LEGO Group, which does not sponsor, authorise or endorse this project. Private hobby project, no commercial intent.
+  </Overview>
+  <WebUI>http://[IP]:[PORT:8300]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/Melle79/brickfolio/main/unraid/brickfolio.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Melle79/brickfolio/main/frontend/icons/icon-512.png</Icon>
+  <DonateText>If you like it, buy me a coffee</DonateText>
+  <DonateLink>https://buymeacoffee.com/melle79</DonateLink>
+  <Date>2026-07-28</Date>
+  <Changes>https://github.com/Melle79/brickfolio/blob/main/CHANGELOG.md</Changes>
+
+  <Config Name="Port: Web Interface" Target="8300" Default="8300" Mode="tcp"
+          Description="Web interface. Open it once after starting - a setup wizard walks you through the admin account and the API keys."
+          Type="Port" Display="always" Required="true" Mask="false">8300</Config>
+
+  <Config Name="Path: /data" Target="/data" Default="/mnt/user/appdata/brickfolio" Mode="rw"
+          Description="Database, automatic backups and uploaded images. This is the only folder that matters - keep it, everything else is replaceable."
+          Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/brickfolio</Config>
+
+  <Config Name="Admin user (optional)" Target="ADMIN_USER" Default="" Mode=""
+          Description="Only for unattended setups: creates the admin account on first start and skips the wizard. Leave empty to set it up in the browser."
+          Type="Variable" Display="advanced" Required="false" Mask="false"/>
+
+  <Config Name="Admin password (optional)" Target="ADMIN_PASSWORD" Default="" Mode=""
+          Description="Password for the account above. Leave empty to set it up in the browser."
+          Type="Variable" Display="advanced" Required="false" Mask="true"/>
+
+  <Config Name="Rebrickable API key (optional)" Target="REBRICKABLE_KEY" Default="" Mode=""
+          Description="Catalogue search by name. Free key from rebrickable.com/api - can also be entered in the app later (More - API keys)."
+          Type="Variable" Display="advanced" Required="false" Mask="true"/>
+
+  <Config Name="BrickLink Consumer Key (optional)" Target="BL_CONSUMER_KEY" Default="" Mode=""
+          Description="Prices and set contents. All four BrickLink values belong together - see bricklink.com/v2/api/register_consumer.page. Can also be entered in the app later."
+          Type="Variable" Display="advanced" Required="false" Mask="true"/>
+
+  <Config Name="BrickLink Consumer Secret (optional)" Target="BL_CONSUMER_SECRET" Default="" Mode=""
+          Description="See above."
+          Type="Variable" Display="advanced" Required="false" Mask="true"/>
+
+  <Config Name="BrickLink Token (optional)" Target="BL_TOKEN" Default="" Mode=""
+          Description="See above."
+          Type="Variable" Display="advanced" Required="false" Mask="true"/>
+
+  <Config Name="BrickLink Token Secret (optional)" Target="BL_TOKEN_SECRET" Default="" Mode=""
+          Description="See above."
+          Type="Variable" Display="advanced" Required="false" Mask="true"/>
+
+  <Config Name="Keep daily backups" Target="BACKUP_KEEP" Default="14" Mode=""
+          Description="How many automatic daily database backups to keep in /data. 0 turns them off."
+          Type="Variable" Display="advanced" Required="false" Mask="false">14</Config>
+</Container>
