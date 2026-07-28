@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.51.1"
+APP_VERSION = "1.52.0"
 
 
 def hash_password(password: str) -> str:
@@ -393,6 +393,9 @@ def init_db():
         # Gewähltes Design pro Benutzer (NULL = folgt dem Instanz-Standard)
         if "theme" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN theme TEXT")
+        # Sprache pro Benutzer (NULL = folgt der Sprache des Browsers)
+        if "lang" not in ucols:
+            conn.execute("ALTER TABLE users ADD COLUMN lang TEXT")
         # Aus welchem Preisgebiet stammt der gespeicherte Preis? Damit lässt
         # sich nach einer Umstellung gezielt nachrechnen, was noch fehlt.
         for tbl in ("collection", "wanted", "shopping_items"):

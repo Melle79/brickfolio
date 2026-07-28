@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Finn's Brickfolio</title>
 <meta name="theme-color" content="#FFCF00">
+<meta name="app-version" content="__APPVERSION__">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/icons/icon-180.png">
@@ -481,6 +482,17 @@
   <!-- Einstellungen -->
   <main id="view-settings" class="view" hidden>
     <h2>Einstellungen</h2>
+    <div class="settings-card" id="lang-card">
+      <h3>🌐 Sprache</h3>
+      <p class="search-hint">Die Wahl wird in deinem Profil gespeichert und
+        gilt auf allen Geräten. Ohne eigene Wahl folgt die App der Sprache
+        deines Browsers.</p>
+      <div class="detail-row btn-grid">
+        <button class="mini-btn cond" data-lang-pick="de">🇩🇪 Deutsch</button>
+        <button class="mini-btn cond" data-lang-pick="en">🇬🇧 English</button>
+      </div>
+    </div>
+
     <div class="settings-card" id="theme-card">
       <h3>🎨 Design</h3>
       <div class="detail-row btn-grid theme-picks">

@@ -11,6 +11,109 @@ const state = {
   collection: [],
 };
 
+/* ------------------------------------------------------------- Sprache
+
+   Nachträglich übersetzen, ohne die Oberfläche umzubauen: Der **deutsche
+   Text ist der Schlüssel** (wie bei gettext). Das hat drei Folgen, die uns
+   hier entgegenkommen:
+
+   - Deutsch braucht keinen Katalog und keine zusätzliche Anfrage. Es ist
+     das, was ohnehin im Dokument steht – kein Aufblitzen, kein Umweg.
+   - Fehlt eine Übersetzung, erscheint der deutsche Satz. Nie ein nackter
+     Schlüssel wie „nav.scan", nie eine leere Stelle.
+   - Die 500 Textstellen in index.html mussten nicht angefasst werden.
+     `translateTree` läuft einmal über das Dokument und tauscht, was im
+     Katalog steht.
+
+   Für Texte, die JavaScript baut, gibt es `t()`. Platzhalter als {name}. */
+
+const APP_I18N_V = (document.querySelector('meta[name="app-version"]')
+  || {}).content || "0";
+const LANGS = { de: "Deutsch", en: "English" };
+let lang = "de";
+let dict = {};                     // deutscher Satz -> Übersetzung
+
+/* Übersetzen. Unbekanntes bleibt deutsch – besser als eine Lücke. */
+function t(text, vars) {
+  let out = dict[text] || text;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      out = out.split("{" + k + "}").join(v);
+    }
+  }
+  return out;
+}
+
+/* Welche Sprache gilt? Profil zuerst, sonst der Browser, sonst Deutsch. */
+function pickLang() {
+  const gespeichert = (state.user && state.user.lang)
+    || localStorage.getItem("bf_lang");
+  if (gespeichert && LANGS[gespeichert]) return gespeichert;
+  for (const l of navigator.languages || [navigator.language || "de"]) {
+    const kurz = String(l).slice(0, 2).toLowerCase();
+    if (LANGS[kurz]) return kurz;
+  }
+  return "de";
+}
+
+async function loadLang(next) {
+  lang = next || pickLang();
+  localStorage.setItem("bf_lang", lang);
+  document.documentElement.lang = lang;
+  if (lang === "de") { dict = {}; return; }   // Quellsprache, nichts zu laden
+  try {
+    const r = await fetch(`/static/i18n/${lang}.json?v=${APP_I18N_V}`);
+    dict = r.ok ? await r.json() : {};
+  } catch (_) { dict = {}; }
+}
+
+/* Diese Attribute tragen ebenfalls sichtbaren Text. */
+const I18N_ATTRS = ["placeholder", "title", "aria-label", "alt"];
+
+/* Einmal über einen Teilbaum und alles ersetzen, was im Katalog steht.
+   Reine Zahlen, Symbole und Nutzerdaten stehen dort nicht – die bleiben. */
+function translateTree(root = document.body) {
+  if (lang === "de" || !Object.keys(dict).length) return;
+
+  // Erst ganze Elemente: Ein Satz mit Auszeichnung („… einen <b>Code</b> von
+  // jemandem") steht als eine Einheit im Katalog. Würde man nur Textknoten
+  // vergleichen, zerfiele er in Bruchstücke – und Bruchstücke wie „und" darf
+  // man nie ersetzen. Von innen nach außen, damit das speziellste zuerst
+  // greift und nicht doppelt übersetzt wird.
+  const kandidaten = [...root.querySelectorAll("*")].reverse();
+  kandidaten.forEach((el) => {
+    if (el.dataset.i18nDone) return;
+    const inhalt = el.innerHTML.replace(/\s+/g, " ").trim();
+    if (!inhalt || !dict[inhalt]) return;
+    el.innerHTML = dict[inhalt];
+    el.dataset.i18nDone = "1";
+    el.querySelectorAll("*").forEach((k) => { k.dataset.i18nDone = "1"; });
+  });
+
+  // Danach der Rest: einzelne Textknoten ohne umgebende Auszeichnung.
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const treffer = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (n.parentElement && n.parentElement.dataset.i18nDone) continue;
+    const roh = n.nodeValue;
+    const kern = roh.trim();
+    if (kern.length < 2 || !dict[kern]) continue;
+    treffer.push([n, roh.replace(kern, dict[kern])]);
+  }
+  treffer.forEach(([n, wert]) => { n.nodeValue = wert; });
+
+  root.querySelectorAll("*").forEach((el) => {
+    I18N_ATTRS.forEach((a) => {
+      const v = el.getAttribute(a);
+      if (v && dict[v.trim()]) el.setAttribute(a, dict[v.trim()]);
+    });
+  });
+  // Der Titel des Fensters gehört auch dazu.
+  if (root === document.body && dict[document.title]) {
+    document.title = dict[document.title];
+  }
+}
+
 /* ---------------------------------------------------------------- API */
 async function api(path, options = {}) {
   const headers = options.headers || {};
@@ -5076,6 +5179,34 @@ function applyServerTheme(data) {
   markDefaultTheme();
 }
 
+/* Sprachwahl. Ein Wechsel lädt die Seite neu – das ist ehrlicher als der
+   Versuch, jede schon gezeichnete Liste nachträglich umzuschreiben. */
+function initLangPicker() {
+  const markieren = () => {
+    document.querySelectorAll("[data-lang-pick]").forEach((b) => {
+      b.classList.toggle("sel", b.dataset.langPick === lang);
+    });
+  };
+  markieren();
+  document.querySelectorAll("[data-lang-pick]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const pick = btn.dataset.langPick;
+      if (pick === lang) return;
+      localStorage.setItem("bf_lang", pick);
+      if (state.user) {
+        state.user.lang = pick;
+        localStorage.setItem("bf_user", JSON.stringify(state.user));
+      }
+      if (state.token) {
+        try {
+          await api("/me/lang", { method: "POST", body: { lang: pick } });
+        } catch (_) { /* lokal gilt sie trotzdem */ }
+      }
+      location.reload();
+    });
+  });
+}
+
 function initThemePicker() {
   document.querySelectorAll("[data-theme-pick]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -5787,7 +5918,12 @@ async function addUser() {
 }
 
 /* ---------------------------------------------------------------- Start */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Sprache zuerst: Danach steht das Dokument fertig übersetzt da, ohne dass
+  // deutscher Text kurz aufblitzt. Bei Deutsch kostet das nichts.
+  await loadLang();
+  translateTree(document.body);
+
   $("btn-login").addEventListener("click", doLogin);
   $("btn-help").addEventListener("click", () => {
     $("help-overlay").hidden = false;
@@ -5798,6 +5934,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "";
   };
   initCollapsibleCards();
+  initLangPicker();
   initThemePicker();
   initExternalAccess();
   const ownerBtn = $("btn-owner-name");

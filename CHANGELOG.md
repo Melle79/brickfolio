@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.52.0 – Juli 2026
+
+### Neu
+- 🌐 **Die App spricht Englisch.** Unter *Mehr → Sprache* lässt sich zwischen Deutsch und English wählen; die Wahl liegt im Profil und gilt auf allen Geräten. Ohne eigene Wahl folgt die App der Sprache des Browsers – wer Englisch eingestellt hat, landet direkt dort
+- 🈯 **Erste Stufe: die feste Oberfläche.** Navigation, Knöpfe, Formulare, Einrichtungsassistent, Hilfe-Überschriften und alle Platzhalter sind übersetzt (251 Textstellen). **Noch deutsch bleiben** die langen Hilfetexte und alles, was JavaScript zur Laufzeit baut – Kartenbeschriftungen, Meldungen, Fehlertexte. Das folgt in weiteren Schritten
+
+### Technisch
+- Der **deutsche Text ist der Schlüssel** (wie bei gettext): Deutsch braucht keinen Katalog und keine zusätzliche Anfrage, und eine fehlende Übersetzung zeigt den deutschen Satz statt einer Lücke oder eines nackten Schlüssels
+- Tests wachen darüber, dass kein Katalogeintrag ins Leere zeigt, dass Platzhalter und Auszeichnungen erhalten bleiben und dass keine Übersetzung leer ist
+
 ## 1.51.1 – Juli 2026
 
 ### Verbessert

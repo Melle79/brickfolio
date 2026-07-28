@@ -160,14 +160,16 @@ def current_user(request: Request) -> dict:
         raise HTTPException(401, "Sitzung abgelaufen – bitte neu anmelden")
     with core.db() as conn:
         row = conn.execute(
-            "SELECT id, username, is_admin, is_dealer, theme, sort_pref FROM users "
+            "SELECT id, username, is_admin, is_dealer, theme, sort_pref, lang "
+            "FROM users "
             "WHERE id = ?", (int(payload["sub"]),)).fetchone()
     if not row:
         raise HTTPException(401, "Sitzung ungültig – bitte neu anmelden")
     return {"id": row["id"], "name": row["username"],
             "is_admin": bool(row["is_admin"]),
             "is_dealer": bool(row["is_dealer"]),
-            "theme": row["theme"], "sort_pref": row["sort_pref"]}
+            "theme": row["theme"], "sort_pref": row["sort_pref"],
+            "lang": row["lang"]}
 
 
 def dealer_user(user: dict = Depends(current_user)) -> dict:
@@ -271,7 +273,7 @@ def setup_create_admin(body: SetupBody):
 def whoami(user: dict = Depends(current_user)):
     return {"username": user["name"], "is_admin": user["is_admin"],
             "is_dealer": user["is_dealer"],
-            "theme": user.get("theme"),
+            "theme": user.get("theme"), "lang": user.get("lang"),
             "sort_pref": user.get("sort_pref"),
             "default_theme": core.get_setting("default_theme") or "classic"}
 
@@ -288,9 +290,10 @@ def login(body: LoginBody):
     is_dealer = bool(row["is_dealer"]) if "is_dealer" in row.keys() else False
     theme = row["theme"] if "theme" in row.keys() else None
     sort_pref = row["sort_pref"] if "sort_pref" in row.keys() else None
+    lang = row["lang"] if "lang" in row.keys() else None
     return {"token": token, "username": row["username"],
             "is_admin": bool(row["is_admin"]), "is_dealer": is_dealer,
-            "theme": theme, "sort_pref": sort_pref,
+            "theme": theme, "sort_pref": sort_pref, "lang": lang,
             "default_theme": core.get_setting("default_theme") or "classic"}
 
 
@@ -310,6 +313,24 @@ def set_my_theme(body: ThemeBody, user: dict = Depends(current_user)):
         conn.execute("UPDATE users SET theme = ? WHERE id = ?",
                      (body.theme, user["id"]))
     return {"ok": True, "theme": body.theme}
+
+
+LANGS = ("de", "en")
+
+
+class LangBody(BaseModel):
+    lang: str = Field(max_length=5)
+
+
+@app.post("/api/me/lang")
+def set_my_lang(body: LangBody, user: dict = Depends(current_user)):
+    """Gewählte Sprache im Profil speichern – gilt dann auf allen Geräten."""
+    if body.lang not in LANGS:
+        raise HTTPException(400, "Unbekannte Sprache")
+    with core.db() as conn:
+        conn.execute("UPDATE users SET lang = ? WHERE id = ?",
+                     (body.lang, user["id"]))
+    return {"ok": True, "lang": body.lang}
 
 
 @app.post("/api/settings/default_theme")
