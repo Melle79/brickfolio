@@ -813,7 +813,30 @@ GitHub-Release – automatisch beim App-Start und beim Öffnen des Mehr-Tabs
 Updates suchen". Wartet ein Update, erscheinen ein Hinweis-Toast und ein
 gelber Banner mit Link zu den Release-Notes.
 
-Eingespielt wird mit einem Befehl auf dem Server:
+Wie eingespielt wird, hängt davon ab, wie ihr installiert habt.
+
+**Mit fertigem Image** (der übliche Weg, siehe 2.2):
+
+```bash
+cd /pfad/zu/brickfolio
+docker compose pull && docker compose up -d
+```
+
+Auf einer Synology geht dasselbe **ohne Konsole**: *Container Manager →
+Projekt → brickfolio → Aktion → Erstellen neu starten*.
+
+> **`update.sh` liegt hier nicht.** Das Skript gehört zum Quellcode und
+> steckt weder im Image noch im Ordner, wenn ihr nur die
+> `docker-compose.yml` geholt habt. Die beiden Befehle oben tun dasselbe –
+> nur den **Schnappschuss** müsst ihr selbst machen: in der App unter
+> *Mehr → Sicherung*. Wer die Bequemlichkeit möchte, lädt das Skript einmal
+> dazu:
+>
+> ```bash
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
+> ```
+
+**Aus dem Quellcode gebaut:**
 
 ```bash
 cd /pfad/zu/brickfolio
@@ -827,25 +850,31 @@ die Installation läuft:
 - steht dort `image: ghcr.io/…`, zieht es das neue Image (Sekunden)
 - steht dort `build: .`, holt es den Quellcode von GitHub und baut neu
 
-Eure `docker-compose.yml` und der `data/`-Ordner bleiben in beiden Fällen
-unberührt. Datenbank-Migrationen laufen beim Start automatisch und sind
-idempotent – mehrfaches Aktualisieren schadet nie.
-
-Wer das Skript nicht hat (Installation direkt über die Container-Oberfläche),
-kommt genauso ans Ziel:
-
-```bash
-docker compose pull && docker compose up -d
-```
-
-Auf einer Synology geht das auch ohne Konsole: *Container Manager → Projekt
-→ brickfolio → Aktion → Erstellen neu starten*.
+**In beiden Fällen gilt:** Eure `docker-compose.yml` und der `data/`-Ordner
+bleiben unberührt – dort liegen Datenbank, Sicherungen und eure hochgeladenen
+Bilder. Datenbank-Migrationen laufen beim Start automatisch und sind
+idempotent; mehrfaches Aktualisieren schadet nie. Ein Rückschritt auf eine
+ältere Version ist dagegen **nicht** vorgesehen: Migrationen erweitern nur.
+Wollt ihr das trotzdem, spielt vorher die Sicherung zurück.
 
 #### Update direkt aus der App *(optional)*
 
 Mit einem kleinen Helfer auf dem Server geht es auch ohne SSH: In der
 Karte **Version & Updates** stehen dann die Knöpfe **Jetzt**, **In 1
 Minute** und **In 5 Minuten**.
+
+> Dafür braucht ihr **beide** Skripte auf dem Server – auch bei einer
+> Installation über das fertige Image, wo sie nicht mitkommen:
+>
+> ```bash
+> cd /pfad/zu/brickfolio
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> ```
+>
+> Ohne sie erscheinen die Knöpfe **gar nicht erst** – die App zeigt statt
+> dessen einen Hinweis. Es entsteht also kein toter Knopf, der ins Leere
+> führt.
 
 So läuft es ab:
 

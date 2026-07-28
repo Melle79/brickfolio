@@ -249,11 +249,37 @@ Rollen sind kombinierbar (der Admin kann sich selbst zum Profi machen).
 
 ## Updates & Backup
 
-- Neue Version einspielen: `docker compose pull && docker compose up -d` –
-  Datenbank-Migrationen laufen automatisch. `sudo bash update.sh` im
-  Projektordner macht dasselbe und legt vorher einen Datenbank-Schnappschuss
-  an; es erkennt selbst, ob die Installation ein fertiges Image benutzt oder
-  aus dem Quellcode baut.
+**Die App sagt Bescheid.** Unter *Mehr → Version & Updates* vergleicht sie die
+laufende Version mit dem neuesten Release – unabhängig davon, wie du
+installiert hast.
+
+**Mit fertigem Image** (der Schnellstart oben) genügen zwei Befehle im
+Projektordner:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Auf einer Synology geht dasselbe ohne Konsole: *Container Manager → Projekt →
+brickfolio → Aktion → Erstellen neu starten*.
+
+Der Ordner `data/` bleibt dabei unberührt, Datenbank-Migrationen laufen beim
+Start automatisch und sind idempotent. **Ein Schnappschuss vorher schadet
+nie** – in der App unter *Mehr → Sicherung* die JSON-Datei herunterladen.
+
+> `update.sh` und `update-watch.sh` liegen **nicht** im Image und nicht im
+> Ordner, wenn du nur die `docker-compose.yml` geholt hast. Wer sie möchte
+> (Schnappschuss automatisch, Update aus der App heraus), lädt sie einmalig
+> dazu:
+>
+> ```bash
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> ```
+
+**Aus dem Quellcode gebaut**: `sudo bash update.sh` im Projektordner. Das
+Skript legt zuerst einen Datenbank-Schnappschuss an (die letzten drei bleiben
+erhalten) und erkennt selbst, ob es das Image nachziehen oder neu bauen muss.
 
 ### Update aus der App heraus (optional)
 

@@ -244,11 +244,35 @@ Roles combine (the admin can grant themselves the pro role).
 
 ## Updates & backup
 
-- Deploy a new version: `docker compose pull && docker compose up -d` –
-  database migrations run automatically. `sudo bash update.sh` in the project
-  folder does the same and takes a database snapshot first; it detects on its
-  own whether the installation uses the ready-made image or builds from
-  source.
+**The app tells you.** Under *More → Version & updates* it compares the running
+version against the latest release, whichever way you installed.
+
+**With the ready-made image** (the quick start above), two commands in the
+project folder:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+On a Synology the same works without a shell: *Container Manager → Project →
+brickfolio → Action → Build and restart*.
+
+The `data/` folder is untouched, database migrations run automatically on
+start and are idempotent. **A snapshot beforehand never hurts** – download the
+JSON file in the app under *More → Backup*.
+
+> `update.sh` and `update-watch.sh` are **not** in the image and not in your
+> folder if you only fetched the `docker-compose.yml`. If you want them
+> (automatic snapshot, updating from inside the app), fetch them once:
+>
+> ```bash
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> ```
+
+**Built from source**: `sudo bash update.sh` in the project folder. It takes a
+database snapshot first (the last three are kept) and detects on its own
+whether to pull the image or rebuild.
 
 ### Updating from inside the app (optional)
 

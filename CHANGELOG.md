@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.55.2 – Juli 2026
+
+*Nur Doku – an der App ändert sich nichts.*
+
+### Behoben
+- 📄 **Der Update-Weg für Image-Installationen war falsch beschrieben.** README und Handbuch verwiesen auf `sudo bash update.sh` – das Skript gehört aber zum Quellcode und liegt weder im Image noch im Ordner, wenn man nur die `docker-compose.yml` geholt hat. Jetzt steht getrennt da, was für welche Installationsart gilt, inklusive des Hinweises, dass man den **Schnappschuss dann selbst** machen sollte (*Mehr → Sicherung*)
+- 📄 Dasselbe für den **Update-Knopf in der App**: Er braucht `update-watch.sh` auf dem Server. Ohne das Skript erscheint er gar nicht erst – das steht jetzt dort, samt der beiden `curl`-Zeilen zum Nachrüsten
+
 ## 1.55.1 – Juli 2026
 
 ### Neu
