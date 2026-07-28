@@ -73,8 +73,14 @@ jobs:
 
       # Ohne das steht auf der Docker-Hub-Seite nichts – wer dort landet,
       # sieht ein Image ohne jede Erklärung.
+      #
+      # Braucht einen Token mit Verwaltungsrecht (Read/Write/Delete); mit
+      # „Read & Write" antwortet Docker Hub mit „Forbidden". Deshalb darf der
+      # Schritt fehlschlagen, ohne den Release mitzureißen – die Images sind
+      # zu dem Zeitpunkt längst veröffentlicht.
       - name: Beschreibung auf Docker Hub aktualisieren
         if: vars.DOCKERHUB_USER != '' && github.event_name == 'release'
+        continue-on-error: true
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ vars.DOCKERHUB_USER }}
