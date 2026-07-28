@@ -158,8 +158,28 @@ async function api(path, options = {}) {
   const resp = await fetch("/api" + path, { ...options, headers });
   let data = {};
   try { data = await resp.json(); } catch (_) { /* leer */ }
-  if (resp.status === 401 && path !== "/login") { logout(); throw new Error(data.detail || "Bitte neu anmelden"); }
-  if (!resp.ok) throw new Error(data.detail || `Fehler ${resp.status}`);
+  // Fehlertexte gleich hier übersetzen, nicht erst beim Anzeigen: Sie landen
+  // an gut einem Dutzend Stellen – in Kurzmeldungen, in Fehlerzeilen, in
+  // leeren Listen. Der Server schickt den deutschen Satz, und der ist der
+  // Schlüssel.
+  if (resp.status === 401 && path !== "/login") {
+    logout();
+    throw new Error(tr(data.detail || "Bitte neu anmelden"));
+  }
+  if (!resp.ok) {
+    // Bei Eingabefehlern schickt der Server eine Liste von Einzelfehlern statt
+    // eines Satzes. Ungeprüft stünde dort „[object Object]" – lieber ein
+    // verständlicher Satz mit dem Grund, sofern einer dabei ist.
+    const d = data.detail;
+    let text;
+    if (typeof d === "string" && d) text = tr(d);
+    else if (Array.isArray(d) && d.length) {
+      const grund = d.map((f) => f && f.msg).filter(Boolean).join("; ");
+      text = grund ? tr("Eingabe nicht gültig: {grund}", { grund })
+        : tr("Eingabe nicht gültig");
+    } else text = tr("Fehler {code}", { code: resp.status });
+    throw new Error(text);
+  }
   return data;
 }
 

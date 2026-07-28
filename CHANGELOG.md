@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.54.1 – Juli 2026
+
+### Neu
+- 🌐 **Auch die Fehlermeldungen des Servers sind übersetzt** – 68 Meldungen von „Eintrag nicht gefunden" bis „Sicherung enthält keinen Admin". Am Backend musste dafür nichts geändert werden: Die Meldung kommt als deutscher Satz an, und der ist der Schlüssel. Übersetzt wird zentral dort, wo der Fehler entsteht – nicht an den gut einem Dutzend Stellen, die ihn anzeigen
+
+### Behoben
+- 🐞 **Bei Eingabefehlern stand `[object Object]` in der Meldung.** Prüft der Server die Eingabe, schickt er eine Liste von Einzelfehlern statt eines Satzes – ungeprüft landete das als Objekt in der Anzeige. Jetzt steht dort der Grund im Klartext
+- 🐳 **Der Release-Lauf meldete stillschweigend Erfolg**, obwohl das Setzen der Docker-Hub-Beschreibung mit „Forbidden" scheiterte. Der Schritt ist entfernt: Docker Hub verlangt dafür einen Token mit *read/write/delete* – der dürfte also auch Images löschen, und das gehört für eine Textseite nicht in die CI. Der Text liegt in `docs/DOCKERHUB.md` und wird bei Bedarf von Hand eingefügt
+
 ## 1.53.1 – Juli 2026
 
 ### Neu

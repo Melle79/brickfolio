@@ -71,20 +71,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Ohne das steht auf der Docker-Hub-Seite nichts – wer dort landet,
-      # sieht ein Image ohne jede Erklärung.
+      # Hinweis: Die Beschreibungsseite auf Docker Hub wird NICHT von hier
+      # gesetzt. Docker Hub verlangt dafür einen Token mit
+      # „read/write/delete" – der dürfte also auch Images löschen. So etwas
+      # für eine Textseite in die CI zu legen, ist das Risiko nicht wert;
+      # der Token hier darf nur schieben.
       #
-      # Braucht einen Token mit Verwaltungsrecht (Read/Write/Delete); mit
-      # „Read & Write" antwortet Docker Hub mit „Forbidden". Deshalb darf der
-      # Schritt fehlschlagen, ohne den Release mitzureißen – die Images sind
-      # zu dem Zeitpunkt längst veröffentlicht.
-      - name: Beschreibung auf Docker Hub aktualisieren
-        if: vars.DOCKERHUB_USER != '' && github.event_name == 'release'
-        continue-on-error: true
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ vars.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ vars.DOCKERHUB_USER }}/brickfolio
-          short-description: ${{ github.event.repository.description }}
-          readme-filepath: ./docs/DOCKERHUB.md
+      # Der Text steht in docs/DOCKERHUB.md und wird bei Bedarf von Hand in
+      # die Repository-Einstellungen auf Docker Hub eingefügt. Er ändert sich
+      # selten – und ein Schritt, der still nichts tut, wäre schlimmer als
+      # gar keiner.

@@ -47,8 +47,13 @@ def seitentext():
     # dahinter weg. Zusätzlich eine Fassung mit vereinheitlichtem Leerraum –
     # im Quelltext umbrechen Sätze mitten drin, gerendert stehen sie in einer
     # Zeile.
+    # Auch das Backend: Seine Fehlermeldungen erreichen die Oberfläche als
+    # deutscher Satz und werden dort über denselben Katalog übersetzt.
+    py = "\n".join(p.read_text() for p in
+                   sorted((FRONTEND.parent / "backend").glob("*.py")))
+    py = re.sub(r'"\s*\n\s*"', "", py)          # umbrochene Zeichenketten
     return "   ".join([nur_text(roh)] + [nur_text(a) for a in attribute]
-                      + [js, " ".join(js.split())])
+                      + [js, " ".join(js.split()), py, " ".join(py.split())])
 
 
 def test_kataloge_vorhanden():
