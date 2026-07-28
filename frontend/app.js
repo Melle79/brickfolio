@@ -78,9 +78,14 @@ function translateTree(root = document.body) {
   // Erst ganze Elemente: Ein Satz mit Auszeichnung („… einen <b>Code</b> von
   // jemandem") steht als eine Einheit im Katalog. Würde man nur Textknoten
   // vergleichen, zerfiele er in Bruchstücke – und Bruchstücke wie „und" darf
-  // man nie ersetzen. Von innen nach außen, damit das speziellste zuerst
-  // greift und nicht doppelt übersetzt wird.
-  const kandidaten = [...root.querySelectorAll("*"), root].reverse();
+  // man nie ersetzen.
+  //
+  // Von außen nach innen, und das ist wesentlich: Übersetzt man erst das
+  // innere <b>, passt der Satz des Elternteils nicht mehr auf seinen
+  // Schlüssel – der ganze Absatz bliebe deutsch, mit einem einzelnen
+  // englischen Wort darin. Der äußere Treffer gewinnt, seine Kinder sind
+  // damit erledigt.
+  const kandidaten = [root, ...root.querySelectorAll("*")];
   kandidaten.forEach((el) => {
     if (el.dataset.i18nDone) return;
     const inhalt = el.innerHTML.replace(/\s+/g, " ").trim();
@@ -341,8 +346,8 @@ function renderWanted(items) {
   $("wanted-empty").hidden = items.length > 0;
   list.innerHTML = items.map((it) => {
     const prices = [
-      it.price_new ? "Ø neu " + fmtEur(it.price_new) : "",
-      it.price_used ? "Ø gebr. " + fmtEur(it.price_used) : "",
+      it.price_new ? tr("Ø neu") + " " + fmtEur(it.price_new) : "",
+      it.price_used ? tr("Ø gebr.") + " " + fmtEur(it.price_used) : "",
     ].filter(Boolean).join(" · ");
     const needsBlNo = /^(fig-|manuell-|custom-)/.test(it.item_id);
     return `
@@ -482,7 +487,7 @@ function renderWanted(items) {
               body: { condition: b.dataset.buyCond, paid_price: paid } });
             toast(res.merged
               ? "In der Sammlung: Anzahl erhöht ✔"
-              : `In die Sammlung übernommen ✔ (${b.dataset.buyCond === "new" ? "Neu" : "Gebraucht"})`);
+              : `In die Sammlung übernommen ✔ (${b.dataset.buyCond === "new" ? tr("Neu") : tr("Gebraucht")})`);
             await askSetFigures(item, b.dataset.buyCond);
             loadWanted();
           } catch (e) {
@@ -592,8 +597,8 @@ function applySuggestInfo(info, withDetail) {
       const sub = card.querySelector("[data-sug-sub]");
       const parts = [];
       if (d.year > 0) parts.push(String(d.year));
-      if (d.new != null) parts.push("Ø neu " + fmtEur(d.new));
-      if (d.used != null) parts.push("Ø gebr. " + fmtEur(d.used));
+      if (d.new != null) parts.push(tr("Ø neu") + " " + fmtEur(d.new));
+      if (d.used != null) parts.push(tr("Ø gebr.") + " " + fmtEur(d.used));
       if (sub && parts.length) {
         sub.textContent = card.dataset.sugBase + " · " + parts.join(" · ");
       }
@@ -776,7 +781,7 @@ async function askRemoveSetFigures(item) {
           <img class="card-img fig-img" src="${imgSrc(f.img_url)}" alt="" loading="lazy">
           <span><strong>${esc(f.name)}</strong><br>
             <span class="sub">${esc(f.item_id)} ·
-              ${f.condition === "new" ? "Neu" : "Gebraucht"} ·
+              ${f.condition === "new" ? tr("Neu") : tr("Gebraucht")} ·
               ${f.remove}× entfernen${f.quantity > f.remove
                 ? ` (von ${f.quantity}, ${f.quantity - f.remove} bleiben)`
                 : ""}</span>
@@ -998,7 +1003,7 @@ function wireFigActions(out, figs) {
             }});
             toast(res.merged
               ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
-              : `Zur Sammlung hinzugefügt ✔ (${b.dataset.fc === "new" ? "Neu" : "Gebraucht"})`);
+              : `Zur Sammlung hinzugefügt ✔ (${b.dataset.fc === "new" ? tr("Neu") : tr("Gebraucht")})`);
             area.innerHTML = orig;
             wireFigActions(out, figs);
             markFigOwnership(out, figs);
@@ -1071,7 +1076,7 @@ function collSubId(it) {
 }
 
 function collSubMeta(it) {
-  let s = it.condition === "new" ? "Neu" : "Gebraucht";
+  let s = it.condition === "new" ? tr("Neu") : tr("Gebraucht");
   if (unitValue(it)) s += " · Ø " + fmtEur(unitValue(it)) + fallbackFlagText(it);
   return s;
 }
@@ -1642,7 +1647,7 @@ function renderScanResults(items) {
             }});
             toast(res.merged
               ? `Schon vorhanden – Anzahl erhöht (jetzt ${res.quantity}×)`
-              : `Zur Sammlung hinzugefügt ✔ (${b.dataset.c === "new" ? "Neu" : "Gebraucht"})`);
+              : `Zur Sammlung hinzugefügt ✔ (${b.dataset.c === "new" ? tr("Neu") : tr("Gebraucht")})`);
             row.remove();
             await askSetFigures(it, b.dataset.c);
             actions.hidden = false;
@@ -2848,8 +2853,8 @@ async function loadSuggestDetail(inner, pit, orig) {
 
   if (pr) {
     const parts = [];
-    if (d.new != null) parts.push(`Ø neu ${fmtEur(d.new)}`);
-    if (d.used != null) parts.push(`Ø gebr. ${fmtEur(d.used)}`);
+    if (d.new != null) parts.push(`${tr("Ø neu")} ${fmtEur(d.new)}`);
+    if (d.used != null) parts.push(`${tr("Ø gebr.")} ${fmtEur(d.used)}`);
     pr.innerHTML = parts.length
       ? `<span class="sug-price-label">Marktpreis</span> ${parts.join(" · ")}`
       : `<span class="price-note">${/^fig-/.test(pit.item_id)
@@ -3160,7 +3165,7 @@ async function loadLists() {
   $("lists-admin").hidden = !dealer;
   if (!dealer) $("duplicates-box").hidden = true;
   $("btn-toggle-archive").textContent = state.showArchive
-    ? "↩︎ Aktive Listen anzeigen" : "📦 Archiv anzeigen";
+    ? tr("↩︎ Aktive Listen anzeigen") : tr("📦 Archiv anzeigen");
   try {
     const data = await api("/lists" + (state.showArchive ? "?archived=1" : ""));
     renderLists(data.lists || []);
@@ -3179,8 +3184,9 @@ function renderLists(lists) {
       <div class="card-head">
         <div class="card-title">
           <strong>${state.showArchive ? "📦 " : "🛒 "}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="Liste umbenennen">✏️</button>` : ""}</strong>
-          <div class="sub">${l.stats.count} Artikel · ${l.stats.open} offen
-            · Marktwert ca. ${fmtEur(l.stats.est)} (je Zustand)${l.stats.paid_sum > 0 ? ` · Einkauf ${fmtEur(l.stats.paid_sum)}` : ""}</div>
+          <div class="sub">${esc(tr("{n} Artikel · {offen} offen · Marktwert ca. {wert} (je Zustand)",
+            { n: l.stats.count, offen: l.stats.open, wert: fmtEur(l.stats.est) }))}${
+            l.stats.paid_sum > 0 ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(l.stats.paid_sum) })) : ""}</div>
         </div>
       </div>
       <div class="set-figs">
@@ -3379,7 +3385,7 @@ function renderLists(lists) {
         const dealer2 = state.user && state.user.is_dealer;
         // Zustand steht am Listeneintrag schon fest – nicht erneut abfragen.
         const cond = listItem && listItem.condition === "new" ? "new" : "used";
-        const condLabel = cond === "new" ? "Neu" : "Gebraucht";
+        const condLabel = cond === "new" ? tr("Neu") : tr("Gebraucht");
 
         const send = async (mode, paid) => {
           const res = await api(`/lists/items/${iid}/receive`,
@@ -3505,7 +3511,8 @@ function listItemRow(it, dealer) {
   const condPrice = it.condition === "new"
     ? (it.price_new || it.price_used) : (it.price_used || it.price_new);
   const prices = condPrice
-    ? `Ø ${it.condition === "new" ? "neu" : "gebr."} ${fmtEur(condPrice)}` : "";
+    ? `${it.condition === "new" ? tr("Ø neu") : tr("Ø gebr.")} `
+      + fmtEur(condPrice) : "";
   const doneInfo = it.done
     ? `<div class="sub done-note">✔ in Sammlung${it.done_by_name ? " von " + esc(it.done_by_name) : ""}${it.done_at ? " am " + new Date(it.done_at * 1000).toLocaleDateString("de-DE") : ""}</div>`
     : "";
@@ -3514,7 +3521,7 @@ function listItemRow(it, dealer) {
     <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
     <div class="fig-info">
       <strong>${esc(it.name)}</strong>
-      <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? "Neu" : "Gebraucht"}${prices ? " · " + prices : ""}${it.paid_price != null ? ` · Einkauf ${fmtEur(it.paid_price)}` : ""}</div>
+      <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${prices ? " · " + prices : ""}${it.paid_price != null ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(it.paid_price) })) : ""}</div>
       ${doneInfo}
       ${!it.done && dealer ? `
       <div class="fig-actions" style="margin-top:6px">
@@ -3713,18 +3720,20 @@ function renderStats(data) {
     <div class="stats-row">
       <div class="stat-chip tappable" data-lists-modal title="Listen anzeigen und verwalten">
         <strong data-lists-total>${fmtEur(t.lists_paid)}</strong>
-        <span><span data-lists-label>Einkauf auf ${t.lists_count === 1 ? "1 Liste" : t.lists_count + " Listen"}</span> ⚙️</span>
+        <span><span data-lists-label>${esc(t.lists_count === 1 ? tr("Einkauf auf 1 Liste") : tr("Einkauf auf {n} Listen", { n: t.lists_count }))}</span> ⚙️</span>
       </div>
     </div>` : ""}
-    ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">
-      Bei Figuren, die in euren Sets stecken, zählt ein nur ⚙️ automatisch
-      ermittelter Kaufpreis nicht extra – der Set-Preis deckt sie ab
-      (${fmtEur(t.paid_estimated)}). ✏️ Selbst eingetragene Preise zählen
-      immer mit, auch bei Set-Figuren.</div>` : ""}
-    ${t.in_sets_value > 0 ? `<div class="price-note" style="margin-top:6px">
-      Figuren, die in euren Sets stecken, sind im Set-Preis enthalten und
-      werden nicht doppelt gezählt (${fmtEur(t.in_sets_value)}).
-      Details unter ❓ Hilfe → „Wie der Wert berechnet wird".</div>` : ""}
+    ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">${
+      esc(tr("Bei Figuren, die in euren Sets stecken, zählt ein nur ⚙️ "
+        + "automatisch ermittelter Kaufpreis nicht extra – der Set-Preis "
+        + "deckt sie ab ({sum}). ✏️ Selbst eingetragene Preise zählen immer "
+        + "mit, auch bei Set-Figuren.", { sum: fmtEur(t.paid_estimated) }))
+    }</div>` : ""}
+    ${t.in_sets_value > 0 ? `<div class="price-note" style="margin-top:6px">${
+      esc(tr("Figuren, die in euren Sets stecken, sind im Set-Preis enthalten "
+        + "und werden nicht doppelt gezählt ({sum}). Details unter ❓ Hilfe → "
+        + "„Wie der Wert berechnet wird“.", { sum: fmtEur(t.in_sets_value) }))
+    }</div>` : ""}
   </div>`;
 
   const chart = `
@@ -3740,7 +3749,7 @@ function renderStats(data) {
     .map(([k, v]) => statBarRow(TYPE_LABELS[k] || k, v, t.value)).join("");
   const condRows = Object.entries(data.by_condition)
     .sort((a, b) => b[1].value - a[1].value)
-    .map(([k, v]) => statBarRow(k === "new" ? "Neu" : "Gebraucht", v,
+    .map(([k, v]) => statBarRow(k === "new" ? tr("Neu") : tr("Gebraucht"), v,
       t.value)).join("");
   const split = `
   <div class="card">
@@ -3927,7 +3936,8 @@ function yearChart(list) {
       + `width="${bw}" height="${bh.toFixed(1)}" rx="2" fill="#0057A6" `
       + `style="cursor:pointer" data-year="${e.year}" `
       + `data-value="${fmtEur(e.value)}" data-pieces="${e.pieces}">`
-      + `<title>${e.year}: ${fmtEur(e.value)} (${e.pieces} Stück)</title></rect>`;
+      + `<title>${esc(tr("{jahr}: {wert} ({n} Stück)",
+        { jahr: e.year, wert: fmtEur(e.value), n: e.pieces }))}</title></rect>`;
   }).join("");
   const first = list[0], last = list[list.length - 1];
   const peak = list.reduce((a, b) => (b.value > a.value ? b : a), list[0]);
@@ -4017,7 +4027,7 @@ function renderDuplicates(data) {
         <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
-          <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? "Neu" : "Gebraucht"}
+          <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}
             · ${it.quantity}× vorhanden${
               it.set_reserved > 0
                 ? ` (${it.set_reserved}× für Sets reserviert)`
@@ -4041,7 +4051,7 @@ function exportDuplicatesCsv() {
   const rows = [["Nummer", "Name", "Zustand", "Vorhanden", "Abgebbar",
     "Ø Stück (EUR)", "Wert (EUR)"]];
   data.items.forEach((it) => rows.push([it.item_id, it.name,
-    it.condition === "new" ? "Neu" : "Gebraucht", it.quantity, it.surplus,
+    it.condition === "new" ? tr("Neu") : tr("Gebraucht"), it.quantity, it.surplus,
     numDe(it.unit_price), numDe(it.value)]));
   downloadCsv("brickfolio-verkaufsliste.csv", rows);
   toast("Verkaufsliste exportiert ✔");
@@ -4050,7 +4060,7 @@ function exportDuplicatesCsv() {
 function printDuplicates() {
   const data = state.duplicates;
   const rows = data.items.map((it) => [it.item_id, it.name,
-    it.condition === "new" ? "Neu" : "Gebraucht",
+    it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
     it.surplus, it.unit_price ? fmtEur(it.unit_price) : "",
     it.value ? fmtEur(it.value) : ""]);
   printTable("Verkaufsliste – Doppelte",
@@ -4309,7 +4319,7 @@ async function exportCollectionCsv() {
   data.items.forEach((it) => {
     const unit = unitValue(it);
     rows.push([it.item_id, it.name, it.item_type, it.year > 0 ? it.year : "",
-      it.quantity, it.condition === "new" ? "Neu" : "Gebraucht",
+      it.quantity, it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
       numDe(it.price_new), numDe(it.price_used),
       unit ? numDe((unit * it.quantity).toFixed(2)) : "",
       it.notes, it.added_by_name || "", _dateDe(it.added_at)]);
@@ -4348,7 +4358,7 @@ async function printCollection() {
   const data = await api("/collection?q=&sort=name");
   const rows = data.items.map((it) => [it.item_id, it.name,
     it.year > 0 ? it.year : "", it.quantity,
-    it.condition === "new" ? "Neu" : "Gebraucht",
+    it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
     unitValue(it) ? fmtEur(unitValue(it)) : ""]);
   const sub = `${data.stats.total} Stück (${data.stats.unique_items} verschiedene)`
     + (data.stats.total_value ? ` · Gesamtwert ca. ${fmtEur(data.stats.total_value)}` : "");
@@ -4802,7 +4812,7 @@ async function loadShareView() {
           <div class="card-title">
             <strong>${esc(it.name)}</strong>
             <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
-              ${it.condition === "new" ? "Neu" : "Gebraucht"}</div>
+              ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}</div>
             ${s.known_state ? `<span class="badge ${it.published ? "badge-owned" : "badge-wanted"}">${
               it.published ? `veröffentlicht (${it.published_qty}×)` : "noch nicht veröffentlicht"}</span>` : ""}
           </div>
@@ -5118,7 +5128,7 @@ async function loadHubOffers() {
           <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url)}" ${IMG_FALLBACK} data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(o.name)}</strong>
-            <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? "Neu" : "Gebraucht") : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
+            <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
             <span class="badge badge-owned">von ${esc(o.display_name)}</span>
             ${t ? `<span class="badge badge-wanted">💬 angefragt · ${tradeStatusText(t.status)}${t.unread ? ` · ${t.unread} neu` : ""}</span>` : ""}
           </div>
@@ -5791,28 +5801,30 @@ function renderUpdateInfo(info) {
   if (hint) hint.hidden = !admin;
   if (diag && admin) {
     const seen = state.helperSeenAt;
-    const anleitung = "Einrichtung (eine Aufgabe je Instanz, die jede Minute"
-      + " läuft) steht im <a href=\"https://github.com/Melle79/brickfolio"
+    const anleitung = tr("Einrichtung (eine Aufgabe je Instanz, die jede "
+      + "Minute läuft) steht im <a href=\"https://github.com/Melle79/brickfolio"
       + "#update-aus-der-app-heraus-optional\" target=\"_blank\""
-      + " rel=\"noopener\">README</a>.";
+      + " rel=\"noopener\">README</a>.");
     if (helper) {
-      diag.innerHTML = "✅ <b>Update-Helfer läuft.</b> Sobald eine neue Version"
-        + " bereitsteht, kannst du sie hier direkt einspielen – ohne SSH.";
+      diag.innerHTML = tr("✅ <b>Update-Helfer läuft.</b> Sobald eine neue "
+        + "Version bereitsteht, kannst du sie hier direkt einspielen – ohne "
+        + "SSH.");
     } else if (!seen) {
-      diag.innerHTML = "💡 <b>Optional:</b> Mit dem Helfer"
-        + " <code>update-watch.sh</code> auf dem Server lässt sich ein Update"
-        + " direkt hier auslösen – ohne SSH. " + anleitung
-        + "<br><b>Stand:</b> Die Aufgabe hat sich hier noch <b>nie</b>"
-        + " gemeldet – meist stimmt der Pfad im Skriptfeld nicht oder sie"
-        + " läuft nicht als <code>root</code>.";
+      diag.innerHTML = tr("💡 <b>Optional:</b> Mit dem Helfer "
+        + "<code>update-watch.sh</code> auf dem Server lässt sich ein Update "
+        + "direkt hier auslösen – ohne SSH. ") + anleitung
+        + tr("<br><b>Stand:</b> Die Aufgabe hat sich hier noch <b>nie</b> "
+          + "gemeldet – meist stimmt der Pfad im Skriptfeld nicht oder sie "
+          + "läuft nicht als <code>root</code>.");
     } else {
       const min = Math.floor((Date.now() / 1000 - seen) / 60);
-      const wann = min < 120 ? `vor ${min} Minuten`
-        : `vor ${Math.floor(min / 60)} Stunden`;
-      diag.innerHTML = `⚠️ <b>Update-Helfer meldet sich nicht.</b> Die Aufgabe`
-        + ` lief zuletzt <b>${wann}</b> – sie ist also eingerichtet, läuft aber`
-        + " nicht jede Minute. Häufigster Grund: „Letzte Ausführungszeit“"
-        + " steht auf <code>00:59</code> statt <code>23:59</code>.";
+      const wann = min < 120 ? tr("vor {n} Minuten", { n: min })
+        : tr("vor {n} Stunden", { n: Math.floor(min / 60) });
+      diag.innerHTML = tr("⚠️ <b>Update-Helfer meldet sich nicht.</b> Die "
+        + "Aufgabe lief zuletzt <b>{wann}</b> – sie ist also eingerichtet, "
+        + "läuft aber nicht jede Minute. Häufigster Grund: „Letzte "
+        + "Ausführungszeit“ steht auf <code>00:59</code> statt "
+        + "<code>23:59</code>.", { wann });
     }
   }
   const status = $("update-status");
@@ -5855,8 +5867,10 @@ async function loadSettings() {
       if (!b || b.keep <= 0) return;
       const el = $("backup-auto-info");
       el.textContent = b.latest
-        ? `Automatische Sicherung: täglich nach data/backups/ · ${b.count} von ${b.keep} Tagesständen`
-        : `Automatische Sicherung: täglich nach data/backups/ (die erste entsteht kurz nach dem Start).`;
+        ? tr("Automatische Sicherung: täglich nach data/backups/ · {n} von "
+          + "{max} Tagesständen", { n: b.count, max: b.keep })
+        : tr("Automatische Sicherung: täglich nach data/backups/ (die erste "
+          + "entsteht kurz nach dem Start).");
       const block = $("backup-restore-block");
       if (b.files && b.files.length) {
         block.hidden = false;

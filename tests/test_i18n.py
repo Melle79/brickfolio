@@ -39,8 +39,16 @@ def seitentext():
     # Über mehrere Zeilen zusammengesetzte Zeichenketten wieder zusammenfügen
     # ("Teil eins " + "Teil zwei"), sonst fände man den fertigen Satz nie.
     js = re.sub(r'["`]\s*\+\s*["`]', "", js)
+    # Maskierte Anführungszeichen entmaskieren: im Quelltext steht \" , im
+    # Katalog das nackte " .
+    js = js.replace('\\"', '"')
+    # JavaScript bleibt roh: Ein Vergleich wie `min < 120` sähe für den
+    # Tag-Entferner wie ein angefangenes Element aus und fräße den Text
+    # dahinter weg. Zusätzlich eine Fassung mit vereinheitlichtem Leerraum –
+    # im Quelltext umbrechen Sätze mitten drin, gerendert stehen sie in einer
+    # Zeile.
     return "   ".join([nur_text(roh)] + [nur_text(a) for a in attribute]
-                      + [nur_text(js), js])
+                      + [js, " ".join(js.split())])
 
 
 def test_kataloge_vorhanden():
@@ -62,8 +70,11 @@ def test_keine_leeren_uebersetzungen(pfad):
 @pytest.mark.parametrize("pfad", KATALOGE, ids=lambda p: p.stem)
 def test_jeder_schluessel_kommt_in_der_oberflaeche_vor(pfad, seitentext):
     """Sonst zeigt der Eintrag ins Leere und bleibt wirkungslos."""
+    # Zwei Schreibweisen sind erlaubt: ohne Auszeichnungen (so steht es im
+    # Dokument) oder wortwörtlich (so steht es in app.js).
     blind = [k for k in json.loads(pfad.read_text())
-             if nur_text(k) and nur_text(k) not in seitentext]
+             if nur_text(k)
+             and nur_text(k) not in seitentext and k not in seitentext]
     assert not blind, ("Schlüssel ohne Entsprechung in index.html: "
                        + "; ".join(repr(k[:60]) for k in blind[:5]))
 

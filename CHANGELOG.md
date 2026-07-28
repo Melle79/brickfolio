@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.53.1 – Juli 2026
+
+### Neu
+- 🌐 **Die Oberfläche ist vollständig auf Englisch.** Gemessen an einer Instanz mit Demodaten, über alle sieben Ansichten und die komplette Hilfe: **0 von 349** bzw. **0 von 149** Textstellen noch deutsch. Umschalten unter *Mehr → Sprache*; die Wahl liegt im Profil
+- 📖 Auch die langen Erklärtexte sind übersetzt – die Hilfe, „Wie der Wert berechnet wird", die Rollen-Übersicht, der Cloudflare-Assistent, die Quellen- und Rechtliches-Angaben
+
+### Behoben
+- 🔤 **Sätze mit Auszeichnung blieben deutsch**, wenn ein Wort darin hervorgehoben war: Das innere `<b>` wurde zuerst übersetzt, danach passte der ganze Satz nicht mehr auf seinen Eintrag. Jetzt gewinnt der äußere Treffer – ein einzelnes englisches Wort in einem deutschen Absatz kann nicht mehr entstehen
+- 🧾 Preis- und Mengenzeilen („2× · Gebraucht · Ø gebr. 8,00 €", „1 Artikel · 1 offen · Marktwert ca. …") tragen jetzt Platzhalter statt fester Wortstellung
+
+### Für Deutsch ändert sich nichts
+Die Quellsprache braucht keinen Katalog: Bei Deutsch werden **null** Einträge geladen, es gibt keine zusätzliche Anfrage und kein Aufblitzen. Nachgeprüft.
+
 ## 1.52.2 – Juli 2026
 
 ### Verbessert
