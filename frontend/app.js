@@ -72,6 +72,11 @@ const I18N_ATTRS = ["placeholder", "title", "aria-label", "alt"];
 
 /* Einmal über einen Teilbaum und alles ersetzen, was im Katalog steht.
    Reine Zahlen, Symbole und Nutzerdaten stehen dort nicht – die bleiben. */
+/* Was vor dem Übersetzen dastand. Damit lässt sich zurückschalten, ohne die
+   Seite neu zu laden – wichtig beim ersten Start, wo sonst der halb
+   ausgefüllte Anmeldebogen verloren ginge. */
+const i18nVorher = new Map();
+
 function translateTree(root = document.body) {
   if (lang === "de" || !Object.keys(dict).length) return;
 
@@ -90,6 +95,7 @@ function translateTree(root = document.body) {
     if (el.dataset.i18nDone) return;
     const inhalt = el.innerHTML.replace(/\s+/g, " ").trim();
     if (!inhalt || !dict[inhalt]) return;
+    if (!i18nVorher.has(el)) i18nVorher.set(el, ["html", el.innerHTML]);
     el.innerHTML = dict[inhalt];
     el.dataset.i18nDone = "1";
     el.querySelectorAll("*").forEach((k) => { k.dataset.i18nDone = "1"; });
@@ -105,18 +111,62 @@ function translateTree(root = document.body) {
     if (kern.length < 2 || !dict[kern]) continue;
     treffer.push([n, roh.replace(kern, dict[kern])]);
   }
-  treffer.forEach(([n, wert]) => { n.nodeValue = wert; });
+  treffer.forEach(([n, wert]) => {
+    if (!i18nVorher.has(n)) i18nVorher.set(n, ["text", n.nodeValue]);
+    n.nodeValue = wert;
+  });
 
   root.querySelectorAll("*").forEach((el) => {
     I18N_ATTRS.forEach((a) => {
       const v = el.getAttribute(a);
-      if (v && dict[v.trim()]) el.setAttribute(a, dict[v.trim()]);
+      if (!v || !dict[v.trim()]) return;
+      const merker = el.dataset.i18nAttr ? el.dataset.i18nAttr.split("|") : [];
+      if (!merker.includes(a)) {
+        el.setAttribute("data-i18n-" + a, v);
+        el.dataset.i18nAttr = merker.concat(a).join("|");
+      }
+      el.setAttribute(a, dict[v.trim()]);
     });
   });
   // Der Titel des Fensters gehört auch dazu.
   if (root === document.body && dict[document.title]) {
+    if (!i18nVorher.has(document)) {
+      i18nVorher.set(document, ["title", document.title]);
+    }
     document.title = dict[document.title];
   }
+}
+
+/* Alles auf den deutschen Stand zurücksetzen – die Quellsprache steht ja
+   nirgends geschrieben, sie ist das, was vorher dastand. */
+function restoreLang() {
+  i18nVorher.forEach(([art, wert], knoten) => {
+    if (art === "html") knoten.innerHTML = wert;
+    else if (art === "text") knoten.nodeValue = wert;
+    else if (art === "title") document.title = wert;
+  });
+  i18nVorher.clear();
+  document.querySelectorAll("[data-i18n-done]").forEach((el) => {
+    delete el.dataset.i18nDone;
+  });
+  document.querySelectorAll("[data-i18n-attr]").forEach((el) => {
+    el.dataset.i18nAttr.split("|").forEach((a) => {
+      const alt = el.getAttribute("data-i18n-" + a);
+      if (alt !== null) { el.setAttribute(a, alt); }
+      el.removeAttribute("data-i18n-" + a);
+    });
+    delete el.dataset.i18nAttr;
+  });
+}
+
+/* Sprache im laufenden Betrieb wechseln, ohne neu zu laden. */
+async function switchLang(pick) {
+  if (pick === lang) return;
+  if (i18nBeobachter) { i18nBeobachter.disconnect(); i18nBeobachter = null; }
+  restoreLang();
+  await loadLang(pick);
+  translateTree(document.body);
+  watchForTranslation();
 }
 
 /* Neu gezeichnete Listen mitnehmen.
@@ -471,7 +521,7 @@ function renderWanted(items) {
           toast(e.message);
         } finally {
           wfixAuto.disabled = false;
-          wfixAuto.textContent = "🔍 Auto";
+          wfixAuto.textContent = tr("🔍 Auto");
         }
       });
     }
@@ -596,7 +646,7 @@ function applySuggestInfo(info, withDetail) {
       ownedEl.textContent = `✔ ${d.owned}× in eurer Sammlung`;
       ownedEl.hidden = false;
     } else if (ownedEl && d.wanted) {
-      ownedEl.textContent = "⭐ auf eurer Wunschliste";
+      ownedEl.textContent = tr("⭐ auf eurer Wunschliste");
       ownedEl.classList.remove("badge-owned");
       ownedEl.classList.add("badge-wanted");
       ownedEl.hidden = false;
@@ -753,7 +803,7 @@ async function askSetFigures(item, condition) {
       if (!chosen.length) return finish(0);
       const c = $("setfigs-cond").value;
       btn.disabled = true;
-      btn.textContent = "Übernehme …";
+      btn.textContent = tr("Übernehme …");
       let done = 0;
       for (const f of chosen) {
         try {
@@ -859,7 +909,7 @@ async function loadSetFigs(card, item, btn) {
     return;
   }
   btn.disabled = true;
-  btn.textContent = "Lade Figuren …";
+  btn.textContent = tr("Lade Figuren …");
   try {
     const data = await api(`/set_figs/${encodeURIComponent(item.item_id)}`);
     const figs = data.items || [];
@@ -911,10 +961,10 @@ async function loadSetFigs(card, item, btn) {
           });
       }
     }
-    btn.textContent = "👥 Figuren ausblenden";
+    btn.textContent = tr("👥 Figuren ausblenden");
   } catch (e) {
     toast(e.message);
-    btn.textContent = "👥 Enthaltene Figuren anzeigen";
+    btn.textContent = tr("👥 Enthaltene Figuren anzeigen");
   } finally {
     btn.disabled = false;
   }
@@ -929,7 +979,7 @@ async function loadFigParts(card, item, btn) {
     return;
   }
   btn.disabled = true;
-  btn.textContent = "Lade Teile …";
+  btn.textContent = tr("Lade Teile …");
   try {
     const data = await api(`/fig_parts/${encodeURIComponent(item.item_id)}`);
     const parts = data.items || [];
@@ -947,10 +997,10 @@ async function loadFigParts(card, item, btn) {
           </div>
         </div>`).join("");
     }
-    btn.textContent = "🧩 Teile ausblenden";
+    btn.textContent = tr("🧩 Teile ausblenden");
   } catch (e) {
     toast(e.message);
-    btn.textContent = "🧩 Enthaltene Teile anzeigen";
+    btn.textContent = tr("🧩 Enthaltene Teile anzeigen");
   } finally {
     btn.disabled = false;
   }
@@ -974,7 +1024,7 @@ async function markFigOwnership(out, figs) {
           badge.textContent = `✔ ${d.owned}× vorhanden`;
           badge.hidden = false;
         } else if (d.wanted) {
-          badge.textContent = "⭐ auf der Wunschliste";
+          badge.textContent = tr("⭐ auf der Wunschliste");
           badge.classList.remove("badge-owned");
           badge.classList.add("badge-wanted");
           badge.hidden = false;
@@ -1338,17 +1388,17 @@ async function doSetup() {
   const p1 = $("setup-pass").value;
   const p2 = $("setup-pass2").value;
   if (username.length < 2) {
-    err.textContent = "Bitte einen Benutzernamen eingeben (mind. 2 Zeichen)";
+    err.textContent = tr("Bitte einen Benutzernamen eingeben (mind. 2 Zeichen)");
     err.hidden = false;
     return;
   }
   if (p1.length < 4) {
-    err.textContent = "Das Passwort braucht mindestens 4 Zeichen";
+    err.textContent = tr("Das Passwort braucht mindestens 4 Zeichen");
     err.hidden = false;
     return;
   }
   if (p1 !== p2) {
-    err.textContent = "Die Passwörter stimmen nicht überein";
+    err.textContent = tr("Die Passwörter stimmen nicht überein");
     err.hidden = false;
     return;
   }
@@ -1362,6 +1412,11 @@ async function doSetup() {
     applySortPref();
     localStorage.setItem("bf_token", data.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
+    // Die Sprache, die beim Anlegen gewählt wurde, gehört ins frische Profil –
+    // sonst gilt sie nur auf diesem Gerät.
+    state.user.lang = lang;
+    try { await api("/me/lang", { method: "POST", body: { lang } }); }
+    catch (_) { /* lokal gilt sie trotzdem */ }
     toast(tr("Willkommen, {name}! 🧱", { name: data.username }));
     startWizard();
   } catch (e) {
@@ -1392,10 +1447,12 @@ function showWizStep() {
   document.querySelectorAll("#view-wizard .wiz-step").forEach((el) => {
     el.hidden = Number(el.dataset.step) !== wizStep;
   });
-  $("wiz-step-of").textContent = `Schritt ${wizStep} von ${WIZ_LAST}`;
+  $("wiz-step-of").textContent = tr("Schritt {n} von {max}",
+    { n: wizStep, max: WIZ_LAST });
   $("wiz-back").hidden = wizStep === 1;
   $("wiz-skip").hidden = wizStep === WIZ_LAST;
-  $("wiz-next").textContent = wizStep === WIZ_LAST ? "Loslegen" : "Weiter";
+  $("wiz-next").textContent = wizStep === WIZ_LAST
+    ? tr("Loslegen") : tr("Weiter");
   $("wiz-error").hidden = true;
 }
 
@@ -2492,7 +2549,7 @@ async function runBricklinkLookup() {
   const box = $("m-suggestions");
   const hint = $("m-search-hint");
   if (!state.bricklinkLookup || no.length < 3) return;
-  hint.textContent = "Suche bei BrickLink …";
+  hint.textContent = tr("Suche bei BrickLink …");
   hint.hidden = false;
   const found = await lookupNumber(no);
   if (seq !== searchSeq) return;   // überholt – nichts rendern
@@ -2535,7 +2592,7 @@ async function runCatalogSearch() {
   if (q.length < 3) {
     box.innerHTML = "";
     if (q.length > 0) {
-      hint.textContent = "Bitte mindestens 3 Zeichen eingeben …";
+      hint.textContent = tr("Bitte mindestens 3 Zeichen eingeben …");
       hint.hidden = false;
     } else {
       hint.hidden = true;
@@ -2544,7 +2601,7 @@ async function runCatalogSearch() {
   }
   // Sieht nach BrickLink-Nummer aus? Dann zuerst dort direkt nachschlagen.
   if (state.bricklinkLookup && (BL_NO_RE.test(q) || NUM_NO_RE.test(q))) {
-    hint.textContent = "Suche bei BrickLink …";
+    hint.textContent = tr("Suche bei BrickLink …");
     hint.hidden = false;
     const found = await lookupNumber(q);
     if (seq !== searchSeq) return;   // eine neuere Suche läuft schon
@@ -2604,7 +2661,7 @@ function renderSuggestions(items, meta) {
   if (!items.length) {
     box.innerHTML = "";
     const hint = $("m-search-hint");
-    hint.textContent = "Nichts gefunden – einfach weitertippen oder unten manuell speichern.";
+    hint.textContent = tr("Nichts gefunden – einfach weitertippen oder unten manuell speichern.");
     hint.hidden = false;
     return;
   }
@@ -2752,7 +2809,7 @@ function openSuggestModal(it) {
     // Solange die BrickLink-Nummer noch gesucht wird: erst danach klickbar
     if (/^fig-/.test(pit.item_id)) {
       partsBtn.disabled = true;
-      partsBtn.textContent = "🧩 Teile (suche Nummer …)";
+      partsBtn.textContent = tr("🧩 Teile (suche Nummer …)");
     }
   }
   const figsBtn = inner.querySelector("[data-figs]");
@@ -2826,7 +2883,7 @@ async function loadSuggestDetail(inner, pit, orig) {
         if (po) po.remove();
       } else {
         pBtn.disabled = false;
-        pBtn.textContent = "🧩 Enthaltene Teile anzeigen";
+        pBtn.textContent = tr("🧩 Enthaltene Teile anzeigen");
       }
     }
   }
@@ -2858,7 +2915,7 @@ async function loadSuggestDetail(inner, pit, orig) {
       badge.textContent = `✔ ${d.owned}× in eurer Sammlung`;
       badge.hidden = false;
     } else if (d.wanted) {
-      badge.textContent = "⭐ auf eurer Wunschliste";
+      badge.textContent = tr("⭐ auf eurer Wunschliste");
       badge.classList.replace("badge-owned", "badge-wanted");
       badge.hidden = false;
     }
@@ -2887,7 +2944,7 @@ async function loadSuggestDetail(inner, pit, orig) {
 
 async function resolveBricklinkNo(it) {
   const hint = $("m-search-hint");
-  hint.textContent = "Suche die passende BrickLink-Nummer (sw/dis/…) …";
+  hint.textContent = tr("Suche die passende BrickLink-Nummer (sw/dis/…) …");
   hint.hidden = false;
   try {
     const data = await api("/resolve", { method: "POST", body: { img_url: it.img_url } });
@@ -2895,11 +2952,11 @@ async function resolveBricklinkNo(it) {
       .filter((c) => !c.item_type || c.item_type === $("m-type").value);
     if (!candidates.length) candidates = data.items || [];
     if (!candidates.length) {
-      hint.textContent = "Keine BrickLink-Nummer gefunden – der Eintrag behält "
+      hint.textContent = tr("Keine BrickLink-Nummer gefunden – der Eintrag behält ")
         + "die Rebrickable-Nummer. Speichern ist trotzdem möglich.";
       return;
     }
-    hint.textContent = "BrickLink-Treffer – bitte die exakte Variante wählen "
+    hint.textContent = tr("BrickLink-Treffer – bitte die exakte Variante wählen ")
       + "(Bild antippen für Großansicht):";
     renderSuggestions(candidates.map((c) => ({ ...c, sub: `${c.score} % sicher` })));
   } catch (e) {
@@ -2943,7 +3000,7 @@ async function addManual() {
   err.hidden = true;
   const name = $("m-name").value.trim();
   if (!name) {
-    err.textContent = "Bitte mindestens einen Namen angeben.";
+    err.textContent = tr("Bitte mindestens einen Namen angeben.");
     err.hidden = false;
     return;
   }
@@ -2954,7 +3011,7 @@ async function addManual() {
   if (paidRaw) {
     const n = Number(paidRaw);
     if (!Number.isFinite(n) || n < 0) {
-      err.textContent = "Bezahlt bitte als Zahl, z. B. 4,50";
+      err.textContent = tr("Bezahlt bitte als Zahl, z. B. 4,50");
       err.hidden = false;
       return;
     }
@@ -3054,7 +3111,7 @@ async function pickListForManual() {
   const err = $("manual-error");
   err.hidden = true;
   if (!$("m-name").value.trim()) {
-    err.textContent = "Bitte mindestens einen Namen angeben.";
+    err.textContent = tr("Bitte mindestens einen Namen angeben.");
     err.hidden = false;
     return;
   }
@@ -3125,7 +3182,7 @@ async function addManualWanted() {
   err.hidden = true;
   const name = $("m-name").value.trim();
   if (!name) {
-    err.textContent = "Bitte mindestens einen Namen angeben.";
+    err.textContent = tr("Bitte mindestens einen Namen angeben.");
     err.hidden = false;
     return;
   }
@@ -3157,7 +3214,7 @@ async function changeOwnUsername() {
   err.hidden = true;
   const name = $("own-name").value.trim();
   if (name.length < 2) {
-    err.textContent = "Bitte mindestens 2 Zeichen.";
+    err.textContent = tr("Bitte mindestens 2 Zeichen.");
     err.hidden = false;
     return;
   }
@@ -4022,7 +4079,7 @@ async function toggleDuplicates() {
     state.duplicates = data;
     renderDuplicates(data);
     box.hidden = false;
-    $("btn-duplicates").textContent = "📋 Verkaufsliste ausblenden";
+    $("btn-duplicates").textContent = tr("📋 Verkaufsliste ausblenden");
   } catch (e) { toast(e.message); }
 }
 
@@ -4105,7 +4162,7 @@ async function toggleMissingFigs() {
   const btn = $("btn-missing-figs");
   if (!box.hidden) {
     box.hidden = true;
-    btn.textContent = "🧩 Fehlende Set-Figuren";
+    btn.textContent = tr("🧩 Fehlende Set-Figuren");
     return;
   }
   btn.disabled = true;
@@ -4114,7 +4171,7 @@ async function toggleMissingFigs() {
     state.missingFigs = data;
     renderMissingFigs(data);
     box.hidden = false;
-    btn.textContent = "🧩 Fehlende ausblenden";
+    btn.textContent = tr("🧩 Fehlende ausblenden");
   } catch (e) {
     toast(e.message);
   } finally {
@@ -4514,7 +4571,7 @@ async function refreshThemes() {
   const out = $("theme-refresh-status");
   btn.disabled = true;
   out.hidden = false;
-  out.textContent = "Themen werden bestimmt …";
+  out.textContent = tr("Themen werden bestimmt …");
   try {
     let total = 0;
     for (;;) {
@@ -4571,7 +4628,7 @@ function wireHubConnectOnce() {
     const invite_code = $("hub-invite-in").value.trim();
     const display_name = $("hub-name-in").value.trim();
     if (!invite_code || !display_name) {
-      err.textContent = "Einladungscode und Anzeigename angeben.";
+      err.textContent = tr("Einladungscode und Anzeigename angeben.");
       err.hidden = false; return;
     }
     try {
@@ -5249,18 +5306,21 @@ function applyServerTheme(data) {
 
 /* Sprachwahl. Ein Wechsel lädt die Seite neu – das ist ehrlicher als der
    Versuch, jede schon gezeichnete Liste nachträglich umzuschreiben. */
+function markLangButtons() {
+  document.querySelectorAll("[data-lang-pick]").forEach((b) => {
+    b.classList.toggle("sel", b.dataset.langPick === lang);
+  });
+}
+
 function initLangPicker() {
-  const markieren = () => {
-    document.querySelectorAll("[data-lang-pick]").forEach((b) => {
-      b.classList.toggle("sel", b.dataset.langPick === lang);
-    });
-  };
-  markieren();
+  markLangButtons();
   document.querySelectorAll("[data-lang-pick]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const pick = btn.dataset.langPick;
       if (pick === lang) return;
       localStorage.setItem("bf_lang", pick);
+      await switchLang(pick);           // ohne Neuladen, Eingaben bleiben
+      markLangButtons();
       if (state.user) {
         state.user.lang = pick;
         localStorage.setItem("bf_user", JSON.stringify(state.user));
@@ -5270,7 +5330,6 @@ function initLangPicker() {
           await api("/me/lang", { method: "POST", body: { lang: pick } });
         } catch (_) { /* lokal gilt sie trotzdem */ }
       }
-      location.reload();
     });
   });
 }
@@ -5381,7 +5440,7 @@ function renderErrors() {
       } catch (e) {
         toast(e.message);
         b.disabled = false;
-        b.textContent = "🐙 Issue anlegen";
+        b.textContent = tr("🐙 Issue anlegen");
       }
     });
   });
@@ -5456,7 +5515,7 @@ function renderNotifications(items) {
   box.querySelectorAll("[data-apply]").forEach((b) => {
     b.onclick = async () => {
       b.disabled = true;
-      b.textContent = "Wird übernommen …";
+      b.textContent = tr("Wird übernommen …");
       try {
         const res = await api(`/notifications/${b.dataset.apply}/apply`,
           { method: "POST" });
@@ -5466,7 +5525,7 @@ function renderNotifications(items) {
       } catch (e) {
         toast(e.message || "Hat nicht geklappt");
         b.disabled = false;
-        b.textContent = "Nummer übernehmen";
+        b.textContent = tr("Nummer übernehmen");
       }
     };
   });
@@ -5492,7 +5551,7 @@ function renderPriceRegion() {
       + " BrickLink – bei vielen Artikeln also in mehreren Durchgängen.";
     run.hidden = false;
   } else {
-    status.textContent = "✅ Alle Preise stammen aus dem eingestellten Gebiet.";
+    status.textContent = tr("✅ Alle Preise stammen aus dem eingestellten Gebiet.");
     run.hidden = true;
   }
 
@@ -5568,7 +5627,7 @@ async function recalcPrices() {
     toast(e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "🔄 Preise jetzt umrechnen";
+    btn.textContent = tr("🔄 Preise jetzt umrechnen");
     renderPriceRegion();
     if (!$("view-collection").hidden) loadCollection();
   }
@@ -5644,7 +5703,7 @@ async function loadPriceLog(limit) {
       staleEl.hidden = false;
     }
     if (!res.entries.length) {
-      box.textContent = "Noch keine Aufzeichnungen.";
+      box.textContent = tr("Noch keine Aufzeichnungen.");
       $("btn-pricelog-more").hidden = true;
       return;
     }
@@ -6411,7 +6470,7 @@ function updateInstallCard() {
   const go = $("install-go");
   const text = $("install-text");
   if (installPrompt) {
-    text.textContent = "Ein Tipp, und Brickfolio startet künftig wie eine "
+    text.textContent = tr("Ein Tipp, und Brickfolio startet künftig wie eine ")
       + "eigene App – ohne Adresszeile, mit eigenem Symbol.";
     go.hidden = false;
     card.hidden = false;

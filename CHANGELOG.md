@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.55.1 – Juli 2026
+
+### Neu
+- 🌐 **Sprachwahl schon beim allerersten Start.** Über den Feldern für das Admin-Konto stehen jetzt Deutsch und English – dort, wo man die Entscheidung ohnehin trifft. Die Wahl landet direkt im Profil des frisch angelegten Admins, gilt also gleich auf allen Geräten
+- 🔁 **Umschalten ohne Neuladen.** Die App merkt sich, was vor dem Übersetzen dastand, und kann zurückwechseln. Damit gehen beim Umschalten **keine Eingaben mehr verloren** – wer schon Benutzername und Passwort getippt hat, behält beides
+
+### Verbessert
+- 🈯 40 weitere Textstellen übersetzt, die per `textContent` gesetzt werden (Ladehinweise, Prüfmeldungen der Formulare, Aufklapp-Knöpfe für Teile und Set-Figuren). Sie blieben bisher deutsch, weil sie erst nach dem Zeichnen entstehen
+
 ## 1.54.1 – Juli 2026
 
 ### Neu
