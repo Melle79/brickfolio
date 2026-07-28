@@ -1414,3 +1414,19 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   [data-theme="nova"] .tabbar .tab.active,
   [data-theme="nova"] .tabbar .tab.active svg { color: #04202E; stroke: #04202E; }
 }
+
+/* ---------- Zwei-Faktor ---------- */
+.profile-trenner { border: 0; border-top: 2px dashed var(--line); margin: 18px 0 12px; }
+.profile-titel { margin: 0 0 4px; font-size: 16px; }
+.tfa-qr { display: flex; justify-content: center; margin: 10px 0; }
+.tfa-qr svg { width: 200px; height: 200px; background: #fff; border-radius: 8px; padding: 6px; }
+.tfa-secret {
+  font-family: ui-monospace, Menlo, monospace; font-size: 15px;
+  letter-spacing: 1px; text-align: center; word-break: break-all;
+  background: var(--field); border-radius: 8px; padding: 8px; margin: 6px 0;
+}
+.tfa-codeliste {
+  font-family: ui-monospace, Menlo, monospace; font-size: 14px;
+  background: var(--field); border-radius: 8px; padding: 10px;
+  margin: 8px 0; white-space: pre; overflow-x: auto;
+}

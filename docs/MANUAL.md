@@ -377,6 +377,46 @@ standard account.
 entries – anyone who gets the pro role later sees complete data
 retroactively.
 
+### 3.1 Two-factor login (optional, per user)
+
+If you like, you can protect your account additionally with a **one-time code
+from an authenticator app** (Aegis, 1Password, Google Authenticator …). It is
+the most sensible addition as soon as the app is reachable from outside.
+
+**Turning it on** under *Profile* (tap your name at the top right) → **🔐
+Two-factor login**:
+
+1. Enter your password, "Set up" – a **QR code** appears; if you cannot scan,
+   type in the key shown below it.
+2. Enter the six-digit code from the app and press "Turn on". Only this step
+   activates the protection – so nobody can lock themselves out with a key
+   that was transferred incorrectly.
+3. **Eight recovery codes** appear. They are shown **only this once**:
+   afterwards the database holds nothing but their checksums. Print them or
+   put them in your password manager.
+
+**Signing in** then happens in two steps: first the password, then the code.
+If you do not have your phone at hand, enter a **recovery code** instead of
+the six digits – each works exactly once, and the app tells you how many are
+left.
+
+**Turning it off** requires the password *and* a valid code.
+
+> **Phone lost and no recovery codes left?** Then an **admin** removes the
+> second factor in user management. Without that way out, a lost device would
+> mean a lost account. The last admin should therefore keep their recovery
+> codes especially carefully.
+
+**Worth knowing:**
+
+- A code works **only once**. Someone reading it over your shoulder cannot
+  reuse it within the same half minute.
+- A clock difference of half a minute is allowed for. If the app stubbornly
+  says "code does not match", it is usually the **phone's clock** that is off.
+- The second step is throttled against guessing too (see 2.8).
+- The app computes the codes according to RFC 6238 – the same procedure as
+  every common authenticator app.
+
 ---
 
 ## 4. Scanning & adding

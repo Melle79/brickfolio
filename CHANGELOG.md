@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.58.2 – Juli 2026
+
+### Neu
+- 🔐 **Zwei-Faktor-Anmeldung – freiwillig, je Benutzer.** Einmalcode aus einer Authenticator-App (TOTP nach RFC 6238), einzurichten im Profil: Passwort, QR-Code scannen, Code bestätigen. Eingeschaltet wird erst, wenn ein Code aus der App stimmt – so kann sich niemand mit einem falsch übertragenen Schlüssel aussperren
+- 🆘 **Acht Rettungscodes** für den Fall, dass das Telefon weg ist. Sie erscheinen genau einmal; in der Datenbank liegen nur ihre Prüfsummen. Jeder gilt einmal, die App zählt mit
+- 🔧 **Notausgang für den Admin**: Ist auch der letzte Rettungscode weg, nimmt ein Admin den zweiten Faktor in der Benutzerverwaltung ab. Ohne das wäre ein verlorenes Gerät ein verlorenes Konto
+- 📖 Neuer Abschnitt 3.1 in beiden Handbüchern
+
+### Behoben
+- 🐞 **Ein Tippfehler im Einmalcode warf einen aus dem ganzen Anmeldevorgang.** Die App behandelte jede Absage mit „401" als abgelaufene Sitzung und meldete ab – auch das „Code stimmt nicht". Jetzt bleibt man im Schritt und kann es nochmal versuchen
+- 🐞 **Nach dem Abmelden standen kurz zwei Anmeldekästen übereinander.** Eine nebenher laufende Abfrage legte den Passwort-Bogen wieder über den Code-Schritt
+
+### Sicherheit
+- Die Zwischenmarke aus dem ersten Anmeldeschritt ist **keine Sitzung** – mit halb erledigter Anmeldung kommt man an keine Daten. Ein Test wacht darüber
+- Ein Einmalcode gilt **nur einmal**; auch der zweite Schritt ist gegen Raten gebremst
+
 ## 1.57.0 – Juli 2026
 
 ### Neu

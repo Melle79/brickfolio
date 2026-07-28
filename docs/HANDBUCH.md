@@ -383,6 +383,46 @@ verwaltet mit dem Standard-Konto einfach seine Sammlung.
 mitgeführt – wer die Profi-Rolle später bekommt, sieht rückwirkend
 vollständige Daten.
 
+### 3.1 Zwei-Faktor-Anmeldung (freiwillig, je Benutzer)
+
+Wer mag, sichert sein Konto zusätzlich mit einem **Einmalcode aus einer
+Authenticator-App** (Aegis, 1Password, Google Authenticator …). Das ist die
+sinnvollste Ergänzung, sobald die App von außen erreichbar ist.
+
+**Einschalten** unter *Profil* (Name oben rechts antippen) → **🔐
+Zwei-Faktor-Anmeldung**:
+
+1. Passwort eingeben, „Einrichten" – es erscheint ein **QR-Code**; wer nicht
+   scannen kann, tippt den darunter stehenden Schlüssel ab.
+2. Den sechsstelligen Code aus der App eintragen und „Einschalten". Erst
+   dieser Schritt aktiviert die Sicherung – so kann sich niemand mit einem
+   falsch übertragenen Schlüssel aussperren.
+3. Es erscheinen **acht Rettungscodes**. Sie werden **nur dieses eine Mal**
+   angezeigt: Danach liegen in der Datenbank nur noch ihre Prüfsummen.
+   Ausdrucken oder in den Passwortspeicher legen.
+
+**Anmelden** läuft danach in zwei Schritten: erst Passwort, dann Code. Wer
+das Telefon nicht zur Hand hat, gibt statt des Codes einen **Rettungscode**
+ein – jeder gilt genau einmal, die App sagt danach, wie viele übrig sind.
+
+**Ausschalten** verlangt Passwort *und* einen gültigen Code.
+
+> **Telefon verloren und keine Rettungscodes mehr?** Dann nimmt ein **Admin**
+> den zweiten Faktor in der Benutzerverwaltung ab. Ohne diesen Ausweg wäre
+> ein verlorenes Gerät ein verlorenes Konto. Der letzte Admin sollte seine
+> Rettungscodes deshalb besonders sorgfältig aufbewahren.
+
+**Gut zu wissen:**
+
+- Ein Code gilt **nur einmal**. Wer ihn über die Schulter abliest, kann ihn
+  nicht innerhalb derselben halben Minute wiederverwenden.
+- Eine Uhr-Abweichung von einer halben Minute ist eingeplant. Meldet die App
+  hartnäckig „Code stimmt nicht", stimmt meist die **Uhrzeit des Telefons**
+  nicht.
+- Auch der zweite Schritt ist gegen Raten gebremst (siehe 2.8).
+- Die Codes rechnet die App nach RFC 6238 – demselben Verfahren wie alle
+  gängigen Authenticator-Apps.
+
 ---
 
 ## 4. Scannen & Erfassen

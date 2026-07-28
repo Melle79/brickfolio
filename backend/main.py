@@ -9,7 +9,8 @@ import time
 import uuid
 
 import requests
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import (Depends, FastAPI, File, HTTPException, Request,
+                     Response, UploadFile)
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,6 +20,7 @@ import core
 import crypto_box
 import hub
 import integrations
+import totp
 import themes
 
 app = FastAPI(title="Brickfolio", docs_url=None, redoc_url=None)
@@ -189,6 +191,11 @@ def current_user(request: Request) -> dict:
     payload = core.decode_token(header[7:])
     if not payload:
         raise HTTPException(401, "Sitzung abgelaufen – bitte neu anmelden")
+    # Die Zwischenmarke aus dem ersten Anmeldeschritt ist keine Sitzung.
+    # Ohne diese Zeile käme man mit halb erledigter Anmeldung an alle Daten –
+    # die Zwei-Faktor-Prüfung wäre damit wirkungslos.
+    if payload.get("zweck"):
+        raise HTTPException(401, "Anmeldung ist noch nicht abgeschlossen")
     with core.db() as conn:
         row = conn.execute(
             "SELECT id, username, is_admin, is_dealer, theme, sort_pref, lang "
@@ -380,6 +387,19 @@ def login(body: LoginBody, request: Request):
     # gültige Zugangsdaten; wer keine hat, kommt nie an diese Stelle.
     for k in keys:
         _login_fails.pop(k, None)
+
+    # Zweiter Faktor, falls eingeschaltet: Das Passwort allein reicht dann
+    # nicht. Statt des Sitzungs-Tokens kommt eine kurzlebige Zwischenmarke
+    # zurück – sie erlaubt ausschließlich den zweiten Schritt.
+    if "totp_secret" in row.keys() and row["totp_secret"]:
+        return {"totp_required": True,
+                "challenge": core.create_token(row["id"], row["username"],
+                                               False, minutes=5,
+                                               zweck="2fa")}
+    return _login_antwort(row)
+
+
+def _login_antwort(row) -> dict:
     token = core.create_token(row["id"], row["username"], row["is_admin"])
     is_dealer = bool(row["is_dealer"]) if "is_dealer" in row.keys() else False
     theme = row["theme"] if "theme" in row.keys() else None
@@ -389,6 +409,56 @@ def login(body: LoginBody, request: Request):
             "is_admin": bool(row["is_admin"]), "is_dealer": is_dealer,
             "theme": theme, "sort_pref": sort_pref, "lang": lang,
             "default_theme": core.get_setting("default_theme") or "classic"}
+
+
+class TotpLoginBody(BaseModel):
+    challenge: str
+    code: str = Field(min_length=4, max_length=40)
+
+
+@app.post("/api/login/2fa")
+def login_2fa(body: TotpLoginBody, request: Request):
+    """Zweiter Schritt: Einmalcode oder Rettungscode."""
+    daten = core.decode_token(body.challenge)
+    if not daten or daten.get("zweck") != "2fa":
+        raise HTTPException(401, "Anmeldung abgelaufen – bitte neu beginnen")
+    uid = int(daten["sub"])
+    keys = (f"t:{uid}", f"i:{_login_key(request)}")
+    warte = _login_blocked(*keys)
+    if warte:
+        raise HTTPException(429, "Zu viele Fehlversuche – bitte "
+                                 f"{max(1, warte // 60)} Minuten warten")
+    with core.db() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+    if not row or not row["totp_secret"]:
+        raise HTTPException(401, "Zwei-Faktor ist nicht aktiv")
+
+    schritt = totp.pruefe(row["totp_secret"], body.code, row["totp_last"])
+    if schritt is not None:
+        with core.db() as conn:
+            conn.execute("UPDATE users SET totp_last = ? WHERE id = ?",
+                         (schritt, uid))
+        for k in keys:
+            _login_fails.pop(k, None)
+        return _login_antwort(row)
+
+    # Kein gültiger Einmalcode – dann vielleicht ein Rettungscode.
+    rest = json.loads(row["totp_recovery"] or "[]")
+    gehasht = totp.rettungscode_hash(body.code)
+    if gehasht in rest:
+        rest.remove(gehasht)                 # gilt genau einmal
+        with core.db() as conn:
+            conn.execute("UPDATE users SET totp_recovery = ? WHERE id = ?",
+                         (json.dumps(rest), uid))
+        for k in keys:
+            _login_fails.pop(k, None)
+        antwort = _login_antwort(row)
+        antwort["recovery_used"] = True
+        antwort["recovery_left"] = len(rest)
+        return antwort
+
+    _login_failed(*keys)
+    raise HTTPException(401, "Code stimmt nicht")
 
 
 THEMES = ("classic", "galaxy", "nova")
@@ -414,6 +484,134 @@ LANGS = ("de", "en")
 
 class LangBody(BaseModel):
     lang: str = Field(max_length=5)
+
+
+# --------------------------------------------- Zwei-Faktor (freiwillig)
+
+@app.get("/api/me/2fa")
+def totp_status(user: dict = Depends(current_user)):
+    with core.db() as conn:
+        row = conn.execute("SELECT totp_secret, totp_recovery FROM users "
+                           "WHERE id = ?", (user["id"],)).fetchone()
+    aktiv = bool(row["totp_secret"])
+    return {"active": aktiv,
+            "recovery_left": len(json.loads(row["totp_recovery"] or "[]"))
+            if aktiv else 0}
+
+
+class TotpStartBody(BaseModel):
+    password: str = Field(min_length=1, max_length=200)
+
+
+@app.post("/api/me/2fa/start")
+def totp_start(body: TotpStartBody, user: dict = Depends(current_user)):
+    """Einrichtung beginnen. Das Passwort wird nochmal verlangt – sonst
+    könnte an einem offen stehenden Gerät jemand fremd einen zweiten Faktor
+    einrichten und den Besitzer aussperren."""
+    with core.db() as conn:
+        row = conn.execute("SELECT password_hash, totp_secret FROM users "
+                           "WHERE id = ?", (user["id"],)).fetchone()
+    if not core.verify_password(body.password, row["password_hash"]):
+        raise HTTPException(401, "Das Passwort ist falsch")
+    if row["totp_secret"]:
+        raise HTTPException(409, "Zwei-Faktor ist bereits aktiv")
+    secret = totp.neuer_schluessel()
+    with core.db() as conn:
+        conn.execute("UPDATE users SET totp_pending = ? WHERE id = ?",
+                     (secret, user["id"]))
+    return {"secret": secret,
+            "otpauth": totp.otpauth_url(secret, user["name"], _owner_name()
+                                        + "'s Brickfolio")}
+
+
+@app.get("/api/me/2fa/qr")
+def totp_qr(user: dict = Depends(current_user)):
+    """QR-Code zur laufenden Einrichtung, als SVG.
+
+    Bewusst erst nach dem Anmelden erreichbar und nur für den eigenen,
+    noch unbestätigten Schlüssel – der Code enthält schließlich das
+    Geheimnis im Klartext.
+    """
+    with core.db() as conn:
+        row = conn.execute("SELECT totp_pending FROM users WHERE id = ?",
+                           (user["id"],)).fetchone()
+    if not row["totp_pending"]:
+        raise HTTPException(404, "Keine Einrichtung begonnen")
+    import io
+
+    import segno
+    url = totp.otpauth_url(row["totp_pending"], user["name"],
+                           _owner_name() + "'s Brickfolio")
+    puffer = io.BytesIO()
+    segno.make(url, error="m").save(puffer, kind="svg", scale=5, border=2)
+    return Response(puffer.getvalue(), media_type="image/svg+xml",
+                    headers={"Cache-Control": "no-store"})
+
+
+class TotpCodeBody(BaseModel):
+    code: str = Field(min_length=4, max_length=40)
+
+
+@app.post("/api/me/2fa/confirm")
+def totp_confirm(body: TotpCodeBody, user: dict = Depends(current_user)):
+    """Erst wenn ein Code aus der App stimmt, wird eingeschaltet – so kann
+    sich niemand mit einem falsch übertragenen Schlüssel aussperren."""
+    with core.db() as conn:
+        row = conn.execute("SELECT totp_pending FROM users WHERE id = ?",
+                           (user["id"],)).fetchone()
+    if not row["totp_pending"]:
+        raise HTTPException(400, "Keine Einrichtung begonnen")
+    schritt = totp.pruefe(row["totp_pending"], body.code)
+    if schritt is None:
+        raise HTTPException(401, "Code stimmt nicht – Uhrzeit des Geräts prüfen")
+    codes = totp.neue_rettungscodes()
+    with core.db() as conn:
+        conn.execute("UPDATE users SET totp_secret = totp_pending, "
+                     "totp_pending = NULL, totp_last = ?, totp_recovery = ? "
+                     "WHERE id = ?",
+                     (schritt, json.dumps([totp.rettungscode_hash(c)
+                                           for c in codes]), user["id"]))
+    # Die Rettungscodes gehen genau hier einmal hinaus – danach liegen nur
+    # noch ihre Hashes in der Datenbank.
+    return {"ok": True, "recovery_codes": codes}
+
+
+class TotpOffBody(BaseModel):
+    password: str = Field(min_length=1, max_length=200)
+    code: str = Field(min_length=4, max_length=40)
+
+
+@app.post("/api/me/2fa/disable")
+def totp_disable(body: TotpOffBody, user: dict = Depends(current_user)):
+    """Ausschalten verlangt beides – Passwort und einen gültigen Code."""
+    with core.db() as conn:
+        row = conn.execute("SELECT password_hash, totp_secret, totp_last "
+                           "FROM users WHERE id = ?", (user["id"],)).fetchone()
+    if not row["totp_secret"]:
+        raise HTTPException(400, "Zwei-Faktor ist nicht aktiv")
+    if not core.verify_password(body.password, row["password_hash"]):
+        raise HTTPException(401, "Das Passwort ist falsch")
+    if totp.pruefe(row["totp_secret"], body.code, row["totp_last"]) is None:
+        raise HTTPException(401, "Code stimmt nicht")
+    with core.db() as conn:
+        conn.execute("UPDATE users SET totp_secret = NULL, totp_pending = NULL,"
+                     " totp_last = NULL, totp_recovery = NULL WHERE id = ?",
+                     (user["id"],))
+    return {"ok": True}
+
+
+@app.post("/api/users/{user_id}/2fa/reset")
+def totp_reset(user_id: int, user: dict = Depends(admin_user)):
+    """Notausgang: Der Admin nimmt den zweiten Faktor ab, wenn jemand sein
+    Telefon verloren hat und keine Rettungscodes mehr besitzt. Ohne das wäre
+    ein verlorenes Gerät ein verlorenes Konto."""
+    with core.db() as conn:
+        cur = conn.execute(
+            "UPDATE users SET totp_secret = NULL, totp_pending = NULL, "
+            "totp_last = NULL, totp_recovery = NULL WHERE id = ?", (user_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Benutzer nicht gefunden")
+    return {"ok": True}
 
 
 @app.post("/api/me/lang")

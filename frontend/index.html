@@ -68,6 +68,22 @@
     <button id="btn-login" class="btn btn-primary">Anmelden</button>
     <p id="login-error" class="error" hidden></p>
   </div>
+
+  <div class="login-box" id="totp-box" hidden>
+    <div class="logo">
+      <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
+      <h1>🔐 Bestätigung</h1>
+      <p>Gib den sechsstelligen Code aus deiner Authenticator-App ein.</p>
+    </div>
+    <label for="totp-code">Code</label>
+    <input id="totp-code" inputmode="numeric" autocomplete="one-time-code"
+           maxlength="40" placeholder="123456">
+    <button id="btn-totp" class="btn btn-primary">Bestätigen</button>
+    <p class="search-hint">Telefon nicht zur Hand? Hier geht auch einer deiner
+      <b>Rettungscodes</b> – jeder gilt einmal.</p>
+    <button id="btn-totp-cancel" class="btn btn-outline">Abbrechen</button>
+    <p id="totp-error" class="error" hidden></p>
+  </div>
 </section>
 
 <!-- ===== Einrichtungsassistent (nur beim allerersten Start) ===== -->
@@ -899,6 +915,47 @@ sudo bash update.sh</pre>
     <input id="own-pass-new" type="password" autocomplete="new-password">
     <button id="btn-own-pass" class="btn btn-primary">Passwort ändern</button>
     <p id="own-pass-error" class="error" hidden></p>
+
+    <hr class="profile-trenner">
+    <h4 class="profile-titel">🔐 Zwei-Faktor-Anmeldung</h4>
+    <p class="search-hint" id="tfa-info"></p>
+
+    <div id="tfa-off">
+      <p class="search-hint">Zusätzlich zum Passwort ein Einmalcode aus einer
+        Authenticator-App. Empfehlenswert, sobald die App von außen erreichbar
+        ist.</p>
+      <label for="tfa-pass">Zum Einschalten dein Passwort</label>
+      <input id="tfa-pass" type="password" autocomplete="current-password">
+      <button id="btn-tfa-start" class="btn btn-outline">Einrichten</button>
+    </div>
+
+    <div id="tfa-setup" hidden>
+      <p class="search-hint">Scanne den Code mit deiner Authenticator-App –
+        oder tippe den Schlüssel von Hand ein.</p>
+      <div id="tfa-qr" class="tfa-qr"></div>
+      <p class="tfa-secret" id="tfa-secret"></p>
+      <label for="tfa-confirm">Code aus der App</label>
+      <input id="tfa-confirm" inputmode="numeric" maxlength="10" placeholder="123456">
+      <button id="btn-tfa-confirm" class="btn btn-primary">Einschalten</button>
+    </div>
+
+    <div id="tfa-codes" hidden>
+      <p class="warn-line"><b>Rettungscodes – jetzt sichern.</b> Sie erscheinen
+        nur dieses eine Mal und helfen, wenn das Telefon weg ist. Jeder gilt
+        einmal.</p>
+      <pre class="tfa-codeliste" id="tfa-codeliste"></pre>
+      <button id="btn-tfa-copy" class="btn btn-outline">📋 Codes kopieren</button>
+      <button id="btn-tfa-done" class="btn btn-primary">Gesichert – fertig</button>
+    </div>
+
+    <div id="tfa-on" hidden>
+      <label for="tfa-off-pass">Zum Ausschalten Passwort und Code</label>
+      <input id="tfa-off-pass" type="password" autocomplete="current-password">
+      <input id="tfa-off-code" inputmode="numeric" maxlength="10" placeholder="123456">
+      <button id="btn-tfa-disable" class="btn btn-outline">Ausschalten</button>
+    </div>
+    <p id="tfa-error" class="error" hidden></p>
+
     <button id="btn-logout" class="btn btn-outline">Abmelden</button>
   </div>
 </div>

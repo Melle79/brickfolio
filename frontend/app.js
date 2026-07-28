@@ -212,7 +212,11 @@ async function api(path, options = {}) {
   // an gut einem Dutzend Stellen – in Kurzmeldungen, in Fehlerzeilen, in
   // leeren Listen. Der Server schickt den deutschen Satz, und der ist der
   // Schlüssel.
-  if (resp.status === 401 && path !== "/login") {
+  // Ein 401 bedeutet normalerweise „Sitzung abgelaufen" – dann abmelden.
+  // Bei den Anmeldewegen selbst heißt es dagegen nur „falsche Eingabe";
+  // dort abzumelden würde einen Tippfehler im Einmalcode zum Rauswurf aus
+  // dem ganzen Vorgang machen.
+  if (resp.status === 401 && !path.startsWith("/login")) {
     logout();
     throw new Error(tr(data.detail || "Bitte neu anmelden"));
   }
@@ -1364,6 +1368,10 @@ function applyOwnerName(name) {
 function showLogin() {
   $("view-login").hidden = false;
   $("app").hidden = true;
+  // Ein angefangener zweiter Anmeldeschritt gehört zurückgesetzt – sonst
+  // stünde nach dem Abmelden noch das Code-Feld von vorhin da.
+  totpChallenge = "";
+  if ($("totp-box")) $("totp-box").hidden = true;
   checkSetup();
 }
 
@@ -1372,12 +1380,17 @@ async function checkSetup() {
     const s = await api("/setup");
     applyOwnerName(s.owner_name);
     if (s.default_theme) applyTheme(s.default_theme);   // Login-Screen: Instanz-Standard
+    // Diese Abfrage läuft nebenher. Steht inzwischen der zweite
+    // Anmeldeschritt auf dem Schirm, darf sie den Anmeldebogen nicht
+    // wieder darüberlegen – sonst stünden beide Kästen gleichzeitig da.
+    const im2fa = $("totp-box") && !$("totp-box").hidden;
     $("setup-box").hidden = !s.needed;
-    $("login-box").hidden = s.needed;
+    $("login-box").hidden = s.needed || im2fa;
     if (s.needed) $("setup-user").focus();
   } catch (_) {
+    const im2fa = $("totp-box") && !$("totp-box").hidden;
     $("setup-box").hidden = true;
-    $("login-box").hidden = false;
+    $("login-box").hidden = !!im2fa;
   }
 }
 
@@ -1579,19 +1592,158 @@ async function doLogin() {
       method: "POST",
       body: { username: $("login-user").value.trim(), password: $("login-pass").value },
     });
-    state.token = data.token;
-    state.user = { username: data.username, is_admin: data.is_admin,
-      is_dealer: data.is_dealer, sortPref: data.sort_pref || "added" };
-    applySortPref();
-    localStorage.setItem("bf_token", data.token);
-    localStorage.setItem("bf_user", JSON.stringify(state.user));
-    applyServerTheme(data);
-    $("login-pass").value = "";
-    showApp();
+    // Zweiter Faktor eingeschaltet? Dann kommt statt der Sitzung nur eine
+    // Zwischenmarke zurück, die allein den nächsten Schritt erlaubt.
+    if (data.totp_required) {
+      totpChallenge = data.challenge;
+      $("login-pass").value = "";
+      $("login-box").hidden = true;
+      $("totp-box").hidden = false;
+      $("totp-code").value = "";
+      $("totp-code").focus();
+      return;
+    }
+    uebernehmeAnmeldung(data);
+    return;
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;
   }
+}
+
+/* Der zweite Schritt: Einmalcode oder Rettungscode. */
+let totpChallenge = "";
+
+function abbrechenTotp() {
+  totpChallenge = "";
+  $("totp-box").hidden = true;
+  $("login-box").hidden = false;
+  $("totp-error").hidden = true;
+}
+
+async function doTotpLogin() {
+  const err = $("totp-error");
+  err.hidden = true;
+  const code = $("totp-code").value.trim();
+  if (!code) return;
+  try {
+    const data = await api("/login/2fa", { method: "POST",
+      body: { challenge: totpChallenge, code } });
+    totpChallenge = "";
+    $("totp-box").hidden = true;
+    $("login-box").hidden = false;
+    if (data.recovery_used) {
+      toast(tr("Rettungscode verbraucht – noch {n} übrig", 
+        { n: data.recovery_left }));
+    }
+    uebernehmeAnmeldung(data);
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
+    $("totp-code").select();
+  }
+}
+
+
+/* ------------------------------------------- Zwei-Faktor im Profil
+
+   Vier Zustände, die sich gegenseitig ausschließen: aus, gerade in
+   Einrichtung, Rettungscodes anzeigen, an. */
+
+async function ladeTfaStatus() {
+  if (!$("tfa-off")) return;
+  try {
+    const s = await api("/me/2fa");
+    zeigeTfa(s.active ? "an" : "aus", s);
+  } catch (_) { /* nicht angemeldet o. Ä. */ }
+}
+
+function zeigeTfa(zustand, daten) {
+  $("tfa-off").hidden = zustand !== "aus";
+  $("tfa-setup").hidden = zustand !== "einrichtung";
+  $("tfa-codes").hidden = zustand !== "codes";
+  $("tfa-on").hidden = zustand !== "an";
+  $("tfa-error").hidden = true;
+  const info = $("tfa-info");
+  if (zustand === "an") {
+    info.textContent = tr("Aktiv – noch {n} Rettungscodes übrig.",
+      { n: (daten && daten.recovery_left) || 0 });
+  } else if (zustand === "aus") {
+    info.textContent = tr("Zurzeit aus.");
+  } else {
+    info.textContent = "";
+  }
+}
+
+function wireTfaOnce() {
+  if (!$("btn-tfa-start") || $("btn-tfa-start").dataset.wired) return;
+  $("btn-tfa-start").dataset.wired = "1";
+  const err = $("tfa-error");
+  const zeigeFehler = (e) => { err.textContent = e.message; err.hidden = false; };
+
+  $("btn-tfa-start").addEventListener("click", async () => {
+    err.hidden = true;
+    try {
+      const r = await api("/me/2fa/start", { method: "POST",
+        body: { password: $("tfa-pass").value } });
+      $("tfa-pass").value = "";
+      $("tfa-secret").textContent = r.secret.replace(/(.{4})/g, "$1 ").trim();
+      // QR frisch laden – der Endpunkt liefert ihn nur für die eigene,
+      // noch offene Einrichtung.
+      const svg = await fetch("/api/me/2fa/qr", {
+        headers: { Authorization: "Bearer " + state.token } });
+      $("tfa-qr").innerHTML = svg.ok ? await svg.text() : "";
+      zeigeTfa("einrichtung");
+      $("tfa-confirm").focus();
+    } catch (e) { zeigeFehler(e); }
+  });
+
+  $("btn-tfa-confirm").addEventListener("click", async () => {
+    err.hidden = true;
+    try {
+      const r = await api("/me/2fa/confirm", { method: "POST",
+        body: { code: $("tfa-confirm").value.trim() } });
+      $("tfa-confirm").value = "";
+      $("tfa-codeliste").textContent = r.recovery_codes.join("\n");
+      zeigeTfa("codes");
+    } catch (e) { zeigeFehler(e); }
+  });
+
+  $("btn-tfa-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("tfa-codeliste").textContent);
+      toast(tr("Rettungscodes kopiert 📋"));
+    } catch (_) { toast(tr("Kopieren nicht möglich – bitte abschreiben")); }
+  });
+
+  $("btn-tfa-done").addEventListener("click", () => {
+    ladeTfaStatus();
+    toast(tr("Zwei-Faktor ist aktiv 🔐"));
+  });
+
+  $("btn-tfa-disable").addEventListener("click", async () => {
+    err.hidden = true;
+    try {
+      await api("/me/2fa/disable", { method: "POST", body: {
+        password: $("tfa-off-pass").value, code: $("tfa-off-code").value.trim() } });
+      $("tfa-off-pass").value = ""; $("tfa-off-code").value = "";
+      toast(tr("Zwei-Faktor ausgeschaltet"));
+      ladeTfaStatus();
+    } catch (e) { zeigeFehler(e); }
+  });
+}
+
+/* Gemeinsamer Abschluss beider Wege – mit und ohne zweiten Faktor. */
+function uebernehmeAnmeldung(data) {
+  state.token = data.token;
+  state.user = { username: data.username, is_admin: data.is_admin,
+    is_dealer: data.is_dealer, sortPref: data.sort_pref || "added" };
+  applySortPref();
+  localStorage.setItem("bf_token", data.token);
+  localStorage.setItem("bf_user", JSON.stringify(state.user));
+  applyServerTheme(data);
+  $("login-pass").value = "";
+  showApp();
 }
 
 function logout() {
@@ -6063,6 +6215,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   watchForTranslation();
 
   $("btn-login").addEventListener("click", doLogin);
+  $("btn-totp").addEventListener("click", doTotpLogin);
+  $("btn-totp-cancel").addEventListener("click", abbrechenTotp);
+  $("totp-code").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") { ev.preventDefault(); doTotpLogin(); }
+  });
   $("btn-help").addEventListener("click", () => {
     $("help-overlay").hidden = false;
     document.body.style.overflow = "hidden";
@@ -6105,6 +6262,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("own-pass-new").value = "";
     $("profile-overlay").hidden = false;
     document.body.style.overflow = "hidden";
+    wireTfaOnce();
+    ladeTfaStatus();
   });
   $("btn-profile-close").addEventListener("click", closeProfile);
   $("profile-overlay").addEventListener("click", (ev) => {

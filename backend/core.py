@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.57.0"
+APP_VERSION = "1.58.2"
 
 
 def hash_password(password: str) -> str:
@@ -65,13 +65,23 @@ def verify_password(password: str, stored: str) -> bool:
 
 # ---------------------------------------------------------------- Tokens
 
-def create_token(user_id: int, username: str, is_admin: bool) -> str:
+def create_token(user_id: int, username: str, is_admin: bool,
+                 minutes: int | None = None, zweck: str | None = None) -> str:
+    """Sitzungs-Token – oder mit `zweck` eine kurzlebige Zwischenmarke.
+
+    Die Marke für den zweiten Anmeldeschritt trägt `zweck="2fa"` und wird
+    deshalb von `current_user` **nicht** als Sitzung akzeptiert: Sonst käme
+    man mit dem halben Anmeldevorgang schon an alle Daten.
+    """
     payload = {
         "sub": str(user_id),
         "name": username,
         "adm": bool(is_admin),
-        "exp": int(time.time()) + TOKEN_DAYS * 86400,
+        "exp": int(time.time()) + (minutes * 60 if minutes
+                                   else TOKEN_DAYS * 86400),
     }
+    if zweck:
+        payload["zweck"] = zweck
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
@@ -396,6 +406,16 @@ def init_db():
         # Sprache pro Benutzer (NULL = folgt der Sprache des Browsers)
         if "lang" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN lang TEXT")
+        # Zwei-Faktor-Anmeldung, freiwillig je Benutzer.
+        #   totp_secret   – aktiv, sobald gesetzt (NULL = aus)
+        #   totp_pending  – während der Einrichtung, noch nicht bestätigt
+        #   totp_last     – zuletzt genutzter Zeitschritt (gegen Wiederverwendung)
+        #   totp_recovery – Rettungscodes als JSON-Liste von Hashes
+        for spalte in ("totp_secret", "totp_pending", "totp_recovery"):
+            if spalte not in ucols:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {spalte} TEXT")
+        if "totp_last" not in ucols:
+            conn.execute("ALTER TABLE users ADD COLUMN totp_last INTEGER")
         # Aus welchem Preisgebiet stammt der gespeicherte Preis? Damit lässt
         # sich nach einer Umstellung gezielt nachrechnen, was noch fehlt.
         for tbl in ("collection", "wanted", "shopping_items"):
