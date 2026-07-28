@@ -131,8 +131,10 @@ Das Image (`ghcr.io/melle79/brickfolio:latest`) gibt es für **amd64**
 
 ### Synology NAS
 
-Ordner unter `/volume1/docker/brickfolio` anlegen und die Befehle per SSH
-mit `sudo` ausführen.
+Ganz ohne Konsole: **Container Manager → Projekt → Erstellen**, YAML einfügen,
+fertig. Schritt für Schritt in [`docs/SYNOLOGY.md`](docs/SYNOLOGY.md).
+Per SSH geht es genauso – Ordner unter `/volume1/docker/brickfolio` anlegen
+und die Befehle oben mit `sudo` ausführen.
 
 ### Selbst bauen (statt fertiges Image)
 
