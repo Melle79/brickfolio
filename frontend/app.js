@@ -25,7 +25,7 @@ const state = {
      `translateTree` läuft einmal über das Dokument und tauscht, was im
      Katalog steht.
 
-   Für Texte, die JavaScript baut, gibt es `t()`. Platzhalter als {name}. */
+   Für Texte, die JavaScript baut, gibt es `tr()`. Platzhalter als {name}. */
 
 const APP_I18N_V = (document.querySelector('meta[name="app-version"]')
   || {}).content || "0";
@@ -34,7 +34,7 @@ let lang = "de";
 let dict = {};                     // deutscher Satz -> Übersetzung
 
 /* Übersetzen. Unbekanntes bleibt deutsch – besser als eine Lücke. */
-function t(text, vars) {
+function tr(text, vars) {
   let out = dict[text] || text;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
@@ -80,7 +80,7 @@ function translateTree(root = document.body) {
   // vergleichen, zerfiele er in Bruchstücke – und Bruchstücke wie „und" darf
   // man nie ersetzen. Von innen nach außen, damit das speziellste zuerst
   // greift und nicht doppelt übersetzt wird.
-  const kandidaten = [...root.querySelectorAll("*")].reverse();
+  const kandidaten = [...root.querySelectorAll("*"), root].reverse();
   kandidaten.forEach((el) => {
     if (el.dataset.i18nDone) return;
     const inhalt = el.innerHTML.replace(/\s+/g, " ").trim();
@@ -114,6 +114,34 @@ function translateTree(root = document.body) {
   }
 }
 
+/* Neu gezeichnete Listen mitnehmen.
+
+   Die Oberfläche baut ihre Karten an 92 Stellen per innerHTML zusammen.
+   Jede einzeln anzufassen wäre fehleranfällig und ginge bei der nächsten
+   neuen Ansicht wieder vergessen. Stattdessen beobachten wir, was dazukommt,
+   und übersetzen genau diesen Teilbaum – das gilt dann auch für Code, den es
+   heute noch nicht gibt.
+
+   Während des Übersetzens hört der Beobachter weg: translateTree ändert ja
+   selbst den Baum und würde sich sonst endlos wiederholen. */
+let i18nBeobachter = null;
+
+function watchForTranslation() {
+  if (lang === "de" || i18nBeobachter || !window.MutationObserver) return;
+  const optionen = { childList: true, subtree: true };
+  i18nBeobachter = new MutationObserver((aenderungen) => {
+    const neu = [];
+    aenderungen.forEach((a) => a.addedNodes.forEach((n) => {
+      if (n.nodeType === 1) neu.push(n);
+    }));
+    if (!neu.length) return;
+    i18nBeobachter.disconnect();
+    try { neu.forEach((el) => translateTree(el)); }
+    finally { i18nBeobachter.observe(document.body, optionen); }
+  });
+  i18nBeobachter.observe(document.body, optionen);
+}
+
 /* ---------------------------------------------------------------- API */
 async function api(path, options = {}) {
   const headers = options.headers || {};
@@ -134,7 +162,10 @@ async function api(path, options = {}) {
 let toastTimer;
 function toast(msg) {
   const el = $("toast");
-  el.textContent = msg;
+  // Hier zentral übersetzen: Die rund 200 Aufrufstellen übergeben den
+  // deutschen Satz – und der ist ja der Schlüssel. Meldungen, in die Zahlen
+  // eingesetzt werden, rufen tr() selbst auf und kommen fertig hier an.
+  el.textContent = tr(msg);
   el.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
@@ -281,7 +312,7 @@ function wireWantButtons(box, items) {
           bricklink_url: it.bricklink_url || "", year: it.year || 0,
         }});
         if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-        else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
+        else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
         else toast("Auf die Wunschliste gesetzt ⭐");
         btn.textContent = "⭐ Gemerkt";
       } catch (e) {
@@ -375,7 +406,7 @@ function renderWanted(items) {
             img_url: found.img_url, bricklink_url: found.bricklink_url,
             year: found.year || 0,
           }});
-          toast(`${found.item_id} gesetzt – hole Preise …`);
+          toast(tr("{id} gesetzt – hole Preise …", { id: found.item_id }));
           await api(`/wanted/${wid}/refresh_prices`, { method: "POST" })
             .catch(() => {});
           loadWanted();
@@ -406,7 +437,8 @@ function renderWanted(items) {
             img_url: best.img_url || item.img_url,
             bricklink_url: best.bricklink_url || "",
           }});
-          toast(`Gefunden: ${best.name} (${best.item_id}, ${best.score} % sicher) – hole Preise …`);
+          toast(tr("Gefunden: {name} ({id}, {score} % sicher) – hole Preise …",
+      { name: best.name, id: best.item_id, score: best.score }));
           await api(`/wanted/${wid}/refresh_prices`, { method: "POST" })
             .catch(() => {});
           loadWanted();
@@ -710,7 +742,8 @@ async function askSetFigures(item, condition) {
           done += 1;
         } catch (_) { /* einzelne Fehler überspringen */ }
       }
-      toast(`${done} Figur${done === 1 ? "" : "en"} zum Set übernommen 👥`);
+      toast(done === 1 ? tr("1 Figur zum Set übernommen 👥")
+      : tr("{n} Figuren zum Set übernommen 👥", { n: done }));
       finish(done);
     };
   });
@@ -785,7 +818,8 @@ async function askRemoveSetFigures(item) {
           done += 1;
         } catch (_) { /* einzelne Fehler überspringen */ }
       }
-      toast(`${done} Figur${done === 1 ? "" : "en"} mit entfernt 🗑`);
+      toast(done === 1 ? tr("1 Figur mit entfernt 🗑")
+      : tr("{n} Figuren mit entfernt 🗑", { n: done }));
       finish(done);
     };
   });
@@ -846,7 +880,7 @@ async function loadSetFigs(card, item, btn) {
                 done += 1;
               } catch (_) { /* einzelne Fehler überspringen */ }
             }
-            toast(`${done} Figuren auf die Wunschliste gesetzt ⭐`);
+            toast(tr("{n} Figuren auf die Wunschliste gesetzt ⭐", { n: done }));
             mrow.remove();
             markFigOwnership(out, figs);
           });
@@ -986,7 +1020,7 @@ function wireFigActions(out, figs) {
           img_url: f.img_url, bricklink_url: f.bricklink_url,
         }});
         if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-        else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
+        else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
         else toast("Auf die Wunschliste gesetzt ⭐");
         markFigOwnership(out, figs);
       } catch (e) {
@@ -1217,7 +1251,7 @@ async function refreshMe() {
   checkForUpdate(false).then((info) => {
     if (info && info.update_available && !state.updateToastShown) {
       state.updateToastShown = true;
-      toast(`⬆️ Update v${info.latest} verfügbar – Details im Mehr-Tab`);
+      toast(tr("⬆️ Update v{v} verfügbar – Details im Mehr-Tab", { v: info.latest }));
     }
   });
 }
@@ -1303,7 +1337,7 @@ async function doSetup() {
     applySortPref();
     localStorage.setItem("bf_token", data.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
-    toast(`Willkommen, ${data.username}! 🧱`);
+    toast(tr("Willkommen, {name}! 🧱", { name: data.username }));
     startWizard();
   } catch (e) {
     err.textContent = e.message;
@@ -2124,7 +2158,8 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
           img_url: best.img_url || item.img_url,
           bricklink_url: best.bricklink_url || "",
         }});
-        toast(`Gefunden: ${best.name} (${best.item_id}, ${best.score} % sicher) ✔`);
+        toast(tr("Gefunden: {name} ({id}, {score} % sicher) ✔",
+      { name: best.name, id: best.item_id, score: best.score }));
         loadCollection();
       } catch (e) {
         toast(e.message);
@@ -2148,7 +2183,8 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
           img_url: found.img_url, bricklink_url: found.bricklink_url,
           year: found.year || 0,
         }});
-        toast(`Aktualisiert: ${found.name} (${found.item_id}) ✔`);
+        toast(tr("Aktualisiert: {name} ({id}) ✔",
+      { name: found.name, id: found.item_id }));
         loadCollection();
       } catch (e) {
         toast(e.message);
@@ -2712,7 +2748,7 @@ function openSuggestModal(it) {
         year: pit.year || 0,
       }});
       if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-      else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
+      else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
       else toast("Auf die Wunschliste gesetzt ⭐");
       b.textContent = "⭐ Gemerkt";
     } catch (e) { toast(e.message); } finally { b.disabled = false; }
@@ -2963,7 +2999,7 @@ async function saveApiKeys() {
     state.bricklinkPrices = res.flags.bricklink_prices;
     state.bricklinkLookup = res.flags.bricklink_lookup;
     state.catalogSearch = res.flags.catalog_search;
-    toast(`Gespeichert (${res.changed} Schlüssel) ✔`);
+    toast(tr("Gespeichert ({n} Schlüssel) ✔", { n: res.changed }));
     loadApiKeys();
   } catch (e) { toast(e.message); }
 }
@@ -3076,7 +3112,7 @@ async function addManualWanted() {
       bricklink_url: blUrl, year, notes: $("m-notes").value,
     }});
     if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-    else if (res.owned > 0) toast(`Gemerkt ⭐ (habt ihr schon ${res.owned}×)`);
+    else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
     else toast("Auf die Wunschliste gesetzt ⭐");
     $("m-name").value = ""; $("m-id").value = "";
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
@@ -3110,7 +3146,7 @@ async function changeOwnUsername() {
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     $("whoami").textContent = res.username;
     $("settings-user").textContent = res.username;
-    toast(`Name geändert: ${res.username} ✔`);
+    toast(tr("Name geändert: {name} ✔", { name: res.username }));
     loadSettings();
   } catch (e) {
     err.textContent = e.message;
@@ -3200,7 +3236,7 @@ function renderLists(lists) {
           try {
             await api(`/lists/${lid}/rename`, { method: "POST",
               body: { name } });
-            toast(`Liste heißt jetzt »${name}« ✔`);
+            toast(tr("Liste heißt jetzt »{name}« ✔", { name }));
             loadLists();
           } catch (e) { toast(e.message); }
         };
@@ -3259,7 +3295,8 @@ function renderLists(lists) {
           try {
             const res = await api(`/lists/${lid}/offer`, { method: "POST",
               body: { total } });
-            toast(`${fmtEur(total)} anteilig auf ${res.count} Artikel verteilt ✔`);
+            toast(tr("{sum} anteilig auf {n} Artikel verteilt ✔",
+      { sum: fmtEur(total), n: res.count }));
             loadLists();
           } catch (e) {
             toast(e.message);
@@ -3721,7 +3758,7 @@ function renderStats(data) {
 
   const top = data.top.length ? `
   <div class="card">
-    <h3 style="margin:0 0 6px">Top ${data.top.length} nach Wert</h3>
+    <h3 style="margin:0 0 6px">${esc(tr("Top {n} nach Wert", { n: data.top.length }))}</h3>
     <div class="set-figs">
       ${data.top.map((it, i) => `
       <div class="fig-row">
@@ -3843,7 +3880,8 @@ function statBarRow(label, v, total) {
   return `
   <div class="stat-bar-row">
     <div class="sub" style="display:flex;justify-content:space-between">
-      <span>${label} · ${v.pieces} Stück</span>
+      <span>${esc(tr("{label} · {n} Stück",
+        { label: tr(label), n: v.pieces }))}</span>
       <b>${fmtEur(v.value)} (${pct} %)</b>
     </div>
     <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
@@ -4166,8 +4204,8 @@ async function fetchMissingFigDetails() {
         { method: "POST" });
       total += res.updated;
       if (res.failed && res.failed.length) {
-        toast(`${res.failed.length} Set(s) übersprungen: `
-          + res.failed[0].error);
+        toast(tr("{n} Set(s) übersprungen: {grund}",
+          { n: res.failed.length, grund: res.failed[0].error }));
       }
       if (!res.remaining || !res.updated) break;
     }
@@ -4362,7 +4400,7 @@ async function restoreBackupFile(file) {
   try {
     const res = await api("/restore", { method: "POST", body: data });
     const n = res.restored && res.restored.collection;
-    toast(`Sicherung eingespielt ✔ (${n ?? "?"} Sammlungseinträge)`);
+    toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n: n ?? "?" }));
     setTimeout(() => location.reload(), 1200);
   } catch (e) { toast(e.message); }
 }
@@ -4616,7 +4654,7 @@ async function pollTrades() {
   else if (hubTab === "trades" && !$("view-hub").hidden) loadTrades(true);
   else refreshUnread();
   if (res.new_messages && !openTradeId) {
-    toast(`${res.new_messages} neue Nachricht(en) 📬`);
+    toast(tr("{n} neue Nachricht(en) 📬", { n: res.new_messages }));
   }
 }
 
@@ -4817,7 +4855,7 @@ function wireHubViewOnce() {
   $("hub-share-dupes").addEventListener("click", async () => {
     try {
       const r = await api("/share/from_duplicates", { method: "POST" });
-      toast(`${r.added} Artikel übernommen`);
+      toast(tr("{n} Artikel übernommen", { n: r.added }));
       loadShareView();
     } catch (e) { toast(e.message); }
   });
@@ -4894,7 +4932,7 @@ function wireHubViewOnce() {
     const b = ev.currentTarget; b.disabled = true;
     try {
       const res = await api("/hub/publish", { method: "POST" });
-      toast(`${res.count} Angebote veröffentlicht 📤`);
+      toast(tr("{n} Angebote veröffentlicht 📤", { n: res.count }));
       loadHubView();
     } catch (e) { toast(e.message); } finally { b.disabled = false; }
   });
@@ -5392,7 +5430,7 @@ function renderNotifications(items) {
       try {
         const res = await api(`/notifications/${b.dataset.apply}/apply`,
           { method: "POST" });
-        toast(`Neue Nummer ${res.new_item_id} übernommen`);
+        toast(tr("Neue Nummer {id} übernommen", { id: res.new_item_id }));
         loadNotifications();
         loadCollection();
       } catch (e) {
@@ -5413,8 +5451,8 @@ function renderPriceRegion() {
   const status = $("price-region-status");
   const run = $("price-region-run");
   if (!s.can_fetch) {
-    status.textContent = "Für Preise wird ein BrickLink-Schlüssel benötigt "
-      + "(Mehr → API-Schlüssel).";
+    status.textContent = tr("Für Preise wird ein BrickLink-Schlüssel "
+      + "benötigt (Mehr → API-Schlüssel).");
     run.hidden = true;
     return;
   }
@@ -5490,7 +5528,8 @@ async function recalcPrices() {
       priceRegionState.pending = res.remaining;
       btn.textContent = `🔄 ${total} umgerechnet, ${res.remaining} offen …`;
       if (res.failed && res.failed.length) {
-        toast(`${res.failed.length} übersprungen: ${res.failed[0].error}`);
+        toast(tr("{n} übersprungen: {grund}",
+      { n: res.failed.length, grund: res.failed[0].error }));
       }
       if (!res.remaining || !res.updated) break;
     }
@@ -5519,7 +5558,8 @@ async function fillMissingPrices() {
       priceRegionState.missing = res.remaining;
       btn.textContent = `🔄 ${filled} gefunden, ${res.remaining} offen …`;
       if (res.failed && res.failed.length) {
-        toast(`${res.failed.length} übersprungen: ${res.failed[0].error}`);
+        toast(tr("{n} übersprungen: {grund}",
+      { n: res.failed.length, grund: res.failed[0].error }));
       }
       if (!res.remaining || !res.updated) break;
     }
@@ -5564,10 +5604,13 @@ async function loadPriceLog(limit) {
       const days = res.stale_days || 7;
       const n = res.stale_count || 0;
       staleEl.textContent = n > 0
-        ? `🕒 Bei ${n} ${n === 1 ? "Artikel ist" : "Artikeln ist"} in der `
-          + `Sammlung der Preisabruf älter als ${days} Tage `
-          + `– der Hintergrundjob frischt sie nach und nach auf.`
-        : `✔ Alle Sammlungs-Preise sind jünger als ${days} Tage.`;
+        ? (n === 1
+          ? tr("🕒 Bei einem Artikel ist der Preisabruf älter als {d} Tage – "
+            + "der Hintergrundjob frischt ihn auf.", { d: days })
+          : tr("🕒 Bei {n} Artikeln ist der Preisabruf älter als {d} Tage – "
+            + "der Hintergrundjob frischt sie nach und nach auf.",
+            { n, d: days }))
+        : tr("✔ Alle Sammlungs-Preise sind jünger als {d} Tage.", { d: days });
       staleEl.hidden = false;
     }
     if (!res.entries.length) {
@@ -5887,7 +5930,7 @@ async function loadSettings() {
         try {
           await api(`/users/${btn.dataset.passUser}/password`,
             { method: "POST", body: { password: pw } });
-          toast(`Passwort für ${btn.dataset.passName} gesetzt ✔`);
+          toast(tr("Passwort für {name} gesetzt ✔", { name: btn.dataset.passName }));
         } catch (e) { toast(e.message); }
       });
     });
@@ -5923,6 +5966,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // deutscher Text kurz aufblitzt. Bei Deutsch kostet das nichts.
   await loadLang();
   translateTree(document.body);
+  watchForTranslation();
 
   $("btn-login").addEventListener("click", doLogin);
   $("btn-help").addEventListener("click", () => {
@@ -5991,7 +6035,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       await api("/lists", { method: "POST", body: { name } });
       $("new-list-name").value = "";
-      toast(`Liste "${name}" angelegt 🛒`);
+      toast(tr('Liste "{name}" angelegt 🛒', { name }));
       state.showArchive = false;
       loadLists();
       updateListsTab();
@@ -6084,7 +6128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await api("/settings/offer_percent", { method: "POST",
         body: { percent: pct } });
       state.offerPercent = pct;
-      toast(`Vorschlag steht jetzt auf ${pct} % ✔`);
+      toast(tr("Vorschlag steht jetzt auf {pct} % ✔", { pct }));
     } catch (e) { toast(e.message); }
   });
   $("btn-csv-import").addEventListener("click", () => $("csv-file").click());

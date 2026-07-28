@@ -25,14 +25,22 @@ def nur_text(s: str) -> str:
 
 @pytest.fixture(scope="module")
 def seitentext():
-    """Sichtbarer Text plus die Attribute, die ebenfalls Text tragen –
-    placeholder und Co. sind genauso übersetzbar wie ein Absatz."""
+    """Alles, worin ein deutscher Satz stehen kann.
+
+    Zwei Quellen: das Dokument (fester Aufbau, samt Attributen wie
+    placeholder) und app.js – dort stecken die Texte der Karten und
+    Meldungen, die erst zur Laufzeit entstehen.
+    """
     roh = INDEX.read_text()
     roh = re.sub(r"<script\b.*?</script>", " ", roh, flags=re.S)
     attribute = re.findall(
         r'(?:placeholder|title|aria-label|alt)="([^"]*)"', roh)
-    return nur_text(roh) + "   " + "   ".join(
-        nur_text(a) for a in attribute)
+    js = (FRONTEND / "app.js").read_text()
+    # Über mehrere Zeilen zusammengesetzte Zeichenketten wieder zusammenfügen
+    # ("Teil eins " + "Teil zwei"), sonst fände man den fertigen Satz nie.
+    js = re.sub(r'["`]\s*\+\s*["`]', "", js)
+    return "   ".join([nur_text(roh)] + [nur_text(a) for a in attribute]
+                      + [nur_text(js), js])
 
 
 def test_kataloge_vorhanden():

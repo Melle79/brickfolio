@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.52.2 – Juli 2026
+
+### Verbessert
+- 🈯 **Zweite Stufe der Übersetzung: alles, was die App zur Laufzeit zeichnet.** Kartenbeschriftungen, Kennzahlen, leere Zustände und die rund 200 Kurzmeldungen sind jetzt auf Englisch. Gemessen an einer Instanz mit Demodaten: **Wünsche 0, Sammlung 1, Scannen 1, Listen 2, Tausch 2, Statistik 4** noch deutsche Textstellen – der Rest sitzt im Mehr-Tab (36), wo die langen Erklärtexte stehen
+- 🔢 Meldungen mit eingesetzten Werten tragen jetzt **Platzhalter** statt zusammengeklebter Bruchstücke („{n} Artikel übernommen"), damit die Wortstellung übersetzbar bleibt
+
+### Behoben
+- 🐞 **Die Statistik brach mit „t is not a function" ab.** Die Übersetzungsfunktion hieß `t` – genauso wie eine lokale Variable in der Statistik-Ansicht, die sie verdeckte. Sie heißt jetzt `tr`; in einer Datei dieser Größe ist ein einzelner Buchstabe als globaler Name eine Falle
+- 🧭 Zwei Katalogeinträge waren **datenabhängig** („Top 5 nach Wert") und hätten nur bei genau diesem Wert gegriffen – jetzt mit Platzhalter
+
 ## 1.52.0 – Juli 2026
 
 ### Neu
