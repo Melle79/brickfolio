@@ -768,8 +768,13 @@ def list_errors(user: dict = Depends(admin_user)):
     with core.db() as conn:
         rows = conn.execute(
             "SELECT * FROM error_log ORDER BY last_at DESC LIMIT 50").fetchall()
+    token = core.get_setting("github_token")
     return {"items": [dict(r) for r in rows],
-            "can_report": bool(core.get_setting("github_token")),
+            "can_report": bool(token),
+            # Wie bei den API-Schlüsseln: maskiert zeigen, dass etwas da ist.
+            # „Gespeichert?" war bisher nur daran zu erkennen, ob der
+            # Melden-Knopf erschien – und das sieht man erst mit einem Fehler.
+            "token_masked": _mask(token) if token else "",
             "repo": GITHUB_REPO}
 
 
@@ -845,8 +850,46 @@ class GithubTokenBody(BaseModel):
 
 @app.post("/api/settings/github_token")
 def set_github_token(body: GithubTokenBody, user: dict = Depends(admin_user)):
-    core.set_setting("github_token", body.token.strip())
-    return {"ok": True, "set": bool(body.token.strip())}
+    token = body.token.strip()
+    core.set_setting("github_token", token)
+    return {"ok": True, "set": bool(token),
+            "masked": _mask(token) if token else ""}
+
+
+@app.post("/api/settings/github_token/test")
+def test_github_token(user: dict = Depends(admin_user)):
+    """Prüft, ob der hinterlegte Token das Repository sehen darf.
+
+    Bewusst nur lesend: Ob er *schreiben* darf, ließe sich nur beweisen,
+    indem man ein Issue anlegt – und Müll im Repo als Nebenwirkung einer
+    Prüfung wäre ein schlechter Tausch. Die Antwort sagt das auch so.
+    """
+    token = core.get_setting("github_token")
+    if not token:
+        return {"ok": False, "info": "Kein Token hinterlegt."}
+    try:
+        resp = requests.get(
+            f"https://api.github.com/repos/{GITHUB_REPO}",
+            headers={"Authorization": f"Bearer {token}",
+                     "Accept": "application/vnd.github+json"}, timeout=15)
+    except requests.RequestException:
+        return {"ok": False, "info": "GitHub nicht erreichbar."}
+    if resp.status_code == 401:
+        return {"ok": False, "info": "Token ungültig oder abgelaufen."}
+    # Der Repository-Name steht als Platzhalter drin, nicht im Satz: Er ist
+    # über GITHUB_REPO einstellbar, und ein eingebauter Name hätte für jede
+    # abweichende Einstellung einen eigenen Katalogeintrag gebraucht.
+    if resp.status_code == 404:
+        return {"ok": False, "repo": GITHUB_REPO,
+                "info": "Token gültig, aber {repo} ist für ihn nicht "
+                        "freigegeben (Repository access)."}
+    if resp.status_code >= 400:
+        return {"ok": False, "code": resp.status_code,
+                "info": "GitHub antwortet mit {code}."}
+    return {"ok": True, "repo": GITHUB_REPO,
+            "info": "Token gültig, {repo} erreichbar. Ob er Issues anlegen "
+                    "darf, zeigt sich beim ersten Melden – das prüft GitHub "
+                    "erst beim Schreiben."}
 
 
 # ------------------------------------------------------- Benachrichtigungen

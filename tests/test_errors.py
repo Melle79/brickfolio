@@ -156,3 +156,65 @@ def test_issue_reports_bad_token(ctx, monkeypatch):
 def test_token_setting_is_admin_only(ctx):
     assert ctx["kid"].post("/api/settings/github_token",
                            json={"token": "x"}).status_code == 403
+
+
+# ------------------------------------------------ GitHub-Token: sichtbar?
+
+def test_gespeicherter_token_wird_maskiert_gezeigt(ctx):
+    """Ob überhaupt einer liegt, war bisher nur daran zu erkennen, dass der
+    Melden-Knopf erschien – und der erscheint erst mit einem Fehler."""
+    assert ctx['admin'].get("/api/errors").json()["token_masked"] == ""
+    ctx['admin'].post("/api/settings/github_token",
+                json={"token": "github_pat_11ABCDEF_geheim"})
+    d = ctx['admin'].get("/api/errors").json()
+    assert d["can_report"] is True
+    assert d["token_masked"].endswith("heim")
+    assert "github_pat" not in d["token_masked"]
+
+
+def test_leerer_token_entfernt_ihn_wieder(ctx):
+    ctx['admin'].post("/api/settings/github_token", json={"token": "github_pat_x1234"})
+    r = ctx['admin'].post("/api/settings/github_token", json={"token": "  "})
+    assert r.json()["set"] is False
+    assert ctx['admin'].get("/api/errors").json()["token_masked"] == ""
+
+
+def test_pruefung_ohne_token_sagt_das(ctx):
+    r = ctx['admin'].post("/api/settings/github_token/test").json()
+    assert r["ok"] is False and "Kein Token" in r["info"]
+
+
+def test_pruefung_meldet_ungueltigen_token(ctx, monkeypatch):
+    ctx['admin'].post("/api/settings/github_token", json={"token": "github_pat_alt"})
+
+    class Antwort:
+        status_code = 401
+    monkeypatch.setattr(main.requests, "get", lambda *a, **k: Antwort())
+    r = ctx['admin'].post("/api/settings/github_token/test").json()
+    assert r["ok"] is False and "abgelaufen" in r["info"]
+
+
+def test_pruefung_meldet_nicht_freigegebenes_repo(ctx, monkeypatch):
+    ctx['admin'].post("/api/settings/github_token", json={"token": "github_pat_x"})
+
+    class Antwort:
+        status_code = 404
+    monkeypatch.setattr(main.requests, "get", lambda *a, **k: Antwort())
+    r = ctx['admin'].post("/api/settings/github_token/test").json()
+    # Der Repo-Name steht als Platzhalter drin – sonst bräuchte jede
+    # abweichende GITHUB_REPO-Einstellung einen eigenen Katalogeintrag.
+    assert r["ok"] is False and "{repo}" in r["info"] and r["repo"]
+
+
+def test_pruefung_bestaetigt_gueltigen_token(ctx, monkeypatch):
+    ctx['admin'].post("/api/settings/github_token", json={"token": "github_pat_gut"})
+
+    class Antwort:
+        status_code = 200
+    monkeypatch.setattr(main.requests, "get", lambda *a, **k: Antwort())
+    r = ctx['admin'].post("/api/settings/github_token/test").json()
+    assert r["ok"] is True and "{repo}" in r["info"]
+
+
+def test_pruefung_ist_admin_sache(ctx):
+    assert ctx["kid"].post("/api/settings/github_token/test").status_code == 403

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.64.1 – Juli 2026
+
+### Verbessert
+- 🔑 **Beim GitHub-Token sieht man jetzt, ob einer liegt.** Bisher war das nur
+  daran zu erkennen, dass der Melden-Knopf an einem Fehler auftauchte – und
+  der taucht erst auf, wenn es überhaupt einen Fehler gibt. Jetzt steht über
+  dem Feld „Gespeichert: …9999" oder „Kein Token hinterlegt"
+- ✅ **Neuer Knopf „Token prüfen".** Er fragt GitHub, ob der Token gültig ist
+  und das Repository sehen darf, und sagt beim Scheitern, *woran* es liegt:
+  abgelaufen, oder gültig aber Repository nicht freigegeben. Ob er auch
+  schreiben darf, prüft GitHub erst beim Schreiben – das sagt die Antwort
+  ausdrücklich, statt eine Sicherheit vorzugeben, die sie nicht hat
+
 ## 1.64.0 – Juli 2026
 
 ### Verbessert

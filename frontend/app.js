@@ -5807,6 +5807,15 @@ function renderErrors() {
   const box = $("errors-list");
   const data = errorsState;
   if (!data) return;
+  // Ob ein Token liegt, war bisher nur daran zu erkennen, dass der
+  // Melden-Knopf erschien – und der erscheint erst, wenn es einen Fehler
+  // gibt. Also hier direkt sagen, was Sache ist.
+  const stand = $("github-token-state");
+  if (stand) {
+    stand.textContent = data.token_masked
+      ? tr("Gespeichert: {wert}", { wert: data.token_masked })
+      : tr("Kein Token hinterlegt – die App kann keine Issues anlegen.");
+  }
   if (!data.items.length) {
     box.innerHTML = `<div class="price-note">Keine Fehler aufgezeichnet ✔</div>`;
     return;
@@ -6691,9 +6700,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await api("/settings/github_token", { method: "POST",
         body: { token: $("github-token").value } });
       $("github-token").value = "";
-      toast(res.set ? "Token gespeichert ✔" : "Token entfernt");
+      toast(res.set ? tr("Token gespeichert ✔") : tr("Token entfernt"));
+      $("github-test-out").hidden = true;
       loadErrors();
     } catch (e) { toast(e.message); }
+    btn.disabled = false;
+  });
+  $("btn-github-test").addEventListener("click", async (ev) => {
+    const btn = ev.currentTarget;
+    const out = $("github-test-out");
+    btn.disabled = true;
+    out.hidden = false;
+    out.textContent = tr("Wird geprüft …");
+    try {
+      const res = await api("/settings/github_token/test", { method: "POST" });
+      out.textContent = (res.ok ? "✅ " : "❌ ")
+        + tr(res.info, { repo: res.repo, code: res.code });
+    } catch (e) { out.textContent = "❌ " + e.message; }
     btn.disabled = false;
   });
   $("btn-csv-sample").addEventListener("click", downloadCsvSample);

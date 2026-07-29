@@ -856,10 +856,15 @@ sudo bash update.sh</pre>
           (Fine-grained), der <b>nur dieses Repository</b> und dort <b>nur
           „Issues: Read and write"</b> darf – mehr braucht es nicht, und mehr
           sollte die App auch nicht können.</p>
+        <p class="search-hint" id="github-token-state"></p>
         <label for="github-token">Token</label>
         <input id="github-token" type="password" autocomplete="off"
           placeholder="github_pat_… (leer lassen zum Entfernen)">
-        <button class="mini-btn add" id="btn-github-token" style="margin-top:8px">Token speichern</button>
+        <div class="detail-row btn-grid" style="margin-top:8px">
+          <button class="mini-btn add" id="btn-github-token">Token speichern</button>
+          <button class="mini-btn" id="btn-github-test">Token prüfen</button>
+        </div>
+        <p class="search-hint" id="github-test-out" hidden></p>
       </details>
     </div>
     </section>
