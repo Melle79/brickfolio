@@ -3979,13 +3979,68 @@ class TradeStartBody(BaseModel):
 
 
 @app.post("/api/hub/trades")
+def _fremder_schluessel(member_id: str, name: str = "") -> str:
+    """Öffentlichen Schlüssel eines Gegenübers holen – und wiedererkennen.
+
+    Der Hub verteilt diese Schlüssel. Nähme man sie jedes Mal ungeprüft
+    hin, stünde er in der Lage, einen eigenen unterzuschieben und
+    mitzulesen. Deshalb zählt der zuerst gesehene.
+    """
+    daten = hub.member_key(member_id)
+    schluessel = daten["public_key"]
+    try:
+        crypto_box.remember_key(member_id, schluessel,
+                                daten.get("display_name") or name)
+    except crypto_box.KeyChanged as e:
+        raise HTTPException(409,
+            f"Der Verschlüsselungs-Schlüssel von {e.name} hat sich geändert. "
+            "Solange das nicht geklärt ist, wird nichts verschickt – ein "
+            "solcher Wechsel kann bedeuten, dass die Instanz neu aufgesetzt "
+            "wurde, oder dass jemand mitlesen will. Frag nach und vergleiche "
+            "die Sicherheitsnummer; danach unter „Schlüssel neu annehmen“ "
+            "bestätigen.")
+    return schluessel
+
+
+class KeyAcceptBody(BaseModel):
+    member_id: str = Field(min_length=3, max_length=80)
+
+
+@app.get("/api/hub/key/{member_id}")
+def hub_key_info(member_id: str, user: dict = Depends(current_user)):
+    """Sicherheitsnummer für ein Gegenüber – zum Vergleichen am Telefon."""
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    with core.db() as conn:
+        row = conn.execute(
+            "SELECT public_key, first_seen FROM hub_keys WHERE member_id = ?",
+            (member_id,)).fetchone()
+    eigen = crypto_box.fingerprint(crypto_box.public_key())
+    if not row:
+        return {"known": False, "mine": eigen}
+    return {"known": True, "mine": eigen,
+            "theirs": crypto_box.fingerprint(row["public_key"]),
+            "since": row["first_seen"]}
+
+
+@app.post("/api/hub/key/accept")
+def hub_key_accept(body: KeyAcceptBody, user: dict = Depends(admin_user)):
+    """Einen geänderten Schlüssel annehmen – nach der Rückfrage.
+
+    Bewusst Admin-Sache: Wer hier bestätigt, erklärt, dass er nachgefragt
+    hat. Das ist keine Kleinigkeit, die nebenbei weggeklickt gehört.
+    """
+    crypto_box.forget_key(body.member_id)
+    return {"ok": True}
+
+
 def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
     """Interesse an einem Angebot anmelden – mit erster Nachricht."""
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
     try:
         _ensure_key_published()
-        key = hub.member_key(body.to)["public_key"]
+        key = _fremder_schluessel(body.to)
         box = crypto_box.seal(key, body.text)
         res = hub.create_trade(body.to, body.item_id, body.item_name, box)
         tid = res["trade_id"]
@@ -4023,7 +4078,7 @@ def hub_send_message(trade_id: str, body: TradeMessageBody,
     if not t:
         raise HTTPException(404, "Vorgang nicht gefunden")
     try:
-        key = hub.member_key(t["other_id"])["public_key"]
+        key = _fremder_schluessel(t["other_id"])
         sent = hub.send_message(trade_id, crypto_box.seal(key, body.text))
         now_ts = int(time.time())
         with core.db() as conn:

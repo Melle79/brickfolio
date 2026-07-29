@@ -491,3 +491,88 @@ def test_no_bricklink_keys_says_so_plainly(client, monkeypatch):
     monkeypatch.setattr(integrations, "setting", lambda n: "")
     r = client.post("/api/settings/test").json()
     assert r["bricklink"]["info"] == "Keine Schlüssel hinterlegt"
+
+
+# ------------------------------- Schlüssel: der Hub darf nicht dazwischen
+
+"""Der Hub verteilt die öffentlichen Schlüssel. Nähme die Instanz sie jedes
+Mal ungeprüft hin, stünde er in der Lage, einen eigenen unterzuschieben und
+alles mitzulesen – die Verschlüsselung liefe gegen den Falschen. Deshalb
+zählt der zuerst gesehene Schlüssel."""
+
+import crypto_box
+
+
+def _fremdschluessel():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+    import base64
+    k = X25519PrivateKey.generate().public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw)
+    return base64.b64encode(k).decode()
+
+
+def test_erster_schluessel_wird_gemerkt(client, monkeypatch):
+    key = _fremdschluessel()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "member_key",
+                        lambda mid: {"public_key": key, "display_name": "Paul"})
+    assert main._fremder_schluessel("mem_1") == key
+    # Zweiter Aufruf mit demselben Schlüssel: unauffällig
+    assert main._fremder_schluessel("mem_1") == key
+
+
+def test_getauschter_schluessel_stoppt_das_verschicken(client, monkeypatch):
+    """Genau der Fall, um den es geht: Der Hub liefert plötzlich einen
+    anderen Schlüssel. Dann wird nicht verschlüsselt, sondern abgebrochen."""
+    erst, dann = _fremdschluessel(), _fremdschluessel()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "member_key",
+                        lambda mid: {"public_key": erst, "display_name": "Paul"})
+    main._fremder_schluessel("mem_2")
+    monkeypatch.setattr(hub, "member_key",
+                        lambda mid: {"public_key": dann, "display_name": "Paul"})
+    with pytest.raises(Exception) as e:
+        main._fremder_schluessel("mem_2")
+    assert "geändert" in str(e.value.detail)
+
+
+def test_nach_bestaetigung_geht_es_weiter(client, monkeypatch):
+    erst, dann = _fremdschluessel(), _fremdschluessel()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "member_key",
+                        lambda mid: {"public_key": erst, "display_name": "Paul"})
+    main._fremder_schluessel("mem_3")
+    assert client.post("/api/hub/key/accept",
+                       json={"member_id": "mem_3"}).status_code == 200
+    monkeypatch.setattr(hub, "member_key",
+                        lambda mid: {"public_key": dann, "display_name": "Paul"})
+    assert main._fremder_schluessel("mem_3") == dann
+
+
+def test_sicherheitsnummer_ist_kurz_und_stabil(client, monkeypatch):
+    key = _fremdschluessel()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "member_key",
+                        lambda mid: {"public_key": key, "display_name": "Paul"})
+    main._fremder_schluessel("mem_4")
+    d = client.get("/api/hub/key/mem_4").json()
+    assert d["known"] is True
+    assert d["theirs"] == crypto_box.fingerprint(key)
+    assert len(d["theirs"].split()) == 5      # am Telefon vorlesbar
+    assert d["mine"] != d["theirs"]
+
+
+def test_unbekanntes_gegenueber_hat_noch_keine_nummer(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    d = client.get("/api/hub/key/mem_neu").json()
+    assert d["known"] is False and d["mine"]
+
+
+def test_annehmen_ist_admin_sache(client, monkeypatch):
+    uid = _user(is_admin=0, is_dealer=0, name="kind")
+    kid = TestClient(main.app)
+    kid.headers["Authorization"] = "Bearer " + core.create_token(uid, "kind", False)
+    assert kid.post("/api/hub/key/accept",
+                    json={"member_id": "mem_1"}).status_code == 403

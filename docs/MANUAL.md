@@ -1070,6 +1070,24 @@ The go-between is a small **hub**. Important to understand:
   readable history lives on the instances involved – even long after the hub
   has deleted the envelopes.
 
+> **A limitation worth knowing.** Encryption uses the other side's public key
+> – and **those keys are distributed by the hub**. Whoever controls the hub
+> could hand out one of their own instead of the real one and read along
+> without it being noticed. That is not a backdoor in the program, but it is
+> the point at which you have to trust the hub.
+>
+> Since v1.68.0 there are two things against that:
+>
+> 1. **The instance remembers the key the first time it sees it.** If a
+>    different one turns up later, **nothing is sent** – it stops, with a
+>    message. Such a change can be harmless (the other side reinstalled);
+>    the only way to tell is to ask. Once it is cleared up, an admin confirms
+>    the new key.
+> 2. **A safety number to compare.** In a conversation, "🔐 Compare the safety
+>    numbers" folds open two short rows of digits: yours and the other side's.
+>    Read them out over the phone once – if they match on both sides, nobody
+>    is in between. They only change when the key really changes.
+
 ### 12.2 Joining
 
 To take part you need an **invite code** from somebody who is already in.

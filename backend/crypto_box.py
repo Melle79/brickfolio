@@ -96,3 +96,62 @@ def open_box(envelope: str) -> str:
     key = _derive(priv.exchange(eph_pub), eph_pub_raw, my_pub_raw)
     return AESGCM(key).decrypt(_unb64(data["n"]), _unb64(data["ct"]),
                                None).decode()
+
+
+# ------------------------------------------------- Schlüssel wiedererkennen
+
+class KeyChanged(Exception):
+    """Der Schlüssel eines Gegenübers ist ein anderer als beim ersten Mal."""
+
+    def __init__(self, name: str, alt: str, neu: str):
+        self.name = name
+        self.alt = alt
+        self.neu = neu
+        super().__init__(f"Der Schlüssel von {name} hat sich geändert")
+
+
+def fingerprint(public_key: str) -> str:
+    """Kurzform eines Schlüssels zum Vergleichen – am Telefon vorlesbar.
+
+    Nicht der Schlüssel selbst, sondern sein SHA-256 in Vierergruppen. Wer
+    wissen will, ob wirklich der richtige Schlüssel benutzt wird, liest die
+    Gruppen einmal vor und vergleicht. Stimmen sie, hat niemand dazwischen
+    getauscht – auch der Hub nicht.
+    """
+    from hashlib import sha256
+    roh = sha256(_unb64(public_key)).hexdigest()[:20].upper()
+    return " ".join(roh[i:i + 4] for i in range(0, len(roh), 4))
+
+
+def remember_key(member_id: str, public_key: str, name: str = "") -> str:
+    """Schlüssel beim ersten Mal merken, danach vergleichen.
+
+    Verteilt werden die öffentlichen Schlüssel vom Hub. Nähme man sie jedes
+    Mal ungeprüft, könnte der Hub – oder wer ihn übernimmt – einen eigenen
+    unterschieben und alles mitlesen: Die Verschlüsselung liefe dann gegen
+    den Falschen, ohne dass es jemandem auffällt.
+
+    Deshalb gilt der zuerst gesehene Schlüssel. Taucht später ein anderer
+    auf, wird **nicht** verschlüsselt, sondern abgebrochen. Ein solcher
+    Wechsel hat harmlose Gründe (Gegenüber neu aufgesetzt) und einen
+    unangenehmen – unterscheiden kann man sie nur, indem man nachfragt.
+    """
+    with core.db() as conn:
+        row = conn.execute(
+            "SELECT public_key FROM hub_keys WHERE member_id = ?",
+            (member_id,)).fetchone()
+        if row and row["public_key"] != public_key:
+            raise KeyChanged(name or member_id, row["public_key"], public_key)
+        if not row:
+            import time
+            conn.execute(
+                "INSERT INTO hub_keys (member_id, public_key, first_seen, "
+                "name) VALUES (?, ?, ?, ?)",
+                (member_id, public_key, int(time.time()), name or None))
+    return public_key
+
+
+def forget_key(member_id: str) -> None:
+    """Gemerkten Schlüssel verwerfen – nach einer geklärten Rückfrage."""
+    with core.db() as conn:
+        conn.execute("DELETE FROM hub_keys WHERE member_id = ?", (member_id,))

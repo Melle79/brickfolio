@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.68.0 – Juli 2026
+
+Zweiter Teil der Durchsicht: der Hub und der Weg dorthin. Ein struktureller
+Fund, zwei kleinere.
+
+### Sicherheit
+- 🔐 **Der Hub verteilt die Verschlüsselungs-Schlüssel – und konnte damit
+  dazwischengehen.** Die Nachrichten sind Ende-zu-Ende verschlüsselt, aber
+  verschlüsselt wird mit dem Schlüssel, den der Hub liefert. Wer ihn
+  kontrolliert, hätte statt des echten einen eigenen ausliefern und
+  mitlesen können, ohne dass es auffällt. Keine Hintertür im Programm, aber
+  die Stelle, an der man dem Hub vertrauen musste. Dagegen jetzt:
+  - **Die Instanz merkt sich jeden Schlüssel beim ersten Mal.** Taucht später
+    ein anderer auf, wird **nichts verschickt**, sondern abgebrochen. Ein
+    Wechsel kann harmlos sein – unterscheiden lässt es sich nur durch
+    Nachfragen; danach bestätigt ein Admin den neuen Schlüssel
+  - **Sicherheitsnummer zum Vergleichen** im Gespräch: zwei kurze Zahlenreihen,
+    einmal am Telefon vorgelesen. Stimmen sie, ist niemand dazwischen
+- 🎟 **Ein Einladungscode konnte doppelt eingelöst werden.** Prüfen und
+  Einlösen waren zwei Schritte – zwei gleichzeitige Anmeldungen mit demselben
+  Code kamen beide durch. Jetzt ein einziger Schritt, und wer verliert, wird
+  gar nicht erst angelegt
+- 🤐 **Der Hub verriet bei einem internen Fehler dessen Wortlaut.** Solche
+  Texte können Tabellennamen oder Abfragen enthalten. Sie stehen jetzt nur
+  noch im Worker-Protokoll, das der Hub-Admin sieht
+
+### Geprüft und in Ordnung
+- **Zugriff auf fremde Vorgänge**: Jeder Nachrichten- und Löschzugriff prüft,
+  ob man überhaupt beteiligt ist
+- **Token** sind 192 Bit Zufall und liegen nur als SHA-256 im Hub
+- **SQL im Worker** läuft durchgehend über gebundene Parameter
+- **Keine Rechte-Erhöhung**: Der Endpunkt zum Ändern des eigenen Profils fasst
+  nur den Anzeigenamen an – „Admin" lässt sich nicht mitschicken
+- **Was der Hub überhaupt sieht**: veröffentlichte Angebote (Nummer, Name,
+  Zustand, Menge, Vorschaubild) und Vorgangsdaten. Sammlung, Preise, Notizen
+  und Einkaufslisten bleiben zu Hause
+
+### Offen
+- **Keine Ratenbremse im Hub.** Für ein Netzwerk unter Bekannten mit
+  Einladungspflicht vertretbar; wächst es, gehört das nachgezogen
+
 ## 1.67.0 – Juli 2026
 
 Ergebnis einer systematischen Durchsicht: alle 129 Endpunkte und ihre Rechte,

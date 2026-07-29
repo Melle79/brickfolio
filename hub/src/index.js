@@ -152,7 +152,6 @@ async function register(req, env) {
   }
 
   let isAdmin = 0;
-  const count = (await env.DB.prepare("SELECT COUNT(*) AS c FROM members").first()).c;
 
   // Erststart: mit dem Bootstrap-Secret wird der erste Admin angelegt.
   if (body.bootstrap_secret) {
@@ -160,20 +159,37 @@ async function register(req, env) {
       return err(403, "Bootstrap-Secret ungültig");
     }
     isAdmin = 1;
-  } else {
-    // Sonst: gültigen, offenen Einladungscode einlösen.
-    const code = (body.invite_code || "").toString().trim();
-    if (!code) return err(400, "invite_code fehlt");
-    const inv = await env.DB.prepare("SELECT * FROM invites WHERE code_hash = ?")
-      .bind(await sha256(code)).first();
-    if (!inv) return err(403, "Einladungscode unbekannt");
-    if (inv.redeemed_by) return err(409, "Einladungscode bereits benutzt");
-    if (inv.expires_at && inv.expires_at < now()) return err(410, "Einladungscode abgelaufen");
   }
 
   const id = randomToken("mem");
   const token = randomToken("bft");           // brickfolio token
   const t = now();
+
+  if (!isAdmin) {
+    // Einladungscode einlösen – **vor** dem Anlegen des Mitglieds und in
+    // einem einzigen Schritt. Prüfen und Einlösen getrennt zu machen ließ
+    // eine Lücke: Zwei gleichzeitige Anmeldungen mit demselben Code kamen
+    // beide durch, weil zwischen Prüfung und Einlösen die zweite passte.
+    // `AND redeemed_by IS NULL` macht daraus ein Entweder-oder, und die
+    // Zahl der geänderten Zeilen sagt, wer gewonnen hat.
+    const code = (body.invite_code || "").toString().trim();
+    if (!code) return err(400, "invite_code fehlt");
+    const hash = await sha256(code);
+    const inv = await env.DB.prepare("SELECT * FROM invites WHERE code_hash = ?")
+      .bind(hash).first();
+    if (!inv) return err(403, "Einladungscode unbekannt");
+    if (inv.redeemed_by) return err(409, "Einladungscode bereits benutzt");
+    if (inv.expires_at && inv.expires_at < now()) {
+      return err(410, "Einladungscode abgelaufen");
+    }
+    const res = await env.DB.prepare(
+      "UPDATE invites SET redeemed_by = ?, redeemed_at = ? "
+      + "WHERE code_hash = ? AND redeemed_by IS NULL")
+      .bind(id, t, hash).run();
+    if (!res.meta || res.meta.changes !== 1) {
+      return err(409, "Einladungscode bereits benutzt");
+    }
+  }
 
   // Kennung: entweder die schon bekannte weiterführen oder eine neue
   // ausstellen. Das Geheimnis geht nur beim Ausstellen einmal hinaus.
@@ -199,12 +215,6 @@ async function register(req, env) {
     + "created_at) VALUES (?, ?, ?, ?, ?, ?)")
     .bind(id, name, await sha256(token), isAdmin, instanceId, t).run();
 
-  if (!isAdmin && count > 0) {
-    const code = (body.invite_code || "").toString().trim();
-    await env.DB.prepare(
-      "UPDATE invites SET redeemed_by = ?, redeemed_at = ? WHERE code_hash = ?")
-      .bind(id, t, await sha256(code)).run();
-  }
   // Token und Instanz-Geheimnis werden NUR hier einmal ausgeliefert.
   return json({ member_id: id, display_name: name, is_admin: !!isAdmin, token,
                 instance_code: instanceCode,
@@ -927,7 +937,11 @@ export default {
 
       return err(404, "unbekannter Endpunkt");
     } catch (e) {
-      return err(500, "interner Fehler: " + (e && e.message ? e.message : e));
+      // Kein Innenleben nach draußen: Ein Fehlertext kann Tabellennamen,
+      // Abfragen oder Pfade enthalten. Für die Fehlersuche steht er im
+      // Worker-Protokoll, das nur der Hub-Admin sieht.
+      console.error("Hub-Fehler:", e && e.stack ? e.stack : e);
+      return err(500, "interner Fehler");
     }
   },
 };

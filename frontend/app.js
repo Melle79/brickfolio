@@ -5101,6 +5101,27 @@ function showHubTab(name) {
   updatePolling();
 }
 
+/* Die Sicherheitsnummer – zwei kurze Zahlenreihen zum Vergleichen.
+
+   Sie ist nicht der Schlüssel, sondern sein Fingerabdruck. Wer sie einmal am
+   Telefon abgleicht, weiß: Es wird wirklich für das Gegenüber verschlüsselt
+   und nicht für jemanden, der sich dazwischengeschoben hat. Die Instanz merkt
+   sich einen Schlüssel ohnehin beim ersten Mal und bricht ab, wenn er sich
+   ändert – das hier ist die Möglichkeit, es selbst nachzusehen. */
+async function zeigeSicherheitsnummer(memberId) {
+  const box = $("trade-fp-box");
+  if (!box) return;
+  box.hidden = true;
+  if (!memberId) return;
+  try {
+    const d = await api(`/hub/key/${encodeURIComponent(memberId)}`);
+    if (!d.known) return;
+    $("trade-fp-mine").textContent = d.mine;
+    $("trade-fp-theirs").textContent = d.theirs;
+    box.hidden = false;
+  } catch (_) { /* ohne Nummer bleibt der Abschnitt einfach zu */ }
+}
+
 /* Ungelesene Nachrichten am Unter-Tab anzeigen. */
 function markUnread(n) {
   const b = $("hub-unread");
@@ -5243,6 +5264,7 @@ async function renderTrade(quiet = false) {
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
     $("trade-gone").hidden = !trade.item_gone;
+  zeigeSicherheitsnummer(trade.other_id);
     box.innerHTML = messages.map((m) => `
       <div class="trade-msg${m.mine ? " mine" : ""}">
         ${esc(m.body)}

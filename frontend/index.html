@@ -514,6 +514,19 @@
         </div>
         <p class="warn-line" id="trade-gone" hidden>⚠ Dieser Artikel wird
           nicht mehr angeboten.</p>
+        <details class="help" id="trade-fp-box" hidden>
+          <summary>🔐 Sicherheitsnummer vergleichen</summary>
+          <p class="search-hint">Die Nachrichten sind Ende-zu-Ende
+            verschlüsselt. Die dafür nötigen Schlüssel verteilt allerdings
+            der Hub – wer den kontrolliert, könnte einen eigenen
+            unterschieben und mitlesen. Wer sichergehen will, liest diese
+            Zahlen einmal am Telefon vor: Stimmen sie auf beiden Seiten
+            überein, ist niemand dazwischen.</p>
+          <p class="search-hint">Deine Nummer:<br>
+            <code id="trade-fp-mine"></code></p>
+          <p class="search-hint">Gegenüber:<br>
+            <code id="trade-fp-theirs"></code></p>
+        </details>
         <div id="trade-msgs" class="trade-msgs"></div>
         <div class="detail-row">
           <input id="trade-input" placeholder="Nachricht schreiben …" maxlength="2000">

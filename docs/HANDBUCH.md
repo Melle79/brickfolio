@@ -1112,6 +1112,26 @@ Vermittelt wird über einen kleinen **Hub**. Wichtig für das Verständnis:
   sie dann. Der lesbare Verlauf lebt auf den beteiligten Instanzen weiter –
   auch dann, wenn der Hub die Umschläge längst gelöscht hat.
 
+> **Eine Einschränkung, die man kennen sollte.** Verschlüsselt wird mit dem
+> öffentlichen Schlüssel des Gegenübers – und **verteilt werden diese
+> Schlüssel vom Hub**. Wer den Hub kontrolliert, könnte statt des echten
+> einen eigenen ausliefern und damit mitlesen, ohne dass es auffällt. Das
+> ist keine Hintertür im Programm, aber es ist die Stelle, an der man dem
+> Hub vertrauen muss.
+>
+> Seit v1.68.0 gibt es dagegen zwei Dinge:
+>
+> 1. **Die Instanz merkt sich den Schlüssel beim ersten Mal.** Taucht später
+>    ein anderer auf, wird **nichts verschickt**, sondern abgebrochen – mit
+>    einer Meldung. Ein Wechsel kann harmlos sein (Gegenüber neu aufgesetzt);
+>    unterscheiden lässt es sich nur durch Nachfragen. Ist es geklärt,
+>    bestätigt ein Admin den neuen Schlüssel.
+> 2. **Eine Sicherheitsnummer zum Vergleichen.** Im Gespräch klappt
+>    „🔐 Sicherheitsnummer vergleichen" zwei kurze Zahlenreihen auf: die
+>    eigene und die des Gegenübers. Einmal am Telefon vorlesen – stimmen sie
+>    auf beiden Seiten überein, ist niemand dazwischen. Sie ändert sich nur,
+>    wenn sich der Schlüssel wirklich ändert.
+
 ### 12.2 Beitreten
 
 Zum Mitmachen braucht es einen **Einladungscode** von jemandem, der schon

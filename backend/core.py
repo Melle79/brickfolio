@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.67.0"
+APP_VERSION = "1.68.0"
 
 
 def hash_password(password: str) -> str:
@@ -296,6 +296,17 @@ def init_db():
             -- Geräte, die per Web-Push benachrichtigt werden wollen. Die
             -- Adresse (endpoint) zeigt auf den Push-Dienst des jeweiligen
             -- Browser-Herstellers und ist je Gerät und Installation eindeutig.
+            -- Öffentliche Schlüssel der Gegenüber, so wie wir sie beim
+            -- **ersten** Mal gesehen haben. Verteilt werden sie vom Hub –
+            -- wer den kontrolliert, könnte einen eigenen unterschieben und
+            -- mitlesen. Ein einmal gemerkter Schlüssel macht genau das
+            -- sichtbar: Ändert er sich, stimmt etwas nicht.
+            CREATE TABLE IF NOT EXISTS hub_keys (
+                member_id  TEXT PRIMARY KEY,
+                public_key TEXT NOT NULL,
+                first_seen INTEGER NOT NULL,
+                name       TEXT
+            );
             CREATE TABLE IF NOT EXISTS push_subs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id),
