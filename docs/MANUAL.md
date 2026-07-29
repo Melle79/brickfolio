@@ -229,26 +229,30 @@ display name, change password and sign out.
 > grid. It is the same app – it just arranges itself according to screen
 > width, without you switching anything.
 
-The **More** tab is sorted by topic (cards fold open and shut by tapping the
-heading; the app remembers the state) – visible depending on your role:
+The **More** tab is arranged in four groups, sorted by **who it concerns**.
+Cards fold open and shut by tapping the heading; the app remembers the state.
+If a whole group is empty for your role, its heading disappears too – so a
+regular user only sees the first group and the sources at the very bottom.
 
-| Card | visible to |
-|---|---|
-| 🌐 Language | everyone |
-| 🎨 Design | everyone |
-| 📤 Export & print | everyone |
-| 📈 Price log | Collector-Pro |
-| 💼 Collector-Pro (offer suggestion, CSV import) | Collector-Pro |
-| ↕️ Collection sort order | everyone |
-| 🤝 Trading network (connect/disconnect) | Admin |
-| 🏷 Display name | Admin |
-| 🔑 API keys | Admin |
-| 👥 Manage users | Admin |
-| 💾 Backup | Admin |
-| 🌍 Price region & currency | Admin |
-| 🖼 Images on your instance | Admin |
-| 🔄 Version & updates | Admin |
-| ℹ️ Sources & legal | everyone |
+| Group | Card | visible to |
+|---|---|---|
+| 🙋 **For you** | 🌐 Language | everyone |
+| | 🎨 Design | everyone |
+| | ↕️ Collection sort order | everyone |
+| | 📤 Export & print | everyone |
+| | 💼 Collector-Pro (offer suggestion, CSV import) | Collector-Pro |
+| | 📈 Price log | Collector-Pro |
+| 🏠 **This instance** | 🏷 Display name | Admin |
+| | 👥 Manage users | Admin |
+| | 🔑 API keys | Admin |
+| | 🌍 Price region & currency | Admin |
+| | 🖼 Images on your instance | Admin |
+| 🌐 **Outward** | 🌐 External access | Admin |
+| | 🤝 Trading network (connect/disconnect) | Admin |
+| 🛠 **Maintenance** | 💾 Backup | Admin |
+| | 🔄 Version & updates | Admin |
+| | 🐞 Error report | Admin |
+| *(no group)* | ℹ️ Sources & legal | everyone |
 
 **🌐 Language** switches between German and English. The choice is stored in
 your profile and therefore applies on every device; without one the app

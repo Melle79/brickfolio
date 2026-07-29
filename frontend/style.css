@@ -1498,3 +1498,24 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   border-left: 3px solid var(--muted, #8a94a6);
 }
 .list-card-archiv .card-title strong { font-weight: 700; }
+
+/* Einstellungen in Gruppen. 17 Karten in einer flachen Liste hießen: bis
+   ganz nach unten scrollen und unterwegs hoffen, das Richtige zu erkennen.
+   Die Überschrift trägt keinen Rahmen – sie soll gliedern, nicht mitreden. */
+.settings-group { margin: 0 0 6px; }
+.settings-group-title {
+  margin: 22px 2px 2px; font-size: 15px; font-weight: 900;
+  letter-spacing: .2px; color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+.settings-group-title::after {
+  content: ""; flex: 1; height: 2px; border-radius: 2px;
+  background: var(--line);
+}
+.settings-group-hint {
+  margin: 0 2px 10px; font-size: 12.5px; color: var(--muted);
+}
+[data-theme="nova"] .settings-group-title::after,
+[data-theme="galaxy"] .settings-group-title::after {
+  background: rgba(255, 255, 255, .13);
+}

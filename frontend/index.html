@@ -534,6 +534,10 @@
   <!-- Einstellungen -->
   <main id="view-settings" class="view" hidden>
     <h2>Einstellungen</h2>
+
+    <section class="settings-group" id="grp-ich">
+      <h3 class="settings-group-title">🙋 Für dich</h3>
+      <p class="settings-group-hint">Gilt für dein Konto – auf jedem Gerät, an dem du angemeldet bist.</p>
     <div class="settings-card" id="lang-card">
       <h3>🌐 Sprache</h3>
       <p class="search-hint">Die Wahl wird in deinem Profil gespeichert und
@@ -544,7 +548,6 @@
         <button class="mini-btn cond" data-lang-pick="en">🇬🇧 English</button>
       </div>
     </div>
-
     <div class="settings-card" id="theme-card">
       <h3>🎨 Design</h3>
       <div class="detail-row btn-grid theme-picks">
@@ -568,8 +571,28 @@
         <b>Standard-Design</b> (Login-Bildschirm und Benutzer ohne eigene Wahl).
         Tippe den Stern eines Designs, um es zum Standard zu machen.</p>
     </div>
-
-    <div class="settings-card">
+    <div class="settings-card" id="sort-card">
+      <h3>↕️ Sortierung der Sammlung</h3>
+      <p class="search-hint">Womit die Sammlung standardmäßig sortiert wird.
+        Die Auswahl gilt nur für dich und bleibt in deinem Profil gespeichert.</p>
+      <label for="sort-pref">Standard-Sortierung</label>
+      <select id="sort-pref">
+        <option value="added">Zuletzt erfasst</option>
+        <option value="year_desc">Jahr (neu → alt)</option>
+        <option value="year_asc">Jahr (alt → neu)</option>
+        <option value="name">Name (A–Z)</option>
+        <option value="number">Nummer (A–Z)</option>
+        <option value="value_desc">Wert (hoch → niedrig)</option>
+        <option value="value_asc">Wert (niedrig → hoch)</option>
+        <option value="theme">Thema (A–Z)</option>
+      </select>
+      <p class="search-hint" id="theme-pending-hint" hidden>
+        <span id="theme-pending-text"></span>
+        <button class="mini-btn" id="btn-themes-refresh">🔄 Themen nachladen</button>
+      </p>
+      <p id="theme-refresh-status" class="search-hint" hidden></p>
+    </div>
+    <div class="settings-card" id="export-card">
       <h3>📤 Export &amp; Druck</h3>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="btn-csv-col">Sammlung als CSV</button>
@@ -580,7 +603,6 @@
       <p class="search-hint">CSV öffnet sich direkt in Excel/Numbers ·
         Drucken nutzt den System-Druckdialog (auch „Als PDF sichern")</p>
     </div>
-
     <div class="settings-card" id="dealer-card" hidden>
       <h3>💼 Sammlerprofi</h3>
       <div id="dealer-settings">
@@ -605,7 +627,6 @@
           Preise, Bilder und Set-Inhalte holt die App automatisch nach.</p>
         </div>
     </div>
-
     <div class="settings-card" id="pricelog-card" hidden>
       <h3>📈 Preis-Protokoll</h3>
       <p class="search-hint">Wann welche Preise aufgezeichnet wurden –
@@ -616,7 +637,29 @@
       <div id="pricelog-list" class="pricelog"></div>
       <button class="mini-btn" id="btn-pricelog-more" hidden>Mehr anzeigen</button>
     </div>
+    </section>
 
+    <section class="settings-group" id="grp-instanz">
+      <h3 class="settings-group-title">🏠 Diese Instanz</h3>
+      <p class="settings-group-hint">Was für alle hier gilt. Nur für Admins sichtbar.</p>
+    <div id="name-card" class="settings-card" hidden>
+      <h3>🏷 Anzeigename</h3>
+      <p class="search-hint">Der Name im Logo und Fenstertitel, z. B.
+        „Finn's Brickfolio". Leer lassen setzt auf den Standard „Finn" zurück.</p>
+      <label for="owner-name">Name</label>
+      <input id="owner-name" maxlength="40" placeholder="Finn" autocapitalize="words">
+      <button id="btn-owner-name" class="btn btn-primary">Speichern</button>
+    </div>
+    <div id="admin-panel" class="settings-card" hidden>
+      <h3>👥 Benutzer verwalten</h3>
+      <ul id="user-list" class="user-list"></ul>
+      <label for="new-user">Neuer Benutzername</label>
+      <input id="new-user" autocapitalize="none">
+      <label for="new-pass">Passwort</label>
+      <input id="new-pass" type="password" autocomplete="new-password">
+      <button id="btn-add-user" class="btn btn-primary">Benutzer anlegen</button>
+      <p id="user-error" class="error" hidden></p>
+    </div>
     <div id="api-panel" class="settings-card" hidden>
       <h3>🔑 API-Schlüssel</h3>
       <p class="search-hint">Gespeicherte Schlüssel werden maskiert angezeigt.
@@ -639,73 +682,6 @@
       </div>
       <p id="keys-status" class="search-hint" hidden></p>
     </div>
-    <div id="name-card" class="settings-card" hidden>
-      <h3>🏷 Anzeigename</h3>
-      <p class="search-hint">Der Name im Logo und Fenstertitel, z. B.
-        „Finn's Brickfolio". Leer lassen setzt auf den Standard „Finn" zurück.</p>
-      <label for="owner-name">Name</label>
-      <input id="owner-name" maxlength="40" placeholder="Finn" autocapitalize="words">
-      <button id="btn-owner-name" class="btn btn-primary">Speichern</button>
-    </div>
-
-    <div id="admin-panel" class="settings-card" hidden>
-      <h3>👥 Benutzer verwalten</h3>
-      <ul id="user-list" class="user-list"></ul>
-      <label for="new-user">Neuer Benutzername</label>
-      <input id="new-user" autocapitalize="none">
-      <label for="new-pass">Passwort</label>
-      <input id="new-pass" type="password" autocomplete="new-password">
-      <button id="btn-add-user" class="btn btn-primary">Benutzer anlegen</button>
-      <p id="user-error" class="error" hidden></p>
-    </div>
-
-    <div class="settings-card" id="backup-card" hidden>
-      <h3>💾 Sicherung</h3>
-      <div class="detail-row btn-grid">
-        <button class="mini-btn" id="btn-backup">💾 Sicherung herunterladen</button>
-        <button class="mini-btn" id="btn-restore">📥 Sicherung einspielen</button>
-      </div>
-      <input type="file" id="restore-file" accept=".json,application/json" hidden>
-      <p class="search-hint">Enthält alles: Benutzer, Sammlung, Wünsche,
-        Preisverläufe, Set-Zuordnungen und Einstellungen.</p>
-      <p class="search-hint" id="backup-auto-info">Zusätzlich sichert
-        Brickfolio die Datenbank täglich von selbst nach
-        <code>data/backups/</code>.</p>
-      <div id="backup-restore-block" hidden>
-        <label for="backup-select">Automatischen Tagesstand wiederherstellen</label>
-        <div class="detail-row btn-grid">
-          <select id="backup-select" style="grid-column:1/-1"></select>
-          <button class="mini-btn" id="btn-backup-dl">⬇ Herunterladen</button>
-          <button class="mini-btn danger" id="btn-restore-snap"
-            style="grid-column:auto">↩︎ Wiederherstellen</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-card" id="errors-card" hidden>
-      <h3>🐞 Fehlerbericht</h3>
-      <p class="search-hint">Tritt in der App ein Fehler auf, landet er hier –
-        auch von den Geräten der anderen. Gleichartige Fehler werden
-        zusammengefasst.</p>
-      <div id="errors-list"></div>
-      <div class="detail-row btn-grid" style="margin-top:8px">
-        <button class="mini-btn" id="btn-errors-copy">📋 Bericht kopieren</button>
-        <button class="mini-btn danger" id="btn-errors-clear">Liste leeren</button>
-      </div>
-      <details class="help" style="margin-top:12px">
-        <summary>GitHub-Token für automatische Issues</summary>
-        <p class="search-hint">Mit einem Token kann die App aus einem Fehler
-          direkt ein Issue anlegen. Nutze einen <b>fein granulierten</b> Token
-          (Fine-grained), der <b>nur dieses Repository</b> und dort <b>nur
-          „Issues: Read and write"</b> darf – mehr braucht es nicht, und mehr
-          sollte die App auch nicht können.</p>
-        <label for="github-token">Token</label>
-        <input id="github-token" type="password" autocomplete="off"
-          placeholder="github_pat_… (leer lassen zum Entfernen)">
-        <button class="mini-btn add" id="btn-github-token" style="margin-top:8px">Token speichern</button>
-      </details>
-    </div>
-
     <div class="settings-card" id="price-region-card" hidden>
       <h3>🌍 Preisgebiet</h3>
       <p class="search-hint">Aus welchem Markt sollen die
@@ -732,7 +708,6 @@
         <button class="mini-btn add" id="btn-price-fill">🔄 Preislose erneut abrufen</button>
       </div>
     </div>
-
     <div class="settings-card" id="images-card" hidden>
       <h3>🖼 Bilder auf der Instanz</h3>
       <p class="search-hint">Gespeichert ist zu jedem Artikel nur die Adresse
@@ -745,7 +720,11 @@
       <p class="search-hint" id="images-status"></p>
       <button class="mini-btn add" id="btn-images-fetch" hidden>🖼 Bilder jetzt holen</button>
     </div>
+    </section>
 
+    <section class="settings-group" id="grp-aussen">
+      <h3 class="settings-group-title">🌐 Nach außen</h3>
+      <p class="settings-group-hint">Wege aus dem Heimnetz heraus – beide freiwillig.</p>
     <div class="settings-card" id="external-access-card" hidden>
       <h3>🌐 Externer Zugriff</h3>
       <p class="search-hint">Von unterwegs auf Brickfolio zugreifen – ohne
@@ -771,29 +750,6 @@
         Handbuch, Kapitel 2.7. <b>Extra-Schloss:</b> im Zero-Trust-Dashboard
         optional eine Access-Policy davorsetzen.</p>
     </div>
-
-    <div class="settings-card" id="sort-card">
-      <h3>↕️ Sortierung der Sammlung</h3>
-      <p class="search-hint">Womit die Sammlung standardmäßig sortiert wird.
-        Die Auswahl gilt nur für dich und bleibt in deinem Profil gespeichert.</p>
-      <label for="sort-pref">Standard-Sortierung</label>
-      <select id="sort-pref">
-        <option value="added">Zuletzt erfasst</option>
-        <option value="year_desc">Jahr (neu → alt)</option>
-        <option value="year_asc">Jahr (alt → neu)</option>
-        <option value="name">Name (A–Z)</option>
-        <option value="number">Nummer (A–Z)</option>
-        <option value="value_desc">Wert (hoch → niedrig)</option>
-        <option value="value_asc">Wert (niedrig → hoch)</option>
-        <option value="theme">Thema (A–Z)</option>
-      </select>
-      <p class="search-hint" id="theme-pending-hint" hidden>
-        <span id="theme-pending-text"></span>
-        <button class="mini-btn" id="btn-themes-refresh">🔄 Themen nachladen</button>
-      </p>
-      <p id="theme-refresh-status" class="search-hint" hidden></p>
-    </div>
-
     <div class="settings-card" id="hub-card" hidden>
       <h3>🤝 Tausch-Netzwerk</h3>
       <p class="search-hint">Mit dem Netzwerk verbinden, um deinen
@@ -826,7 +782,33 @@
         </div>
       </div>
     </div>
+    </section>
 
+    <section class="settings-group" id="grp-wartung">
+      <h3 class="settings-group-title">🛠 Wartung</h3>
+      <p class="settings-group-hint">Sichern, aktualisieren und nachsehen, wenn etwas klemmt.</p>
+    <div class="settings-card" id="backup-card" hidden>
+      <h3>💾 Sicherung</h3>
+      <div class="detail-row btn-grid">
+        <button class="mini-btn" id="btn-backup">💾 Sicherung herunterladen</button>
+        <button class="mini-btn" id="btn-restore">📥 Sicherung einspielen</button>
+      </div>
+      <input type="file" id="restore-file" accept=".json,application/json" hidden>
+      <p class="search-hint">Enthält alles: Benutzer, Sammlung, Wünsche,
+        Preisverläufe, Set-Zuordnungen und Einstellungen.</p>
+      <p class="search-hint" id="backup-auto-info">Zusätzlich sichert
+        Brickfolio die Datenbank täglich von selbst nach
+        <code>data/backups/</code>.</p>
+      <div id="backup-restore-block" hidden>
+        <label for="backup-select">Automatischen Tagesstand wiederherstellen</label>
+        <div class="detail-row btn-grid">
+          <select id="backup-select" style="grid-column:1/-1"></select>
+          <button class="mini-btn" id="btn-backup-dl">⬇ Herunterladen</button>
+          <button class="mini-btn danger" id="btn-restore-snap"
+            style="grid-column:auto">↩︎ Wiederherstellen</button>
+        </div>
+      </div>
+    </div>
     <div class="settings-card" id="update-card" hidden>
       <h3>🔄 Version &amp; Updates</h3>
       <p class="sub">Installiert: <b id="ver-current">…</b>
@@ -857,6 +839,30 @@ sudo bash update.sh</pre>
       <button class="mini-btn" id="btn-update-check">Nach Updates suchen</button>
       <p id="update-status" class="search-hint" hidden></p>
     </div>
+    <div class="settings-card" id="errors-card" hidden>
+      <h3>🐞 Fehlerbericht</h3>
+      <p class="search-hint">Tritt in der App ein Fehler auf, landet er hier –
+        auch von den Geräten der anderen. Gleichartige Fehler werden
+        zusammengefasst.</p>
+      <div id="errors-list"></div>
+      <div class="detail-row btn-grid" style="margin-top:8px">
+        <button class="mini-btn" id="btn-errors-copy">📋 Bericht kopieren</button>
+        <button class="mini-btn danger" id="btn-errors-clear">Liste leeren</button>
+      </div>
+      <details class="help" style="margin-top:12px">
+        <summary>GitHub-Token für automatische Issues</summary>
+        <p class="search-hint">Mit einem Token kann die App aus einem Fehler
+          direkt ein Issue anlegen. Nutze einen <b>fein granulierten</b> Token
+          (Fine-grained), der <b>nur dieses Repository</b> und dort <b>nur
+          „Issues: Read and write"</b> darf – mehr braucht es nicht, und mehr
+          sollte die App auch nicht können.</p>
+        <label for="github-token">Token</label>
+        <input id="github-token" type="password" autocomplete="off"
+          placeholder="github_pat_… (leer lassen zum Entfernen)">
+        <button class="mini-btn add" id="btn-github-token" style="margin-top:8px">Token speichern</button>
+      </details>
+    </div>
+    </section>
 
     <div class="settings-card" id="about-card">
       <h3>ℹ️ Quellen &amp; Rechtliches</h3>
@@ -881,6 +887,8 @@ sudo bash update.sh</pre>
         <a href="https://github.com/Melle79/brickfolio" target="_blank" rel="noopener">Brickfolio</a>
         unter MIT-Lizenz.</p>
     </div>
+
+  
 
   </main>
 

@@ -234,26 +234,31 @@ Abmelden.
 > fünf Karten pro Reihe im Raster. Es ist dieselbe App – sie ordnet sich nur
 > je nach Bildschirmbreite anders an, ohne dass man etwas umstellen muss.
 
-Der Tab **Mehr** ist nach Themen sortiert (Karten per Antippen der
-Überschrift auf- und zuklappbar; die App merkt sich den Zustand) – je
-nach Rolle sichtbar:
+Der Tab **Mehr** steht in vier Gruppen, sortiert danach, **wen es
+angeht**. Die Karten klappen per Antippen der Überschrift auf und zu; die
+App merkt sich den Zustand. Ist eine ganze Gruppe für die eigene Rolle
+leer, verschwindet auch ihre Überschrift – ein normaler Benutzer sieht
+also nur die erste Gruppe und ganz unten die Quellen.
 
-| Karte | sichtbar für |
-|---|---|
-| 🎨 Design | alle |
-| 📤 Export & Druck | alle |
-| 📈 Preis-Protokoll | Sammlerprofi |
-| 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
-| ↕️ Sortierung der Sammlung | alle |
-| 🤝 Tausch-Netzwerk (verbinden/trennen) | Admin |
-| 🏷 Anzeigename | Admin |
-| 🔑 API-Schlüssel | Admin |
-| 👥 Benutzer verwalten | Admin |
-| 💾 Sicherung | Admin |
-| 🌍 Preisgebiet & Währung | Admin |
-| 🖼 Bilder auf der Instanz | Admin |
-| 🔄 Version & Updates | Admin |
-| ℹ️ Quellen & Rechtliches | alle |
+| Gruppe | Karte | sichtbar für |
+|---|---|---|
+| 🙋 **Für dich** | 🌐 Sprache | alle |
+| | 🎨 Design | alle |
+| | ↕️ Sortierung der Sammlung | alle |
+| | 📤 Export & Druck | alle |
+| | 💼 Sammlerprofi (Angebots-Vorschlag, CSV-Import) | Sammlerprofi |
+| | 📈 Preis-Protokoll | Sammlerprofi |
+| 🏠 **Diese Instanz** | 🏷 Anzeigename | Admin |
+| | 👥 Benutzer verwalten | Admin |
+| | 🔑 API-Schlüssel | Admin |
+| | 🌍 Preisgebiet & Währung | Admin |
+| | 🖼 Bilder auf der Instanz | Admin |
+| 🌐 **Nach außen** | 🌐 Externer Zugriff | Admin |
+| | 🤝 Tausch-Netzwerk (verbinden/trennen) | Admin |
+| 🛠 **Wartung** | 💾 Sicherung | Admin |
+| | 🔄 Version & Updates | Admin |
+| | 🐞 Fehlerbericht | Admin |
+| *(ohne Gruppe)* | ℹ️ Quellen & Rechtliches | alle |
 
 **🎨 Design** bietet drei Aussehen: **Klassisch** (hell, LEGO-Farben),
 **Galaxie** (dunkel, mit Sternenhimmel und leuchtenden Akzenten) und

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.64.0 – Juli 2026
+
+### Verbessert
+- ⚙️ **Der Mehr-Tab ist sortiert.** 17 Karten lagen in einer flachen Liste,
+  und die Sortierung der Sammlung saß mitten zwischen Admin-Sachen. Jetzt
+  stehen sie in vier Gruppen, geordnet danach, **wen es angeht**:
+  🙋 Für dich · 🏠 Diese Instanz · 🌐 Nach außen · 🛠 Wartung. Quellen &
+  Rechtliches bleibt ohne Gruppe ganz unten
+- 🙈 **Leere Gruppen verschwinden mitsamt ihrer Überschrift.** Ein normaler
+  Benutzer sieht damit nur „Für dich" und die Quellen – statt dreier
+  Zwischenzeilen ohne Inhalt darunter
+
 ## 1.63.2 – Juli 2026
 
 ### Behoben

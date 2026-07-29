@@ -6417,6 +6417,17 @@ function renderUpdateInfo(info) {
   }
 }
 
+/* Eine Gruppe, deren Karten alle ausgeblendet sind, hat nichts zu sagen –
+   dann verschwindet auch ihre Überschrift. Sonst stünde bei einem normalen
+   Benutzer dreimal eine leere Zwischenzeile. */
+function gruppenAufraeumen() {
+  document.querySelectorAll(".settings-group").forEach((g) => {
+    const sichtbar = [...g.querySelectorAll(".settings-card")]
+      .some((c) => !c.hidden);
+    g.hidden = !sichtbar;
+  });
+}
+
 async function loadSettings() {
   const dealerUi = state.user && state.user.is_dealer;
   if ($("dealer-card")) {
@@ -6481,6 +6492,7 @@ async function loadSettings() {
   if (isAdmin) checkForUpdate(false).then(renderUpdateInfo);
   const panel = $("admin-panel");
   panel.hidden = !isAdmin;
+  gruppenAufraeumen();
   if (!isAdmin) return;
   loadApiKeys();
   try {
