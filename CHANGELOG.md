@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.63.2 – Juli 2026
+
+### Behoben
+- 🔎 **Ein klemmendes Katalogbild meldete die falsche Adresse.** Seit die
+  Bilder über die eigene Instanz laufen, stand im Fehlerbericht deren Name –
+  als wäre der eigene Server kaputt. Gemeldet wird jetzt der Host dahinter,
+  also der, der wirklich nicht antwortet
+
 ## 1.63.1 – Juli 2026
 
 ### Behoben

@@ -5901,9 +5901,16 @@ function initErrorReporting() {
     if (!el || el.tagName !== "IMG") return;
     const src = el.getAttribute("src") || "";
     if (!src || src.startsWith("data:")) return;
-    let host = src;
-    try { host = new URL(src, location.href).host || src; } catch (_) { /* egal */ }
-    reportError(`Bild lädt nicht: ${host}`, src, "bild");
+    let quelle = src;
+    try {
+      const u = new URL(src, location.href);
+      // Katalogbilder laufen über die eigene Instanz. Deren Adresse zu
+      // melden wäre irreführend – nicht sie klemmt, sondern das CDN
+      // dahinter. Die ursprüngliche Adresse steht im Parameter.
+      const original = u.pathname === "/catalog" ? u.searchParams.get("u") : null;
+      quelle = original ? new URL(original).host : (u.host || src);
+    } catch (_) { /* dann eben die rohe Adresse */ }
+    reportError(`Bild lädt nicht: ${quelle}`, src, "bild");
   }, true);
 }
 
