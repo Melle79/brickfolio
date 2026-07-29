@@ -1468,6 +1468,37 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .mini-btn,
 [data-theme="nova"] .brick-button { border-radius: 14px; }
 
+/* Der Scan-Knopf.
+
+   Im hellen Design ist er LEGO-rot – das ist gewollt und sieht nach
+   Klemmbaustein aus. In Nova ist `--red` aber die **Warnfarbe** (Löschen,
+   Verlust, gesperrt). Der wichtigste Knopf der App stand damit als große
+   pinke Fläche da und las sich wie eine Fehlermeldung.
+
+   Stattdessen die Akzentfarbe des Designs, mit dunkler Schrift wie auf allen
+   anderen hellen Flächen hier, und einem leichten Verlauf, damit die große
+   Fläche nicht flach wirkt. Die Noppen oben bekommen dieselbe Farbe – sonst
+   säßen zwei rote Zipfel auf einer blauen Fläche. */
+[data-theme="nova"] .brick-button {
+  background-color: var(--yellow);
+  background-image: linear-gradient(160deg,
+    rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%);
+  color: #04202E;
+  border-color: var(--yellow-dark);
+  box-shadow: 0 10px 28px rgba(87, 199, 251, .22),
+              inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+[data-theme="nova"] .brick-button:active {
+  box-shadow: 0 4px 14px rgba(87, 199, 251, .22),
+              inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+[data-theme="nova"] .brick-studs i {
+  background: var(--yellow); border-color: var(--yellow-dark);
+}
+/* Der Untertitel steht auf hellem Grund – die Standard-Deckkraft wäre dort
+   zu blass zum Lesen. */
+[data-theme="nova"] .brick-button small { opacity: .72; }
+
 @media (min-width: 960px) {
   [data-theme="nova"] .tabbar {
     border-top: none; border-right: 1px solid rgba(255, 255, 255, .1);

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.68.2 – Juli 2026
+
+### Behoben
+- 🎨 **Der Scan-Knopf war in Nova die Warnfarbe.** Er nutzt `--red` – im
+  hellen Design das LEGO-Rot, und dort sieht er auch genau richtig aus. In
+  Nova ist Rot aber die Farbe für Löschen und Verlust. Der wichtigste Knopf
+  der App stand damit als große pinke Fläche da und las sich wie eine
+  Fehlermeldung. Jetzt in der Akzentfarbe des Designs, mit dunkler Schrift
+  wie auf allen anderen hellen Flächen dort, einem leichten Verlauf und
+  passenden Noppen. Klassisch und Galaxie bleiben unverändert rot
+
 ## 1.68.1 – Juli 2026
 
 ### Verbessert
