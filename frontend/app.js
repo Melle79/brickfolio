@@ -1748,6 +1748,7 @@ function showApp() {
     if (state.hubConnected) refreshUnread();
   }).catch(() => {});
   startUpdateWatch();
+  diagStarten();
   initErrorReporting();
   loadNotifications();
   showTab("scan");
@@ -5901,6 +5902,7 @@ function renderErrors() {
   // gibt. Also hier direkt sagen, was Sache ist.
   zeigeGithubToken(data.token_masked || "");
   loadPushCard();
+  renderDiag();
   if (!data.items.length) {
     box.innerHTML = `<div class="price-note">Keine Fehler aufgezeichnet ✔</div>`;
     return;
@@ -5997,6 +5999,129 @@ function initErrorReporting() {
   // fasst von sich aus nach, und der Platzhalter sagt es dem Auge ohnehin.
   // Gemeldet hat es dagegen sehr wohl – bis hin zu einem GitHub-Issue und
   // einer Meldung aufs Handy, für ein einziges hakeliges Vorschaubild.
+}
+
+/* ------------------------------------------------- Speicher beobachten
+
+   Ein abgestürzter Tab hinterlässt nichts: keine Konsole, keinen
+   Fehlerbericht, kein Netzwerkprotokoll. Genau deshalb schreibt diese
+   Messung in den **Browser-Speicher** – der überlebt das Ende des Tabs. Nach
+   dem nächsten Start steht also da, was in den Minuten davor passiert ist.
+
+   Gemessen wird, was ohne Sonderrechte messbar ist: der JavaScript-Speicher
+   (nur Chromium/Edge), die Zahl der Elemente im Dokument und der Bilder. Das
+   entpackte Bild selbst steckt **nicht** im JS-Speicher – bleibt die Kurve
+   flach, während der Tab trotzdem stirbt, liegt es also nicht am
+   JavaScript, und dann lohnt der Blick auf die anderen Tabs. Auch das ist
+   ein Ergebnis. */
+
+const DIAG_KEY = "bf_mem";
+const DIAG_MAX = 240;                 // 240 × 30 s = zwei Stunden
+const DIAG_TAKT = 30000;
+
+function diagLesen() {
+  try { return JSON.parse(localStorage.getItem(DIAG_KEY) || "[]"); }
+  catch (_) { return []; }
+}
+
+function diagMessen(grund = "") {
+  const m = performance.memory;
+  const punkt = {
+    t: Date.now(),
+    // MB, gerundet – Nachkommastellen wären hier Scheingenauigkeit
+    heap: m ? Math.round(m.usedJSHeapSize / 1048576) : null,
+    limit: m ? Math.round(m.jsHeapSizeLimit / 1048576) : null,
+    knoten: document.getElementsByTagName("*").length,
+    bilder: document.getElementsByTagName("img").length,
+    v: (state.appVersion || "").slice(0, 12),
+  };
+  if (grund) punkt.g = grund;
+  const liste = diagLesen();
+  liste.push(punkt);
+  while (liste.length > DIAG_MAX) liste.shift();
+  try { localStorage.setItem(DIAG_KEY, JSON.stringify(liste)); }
+  catch (_) { /* Speicher voll – dann eben nicht */ }
+  return punkt;
+}
+
+let diagTimer = null;
+
+function diagStarten() {
+  if (diagTimer) return;
+  // „start" markiert den Beginn einer Sitzung. Steht davor ein Messwert von
+  // vor wenigen Sekunden, ist der Tab dazwischen gestorben – genau das ist
+  // die Stelle, die interessiert.
+  diagMessen("start");
+  diagTimer = setInterval(diagMessen, DIAG_TAKT);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) diagMessen("zurück");
+  });
+}
+
+function diagZeitraum(ms) {
+  const min = Math.round(ms / 60000);
+  return min < 60 ? `${min} min` : `${Math.round(min / 60 * 10) / 10} h`;
+}
+
+function renderDiag() {
+  const box = $("diag-box");
+  if (!box) return;
+  const liste = diagLesen();
+  const zus = $("diag-summary");
+  const chart = $("diag-chart");
+  if (liste.length < 2) {
+    zus.textContent = tr("Noch keine Messwerte – die erste Messung kommt "
+      + "innerhalb einer Minute.");
+    chart.innerHTML = "";
+    return;
+  }
+  const heaps = liste.map((p) => p.heap).filter((x) => x != null);
+  const letzte = liste[liste.length - 1];
+  // Ein Neustart kurz nach dem letzten Messwert heißt: Der Tab ist gestorben.
+  let abbruch = 0;
+  for (let i = 1; i < liste.length; i++) {
+    if (liste[i].g === "start" && liste[i].t - liste[i - 1].t < 90000) abbruch++;
+  }
+  const teile = [
+    tr("{n} Messwerte über {zeit}", { n: liste.length,
+      zeit: diagZeitraum(letzte.t - liste[0].t) }),
+  ];
+  if (heaps.length) {
+    teile.push(tr("JS-Speicher jetzt {jetzt} MB (von {min} bis {max}, "
+      + "Grenze {limit} MB)", { jetzt: letzte.heap, min: Math.min(...heaps),
+      max: Math.max(...heaps), limit: letzte.limit || "?" }));
+  } else {
+    teile.push(tr("Dieser Browser gibt den Speicherstand nicht preis – "
+      + "gemessen werden nur Elemente und Bilder."));
+  }
+  teile.push(tr("{n} Elemente, {b} Bilder", { n: letzte.knoten, b: letzte.bilder }));
+  if (abbruch) {
+    teile.push(tr("⚠️ {n}× brach die Seite ab und startete sofort neu.",
+      { n: abbruch }));
+  }
+  zus.innerHTML = teile.map(esc).join("<br>");
+
+  // Verlauf zeichnen – dieselbe Sprache wie die Preiskurven
+  const werte = liste.map((p) => p.heap != null ? p.heap : p.knoten / 100);
+  const w = 560, h = 90, padX = 8, padT = 8, padB = 16;
+  const hi = Math.max(...werte, 1), lo = Math.min(...werte, 0);
+  const x = (i) => padX + (i / Math.max(1, werte.length - 1)) * (w - 2 * padX);
+  const y = (v) => padT + (1 - (v - lo) / Math.max(0.001, hi - lo)) * (h - padT - padB);
+  const linie = werte.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const marken = liste.map((p, i) => p.g === "start" && i
+    ? `<line x1="${x(i).toFixed(1)}" y1="${padT}" x2="${x(i).toFixed(1)}"`
+      + ` y2="${h - padB}" class="hist-grid"/>` : "").join("");
+  chart.innerHTML = `
+  <svg viewBox="0 0 ${w} ${h}" class="diag-svg" role="img"
+       aria-label="${esc(tr("Speicher-Verlauf"))}">
+    ${marken}
+    <polyline points="${linie}" fill="none" stroke="var(--chart-new)"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="${padX}" y="${padT + 8}" class="hist-label">${esc(String(Math.round(hi)))}</text>
+    <text x="${padX}" y="${h - padB - 2}" class="hist-label">${esc(String(Math.round(lo)))}</text>
+  </svg>
+  <div class="price-note">${esc(tr("Senkrechte Linien: hier begann eine neue "
+    + "Sitzung. Kommt eine davon ohne Zutun, ist der Tab abgestürzt."))}</div>`;
 }
 
 /* ------------------------------------------- Benachrichtigung aufs Gerät
@@ -6909,6 +7034,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadErrors();
     } catch (e) { toast(e.message); }
     btn.disabled = false;
+  });
+  $("btn-diag-copy").addEventListener("click", async () => {
+    const liste = diagLesen();
+    const zeilen = liste.map((p) => [
+      new Date(p.t).toLocaleString(dateLocale()),
+      p.heap != null ? p.heap + " MB" : "–",
+      p.knoten + " Elemente", p.bilder + " Bilder",
+      p.v ? "v" + p.v : "", p.g || "",
+    ].filter(Boolean).join("  ·  "));
+    const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(tr("Verlauf kopiert ✔"));
+    } catch (_) {
+      toast(tr("Kopieren nicht möglich – Text bitte von Hand markieren"));
+    }
+  });
+  $("btn-diag-clear").addEventListener("click", () => {
+    localStorage.removeItem(DIAG_KEY);
+    renderDiag();
+    toast(tr("Verlauf geleert"));
   });
   $("btn-push-on").addEventListener("click", pushEinschalten);
   $("btn-push-off").addEventListener("click", pushAusschalten);

@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.69.0 – Juli 2026
+
+### Neu
+- 🩺 **Speicher-Verlauf im Fehlerbericht.** Ein abgestürzter Tab hinterlässt
+  normalerweise nichts – keine Konsole, kein Protokoll. Deshalb misst die App
+  jetzt alle 30 Sekunden JS-Speicher, Zahl der Elemente und Zahl der Bilder
+  und legt das **im Browser** ab, wo es einen Abbruch übersteht. Nach dem
+  nächsten Start steht da, was in den zwei Stunden davor passiert ist, samt
+  Kurve
+- ⚠️ **Abstürze werden erkannt und gezählt.** Folgt der Beginn einer Sitzung
+  unmittelbar auf einen Messwert, ohne dass jemand neu geladen hat, war es
+  ein Abbruch. Senkrechte Linien in der Kurve zeigen, wo
+- 📋 Der Verlauf lässt sich als Text kopieren; er bleibt auf dem Gerät
+
+> **Was die Zahl aussagt – und was nicht.** Gemessen wird der
+> JavaScript-Speicher. Entpackte Bilder und der Seitenaufbau stecken da nicht
+> drin. Wächst die Kurve, liegt es an der App. Bleibt sie flach, während der
+> Tab trotzdem stirbt, liegt es sehr wahrscheinlich woanders. Auch das ist
+> ein Ergebnis.
+
 ## 1.68.5 – Juli 2026
 
 ### Verbessert

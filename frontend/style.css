@@ -1563,3 +1563,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    Inline-Stil – und der schlug die Regel fürs Zuklappen: Die Karte war zu,
    der Inhalt trotzdem da. Eine Klasse verliert diesen Wettstreit. */
 .push-box { margin-top: 12px; }
+
+/* Speicher-Verlauf im Fehlerbericht */
+.diag-box { margin-top: 12px; }
+.diag-svg { width: 100%; height: auto; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--chart-bg); }

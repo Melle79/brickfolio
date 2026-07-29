@@ -862,6 +862,21 @@ sudo bash update.sh</pre>
         <button class="mini-btn" id="btn-errors-copy">📋 Bericht kopieren</button>
         <button class="mini-btn danger" id="btn-errors-clear">Liste leeren</button>
       </div>
+      <div class="diag-box" id="diag-box">
+        <p class="search-hint" style="margin:0 0 6px"><b>🩺 Speicher-Verlauf.</b>
+          Alle 30 Sekunden ein Messwert, gespeichert im Browser – und zwar
+          so, dass er einen Absturz des Tabs übersteht. Bricht der Browser die
+          Seite ab („Auf dieser Seite gibt es ein Problem"), steht hier
+          hinterher, was kurz davor los war. Nur auf diesem Gerät, nichts geht
+          nach außen.</p>
+        <p class="search-hint" id="diag-summary"></p>
+        <div id="diag-chart"></div>
+        <div class="detail-row btn-grid" style="margin-top:8px">
+          <button class="mini-btn" id="btn-diag-copy">📋 Verlauf kopieren</button>
+          <button class="mini-btn danger" id="btn-diag-clear">Verlauf leeren</button>
+        </div>
+      </div>
+
       <div id="push-box" class="push-box" hidden>
         <p class="search-hint" style="margin:0 0 6px"><b>🔔 Benachrichtigung
           aufs Gerät.</b> Damit erfährst du von einem Fehler auch, wenn

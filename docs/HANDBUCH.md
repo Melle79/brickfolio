@@ -1431,6 +1431,28 @@ damit sich das nicht erst beim echten Fehler zeigt. Wird die App neu
 installiert, zeigt die alte Adresse ins Leere – solche Einträge räumt der
 Server beim nächsten Versand selbst weg.
 
+**🩺 Speicher-Verlauf.** Bricht der Browser die Seite ab („Auf dieser Seite
+gibt es ein Problem"), hinterlässt das normalerweise nichts – keine
+Konsole, kein Protokoll, nichts. Deshalb misst die App alle 30 Sekunden
+JS-Speicher, Zahl der Elemente und Zahl der Bilder und legt das **im
+Browser** ab, wo es einen Abbruch übersteht. Nach dem nächsten Start steht
+in derselben Karte, was in den zwei Stunden davor passiert ist, samt Kurve.
+
+Senkrechte Linien markieren den Beginn einer Sitzung. Folgt eine davon
+unmittelbar auf einen Messwert, ohne dass jemand neu geladen hat, ist der
+Tab abgestürzt – die App zählt solche Fälle und sagt es.
+
+> **Was die Zahl aussagt – und was nicht.** Gemessen wird der
+> **JavaScript-Speicher**. Entpackte Bilder und der Aufbau der Seite selbst
+> stecken da **nicht** drin. Wächst die Kurve, liegt es an der App. Bleibt
+> sie flach, während der Tab trotzdem stirbt, liegt es sehr wahrscheinlich
+> woanders – dann lohnt der Blick in `edge://crashes` und in den
+> Task-Manager des Browsers (Umschalt+Esc), welcher Tab wirklich wächst.
+> Auch das ist ein Ergebnis.
+
+Der Verlauf bleibt auf dem Gerät. „📋 Verlauf kopieren" legt ihn als Text in
+die Zwischenablage, um ihn woanders einzufügen.
+
 **Issue auf Knopfdruck.** Ist ein GitHub-Token hinterlegt, legt „🐙 Issue
 anlegen" aus einem Eintrag direkt ein Issue im Projekt an. Der Knopf wird
 danach zu „Issue ansehen ↗"; ein zweiter Klick legt kein Duplikat an.

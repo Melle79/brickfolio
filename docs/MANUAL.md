@@ -1369,6 +1369,27 @@ button checks delivery, so it does not first show at the real error. If the app
 is reinstalled, the old address points nowhere – the server clears such entries
 away by itself on the next send.
 
+**🩺 Memory trace.** When the browser gives up on the page ("There is a problem
+with this page"), it normally leaves nothing behind – no console, no log,
+nothing. So the app takes a reading every 30 seconds – JS memory, number of
+elements, number of images – and stores it **in the browser**, where it
+survives such an abort. After the next start the same card shows what
+happened in the two hours before, with a curve.
+
+Vertical lines mark the start of a session. If one follows a reading
+immediately without anybody reloading, the tab crashed – the app counts those
+cases and says so.
+
+> **What the number says – and what it does not.** What is measured is the
+> **JavaScript memory**. Decoded images and the page structure itself are
+> **not** in it. If the curve grows, it is the app. If it stays flat while the
+> tab dies anyway, the cause is very likely elsewhere – then it is worth
+> looking at `edge://crashes` and the browser's task manager (Shift+Esc) to
+> see which tab actually grows. That is a result too.
+
+The trace stays on the device. "📋 Copy the trace" puts it on the clipboard as
+text to paste elsewhere.
+
 **An issue at the press of a button.** With a GitHub token stored, "🐙 Create an
 issue" turns an entry directly into an issue in the project. The button then
 becomes "View issue ↗"; a second click creates no duplicate. Without a token
