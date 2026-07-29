@@ -227,3 +227,57 @@ def test_migration_fills_custom_theme(tmp_path, monkeypatch):
         row = conn.execute(
             "SELECT theme FROM collection WHERE item_id = 'custom-002'").fetchone()
     assert row["theme"] == "Custom"
+
+
+# ---------------------------------------------- Rückfall über die Figuren
+
+def test_set_ohne_kategorie_erbt_das_thema_seiner_figuren(tmp_path, monkeypatch):
+    """Die Kategorie-ID eines Sets steht nicht immer in BrickLinks
+    Kategorieliste – dann bleibt die Kette am ersten Glied stehen. Die
+    Figuren im Set wissen es aber ohnehin."""
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "t.db"))
+    core.init_db()
+    with core.db() as conn:
+        for fig in ("sw0910", "sw0552", "col123"):
+            conn.execute("INSERT INTO set_contents (set_no, fig_no, qty) "
+                         "VALUES ('75018-1', ?, 1)", (fig,))
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id",
+                        lambda t, i: "9999")          # unbekannte Kategorie
+    monkeypatch.setattr(main, "_top_category", lambda cid: None)
+    assert main._theme_from_bricklink("75018-1", "set") == "Star Wars"
+
+
+def test_kategorie_hat_weiter_vorrang(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "t.db"))
+    core.init_db()
+    with core.db() as conn:
+        conn.execute("INSERT INTO set_contents (set_no, fig_no, qty) "
+                     "VALUES ('75018-1', 'sw0910', 1)")
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id",
+                        lambda t, i: "65")
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Ninjago")
+    assert main._theme_from_bricklink("75018-1", "set") == "Ninjago"
+
+
+def test_ohne_figuren_bleibt_es_ohne_thema(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "t.db"))
+    core.init_db()
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id",
+                        lambda t, i: None)
+    assert main._theme_from_bricklink("9999-1", "set") is None
+
+
+def test_figuren_rueckfall_gilt_nicht_fuer_teile(tmp_path, monkeypatch):
+    """Ein Teil steckt in vielen Sets – daraus ein Thema zu raten wäre
+    geraten, nicht gewusst."""
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "t.db"))
+    core.init_db()
+    with core.db() as conn:
+        conn.execute("INSERT INTO set_contents (set_no, fig_no, qty) "
+                     "VALUES ('3001', 'sw0910', 1)")
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, i: None)
+    assert main._theme_from_bricklink("3001", "part") is None

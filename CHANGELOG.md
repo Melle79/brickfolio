@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.63.0 – Juli 2026
+
+### Behoben
+- 🏷 **Einzelne Sets standen unter „Ohne Thema", obwohl BrickLink sie eindeutig
+  führt.** Das Thema eines Sets kommt aus der BrickLink-Kategorie – und deren
+  ID taucht nicht immer in BrickLinks eigener Kategorieliste auf. Dann bleibt
+  die Kette gleich am ersten Glied stehen. Jetzt fragt die App in diesem Fall
+  die **Figuren im Set**: Stecken dort `sw…`-Nummern drin, ist es Star Wars.
+  Es zählt, was am häufigsten vorkommt
+- 🔎 Das Nachziehen sagt jetzt auch, **welche** Nummern sich weigern. Vorher
+  stand dort auf Dauer „1 Eintrag offen", ohne dass jemand erfuhr, welcher
+
+### Verbessert
+- 📈 **Die Diagramme sind gewachsen.** Bisher standen Blau und Grün fest im
+  Code – in den dunklen Designs sahen die Kurven deshalb aus wie
+  hineinkopiert. Jetzt gehören sie zum Design: In Nova zeichnen sie in Cyan
+  und Mint, in Galaxy in dessen Blau und Grün, im hellen wie gehabt. Dazu
+  weiche Flächen unter den Kurven, runde Linienenden, eine zurückhaltende
+  Hilfslinie auf halber Höhe statt eines harten Rahmens und Punkte mit einem
+  Ring in der Flächenfarbe
+- ✨ **Das Popup in Nova hat Tiefe bekommen.** Drei Schichten statt einer
+  flachen Fläche: eine tiefe Grundfarbe, ein Lichtschimmer an der oberen
+  Kante und ein leiser Farbhauch im Akzent. Der Hintergrund dahinter tritt
+  stärker zurück (mehr Unschärfe), damit das Fenster wirklich vorne steht
+  statt nur obenauf zu liegen
+
 ## 1.62.0 – Juli 2026
 
 ### Verbessert

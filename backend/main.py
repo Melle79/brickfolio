@@ -2042,6 +2042,33 @@ def _top_category(cat_id: str) -> str | None:
     return None
 
 
+def _theme_aus_figuren(set_no: str) -> str | None:
+    """Thema eines Sets aus den Figuren, die drinstecken.
+
+    Der Weg über die BrickLink-Kategorie versagt vereinzelt: Die Kategorie-ID
+    eines Sets taucht nicht immer in der Kategorieliste auf, und dann bleibt
+    die Kette gleich am ersten Glied stehen. Genau ein Set stand deshalb unter
+    „Ohne Thema", während 787 andere richtig einsortiert waren.
+
+    Die Figuren wissen es aber ohnehin: `sw0xxx` heißt Star Wars, ganz ohne
+    Abruf. Es zählt, was am häufigsten vorkommt – ein Set mit sechs
+    Star-Wars-Figuren und einer Sammelfigur ist Star Wars.
+    """
+    with core.db() as conn:
+        figs = [r["fig_no"] for r in conn.execute(
+            "SELECT fig_no FROM set_contents WHERE set_no = ?", (set_no,))]
+    if not figs:
+        return None
+    zaehler: dict = {}
+    for f in figs:
+        t = themes.from_minifig_number(f)
+        if t:
+            zaehler[t] = zaehler.get(t, 0) + 1
+    if not zaehler:
+        return None
+    return max(zaehler.items(), key=lambda kv: kv[1])[0]
+
+
 def _theme_from_bricklink(item_id: str, item_type: str) -> str | None:
     """Thema für Sets/Teile über die BrickLink-Kategorie."""
     if not integrations.bricklink_enabled():
@@ -2051,8 +2078,11 @@ def _theme_from_bricklink(item_id: str, item_type: str) -> str | None:
     try:
         cid = integrations.bricklink_category_id(item_type, item_id)
     except Exception:
-        return None
-    return _top_category(cid) if cid else None
+        cid = None
+    thema = _top_category(cid) if cid else None
+    if not thema and (item_type or "").lower() == "set":
+        thema = _theme_aus_figuren(item_id)
+    return thema
 _color_cache = {"at": 0, "map": {}}
 
 
@@ -2460,11 +2490,15 @@ def refresh_themes(limit: int = 25, user: dict = Depends(current_user)):
             "AND item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
             "AND item_id NOT LIKE 'custom-%' ORDER BY id").fetchall()
     done = 0
+    offen: list = []
     for r in rows[:limit]:
         theme = themes.for_item(r["item_id"], r["item_type"])
         if not theme:
             theme = _theme_from_bricklink(r["item_id"], r["item_type"])
         if not theme:
+            # Merken statt still übergehen: Sonst steht dort für immer „1
+            # Eintrag offen", ohne dass jemand erfährt, welcher.
+            offen.append(r["item_id"])
             continue
         with core.db() as conn:
             conn.execute("UPDATE collection SET theme = ? WHERE id = ?",
@@ -2476,7 +2510,8 @@ def refresh_themes(limit: int = 25, user: dict = Depends(current_user)):
             "theme = '') AND item_id NOT LIKE 'fig-%' "
             "AND item_id NOT LIKE 'manuell-%' "
             "AND item_id NOT LIKE 'custom-%'").fetchone()["c"]
-    return {"ok": True, "updated": done, "remaining": left}
+    return {"ok": True, "updated": done, "remaining": left,
+            "unresolved": offen[:20]}
 
 
 # Erlaubte Sortierungen der Sammlung (Reihenfolge wie in der Oberfläche)

@@ -570,6 +570,14 @@ App bei Minifiguren aus dem Nummernpräfix ab (`sw…` → Star Wars) und holt
 es bei Sets von BrickLink; unter *Mehr* lässt es sich für Bestandsdaten
 nachziehen.
 
+> **Wenn BrickLink schweigt:** Die Kategorie-ID eines Sets taucht nicht
+> immer in BrickLinks Kategorieliste auf – dann bleibt die Kette gleich am
+> ersten Glied stehen, und das Set landet unter „Ohne Thema", obwohl es
+> dort eindeutig gelistet ist. In diesem Fall fragt die App die **Figuren
+> im Set**: Stecken dort `sw…`-Nummern, ist es Star Wars. Es zählt, was am
+> häufigsten vorkommt. Voraussetzung ist, dass die Set-Inhalte schon
+> geladen wurden – das passiert beim Erfassen von selbst.
+
 > Der Wert einer Themenkarte rechnet Figuren, die in euren eigenen Sets
 > stecken, nur anteilig mit – genau wie die Gesamtsumme oben. Sonst läge
 > die Summe der Karten über dem Gesamtwert.

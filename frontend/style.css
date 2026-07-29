@@ -26,6 +26,13 @@
   --toast-bg: #1D1D1B;
   --toast-fg: #FFFFFF;
   --page-dots: rgba(29, 29, 27, .05);
+  /* Diagramme. Standen bisher fest im Code – in den dunklen Designs sahen
+     die Kurven deshalb aus wie hineinkopiert. Jetzt gehören sie zum Design. */
+  --chart-new: #0057A6;    /* Kurve „neu", Balken, Wertentwicklung */
+  --chart-used: #00963E;   /* Kurve „gebraucht" */
+  --chart-pick: #E3000F;   /* der angetippte Balken */
+  --chart-bg: var(--field);
+  --chart-grid: rgba(29, 29, 27, .10);
 }
 
 * { box-sizing: border-box; }
@@ -553,9 +560,13 @@ code {
 
 .price-history { margin-top: 8px; }
 .history-svg {
-  width: 100%; height: auto; background: var(--field);
-  border: 1.5px solid var(--line); border-radius: 10px;
+  width: 100%; height: auto; background: var(--chart-bg);
+  border: 1.5px solid var(--line); border-radius: 12px;
 }
+/* Achse und eine einzelne Hilfslinie auf halber Höhe – genug, um Höhen
+   einzuordnen, wenig genug, um nicht wie Millimeterpapier zu wirken. */
+.hist-axis { stroke: var(--chart-grid); stroke-width: 1.5; }
+.hist-grid { stroke: var(--chart-grid); stroke-width: 1; stroke-dasharray: 3 5; }
 .hist-label { font-size: 11px; fill: var(--muted); font-family: inherit; font-weight: 700; }
 .hist-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; }
 
@@ -834,7 +845,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 [data-theme="galaxy"] .history-svg .hist-label,
 [data-theme="nova"] .history-svg .hist-label {
-  fill: var(--ink); stroke: rgba(7, 10, 18, .92);
+  fill: var(--muted); stroke: var(--chart-bg-solid); stroke-width: 2.5px;
 }
 .update-banner {
   background: var(--yellow); border: 2px solid var(--ink);
@@ -1038,6 +1049,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   --toast-bg: #1E2941;
   --toast-fg: #EAEEF7;
   --page-dots: rgba(255, 255, 255, .18);
+  --chart-new: #4FA8FF;
+  --chart-used: #35D07F;
+  --chart-pick: #FFD52E;
+  --chart-bg: #0E1523;
+  --chart-bg-solid: #0E1523;
+  --chart-grid: rgba(255, 255, 255, .12);
 }
 
 /* Sternenfeld statt Noppen-Raster, dazu ein sanfter Nebel oben */
@@ -1295,6 +1312,16 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   --toast-bg: #16203A;
   --toast-fg: #E9EFFA;
   --page-dots: transparent;
+  /* Diagramme im Akzent des Designs statt in Bürokraten-Blau. Die Fläche
+     ist durchscheinend wie alles andere hier; für den Halo der
+     Beschriftung braucht es zusätzlich einen deckenden Wert – ein
+     durchscheinender Halo lässt die Kurve durchscheinen. */
+  --chart-new: #57C7FB;
+  --chart-used: #34E3A6;
+  --chart-pick: #FFC24B;
+  --chart-bg: rgba(255, 255, 255, .04);
+  --chart-bg-solid: #131A2B;
+  --chart-grid: rgba(255, 255, 255, .13);
 }
 
 /* Ruhiger Farbverlauf statt Noppen-Raster: blauer Schimmer oben, ein
@@ -1350,11 +1377,43 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   -webkit-backdrop-filter: blur(14px) saturate(1.25);
   backdrop-filter: blur(14px) saturate(1.25);
 }
+/* Das Popup ist die einzige Fläche, die den Blick allein trägt – hier darf
+   es aufwendiger sein als bei den vielen Karten der Sammlung. Drei Schichten
+   übereinander: eine tiefe Grundfläche, ein Schimmer am oberen Rand (wie
+   Licht, das auf eine Glaskante fällt) und ein leiser Farbhauch in der
+   Akzentfarbe. Der Verlauf sitzt auf `background-image`, damit `--surface`
+   als deckende Grundfarbe darunter bleibt und nichts durchscheint, was
+   dahinter gescrollt wird. */
 [data-theme="nova"] .card-modal .modal-inner {
-  background: rgba(19, 26, 43, .82);
-  border: 1px solid var(--line);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+  background-color: rgba(17, 23, 39, .88);
+  background-image:
+    radial-gradient(120% 80% at 50% -20%, rgba(87, 199, 251, .16), transparent 60%),
+    radial-gradient(90% 60% at 100% 0%, rgba(123, 96, 255, .12), transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0) 22%);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: var(--radius);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, .6),
+    0 2px 0 rgba(255, 255, 255, .05) inset,
+    0 0 0 1px rgba(87, 199, 251, .07);
 }
+/* Der Hintergrund dahinter tritt weiter zurück, damit das Fenster wirklich
+   vorne steht statt nur obenauf zu liegen. */
+[data-theme="nova"] .card-modal-overlay {
+  background: rgba(6, 9, 17, .62);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+}
+
+/* Diagramme: kein Kasten mit Rahmen mehr, sondern eine ruhige Fläche, die
+   zur Karte gehört. Die Kurven bringen ihre Farbe schon selbst mit. */
+[data-theme="nova"] .history-svg {
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 14px;
+  background-color: rgba(255, 255, 255, .035);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .04), transparent 55%);
+}
+[data-theme="nova"] .price-history { margin-top: 12px; }
 
 /* Weiche Konturen überall dort, wo im hellen Design --ink die Kante bildet */
 [data-theme="nova"] .btn,

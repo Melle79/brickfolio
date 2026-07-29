@@ -2713,23 +2713,56 @@ function historyChart(pts) {
   const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
   const line = (key) => pts.filter((p) => p[key])
     .map((p) => `${x(p.ts).toFixed(1)},${y(p[key]).toFixed(1)}`).join(" ");
-  const dots = (key, color) => pts.filter((p) => p[key]).map((p) =>
-    `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p[key]).toFixed(1)}" r="3.5" fill="${color}"/>`).join("");
+  const dots = (key, farbe) => pts.filter((p) => p[key]).map((p) =>
+    `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p[key]).toFixed(1)}" r="3.2"`
+    + ` fill="${farbe}" stroke="var(--chart-bg)" stroke-width="1.6"/>`).join("");
+  // Fläche unter der Kurve: dieselben Punkte, unten am Achsenrand
+  // geschlossen. Macht aus zwei dünnen Strichen zwei lesbare Bänder.
+  const flaeche = (key) => {
+    const pl = pts.filter((p) => p[key]);
+    if (pl.length < 2) return "";
+    const boden = (h - padB).toFixed(1);
+    return `${x(pl[0].ts).toFixed(1)},${boden} ${line(key)} `
+      + `${x(pl[pl.length - 1].ts).toFixed(1)},${boden}`;
+  };
   const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale(),
     { day: "2-digit", month: "2-digit", year: "2-digit" });
+  // Die Farben kommen aus dem Design, nicht aus dem Code: Im hellen Blau/Grün
+  // wie gehabt, in Galaxy und Nova die Akzentfarben des jeweiligen Designs.
+  // Die Verlaufs-Kennung enthält eine Zufallszahl, weil mehrere Diagramme
+  // gleichzeitig im Dokument stehen können und `id` eindeutig sein muss.
+  const uid = "h" + Math.random().toString(36).slice(2, 8);
+  const band = (key, farbe) => flaeche(key)
+    ? `<polygon points="${flaeche(key)}" fill="url(#${uid}-${key})"/>` : "";
   return `
-  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="Preisverlauf">
-    <line x1="${padX}" y1="${h - padB}" x2="${w - padX}" y2="${h - padB}" stroke="#D4D7DC" stroke-width="1.5"/>
-    <polyline points="${line("price_new")}" fill="none" stroke="#0057A6" stroke-width="2.5"/>
-    <polyline points="${line("price_used")}" fill="none" stroke="#00963E" stroke-width="2.5"/>
-    ${dots("price_new", "#0057A6")}${dots("price_used", "#00963E")}
+  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="${esc(tr("Preisverlauf"))}">
+    <defs>
+      <linearGradient id="${uid}-price_new" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--chart-new)" stop-opacity=".34"/>
+        <stop offset="100%" stop-color="var(--chart-new)" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="${uid}-price_used" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--chart-used)" stop-opacity=".30"/>
+        <stop offset="100%" stop-color="var(--chart-used)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <line x1="${padX}" y1="${(padT + (h - padT - padB) / 2).toFixed(1)}"
+          x2="${w - padX}" y2="${(padT + (h - padT - padB) / 2).toFixed(1)}"
+          class="hist-grid"/>
+    <line x1="${padX}" y1="${h - padB}" x2="${w - padX}" y2="${h - padB}" class="hist-axis"/>
+    ${band("price_new")}${band("price_used")}
+    <polyline points="${line("price_new")}" fill="none" stroke="var(--chart-new)"
+              stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${line("price_used")}" fill="none" stroke="var(--chart-used)"
+              stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots("price_new", "var(--chart-new)")}${dots("price_used", "var(--chart-used)")}
     <text x="${padX}" y="${h - 6}" class="hist-label">${dFmt(t0)}</text>
     <text x="${w - padX}" y="${h - 6}" text-anchor="end" class="hist-label">${dFmt(t1)}</text>
     <text x="${padX}" y="${padT + 2}" class="hist-label">${fmtEur(hi)}</text>
     <text x="${padX}" y="${h - padB - 4}" class="hist-label">${fmtEur(lo)}</text>
   </svg>
-  <div class="price-note"><span class="hist-dot" style="background:#0057A6"></span> Neu
-    &nbsp;<span class="hist-dot" style="background:#00963E"></span> Gebraucht
+  <div class="price-note"><span class="hist-dot" style="background:var(--chart-new)"></span> Neu
+    &nbsp;<span class="hist-dot" style="background:var(--chart-used)"></span> Gebraucht
     · eigene Aufzeichnung seit Erfassung</div>`;
 }
 
@@ -4259,8 +4292,8 @@ function wireYearChart() {
   if (!detail || !bars.length) return;
   const show = (bar) => {
     document.querySelectorAll(".year-bar").forEach((b) =>
-      b.setAttribute("fill", "#0057A6"));
-    bar.setAttribute("fill", "#E3000F");
+      b.setAttribute("fill", "var(--chart-new)"));
+    bar.setAttribute("fill", "var(--chart-pick)");
     detail.innerHTML = `<b>${bar.dataset.year}</b>: `
       + `${bar.dataset.value} · ${bar.dataset.pieces} Stück`;
   };
@@ -4294,11 +4327,27 @@ function totalChart(pts) {
     .join(" ");
   const dFmt = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale(),
     { day: "2-digit", month: "2-digit", year: "2-digit" });
+  const uid = "v" + Math.random().toString(36).slice(2, 8);
+  const boden = (h - padB).toFixed(1);
+  const flaeche = pts.length > 1
+    ? `${x(pts[0].ts).toFixed(1)},${boden} ${line} ${x(pts[pts.length - 1].ts).toFixed(1)},${boden}`
+    : "";
   return `
-  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="Wertentwicklung">
-    <line x1="${padX}" y1="${h - padB}" x2="${w - padX}" y2="${h - padB}" stroke="#D4D7DC" stroke-width="1.5"/>
-    <polyline points="${line}" fill="none" stroke="#0057A6" stroke-width="2.5"/>
-    ${pts.map((p) => `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3" fill="#0057A6"/>`).join("")}
+  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="${esc(tr("Wertentwicklung"))}">
+    <defs>
+      <linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--chart-new)" stop-opacity=".34"/>
+        <stop offset="100%" stop-color="var(--chart-new)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <line x1="${padX}" y1="${(padT + (h - padT - padB) / 2).toFixed(1)}"
+          x2="${w - padX}" y2="${(padT + (h - padT - padB) / 2).toFixed(1)}"
+          class="hist-grid"/>
+    <line x1="${padX}" y1="${h - padB}" x2="${w - padX}" y2="${h - padB}" class="hist-axis"/>
+    ${flaeche ? `<polygon points="${flaeche}" fill="url(#${uid})"/>` : ""}
+    <polyline points="${line}" fill="none" stroke="var(--chart-new)"
+              stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pts.map((p) => `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3" fill="var(--chart-new)" stroke="var(--chart-bg)" stroke-width="1.6"/>`).join("")}
     <text x="${padX}" y="${h - 6}" class="hist-label">${dFmt(t0)}</text>
     <text x="${w - padX}" y="${h - 6}" text-anchor="end" class="hist-label">${dFmt(t1)}</text>
     <text x="${padX}" y="${padT + 2}" class="hist-label">${fmtEur(hi)}</text>
@@ -4318,7 +4367,7 @@ function yearChart(list) {
     const bx = 8 + i * (bw + gap);
     const by = h - padB - bh;
     return `<rect class="year-bar" x="${bx}" y="${by.toFixed(1)}" `
-      + `width="${bw}" height="${bh.toFixed(1)}" rx="2" fill="#0057A6" `
+      + `width="${bw}" height="${bh.toFixed(1)}" rx="3" fill="var(--chart-new)" `
       + `style="cursor:pointer" data-year="${e.year}" `
       + `data-value="${fmtEur(e.value)}" data-pieces="${e.pieces}">`
       + `<title>${esc(tr("{jahr}: {wert} ({n} Stück)",

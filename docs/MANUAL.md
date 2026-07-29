@@ -560,6 +560,14 @@ shows **collapsible theme cards** – Star Wars, City, Harry Potter, Custom,
 minifigures from the number prefix (`sw…` → Star Wars) and fetches it for sets
 from BrickLink; under *More* it can be filled in for existing data.
 
+> **When BrickLink stays silent:** a set's category id does not always appear
+> in BrickLink's category list – then the chain stops at the very first link
+> and the set ends up under "Without a theme", even though it is clearly
+> listed there. In that case the app asks the **figures inside the set**: if
+> there are `sw…` numbers in it, it is Star Wars. Whatever occurs most often
+> wins. This requires the set contents to have been loaded already – which
+> happens by itself when the set is added.
+
 > The value of a theme card counts figures that sit inside your own sets only
 > proportionally – exactly like the total at the top. Otherwise the sum of the
 > cards would exceed the total value.
