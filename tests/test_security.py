@@ -8,6 +8,7 @@ import time
 import pytest
 
 import core
+import integrations
 import main
 from fastapi.testclient import TestClient
 
@@ -128,3 +129,117 @@ def test_kein_skript_in_attributen():
         for m in re.finditer(r'\bon[a-z]{3,}\s*=\s*["\']', text):
             treffer.append(f"{datei}: …{text[max(0, m.start() - 30):m.end()]}")
     assert not treffer, "Skript in Attributen: " + "; ".join(treffer[:3])
+
+
+# ------------------------------------ Sitzungen enden mit dem Passwort
+
+def _neuer_client(name="sven", passwort="alt12345", admin=True):
+    import time as _t
+    with core.db() as conn:
+        uid = conn.execute(
+            "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
+            " created_at) VALUES (?, ?, ?, 1, ?)",
+            (name, core.hash_password(passwort), int(admin),
+             int(_t.time()))).lastrowid
+    c = TestClient(main.app)
+    tok = c.post("/api/login", json={"username": name,
+                                     "password": passwort}).json()["token"]
+    c.headers["Authorization"] = "Bearer " + tok
+    return c, uid
+
+
+def test_passwortwechsel_beendet_alte_sitzungen(client):
+    """Ohne das liefe ein abhandengekommenes Token bis zu 90 Tage weiter,
+    obwohl das Passwort längst ein anderes ist."""
+    handy, uid = _neuer_client("wechsler")
+    rechner = TestClient(main.app)
+    rechner.headers["Authorization"] = handy.headers["Authorization"]
+    assert rechner.get("/api/me").status_code == 200
+
+    r = handy.post("/api/me/password", json={"current_password": "alt12345",
+                                             "new_password": "ganzneu123"})
+    assert r.status_code == 200
+    assert rechner.get("/api/me").status_code == 401
+
+
+def test_wer_das_passwort_aendert_bleibt_selbst_drin(client):
+    """Sonst fliegt man beim eigenen Passwortwechsel aus der App."""
+    c, _ = _neuer_client("bleibt")
+    r = c.post("/api/me/password", json={"current_password": "alt12345",
+                                         "new_password": "ganzneu123"})
+    neu = r.json().get("token")
+    assert neu
+    c.headers["Authorization"] = "Bearer " + neu
+    assert c.get("/api/me").status_code == 200
+
+
+def test_admin_zuruecksetzen_wirft_das_geraet_raus(client):
+    """Wird ein Passwort zurückgesetzt, weil ein Gerät weg ist, muss die
+    Sitzung von genau diesem Gerät enden."""
+    admin, _ = _neuer_client("chef", "chef12345", admin=True)
+    kind, kid = _neuer_client("kind2", "kind1234", admin=False)
+    assert kind.get("/api/me").status_code == 200
+    assert admin.post(f"/api/users/{kid}/password",
+                      json={"password": "vomAdmin123"}).status_code == 200
+    assert kind.get("/api/me").status_code == 401
+
+
+def test_alte_token_ohne_zaehler_bleiben_gueltig(client):
+    """Beim Update darf niemand ausgeloggt werden – Bestand hat keinen Stand
+    im Token und muss als 0 durchgehen."""
+    import jwt as _jwt
+    _, uid = _neuer_client("bestand")
+    alt = _jwt.encode({"sub": str(uid), "name": "bestand", "adm": True,
+                       "exp": int(time.time()) + 3600},
+                      core.SECRET_KEY, algorithm="HS256")
+    c = TestClient(main.app)
+    c.headers["Authorization"] = "Bearer " + alt
+    assert c.get("/api/me").status_code == 200
+
+
+# ------------------------------------ Geheimnisse gehen nie nach draußen
+
+def test_scrub_entfernt_alle_geheimnisse(client):
+    """Eine Fehlermeldung kann als GitHub-Issue **öffentlich** werden."""
+    werte = {
+        "bl_token": "blt_geheim_1234567890",
+        "github_token": "github_pat_geheim_abcdef",
+        "hub_token": "bft_hub_geheim_9876543210",
+        "hub_privkey": "PRIVKEY-geheim-aaaaaaaaaaaa",
+        "vapid_private": "-----BEGIN PRIVATE KEY----- geheimgeheim",
+    }
+    for name, wert in werte.items():
+        core.set_setting(name, wert)
+    text = "Fehler bei " + " und ".join(werte.values())
+    sauber = main.scrub(text, limit=2000)
+    for name, wert in werte.items():
+        assert wert not in sauber, f"{name} steht noch drin"
+
+
+def test_jede_gespeicherte_einstellung_ist_eingeordnet():
+    """Der eigentliche Schutz: Kommt eine neue Einstellung dazu, muss jemand
+    entscheiden, ob sie geheim ist. Sonst rutscht das nächste Geheimnis
+    unbemerkt an `scrub()` vorbei."""
+    import re
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1] / "backend"
+    namen = set()
+    for datei in backend.glob("*.py"):
+        namen |= set(re.findall(r'set_setting\(\s*"([a-z_]+)"',
+                                datei.read_text()))
+        namen |= set(re.findall(r'set_setting\(\s*([A-Z_]+)\s*,',
+                                datei.read_text()))
+    # Konstanten auflösen (z. B. VAPID_PRIV = "vapid_private")
+    import push
+    aufgeloest = {getattr(push, n, n) if n.isupper() else n for n in namen}
+    OFFEN = {                       # bewusst nicht geheim
+        "bl_categories", "bl_colors", "currency", "default_theme",
+        "hub_blocked", "hub_display_name", "hub_instance_code", "hub_is_admin",
+        "hub_key_sent", "hub_last_publish", "hub_member_id", "offer_percent",
+        "owner_name", "price_region", "vapid_public",
+    }
+    unbekannt = aufgeloest - set(integrations.GEHEIME_SETTINGS) - OFFEN
+    assert not unbekannt, (
+        "Neue Einstellung(en) ohne Einordnung: " + ", ".join(sorted(unbekannt))
+        + " – entweder in GEHEIME_SETTINGS aufnehmen oder hier als offen "
+          "eintragen.")

@@ -32,6 +32,22 @@ def setting(name: str) -> str:
     return core.get_setting(name) or os.environ.get(SETTING_ENV[name], "")
 
 
+# Alles, was in der Datenbank steht und niemals nach außen darf. Die Liste ist
+# der Bezugspunkt für `scrub()`: Was hier fehlt, kann in einer Fehlermeldung
+# stehen – und die kann als GitHub-Issue **öffentlich** werden. Ein Test
+# vergleicht sie mit den tatsächlich gespeicherten Einstellungen und schlägt
+# an, sobald eine neue dazukommt, die niemand eingeordnet hat.
+GEHEIME_SETTINGS = (
+    "bl_consumer_key", "bl_consumer_secret", "bl_token", "bl_token_secret",
+    "rebrickable_key",
+    "github_token",
+    "hub_token",              # Zugang dieser Instanz zum Tausch-Netzwerk
+    "hub_privkey",            # entschlüsselt die Nachrichten anderer
+    "hub_instance_secret",
+    "vapid_private",          # signiert die Push-Meldungen dieser Instanz
+)
+
+
 def _bl_auth():
     from requests_oauthlib import OAuth1
     return OAuth1(setting("bl_consumer_key"), setting("bl_consumer_secret"),

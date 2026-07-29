@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.67.0 – Juli 2026
+
+Ergebnis einer systematischen Durchsicht: alle 129 Endpunkte und ihre Rechte,
+SQL, Dateipfade, XSS (mit vergifteten Daten in jedem Feld), der Update-Weg,
+die Sitzungslogik. Zwei echte Lücken, beide behoben.
+
+### Sicherheit
+- 🔐 **Ein Passwortwechsel beendet jetzt alle bisherigen Sitzungen.** Bisher
+  blieb ein einmal ausgestelltes Token **90 Tage** gültig – auch nach einem
+  Passwortwechsel. Wer sein Passwort änderte, weil ein Gerät abhandengekommen
+  war, sperrte es damit *nicht* aus. Jetzt zählt jeder Wechsel einen Stand
+  hoch, den jedes Token mitführt; das eigene Gerät bekommt eine frische
+  Sitzung und bleibt drin. Dasselbe beim Zurücksetzen durch einen Admin und
+  beim Abnehmen des zweiten Faktors – gerade dort ist es der Sinn der Sache
+- 🤐 **Fehlermeldungen kannten nur die Hälfte der Geheimnisse.** Entfernt
+  wurden bisher nur die API-Schlüssel und der GitHub-Token. **Hub-Zugang,
+  privater Hub-Schlüssel und Push-Schlüssel wären stehen geblieben** – und
+  eine Fehlermeldung kann per Knopfdruck ein **öffentliches** GitHub-Issue
+  werden. Jetzt gibt es eine Liste, und ein Test schlägt an, sobald eine neue
+  Einstellung dazukommt, die niemand eingeordnet hat
+- 🧪 12 neue Tests dafür, unter anderem: alte Token ohne Zählerstand bleiben
+  gültig (niemand wird durch das Update ausgeloggt)
+
+### Geprüft und in Ordnung
+- **Rechte** kommen bei jeder Anfrage frisch aus der Datenbank – Entzug und
+  Löschen wirken sofort, nicht erst mit Ablauf der Sitzung
+- **SQL**: Werte laufen ausnahmslos über Platzhalter; wo Tabellennamen
+  eingesetzt werden, stammen sie aus festen Listen im Code
+- **Dateipfade**: Uploads über eine strenge Namensprüfung, Sicherungen gegen
+  eine Positivliste, Katalogbilder über einen Hash – kein Weg nach oben
+- **XSS**: mit Schadcode in Artikelnamen, Notizen, Listennamen, Benutzernamen,
+  Fehlermeldungen und Hinweisen durchgespielt und in allen Ansichten
+  nachgemessen – nichts wurde ausgeführt, nichts als Markup eingeschleust
+- **Der Update-Helfer** liest aus der Markierungsdatei nur eine Zahl und führt
+  ein festes Skript aus. Selbst wer die Datei schreiben könnte, bekäme keinen
+  eigenen Befehl ausgeführt
+- **Keine CORS-Freigabe**, Sitzung im Header statt im Cookie – damit ist die
+  klassische Cross-Site-Anfrage kein Thema
+
 ## 1.66.2 – Juli 2026
 
 ### Behoben

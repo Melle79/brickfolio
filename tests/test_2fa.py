@@ -160,8 +160,24 @@ def test_ausschalten_verlangt_passwort_und_code(client):
 def test_admin_kann_den_zweiten_faktor_abnehmen(client):
     """Notausgang bei verlorenem Telefon."""
     einrichten(client)
-    assert client.post("/api/users/1/2fa/reset").status_code == 200
+    r = client.post("/api/users/1/2fa/reset")
+    assert r.status_code == 200
+    # Beim eigenen Konto kommt eine frische Sitzung mit: Der Handgriff
+    # beendet alle bisherigen, und sich dabei selbst auszusperren wäre kein
+    # Sicherheitsgewinn.
+    client.headers["Authorization"] = "Bearer " + r.json()["token"]
     assert client.get("/api/me/2fa").json()["active"] is False
+
+
+def test_zweiter_faktor_abnehmen_beendet_fremde_sitzungen(client):
+    """Genau darum geht es: Das Telefon ist weg – eine Sitzung von diesem
+    Gerät darf nicht einfach weiterlaufen."""
+    einrichten(client)
+    fremd = TestClient(main.app)
+    fremd.headers["Authorization"] = client.headers["Authorization"]
+    assert fremd.get("/api/me").status_code == 200
+    client.post("/api/users/1/2fa/reset")
+    assert fremd.get("/api/me").status_code == 401
 
 
 def test_raten_im_zweiten_schritt_wird_gebremst(client):

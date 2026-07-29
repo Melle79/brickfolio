@@ -448,7 +448,7 @@
  "Ozeanien": "Oceania",
  "Passwort": "Password",
  "Passwort für {name} gesetzt ✔": "Password set for {name} ✔",
- "Passwort geändert ✔": "Password changed ✔",
+ "Passwort geändert ✔ – andere Geräte müssen sich neu anmelden": "Password changed ✔ – other devices have to sign in again",
  "Passwort wiederholen": "Repeat password",
  "Passwort ändern": "Change password",
  "Polen": "Poland",

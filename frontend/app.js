@@ -4728,13 +4728,20 @@ async function changeOwnPassword() {
   const err = $("own-pass-error");
   err.hidden = true;
   try {
-    await api("/me/password", { method: "POST", body: {
+    const res = await api("/me/password", { method: "POST", body: {
       current_password: $("own-pass-current").value,
       new_password: $("own-pass-new").value,
     }});
+    // Der Wechsel beendet **alle** bisherigen Sitzungen – auch die eigene.
+    // Der Server legt deshalb eine frische bei; ohne sie flöge man beim
+    // eigenen Passwortwechsel aus der App.
+    if (res.token) {
+      state.token = res.token;
+      localStorage.setItem("bf_token", res.token);
+    }
     $("own-pass-current").value = "";
     $("own-pass-new").value = "";
-    toast("Passwort geändert ✔");
+    toast("Passwort geändert ✔ – andere Geräte müssen sich neu anmelden");
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;

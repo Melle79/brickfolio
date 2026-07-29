@@ -204,11 +204,17 @@ def current_user(request: Request) -> dict:
         raise HTTPException(401, "Anmeldung ist noch nicht abgeschlossen")
     with core.db() as conn:
         row = conn.execute(
-            "SELECT id, username, is_admin, is_dealer, theme, sort_pref, lang "
-            "FROM users "
+            "SELECT id, username, is_admin, is_dealer, theme, sort_pref, lang, "
+            "token_epoch FROM users "
             "WHERE id = ?", (int(payload["sub"]),)).fetchone()
     if not row:
         raise HTTPException(401, "Sitzung ungültig – bitte neu anmelden")
+    # Rechte und Gültigkeit kommen aus der Datenbank, nicht aus dem Token:
+    # Ein Passwortwechsel zählt den Stand hoch und beendet damit alle
+    # bisherigen Sitzungen – sonst liefe ein abhandengekommenes Token bis zu
+    # 90 Tage weiter, obwohl das Passwort längst ein anderes ist.
+    if int(payload.get("tv") or 0) != int(row["token_epoch"] or 0):
+        raise HTTPException(401, "Sitzung beendet – bitte neu anmelden")
     return {"id": row["id"], "name": row["username"],
             "is_admin": bool(row["is_admin"]),
             "is_dealer": bool(row["is_dealer"]),
@@ -617,6 +623,14 @@ def totp_reset(user_id: int, user: dict = Depends(admin_user)):
             "totp_last = NULL, totp_recovery = NULL WHERE id = ?", (user_id,))
         if cur.rowcount == 0:
             raise HTTPException(404, "Benutzer nicht gefunden")
+    # Der zweite Faktor fällt weg, weil ein Gerät abhandenkam – dann darf eine
+    # Sitzung von genau diesem Gerät nicht einfach weiterlaufen. Nimmt ein
+    # Admin ihn sich selbst ab, bekommt er eine frische Sitzung: Sich beim
+    # eigenen Handgriff auszusperren wäre kein Sicherheitsgewinn.
+    core.sitzungen_beenden(user_id)
+    if user_id == user["id"]:
+        return {"ok": True, "token": core.create_token(
+            user["id"], user["name"], user["is_admin"])}
     return {"ok": True}
 
 
@@ -1520,7 +1534,12 @@ def change_own_password(body: OwnPasswordBody,
             raise HTTPException(403, "Das aktuelle Passwort ist falsch")
         conn.execute("UPDATE users SET password_hash = ? WHERE id = ?",
                      (core.hash_password(body.new_password), user["id"]))
-    return {"ok": True}
+    core.sitzungen_beenden(user["id"])
+    # Wer gerade das Passwort geändert hat, soll nicht selbst rausfliegen –
+    # er bekommt eine frische Sitzung mit dem neuen Stand.
+    return {"ok": True,
+            "token": core.create_token(user["id"], user["name"],
+                                       user["is_admin"])}
 
 
 class DealerBody(BaseModel):
@@ -1571,6 +1590,9 @@ def reset_user_password(user_id: int, body: PasswordBody,
                            (core.hash_password(body.password), user_id))
         if cur.rowcount == 0:
             raise HTTPException(404, "Benutzer nicht gefunden")
+    # Setzt ein Admin ein Passwort zurück, weil ein Gerät weg ist, muss die
+    # alte Sitzung enden – sonst war das Zurücksetzen wirkungslos.
+    core.sitzungen_beenden(user_id)
     return {"ok": True}
 
 
@@ -2079,16 +2101,22 @@ def save_settings(body: SettingsBody, user: dict = Depends(admin_user)):
 
 
 def scrub(msg: str, limit: int = 200) -> str:
-    """Schlüssel aus Fehlermeldungen entfernen, bevor sie nach außen gehen."""
-    for name in integrations.SETTING_ENV:
-        value = integrations.setting(name)
-        if value:
-            msg = msg.replace(value, "***")
-    # Der GitHub-Token steht nicht in SETTING_ENV, darf aber erst recht nicht
-    # in einem Issue landen, das genau dorthin geschrieben wird.
-    token = core.get_setting("github_token")
-    if token:
-        msg = msg.replace(token, "***")
+    """Geheimnisse aus Fehlermeldungen entfernen, bevor sie nach außen gehen.
+
+    Der Bezugspunkt ist `GEHEIME_SETTINGS` – **eine** Liste, nicht mehrere
+    verstreute Sonderfälle. Vorher deckte diese Funktion nur die
+    API-Schlüssel und den GitHub-Token ab; der Hub-Token, der private
+    Hub-Schlüssel und der Push-Schlüssel wären in einer Fehlermeldung
+    stehen geblieben – und die kann als Issue öffentlich werden.
+    """
+    for name in integrations.GEHEIME_SETTINGS:
+        wert = core.get_setting(name)
+        if not wert and name in integrations.SETTING_ENV:
+            wert = integrations.setting(name)
+        # Kurze Werte nicht ersetzen: Ein zweistelliges „Geheimnis" käme in
+        # jedem zweiten Wort vor und machte die Meldung unlesbar.
+        if wert and len(wert) >= 8:
+            msg = msg.replace(wert, "***")
     return msg[:limit]
 
 

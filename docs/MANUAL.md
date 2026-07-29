@@ -354,7 +354,19 @@ router, you should know what protects you and what does not.
 - **Uploaded images** are re-encoded – that strips EXIF data (GPS from phone
   photos, for instance) and makes sure nothing other than an image is stored.
 - **Roles**: purchase prices, list management, users, keys and backup all sit
-  behind pro or admin rights.
+  behind pro or admin rights. **Rights are read fresh from the database on
+  every request**, not taken from the session token: if an admin removes
+  someone's rights or deletes the account, that takes effect immediately and
+  not only when the session expires.
+- **Changing a password ends all previous sessions** (since v1.67.0) – on
+  every device. If you change your password because a device went missing, you
+  really do lock it out; your own device gets a fresh session and stays signed
+  in. The same applies when an admin resets a password or removes a second
+  factor.
+- **Secrets are stripped from every error message** before it is stored or
+  sent as a GitHub issue – API keys, GitHub token, hub access, the private hub
+  key and the push key. A test fires as soon as a new setting appears that
+  nobody has classified as secret or public.
 
 **What is missing – and why a port forward is still a bad idea:**
 

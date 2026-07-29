@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.66.2"
+APP_VERSION = "1.67.0"
 
 
 def hash_password(password: str) -> str:
@@ -65,6 +65,21 @@ def verify_password(password: str, stored: str) -> bool:
 
 # ---------------------------------------------------------------- Tokens
 
+def sitzungs_zaehler(user_id: int) -> int:
+    """Aktueller Stand des Kontos. Steht er nicht im Token, ist es 0."""
+    with db() as conn:
+        row = conn.execute("SELECT token_epoch FROM users WHERE id = ?",
+                           (user_id,)).fetchone()
+    return int(row["token_epoch"]) if row and row["token_epoch"] else 0
+
+
+def sitzungen_beenden(user_id: int) -> None:
+    """Alle bestehenden Sitzungen dieses Kontos ungültig machen."""
+    with db() as conn:
+        conn.execute("UPDATE users SET token_epoch = COALESCE(token_epoch, 0)"
+                     " + 1 WHERE id = ?", (user_id,))
+
+
 def create_token(user_id: int, username: str, is_admin: bool,
                  minutes: int | None = None, zweck: str | None = None) -> str:
     """Sitzungs-Token – oder mit `zweck` eine kurzlebige Zwischenmarke.
@@ -82,6 +97,10 @@ def create_token(user_id: int, username: str, is_admin: bool,
     }
     if zweck:
         payload["zweck"] = zweck
+    else:
+        # Nur echte Sitzungen tragen den Zählerstand – die Zwischenmarke des
+        # zweiten Anmeldeschritts lebt ohnehin nur Minuten.
+        payload["tv"] = sitzungs_zaehler(user_id)
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
@@ -428,6 +447,15 @@ def init_db():
                 conn.execute(f"ALTER TABLE users ADD COLUMN {spalte} TEXT")
         if "totp_last" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN totp_last INTEGER")
+        # Zähler für gültige Sitzungen. Ein Sitzungs-Token ist so lange gut,
+        # wie sein Zählerstand zu dem des Kontos passt. Ein Passwortwechsel
+        # zählt hoch – damit enden alle bisherigen Sitzungen sofort, statt bis
+        # zu 90 Tage weiterzulaufen. Bestand startet bei 0, alte Token tragen
+        # keinen Stand und gelten als 0: Niemand wird durch das Update
+        # ausgeloggt.
+        if "token_epoch" not in ucols:
+            conn.execute("ALTER TABLE users ADD COLUMN token_epoch "
+                         "INTEGER NOT NULL DEFAULT 0")
         # Aus welchem Preisgebiet stammt der gespeicherte Preis? Damit lässt
         # sich nach einer Umstellung gezielt nachrechnen, was noch fehlt.
         # Dasselbe für die Währung: Wer von Euro auf Pfund umstellt, hat sonst

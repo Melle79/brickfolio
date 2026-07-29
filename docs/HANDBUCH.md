@@ -360,7 +360,20 @@ freigibt, sollte wissen, was dann greift und was nicht.
   (etwa GPS aus Handyfotos) und verhindert, dass etwas anderes als ein Bild
   gespeichert wird.
 - **Rollen**: Kaufpreise, Listenverwaltung, Benutzer, Schlüssel und
-  Sicherung hängen an Profi- bzw. Admin-Rechten.
+  Sicherung hängen an Profi- bzw. Admin-Rechten. **Rechte kommen bei jeder
+  Anfrage frisch aus der Datenbank**, nicht aus dem Sitzungs-Token: Entzieht
+  ein Admin jemandem die Rechte oder löscht das Konto, wirkt das sofort und
+  nicht erst mit Ablauf der Sitzung.
+- **Ein Passwortwechsel beendet alle bisherigen Sitzungen** (seit v1.67.0) –
+  auf allen Geräten. Wer sein Passwort ändert, weil ein Gerät abhandengekommen
+  ist, sperrt es damit wirklich aus; das eigene Gerät bekommt eine frische
+  Sitzung und bleibt angemeldet. Dasselbe gilt, wenn ein Admin ein Passwort
+  zurücksetzt oder einen zweiten Faktor abnimmt.
+- **Geheimnisse werden aus jeder Fehlermeldung entfernt**, bevor sie
+  gespeichert oder als GitHub-Issue verschickt wird – API-Schlüssel,
+  GitHub-Token, Hub-Zugang, der private Hub-Schlüssel und der
+  Push-Schlüssel. Ein Test schlägt an, sobald eine neue Einstellung
+  dazukommt, die niemand als geheim oder offen eingeordnet hat.
 
 **Was fehlt – und warum eine Portfreigabe trotzdem keine gute Idee ist:**
 
@@ -369,8 +382,11 @@ freigibt, sollte wissen, was dann greift und was nicht.
   ist der schwerwiegendste Punkt.
 - **Passwörter dürfen kurz sein** (mindestens acht Zeichen seit v1.57.0,
   vorher vier). Für zu Hause in Ordnung, für das offene Internet dünn.
-- **Kein zweiter Faktor**, keine Anmeldung über einen fremden Dienst.
-- **Sitzungen gelten 90 Tage** und liegen im Browser-Speicher.
+- **Sitzungen gelten 90 Tage** und liegen im Browser-Speicher. Anpassbar
+  über `TOKEN_DAYS` in `docker-compose.yml`.
+- **Kein Schutz gegen jemanden, der schon im Heimnetz ist.** Die Bilddateien
+  und die Katalogbilder sind ohne Anmeldung abrufbar – ihre Namen sind
+  allerdings ohne den Schlüssel der Instanz nicht auszurechnen.
 
 **Die Empfehlung** ist deshalb unverändert der **Cloudflare Tunnel** (2.7):
 Er bringt Verschlüsselung mit, öffnet keinen Port, und mit einer
