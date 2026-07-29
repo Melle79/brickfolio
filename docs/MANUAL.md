@@ -367,6 +367,16 @@ router, you should know what protects you and what does not.
   sent as a GitHub issue – API keys, GitHub token, hub access, the private hub
   key and the push key. A test fires as soon as a new setting appears that
   nobody has classified as secret or public.
+- **`latest` means trusting the registry.** With `:latest` every update pulls
+  the newest state from there – even if that account ever fell into the wrong
+  hands. If you would rather not, pin a **fixed version**
+  (`image: ghcr.io/melle79/brickfolio:1.67.0`). Then only what you picked runs.
+  > **The price:** the update button in the app no longer does anything.
+  > With a fixed version `docker compose pull` fetches the same state, the
+  > container restarts and shows the same version. Updating then means editing
+  > the line in `docker-compose.yml` and running `docker compose up -d`. The
+  > app still reports that a new version is available – that is then a hint,
+  > not an instruction for the button.
 
 **What is missing – and why a port forward is still a bad idea:**
 

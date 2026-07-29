@@ -3,6 +3,15 @@ services:
     # Fertiges Image – nichts zu bauen, kein Quellcode nötig.
     # Wer lieber selbst baut (eigene Änderungen), ersetzt die Zeile durch:
     #   build: .
+    #
+    # `latest` heißt: Jedes Update zieht den neuesten Stand – bequem, aber
+    # es bedeutet auch Vertrauen in die Registry. Wer das nicht will, trägt
+    # eine feste Version ein, z. B.:
+    #   image: ghcr.io/melle79/brickfolio:1.67.0
+    # Dann läuft nur, was du selbst ausgewählt hast. Der Preis: Der
+    # Update-Knopf in der App bewirkt nichts mehr – `docker compose pull`
+    # holt bei einer festen Version denselben Stand. Aktualisieren heißt
+    # dann: Zeile ändern, `docker compose up -d`.
     image: ghcr.io/melle79/brickfolio:latest
     container_name: brickfolio
     restart: unless-stopped

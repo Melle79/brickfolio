@@ -387,6 +387,18 @@ freigibt, sollte wissen, was dann greift und was nicht.
 - **Kein Schutz gegen jemanden, der schon im Heimnetz ist.** Die Bilddateien
   und die Katalogbilder sind ohne Anmeldung abrufbar – ihre Namen sind
   allerdings ohne den Schlüssel der Instanz nicht auszurechnen.
+- **`latest` heißt Vertrauen in die Registry.** Wer das Image mit dem Zusatz
+  `:latest` einträgt, bekommt bei jedem Update den neuesten Stand von dort –
+  auch dann, wenn dieses Konto einmal in falsche Hände geriete. Wer das nicht
+  möchte, trägt eine **feste Version** ein
+  (`image: ghcr.io/melle79/brickfolio:1.67.0`). Dann läuft nur, was ihr selbst
+  ausgewählt habt.
+  > **Der Preis dafür:** Der Update-Knopf in der App bewirkt nichts mehr.
+  > `docker compose pull` holt bei einer festen Version denselben Stand, der
+  > Container startet neu und zeigt dieselbe Version. Aktualisieren heißt dann:
+  > Zeile in der `docker-compose.yml` ändern und `docker compose up -d`. Die
+  > App meldet weiterhin, dass eine neue Version bereitsteht – das ist dann
+  > ein Hinweis, keine Aufforderung an den Knopf.
 
 **Die Empfehlung** ist deshalb unverändert der **Cloudflare Tunnel** (2.7):
 Er bringt Verschlüsselung mit, öffnet keinen Port, und mit einer
