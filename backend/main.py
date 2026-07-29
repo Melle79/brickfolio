@@ -60,7 +60,13 @@ async def security_headers(request: Request, call_next):
             # liegen in einem Google-Storage-Bucket; CSP kennt keine
             # Pfade, deshalb steht hier der ganze Host. Fehlte er, blieben
             # genau die Artikel ohne Bild, die per Foto erfasst wurden.
-            "img-src 'self' data: https://img.bricklink.com "
+            # `blob:` ist das gerade aufgenommene bzw. hereingezogene Foto:
+            # Die Vorschau zeigt es aus dem Arbeitsspeicher, bevor es
+            # überhaupt hochgeladen wird. Ohne diese Erlaubnis blockierte der
+            # Browser genau das Bild, das man selbst ausgewählt hat – die
+            # Vorschau blieb ein Platzhalter. Es verweist immer auf Daten
+            # dieser Seite, kann also nichts von außen nachladen.
+            "img-src 'self' data: blob: https://img.bricklink.com "
             "https://cdn.rebrickable.com https://*.bricklink.com "
             "https://*.rebrickable.com https://storage.googleapis.com",
             "style-src 'self' 'unsafe-inline'",

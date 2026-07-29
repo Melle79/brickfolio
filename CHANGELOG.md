@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.68.3 – Juli 2026
+
+### Behoben
+- 📷 **Das eigene Foto war in der Vorschau nie zu sehen.** Sie zeigt das
+  gerade aufgenommene oder hereingezogene Bild als `blob:` aus dem
+  Arbeitsspeicher, noch bevor es hochgeladen ist – und genau dieses Schema
+  fehlte in den Sicherheits-Regeln. Der Browser blockierte also ausgerechnet
+  das Bild, das man selbst ausgewählt hatte, und es blieb beim Platzhalter.
+  Aufgefallen ist es, weil der Fehlerbericht seit 1.60.2 blockierte Inhalte
+  meldet: „Vom Browser blockiert: img-src → blob"
+
+### Vorbeugend
+- 🧪 **Ein Test leitet aus dem Quelltext ab, welche Schemata die Oberfläche
+  benutzt**, und prüft, ob die Regeln dazu passen – statt eine feste Liste
+  abzuhaken. Das ist der vierte Fall dieser Art (Katalogbilder, Bild-Ersatz,
+  Design-Setzen, jetzt die Vorschau); eine Liste, die jemand pflegen muss,
+  hätte ihn wieder nicht gefunden
+
 ## 1.68.2 – Juli 2026
 
 ### Behoben

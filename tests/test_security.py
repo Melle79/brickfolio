@@ -90,6 +90,32 @@ def test_katalogbilder_bleiben_erlaubt(client):
     assert "img.bricklink.com" in csp and "cdn.rebrickable.com" in csp
 
 
+def _csp_teil(client, name):
+    csp = client.get("/").headers["content-security-policy"]
+    return [t for t in csp.split(";") if t.strip().startswith(name)][0]
+
+
+def test_benutzte_schemata_sind_erlaubt(client):
+    """Die Regeln müssen zu dem passen, was die Oberfläche tatsächlich tut.
+
+    Das ist inzwischen viermal schiefgegangen: blockierte Katalogbilder, der
+    Ersatz für kaputte Bilder, das Setzen des Designs – und zuletzt die
+    Vorschau des eigenen Fotos. Sie zeigt das Bild als `blob:` aus dem
+    Arbeitsspeicher, noch bevor es hochgeladen ist; ohne Erlaubnis blockierte
+    der Browser ausgerechnet das Bild, das man selbst ausgewählt hatte, und
+    es blieb bei einem Platzhalter.
+
+    Deshalb wird hier nicht eine feste Liste geprüft, sondern **aus dem
+    Quelltext abgeleitet**, welche Schemata vorkommen."""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "frontend" / "app.js").read_text()
+    img = _csp_teil(client, "img-src")
+    if "createObjectURL" in js:
+        assert " blob:" in img, "createObjectURL benutzt, aber blob: fehlt"
+    if "data:image" in js:
+        assert " data:" in img, "Daten-URLs benutzt, aber data: fehlt"
+
+
 def test_scan_bilder_bleiben_erlaubt(client):
     """Brickognize legt seine Vorschaubilder in einem Google-Storage-Bucket
     ab. Fehlt der Host, verlieren genau die Artikel ihr Bild, die per Foto
