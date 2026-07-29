@@ -857,12 +857,16 @@ sudo bash update.sh</pre>
           „Issues: Read and write"</b> darf – mehr braucht es nicht, und mehr
           sollte die App auch nicht können.</p>
         <p class="search-hint" id="github-token-state"></p>
-        <label for="github-token">Token</label>
-        <input id="github-token" type="password" autocomplete="off"
-          placeholder="github_pat_… (leer lassen zum Entfernen)">
+        <div id="github-token-input">
+          <label for="github-token">Token</label>
+          <input id="github-token" type="password" autocomplete="off"
+            placeholder="github_pat_…">
+        </div>
         <div class="detail-row btn-grid" style="margin-top:8px">
           <button class="mini-btn add" id="btn-github-token">Token speichern</button>
-          <button class="mini-btn" id="btn-github-test">Token prüfen</button>
+          <button class="mini-btn" id="btn-github-test" hidden>Token prüfen</button>
+          <button class="mini-btn" id="btn-github-replace" hidden>Ersetzen</button>
+          <button class="mini-btn danger" id="btn-github-del" hidden>Token entfernen</button>
         </div>
         <p class="search-hint" id="github-test-out" hidden></p>
       </details>

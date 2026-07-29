@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.64.2 – Juli 2026
+
+### Verbessert
+- 🔑 **Liegt ein Token, verschwindet das Eingabefeld.** Es stand sonst leer da
+  und lud dazu ein, aus Versehen zu überschreiben. Stattdessen stehen dort
+  jetzt drei Knöpfe: **Token prüfen**, **Ersetzen** (holt das Feld zurück,
+  ohne den alten zu löschen) und **Token entfernen**
+- ⚠️ Das Entfernen fragt nach – GitHub zeigt einen Token **kein zweites Mal**,
+  wer ihn hier löscht, braucht sonst einen neuen
+
 ## 1.64.1 – Juli 2026
 
 ### Verbessert

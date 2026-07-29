@@ -5810,12 +5810,7 @@ function renderErrors() {
   // Ob ein Token liegt, war bisher nur daran zu erkennen, dass der
   // Melden-Knopf erschien – und der erscheint erst, wenn es einen Fehler
   // gibt. Also hier direkt sagen, was Sache ist.
-  const stand = $("github-token-state");
-  if (stand) {
-    stand.textContent = data.token_masked
-      ? tr("Gespeichert: {wert}", { wert: data.token_masked })
-      : tr("Kein Token hinterlegt – die App kann keine Issues anlegen.");
-  }
+  zeigeGithubToken(data.token_masked || "");
   if (!data.items.length) {
     box.innerHTML = `<div class="price-note">Keine Fehler aufgezeichnet ✔</div>`;
     return;
@@ -5921,6 +5916,27 @@ function initErrorReporting() {
     } catch (_) { /* dann eben die rohe Adresse */ }
     reportError(`Bild lädt nicht: ${quelle}`, src, "bild");
   }, true);
+}
+
+/* Liegt ein Token, hat das Eingabefeld nichts mehr zu suchen: Es stünde
+   leer da und lüde dazu ein, versehentlich zu überschreiben. Stattdessen der
+   maskierte Stand und die beiden Wege weiter – ersetzen oder entfernen. */
+let githubFeldOffen = false;
+
+function zeigeGithubToken(maskiert) {
+  const stand = $("github-token-state");
+  if (!stand) return;
+  const hat = !!maskiert;
+  const feldZeigen = !hat || githubFeldOffen;
+  stand.textContent = hat
+    ? tr("Gespeichert: {wert}", { wert: maskiert })
+    : tr("Kein Token hinterlegt – die App kann keine Issues anlegen.");
+  $("github-token-input").hidden = !feldZeigen;
+  $("btn-github-token").hidden = !feldZeigen;
+  $("btn-github-replace").hidden = !hat || githubFeldOffen;
+  $("btn-github-del").hidden = !hat;
+  // Ohne Token gibt es nichts zu prüfen.
+  $("btn-github-test").hidden = !hat;
 }
 
 /* ------------------------------------------------------- Benachrichtigungen */
@@ -6700,11 +6716,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await api("/settings/github_token", { method: "POST",
         body: { token: $("github-token").value } });
       $("github-token").value = "";
+      githubFeldOffen = false;
       toast(res.set ? tr("Token gespeichert ✔") : tr("Token entfernt"));
       $("github-test-out").hidden = true;
       loadErrors();
     } catch (e) { toast(e.message); }
     btn.disabled = false;
+  });
+  $("btn-github-replace").addEventListener("click", () => {
+    githubFeldOffen = true;
+    zeigeGithubToken(errorsState ? errorsState.token_masked : "");
+    $("github-token").focus();
+  });
+  $("btn-github-del").addEventListener("click", async () => {
+    // Rückfrage, weil GitHub einen Token nur einmal zeigt: Wer ihn hier
+    // löscht und nicht anderswo notiert hat, muss einen neuen erzeugen.
+    if (!confirm(tr("Token entfernen? GitHub zeigt ihn kein zweites Mal – "
+      + "zum Wiederherstellen bräuchtest du einen neuen."))) return;
+    try {
+      await api("/settings/github_token", { method: "POST", body: { token: "" } });
+      githubFeldOffen = false;
+      $("github-test-out").hidden = true;
+      toast(tr("Token entfernt"));
+      loadErrors();
+    } catch (e) { toast(e.message); }
   });
   $("btn-github-test").addEventListener("click", async (ev) => {
     const btn = ev.currentTarget;
