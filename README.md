@@ -192,12 +192,30 @@ Gebaut wird für **amd64** und **arm64**. Sehr alte 32-Bit-ARM-Geräte
 Template Repositories* diese Adresse eintragen –
 
 ```
-https://github.com/Melle79/brickfolio
+https://github.com/Melle79/unraid-templates
 ```
 
 – danach steht Brickfolio unter *Docker → Add Container* in der
 Vorlagen-Auswahl, mit vorbelegtem Port, `/data`-Pfad und den optionalen
-Schlüsseln. Die Vorlage liegt in [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
+Schlüsseln. Die Vorlage pflegen wir in
+[Melle79/unraid-templates](https://github.com/Melle79/unraid-templates);
+eine Kopie liegt hier unter [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
+
+### Bei einem Anbieter statt zu Hause
+
+Wer keine eigene Hardware laufen lassen will, mietet die Instanz. **Sie
+gehört dann dem, der sie anlegt** – Daten, Kosten und Zugang. Es gibt
+weiterhin keinen Brickfolio-Dienst dazwischen.
+
+| Anbieter | Weg | Anmerkung |
+|---|---|---|
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Liest [`render.yaml`](render.yaml). Braucht den kleinsten **bezahlten** Tarif: Brickfolio benötigt eine dauerhafte Platte für `/data`, und die gibt es im kostenlosen Tarif nicht |
+| **Railway** | Neues Projekt → *Deploy from GitHub* → dieses Repo, dann unter *Settings → Config-as-Code* `deploy/railway/railway.json` eintragen | Danach eine **Volume** auf `/data` legen, sonst ist die Sammlung nach jedem Neustart weg |
+| **Coolify / Dokploy** | `docker-compose.example.yml` einfügen | Auf dem eigenen v-Server, volle Kontrolle |
+
+> **Warum kein kostenloser Tarif?** Ohne dauerhafte Platte liegt die
+> Datenbank im Container – bei jedem Neustart wäre die Sammlung weg. Lieber
+> ein ehrlicher Hinweis als eine Bereitstellung, die still Daten verliert.
 
 Wer keine Compose-Oberfläche hat, kommt auch so ans Ziel:
 

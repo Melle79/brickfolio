@@ -1,0 +1,32 @@
+# Ein-Klick-Bereitstellung bei Render.
+#
+# Die Instanz gehört dem, der sie anlegt – Daten, Kosten und Zugang. Es gibt
+# keinen Brickfolio-Dienst dazwischen.
+#
+# Wichtig: Brickfolio braucht ein dauerhaftes Verzeichnis (`/data`). Renders
+# kostenloser Tarif hat keines – ohne eigene Platte wäre die Sammlung nach
+# jedem Neustart weg. Deshalb ist hier bewusst der kleinste **bezahlte**
+# Tarif eingetragen, statt eine Bereitstellung anzubieten, die Daten
+# verliert.
+services:
+  - type: web
+    name: brickfolio
+    runtime: image
+    plan: starter
+    image:
+      url: ghcr.io/melle79/brickfolio:latest
+    healthCheckPath: /api/setup
+    disk:
+      name: brickfolio-data
+      mountPath: /data
+      sizeGB: 2
+    envVars:
+      # Das Image lauscht fest auf 8300. Ohne diese Angabe suchte Render den
+      # Dienst auf seinem Standard-Port und hielte ihn für tot.
+      - key: PORT
+        value: 8300
+      # Der Schlüssel für die Sitzungen. Wird einmal erzeugt und bleibt –
+      # ohne ihn wären nach jedem Neustart alle abgemeldet.
+      - key: SECRET_KEY
+        generateValue: true
+      # Die restlichen Einstellungen macht der Assistent beim ersten Start.

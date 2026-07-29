@@ -187,12 +187,30 @@ Very old 32-bit ARM devices (`armv7`) are not supported.
 add this address –
 
 ```
-https://github.com/Melle79/brickfolio
+https://github.com/Melle79/unraid-templates
 ```
 
 – and Brickfolio appears under *Docker → Add Container* in the template
 picker, with the port, the `/data` path and the optional keys pre-filled.
-The template lives in [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
+The template is maintained in
+[Melle79/unraid-templates](https://github.com/Melle79/unraid-templates);
+a copy lives here under [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
+
+### Hosted instead of at home
+
+If you would rather not run your own hardware, rent the instance. **It
+belongs to whoever creates it** – data, cost and access. There is still no
+Brickfolio service in between.
+
+| Provider | How | Note |
+|---|---|---|
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Reads [`render.yaml`](render.yaml). Needs the smallest **paid** plan: Brickfolio requires a persistent disk for `/data`, and the free plan has none |
+| **Railway** | New project → *Deploy from GitHub* → this repo, then set *Settings → Config-as-Code* to `deploy/railway/railway.json` | Afterwards attach a **volume** at `/data`, otherwise the collection is gone after every restart |
+| **Coolify / Dokploy** | Paste `docker-compose.example.yml` | On your own VPS, full control |
+
+> **Why no free plan?** Without a persistent disk the database lives inside
+> the container – every restart would wipe the collection. Better an honest
+> note than a deployment that quietly loses data.
 
 Without a compose UI:
 
