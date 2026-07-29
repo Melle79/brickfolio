@@ -375,7 +375,7 @@ Brickfolio knows three levels, which can be combined:
 
 | Action | Standard | Collector-Pro 💼 | Admin 🔧 |
 |---|:-:|:-:|:-:|
-| Scanning, collection, wishes, statistics | ✔ | ✔ | ✔ |
+| Scanning, collection, lists (wishes), statistics | ✔ | ✔ | ✔ |
 | See shopping lists, book items in as "got it" | ✔¹ | ✔ | ✔¹ |
 | Create/fill/archive lists, bundle offer | – | ✔ | – |
 | See purchase prices & profit, sell list, CSV import | – | ✔ | – |
@@ -644,7 +644,21 @@ quantity).
 
 ## 6. The wishlist
 
-The **Wishlist** tab collects everything you saved – with image, average
+**Where it lives:** since 1.62.0 wishes, shopping lists and the archive share
+the **Lists** tab – three sub-tabs above the view:
+
+| Sub-tab | Contents | Visible |
+|---|---|---|
+| ⭐ **Wishes** | everything you saved | always |
+| 🛒 **Shopping** | active shopping lists, sell list, missing set figures | when there are lists or you are a pro |
+| 📦 **Archive** | lists you have worked through | likewise |
+
+Before that these were two entries in the bar for the same question – *what do
+I still want, what do I take along?* – and the archive was a button that showed
+the same cards with a different symbol. Now it is an area of its own, and
+archived lists are dimmed as well.
+
+The **⭐ Wishes** sub-tab collects everything you saved – with image, average
 prices and widgets that add up the estimated cost of acquiring it (used/new).
 
 - **✔ Bought!** asks for the condition and moves the item into the collection.
@@ -728,7 +742,8 @@ When booking in an item that already exists, the app asks:
 ### 7.4 Archive
 
 Once the **last** item is booked in, the list moves into the **archive**
-automatically 🎉. Only pros see it ("📦 Show archive"), can reactivate lists,
+automatically 🎉 – the third sub-tab in the Lists tab. Only pros can
+reactivate lists,
 archive them by hand or delete them – and **undo** bookings (↩︎; the
 collection entry deliberately stays and is adjusted manually if needed).
 
@@ -736,8 +751,8 @@ collection entry deliberately stays and is adjusted manually if needed).
 
 ## 8. The sell list (duplicates)
 
-*(Collector-Pro only – the "📋 Sell list (duplicates)" button in the Lists
-tab.)*
+*(Collector-Pro only – the "📋 Sell list (duplicates)" button under
+**Lists → 🛒 Shopping**.)*
 
 At the press of a button Brickfolio produces the list of all items you own
 more than once – calculated live, no maintenance needed. The basic rule:

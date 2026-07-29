@@ -381,7 +381,7 @@ Brickfolio kennt drei Stufen, die sich kombinieren lassen:
 
 | Aktion | Standard | Sammlerprofi 💼 | Admin 🔧 |
 |---|:-:|:-:|:-:|
-| Scannen, Sammlung, Wünsche, Statistik | ✔ | ✔ | ✔ |
+| Scannen, Sammlung, Listen (Wünsche), Statistik | ✔ | ✔ | ✔ |
 | Einkaufslisten sehen, Artikel „ist da" verbuchen | ✔¹ | ✔ | ✔¹ |
 | Listen anlegen/befüllen/archivieren, Gesamtangebot | – | ✔ | – |
 | Kaufpreise & Gewinn sehen, Verkaufsliste, CSV-Import | – | ✔ | – |
@@ -660,7 +660,21 @@ Darunter rechnet die **Gewinnzeile** live: *Bezahlt 12,50 € · Wert
 
 ## 6. Die Wunschliste
 
-Der Tab **Wünsche** sammelt alles Gemerkte – mit Bild, Ø-Preisen und
+**Wo sie liegt:** Wünsche, Einkaufslisten und Archiv teilen sich seit 1.62.0
+den Tab **Listen** – drei Reiter über der Ansicht:
+
+| Reiter | Inhalt | Sichtbar |
+|---|---|---|
+| ⭐ **Wünsche** | alles Gemerkte | immer |
+| 🛒 **Einkaufen** | aktive Einkaufslisten, Verkaufsliste, fehlende Set-Figuren | wenn es Listen gibt oder ihr Profi seid |
+| 📦 **Archiv** | abgearbeitete Listen | ebenso |
+
+Vorher waren das zwei Einträge in der Leiste für dieselbe Frage – *was will
+ich noch, was nehme ich mit?* –, und das Archiv war ein Knopf, der dieselben
+Karten mit einem anderen Symbol zeigte. Jetzt ist es ein eigener Bereich, und
+archivierte Listen sind auch gedämpft dargestellt.
+
+Der Reiter **⭐ Wünsche** sammelt alles Gemerkte – mit Bild, Ø-Preisen und
 Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
 
 - **✔ Gekauft!** fragt den Zustand ab und verschiebt den Artikel in die
@@ -745,7 +759,7 @@ Beim Verbuchen eines bereits vorhandenen Artikels fragt die App:
 ### 7.4 Archiv
 
 Ist der **letzte** Artikel verbucht, wandert die Liste automatisch ins
-**Archiv** 🎉. Nur Profis sehen es („📦 Archiv anzeigen"), können Listen
+**Archiv** 🎉 – den dritten Reiter im Listen-Tab. Nur Profis können Listen
 reaktivieren, von Hand archivieren oder löschen – und Verbuchungen
 **rückgängig** machen (↩︎; der Sammlung-Eintrag bleibt dabei bewusst
 bestehen und wird bei Bedarf manuell angepasst).
@@ -754,7 +768,8 @@ bestehen und wird bei Bedarf manuell angepasst).
 
 ## 8. Die Verkaufsliste (Doppelte)
 
-*(Nur Sammlerprofi – Knopf „📋 Verkaufsliste (Doppelte)" im Listen-Tab.)*
+*(Nur Sammlerprofi – Knopf „📋 Verkaufsliste (Doppelte)" unter
+**Listen → 🛒 Einkaufen**.)*
 
 Auf Knopfdruck erzeugt Brickfolio die Liste aller mehrfach vorhandenen
 Artikel – live berechnet, keine Pflege nötig. Die Grundregel:

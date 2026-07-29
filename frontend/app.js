@@ -1366,18 +1366,39 @@ function priceLine(label, d) {
 }
 
 function showTab(name) {
-  ["scan", "collection", "wanted", "lists", "stats", "hub", "settings"].forEach((t) => {
+  ["scan", "collection", "lists", "stats", "hub", "settings"].forEach((t) => {
     $("view-" + t).hidden = t !== name;
   });
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
   if (name === "collection") loadCollection(true);
-  if (name === "wanted") loadWanted();
-  if (name === "lists") loadLists();
+  if (name === "lists") showListsTab(listsTab);
   if (name === "stats") loadStats();
   if (name === "hub") loadHubView();
   else updatePolling();          // außerhalb des Tausch-Tabs ruhiger takten
   if (name === "settings") loadSettings();
+}
+
+/* Wünsche, Einkaufslisten und Archiv liegen in einem Tab.
+
+   Vorher waren es zwei Einträge in der Leiste für dieselbe Frage – „was will
+   ich noch, was nehme ich mit?" –, und das Archiv war ein Knopf, der
+   dieselben Karten mit anderem Symbol zeigte. Als eigener Reiter ist es auf
+   einen Blick etwas anderes. */
+let listsTab = "wanted";
+
+function showListsTab(name) {
+  // Sind Einkaufslisten ausgeblendet, gibt es dort nichts zu sehen.
+  if (name !== "wanted" && $("listtab-shop").hidden) name = "wanted";
+  listsTab = name;
+  state.showArchive = name === "archive";
+  ["wanted", "shop", "archive"].forEach((t) => {
+    $("listpane-" + t).hidden = t !== name;
+  });
+  document.querySelectorAll("[data-listtab]").forEach((b) =>
+    b.classList.toggle("sel", b.dataset.listtab === name));
+  if (name === "wanted") loadWanted();
+  else loadLists();
 }
 
 /* Tausch-Tab nur zeigen, wenn diese Instanz mit dem Hub verbunden ist. */
@@ -1422,20 +1443,24 @@ async function refreshMe() {
   });
 }
 
+/* Der Tab ist immer da – die Wünsche gibt es ja immer. Ob es *Einkaufslisten*
+   zu sehen gibt, entscheidet dagegen weiter der Bestand: Wer keine führt,
+   soll auch keine leeren Reiter vor sich haben. */
 async function updateListsTab() {
-  const tab = $("tab-lists");
-  if (!tab) return;
-  if (state.user && state.user.is_dealer) {
-    tab.hidden = false;
-    return;
+  const shop = $("listtab-shop");
+  const arch = $("listtab-archive");
+  if (!shop) return;
+  let zeigen = !!(state.user && state.user.is_dealer);
+  if (!zeigen) {
+    try {
+      const data = await api("/lists");
+      zeigen = !!(data.lists && data.lists.length);
+    } catch (_) { zeigen = false; }
   }
-  try {
-    const data = await api("/lists");
-    tab.hidden = !(data.lists && data.lists.length);
-  } catch (_) {
-    tab.hidden = true;
+  shop.hidden = arch.hidden = !zeigen;
+  if (!zeigen && listsTab !== "wanted" && !$("view-lists").hidden) {
+    showListsTab("wanted");
   }
-  if (tab.hidden && !$("view-lists").hidden) showTab("scan");
 }
 
 /* Titel der App inkl. Anzeigename – auch für Kopfzeilen im Druck */
@@ -3528,8 +3553,6 @@ async function loadLists() {
   const dealer = state.user && state.user.is_dealer;
   $("lists-admin").hidden = !dealer;
   if (!dealer) $("duplicates-box").hidden = true;
-  $("btn-toggle-archive").textContent = state.showArchive
-    ? tr("↩︎ Aktive Listen anzeigen") : tr("📦 Archiv anzeigen");
   try {
     const data = await api("/lists" + (state.showArchive ? "?archived=1" : ""));
     renderLists(data.lists || []);
@@ -3538,13 +3561,11 @@ async function loadLists() {
 
 function renderLists(lists) {
   const dealer = state.user && state.user.is_dealer;
-  const box = $("lists-container");
-  $("lists-empty").hidden = lists.length > 0;
-  $("lists-empty").textContent = state.showArchive
-    ? "Das Archiv ist leer." : "Keine Einkaufslisten vorhanden."
-      + (dealer ? "" : "");
+  const box = $(state.showArchive ? "archive-container" : "lists-container");
+  const leer = $(state.showArchive ? "archive-empty" : "lists-empty");
+  leer.hidden = lists.length > 0;
   box.innerHTML = lists.map((l) => `
-    <div class="card list-card" data-lid="${l.id}">
+    <div class="card list-card${state.showArchive ? " list-card-archiv" : ""}" data-lid="${l.id}">
       <div class="card-head">
         <div class="card-title">
           <strong>${state.showArchive ? "📦 " : "🛒 "}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="${esc(tr("Liste umbenennen"))}">✏️</button>` : ""}</strong>
@@ -3855,8 +3876,7 @@ function renderLists(lists) {
           await api(`/lists/items/${btn.dataset.iUndo}/undo`,
             { method: "POST" });
           toast("Rückgängig – Sammlung ggf. manuell anpassen");
-          state.showArchive = false;
-          loadLists();
+          showListsTab("shop");
         } catch (e) { toast(e.message); }
       });
     });
@@ -6538,9 +6558,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       await api("/lists", { method: "POST", body: { name } });
       $("new-list-name").value = "";
       toast(tr('Liste "{name}" angelegt 🛒', { name }));
-      state.showArchive = false;
-      loadLists();
-      updateListsTab();
+      await updateListsTab();
+      showListsTab("shop");
     } catch (e) { toast(e.message); }
   });
   $("btn-duplicates").addEventListener("click", toggleDuplicates);
@@ -6645,9 +6664,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     ev.target.value = "";
     if (file) importCsvFile(file);
   });
-  $("btn-toggle-archive").addEventListener("click", () => {
-    state.showArchive = !state.showArchive;
-    loadLists();
+  document.querySelectorAll("[data-listtab]").forEach((b) => {
+    b.addEventListener("click", () => showListsTab(b.dataset.listtab));
   });
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {

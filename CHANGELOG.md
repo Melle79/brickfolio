@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.62.0 – Juli 2026
+
+### Verbessert
+- 🗂 **Wünsche und Listen liegen jetzt in einem Tab.** Es waren zwei Einträge
+  in der Leiste für dieselbe Frage – *was will ich noch, was nehme ich mit?*
+  Der Tab **Listen** führt beides zusammen, mit drei Reitern darüber:
+  ⭐ Wünsche · 🛒 Einkaufen · 📦 Archiv. Dasselbe Muster wie im
+  Tausch-Netzwerk
+- 📦 **Das Archiv ist ein eigener Bereich statt eines Knopfes.** Vorher zeigte
+  „Archiv anzeigen" dieselben Karten mit einem anderen Symbol davor – als
+  Unterschied zu leise. Jetzt ein eigener Reiter, und archivierte Listen sind
+  zusätzlich gedämpft dargestellt, mit einer Kante am linken Rand
+- 🧭 **Die Hauptleiste hat einen Eintrag weniger** und wackelt nicht mehr: Der
+  Listen-Tab war bisher versteckt, solange es keine Liste gab, und tauchte
+  dann auf. Jetzt ist er immer da – die Wünsche gibt es ja immer –, und nur
+  die beiden hinteren Reiter erscheinen, wenn es dort etwas zu sehen gibt
+
 ## 1.61.1 – Juli 2026
 
 ### Behoben

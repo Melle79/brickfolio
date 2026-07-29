@@ -1430,3 +1430,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   background: var(--field); border-radius: 8px; padding: 10px;
   margin: 8px 0; white-space: pre; overflow-x: auto;
 }
+
+/* Archivierte Listen: abgelegt, nicht gelöscht. Gedämpft, damit man beim
+   Blättern sofort sieht, dass hier nichts mehr passiert – das Paket-Symbol
+   allein war zu leise. */
+.list-card-archiv {
+  opacity: .82;
+  border-left: 3px solid var(--muted, #8a94a6);
+}
+.list-card-archiv .card-title strong { font-weight: 700; }
