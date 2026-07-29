@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.65.0 – Juli 2026
+
+### Neu
+- 🔔 **Ein neuer Fehler hinterlässt einen Zettel auf der Startseite.** Bisher
+  füllte sich das Protokoll still – man musste von sich aus nachsehen. Jetzt
+  steht dort, dass etwas aufgezeichnet wurde, mitsamt der Meldung und einem
+  Knopf **Fehlerbericht öffnen**, der direkt zur passenden Karte springt und
+  sie aufklappt
+- 🙈 **Höchstens ein Zettel gleichzeitig.** Ein Problem löst oft mehrere
+  verschiedene Fehler aus; zehn Karten übereinander helfen niemandem. Ist der
+  eine weggeklickt, meldet sich der nächste **neue** Fehler wieder –
+  derselbe zum zweiten Mal nicht
+- 👑 **Nur Admins sehen ihn.** Der Fehlerbericht liegt in einer Admin-Karte,
+  ein Zettel dorthin wäre für alle anderen eine Sackgasse
+
 ## 1.64.2 – Juli 2026
 
 ### Verbessert

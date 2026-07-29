@@ -218,3 +218,51 @@ def test_pruefung_bestaetigt_gueltigen_token(ctx, monkeypatch):
 
 def test_pruefung_ist_admin_sache(ctx):
     assert ctx["kid"].post("/api/settings/github_token/test").status_code == 403
+
+
+# --------------------------------------- Hinweis, dass etwas passiert ist
+
+def _offene_hinweise(client):
+    return [n for n in client.get("/api/notifications").json()["items"]
+            if n["kind"] == "error"]
+
+
+def test_neuer_fehler_hinterlaesst_einen_zettel(ctx):
+    """Sonst müsste der Admin von sich aus regelmäßig nachsehen."""
+    assert _offene_hinweise(ctx["admin"]) == []
+    _report(ctx["kid"], "Etwas ist kaputt")
+    hinweise = _offene_hinweise(ctx["admin"])
+    assert len(hinweise) == 1
+    assert "kaputt" in hinweise[0]["body"]
+
+
+def test_derselbe_fehler_meldet_sich_nicht_zweimal(ctx):
+    _report(ctx["kid"], "Immer dasselbe")
+    ctx["admin"].delete(f"/api/notifications/{_offene_hinweise(ctx['admin'])[0]['id']}")
+    for _ in range(5):
+        _report(ctx["kid"], "Immer dasselbe")
+    assert _offene_hinweise(ctx["admin"]) == []
+
+
+def test_hoechstens_ein_zettel_gleichzeitig(ctx):
+    """Ein Problem löst oft mehrere verschiedene Fehler aus – zehn Karten
+    übereinander helfen niemandem."""
+    for i in range(4):
+        _report(ctx["kid"], f"Fehler Nummer {i}")
+    assert len(_offene_hinweise(ctx["admin"])) == 1
+
+
+def test_nach_dem_wegklicken_meldet_sich_der_naechste(ctx):
+    _report(ctx["kid"], "Erster")
+    ctx["admin"].delete(f"/api/notifications/{_offene_hinweise(ctx['admin'])[0]['id']}")
+    _report(ctx["kid"], "Zweiter")
+    hinweise = _offene_hinweise(ctx["admin"])
+    assert len(hinweise) == 1 and "Zweiter" in hinweise[0]["body"]
+
+
+def test_normale_benutzer_sehen_den_zettel_nicht(ctx):
+    """Der Fehlerbericht liegt in einer Admin-Karte – ein Zettel dorthin
+    wäre für alle anderen eine Sackgasse."""
+    _report(ctx["kid"], "Nur für Admins")
+    assert _offene_hinweise(ctx["admin"])
+    assert _offene_hinweise(ctx["kid"]) == []

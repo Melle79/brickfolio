@@ -741,6 +741,7 @@ def report_error(body: ErrorReportBody, user: dict = Depends(current_user),
     fp = hashlib.sha256(
         (body.message + "|" + (body.detail or "")[:400]).encode()).hexdigest()[:32]
     now = int(time.time())
+    neu = False
     agent = (request.headers.get("User-Agent", "")[:200] if request else "")
     with core.db() as conn:
         row = conn.execute("SELECT id FROM error_log WHERE fingerprint = ?",
@@ -760,6 +761,9 @@ def report_error(body: ErrorReportBody, user: dict = Depends(current_user),
                 "DELETE FROM error_log WHERE issue_url IS NULL AND id NOT IN "
                 "(SELECT id FROM error_log ORDER BY last_at DESC LIMIT ?)",
                 (ERROR_LOG_KEEP,))
+            neu = True
+    if neu:
+        _note_error(body.message, fp)
     return {"ok": True}
 
 
@@ -913,6 +917,33 @@ def _notify(kind: str, title: str, body: str = "", item_type: str = None,
              int(time.time())))
 
 
+# Hinweise, die nur Admins etwas angehen. Der Fehlerbericht liegt in einer
+# Admin-Karte – ein Zettel dorthin wäre für alle anderen eine Sackgasse.
+ADMIN_NOTES = ("error",)
+
+
+def _note_error(message: str, fp: str) -> None:
+    """Auf einen neu aufgezeichneten Fehler hinweisen.
+
+    Höchstens **ein** offener Zettel gleichzeitig: Ein Problem löst oft
+    mehrere verschiedene Fehler aus, und zehn Karten übereinander helfen
+    niemandem. Ist der eine weggeklickt, meldet sich der nächste neue Fehler
+    wieder – die Fingerabdruck-Kennung sorgt dafür, dass es wirklich ein
+    neuer ist und nicht derselbe zum zweiten Mal.
+    """
+    with core.db() as conn:
+        offen = conn.execute(
+            "SELECT 1 FROM notifications WHERE kind = 'error' "
+            "AND dismissed_at IS NULL LIMIT 1").fetchone()
+    if offen:
+        return
+    _notify("error", "🐞 Ein Fehler wurde aufgezeichnet",
+            f"„{message[:140]}“ – nachzulesen unter Mehr → Wartung → "
+            "Fehlerbericht. Von dort lässt sich daraus ein GitHub-Issue "
+            "anlegen; von allein geht nichts nach außen.",
+            "error", fp)
+
+
 def _note_item_gone(entry: dict) -> None:
     """BrickLink kennt eine Nummer aus der Sammlung nicht mehr."""
     label = TYPE_LABEL.get(entry.get("item_type"), "Artikel")
@@ -989,7 +1020,10 @@ def list_notifications(user: dict = Depends(current_user)):
         rows = conn.execute(
             "SELECT * FROM notifications WHERE dismissed_at IS NULL "
             "ORDER BY created_at DESC LIMIT 20").fetchall()
-    return {"items": [dict(r) for r in rows]}
+    items = [dict(r) for r in rows]
+    if not user["is_admin"]:
+        items = [i for i in items if i["kind"] not in ADMIN_NOTES]
+    return {"items": items}
 
 
 @app.delete("/api/notifications/{note_id}")

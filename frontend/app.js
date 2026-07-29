@@ -5962,9 +5962,23 @@ function renderNotifications(items) {
               title="Hinweis entfernen" aria-label="Hinweis entfernen">✕</button>
       <div class="notice-title">🔔 ${esc(n.title)}</div>
       ${n.body ? `<p class="notice-body">${esc(n.body)}</p>` : ""}
-      ${n.new_item_id ? `<button class="btn btn-primary notice-apply"
+      ${n.kind === "error"
+        ? `<button class="btn btn-primary" data-goto-errors>Fehlerbericht öffnen</button>`
+        : n.new_item_id ? `<button class="btn btn-primary notice-apply"
           data-apply="${n.id}">Nummer übernehmen</button>` : ""}`;
     box.appendChild(card);
+  });
+
+  // Direkt zur Stelle springen, statt den Weg zu beschreiben.
+  box.querySelectorAll("[data-goto-errors]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      showTab("settings");
+      await new Promise((r) => setTimeout(r, 300));
+      const karte = $("errors-card");
+      if (!karte) return;
+      karte.classList.remove("collapsed");
+      karte.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
   });
 
   box.querySelectorAll("[data-close]").forEach((b) => {
