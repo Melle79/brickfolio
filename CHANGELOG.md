@@ -1,9 +1,6 @@
 # Changelog
 
-## 1.60.0-beta.2 – Juli 2026
-
-> **Beta.** Währung und die neuen Preisgebiete sind neu und wollen im Alltag
-> gesehen werden, bevor sie als stabil gelten.
+## 1.60.0 – Juli 2026
 
 ### Neu
 - 🌍 **21 Länder und sieben Regionen als Preisgebiet.** Bisher gab es nur den
@@ -45,13 +42,11 @@
 - 🌐 Sätze, die in der Vorlage über zwei Zeilen laufen, fanden ihren
   Katalogeintrag nicht mehr
 
-### Behoben (beta.2)
-- 🏷 **Eine Vorabversion nahm die Marke `latest` mit.** Der Release-Ablauf
-  unterschied Release und Prerelease nicht – ein als Beta veröffentlichtes
-  Image wäre bei allen gelandet, die einfach `latest` ziehen. Betas tragen
-  jetzt die eigene Marke `beta`; `latest` bleibt der letzten stabilen Version
-
 ### Für Entwickler
+- 🏷 Der Release-Ablauf unterscheidet jetzt Release und Vorabversion. Eine als
+  Prerelease veröffentlichte Beta nahm bisher die Marke `latest` mit und wäre
+  damit bei allen gelandet, die schlicht `latest` ziehen. Betas tragen die
+  eigene Marke `beta`
 - Neue Spalte `price_currency` in `collection`, `wanted` und `shopping_items`
   (Migration läuft von selbst). `NULL` gilt als Euro
 - `/api/settings/price_region` liefert zusätzlich `currency`, `currencies` und
