@@ -1294,6 +1294,34 @@ text (`***`) before it is stored or sent. The report goes exclusively to your
 own server – the only thing that leaves it is what you send as an issue
 yourself.
 
+**Noticing that something happened.** A *new* error leaves a note on the start
+screen – with the message and a button that jumps straight to the card. Only
+admins see it; the error report sits in an admin card, so for everyone else the
+note would be a dead end. There is always **at most one** open: a single
+problem often triggers several different errors. Once dismissed, the next
+**new** error reports again – the same one a second time does not.
+
+**🔔 Notification on your device.** If you want to know even when Brickfolio is
+closed, switch on web push in the same card – **per device**, with the
+browser's permission prompt. After that a new error sends a message to your
+phone or desktop.
+
+> **What goes where.** The keys are created on your server the first time you
+> switch it on and stay there – the private part never leaves it. Delivery has
+> to go through the push service of the respective browser vendor (Apple,
+> Google, Mozilla); web push does not work any other way. That is why the
+> message only says "An error has been recorded" – no error text, no number,
+> nothing from your collection. The content is encrypted on the way there
+> anyway, but what is not in it cannot stand out. **The trading hub is not
+> involved.**
+
+Requirements: **https** (so the Cloudflare tunnel or your own certificate – over
+plain `http` on the home network browsers allow no notifications) and, on the
+iPhone, the app **installed to the home screen**. A **Send a test message**
+button checks delivery, so it does not first show at the real error. If the app
+is reinstalled, the old address points nowhere – the server clears such entries
+away by itself on the next send.
+
 **An issue at the press of a button.** With a GitHub token stored, "🐙 Create an
 issue" turns an entry directly into an issue in the project. The button then
 becomes "View issue ↗"; a second click creates no duplicate. Without a token

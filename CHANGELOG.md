@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.66.0 – Juli 2026
+
+### Neu
+- 🔔 **Benachrichtigung aufs Gerät bei neuen Fehlern.** Web-Push **von der
+  eigenen Instanz** – einzuschalten je Gerät unter *Mehr → Wartung →
+  Fehlerbericht*. Damit erfährt man von einem Fehler auch, wenn Brickfolio
+  gerade zu ist
+- 🧪 **Probemeldung senden**, damit sich eine klemmende Zustellung nicht erst
+  beim echten Fehler zeigt
+
+### Bewusst so gebaut
+- 🔑 **Die Schlüssel entstehen auf eurem Server** und bleiben dort; der
+  private Teil verlässt ihn nie. Ein Test wacht darüber, dass er in keiner
+  Antwort auftaucht
+- 🤐 **Die Meldung sagt nur, *dass* etwas war** – kein Fehlertext, keine
+  Nummer, nichts aus der Sammlung. Zustellen muss der Push-Dienst des
+  Browser-Herstellers, anders geht Web-Push nicht; der Inhalt ist dabei
+  verschlüsselt, aber was gar nicht drinsteht, kann auch nicht auffallen
+- 🚫 **Der Tausch-Hub ist nicht beteiligt.** Fehler sind Sache dieser
+  Instanz. Sie an einen Dienst zu schicken, den jemand anderes betreibt,
+  wäre genau die Telemetrie, die es hier nicht geben soll
+- 🧹 Abonnements, die ins Leere zeigen (App neu installiert), räumt der
+  Server beim nächsten Versand selbst weg – ein Aussetzer beim Push-Dienst
+  trägt dagegen **kein** Gerät aus
+
+### Voraussetzungen
+- **https** (Cloudflare-Tunnel oder eigenes Zertifikat) – über `http` im
+  Heimnetz erlauben Browser keine Benachrichtigungen
+- Auf dem iPhone die **auf dem Startbildschirm installierte** App
+- Neue Abhängigkeit `pywebpush`; fehlt sie, bleibt die Karte einfach aus
+
 ## 1.65.0 – Juli 2026
 
 ### Neu

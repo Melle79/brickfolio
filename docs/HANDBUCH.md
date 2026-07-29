@@ -1346,6 +1346,36 @@ jedem Text entfernt (`***`), bevor er gespeichert oder verschickt wird.
 Die Meldung geht ausschließlich an euren eigenen Server – nach außen geht
 nur, was ihr selbst per Issue verschickt.
 
+**Mitbekommen, dass etwas war.** Ein *neuer* Fehler legt einen Zettel auf
+der Startseite ab – mit der Meldung und einem Knopf, der direkt zur Karte
+springt. Nur Admins sehen ihn; der Fehlerbericht liegt in einer Admin-Karte,
+für alle anderen wäre der Zettel eine Sackgasse. Es liegt immer **höchstens
+einer** offen: Ein Problem löst oft mehrere verschiedene Fehler aus. Ist er
+weggeklickt, meldet sich der nächste **neue** Fehler wieder – derselbe zum
+zweiten Mal nicht.
+
+**🔔 Benachrichtigung aufs Gerät.** Wer auch dann Bescheid wissen will, wenn
+Brickfolio gerade zu ist, schaltet in derselben Karte Web-Push ein – **je
+Gerät einzeln**, mit einer Berechtigungsabfrage des Browsers. Danach kommt
+bei einem neuen Fehler eine Meldung aufs Handy oder an den Desktop.
+
+> **Was dabei wohin geht.** Die Schlüssel entstehen beim ersten Einschalten
+> auf eurem Server und bleiben dort – der private Teil verlässt ihn nie.
+> Zustellen muss der Push-Dienst des jeweiligen Browser-Herstellers (Apple,
+> Google, Mozilla); anders funktioniert Web-Push nicht. Deshalb steht in der
+> Meldung nur „Ein Fehler wurde aufgezeichnet" – kein Fehlertext, keine
+> Nummer, nichts aus der Sammlung. Der Inhalt ist auf dem Weg dorthin
+> ohnehin verschlüsselt, aber was gar nicht drinsteht, kann auch nicht
+> auffallen. **Der Tausch-Hub ist daran nicht beteiligt.**
+
+Voraussetzungen: **https** (also der Cloudflare-Tunnel oder ein eigenes
+Zertifikat – im reinen Heimnetz über `http` erlauben Browser keine
+Benachrichtigungen) und auf dem iPhone die **auf dem Startbildschirm
+installierte** App. Ein Knopf **Probemeldung senden** prüft die Zustellung,
+damit sich das nicht erst beim echten Fehler zeigt. Wird die App neu
+installiert, zeigt die alte Adresse ins Leere – solche Einträge räumt der
+Server beim nächsten Versand selbst weg.
+
 **Issue auf Knopfdruck.** Ist ein GitHub-Token hinterlegt, legt „🐙 Issue
 anlegen" aus einem Eintrag direkt ein Issue im Projekt an. Der Knopf wird
 danach zu „Issue ansehen ↗"; ein zweiter Klick legt kein Duplikat an.

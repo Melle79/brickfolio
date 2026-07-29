@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.65.0"
+APP_VERSION = "1.66.0"
 
 
 def hash_password(password: str) -> str:
@@ -274,6 +274,18 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_notif_open
                 ON notifications(dismissed_at, created_at);
+            -- Geräte, die per Web-Push benachrichtigt werden wollen. Die
+            -- Adresse (endpoint) zeigt auf den Push-Dienst des jeweiligen
+            -- Browser-Herstellers und ist je Gerät und Installation eindeutig.
+            CREATE TABLE IF NOT EXISTS push_subs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                endpoint TEXT NOT NULL UNIQUE,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                user_agent TEXT,
+                created_at INTEGER NOT NULL
+            );
             -- Der Primärschlüssel (set_no, fig_no) hilft nur bei Suche nach
             -- set_no. Die Sammlung fragt aber je Zeile nach fig_no ("in Sets").
             CREATE INDEX IF NOT EXISTS idx_set_contents_fig

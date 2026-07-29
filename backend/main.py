@@ -21,6 +21,7 @@ import core
 import crypto_box
 import hub
 import integrations
+import push
 import totp
 import themes
 
@@ -848,6 +849,55 @@ def create_issue(error_id: int, user: dict = Depends(admin_user)):
     return {"ok": True, "url": url, "existed": False}
 
 
+# ------------------------------------------------- Benachrichtigung aufs Gerät
+
+class PushSubBody(BaseModel):
+    subscription: dict
+
+
+class PushOffBody(BaseModel):
+    endpoint: str = Field(min_length=10, max_length=600)
+
+
+@app.get("/api/push")
+def push_status(request: Request, user: dict = Depends(admin_user)):
+    """Öffentlicher Schlüssel und die Geräte, die schon eingetragen sind."""
+    if not push.verfuegbar():
+        return {"available": False, "devices": []}
+    return {"available": True, "key": push.public_key(),
+            "devices": [{"id": d["id"], "name": d["user_agent"] or "?",
+                         "created_at": d["created_at"]}
+                        for d in push.geraete(user["id"])]}
+
+
+@app.post("/api/push/subscribe")
+def push_subscribe(body: PushSubBody, request: Request,
+                   user: dict = Depends(admin_user)):
+    if not push.verfuegbar():
+        raise HTTPException(501, "Push ist auf diesem Server nicht verfügbar")
+    if not body.subscription.get("endpoint"):
+        raise HTTPException(400, "Ungültiges Abonnement")
+    push.abonnieren(user["id"], body.subscription,
+                    request.headers.get("User-Agent", "") if request else "")
+    return {"ok": True}
+
+
+@app.post("/api/push/unsubscribe")
+def push_unsubscribe(body: PushOffBody, user: dict = Depends(admin_user)):
+    push.abbestellen(body.endpoint)
+    return {"ok": True}
+
+
+@app.post("/api/push/test")
+def push_test(user: dict = Depends(admin_user)):
+    """Eine Probemeldung – sonst merkt man erst beim echten Fehler, dass
+    unterwegs etwas klemmt."""
+    if not push.verfuegbar():
+        raise HTTPException(501, "Push ist auf diesem Server nicht verfügbar")
+    n = push.senden("🧱 Brickfolio", "Probemeldung – die Zustellung klappt.", "/")
+    return {"ok": True, "sent": n}
+
+
 class GithubTokenBody(BaseModel):
     token: str = Field(default="", max_length=200)
 
@@ -937,6 +987,13 @@ def _note_error(message: str, fp: str) -> None:
             "AND dismissed_at IS NULL LIMIT 1").fetchone()
     if offen:
         return
+    # Auch aufs Gerät, wenn jemand das eingeschaltet hat. Bewusst nach dem
+    # „höchstens einer offen"-Riegel: Sonst käme bei einem kaputten Update
+    # ein Dutzend Meldungen hintereinander.
+    try:
+        push.senden("🐞 Brickfolio", "Ein Fehler wurde aufgezeichnet.", "/")
+    except Exception:
+        pass          # Melden darf nie stören
     _notify("error", "🐞 Ein Fehler wurde aufgezeichnet",
             f"„{message[:140]}“ – nachzulesen unter Mehr → Wartung → "
             "Fehlerbericht. Von dort lässt sich daraus ein GitHub-Issue "

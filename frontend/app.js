@@ -5811,6 +5811,7 @@ function renderErrors() {
   // Melden-Knopf erschien – und der erscheint erst, wenn es einen Fehler
   // gibt. Also hier direkt sagen, was Sache ist.
   zeigeGithubToken(data.token_masked || "");
+  loadPushCard();
   if (!data.items.length) {
     box.innerHTML = `<div class="price-note">Keine Fehler aufgezeichnet ✔</div>`;
     return;
@@ -5916,6 +5917,98 @@ function initErrorReporting() {
     } catch (_) { /* dann eben die rohe Adresse */ }
     reportError(`Bild lädt nicht: ${quelle}`, src, "bild");
   }, true);
+}
+
+/* ------------------------------------------- Benachrichtigung aufs Gerät
+
+   Web-Push von der eigenen Instanz. Zustellen muss der Push-Dienst des
+   Browser-Herstellers – anders geht es nicht –, deshalb steht in der Meldung
+   nur, *dass* etwas passiert ist. Der Weg führt ausdrücklich **nicht** über
+   den Tausch-Hub: Fehler sind Sache dieser Instanz. */
+
+/* base64url → Bytes, wie `applicationServerKey` es verlangt. */
+function b64Bytes(b64) {
+  const voll = (b64 + "=".repeat((4 - b64.length % 4) % 4))
+    .replace(/-/g, "+").replace(/_/g, "/");
+  const roh = atob(voll);
+  return Uint8Array.from(roh, (c) => c.charCodeAt(0));
+}
+
+let pushState = null;
+
+async function eigenesAbo() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+async function loadPushCard() {
+  const box = $("push-box");
+  if (!box) return;
+  // Ohne HTTPS gibt es keine Push-Berechtigung – dann die Karte gar nicht
+  // erst zeigen, statt einen Knopf anzubieten, der nur scheitern kann.
+  const geht = window.isSecureContext && "serviceWorker" in navigator
+    && "PushManager" in window && "Notification" in window;
+  try {
+    pushState = await api("/push");
+  } catch (_) { pushState = null; }
+  box.hidden = !(geht && pushState && pushState.available);
+  if (box.hidden) return;
+  const abo = await eigenesAbo();
+  const an = !!abo;
+  $("push-state").textContent = an
+    ? tr("Auf diesem Gerät eingeschaltet · {n} Gerät(e) insgesamt",
+      { n: pushState.devices.length })
+    : (Notification.permission === "denied"
+      ? tr("Der Browser hat Benachrichtigungen für diese Seite blockiert – "
+        + "das lässt sich nur in seinen Einstellungen zurücknehmen.")
+      : tr("Auf diesem Gerät aus."));
+  $("btn-push-on").hidden = an || Notification.permission === "denied";
+  $("btn-push-off").hidden = !an;
+  $("btn-push-test").hidden = !pushState.devices.length;
+}
+
+async function pushEinschalten() {
+  const out = $("push-out");
+  out.hidden = false;
+  out.textContent = tr("Wird eingerichtet …");
+  try {
+    const erlaubt = await Notification.requestPermission();
+    if (erlaubt !== "granted") {
+      out.textContent = tr("Ohne Erlaubnis des Browsers geht es nicht.");
+      loadPushCard();
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: b64Bytes(pushState.key),
+    });
+    await api("/push/subscribe", { method: "POST",
+      body: { subscription: sub.toJSON() } });
+    out.textContent = tr("Eingeschaltet ✔");
+  } catch (e) {
+    out.textContent = e.message;
+  }
+  loadPushCard();
+}
+
+async function pushAusschalten() {
+  const out = $("push-out");
+  out.hidden = false;
+  try {
+    const abo = await eigenesAbo();
+    if (abo) {
+      // Erst beim Server abmelden, dann im Browser: Andersherum wäre die
+      // Adresse weg, bevor der Server sie löschen konnte – der Eintrag
+      // bliebe als Leiche stehen.
+      await api("/push/unsubscribe", { method: "POST",
+        body: { endpoint: abo.endpoint } });
+      await abo.unsubscribe();
+    }
+    out.textContent = tr("Ausgeschaltet.");
+  } catch (e) { out.textContent = e.message; }
+  loadPushCard();
 }
 
 /* Liegt ein Token, hat das Eingabefeld nichts mehr zu suchen: Es stünde
@@ -6736,6 +6829,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadErrors();
     } catch (e) { toast(e.message); }
     btn.disabled = false;
+  });
+  $("btn-push-on").addEventListener("click", pushEinschalten);
+  $("btn-push-off").addEventListener("click", pushAusschalten);
+  $("btn-push-test").addEventListener("click", async () => {
+    const out = $("push-out");
+    out.hidden = false;
+    out.textContent = tr("Wird gesendet …");
+    try {
+      const res = await api("/push/test", { method: "POST" });
+      out.textContent = res.sent
+        ? tr("An {n} Gerät(e) geschickt – gleich müsste sie ankommen.",
+          { n: res.sent })
+        : tr("Kein Gerät erreicht. Ist die Benachrichtigung eingeschaltet?");
+    } catch (e) { out.textContent = e.message; }
   });
   $("btn-github-replace").addEventListener("click", () => {
     githubFeldOffen = true;

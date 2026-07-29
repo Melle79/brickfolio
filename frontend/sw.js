@@ -1,5 +1,5 @@
 /* Brickfolio Service Worker – App-Shell offlinefähig, API immer live */
-const CACHE = "brickfolio-v6";
+const CACHE = "brickfolio-v7";
 const SHELL = [
   "/",
   "/static/style.css",
@@ -56,4 +56,32 @@ self.addEventListener("fetch", (e) => {
       .catch(() => caches.match(e.request).then((hit) => hit || new Response(
         "Offline", { status: 504, statusText: "Gateway Timeout" })))
   );
+});
+
+/* Meldung vom eigenen Server. Der Inhalt ist bewusst knapp – Einzelheiten
+   stehen in der App, nicht auf dem Sperrbildschirm. */
+self.addEventListener("push", (e) => {
+  let d = { title: "Brickfolio", body: "", url: "/" };
+  try { if (e.data) d = Object.assign(d, e.data.json()); } catch (_) { /* egal */ }
+  e.waitUntil(self.registration.showNotification(d.title, {
+    body: d.body,
+    icon: "/static/icons/icon-192.png",
+    badge: "/static/icons/icon-192.png",
+    // Gleichartige Meldungen ersetzen einander, statt sich zu stapeln.
+    tag: "brickfolio",
+    data: { url: d.url || "/" },
+  }));
+});
+
+/* Antippen bringt ein offenes Fenster nach vorn, statt ein zweites zu öffnen. */
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const ziel = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true })
+    .then((fenster) => {
+      for (const f of fenster) {
+        if ("focus" in f) return f.focus();
+      }
+      return self.clients.openWindow(ziel);
+    }));
 });
