@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.66.1 – Juli 2026
+
+### Behoben
+- 🏷 **Neue Sets und Teile bekommen ihr Thema jetzt von selbst** ([#13]).
+  Bisher blieb es leer, bis jemand *Themen nachladen* drückte – wer das nicht
+  wusste, sammelte nach und nach Einträge unter „Ohne Thema". Der Abruf läuft
+  im Hintergrund, hält also das Erfassen nicht auf. Bei Sets zusätzlich noch
+  einmal, sobald die Set-Inhalte da sind: Erst dann kann der Rückfall über
+  die Figuren greifen. Ein von Hand gesetztes Thema wird nie überschrieben
+- 🖼 **Ein Aussetzer beim CDN wird einmal nachgefasst** ([#12]). Ein einzelner
+  Netzhänger ließ das Vorschaubild sonst als Platzhalter stehen, bis jemand
+  die Seite neu lud
+- 🔕 **Ein Bild, das nicht lädt, ist kein Fehler mehr.** Als die Bilder noch
+  direkt vom CDN kamen, war die Meldung berechtigt. Seit sie über die eigene
+  Instanz laufen, heißt ein Fehlschlag nur: Das CDN hat gerade nicht
+  geantwortet. Gemeldet wurde es trotzdem – bis hin zu einem GitHub-Issue und
+  einer Meldung aufs Handy, für ein einziges hakeliges Vorschaubild. Vom
+  Browser **blockierte** Inhalte werden weiterhin gemeldet
+
+[#12]: https://github.com/Melle79/brickfolio/issues/12
+[#13]: https://github.com/Melle79/brickfolio/issues/13
+
 ## 1.66.0 – Juli 2026
 
 ### Neu

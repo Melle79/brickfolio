@@ -5899,24 +5899,15 @@ function initErrorReporting() {
       ev.blockedURI, "csp");
   });
 
-  // Ein Bild, das nicht lädt, meldet sich nur am Element selbst. Auch das
-  // erreicht `window.onerror` nie.
-  document.addEventListener("error", (ev) => {
-    const el = ev.target;
-    if (!el || el.tagName !== "IMG") return;
-    const src = el.getAttribute("src") || "";
-    if (!src || src.startsWith("data:")) return;
-    let quelle = src;
-    try {
-      const u = new URL(src, location.href);
-      // Katalogbilder laufen über die eigene Instanz. Deren Adresse zu
-      // melden wäre irreführend – nicht sie klemmt, sondern das CDN
-      // dahinter. Die ursprüngliche Adresse steht im Parameter.
-      const original = u.pathname === "/catalog" ? u.searchParams.get("u") : null;
-      quelle = original ? new URL(original).host : (u.host || src);
-    } catch (_) { /* dann eben die rohe Adresse */ }
-    reportError(`Bild lädt nicht: ${quelle}`, src, "bild");
-  }, true);
+  // Ein Bild, das nicht lädt, wird **nicht** gemeldet.
+  //
+  // Es war einmal richtig: Damals holte der Browser die Katalogbilder direkt,
+  // und ein blockiertes Bild war ein Hinweis auf ein echtes Problem. Seit die
+  // Bilder über die eigene Instanz laufen, heißt ein Fehlschlag nur noch: Das
+  // CDN hat gerade nicht geantwortet. Das ist kein Fehler der App, der Server
+  // fasst von sich aus nach, und der Platzhalter sagt es dem Auge ohnehin.
+  // Gemeldet hat es dagegen sehr wohl – bis hin zu einem GitHub-Issue und
+  // einer Meldung aufs Handy, für ein einziges hakeliges Vorschaubild.
 }
 
 /* ------------------------------------------- Benachrichtigung aufs Gerät

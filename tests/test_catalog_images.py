@@ -171,3 +171,37 @@ def test_holen_ist_admin_sache(ctx):
         uid = cur.lastrowid
     ctx.headers["Authorization"] = "Bearer " + core.create_token(uid, "gast", False)
     assert ctx.post("/api/images/fetch").status_code == 403
+
+
+def test_ein_aussetzer_beim_cdn_wird_nachgefasst(ctx, monkeypatch):
+    """Ein einzelner Netzhänger ließ das Bild als Platzhalter stehen – und
+    meldete das als Fehler, bis hin zu einem GitHub-Issue für ein hakeliges
+    Vorschaubild."""
+    versuche = []
+
+    def fake(url, hosts=None):
+        versuche.append(url)
+        if len(versuche) == 1:
+            raise TimeoutError("CDN hängt")
+        return b"ROH"
+
+    monkeypatch.setattr(integrations, "fetch_catalog_image", fake)
+    monkeypatch.setattr(integrations, "prepare_image",
+                        lambda roh, max_side=400: b"\xff\xd8K")
+    monkeypatch.setattr(main.time, "sleep", lambda s: None)
+    assert ctx.get("/catalog", params={"u": BILD}).status_code == 200
+    assert len(versuche) == 2
+
+
+def test_nicht_erlaubte_adresse_wird_nicht_wiederholt(ctx, monkeypatch):
+    """Bei einer gesperrten Adresse hilft kein zweiter Versuch – der wäre
+    nur ein zweiter Anlauf, von innen irgendwohin zu greifen."""
+    versuche = []
+
+    def fake(url, hosts=None):
+        versuche.append(url)
+        raise ValueError("Bild-URL nicht erlaubt")
+
+    monkeypatch.setattr(integrations, "fetch_catalog_image", fake)
+    assert ctx.get("/catalog", params={"u": BILD}).status_code == 404
+    assert len(versuche) == 1

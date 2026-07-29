@@ -340,3 +340,61 @@ def test_figuren_rueckfall_braucht_keine_bricklink_schluessel(tmp_path, monkeypa
                          "VALUES ('75018-1', ?, 1)", (fig,))
     monkeypatch.setattr(integrations, "bricklink_enabled", lambda: False)
     assert main._theme_nachschlagen("75018-1", "set") == "Star Wars"
+
+
+# ------------------------------- Thema gleich beim Erfassen (Issue #13)
+
+def test_neues_set_bekommt_sein_thema_ohne_zutun(client, monkeypatch):
+    """Bisher blieb es leer, bis jemand „Themen nachladen" drückte – wer das
+    nicht wusste, sammelte nach und nach Einträge unter „Ohne Thema"."""
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, i: "65")
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Star Wars")
+    # Der Hintergrundlauf wird hier direkt ausgeführt, damit der Test nicht
+    # auf einen Thread warten muss.
+    monkeypatch.setattr(main.threading, "Thread",
+                        lambda target=None, args=(), daemon=None: type(
+                            "T", (), {"start": lambda self: target(*args)})())
+    r = client.post("/api/collection", json={
+        "item_id": "75300-1", "item_type": "set", "name": "TIE Fighter",
+        "quantity": 1, "condition": "used"})
+    assert r.status_code == 200
+    with core.db() as conn:
+        row = conn.execute("SELECT theme FROM collection WHERE item_id = "
+                           "'75300-1'").fetchone()
+    assert row["theme"] == "Star Wars"
+
+
+def test_eigene_figuren_fragen_niemanden(client, monkeypatch):
+    """Custom bekommt sein Thema aus der Nummer – ein Abruf wäre sinnlos."""
+    gerufen = []
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id",
+                        lambda t, i: gerufen.append(i))
+    client.post("/api/collection", json={
+        "item_id": "custom-001", "item_type": "minifig", "name": "Eigenbau",
+        "quantity": 1, "condition": "used"})
+    assert gerufen == []
+    with core.db() as conn:
+        row = conn.execute("SELECT theme FROM collection WHERE item_id = "
+                           "'custom-001'").fetchone()
+    assert row["theme"] == themes.CUSTOM_THEME
+
+
+def test_vorhandenes_thema_wird_nicht_ueberschrieben(client, monkeypatch):
+    """Wer von Hand einsortiert hat, soll das behalten."""
+    import time as _t
+    now = int(_t.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, theme, added_at) VALUES ('75300-1','set','TIE',1,"
+            "'used','Von Hand', ?)", (now,))
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, i: "65")
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Star Wars")
+    main._thema_nachtragen("75300-1", "set")
+    with core.db() as conn:
+        row = conn.execute("SELECT theme FROM collection WHERE item_id = "
+                           "'75300-1'").fetchone()
+    assert row["theme"] == "Von Hand"

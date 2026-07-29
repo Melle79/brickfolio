@@ -2498,8 +2498,22 @@ def _katalog_bild(url: str, holen: bool = True) -> str | None:
         return pfad
     if not holen:
         return None
+    # Einmal nachfassen: Ein einzelner Aussetzer beim CDN – Zeitüberschreitung,
+    # kurzer Netzhänger – ließ das Bild sonst als Platzhalter stehen, bis
+    # jemand die Seite neu lud. Zwei Versuche kosten wenig und decken den
+    # Großteil dieser Fälle ab.
+    roh = None
+    for versuch in (1, 2):
+        try:
+            roh = integrations.fetch_catalog_image(url, integrations.BILD_HOSTS)
+            break
+        except ValueError:
+            return None          # Adresse nicht erlaubt – kein zweiter Versuch
+        except Exception:
+            if versuch == 2:
+                return None
+            time.sleep(0.6)
     try:
-        roh = integrations.fetch_catalog_image(url, integrations.BILD_HOSTS)
         klein = integrations.prepare_image(roh, max_side=BILD_KANTE)
     except Exception:
         return None
@@ -2962,6 +2976,7 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
         new_id = cur.lastrowid
     _maybe_fetch_prices_async(new_id, body.item_id)
     _bild_holen_async(body.img_url)
+    _maybe_fetch_theme_async(body.item_id, body.item_type)
     if body.item_type == "set":
         _maybe_fetch_set_contents_async(body.item_id)
     return {"ok": True, "merged": False, "quantity": body.quantity}
@@ -3262,9 +3277,44 @@ def _maybe_fetch_set_contents_async(set_no: str):
         try:
             _store_set_contents(set_no, integrations.bricklink_subsets(set_no))
         except Exception:
-            pass
+            return
+        # Jetzt erst kann der Rückfall über die Figuren greifen – vorher gab
+        # es die Set-Inhalte noch gar nicht.
+        _thema_nachtragen(set_no, "set")
 
     threading.Thread(target=run, daemon=True).start()
+
+
+def _thema_nachtragen(item_id: str, item_type: str) -> None:
+    """Thema für einen Eintrag bestimmen und speichern, falls noch keins da
+    ist. Läuft im Hintergrund, weil dahinter ein BrickLink-Abruf steckt."""
+    try:
+        thema = _theme_nachschlagen(item_id, item_type)
+    except Exception:
+        return
+    if not thema:
+        return
+    with core.db() as conn:
+        conn.execute(
+            "UPDATE collection SET theme = ? WHERE item_id = ? "
+            "AND item_type = ? AND (theme IS NULL OR theme = '')",
+            (thema, item_id, item_type))
+
+
+def _maybe_fetch_theme_async(item_id: str, item_type: str):
+    """Neu erfasste Sets und Teile bekommen ihr Thema von selbst.
+
+    Bei Minifiguren steht es schon in der Nummer und wird beim Einfügen
+    gesetzt. Für Sets und Teile braucht es einen Abruf – der lief bisher
+    nur, wenn jemand von Hand „Themen nachladen" drückte. Wer das nicht
+    wusste, sammelte nach und nach Einträge unter „Ohne Thema".
+    """
+    if (item_type or "").lower() == "minifig":
+        return          # steht in der Nummer, ist schon gesetzt
+    if item_id.startswith(("fig-", "manuell-", "custom-")):
+        return
+    threading.Thread(target=_thema_nachtragen, args=(item_id, item_type),
+                     daemon=True).start()
 
 
 @app.get("/api/set_figs/{set_no}")
