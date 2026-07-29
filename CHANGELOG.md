@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.60.2 – Juli 2026
+
+### Behoben
+- 🔎 **Das Fehlerprotokoll bekam von all dem nichts mit.** Blockiert der
+  Browser etwas wegen der Sicherheits-Regeln, ist das kein Programmfehler –
+  `window.onerror` sieht davon nichts, und ein Bild, das nicht lädt, meldet
+  sich nur am Element selbst. Deshalb stand dort „Keine Fehler aufgezeichnet",
+  während die Konsole voll war. Beides wird jetzt gemeldet, je Regel und Host
+  einmal statt je Bild
+
+### Dokumentation
+- 🔍 **Klargestellt, was beim Anzeigen von Bildern nach außen geht.** Brickfolio
+  speichert zu jedem Artikel nur die *Adresse* des Katalogbildes; geholt wird es
+  vom Browser direkt bei BrickLink, Rebrickable oder – für Gescanntes –
+  Brickognize (dessen Vorschaubilder liegen bei `storage.googleapis.com`).
+  Dorthin geht die Bildadresse, die IP-Adresse und die Browserkennung –
+  **nichts aus der Sammlung**, und ausdrücklich kein Referrer. Das stand so
+  bisher nirgends; README und beide Handbücher sagen es jetzt
+
 ## 1.60.1 – Juli 2026
 
 ### Behoben

@@ -5771,6 +5771,30 @@ function initErrorReporting() {
     reportError(r && r.message ? r.message : String(r),
       r && r.stack, "unhandledrejection");
   });
+
+  // Blockiert der Browser etwas wegen der Sicherheits-Regeln, ist das kein
+  // Programmfehler – `window.onerror` sieht davon nichts. Genau deshalb
+  // konnten die Bilder gescannter Artikel wochenlang fehlen, während das
+  // Protokoll „keine Fehler" meldete. Gemeldet wird je Regel und Host
+  // einmal, nicht je Bild: Sonst stünden hundert gleiche Zeilen darin.
+  document.addEventListener("securitypolicyviolation", (ev) => {
+    let host = ev.blockedURI || "?";
+    try { host = new URL(ev.blockedURI).host || host; } catch (_) { /* inline */ }
+    reportError(`Vom Browser blockiert: ${ev.violatedDirective} → ${host}`,
+      ev.blockedURI, "csp");
+  });
+
+  // Ein Bild, das nicht lädt, meldet sich nur am Element selbst. Auch das
+  // erreicht `window.onerror` nie.
+  document.addEventListener("error", (ev) => {
+    const el = ev.target;
+    if (!el || el.tagName !== "IMG") return;
+    const src = el.getAttribute("src") || "";
+    if (!src || src.startsWith("data:")) return;
+    let host = src;
+    try { host = new URL(src, location.href).host || src; } catch (_) { /* egal */ }
+    reportError(`Bild lädt nicht: ${host}`, src, "bild");
+  }, true);
 }
 
 /* ------------------------------------------------------- Benachrichtigungen */

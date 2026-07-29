@@ -50,6 +50,18 @@ search by name (Rebrickable) and for prices and set contents (BrickLink). The
 latter two need your own free access – see 2.4. Without them everything else
 keeps working.
 
+**One point that is easily missed: the images.** For each item Brickfolio
+stores only the *address* of its catalogue picture, not the picture itself. So
+when displaying it, **your browser** fetches it directly from
+`img.bricklink.com`, `cdn.rebrickable.com` or – for anything scanned –
+`storage.googleapis.com`, where Brickognize keeps its thumbnails. What goes
+there is the image address (it names the part number), your IP address and
+your browser's identifier. **Nothing from your collection**: not what you own,
+not what you paid, no name, no account. A referrer is deliberately not sent,
+so the other side does not learn your address. If you do not want even that,
+run the instance without internet access – the image areas then stay empty and
+everything else keeps working.
+
 If you like, you can additionally connect your instance to the **trading
 network** (chapter 12) – then several households can reach each other. Even
 then the collection stays at home: only what someone explicitly offers for

@@ -51,6 +51,18 @@ bei der Namenssuche (Rebrickable) und für Preise und Set-Inhalte
 (BrickLink). Für die beiden letzten braucht ihr eigene kostenlose Zugänge –
 siehe 2.4. Ohne sie läuft alles andere weiter.
 
+**Ein Punkt, der oft übersehen wird: die Bilder.** Brickfolio speichert zu
+jedem Artikel nur die *Adresse* seines Katalogbildes, nicht das Bild selbst.
+Beim Anzeigen holt es also **euer Browser** direkt bei `img.bricklink.com`,
+`cdn.rebrickable.com` oder – für alles Gescannte – bei
+`storage.googleapis.com`, wo Brickognize seine Vorschaubilder ablegt. Dorthin
+geht die Bildadresse (sie nennt die Teilenummer), eure IP-Adresse und die
+Kennung des Browsers. **Nichts aus eurer Sammlung**: nicht, was ihr besitzt,
+nicht, was ihr bezahlt habt, kein Name, kein Konto. Ein Referrer wird
+ausdrücklich nicht mitgeschickt, die Gegenseite erfährt eure Adresse also
+nicht. Wer auch das nicht möchte, betreibt die Instanz ohne Internetzugang –
+dann bleiben die Bildflächen leer, alles andere funktioniert.
+
 Wer mag, verbindet seine Instanz zusätzlich mit dem **Tausch-Netzwerk**
 (Kapitel 12) – dann sind auch mehrere Haushalte untereinander erreichbar.
 Auch dabei bleibt die Sammlung zu Hause: Nach außen geht nur, was jemand
