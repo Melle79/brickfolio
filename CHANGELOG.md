@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.61.1 – Juli 2026
+
+### Behoben
+- 🎨 **Das Design wurde vor dem ersten Zeichnen nicht mehr gesetzt.** Dafür gab
+  es ein paar Zeilen direkt im Dokument – und genau das verbieten die
+  Sicherheits-Regeln seit 1.57.0 (`script-src 'self'`). Der Browser blockierte
+  sie still; wer ein dunkles Design nutzt, sah bei jedem Laden kurz das helle
+  aufblitzen. Die Zeilen stehen jetzt in `theme-boot.js`, und ein Test wacht
+  darüber, dass kein Skript zurück ins Dokument wandert
+- 📱 `mobile-web-app-capable` ergänzt. Die Apple-Schreibweise allein ist
+  abgekündigt und wurde von neueren Browsern angemahnt; beide stehen jetzt
+  nebeneinander, bis iOS nachzieht
+
+### Nicht behoben, weil kein Fehler
+- Die Konsolenzeile „Banner not shown: beforeinstallpromptevent
+  .preventDefault() called" ist Absicht: Brickfolio unterdrückt das Angebot
+  des Browsers, um es an passender Stelle selbst zu zeigen – als Karte auf der
+  Scan-Seite, mit eigener Anleitung für iPhones
+
 ## 1.61.0 – Juli 2026
 
 ### Neu

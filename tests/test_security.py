@@ -97,6 +97,21 @@ def test_scan_bilder_bleiben_erlaubt(client):
     assert "storage.googleapis.com" in csp
 
 
+def test_kein_inline_skript():
+    """`script-src 'self'` verbietet auch `<script>…</script>` im Dokument.
+
+    Genau daran hing das Setzen des Designs: Der Browser blockierte es still,
+    und wer ein dunkles Design nutzte, sah bei jedem Laden kurz das helle
+    aufblitzen. Skript gehört in eine eigene Datei."""
+    import re
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1]
+            / "frontend" / "index.html").read_text()
+    inline = [m.group(0)[:60] for m in
+              re.finditer(r"<script(?![^>]*\bsrc=)[^>]*>", html)]
+    assert not inline, f"Skript im Dokument statt in einer Datei: {inline}"
+
+
 def test_kein_skript_in_attributen():
     """`script-src 'self'` verbietet `onerror="…"` & Co. Steht so etwas doch
     im Frontend, führt der Browser es nie aus – der Fehlerfall fällt dann
@@ -108,7 +123,7 @@ def test_kein_skript_in_attributen():
     frontend = Path(__file__).resolve().parents[1] / "frontend"
     ohne_kommentar = lambda t: re.sub(r"/\*.*?\*/|<!--.*?-->", " ", t, flags=re.S)
     treffer = []
-    for datei in ("app.js", "index.html", "sw.js"):
+    for datei in ("app.js", "index.html", "sw.js", "theme-boot.js"):
         text = ohne_kommentar((frontend / datei).read_text())
         for m in re.finditer(r'\bon[a-z]{3,}\s*=\s*["\']', text):
             treffer.append(f"{datei}: …{text[max(0, m.start() - 30):m.end()]}")

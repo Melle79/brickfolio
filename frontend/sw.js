@@ -1,10 +1,11 @@
 /* Brickfolio Service Worker – App-Shell offlinefähig, API immer live */
-const CACHE = "brickfolio-v5";
+const CACHE = "brickfolio-v6";
 const SHELL = [
   "/",
   "/static/style.css",
   "/static/fonts.css",
   "/static/app.js",
+  "/static/theme-boot.js",
   "/manifest.webmanifest",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
