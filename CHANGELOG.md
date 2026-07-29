@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.68.5 – Juli 2026
+
+### Verbessert
+- 🖼 **Bilder werden vor Anzeige und Versand verkleinert.** Ein
+  Bildschirmfoto in 4K belegt entpackt **32 MB** im Browser – obwohl die
+  Vorschau es auf 300 Pixel Höhe zeigt und der Server es ohnehin auf 1200
+  Pixel bringt, bevor er es zur Erkennung weiterreicht. Jetzt passiert das
+  gleich im Browser: aus 32 MB werden 3 MB, und statt 10 MB gehen 250 KB
+  durch die Leitung. Für die Erkennung ändert sich nichts – der Server hat
+  auch vorher nur die verkleinerte Fassung gesehen
+- 🧹 **Der Zwischenspeicher der Übersetzung mistet aus.** Er hält Verweise auf
+  Elemente, um beim Sprachwechsel zurücksetzen zu können. Neu gezeichnete
+  Listen ließen die alten darin zurück – bei tausend Karten summiert sich
+  das. Betraf nur die englische Fassung
+
 ## 1.68.4 – Juli 2026
 
 ### Behoben

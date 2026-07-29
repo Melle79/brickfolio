@@ -83,6 +83,18 @@ const I18N_ATTRS = ["placeholder", "title", "aria-label", "alt"];
    ausgefüllte Anmeldebogen verloren ginge. */
 const i18nVorher = new Map();
 
+/* Der Speicher oben hält **echte Verweise** auf DOM-Knoten. Wird eine Liste
+   neu gezeichnet, sind die alten Knoten aus dem Dokument raus – aus dieser
+   Karte aber nicht, und damit bleiben sie im Speicher. Bei tausend Karten und
+   jedem Neuzeichnen summiert sich das. Deshalb ab und zu ausmisten: Was nicht
+   mehr im Dokument hängt, kann auch nicht mehr zurückgesetzt werden. */
+function i18nAufraeumen() {
+  if (i18nVorher.size < 3000) return;
+  for (const knoten of [...i18nVorher.keys()]) {
+    if (knoten !== document && !knoten.isConnected) i18nVorher.delete(knoten);
+  }
+}
+
 function translateTree(root = document.body) {
   if (lang === "de" || !Object.keys(dict).length) return;
 
@@ -126,6 +138,8 @@ function translateTree(root = document.body) {
     if (!i18nVorher.has(n)) i18nVorher.set(n, ["text", n.nodeValue]);
     n.nodeValue = wert;
   });
+
+  i18nAufraeumen();
 
   root.querySelectorAll("*").forEach((el) => {
     I18N_ATTRS.forEach((a) => {
@@ -1927,8 +1941,42 @@ function logout() {
    beendet ihn („Auf dieser Seite gibt es ein Problem"). */
 let vorschauUrl = null;
 
+/* Ein Bild auf Arbeitsgröße bringen, **bevor** es irgendwo landet.
+
+   Ein Bildschirmfoto ist schnell 2560×1440 oder größer. Der Browser hält es
+   dann entpackt im Speicher – rund 14 MB bei dieser Größe, bei 4K das
+   Doppelte –, obwohl die Vorschau es auf 300 Pixel Höhe zeigt. Wer mehrere
+   nacheinander hineinzieht, treibt den Verbrauch so hoch, dass das System den
+   Tab beendet („Auf dieser Seite gibt es ein Problem", Fehlercode 5).
+
+   Verloren geht dabei nichts: Der Server verkleinert jedes Bild ohnehin auf
+   1200 Pixel, bevor er es zur Erkennung weiterreicht. Wir tun es nur früher –
+   und sparen nebenbei die Übertragung von zehn Megabyte durch den Tunnel. */
+const SCAN_KANTE = 1200;
+
+async function verkleinern(file, maxSeite = SCAN_KANTE) {
+  if (!file || !("createImageBitmap" in window)) return file;
+  let bmp;
+  try {
+    bmp = await createImageBitmap(file);
+  } catch (_) {
+    return file;                     // kein lesbares Bild – der Server sagt es
+  }
+  const faktor = Math.min(1, maxSeite / Math.max(bmp.width, bmp.height));
+  if (faktor === 1) { bmp.close(); return file; }     // schon klein genug
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * faktor);
+  c.height = Math.round(bmp.height * faktor);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  bmp.close();                       // das Original sofort freigeben
+  const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
+  c.width = c.height = 0;            // auch die Zeichenfläche
+  return blob ? new File([blob], "scan.jpg", { type: "image/jpeg" }) : file;
+}
+
 async function handlePhoto(file) {
   if (!file) return;
+  file = await verkleinern(file);
   lastScanFile = file;          // fürs Anlegen einer eigenen Figur aufheben
   updateScanCustomBtns();
   if (vorschauUrl) URL.revokeObjectURL(vorschauUrl);
