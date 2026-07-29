@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.66.2 – Juli 2026
+
+### Behoben
+- 🎨 **Die Themenkarten hatten in Galaxy und Nova einen dicken hellen Rahmen.**
+  Sie fehlten in der Liste der Flächen, die in den dunklen Designs anders
+  aussehen – und griffen deshalb auf die 2px-Kante des hellen Designs zurück,
+  die dort aus der Textfarbe gebildet wird und damit fast weiß ist. Jetzt
+  gleichen sie den Kacheln darüber
+- 📕 **Die zugeklappte Karte „Fehlerbericht" zeigte die Benachrichtigung
+  trotzdem.** Der Kasten trug `display:block` als Inline-Stil, und der schlägt
+  jede Regel aus dem Stylesheet – auch die fürs Zuklappen. Als Klasse verliert
+  er diesen Wettstreit und verschwindet mit
+
 ## 1.66.1 – Juli 2026
 
 ### Behoben

@@ -1085,6 +1085,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 
 /* Konturen weicher als im hellen Design (dort ist --ink die Kontur) */
 [data-theme="galaxy"] .card,
+[data-theme="galaxy"] .theme-group,
 [data-theme="galaxy"] .stat-chip,
 [data-theme="galaxy"] .settings-card,
 [data-theme="galaxy"] .login-box,
@@ -1361,6 +1362,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    große Flächen beschränkt; die vielen Sammlungskarten bekommen nur die
    durchscheinende Fläche (sonst ruckelt langes Scrollen). */
 [data-theme="nova"] .card,
+[data-theme="nova"] .theme-group,
 [data-theme="nova"] .stat-chip,
 [data-theme="nova"] .settings-card,
 [data-theme="nova"] .login-box,
@@ -1368,6 +1370,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: 0 8px 26px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+/* Die Kopfzeile einer Themenkarte hebt sich beim Überfahren ab – `--plate`
+   wäre hier die Seitenfarbe und damit unsichtbar. */
+[data-theme="nova"] .theme-head:hover,
+[data-theme="galaxy"] .theme-head:hover {
+  background: rgba(255, 255, 255, .05);
 }
 [data-theme="nova"] .stat-chip,
 [data-theme="nova"] .settings-card,
@@ -1519,3 +1527,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .settings-group-title::after {
   background: rgba(255, 255, 255, .13);
 }
+
+/* Der Kasten für die Benachrichtigung. Vorher stand hier `display:block` als
+   Inline-Stil – und der schlug die Regel fürs Zuklappen: Die Karte war zu,
+   der Inhalt trotzdem da. Eine Klasse verliert diesen Wettstreit. */
+.push-box { margin-top: 12px; }
