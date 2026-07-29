@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.68.1 – Juli 2026
+
+### Verbessert
+- 🏷 **Der Hub sagt jetzt, welcher Stand läuft.** Bisher hatte der Worker
+  keine Versionsnummer – nach einem Deploy war nirgends abzulesen, ob der
+  neue Code tatsächlich oben ist. Die Zahl in der Admin-Konsole ist deren
+  **eigene** und steht nur zufällig neben „Hub-Admin", was leicht zu
+  verwechseln ist. `/v1/health` und `/v1/me` nennen den Hub-Stand jetzt
+  ausdrücklich (`version` bzw. `hub_version`), beginnend bei **1.4.0**
+
 ## 1.68.0 – Juli 2026
 
 Zweiter Teil der Durchsicht: der Hub und der Weg dorthin. Ein struktureller

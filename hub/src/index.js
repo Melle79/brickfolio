@@ -16,6 +16,12 @@ const now = () => Math.floor(Date.now() / 1000);
 /* CORS: Die Admin-Konsole ist eine eigene Seite auf anderer Domain und ruft
    den Hub direkt aus dem Browser. Geschützt wird über den Bearer-Token, nicht
    über Cookies – deshalb ist „*" hier unbedenklich (kein Credential-Modus). */
+// Stand des Workers. Nach einem Deploy war bisher nirgends abzulesen, welcher
+// Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
+// eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
+// hochzählen, sonst ist die Anzeige schlimmer als keine.
+const HUB_VERSION = "1.4.0";
+
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
@@ -252,6 +258,9 @@ async function me(req, member, env) {
     member_id: member.id, display_name: member.display_name,
     is_admin: !!member.is_admin, created_at: member.created_at,
     instance_code: code, instance_secret: isInstance ? secret : null,
+    // Damit die Konsole den Stand des Hubs zeigen kann, ohne dafür einen
+    // zweiten Abruf zu brauchen.
+    hub_version: HUB_VERSION,
   });
 }
 
@@ -899,7 +908,10 @@ export default {
 
     try {
       if (method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-      if (p === "/" || p === "/v1/health") return json({ ok: true, service: "brickfolio-hub" });
+      if (p === "/" || p === "/v1/health") {
+        return json({ ok: true, service: "brickfolio-hub",
+                      version: HUB_VERSION });
+      }
       if (p === "/v1/register" && method === "POST") return await register(req, env);
 
       // ab hier: Auth nötig
