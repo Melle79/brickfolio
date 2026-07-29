@@ -269,3 +269,20 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
         "Neue Einstellung(en) ohne Einordnung: " + ", ".join(sorted(unbekannt))
         + " – entweder in GEHEIME_SETTINGS aufnehmen oder hier als offen "
           "eintragen.")
+
+
+def test_jede_erzeugte_objektadresse_wird_wieder_freigegeben():
+    """`createObjectURL` hält die Datei bis zum Neuladen der Seite im
+    Speicher. Bei der Scan-Vorschau fehlte die Freigabe: Wer nacheinander
+    Bildschirmfotos hineinzog, sammelte sie alle an – jedes 2560×1440-Bild
+    entpackt rund 14 MB. Irgendwann beendet der Browser den Tab.
+
+    Geprüft wird die Zahl, nicht die Stelle: Jede erzeugte Adresse braucht
+    ihr Gegenstück, sonst ist der nächste Speicherfresser schon gebaut."""
+    import re
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "frontend" / "app.js").read_text()
+    erzeugt = len(re.findall(r"URL\.createObjectURL\(", js))
+    freigegeben = len(re.findall(r"URL\.revokeObjectURL\(", js))
+    assert freigegeben >= erzeugt, (
+        f"{erzeugt}× createObjectURL, aber nur {freigegeben}× revokeObjectURL")

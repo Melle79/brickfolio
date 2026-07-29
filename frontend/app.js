@@ -1917,11 +1917,23 @@ function logout() {
 }
 
 /* ---------------------------------------------------------------- Scannen */
+
+/* Adresse der aktuellen Vorschau. Sie muss gemerkt werden, um sie wieder
+   freigeben zu können: Eine mit `createObjectURL` erzeugte Adresse hält die
+   Datei **bis zum Neuladen der Seite** im Speicher, auch wenn längst ein
+   anderes Bild angezeigt wird. Wer nacheinander mehrere Bildschirmfotos
+   hineinzieht, sammelt sie also alle an – ein 2560×1440-Bild belegt entpackt
+   rund 14 MB. Nach ein paar Dutzend ist der Tab am Ende, und der Browser
+   beendet ihn („Auf dieser Seite gibt es ein Problem"). */
+let vorschauUrl = null;
+
 async function handlePhoto(file) {
   if (!file) return;
   lastScanFile = file;          // fürs Anlegen einer eigenen Figur aufheben
   updateScanCustomBtns();
-  const url = URL.createObjectURL(file);
+  if (vorschauUrl) URL.revokeObjectURL(vorschauUrl);
+  vorschauUrl = URL.createObjectURL(file);
+  const url = vorschauUrl;
   $("preview-img").src = url;
   $("scan-preview").hidden = false;
   $("scan-status").hidden = false;

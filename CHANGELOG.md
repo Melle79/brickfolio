@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.68.4 – Juli 2026
+
+### Behoben
+- 🧠 **Jedes hineingezogene Bild blieb für immer im Speicher.** Die
+  Scan-Vorschau erzeugt für das gewählte Foto eine Objekt-Adresse – und die
+  hält die Datei bis zum Neuladen der Seite fest, auch wenn längst ein
+  anderes Bild angezeigt wird. Drei andere Stellen in der App geben ihre
+  Adressen ordentlich frei, ausgerechnet diese nicht. Wer nacheinander
+  Bildschirmfotos in die Erkennung zieht, sammelte sie also alle an: ein
+  2560×1440-Foto belegt entpackt rund **14 MB**. Nach ein paar Dutzend
+  beendet der Browser den Tab – bei Edge mit „Auf dieser Seite gibt es ein
+  Problem". Jetzt wird die vorherige Vorschau freigegeben, sobald die
+  nächste kommt
+- 🧪 Ein Test zählt `createObjectURL` gegen `revokeObjectURL` in `app.js` –
+  wer künftig eine Adresse erzeugt, ohne sie freizugeben, fällt auf
+
 ## 1.68.3 – Juli 2026
 
 ### Behoben
