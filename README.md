@@ -128,9 +128,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 📲 Als PWA installierbar – auf dem Handy bietet die Scan-Seite das Ablegen
   **auf dem Startbildschirm** an (auf Android per Knopf, auf dem iPhone mit
   Anleitung) und blendet den Hinweis aus, sobald es liegt. Offline-Shell,
-  keine Cloud – eure Sammlung liegt vollständig auf eurem Server. Die
-  Katalogbilder holt der Browser direkt bei BrickLink, Rebrickable und
-  Brickognize; dorthin geht die Bildadresse, sonst nichts
+  keine Cloud – alles liegt auf eurem Server, **auch die Katalogbilder**:
+  Die holt die Instanz einmal und liefert sie danach selbst, der Browser
+  fragt also nie bei BrickLink, Rebrickable oder Brickognize an
 
 ## Screenshots
 

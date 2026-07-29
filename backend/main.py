@@ -1,5 +1,6 @@
 """Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
 import base64
+import hashlib
 import json
 import os
 import re
@@ -2273,6 +2274,167 @@ def _uploads_dir() -> str:
     return d
 
 
+# --------------------------------------------- Katalogbilder auf der Instanz
+#
+# Gespeichert war bisher nur die *Adresse* eines Katalogbildes; geholt hat es
+# der Browser bei BrickLink, Rebrickable oder Brickognize. Dorthin ging zwar
+# nichts aus der Sammlung, aber eben doch bei jedem Blättern ein Abruf – und
+# die Adresse nennt die Teilenummer. Wer die Instanz betreibt, damit die Daten
+# zu Hause bleiben, erwartet das nicht.
+#
+# Deshalb holt der Server das Bild einmal, verkleinert es und legt es neben
+# der Datenbank ab. Danach fragt der Browser nur noch die eigene Instanz.
+# Bewusst eng gehalten: nur Artikel, die wirklich in der Sammlung stehen,
+# nur verkleinert, kein Abzug des Katalogs.
+
+BILD_KANTE = 400              # Pixel je Seite – reicht für Karte und Popup
+
+
+def _katalog_dir() -> str:
+    d = os.path.join(os.path.dirname(core.DB_PATH), "catalog")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _katalog_name(url: str) -> str:
+    """Dateiname für eine Bildadresse.
+
+    Über `_img_key` fallen die verschiedenen BrickLink-Endpunkte derselben
+    Figur zusammen – ein Motiv, eine Datei. Der Schlüssel der Instanz geht in
+    den Hash ein: Sonst könnte jemand, der die App im Netz erreicht, aus einer
+    Teilenummer den Dateinamen ausrechnen und so erfahren, was hier steht.
+    """
+    roh = (_img_key(url) + "|" + core.SECRET_KEY).encode()
+    return hashlib.sha256(roh).hexdigest() + ".jpg"
+
+
+def _katalog_bild(url: str, holen: bool = True) -> str | None:
+    """Lokaler Pfad zum Bild – bei Bedarf wird es einmal geholt.
+
+    Gibt None zurück, wenn die Adresse nicht erlaubt ist oder der Abruf nicht
+    klappt. Fehlschläge werden **nicht** gemerkt: Ein Aussetzer beim CDN soll
+    ein Bild nicht dauerhaft verschwinden lassen.
+    """
+    if not url or not url.startswith(("http://", "https://", "//")):
+        return None
+    if url.startswith("//"):
+        url = "https:" + url
+    pfad = os.path.join(_katalog_dir(), _katalog_name(url))
+    if os.path.isfile(pfad):
+        return pfad
+    if not holen:
+        return None
+    try:
+        roh = integrations.fetch_catalog_image(url, integrations.BILD_HOSTS)
+        klein = integrations.prepare_image(roh, max_side=BILD_KANTE)
+    except Exception:
+        return None
+    # Erst vollständig schreiben, dann umbenennen: Ein abgebrochener Abruf
+    # hinterlässt sonst eine halbe Datei, die für immer als „fertig" gilt.
+    temp = pfad + f".{os.getpid()}.part"
+    try:
+        with open(temp, "wb") as f:
+            f.write(klein)
+        os.replace(temp, pfad)
+    except OSError:
+        return None
+    return pfad
+
+
+def _bild_holen_async(url: str) -> None:
+    """Bild für einen neuen Eintrag im Hintergrund holen.
+
+    Es ginge auch ohne: `/catalog` holt beim ersten Anzeigen nach. Aber genau
+    dieses erste Anzeigen wäre dann langsam – und beim Scannen kommt es
+    unmittelbar. Also gleich beim Erfassen, ohne die Antwort aufzuhalten.
+    """
+    if not url or not url.startswith(("http://", "https://", "//")):
+        return
+
+    def run():
+        try:
+            _katalog_bild(url)
+        except Exception:
+            pass          # Bild ist nice-to-have, der Eintrag zählt
+
+    threading.Thread(target=run, daemon=True).start()
+
+
+@app.get("/catalog")
+def serve_katalogbild(u: str):
+    """Katalogbild ausliefern – aus dem eigenen Speicher.
+
+    Die Oberfläche schickt jedes fremde Bild hierüber. Liegt es schon da, geht
+    es sofort raus; sonst holt der Server es einmal, verkleinert es und behält
+    es. Danach fragt der Browser nie wieder nach draußen.
+
+    Bewusst ohne Login: Ein `<img>` trägt keinen Token, und wer die App im Netz
+    erreicht, ist ohnehin angemeldet. Geholt werden kann nur von den vier
+    festen Katalog-Hosts – als Weg nach außen taugt das nicht.
+    """
+    pfad = _katalog_bild(u)
+    if not pfad:
+        # Kein Bild – die Oberfläche setzt daraufhin ihren Platzhalter. Kein
+        # Verweis auf die Originaladresse: Das wäre genau der Abruf nach
+        # außen, den dieser Endpunkt vermeiden soll.
+        raise HTTPException(404, "Bild nicht verfügbar")
+    return FileResponse(pfad, media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=31536000"})
+
+
+# Was noch kein Bild auf der Instanz hat. Gezählt wird über alle drei
+# Bestände – Sammlung, Wunschliste und Einkaufslisten –, damit der Knopf in
+# den Einstellungen dieselbe Zahl nennt, die er danach abarbeitet.
+_BILD_QUELLEN = ("collection", "wanted", "shopping_items")
+
+
+def _bild_urls(conn, nur_offene: bool = True, limit: int | None = None) -> list:
+    urls, gesehen = [], set()
+    for tabelle in _BILD_QUELLEN:
+        for r in conn.execute(
+                f"SELECT img_url FROM {tabelle} WHERE img_url IS NOT NULL "
+                "AND img_url != ''"):
+            u = r["img_url"]
+            if not u.startswith(("http://", "https://", "//")):
+                continue        # eigene Uploads liegen längst hier
+            if u in gesehen:
+                continue
+            gesehen.add(u)
+            if nur_offene and _katalog_bild(u, holen=False):
+                continue
+            urls.append(u)
+            if limit and len(urls) >= limit:
+                return urls
+    return urls
+
+
+@app.get("/api/images/status")
+def bilder_status(user: dict = Depends(current_user)):
+    """Wie viele Bilder liegen noch nicht auf der Instanz?"""
+    with core.db() as conn:
+        offen = len(_bild_urls(conn))
+        gesamt = len(_bild_urls(conn, nur_offene=False))
+    return {"pending": offen, "total": gesamt}
+
+
+@app.post("/api/images/fetch")
+def bilder_holen(limit: int = 25, user: dict = Depends(admin_user)):
+    """Fehlende Katalogbilder holen – in Häppchen, wie beim Umrechnen.
+
+    Jedes Bild ist ein Abruf beim CDN; bei einer großen Sammlung wäre alles
+    auf einmal unhöflich und würde die Antwort ewig blockieren. Die Antwort
+    sagt, wie viele noch offen sind, und die Oberfläche ruft nach.
+    """
+    limit = max(1, min(limit, 100))
+    with core.db() as conn:
+        urls = _bild_urls(conn, limit=limit)
+    geholt = sum(1 for u in urls if _katalog_bild(u))
+    with core.db() as conn:
+        offen = len(_bild_urls(conn))
+    return {"ok": True, "fetched": geholt, "tried": len(urls),
+            "remaining": offen}
+
+
 @app.get("/api/themes/status")
 def themes_status(user: dict = Depends(current_user)):
     """Wie viele Einträge haben noch kein Thema?"""
@@ -2620,6 +2782,7 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
         )
         new_id = cur.lastrowid
     _maybe_fetch_prices_async(new_id, body.item_id)
+    _bild_holen_async(body.img_url)
     if body.item_type == "set":
         _maybe_fetch_set_contents_async(body.item_id)
     return {"ok": True, "merged": False, "quantity": body.quantity}

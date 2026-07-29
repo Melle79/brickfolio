@@ -126,12 +126,20 @@ def search_catalog(query: str, item_type: str = "minifig",
 
 RESOLVE_HOSTS = {"cdn.rebrickable.com", "img.bricklink.com"}
 
+# Woher Katalogbilder überhaupt kommen dürfen. Bewusst eine feste Liste und
+# nicht „alles, was nach Bild aussieht": Der Abruf läuft auf dem Server, ein
+# offener Weg dorthin wäre ein Werkzeug, um von innen beliebige Adressen
+# anzufragen. `storage.googleapis.com` steht drin, weil Brickognize seine
+# Vorschaubilder dort ablegt – ohne den Host hätte alles Gescannte kein Bild.
+BILD_HOSTS = RESOLVE_HOSTS | {"storage.googleapis.com", "m.rebrickable.com"}
 
-def fetch_catalog_image(url: str) -> bytes:
-    """Katalogbild von erlaubten CDNs laden (für die Nummern-Auflösung)."""
+
+def fetch_catalog_image(url: str, hosts: set | None = None) -> bytes:
+    """Katalogbild von erlaubten CDNs laden."""
     from urllib.parse import urlparse
     p = urlparse(url)
-    if p.scheme not in ("http", "https") or p.hostname not in RESOLVE_HOSTS:
+    erlaubt = RESOLVE_HOSTS if hosts is None else hosts
+    if p.scheme not in ("http", "https") or p.hostname not in erlaubt:
         raise ValueError("Bild-URL nicht erlaubt")
     resp = requests.get(url, timeout=20, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()

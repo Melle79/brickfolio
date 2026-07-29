@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.61.0 – Juli 2026
+
+### Neu
+- 🖼 **Katalogbilder liegen jetzt auf der Instanz.** Bisher stand in der
+  Datenbank nur die *Adresse* eines Bildes – geholt hat es der Browser direkt
+  bei BrickLink, Rebrickable oder Brickognize. Aus der Sammlung ging dabei
+  nichts nach außen, aber die Bildadresse nennt die Teilenummer, und bei jedem
+  Blättern lief so ein Abruf. Jetzt holt der Server das Bild **einmal**,
+  verkleinert es auf 400 Pixel und legt es unter `data/catalog/` ab. Danach
+  fragt der Browser nur noch die eigene Instanz
+- 🔄 **Neue Artikel bringen ihr Bild von selbst mit**; den Bestand aus der Zeit
+  davor holt **Mehr → 🖼 Bilder auf der Instanz** in Häppchen nach und zeigt
+  dabei, wie viele noch fehlen
+
+### Sicherheit
+- Der Abruf kann **ausschließlich** zu den vier Katalog-Hosts gehen. Er läuft
+  auf dem Server, ein offener Weg dorthin wäre ein Werkzeug, um von innen
+  beliebige Adressen anzufragen – fünf Tests prüfen genau das, von
+  `127.0.0.1` bis zur Metadaten-Adresse einer Cloud
+- Der Dateiname entsteht aus der Bildadresse **und dem Schlüssel der
+  Instanz**. Ohne ihn lässt sich aus einer Teilenummer nicht ausrechnen, ob
+  dieses Bild hier liegt – sonst verriete der Speicher, was die Sammlung
+  enthält
+- Ein Fehlschlag beim CDN wird **nicht** gemerkt: Ein Aussetzer darf ein Bild
+  nicht dauerhaft verschwinden lassen
+
+### Gut zu wissen
+- Grob 10–25 KB je Artikel, 1000 Artikel also 15–25 MB. In der
+  JSON-Sicherung stecken die Bilder **nicht** – die bleibt klein, und
+  verlorene Bilder holt der Knopf jederzeit neu
+- 16 neue Tests in `tests/test_catalog_images.py` (323 gesamt)
+
 ## 1.60.2 – Juli 2026
 
 ### Behoben

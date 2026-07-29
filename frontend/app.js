@@ -273,7 +273,21 @@ const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
      <rect x="40" y="16" width="12" height="10" rx="3" fill="#FFCF00" stroke="#1D1D1B" stroke-width="3"/>
    </svg>`);
 
-function imgSrc(url) { return url ? esc(url) : IMG_PLACEHOLDER; }
+/* Woher ein Bild kommt.
+
+   Fremde Adressen laufen über die eigene Instanz: Die holt das Bild einmal,
+   legt es ab und liefert es fortan selbst. Der Browser fragt damit nie bei
+   BrickLink, Rebrickable oder Brickognize an – die erfahren also nicht, wer
+   hier gerade welche Figur ansieht. Eigene Uploads und Daten-URLs bleiben,
+   wie sie sind. Klappt der Abruf nicht, antwortet die Instanz mit 404, und
+   der Platzhalter springt ein. */
+function imgSrc(url) {
+  if (!url) return IMG_PLACEHOLDER;
+  if (/^(https?:)?\/\//.test(url)) {
+    return esc("/catalog?u=" + encodeURIComponent(url));
+  }
+  return esc(url);
+}
 
 /* Drehender Klemmbaustein als Lade-Anzeige. */
 function brickSpinner(label, size = 46) {
@@ -5938,6 +5952,53 @@ async function savePriceRegion(region, waehrung) {
   }
 }
 
+/* ------------------------------------------------- Bilder auf der Instanz */
+
+async function loadImagesStatus() {
+  const status = $("images-status");
+  const btn = $("btn-images-fetch");
+  if (!status) return;
+  try {
+    const s = await api("/images/status");
+    const da = s.total - s.pending;
+    status.textContent = s.pending > 0
+      ? tr("{n} von {max} Bildern liegen hier – {rest} fehlen noch.",
+        { n: da, max: s.total, rest: s.pending })
+      : (s.total > 0
+        ? tr("Alle {n} Bilder liegen auf der Instanz ✔", { n: s.total })
+        : tr("Noch keine Artikel mit Bild."));
+    btn.hidden = s.pending === 0;
+  } catch (_) { status.textContent = ""; btn.hidden = true; }
+}
+
+/* Holt in Häppchen und zeigt den Fortschritt – jedes Bild ist ein Abruf beim
+   CDN, alles auf einmal wäre bei einer großen Sammlung unhöflich. */
+async function fetchImages() {
+  const btn = $("btn-images-fetch");
+  btn.disabled = true;
+  let total = 0;
+  try {
+    for (let runde = 0; runde < 200; runde += 1) {
+      const res = await api("/images/fetch?limit=25", { method: "POST" });
+      total += res.fetched;
+      btn.textContent = tr("🖼 {n} geholt, {rest} offen …",
+        { n: total, rest: res.remaining });
+      // Nichts mehr offen – oder eine ganze Runde ohne einen einzigen
+      // Treffer: Dann helfen weitere Versuche auch nicht.
+      if (!res.remaining || !res.fetched) break;
+    }
+    toast(total ? tr("{n} Bilder geholt ✔", { n: total })
+      : tr("Nichts zu tun"));
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = tr("🖼 Bilder jetzt holen");
+    loadImagesStatus();
+    if (!$("view-collection").hidden) loadCollection();
+  }
+}
+
 /* Rechnet in Häppchen um und zeigt den Fortschritt. */
 async function recalcPrices() {
   const btn = $("btn-price-recalc");
@@ -6307,6 +6368,8 @@ async function loadSettings() {
   if (isAdmin) loadErrors();
   $("price-region-card").hidden = !isAdmin;
   if (isAdmin) loadPriceRegion();
+  $("images-card").hidden = !isAdmin;
+  if (isAdmin) loadImagesStatus();
   $("external-access-card").hidden = !isAdmin;
   loadSortCard();               // Sortierung darf jeder für sich einstellen
   $("hub-card").hidden = !isAdmin;
@@ -6489,6 +6552,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("price-currency").addEventListener("change", (ev) =>
     savePriceRegion($("price-region").value, ev.currentTarget.value));
   $("btn-price-recalc").addEventListener("click", recalcPrices);
+  $("btn-images-fetch").addEventListener("click", fetchImages);
   $("btn-price-fill").addEventListener("click", fillMissingPrices);
 
   $("btn-errors-copy").addEventListener("click", async () => {

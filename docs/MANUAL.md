@@ -50,17 +50,28 @@ search by name (Rebrickable) and for prices and set contents (BrickLink). The
 latter two need your own free access – see 2.4. Without them everything else
 keeps working.
 
-**One point that is easily missed: the images.** For each item Brickfolio
-stores only the *address* of its catalogue picture, not the picture itself. So
-when displaying it, **your browser** fetches it directly from
-`img.bricklink.com`, `cdn.rebrickable.com` or – for anything scanned –
-`storage.googleapis.com`, where Brickognize keeps its thumbnails. What goes
-there is the image address (it names the part number), your IP address and
-your browser's identifier. **Nothing from your collection**: not what you own,
-not what you paid, no name, no account. A referrer is deliberately not sent,
-so the other side does not learn your address. If you do not want even that,
-run the instance without internet access – the image areas then stay empty and
-everything else keeps working.
+**One point that is easily missed: the images.** The database holds only the
+*address* of each item's catalogue picture. It used to be fetched by **your
+browser** directly from `img.bricklink.com`, `cdn.rebrickable.com` or – for
+anything scanned – `storage.googleapis.com`, where Brickognize keeps its
+thumbnails. Nothing from your collection went out, but the image address names
+the part number, and every time you browsed, such a request went off.
+
+**Since 1.61.0 the pictures live on your instance.** When an item is added the
+server fetches its picture once, scales it down to 400 pixels and stores it
+next to the database (`data/catalog/`). After that the browser only ever asks
+**your own instance** – nothing goes outside any more. Older items are caught
+up by **More → 🖼 Images on your instance**; the card says how many are
+missing and works through them in portions.
+
+The fetch can only ever reach the four catalogue hosts – it is no route to the
+outside, and dedicated tests watch over that. The file name is derived from the
+image address **and your instance's key**; without it nobody can work out from
+a part number whether that picture is stored here.
+
+Roughly 10–25 KB per item, so 1000 items are about 15–25 MB on disk. They are
+**not** part of the JSON backup – that stays small, and the button fetches lost
+pictures again at any time.
 
 If you like, you can additionally connect your instance to the **trading
 network** (chapter 12) – then several households can reach each other. Even
@@ -235,6 +246,7 @@ heading; the app remembers the state) – visible depending on your role:
 | 👥 Manage users | Admin |
 | 💾 Backup | Admin |
 | 🌍 Price region & currency | Admin |
+| 🖼 Images on your instance | Admin |
 | 🔄 Version & updates | Admin |
 | ℹ️ Sources & legal | everyone |
 

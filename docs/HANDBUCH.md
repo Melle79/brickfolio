@@ -51,17 +51,29 @@ bei der Namenssuche (Rebrickable) und für Preise und Set-Inhalte
 (BrickLink). Für die beiden letzten braucht ihr eigene kostenlose Zugänge –
 siehe 2.4. Ohne sie läuft alles andere weiter.
 
-**Ein Punkt, der oft übersehen wird: die Bilder.** Brickfolio speichert zu
-jedem Artikel nur die *Adresse* seines Katalogbildes, nicht das Bild selbst.
-Beim Anzeigen holt es also **euer Browser** direkt bei `img.bricklink.com`,
+**Ein Punkt, der leicht übersehen wird: die Bilder.** In der Datenbank steht
+zu jedem Artikel nur die *Adresse* seines Katalogbildes. Geholt wurde es
+früher von **eurem Browser** direkt bei `img.bricklink.com`,
 `cdn.rebrickable.com` oder – für alles Gescannte – bei
-`storage.googleapis.com`, wo Brickognize seine Vorschaubilder ablegt. Dorthin
-geht die Bildadresse (sie nennt die Teilenummer), eure IP-Adresse und die
-Kennung des Browsers. **Nichts aus eurer Sammlung**: nicht, was ihr besitzt,
-nicht, was ihr bezahlt habt, kein Name, kein Konto. Ein Referrer wird
-ausdrücklich nicht mitgeschickt, die Gegenseite erfährt eure Adresse also
-nicht. Wer auch das nicht möchte, betreibt die Instanz ohne Internetzugang –
-dann bleiben die Bildflächen leer, alles andere funktioniert.
+`storage.googleapis.com`, wo Brickognize seine Vorschaubilder ablegt. Aus der
+Sammlung ging dabei nichts nach außen, aber die Bildadresse nennt die
+Teilenummer, und bei jedem Blättern lief so ein Abruf.
+
+**Seit 1.61.0 liegen die Bilder auf der Instanz.** Beim Erfassen holt der
+Server das Bild einmal, verkleinert es auf 400 Pixel Kantenlänge und legt es
+neben der Datenbank ab (`data/catalog/`). Danach fragt der Browser **nur noch
+die eigene Instanz** – nach außen geht gar nichts mehr. Den Bestand aus der
+Zeit davor holt **Mehr → 🖼 Bilder auf der Instanz** nach; die Karte sagt, wie
+viele noch fehlen, und arbeitet sie in Häppchen ab.
+
+Der Abruf kann ausschließlich zu den vier Katalog-Hosts gehen – als Weg nach
+außen taugt er nicht, das prüfen eigene Tests. Der Dateiname wird aus der
+Bildadresse **und dem Schlüssel eurer Instanz** gebildet; ohne den lässt sich
+aus einer Teilenummer nicht ausrechnen, ob dieses Bild hier liegt.
+
+Grob 10–25 KB je Artikel: 1000 Artikel sind also rund 15–25 MB auf der
+Platte. In der JSON-Sicherung stecken sie **nicht** – die bleibt klein, und
+verlorene Bilder holt der Knopf jederzeit neu.
 
 Wer mag, verbindet seine Instanz zusätzlich mit dem **Tausch-Netzwerk**
 (Kapitel 12) – dann sind auch mehrere Haushalte untereinander erreichbar.
@@ -239,6 +251,7 @@ nach Rolle sichtbar:
 | 👥 Benutzer verwalten | Admin |
 | 💾 Sicherung | Admin |
 | 🌍 Preisgebiet & Währung | Admin |
+| 🖼 Bilder auf der Instanz | Admin |
 | 🔄 Version & Updates | Admin |
 | ℹ️ Quellen & Rechtliches | alle |
 
