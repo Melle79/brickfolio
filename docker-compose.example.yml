@@ -8,6 +8,9 @@ services:
     # es bedeutet auch Vertrauen in die Registry. Wer das nicht will, trägt
     # eine feste Version ein, z. B.:
     #   image: ghcr.io/melle79/brickfolio:1.67.0
+    # Achtung: Das legt nur den *Namen* fest. Gegen eine übernommene Registry
+    # hilft erst ein Digest, denn der beschreibt den Inhalt selbst:
+    #   image: ghcr.io/melle79/brickfolio@sha256:7efb9eb03038cb89f…
     # Dann läuft nur, was du selbst ausgewählt hast. Der Preis: Der
     # Update-Knopf in der App bewirkt nichts mehr – `docker compose pull`
     # holt bei einer festen Version denselben Stand. Aktualisieren heißt

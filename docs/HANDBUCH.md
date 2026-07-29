@@ -393,7 +393,14 @@ freigibt, sollte wissen, was dann greift und was nicht.
   möchte, trägt eine **feste Version** ein
   (`image: ghcr.io/melle79/brickfolio:1.67.0`). Dann läuft nur, was ihr selbst
   ausgewählt habt.
-  > **Der Preis dafür:** Der Update-Knopf in der App bewirkt nichts mehr.
+  > **Aber:** Eine feste Versionsnummer legt nur den *Namen* fest. Wer die
+  > Registry kontrolliert, könnte unter `1.67.0` genauso etwas anderes
+  > ausliefern wie unter `latest`. Wirklich schützt nur ein **Digest**
+  > (`image: ghcr.io/melle79/brickfolio@sha256:…`) – der beschreibt den Inhalt
+  > selbst und lässt sich nicht umhängen. Den Digest zeigt die
+  > Release-Seite bzw. `docker image inspect`.
+  >
+  > **Der Preis in beiden Fällen:** Der Update-Knopf in der App bewirkt nichts mehr.
   > `docker compose pull` holt bei einer festen Version denselben Stand, der
   > Container startet neu und zeigt dieselbe Version. Aktualisieren heißt dann:
   > Zeile in der `docker-compose.yml` ändern und `docker compose up -d`. Die

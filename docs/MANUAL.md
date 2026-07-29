@@ -371,7 +371,14 @@ router, you should know what protects you and what does not.
   the newest state from there – even if that account ever fell into the wrong
   hands. If you would rather not, pin a **fixed version**
   (`image: ghcr.io/melle79/brickfolio:1.67.0`). Then only what you picked runs.
-  > **The price:** the update button in the app no longer does anything.
+  > **But:** a fixed version number only fixes the *name*. Whoever controls
+  > the registry could serve something else under `1.67.0` just as under
+  > `latest`. Real protection comes only from a **digest**
+  > (`image: ghcr.io/melle79/brickfolio@sha256:…`) – it describes the content
+  > itself and cannot be re-pointed. The release page or `docker image
+  > inspect` shows the digest.
+  >
+  > **The price either way:** the update button in the app no longer does anything.
   > With a fixed version `docker compose pull` fetches the same state, the
   > container restarts and shows the same version. Updating then means editing
   > the line in `docker-compose.yml` and running `docker compose up -d`. The
