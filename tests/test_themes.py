@@ -281,3 +281,62 @@ def test_figuren_rueckfall_gilt_nicht_fuer_teile(tmp_path, monkeypatch):
     monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
     monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, i: None)
     assert main._theme_from_bricklink("3001", "part") is None
+
+
+def test_nachziehen_holt_das_set_wirklich_aus_ohne_thema(client, monkeypatch):
+    """Der ganze Weg, wie ihn der Knopf geht – nicht nur die Hilfsfunktion.
+
+    Genau dieser Fall stand in der App: ein Star-Wars-Set unter „Ohne Thema",
+    weil BrickLink zu seiner Kategorie nichts sagt.
+    """
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, theme, added_at) VALUES ('75018-1', 'set', "
+            "'Jek-14''s Stealth Starfighter', 1, 'used', NULL, ?)", (now,))
+        for fig in ("sw0473", "sw0474", "sw0475", "col123"):
+            conn.execute("INSERT INTO set_contents (set_no, fig_no, qty) "
+                         "VALUES ('75018-1', ?, 1)", (fig,))
+
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    # BrickLink kennt die Kategorie-ID, die Kategorieliste sie aber nicht
+    monkeypatch.setattr(integrations, "bricklink_category_id",
+                        lambda t, i: "1234")
+    monkeypatch.setattr(main, "_bl_category_map", lambda: {"65": ("Star Wars", "")})
+
+    assert client.get("/api/themes/status").json()["pending"] == 1
+    res = client.post("/api/themes/refresh?limit=25").json()
+    assert res["updated"] == 1 and res["remaining"] == 0
+    with core.db() as conn:
+        row = conn.execute("SELECT theme FROM collection WHERE item_id = "
+                           "'75018-1'").fetchone()
+    assert row["theme"] == "Star Wars"
+
+
+def test_nicht_aufloesbares_set_wird_benannt(client, monkeypatch):
+    """Bleibt wirklich nichts übrig, muss wenigstens die Nummer dastehen –
+    sonst sucht man ewig, welcher Eintrag gemeint ist."""
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, theme, added_at) VALUES ('9999-1', 'set', 'Rätsel', "
+            "1, 'used', NULL, ?)", (now,))
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, i: None)
+    res = client.post("/api/themes/refresh?limit=25").json()
+    assert res["remaining"] == 1 and res["unresolved"] == ["9999-1"]
+
+
+def test_figuren_rueckfall_braucht_keine_bricklink_schluessel(tmp_path, monkeypatch):
+    """Die Set-Inhalte liegen längst in der eigenen Datenbank. Ohne Schlüssel
+    blieb das Set trotzdem ohne Thema – die Antwort war die ganze Zeit da."""
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "t.db"))
+    core.init_db()
+    with core.db() as conn:
+        for fig in ("sw0473", "sw0474"):
+            conn.execute("INSERT INTO set_contents (set_no, fig_no, qty) "
+                         "VALUES ('75018-1', ?, 1)", (fig,))
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: False)
+    assert main._theme_nachschlagen("75018-1", "set") == "Star Wars"

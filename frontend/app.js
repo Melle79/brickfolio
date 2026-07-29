@@ -2248,9 +2248,22 @@ function renderThemeGroups(list, items) {
             ? esc(tr(" · {n} Stück", { n: g.pieces })) : ""}${
           g.value > 0 ? ` · ${fmtEur(g.value)}` : ""}</span>
       </button>
-      <div class="theme-body">${g.items.map(collCardHtml).join("")}</div>
+      <div class="theme-body">${g.name === THEME_NONE
+        ? `<p class="search-hint">${esc(tr("Für diese Einträge ist noch kein "
+          + "Thema bestimmt."))} <button class="mini-btn" data-theme-fix>`
+          + `${esc(tr("🔄 Themen nachladen"))}</button></p>` : ""}${
+        g.items.map(collCardHtml).join("")}</div>
     </section>`;
   }).join("");
+
+  // Der Knopf steckte bisher nur unter „Mehr → Sortierung" – also weit weg
+  // von der Stelle, an der die Lücke auffällt.
+  list.querySelectorAll("[data-theme-fix]").forEach((b) => {
+    b.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      refreshThemes();
+    });
+  });
 
   list.querySelectorAll(".theme-head").forEach((head) => {
     head.addEventListener("click", () => {
@@ -4938,26 +4951,40 @@ async function loadThemeStatus() {
 async function refreshThemes() {
   const btn = $("btn-themes-refresh");
   const out = $("theme-refresh-status");
-  btn.disabled = true;
-  out.hidden = false;
-  out.textContent = tr("Themen werden bestimmt …");
+  // Der Knopf steht auch in der Sammlung – dort gibt es diese Zeile nicht.
+  // Deshalb geht die Rückmeldung zusätzlich als Meldung raus.
+  const sagen = (text) => {
+    if (out) { out.hidden = false; out.textContent = text; }
+  };
+  if (btn) btn.disabled = true;
+  sagen(tr("Themen werden bestimmt …"));
   try {
     let total = 0;
+    let offen = [];
     for (;;) {
       const res = await api("/themes/refresh?limit=25", { method: "POST" });
       total += res.updated;
-      out.textContent = tr("{n} zugeordnet, noch {rest} offen …",
-        { n: total, rest: res.remaining });
+      offen = res.unresolved || [];
+      sagen(tr("{n} zugeordnet, noch {rest} offen …",
+        { n: total, rest: res.remaining }));
       if (res.remaining === 0 || res.updated === 0) break;
     }
-    out.textContent = total
+    // Wenn etwas übrig bleibt: die Nummern nennen. „Lässt sich nicht
+    // bestimmen" allein lässt einen raten, welcher Eintrag gemeint ist.
+    const fertig = total
       ? tr("{n} Einträge haben jetzt ein Thema ✔", { n: total })
-      : tr("Für die übrigen Einträge lässt sich kein Thema bestimmen.");
+      : (offen.length
+        ? tr("Kein Thema bestimmbar für: {nummern}",
+          { nummern: offen.slice(0, 5).join(", ") })
+        : tr("Für die übrigen Einträge lässt sich kein Thema bestimmen."));
+    sagen(fertig);
+    toast(fertig);
     loadThemeStatus();
     loadCollection();
   } catch (e) {
-    out.textContent = e.message;
-  } finally { btn.disabled = false; }
+    sagen(e.message);
+    toast(e.message);
+  } finally { if (btn) btn.disabled = false; }
 }
 
 /* ---------------------------------------- Tausch-Hub: Verbindung (Einstellungen)

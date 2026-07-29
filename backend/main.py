@@ -2069,20 +2069,30 @@ def _theme_aus_figuren(set_no: str) -> str | None:
     return max(zaehler.items(), key=lambda kv: kv[1])[0]
 
 
-def _theme_from_bricklink(item_id: str, item_type: str) -> str | None:
-    """Thema für Sets/Teile über die BrickLink-Kategorie."""
-    if not integrations.bricklink_enabled():
-        return None
+def _theme_nachschlagen(item_id: str, item_type: str) -> str | None:
+    """Thema für Sets und Teile – erst BrickLink, dann die eigenen Daten.
+
+    Der Rückfall über die Figuren steht **außerhalb** der BrickLink-Prüfung:
+    Er braucht keinen Abruf, die Set-Inhalte liegen längst hier. Stand er
+    innerhalb, blieb ein Set ohne Thema, sobald die Schlüssel fehlten oder
+    abgelaufen waren – obwohl die Antwort in der eigenen Datenbank stand.
+    """
     if item_id.startswith(("fig-", "manuell-", "custom-")):
         return None
-    try:
-        cid = integrations.bricklink_category_id(item_type, item_id)
-    except Exception:
-        cid = None
-    thema = _top_category(cid) if cid else None
+    thema = None
+    if integrations.bricklink_enabled():
+        try:
+            cid = integrations.bricklink_category_id(item_type, item_id)
+        except Exception:
+            cid = None
+        thema = _top_category(cid) if cid else None
     if not thema and (item_type or "").lower() == "set":
         thema = _theme_aus_figuren(item_id)
     return thema
+
+
+# Alter Name, damit Bestandsaufrufe (und Tests) weiter funktionieren.
+_theme_from_bricklink = _theme_nachschlagen
 _color_cache = {"at": 0, "map": {}}
 
 
@@ -2494,7 +2504,7 @@ def refresh_themes(limit: int = 25, user: dict = Depends(current_user)):
     for r in rows[:limit]:
         theme = themes.for_item(r["item_id"], r["item_type"])
         if not theme:
-            theme = _theme_from_bricklink(r["item_id"], r["item_type"])
+            theme = _theme_nachschlagen(r["item_id"], r["item_type"])
         if not theme:
             # Merken statt still übergehen: Sonst steht dort für immer „1
             # Eintrag offen", ohne dass jemand erfährt, welcher.

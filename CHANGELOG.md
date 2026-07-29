@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.63.1 – Juli 2026
+
+### Behoben
+- 🏷 **Der Rückfall über die Figuren lief nur mit BrickLink-Schlüsseln.** Er
+  stand innerhalb der Schlüssel-Prüfung – dabei braucht er gar keinen Abruf:
+  Die Set-Inhalte liegen längst in der eigenen Datenbank. Fehlten oder
+  versagten die Schlüssel, blieb ein Set also ohne Thema, obwohl die Antwort
+  die ganze Zeit im Haus war
+
+### Verbessert
+- 🔎 **Der Knopf „Themen nachladen" steht jetzt auch dort, wo die Lücke
+  auffällt** – direkt in der Gruppe „Ohne Thema" in der Sammlung. Bisher lag
+  er unter *Mehr → Sortierung*, also weit weg vom Problem
+- 🔎 Bleibt danach etwas übrig, **nennt die App die Nummern**, statt nur „lässt
+  sich nicht bestimmen" zu melden. Die Rückmeldung kommt zusätzlich als
+  Meldung, damit sie auch aus der Sammlung heraus zu sehen ist
+
 ## 1.63.0 – Juli 2026
 
 ### Behoben
