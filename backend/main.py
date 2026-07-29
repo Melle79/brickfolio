@@ -53,10 +53,14 @@ async def security_headers(request: Request, call_next):
     if not request.url.path.startswith("/api/"):
         response.headers.setdefault("Content-Security-Policy", "; ".join([
             "default-src 'self'",
-            # Katalogbilder liegen bei BrickLink und Rebrickable
+            # Katalogbilder liegen bei BrickLink, Rebrickable – und, für
+            # alles Gescannte, bei Brickognize. Dessen Vorschaubilder
+            # liegen in einem Google-Storage-Bucket; CSP kennt keine
+            # Pfade, deshalb steht hier der ganze Host. Fehlte er, blieben
+            # genau die Artikel ohne Bild, die per Foto erfasst wurden.
             "img-src 'self' data: https://img.bricklink.com "
             "https://cdn.rebrickable.com https://*.bricklink.com "
-            "https://*.rebrickable.com",
+            "https://*.rebrickable.com https://storage.googleapis.com",
             "style-src 'self' 'unsafe-inline'",
             "script-src 'self'",
             "connect-src 'self'",

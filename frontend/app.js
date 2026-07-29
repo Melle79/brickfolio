@@ -296,7 +296,20 @@ function brickLoading(text) {
 
 /* Für <img>: lädt die Quelle nicht (404, offline), zeigt den Platzhalter
    statt eines kaputten Bildsymbols. */
-const IMG_FALLBACK = 'onerror="this.onerror=null;this.src=IMG_PLACEHOLDER"';
+/* Bild kaputt oder blockiert? Dann den Platzhalter zeigen.
+
+   Früher stand dafür ein `onerror="…"` im Markup. Das war ein Fehler: Die
+   Sicherheits-Regeln der App verbieten Skript in Attributen (`script-src
+   'self'`), der Browser führte es also nie aus – ein fehlgeschlagenes Bild
+   blieb als zerbrochenes Symbol stehen. Ein einziger Lauscher am Dokument
+   erledigt es für *alle* Bilder: `error` steigt zwar nicht auf, lässt sich
+   aber auf dem Weg nach unten abfangen. */
+document.addEventListener("error", (ev) => {
+  const el = ev.target;
+  if (el && el.tagName === "IMG" && el.getAttribute("src") !== IMG_PLACEHOLDER) {
+    el.src = IMG_PLACEHOLDER;
+  }
+}, true);
 
 /* Geldbeträge in der eingestellten Währung. BrickLink liefert die Preise
    bereits umgerechnet, hier wird also nur noch geschrieben – kein eigener
@@ -1050,7 +1063,7 @@ async function loadFigParts(card, item, btn) {
     } else {
       out.innerHTML = parts.map((p) => `
         <div class="fig-row">
-          <img class="card-img fig-img" src="${imgSrc(p.img_url)}" ${IMG_FALLBACK} alt="" loading="lazy">
+          <img class="card-img fig-img" src="${imgSrc(p.img_url)}" alt="" loading="lazy">
           <div class="fig-info">
             <strong>${esc(p.name)}</strong>
             <div class="sub">${esc(p.item_id)}${p.color_name ? ` · ${esc(p.color_name)}` : ""}${p.qty > 1 ? ` · ${p.qty}×` : ""}</div>
@@ -2130,7 +2143,7 @@ function collCardHtml(it) {
   return `
     <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}">
       <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <span class="qty-badge" data-qty-val>${it.quantity}</span>
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
@@ -2331,7 +2344,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
           <div class="card-img-wrap">
-            <img class="card-img" src="${imgSrc(item.img_url)}" ${IMG_FALLBACK} data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
+            <img class="card-img" src="${imgSrc(item.img_url)}" data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
             ${state.bricklinkLookup && !/^(fig-|manuell-|custom-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
           </div>
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
@@ -3023,7 +3036,7 @@ function openSuggestModal(it) {
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
           <div class="card-img-wrap">
-            <img class="card-img" src="${imgSrc(pit.img_url)}" ${IMG_FALLBACK} data-gid="${esc(pit.item_id)}" data-gtype="${esc(type)}" alt="">
+            <img class="card-img" src="${imgSrc(pit.img_url)}" data-gid="${esc(pit.item_id)}" data-gtype="${esc(type)}" alt="">
           </div>
           <div class="card-title">
             <strong>${esc(pit.name)}</strong>
@@ -4474,7 +4487,7 @@ function renderMissingFigs(data) {
     <div class="set-figs">
       ${data.items.map((it, i) => `
       <div class="fig-row" data-mf-row="${i}">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
+        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · <b>${it.missing}× fehlt</b>${
@@ -5162,7 +5175,7 @@ async function loadShareView() {
     box.innerHTML = s.items.length ? stale + s.items.map((it) => `
       <div class="card">
         <div class="card-head">
-          <img class="card-img" src="${imgSrc(it.img_url)}" ${IMG_FALLBACK} alt="" loading="lazy">
+          <img class="card-img" src="${imgSrc(it.img_url)}" alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(it.name)}</strong>
             <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
@@ -5484,7 +5497,7 @@ async function loadHubOffers() {
       return `
       <div class="card tappable" data-offer-card>
         <div class="card-head">
-          <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url)}" ${IMG_FALLBACK} data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
+          <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url)}" data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(o.name)}</strong>
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>

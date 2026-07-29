@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.60.1 – Juli 2026
+
+### Behoben
+- 🖼 **Gescannte Artikel hatten kein Bild mehr.** Brickognize legt seine
+  Vorschaubilder in einem Google-Storage-Bucket ab – dieser Host fehlte in den
+  Sicherheits-Regeln von 1.57.0. Der Browser blockierte die Bilder still; zu
+  sehen war das nur in der Konsole. Katalogbilder von BrickLink und
+  Rebrickable waren nie betroffen, deshalb fehlten immer nur *manche* Bilder
+- 🖼 **Der Ersatz für ein kaputtes Bild wurde nie eingesetzt.** Er hing an
+  einem `onerror`-Attribut, und genau das verbieten dieselben Regeln
+  (`script-src 'self'`). Statt des Platzhalters stand ein zerbrochenes Symbol
+  da. Jetzt erledigt das ein einziger Lauscher am Dokument – für *alle*
+  Bilder, nicht nur die sieben, die das Attribut hatten. Ein Test wacht
+  darüber, dass kein Skript zurück in ein Attribut wandert
+- ⚙️ **Der Service Worker machte aus einem stockenden Abruf einen harten
+  Fehler.** Er griff auch nach fremden Hosts, und schlug der Abruf fehl, gab
+  er `undefined` als Antwort zurück – der Browser meldete einen kaputten
+  Worker. Fremde Hosts lässt er jetzt ganz in Ruhe, und im Offline-Fall kommt
+  eine echte Antwort statt keiner
+- 📲 **Hinter einem Zugangsschutz galt die App als nicht installierbar.** Der
+  Abruf der Manifest-Datei schickte die Sitzung nicht mit und landete auf der
+  Anmeldeseite von Cloudflare Access. Jetzt geht er mit Zugangsdaten raus
+
 ## 1.60.0 – Juli 2026
 
 ### Neu

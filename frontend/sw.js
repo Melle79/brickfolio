@@ -1,5 +1,5 @@
 /* Brickfolio Service Worker – App-Shell offlinefähig, API immer live */
-const CACHE = "brickfolio-v4";
+const CACHE = "brickfolio-v5";
 const SHELL = [
   "/",
   "/static/style.css",
@@ -32,16 +32,27 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.pathname.startsWith("/api/")) return;
+  // Fremde Hosts gehen den Browser direkt an. Katalogbilder von BrickLink,
+  // Rebrickable und Brickognize haben in diesem Cache nichts verloren – und
+  // solange der Worker sie anfasste, machte er aus einem stockenden Abruf
+  // einen harten Netzwerkfehler: Das Bild blieb dann leer, statt beim
+  // nächsten Blättern einfach nachzuladen.
+  if (url.origin !== location.origin) return;
   // Netz zuerst (damit Updates sofort ankommen), Cache als Offline-Fallback
   e.respondWith(
     fetch(e.request)
       .then((resp) => {
-        if (resp.ok && url.origin === location.origin) {
+        if (resp.ok) {
           const copy = resp.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
         }
         return resp;
       })
-      .catch(() => caches.match(e.request))
+      // Ohne Treffer im Cache liefert `caches.match` undefined – und
+      // `respondWith(undefined)` wirft „Failed to convert value to
+      // 'Response'". Der Browser sah dann einen kaputten Worker statt einer
+      // ehrlichen Fehlermeldung. Also immer eine echte Antwort zurückgeben.
+      .catch(() => caches.match(e.request).then((hit) => hit || new Response(
+        "Offline", { status: 504, statusText: "Gateway Timeout" })))
   );
 });

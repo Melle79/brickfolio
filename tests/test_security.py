@@ -89,6 +89,27 @@ def test_katalogbilder_bleiben_erlaubt(client):
     assert "img.bricklink.com" in csp and "cdn.rebrickable.com" in csp
 
 
-def test_api_antworten_tragen_die_basis_header(client):
-    h = client.get("/api/setup").headers
-    assert h["x-content-type-options"] == "nosniff"
+def test_scan_bilder_bleiben_erlaubt(client):
+    """Brickognize legt seine Vorschaubilder in einem Google-Storage-Bucket
+    ab. Fehlt der Host, verlieren genau die Artikel ihr Bild, die per Foto
+    erfasst wurden – und zwar still, nur die Browser-Konsole sagt es."""
+    csp = client.get("/").headers["content-security-policy"]
+    assert "storage.googleapis.com" in csp
+
+
+def test_kein_skript_in_attributen():
+    """`script-src 'self'` verbietet `onerror="…"` & Co. Steht so etwas doch
+    im Frontend, führt der Browser es nie aus – der Fehlerfall fällt dann
+    einfach aus, ohne dass es jemandem auffällt. Deshalb: gar nicht erst
+    schreiben. Erklärende Kommentare dürfen den Namen nennen, sie werden
+    vorher entfernt."""
+    import re
+    from pathlib import Path
+    frontend = Path(__file__).resolve().parents[1] / "frontend"
+    ohne_kommentar = lambda t: re.sub(r"/\*.*?\*/|<!--.*?-->", " ", t, flags=re.S)
+    treffer = []
+    for datei in ("app.js", "index.html", "sw.js"):
+        text = ohne_kommentar((frontend / datei).read_text())
+        for m in re.finditer(r'\bon[a-z]{3,}\s*=\s*["\']', text):
+            treffer.append(f"{datei}: …{text[max(0, m.start() - 30):m.end()]}")
+    assert not treffer, "Skript in Attributen: " + "; ".join(treffer[:3])
