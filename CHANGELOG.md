@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.73.1 – Juli 2026
+
+### Behoben
+- 🪧 **Der Abschiedszettel lag am falschen Ort und wurde falsch gelesen.**
+  Zwei Fehler, beide beim ersten Einsatz aufgefallen: Er lag im
+  `sessionStorage`, und der verschwindet ausgerechnet dann, wenn die App
+  geschlossen wird – also im häufigsten *sauberen* Fall. Und verglichen
+  wurde mit der Uhr (10 Sekunden), nicht mit dem letzten Messwert. Wer die
+  App zumachte und später wieder aufmachte, wäre als Absturz gezählt worden.
+  Jetzt liegt der Zettel im `localStorage` und gilt, wenn er **nach** dem
+  letzten Messwert geschrieben wurde – egal wie lange das her ist
+- ⏱ **Die 90-Sekunden-Frist ist weg.** Sie war der Notbehelf, solange es den
+  Zettel nicht gab. Ein Absturz um 21:08, bemerkt beim Wiederöffnen um 21:16,
+  fiel damit durchs Raster – der Eintrag trug „OHNE ABSCHIED", die
+  Zusammenfassung meldete trotzdem nichts
+- 🔐 **Antwort ohne JSON wird nicht mehr verschluckt.** Sitzt zwischen App und
+  Instanz ein Zugangsschutz (Cloudflare Access) oder ein Zwischenserver, kommt
+  dessen Anmeldeseite zurück – als HTML, mit Status 200. Daraus wurde
+  stillschweigend ein leeres Objekt, die Oberfläche baute darauf weiter und
+  fiel erst viel später über ein fehlendes Element. Jetzt sagt sie sofort,
+  was los ist
+
 ## 1.73.0 – Juli 2026
 
 ### Verbessert

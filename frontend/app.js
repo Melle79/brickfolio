@@ -242,7 +242,22 @@ async function api(path, options = {}) {
       + "und ist das Gerät im richtigen Netz?"));
   }
   let data = {};
-  try { data = await resp.json(); } catch (_) { /* leer */ }
+  const roh = await resp.text();
+  if (roh) {
+    try {
+      data = JSON.parse(roh);
+    } catch (_) {
+      // Antwort kam an, ist aber keine von uns. Typischer Fall: Zwischen App
+      // und Instanz sitzt ein Zugangsschutz (Cloudflare Access) oder ein
+      // Zwischenserver, der seine eigene Seite ausliefert – mit Status 200.
+      // Ungeprüft wurde daraus ein leeres Objekt, die Oberfläche baute auf
+      // Nichts weiter und fiel erst viel später über ein fehlendes Element.
+      if (resp.ok) {
+        throw new Error(tr("Unerwartete Antwort von der Instanz – dazwischen "
+          + "sitzt etwas, das eine Anmeldung verlangt. Bitte neu laden."));
+      }
+    }
+  }
   // Fehlertexte gleich hier übersetzen, nicht erst beim Anzeigen: Sie landen
   // an gut einem Dutzend Stellen – in Kurzmeldungen, in Fehlerzeilen, in
   // leeren Listen. Der Server schickt den deutschen Satz, und der ist der
@@ -6139,12 +6154,20 @@ function diagMessen(grund = "", geplant = null) {
     if (document.wasDiscarded) punkt.disc = 1;
     // Hat sich die vorige Seite ordentlich verabschiedet? `pagehide` läuft
     // bei jedem gewollten Ende – Neuladen, Weiterklicken, Schließen. Bei
-    // einem Absturz läuft es nicht. Damit ist der Unterschied endlich
-    // messbar, statt aus „Neuladen" geraten werden zu müssen.
+    // einem Absturz läuft es nicht.
+    //
+    // Verglichen wird der Abschied mit dem *letzten Messwert*, nicht mit der
+    // Uhr: Wer die App zumacht und drei Stunden später wieder aufmacht, hat
+    // sich trotzdem ordentlich verabschiedet. Mit einer Frist von Sekunden
+    // wäre genau das als Absturz durchgegangen. Und der Zettel liegt im
+    // localStorage – sessionStorage verschwindet ausgerechnet dann, wenn die
+    // App geschlossen wird, also im häufigsten sauberen Fall.
     try {
-      const weg = Number(sessionStorage.getItem(DIAG_WEG_KEY) || 0);
-      sessionStorage.removeItem(DIAG_WEG_KEY);
-      if (weg && Date.now() - weg < 10000) punkt.sauber = 1;
+      const weg = Number(localStorage.getItem(DIAG_WEG_KEY) || 0);
+      localStorage.removeItem(DIAG_WEG_KEY);
+      const vorher = diagLesen();
+      const letzte = vorher.length ? vorher[vorher.length - 1].t : 0;
+      if (weg && weg + 2000 >= letzte) punkt.sauber = 1;
     } catch (_) { /* egal */ }
   }
   const liste = diagLesen();
@@ -6183,7 +6206,7 @@ function diagStarten() {
   // Der Abschiedszettel. Läuft bei Neuladen, Weiterklicken und Schließen –
   // und ausgerechnet dann nicht, wenn der Browser die Seite abwürgt.
   addEventListener("pagehide", () => {
-    try { sessionStorage.setItem(DIAG_WEG_KEY, String(Date.now())); }
+    try { localStorage.setItem(DIAG_WEG_KEY, String(Date.now())); }
     catch (_) { /* egal */ }
   });
   document.addEventListener("visibilitychange", () => {
@@ -6223,15 +6246,17 @@ function renderDiag() {
       if (letzterServer && p.s !== letzterServer) serverNeu++;
       letzterServer = p.s;
     }
-    if (!i || p.g !== "start" || p.t - vor.t >= 90000) continue;
+    if (!i || p.g !== "start") continue;
+    // Die Frist von 90 Sekunden ist weg: Sie war nur der Notbehelf, solange
+    // es den Abschiedszettel nicht gab. Ein Absturz um 21:08, bemerkt beim
+    // Wiederöffnen um 21:16, fiel damit durchs Raster.
     if (p.disc) weggeraeumt++;
     else if (p.p) geplant++;
     else if (p.sauber) sauber++;       // von Hand neu geladen o. Ä.
-    else if (p.nav === "navigate") continue;
-    // Ein frisch geöffneter zweiter Tab hat weder Abschiedszettel noch
-    // Vorgeschichte – der zählt nicht als Absturz. Abgestürzt heißt:
-    // dieselbe Seite kam als „reload" zurück, ohne sich verabschiedet
-    // zu haben.
+    else if (p.nav === "navigate" && p.t - vor.t >= 90000) continue;
+    // Ein frisch geöffneter zweiter Tab lange nach dem letzten Messwert hat
+    // weder Zettel noch Vorgeschichte – der zählt nicht. Abgestürzt heißt:
+    // die Seite war weg, ohne sich zu verabschieden.
     else abbruch++;
   }
   const teile = [
