@@ -253,12 +253,22 @@ class UserBody(BaseModel):
     is_admin: bool = False
 
 
+# Nur die drei Sorten, die es im Katalog gibt. `condition` wurde schon immer
+# geprüft, `item_type` nicht – so landete "raumschiff" klaglos in der
+# Datenbank und tauchte danach in Adressen und Auswertungen wieder auf.
+ITEM_TYPE_RE = "^(minifig|set|part)$"
+
+# Bild: entweder eine Adresse auf der eigenen Instanz oder http(s). Alles
+# andere (javascript:, data:, file: …) hat hier nichts verloren.
+IMG_URL_RE = r"^$|^/(uploads|catalog)/|^/catalog\?|^https?://"
+
+
 class AddItemBody(BaseModel):
     item_id: str = Field(min_length=1, max_length=60)
     year: int = Field(default=0, ge=0, le=2100)
-    item_type: str = Field(default="minifig", max_length=20)
+    item_type: str = Field(default="minifig", pattern=ITEM_TYPE_RE)
     name: str = Field(min_length=1, max_length=300)
-    img_url: str = Field(default="", max_length=600)
+    img_url: str = Field(default="", max_length=600, pattern=IMG_URL_RE)
     bricklink_url: str = Field(default="", max_length=600)
     quantity: int = Field(default=1, ge=1, le=999)
     condition: str = Field(default="used", pattern="^(new|used)$")
@@ -1812,7 +1822,15 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
         raise HTTPException(400, "Die Datei ist leer")
     first = text.splitlines()[0]
     delim = ";" if first.count(";") >= first.count(",") else ","
-    rows = list(csvmod.reader(io.StringIO(text), delimiter=delim))
+    # Ein einzelnes offenes Anführungszeichen macht aus dem ganzen Rest der
+    # Datei ein Feld. Python bricht dann bei 128 KB ab – bisher mit einem
+    # nackten „Internal Server Error", bei dem niemand ahnt, woran es liegt.
+    try:
+        rows = list(csvmod.reader(io.StringIO(text), delimiter=delim))
+    except csvmod.Error:
+        raise HTTPException(400, "Die Datei lässt sich nicht lesen. Häufigste "
+                                 "Ursache: ein einzelnes Anführungszeichen, "
+                                 "das nicht wieder geschlossen wird.")
     if len(rows) < 2:
         raise HTTPException(400, "Keine Datenzeilen gefunden (Kopfzeile + "
                                  "mindestens eine Zeile nötig)")
@@ -2158,7 +2176,7 @@ def test_settings(user: dict = Depends(admin_user)):
 
 class SuggestInfoItem(BaseModel):
     item_id: str = Field(min_length=1, max_length=60)
-    item_type: str = Field(default="minifig", max_length=20)
+    item_type: str = Field(default="minifig", pattern=ITEM_TYPE_RE)
 
 
 class SuggestInfoBody(BaseModel):
@@ -2993,20 +3011,37 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
                         (round(unit * body.quantity, 2), row["id"]))
             return {"ok": True, "merged": True,
                     "quantity": row["quantity"] + body.quantity}
-        cur = conn.execute(
-            "INSERT INTO collection (item_id, item_type, name, img_url, "
-            "bricklink_url, quantity, condition, notes, year, paid_price, "
-            "paid_source, paid_at, theme, added_by, added_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (body.item_id, body.item_type, body.name, body.img_url,
-             body.bricklink_url, body.quantity, body.condition, body.notes,
-             body.year or None, body.paid_price,
-             ((body.paid_source or "manual")
-              if body.paid_price is not None else None),
-             int(time.time()) if body.paid_price is not None else None,
-             themes.for_item(body.item_id, body.item_type),
-             user["id"], int(time.time())),
-        )
+        try:
+            cur = conn.execute(
+                "INSERT INTO collection (item_id, item_type, name, img_url, "
+                "bricklink_url, quantity, condition, notes, year, paid_price, "
+                "paid_source, paid_at, theme, added_by, added_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (body.item_id, body.item_type, body.name, body.img_url,
+                 body.bricklink_url, body.quantity, body.condition, body.notes,
+                 body.year or None, body.paid_price,
+                 ((body.paid_source or "manual")
+                  if body.paid_price is not None else None),
+                 int(time.time()) if body.paid_price is not None else None,
+                 themes.for_item(body.item_id, body.item_type),
+                 user["id"], int(time.time())),
+            )
+        except sqlite3.IntegrityError:
+            # Zwei Anfragen für denselben, noch nicht vorhandenen Artikel
+            # gleichzeitig: Beide sahen oben keine Zeile, eine legt sie an,
+            # die zweite lief in die eindeutige Bedingung – und der Anwender
+            # bekam einen Serverfehler, während sein Stück verschwand.
+            # Jetzt wird daraus nachträglich das Zusammenführen.
+            conn.execute(
+                "UPDATE collection SET quantity = quantity + ? WHERE "
+                "item_id = ? AND item_type = ? AND condition = ?",
+                (body.quantity, body.item_id, body.item_type, body.condition))
+            neu = conn.execute(
+                "SELECT id, quantity FROM collection WHERE item_id = ? AND "
+                "item_type = ? AND condition = ?",
+                (body.item_id, body.item_type, body.condition)).fetchone()
+            return {"ok": True, "merged": True,
+                    "quantity": neu["quantity"] if neu else body.quantity}
         new_id = cur.lastrowid
     _maybe_fetch_prices_async(new_id, body.item_id)
     _bild_holen_async(body.img_url)
@@ -3101,9 +3136,9 @@ def delete_item(entry_id: int, user: dict = Depends(current_user)):
 
 class WantedBody(BaseModel):
     item_id: str = Field(min_length=1, max_length=60)
-    item_type: str = Field(default="minifig", max_length=20)
+    item_type: str = Field(default="minifig", pattern=ITEM_TYPE_RE)
     name: str = Field(min_length=1, max_length=300)
-    img_url: str = Field(default="", max_length=600)
+    img_url: str = Field(default="", max_length=600, pattern=IMG_URL_RE)
     bricklink_url: str = Field(default="", max_length=600)
     year: int = Field(default=0, ge=0, le=2100)
     notes: str = Field(default="", max_length=1000)
@@ -4228,9 +4263,9 @@ class ListArchiveBody(BaseModel):
 
 class ListItemBody(BaseModel):
     item_id: str = Field(min_length=1, max_length=60)
-    item_type: str = Field(default="minifig", max_length=20)
+    item_type: str = Field(default="minifig", pattern=ITEM_TYPE_RE)
     name: str = Field(min_length=1, max_length=300)
-    img_url: str = Field(default="", max_length=600)
+    img_url: str = Field(default="", max_length=600, pattern=IMG_URL_RE)
     bricklink_url: str = Field(default="", max_length=600)
     year: int = Field(default=0, ge=0, le=2100)
     qty: int = Field(default=1, ge=1, le=99)

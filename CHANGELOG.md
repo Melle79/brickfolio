@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.72.0 – Juli 2026
+
+Aus einem Belastungstest: 132 Endpunkte, bis zu 5.041 Einträge, alle Tabs.
+Angemeldet, Rechte, Einschleusung, XSS, Pfad-Ausbruch – alles dicht. Was
+nicht gehalten hat, steht hier.
+
+### Behoben
+- 🇬🇧 **Der Export war deutsch, auch auf Englisch.** Druckausgabe und CSV
+  hatten ihre Überschriften fest im Code: „Nummer, Name, Jahr, Anz., Zustand".
+  Jetzt laufen Titel, Spalten, Dateinamen und Zahlenformat über die
+  Übersetzung – und die Geldspalten tragen die **eingestellte Währung** statt
+  eines festen „(EUR)"
+- 💥 **CSV-Import stürzte ab statt zu meckern.** Ein einzelnes
+  Anführungszeichen ohne Gegenstück macht aus dem Rest der Datei ein Feld; ab
+  128 KB gab Python auf und der Server antwortete mit einem nackten
+  „Internal Server Error". Jetzt kommt der Satz, der weiterhilft
+- 🔀 **Zwei Leute, derselbe Artikel, im selben Moment.** Beide Anfragen sahen
+  „gibt es noch nicht", eine legte an, die andere lief in die eindeutige
+  Bedingung – Serverfehler, und ihr Stück war weg. Jetzt wird daraus
+  nachträglich das Zusammenführen
+- 🧾 **„… in 3 von 12 Setsvon 12 Sets"** – in der Druckausgabe der fehlenden
+  Set-Figuren stand die Zahl doppelt
+- 🔎 **Suche ohne Treffer zeigte eine leere Fläche.** Kein Hinweis, kein
+  Ladezeichen – man wusste nicht, ob nichts passt oder noch geladen wird.
+  Jetzt steht „Nichts gefunden" da, mit einem Knopf, der die Filter räumt
+- 🔌 **„Failed to fetch".** Ist die Instanz nicht erreichbar (NAS schläft,
+  VPN weg, Update läuft), stand diese englische Browser-Meldung als ganzer
+  Inhalt in der Statistik. Jetzt: „Keine Verbindung zur Instanz. Läuft der
+  Server, und ist das Gerät im richtigen Netz?"
+
+### Verbessert
+- 🧹 **Die Sammlung gibt den Platz frei, wenn man sie verlässt.** Bisher
+  blieben alle Karten im Dokument stehen, auch in der Statistik – gemessen
+  bei 400 Einträgen: **5.731 → 988 Elemente**, bei 815 sind es rund 13.800
+  weniger. Die Daten bleiben im Speicher, beim Zurückkommen ist die Liste
+  sofort wieder da
+- 🔒 **`item_type` wird geprüft** – bisher landete „raumschiff" klaglos in
+  der Datenbank und tauchte danach in Adressen und Auswertungen wieder auf.
+  Und **Bildadressen** nehmen nur noch die eigene Instanz oder http(s);
+  `javascript:` und `data:` sind raus (ausgeführt wurde davon nie etwas, die
+  CSP hat es abgefangen – in der Datenbank hatte es trotzdem nichts verloren)
+
 ## 1.71.0 – Juli 2026
 
 ### Neu

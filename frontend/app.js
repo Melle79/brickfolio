@@ -230,7 +230,17 @@ async function api(path, options = {}) {
     headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(options.body);
   }
-  const resp = await fetch("/api" + path, { ...options, headers });
+  let resp;
+  try {
+    resp = await fetch("/api" + path, { ...options, headers });
+  } catch (_) {
+    // Kein Netz, Server aus, NAS im Schlaf, Update läuft: `fetch` wirft dann
+    // „Failed to fetch" – englisch, technisch, und das stand bisher als
+    // ganzer Inhalt in der Statistik. Hier wird ein Satz daraus, den man
+    // auch versteht.
+    throw new Error(tr("Keine Verbindung zur Instanz. Läuft der Server, "
+      + "und ist das Gerät im richtigen Netz?"));
+  }
   let data = {};
   try { data = await resp.json(); } catch (_) { /* leer */ }
   // Fehlertexte gleich hier übersetzen, nicht erst beim Anzeigen: Sie landen
@@ -1383,6 +1393,7 @@ function showTab(name) {
   ["scan", "collection", "lists", "stats", "hub", "settings"].forEach((t) => {
     $("view-" + t).hidden = t !== name;
   });
+  sammlungFreigeben(name);
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
   if (name === "collection") loadCollection(true);
@@ -1391,6 +1402,22 @@ function showTab(name) {
   if (name === "hub") loadHubView();
   else updatePolling();          // außerhalb des Tausch-Tabs ruhiger takten
   if (name === "settings") loadSettings();
+}
+
+/* Die Sammlung ist mit Abstand die größte Ansicht: bei 815 Einträgen rund
+   14.700 Elemente und ebenso viele Bilder. Bisher blieb das alles im
+   Dokument stehen, auch wenn man längst in der Statistik war – gemessen bei
+   5.000 Einträgen: 86.753 Elemente, dauerhaft. Wachsen tut das nicht, aber
+   es ist der Sockel, auf dem jeder weitere Verbrauch aufsetzt.
+
+   Beim Verlassen wird die Liste deshalb geleert. Die Daten bleiben in
+   `state.collection`; beim Zurückkommen baut `loadCollection` sie neu auf. */
+function sammlungFreigeben(neuerTab) {
+  if (neuerTab === "collection") return;
+  const liste = $("collection-list");
+  if (!liste || !liste.firstChild) return;
+  if (bgBeobachter) bgBeobachter.disconnect();
+  liste.innerHTML = "";
 }
 
 /* Wünsche, Einkaufslisten und Archiv liegen in einem Tab.
@@ -2346,11 +2373,23 @@ function renderCollection() {
   const list = $("collection-list");
   const items = state.collection;
   applyCollView();
-  $("collection-empty").hidden = items.length > 0 || $("search").value.trim() !== "";
+  const gesucht = $("search").value.trim() !== "" || $("type-filter").value !== "";
+  $("collection-empty").hidden = items.length > 0 || gesucht;
   const grouped = $("sort").value === "theme" && items.length > 0;
   list.classList.toggle("by-theme", grouped);
   if (grouped) renderThemeGroups(list, items);
-  else list.innerHTML = items.map(collCardHtml).join("");
+  else if (!items.length && gesucht) {
+    // Vorher blieb hier eine leere Fläche: keine Karten, kein Hinweis –
+    // man wusste nicht, ob nichts passt oder noch geladen wird.
+    list.innerHTML = `<p class="empty">${esc(tr("Nichts gefunden."))}<br>`
+      + `${esc(tr("Andere Schreibweise probieren oder die Filter zurücksetzen."))}`
+      + ` <button class="mini-btn" data-filter-reset>${esc(tr("Filter zurücksetzen"))}</button></p>`;
+    list.querySelector("[data-filter-reset]").addEventListener("click", () => {
+      $("search").value = "";
+      $("type-filter").value = "";
+      loadCollection();
+    });
+  } else list.innerHTML = items.map(collCardHtml).join("");
 
   list.querySelectorAll(".card").forEach((card) => {
     const id = Number(card.dataset.id);
@@ -4589,13 +4628,13 @@ function renderDuplicates(data) {
 
 function exportDuplicatesCsv() {
   const data = state.duplicates;
-  const rows = [["Nummer", "Name", "Zustand", "Vorhanden", "Abgebbar",
-    "Ø Stück (EUR)", "Wert (EUR)"]];
+  const rows = [[tr("Nummer"), tr("Name"), tr("Zustand"), tr("Vorhanden"),
+    tr("Abgebbar"), geldSpalte("Ø Stück"), geldSpalte("Wert")]];
   data.items.forEach((it) => rows.push([it.item_id, it.name,
     it.condition === "new" ? tr("Neu") : tr("Gebraucht"), it.quantity, it.surplus,
-    numDe(it.unit_price), numDe(it.value)]));
-  downloadCsv("brickfolio-verkaufsliste.csv", rows);
-  toast("Verkaufsliste exportiert ✔");
+    numLoc(it.unit_price), numLoc(it.value)]));
+  downloadCsv(tr("brickfolio-verkaufsliste.csv"), rows);
+  toast(tr("Verkaufsliste exportiert ✔"));
 }
 
 function printDuplicates() {
@@ -4604,10 +4643,11 @@ function printDuplicates() {
     it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
     it.surplus, it.unit_price ? fmtEur(it.unit_price) : "",
     it.value ? fmtEur(it.value) : ""]);
-  printTable("Verkaufsliste – Doppelte",
+  printTable(tr("Verkaufsliste – Doppelte"),
     tr("{n} Stück abgebbar · Verkaufswert ca. {wert}",
       { n: data.stats.pieces, wert: fmtEur(data.stats.value) }),
-    ["Nummer", "Name", "Zustand", "Abgebbar", "Ø Stück", "Wert"], rows,
+    [tr("Nummer"), tr("Name"), tr("Zustand"), tr("Abgebbar"), tr("Ø Stück"),
+     tr("Wert")], rows,
     ["num", "name", "cond", "qty", "price", "price"]);
 }
 
@@ -4790,14 +4830,14 @@ function wantMissingFig(it) {
 
 function exportMissingFigsCsv() {
   const data = state.missingFigs;
-  const rows = [["Nummer", "Name", "Fehlt", "Benötigt", "Vorhanden",
-    "Ø Stück (EUR)", "Für Sets", "Auf Liste"]];
+  const rows = [[tr("Nummer"), tr("Name"), tr("Fehlt"), tr("Benötigt"),
+    tr("Vorhanden"), geldSpalte("Ø Stück"), tr("Für Sets"), tr("Auf Liste")]];
   data.items.forEach((it) => rows.push([it.item_id, it.name, it.missing,
-    it.needed, it.owned, numDe(it.unit_price),
+    it.needed, it.owned, numLoc(it.unit_price),
     it.sets.map((s) => `${s.name} (${s.no})`).join(" / "),
     (it.on_lists || []).join(" / ")]));
-  downloadCsv("brickfolio-fehlende-set-figuren.csv", rows);
-  toast("Liste exportiert ✔");
+  downloadCsv(tr("brickfolio-fehlende-set-figuren.csv"), rows);
+  toast(tr("Liste exportiert ✔"));
 }
 
 function printMissingFigs() {
@@ -4805,14 +4845,16 @@ function printMissingFigs() {
   const rows = data.items.map((it) => [it.item_id, it.name, it.missing,
     it.unit_price ? fmtEur(it.unit_price) : "",
     it.sets.map((s) => `${s.name} (${s.no})`).join(", ")]);
-  printTable("Fehlende Set-Figuren",
+  printTable(tr("Fehlende Set-Figuren"),
+    // Das „von N Sets" stand hier zweimal – einmal im übersetzten Satz und
+    // einmal fest angehängt: „… in 3 von 12 Setsvon 12 Sets".
     tr("{n} Figuren fehlen in {offen} von {ges} Sets",
       { n: data.stats.pieces, offen: data.stats.sets_incomplete,
         ges: data.stats.sets_total })
-    + `von ${data.stats.sets_total} Sets`
     + (data.stats.est_cost > 0
-        ? ` · Nachkauf ca. ${fmtEur(data.stats.est_cost)}` : ""),
-    ["Nummer", "Name", "Fehlt", "Ø Stück", "Für Sets"], rows,
+        ? tr(" · Nachkauf ca. {wert}", { wert: fmtEur(data.stats.est_cost) })
+        : ""),
+    [tr("Nummer"), tr("Name"), tr("Fehlt"), tr("Ø Stück"), tr("Für Sets")], rows,
     ["num", "name", "qty", "price", "name"]);
 }
 
@@ -4847,8 +4889,11 @@ function csvCell(v) {
   return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
 }
 
-function numDe(v) {
-  return v == null ? "" : String(v).replace(".", ",");
+/* Zahl fürs Tabellenblatt. Deutsch trennt mit Komma, Englisch mit Punkt –
+   sonst liest das Tabellenprogramm den Preis als Text ein. */
+function numLoc(v) {
+  if (v == null) return "";
+  return lang === "en" ? String(v) : String(v).replace(".", ",");
 }
 
 function downloadCsv(filename, rows) {
@@ -4865,34 +4910,39 @@ function downloadCsv(filename, rows) {
 
 const _dateDe = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale());
 
+/* Spaltenkopf mit Währung – die stand fest auf EUR, auch wenn jemand in
+   Pfund rechnet. */
+const geldSpalte = (text) => tr(text) + " (" + (state.currency || "EUR") + ")";
+
 async function exportCollectionCsv() {
   const data = await api("/collection?q=&sort=name");
-  const rows = [["Nummer", "Name", "Typ", "Jahr", "Anzahl", "Zustand",
-    "Ø Neu (EUR)", "Ø Gebraucht (EUR)", "Wert (EUR)", "Notizen",
-    "Erfasst von", "Erfasst am"]];
+  const rows = [[tr("Nummer"), tr("Name"), tr("Typ"), tr("Jahr"), tr("Anzahl"),
+    tr("Zustand"), geldSpalte("Ø Neu"), geldSpalte("Ø Gebraucht"),
+    geldSpalte("Wert"), tr("Notizen"), tr("Erfasst von"), tr("Erfasst am")]];
   data.items.forEach((it) => {
     const unit = unitValue(it);
     rows.push([it.item_id, it.name, it.item_type, it.year > 0 ? it.year : "",
       it.quantity, it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
-      numDe(it.price_new), numDe(it.price_used),
-      unit ? numDe((unit * it.quantity).toFixed(2)) : "",
+      numLoc(it.price_new), numLoc(it.price_used),
+      unit ? numLoc((unit * it.quantity).toFixed(2)) : "",
       it.notes, it.added_by_name || "", _dateDe(it.added_at)]);
   });
-  downloadCsv("brickfolio-sammlung.csv", rows);
-  toast("Sammlung exportiert ✔");
+  downloadCsv(tr("brickfolio-sammlung.csv"), rows);
+  toast(tr("Sammlung exportiert ✔"));
 }
 
 async function exportWantedCsv() {
   const data = await api("/wanted");
-  const rows = [["Nummer", "Name", "Typ", "Jahr", "Ø Neu (EUR)",
-    "Ø Gebraucht (EUR)", "Notizen", "Erfasst von", "Erfasst am"]];
+  const rows = [[tr("Nummer"), tr("Name"), tr("Typ"), tr("Jahr"),
+    geldSpalte("Ø Neu"), geldSpalte("Ø Gebraucht"), tr("Notizen"),
+    tr("Erfasst von"), tr("Erfasst am")]];
   data.items.forEach((it) => {
     rows.push([it.item_id, it.name, it.item_type, it.year > 0 ? it.year : "",
-      numDe(it.price_new), numDe(it.price_used), it.notes,
+      numLoc(it.price_new), numLoc(it.price_used), it.notes,
       it.added_by_name || "", _dateDe(it.added_at)]);
   });
-  downloadCsv("brickfolio-wunschliste.csv", rows);
-  toast("Wunschliste exportiert ✔");
+  downloadCsv(tr("brickfolio-wunschliste.csv"), rows);
+  toast(tr("Wunschliste exportiert ✔"));
 }
 
 function printTable(title, subtitle, headers, rows, cols) {
@@ -4900,7 +4950,8 @@ function printTable(title, subtitle, headers, rows, cols) {
   const cls = (i) => (cols[i] ? ` class="pc-${cols[i]}"` : "");
   const area = $("print-area");
   area.innerHTML = `<h1>${esc(title)}</h1>`
-    + `<p>${esc(subtitle)} · Stand ${new Date().toLocaleDateString(dateLocale())} · ${esc(appTitle())}</p>`
+    + `<p>${esc(subtitle)}${esc(tr(" · Stand {d}",
+        { d: new Date().toLocaleDateString(dateLocale()) }))} · ${esc(appTitle())}</p>`
     + `<table><colgroup>${cols.map((c) => `<col${c ? ` class="pc-${c}"` : ""}>`).join("")}</colgroup>`
     + `<thead><tr>${headers.map((h, i) => `<th${cls(i)}>${esc(h)}</th>`).join("")}</tr></thead>`
     + `<tbody>${rows.map((r) =>
@@ -4916,9 +4967,12 @@ async function printCollection() {
     unitValue(it) ? fmtEur(unitValue(it)) : ""]);
   const sub = tr("{n} Stück ({v} verschiedene)",
     { n: data.stats.total, v: data.stats.unique_items })
-    + (data.stats.total_value ? ` · Gesamtwert ca. ${fmtEur(data.stats.total_value)}` : "");
-  printTable("Deine LEGO-Sammlung", sub,
-    ["Nummer", "Name", "Jahr", "Anz.", "Zustand", "Ø Preis"], rows,
+    + (data.stats.total_value
+      ? " · " + tr("Gesamtwert ca. {wert}", { wert: fmtEur(data.stats.total_value) })
+      : "");
+  printTable(tr("Deine LEGO-Sammlung"), sub,
+    [tr("Nummer"), tr("Name"), tr("Jahr"), tr("Anz."), tr("Zustand"),
+     tr("Ø Preis")], rows,
     ["num", "name", "year", "qty", "cond", "price"]);
 }
 
@@ -4928,11 +4982,12 @@ async function printWanted() {
     it.year > 0 ? it.year : "",
     it.price_used ? fmtEur(it.price_used) : "",
     it.price_new ? fmtEur(it.price_new) : ""]);
-  const sub = tr("{n} Wünsche", { n: data.stats.count })
+  const sub = (data.stats.count === 1 ? tr("1 Wunsch")
+                : tr("{n} Wünsche", { n: data.stats.count }))
     + (data.stats.est_cost ? tr(" · geschätzt {wert} (gebraucht)",
       { wert: fmtEur(data.stats.est_cost) }) : "");
-  printTable("Deine Wunschliste", sub,
-    ["Nummer", "Name", "Jahr", "Ø gebr.", "Ø neu"], rows,
+  printTable(tr("Deine Wunschliste"), sub,
+    [tr("Nummer"), tr("Name"), tr("Jahr"), tr("Ø gebr."), tr("Ø neu")], rows,
     ["num", "name", "year", "price", "price"]);
 }
 
