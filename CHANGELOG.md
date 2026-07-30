@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.71.0 – Juli 2026
+
+### Neu
+- ↓ **Nach unten ziehen lädt neu.** Vom Startbildschirm gestartet fehlt die
+  Adressleiste – und damit der Knopf zum Neuladen; auf iOS gibt es dort auch
+  keine Geste dafür. Jetzt kommt ein Stein von oben mit dem Finger herunter,
+  färbt sich grün, sobald es reicht, und beim Loslassen lädt die Seite neu.
+  Nur in der App: Im Browser bringt die Adressleiste das schon mit, zwei
+  Anzeigen übereinander wären keine Verbesserung
+
+> Der Zug greift nur ganz oben und nur, wenn kein Popup offen ist – und er
+> fängt weder das Scrollen noch das Wischen zur Seite ab. Das Neuladen trägt
+> sich als **„Nach unten gezogen"** in den Speicher-Verlauf ein, damit es
+> dort nicht als Absturz erscheint.
+
 ## 1.70.1 – Juli 2026
 
 ### Verbessert

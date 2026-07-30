@@ -7454,6 +7454,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
   wireInstallCard();
+  zugZumNeuladen();
 });
 
 /* --------------------------------------- „Auf den Startbildschirm"
@@ -7474,6 +7475,82 @@ function isIOS() {
   // iPad meldet sich seit iPadOS 13 als Macintosh – am Touch erkennbar.
   return /iPhone|iPod|iPad/.test(ua)
     || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+/* --------------------------------------- Nach unten ziehen = neu laden
+
+   Vom Startbildschirm gestartet fehlt die Adressleiste – und damit der
+   Knopf zum Neuladen. Auf iOS gibt es dort auch keine Geste dafür. Deshalb
+   hier eine eigene, und nur dort: Im Browser macht der das schon selbst,
+   zwei Anzeigen übereinander will niemand sehen. */
+
+const PTR_SCHWELLE = 70;      // ab hier löst das Loslassen aus
+const PTR_MAX = 110;          // weiter zieht es nicht mit
+
+function zugZumNeuladen() {
+  if (!isStandalone() || !("ontouchstart" in window)) return;
+  // Der eigene Zug ersetzt den des Browsers, falls es ihn gibt
+  document.body.style.overscrollBehaviorY = "contain";
+
+  const anzeige = document.createElement("div");
+  anzeige.className = "ptr";
+  anzeige.setAttribute("aria-hidden", "true");
+  anzeige.innerHTML = brickSpinner(tr("Neu laden"), 26);
+  document.body.appendChild(anzeige);
+
+  let startY = null, startX = 0, zug = 0, laeuft = false;
+
+  const zurueck = () => {
+    startY = null;
+    zug = 0;
+    anzeige.classList.remove("ptr-an", "ptr-bereit");
+    anzeige.style.transform = "";
+  };
+
+  // Nur ganz oben und nur, wenn nichts darüber liegt: Ein offenes Popup
+  // scrollt selbst, da wäre der Zug ein Griff ins Leere.
+  const freieBahn = () => window.scrollY <= 0
+    && !document.getElementById("card-modal")
+    && $("lightbox").hidden
+    && $("update-lock").hidden;
+
+  document.addEventListener("touchstart", (ev) => {
+    if (laeuft || ev.touches.length !== 1 || !freieBahn()) return;
+    startY = ev.touches[0].clientY;
+    startX = ev.touches[0].clientX;
+  }, { passive: true });
+
+  document.addEventListener("touchmove", (ev) => {
+    if (startY == null || laeuft) return;
+    const dy = ev.touches[0].clientY - startY;
+    const dx = Math.abs(ev.touches[0].clientX - startX);
+    // Nach oben, quer oder inzwischen weggescrollt: kein Zug
+    if (dy <= 0 || dx > dy || !freieBahn()) { zurueck(); return; }
+    ev.preventDefault();                 // sonst wandert die Seite mit
+    zug = Math.min(PTR_MAX, dy * 0.5);   // Widerstand, wie man ihn erwartet
+    anzeige.classList.add("ptr-an");
+    anzeige.classList.toggle("ptr-bereit", zug >= PTR_SCHWELLE);
+    anzeige.style.transform = `translate(-50%, ${zug.toFixed(1)}px)`;
+  }, { passive: false });
+
+  document.addEventListener("touchend", () => {
+    if (startY == null) return;
+    if (zug >= PTR_SCHWELLE) {
+      // Das Neuladen braucht einen Moment. Bis dahin muss der Zug beendet
+      // sein, sonst hinge das Scrollen an einem Startpunkt von eben.
+      laeuft = true;
+      startY = null;
+      zug = 0;
+      anzeige.classList.add("ptr-laeuft");
+      // Über `neuLadenMit`, damit der Speicher-Verlauf das nicht für einen
+      // Absturz hält – dieselbe Falle wie beim Neustart des Servers.
+      neuLadenMit("Nach unten gezogen");
+      return;
+    }
+    zurueck();
+  }, { passive: true });
+
+  document.addEventListener("touchcancel", zurueck, { passive: true });
 }
 
 let installPrompt = null;

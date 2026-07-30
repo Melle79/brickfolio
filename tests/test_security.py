@@ -321,3 +321,27 @@ def test_kartenhintergrund_nur_in_sichtweite():
     assert 'setProperty("--bg-img"' in rumpf
     assert 'removeProperty("--bg-img")' in rumpf, (
         "Ohne Freigabe wächst der Bildspeicher beim Scrollen weiter")
+
+
+def test_zug_zum_neuladen_bleibt_nachvollziehbar():
+    """Nach unten ziehen lädt die Seite neu – und muss dabei seinen Grund
+    hinterlassen.
+
+    Sonst steht im Speicher-Verlauf ein Start wenige Sekunden nach dem
+    letzten Messwert, und die Auswertung hält das für einen Absturz. Genau
+    diese Verwechslung hat schon einmal auf die falsche Fährte geführt: Der
+    „Absturz" um 09:19:44 war in Wahrheit das Update.
+
+    Zweite Bedingung: Die Geste gibt es nur vom Startbildschirm aus. Im
+    Browser bringt sie die Adressleiste schon mit – zwei Anzeigen
+    übereinander wären keine Verbesserung."""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "frontend" / "app.js").read_text()
+    start = js.index("function zugZumNeuladen(")
+    rumpf = js[start:js.index("\n}\n", start)]
+
+    assert "isStandalone()" in rumpf, "Die Geste gehört nur in die App"
+    assert "neuLadenMit(" in rumpf, (
+        "Neu laden muss über neuLadenMit gehen, sonst zählt der Verlauf es"
+        " als Absturz")
+    assert "location.reload()" not in rumpf

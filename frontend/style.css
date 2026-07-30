@@ -501,6 +501,30 @@ code {
   max-width: 90vw; text-align: center;
 }
 
+/* ---------- Nach unten ziehen = neu laden ----------
+   Nur vom Startbildschirm aus, wo die Adressleiste samt Neu-laden-Knopf
+   fehlt. Der Stein hängt über dem oberen Rand und kommt mit dem Finger
+   herunter; ab der Schwelle färbt er sich, damit man weiß, dass Loslassen
+   jetzt wirkt. */
+.ptr {
+  position: fixed; top: calc(env(safe-area-inset-top) + 4px); left: 50%;
+  transform: translate(-50%, 0);
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+  opacity: 0; pointer-events: none; z-index: 120;
+  margin-top: -54px;                 /* außerhalb, bis gezogen wird */
+}
+.ptr.ptr-an { opacity: 1; }
+/* Grün statt Gelb: Der Balken darüber ist selbst gelb – die Schwelle wäre
+   dort nicht zu erkennen gewesen. */
+.ptr.ptr-bereit { background: var(--green); }
+/* Beim Ziehen steht der Stein still – er dreht sich erst, wenn es losgeht */
+.ptr .spinner-brick { animation: none; }
+.ptr.ptr-laeuft { opacity: 1; }
+.ptr.ptr-laeuft .spinner-brick { animation: bf-spin .9s linear infinite; }
+
 /* ---------- Lightbox (Bild-Großansicht) ---------- */
 .card-img { cursor: zoom-in; }
 .lightbox {
