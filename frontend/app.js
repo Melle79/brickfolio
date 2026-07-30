@@ -2241,7 +2241,8 @@ function collCardDetails(it) {
    beim Aufklappen – das hält das DOM bei großen Sammlungen schlank. */
 function collCardHtml(it) {
   return `
-    <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}">
+    <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}"${
+      it.img_url ? ` data-bg="${imgSrc(it.img_url)}"` : ""}>
       <div class="card-head">
         <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <span class="qty-badge" data-qty-val>${it.quantity}</span>
@@ -2355,10 +2356,6 @@ function renderCollection() {
     const id = Number(card.dataset.id);
     const item = items.find((i) => i.id === id);
     const canPrice = state.bricklinkPrices && !/^(fig-|manuell-|custom-)/.test(item.item_id);
-    // Produktbild als zarter, weich gezeichneter Hintergrund der Karte
-    if (item.img_url) {
-      card.style.setProperty("--bg-img", `url("${item.img_url}")`);
-    }
 
     const deleteEntry = async () => {
       if (!confirm(tr("„{name}“ wirklich löschen?", { name: item.name }))) return;
@@ -2430,6 +2427,41 @@ function renderCollection() {
       openCardModal(item, id, card, deleteEntry, wireQty, canPrice);
     });
   });
+
+  hintergrundBeobachten(list);
+}
+
+/* Der weiche Hintergrund ist der teuerste Teil einer Karte: ein zweites Bild
+   pro Eintrag – und für CSS-Hintergründe gibt es kein `loading="lazy"`. Bei
+   815 Einträgen wurden dadurch beim Öffnen der Sammlung 815 Bilder auf einmal
+   geholt (gemessen), zusätzlich zu den ausgelieferten der Karten. Der
+   JS-Speicher blieb dabei unauffällig – das Bildmaterial liegt außerhalb, und
+   genau daran ist der Tab gestorben.
+
+   Jetzt bekommt eine Karte ihr Hintergrundbild erst, wenn sie in die Nähe des
+   Fensters kommt, und gibt es wieder her, sobald sie weit weg ist. Damit sind
+   nie mehr als eine Handvoll gleichzeitig im Speicher. */
+let bgBeobachter = null;
+
+function cssUrl(url) {
+  return `url("${String(url).replace(/["\\]/g, "\\$&")}")`;
+}
+
+function hintergrundBeobachten(root) {
+  if (bgBeobachter) bgBeobachter.disconnect();
+  if (!("IntersectionObserver" in window)) {
+    // Ohne Beobachter lieber gar kein Hintergrund als alle auf einmal
+    return;
+  }
+  bgBeobachter = new IntersectionObserver((eintraege) => {
+    eintraege.forEach((e) => {
+      const url = e.target.dataset.bg;
+      if (!url) return;
+      if (e.isIntersecting) e.target.style.setProperty("--bg-img", cssUrl(url));
+      else e.target.style.removeProperty("--bg-img");
+    });
+  }, { rootMargin: "800px 0px" });
+  root.querySelectorAll(".card[data-bg]").forEach((c) => bgBeobachter.observe(c));
 }
 
 /* Detailansicht als Popup. Enthält Kopf UND Details, damit die bestehende

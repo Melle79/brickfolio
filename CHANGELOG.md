@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.70.0 – Juli 2026
+
+### Behoben
+- 💥 **Der abstürzende Tab.** Der Speicher-Verlauf aus 1.69.0 hat die Stelle
+  gezeigt: 6 MB JS-Speicher, flach über elf Minuten, 14.680 Elemente,
+  815 Bilder – und dann weg. Die Kurve blieb flach, also lag es woanders.
+  Es lag am **weichen Hintergrundbild der Sammlungskarten**: Jede Karte trug
+  ein zweites Bild, und für CSS-Hintergründe gibt es kein `loading="lazy"`.
+  Mit 815 Einträgen nachgestellt – identisch bis auf 100 Elemente genau –
+  holte das Öffnen der Sammlung **815 Bilder auf einmal**, ohne eine Zeile zu
+  scrollen. Entpackt ist das ein halbes Gigabyte, und das steht nirgends im
+  JS-Speicher. Jetzt bekommt eine Karte ihr Hintergrundbild erst, wenn sie in
+  die Nähe des Fensters kommt, und gibt es wieder her, wenn sie weit weg ist:
+  gemessen **54 statt 815** Bilder beim Öffnen, und beim Weiterscrollen
+  wandert ein Fenster von rund 40 Karten mit
+
+### Verbessert
+- 🔒 **Auch die Hintergrundbilder laufen jetzt über die eigene Instanz.**
+  Sie hingen als einzige noch am Original bei BrickLink – damit verriet jede
+  angezeigte Karte, was hier steht, und geladen wurde die unverkleinerte
+  Fassung. Jetzt gilt für sie derselbe Weg wie für die Kartenbilder
+
 ## 1.69.0 – Juli 2026
 
 ### Neu

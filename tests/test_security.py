@@ -286,3 +286,38 @@ def test_jede_erzeugte_objektadresse_wird_wieder_freigegeben():
     freigegeben = len(re.findall(r"URL\.revokeObjectURL\(", js))
     assert freigegeben >= erzeugt, (
         f"{erzeugt}× createObjectURL, aber nur {freigegeben}× revokeObjectURL")
+
+
+def test_kartenhintergrund_nur_in_sichtweite():
+    """Der weiche Hintergrund einer Sammlungskarte ist ein zweites Bild je
+    Eintrag – und für CSS-Hintergründe gibt es kein `loading="lazy"`.
+
+    Gemessen mit 815 Einträgen: Das Öffnen der Sammlung holte 815 Bilder auf
+    einmal, ohne eine Zeile zu scrollen. Der JS-Speicher blieb dabei
+    unauffällig (2 MB) – Bildmaterial liegt außerhalb, und genau daran ist
+    der Tab wiederholt gestorben.
+
+    Zwei Bedingungen: Die Adresse hängt am Element und geht durch `imgSrc`
+    (also über die eigene Instanz, verkleinert – sonst wäre es zusätzlich
+    das Original von BrickLink, und jede Karte verriete beim Anzeigen, was
+    hier steht). Und `--bg-img` wird ausschließlich dort gesetzt, wo es auch
+    wieder weggenommen wird."""
+    import re
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "frontend" / "app.js").read_text()
+
+    assert 'data-bg="${imgSrc(' in js, (
+        "Der Kartenhintergrund muss über imgSrc laufen")
+
+    gesetzt = re.findall(r'setProperty\(\s*"--bg-img"', js)
+    assert len(gesetzt) == 1, (
+        f"--bg-img wird an {len(gesetzt)} Stellen gesetzt – erlaubt ist nur"
+        " die Stelle, die es auch wieder freigibt")
+
+    start = js.index("function hintergrundBeobachten(")
+    ende = js.index("\n}\n", start)
+    rumpf = js[start:ende]
+    assert "IntersectionObserver" in rumpf
+    assert 'setProperty("--bg-img"' in rumpf
+    assert 'removeProperty("--bg-img")' in rumpf, (
+        "Ohne Freigabe wächst der Bildspeicher beim Scrollen weiter")
