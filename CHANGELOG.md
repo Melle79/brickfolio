@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.73.0 – Juli 2026
+
+### Verbessert
+- 🪧 **Der Abschiedszettel.** Bisher blieb ein Rest Rätselraten: Ein Neuladen
+  von Hand sah im Verlauf genauso aus wie ein Absturz. Jetzt hinterlässt die
+  Seite beim Verlassen eine Notiz – das passiert bei jedem gewollten Ende
+  (neu laden, weiterklicken, schließen) und ausgerechnet **nicht**, wenn der
+  Browser sie abwürgt. Fehlt die Notiz, war es wirklich ein Absturz.
+  Der Verlauf sagt das jetzt im Klartext: „ohne sich zu verabschieden – das
+  ist ein echter Absturz" gegen „von Hand neu geladen – kein Absturz"
+- 🗂 **Ein zweiter Tab zählt nicht mehr als Absturz.** Wer die App noch einmal
+  öffnet, während die erste Sitzung läuft, hat weder Notiz noch Vorgeschichte
+  – das sah aus wie ein Abbruch und war keiner
+
 ## 1.72.0 – Juli 2026
 
 Aus einem Belastungstest: 132 Endpunkte, bis zu 5.041 Einträge, alle Tabs.

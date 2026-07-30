@@ -6105,6 +6105,7 @@ function initErrorReporting() {
 const DIAG_KEY = "bf_mem";
 const DIAG_MAX = 240;                 // 240 × 30 s = zwei Stunden
 const DIAG_TAKT = 30000;
+const DIAG_WEG_KEY = "bf_weg";        // Zeitpunkt des ordentlichen Abschieds
 
 function diagLesen() {
   try { return JSON.parse(localStorage.getItem(DIAG_KEY) || "[]"); }
@@ -6136,6 +6137,15 @@ function diagMessen(grund = "", geplant = null) {
     const nav = performance.getEntriesByType("navigation")[0];
     if (nav && nav.type) punkt.nav = nav.type;
     if (document.wasDiscarded) punkt.disc = 1;
+    // Hat sich die vorige Seite ordentlich verabschiedet? `pagehide` läuft
+    // bei jedem gewollten Ende – Neuladen, Weiterklicken, Schließen. Bei
+    // einem Absturz läuft es nicht. Damit ist der Unterschied endlich
+    // messbar, statt aus „Neuladen" geraten werden zu müssen.
+    try {
+      const weg = Number(sessionStorage.getItem(DIAG_WEG_KEY) || 0);
+      sessionStorage.removeItem(DIAG_WEG_KEY);
+      if (weg && Date.now() - weg < 10000) punkt.sauber = 1;
+    } catch (_) { /* egal */ }
   }
   const liste = diagLesen();
   liste.push(punkt);
@@ -6170,6 +6180,12 @@ function diagStarten() {
   } catch (_) { /* egal */ }
   diagMessen("start", geplant);
   diagTimer = setInterval(diagMessen, DIAG_TAKT);
+  // Der Abschiedszettel. Läuft bei Neuladen, Weiterklicken und Schließen –
+  // und ausgerechnet dann nicht, wenn der Browser die Seite abwürgt.
+  addEventListener("pagehide", () => {
+    try { sessionStorage.setItem(DIAG_WEG_KEY, String(Date.now())); }
+    catch (_) { /* egal */ }
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) diagMessen("zurück");
   });
@@ -6197,7 +6213,7 @@ function renderDiag() {
   // Ein Neustart kurz nach dem letzten Messwert heißt: Die Seite war weg.
   // Warum, steht am Eintrag – gewolltes Neuladen der App zählt nicht als
   // Absturz, sonst hätte jeder Server-Neustart wie einer ausgesehen.
-  let abbruch = 0, geplant = 0, weggeraeumt = 0, serverNeu = 0;
+  let abbruch = 0, geplant = 0, weggeraeumt = 0, serverNeu = 0, sauber = 0;
   // Verglichen wird mit der zuletzt *bekannten* Startzeit: Direkt nach einem
   // Neuladen steht sie noch nicht fest, der Eintrag hat dort kein `s`.
   let letzterServer = null;
@@ -6210,6 +6226,12 @@ function renderDiag() {
     if (!i || p.g !== "start" || p.t - vor.t >= 90000) continue;
     if (p.disc) weggeraeumt++;
     else if (p.p) geplant++;
+    else if (p.sauber) sauber++;       // von Hand neu geladen o. Ä.
+    else if (p.nav === "navigate") continue;
+    // Ein frisch geöffneter zweiter Tab hat weder Abschiedszettel noch
+    // Vorgeschichte – der zählt nicht als Absturz. Abgestürzt heißt:
+    // dieselbe Seite kam als „reload" zurück, ohne sich verabschiedet
+    // zu haben.
     else abbruch++;
   }
   const teile = [
@@ -6226,8 +6248,12 @@ function renderDiag() {
   }
   teile.push(tr("{n} Elemente, {b} Bilder", { n: letzte.knoten, b: letzte.bilder }));
   if (abbruch) {
-    teile.push(tr("⚠️ {n}× brach die Seite ohne erkennbaren Grund ab.",
-      { n: abbruch }));
+    teile.push(tr("⚠️ {n}× brach die Seite ab, ohne sich zu verabschieden – "
+      + "das ist ein echter Absturz.", { n: abbruch }));
+  }
+  if (sauber) {
+    teile.push(tr("🔄 {n}× wurde die Seite von Hand neu geladen – kein "
+      + "Absturz.", { n: sauber }));
   }
   if (weggeraeumt) {
     teile.push(tr("🧹 {n}× hat der Browser den Tab weggeräumt – das tut er "
@@ -7191,6 +7217,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         p.v ? "v" + p.v : "", p.g || "",
         // Nur beim Start belegt: Woher kam er?
         p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
+        p.g === "start" && !p.p && !p.disc
+          ? (p.sauber ? "ordentlich beendet" : "OHNE ABSCHIED") : "",
         p.nav && p.g === "start" ? "nav=" + p.nav : "",
         // Server-Neustart dort, wo seine Startzeit springt
         sprung ? "SERVER NEU GESTARTET" : "",
