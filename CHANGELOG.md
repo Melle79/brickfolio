@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.70.1 – Juli 2026
+
+### Verbessert
+- 🔍 **Der Verlauf sagt jetzt, *warum* eine Sitzung neu begann.** Bisher galt
+  jeder Start kurz nach dem letzten Messwert als Absturz – auch dann, wenn die
+  App sich selbst neu geladen hatte. Genau das passiert nach jedem
+  Server-Neustart, damit niemand mit veraltetem Code weiterarbeitet. Im
+  Verlauf vom 30.7. steht der Beweis: Der „Absturz" um 09:19:44 war das Update
+  auf 1.70.0, eine halbe Minute später lief die neue Version. Jetzt trägt
+  jedes gewollte Neuladen seinen Grund, und die Zusammenfassung zählt getrennt:
+  „ohne erkennbaren Grund", „vom Browser weggeräumt", „App selbst neu geladen"
+- 🖥 **Die Startzeit des Servers steht in jedem Messwert.** Springt sie, ist der
+  Container neu gestartet – das ist im Verlauf jetzt direkt zu sehen, statt es
+  aus einem Neustart der Seite erraten zu müssen
+- 🧹 **Der Browser verrät, wenn er den Tab weggeräumt hat** (`wasDiscarded`).
+  Das tut er bei Speichermangel – es ist der einzige Hinweis auf Speicher, den
+  er einer Seite gibt, und damit der erste belastbare statt eines vermuteten
+
 ## 1.70.0 – Juli 2026
 
 ### Behoben

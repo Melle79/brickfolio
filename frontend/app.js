@@ -4969,7 +4969,7 @@ async function restoreBackupFile(file) {
     const res = await api("/restore", { method: "POST", body: data });
     const n = res.restored && res.restored.collection;
     toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n: n ?? "?" }));
-    setTimeout(() => location.reload(), 1200);
+    setTimeout(() => neuLadenMit("Sicherung eingespielt"), 1200);
   } catch (e) { toast(e.message); }
 }
 
@@ -6056,7 +6056,7 @@ function diagLesen() {
   catch (_) { return []; }
 }
 
-function diagMessen(grund = "") {
+function diagMessen(grund = "", geplant = null) {
   const m = performance.memory;
   const punkt = {
     t: Date.now(),
@@ -6066,8 +6066,22 @@ function diagMessen(grund = "") {
     knoten: document.getElementsByTagName("*").length,
     bilder: document.getElementsByTagName("img").length,
     v: (state.appVersion || "").slice(0, 12),
+    // Startzeit des Servers. Ändert sie sich, ist der Container neu
+    // gestartet – und die App lädt sich daraufhin selbst neu. Ohne diese
+    // Zahl sah genau das im Verlauf aus wie ein Absturz.
+    s: state.serverStartedAt || null,
   };
   if (grund) punkt.g = grund;
+  if (grund === "start") {
+    // Woher kam dieser Start? `p` ist der Grund, falls die App selbst neu
+    // geladen hat. `nav` unterscheidet Neuladen von normalem Aufruf, und
+    // `disc` sagt, ob der Browser den Tab wegen Speichermangel weggeräumt
+    // hat – das ist der einzige Hinweis auf Speicher, den er herausrückt.
+    if (geplant) punkt.p = geplant;
+    const nav = performance.getEntriesByType("navigation")[0];
+    if (nav && nav.type) punkt.nav = nav.type;
+    if (document.wasDiscarded) punkt.disc = 1;
+  }
   const liste = diagLesen();
   liste.push(punkt);
   while (liste.length > DIAG_MAX) liste.shift();
@@ -6078,12 +6092,28 @@ function diagMessen(grund = "") {
 
 let diagTimer = null;
 
+/* Die App lädt sich an einigen Stellen selbst neu – nach einem Server-Neustart
+   etwa, oder nach dem Einspielen einer Sicherung. Im Verlauf sah das bisher
+   aus wie ein Absturz: ein „start" wenige Sekunden nach dem letzten Messwert.
+   Deshalb hinterlässt jedes gewollte Neuladen hier seinen Grund. */
+const DIAG_GRUND_KEY = "bf_reload_grund";
+
+function neuLadenMit(grund) {
+  try { sessionStorage.setItem(DIAG_GRUND_KEY, grund); } catch (_) { /* egal */ }
+  location.reload();
+}
+
 function diagStarten() {
   if (diagTimer) return;
   // „start" markiert den Beginn einer Sitzung. Steht davor ein Messwert von
-  // vor wenigen Sekunden, ist der Tab dazwischen gestorben – genau das ist
-  // die Stelle, die interessiert.
-  diagMessen("start");
+  // vor wenigen Sekunden, ist die Seite dazwischen weggewesen. Ob sie
+  // abgestürzt ist oder ordentlich neu geladen wurde, steht daneben.
+  let geplant = null;
+  try {
+    geplant = sessionStorage.getItem(DIAG_GRUND_KEY);
+    sessionStorage.removeItem(DIAG_GRUND_KEY);
+  } catch (_) { /* egal */ }
+  diagMessen("start", geplant);
   diagTimer = setInterval(diagMessen, DIAG_TAKT);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) diagMessen("zurück");
@@ -6109,10 +6139,23 @@ function renderDiag() {
   }
   const heaps = liste.map((p) => p.heap).filter((x) => x != null);
   const letzte = liste[liste.length - 1];
-  // Ein Neustart kurz nach dem letzten Messwert heißt: Der Tab ist gestorben.
-  let abbruch = 0;
-  for (let i = 1; i < liste.length; i++) {
-    if (liste[i].g === "start" && liste[i].t - liste[i - 1].t < 90000) abbruch++;
+  // Ein Neustart kurz nach dem letzten Messwert heißt: Die Seite war weg.
+  // Warum, steht am Eintrag – gewolltes Neuladen der App zählt nicht als
+  // Absturz, sonst hätte jeder Server-Neustart wie einer ausgesehen.
+  let abbruch = 0, geplant = 0, weggeraeumt = 0, serverNeu = 0;
+  // Verglichen wird mit der zuletzt *bekannten* Startzeit: Direkt nach einem
+  // Neuladen steht sie noch nicht fest, der Eintrag hat dort kein `s`.
+  let letzterServer = null;
+  for (let i = 0; i < liste.length; i++) {
+    const p = liste[i], vor = liste[i - 1];
+    if (p.s) {
+      if (letzterServer && p.s !== letzterServer) serverNeu++;
+      letzterServer = p.s;
+    }
+    if (!i || p.g !== "start" || p.t - vor.t >= 90000) continue;
+    if (p.disc) weggeraeumt++;
+    else if (p.p) geplant++;
+    else abbruch++;
   }
   const teile = [
     tr("{n} Messwerte über {zeit}", { n: liste.length,
@@ -6128,8 +6171,20 @@ function renderDiag() {
   }
   teile.push(tr("{n} Elemente, {b} Bilder", { n: letzte.knoten, b: letzte.bilder }));
   if (abbruch) {
-    teile.push(tr("⚠️ {n}× brach die Seite ab und startete sofort neu.",
+    teile.push(tr("⚠️ {n}× brach die Seite ohne erkennbaren Grund ab.",
       { n: abbruch }));
+  }
+  if (weggeraeumt) {
+    teile.push(tr("🧹 {n}× hat der Browser den Tab weggeräumt – das tut er "
+      + "bei Speichermangel.", { n: weggeraeumt }));
+  }
+  if (geplant) {
+    teile.push(tr("↻ {n}× hat die App selbst neu geladen (z. B. nach einem "
+      + "Server-Neustart) – das ist kein Absturz.", { n: geplant }));
+  }
+  if (serverNeu) {
+    teile.push(tr("🖥 {n}× ist der Server in dieser Zeit neu gestartet.",
+      { n: serverNeu }));
   }
   zus.innerHTML = teile.map(esc).join("<br>");
 
@@ -6153,7 +6208,8 @@ function renderDiag() {
     <text x="${padX}" y="${h - padB - 2}" class="hist-label">${esc(String(Math.round(lo)))}</text>
   </svg>
   <div class="price-note">${esc(tr("Senkrechte Linien: hier begann eine neue "
-    + "Sitzung. Kommt eine davon ohne Zutun, ist der Tab abgestürzt."))}</div>`;
+    + "Sitzung. Steht darüber kein Grund, kam sie ohne Zutun – dann ist der "
+    + "Tab abgestürzt."))}</div>`;
 }
 
 /* ------------------------------------------- Benachrichtigung aufs Gerät
@@ -6664,7 +6720,7 @@ async function pollUpdateStatus() {
       if (serverStartedKnown === null) {
         serverStartedKnown = s.started_at;
       } else if (s.started_at !== serverStartedKnown) {
-        location.reload();
+        neuLadenMit("Server neu gestartet");
         return;
       }
     }
@@ -7069,12 +7125,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("btn-diag-copy").addEventListener("click", async () => {
     const liste = diagLesen();
-    const zeilen = liste.map((p) => [
-      new Date(p.t).toLocaleString(dateLocale()),
-      p.heap != null ? p.heap + " MB" : "–",
-      p.knoten + " Elemente", p.bilder + " Bilder",
-      p.v ? "v" + p.v : "", p.g || "",
-    ].filter(Boolean).join("  ·  "));
+    let bekannt = null;
+    const zeilen = liste.map((p) => {
+      const sprung = p.s && bekannt && p.s !== bekannt;
+      if (p.s) bekannt = p.s;
+      return [
+        new Date(p.t).toLocaleString(dateLocale()),
+        p.heap != null ? p.heap + " MB" : "–",
+        p.knoten + " Elemente", p.bilder + " Bilder",
+        p.v ? "v" + p.v : "", p.g || "",
+        // Nur beim Start belegt: Woher kam er?
+        p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
+        p.nav && p.g === "start" ? "nav=" + p.nav : "",
+        // Server-Neustart dort, wo seine Startzeit springt
+        sprung ? "SERVER NEU GESTARTET" : "",
+      ].filter(Boolean).join("  ·  ");
+    });
     const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n");
     try {
       await navigator.clipboard.writeText(text);
@@ -7165,7 +7231,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     ev.currentTarget.disabled = false;
     pollUpdateStatus();
   });
-  $("btn-update-reload").addEventListener("click", () => location.reload());
+  $("btn-update-reload").addEventListener("click",
+    () => neuLadenMit("Knopf „Neu laden“"));
 
   $("btn-update-check").addEventListener("click", async (ev) => {
     const btn = ev.currentTarget;
@@ -7233,7 +7300,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert(tr("Stand {wann} wiederhergestellt.", { wann: label }) + "\n"
         + tr("Sicherheitskopie: {name}", { name: res.safety })
         + "\n\n" + tr("Die App lädt jetzt neu."));
-      location.reload();
+      neuLadenMit("Sicherung wiederhergestellt");
     } catch (e) { toast(e.message); }
   });
   $("restore-file").addEventListener("change", (ev) => {
