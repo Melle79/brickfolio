@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.75.0 – Juli 2026
+
+### Neu
+- 💬 **Ungelesene Nachrichten sieht man sofort.** Bisher stand der Zähler nur
+  am Unter-Reiter im Tausch-Bereich – wer woanders war oder die App gerade
+  erst geöffnet hatte, merkte von einer neuen Nachricht nichts. Jetzt sitzt
+  ein Zeichen mit der Zahl **oben in der Kopfzeile**, von jedem Tab aus
+  sichtbar. Ein Tipp führt direkt zu *Tausch → Meine Vorgänge*
+- Ist nichts offen, ist auch **kein Zeichen** da – die Kopfzeile bleibt so
+  ruhig wie vorher
+- Beim Öffnen der App wird **einmal beim Hub nachgefragt**, statt nur den
+  zuletzt bekannten Stand zu zeigen. Sonst stünde die Zahl bis zum nächsten
+  Takt auf dem Wert von gestern
+
 ## 1.74.1 – Juli 2026
 
 ### Behoben

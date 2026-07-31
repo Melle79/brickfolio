@@ -1814,7 +1814,10 @@ function showApp() {
     state.hubConnected = !!c.hub_connected;
     updateHubTab();
     updatePolling();
-    if (state.hubConnected) refreshUnread();
+    // Beim Öffnen einmal richtig nachsehen: `refreshUnread` allein liest nur
+    // den zuletzt bekannten Stand aus der eigenen Datenbank – neue
+    // Nachrichten lägen dann bis zum ersten Takt unbemerkt da.
+    if (state.hubConnected) syncTrades(true).then(refreshUnread);
   }).catch(() => {});
   startUpdateWatch();
   diagStarten();
@@ -5437,12 +5440,25 @@ async function zeigeSicherheitsnummer(memberId) {
   } catch (_) { /* ohne Nummer bleibt der Abschnitt einfach zu */ }
 }
 
-/* Ungelesene Nachrichten am Unter-Tab anzeigen. */
+/* Ungelesene Nachrichten anzeigen – am Unter-Tab und oben in der Kopfzeile.
+
+   Den Unter-Tab sieht nur, wer schon im Tausch-Bereich ist. Damit blieb eine
+   neue Nachricht unbemerkt, solange man woanders war oder die App gerade erst
+   geöffnet hat. Das Zeichen in der Kopfzeile ist von überall zu sehen – und
+   verschwindet wieder, sobald nichts mehr offen ist. */
 function markUnread(n) {
   const b = $("hub-unread");
-  if (!b) return;
-  b.hidden = !n;
-  b.textContent = n;
+  if (b) {
+    b.hidden = !n;
+    b.textContent = n;
+  }
+  const oben = $("topbar-unread");
+  if (oben) {
+    oben.hidden = !n;
+    oben.querySelector("[data-unread-count]").textContent = n > 99 ? "99+" : n;
+    oben.title = n === 1 ? tr("1 ungelesene Nachricht")
+      : tr("{n} ungelesene Nachrichten", { n });
+  }
 }
 
 async function syncTrades(quiet = true, focus = "") {
@@ -7267,6 +7283,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("totp-code").addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") { ev.preventDefault(); doTotpLogin(); }
   });
+  $("topbar-unread").addEventListener("click", () => {
+    showTab("hub");
+    showHubTab("trades");
+  });
+
   $("btn-help").addEventListener("click", () => {
     $("help-overlay").hidden = false;
     document.body.style.overflow = "hidden";

@@ -229,6 +229,12 @@ as a popup – from any tab, with instructions for every feature. And **your own
 name** next to it is tappable: behind it is the **profile popup** with change
 display name, change password and sign out.
 
+**💬 Unread messages.** If something is waiting in the trade network, a mark
+with the number of unread messages appears to the left – visible from every
+tab. Tapping it goes straight to *Trade → My conversations*. If nothing is
+open, there is no mark either. When the app opens, Brickfolio asks the hub
+once so the number is right immediately instead of after the next cycle.
+
 > **Phone or computer?** The navigation sits **at the bottom on a phone** and
 > **as a sidebar on the left on wide screens**. There the app uses the space:
 > key figures side by side, and four to five cards per row in the collection

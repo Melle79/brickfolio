@@ -234,6 +234,13 @@ allen Funktionen. Und der **eigene Name** daneben ist antippbar: Dahinter
 liegt das **Profil-Popup** mit Anzeigename ändern, Passwort ändern und
 Abmelden.
 
+**💬 Ungelesene Nachrichten.** Wartet im Tausch-Netzwerk etwas, erscheint
+links daneben ein Zeichen mit der Zahl der ungelesenen Nachrichten – von
+jedem Tab aus zu sehen. Ein Tipp darauf führt direkt zu *Tausch → Meine
+Vorgänge*. Ist nichts offen, ist auch kein Zeichen da. Beim Öffnen der App
+fragt Brickfolio einmal beim Hub nach, damit die Zahl gleich stimmt und
+nicht erst nach dem nächsten Takt.
+
 > **Handy oder Rechner?** Die Navigation liegt auf dem **Handy als Leiste
 > unten**, auf **breiten Bildschirmen als Seitenleiste links**. Dort nutzt
 > die App die Fläche: Kennzahlen nebeneinander und in der Sammlung vier bis
