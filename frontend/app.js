@@ -2030,20 +2030,55 @@ let vorschauUrl = null;
    und sparen nebenbei die Übertragung von zehn Megabyte durch den Tunnel. */
 const SCAN_KANTE = 1200;
 
+/* Maße lesen, ohne das Bild zu entpacken. `naturalWidth` steht nach dem
+   Laden bereit; entpackt wird erst beim Zeichnen. */
+async function bildMasse(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise((fertig, schief) => {
+      img.onload = fertig;
+      img.onerror = schief;
+      img.src = url;
+    });
+    return { w: img.naturalWidth, h: img.naturalHeight };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 async function verkleinern(file, maxSeite = SCAN_KANTE) {
   if (!file || !("createImageBitmap" in window)) return file;
-  let bmp;
+  let masse;
   try {
-    bmp = await createImageBitmap(file);
+    masse = await bildMasse(file);
   } catch (_) {
     return file;                     // kein lesbares Bild – der Server sagt es
   }
-  const faktor = Math.min(1, maxSeite / Math.max(bmp.width, bmp.height));
-  if (faktor === 1) { bmp.close(); return file; }     // schon klein genug
+  if (!masse.w || !masse.h) return file;
+  const faktor = Math.min(1, maxSeite / Math.max(masse.w, masse.h));
+  if (faktor === 1) return file;                      // schon klein genug
+  const bw = Math.round(masse.w * faktor);
+  const bh = Math.round(masse.h * faktor);
+  let bmp;
+  try {
+    // **Beim Entpacken** verkleinern, nicht danach. Ein Handyfoto hat
+    // heute leicht 50 Megapixel – vollständig entpackt sind das rund
+    // 200 MB, in einem Stück, außerhalb des JS-Speichers. Genau dort sieht
+    // keine Messung etwas, und genau dort ist der Tab wiederholt gestorben,
+    // während die Kurve flach blieb. Mit `resizeWidth` entsteht das große
+    // Bild gar nicht erst.
+    bmp = await createImageBitmap(file, {
+      resizeWidth: bw, resizeHeight: bh, resizeQuality: "high",
+    });
+  } catch (_) {
+    try { bmp = await createImageBitmap(file); }       // älterer Browser
+    catch (_2) { return file; }
+  }
   const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * faktor);
-  c.height = Math.round(bmp.height * faktor);
-  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  c.width = bw;
+  c.height = bh;
+  c.getContext("2d").drawImage(bmp, 0, 0, bw, bh);
   bmp.close();                       // das Original sofort freigeben
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;            // auch die Zeichenfläche
@@ -2221,18 +2256,21 @@ function scanAuswahlEinrichten() {
     const status = $("scan-status");
     const gefunden = [];
     try {
-      for (let i = 0; i < gemerkteRahmen.length; i++) {
-        status.hidden = false;
-        status.querySelector("[data-scan-text]").textContent =
-          tr("Figur {i} von {n} …", { i: i + 1, n: gemerkteRahmen.length });
-        const teil = await ausschnittBild(lastScanFile, gemerkteRahmen[i]);
-        const fd = new FormData();
-        fd.append("file", teil, "scan.jpg");
-        try {
-          const d = await api("/scan", { method: "POST", body: fd });
-          if (d.items && d.items[0]) gefunden.push(d.items[0]);
-        } catch (_) { /* eine weniger, der Rest läuft weiter */ }
-      }
+      const bild = await createImageBitmap(lastScanFile);
+      try {
+        for (let i = 0; i < gemerkteRahmen.length; i++) {
+          status.hidden = false;
+          status.querySelector("[data-scan-text]").textContent =
+            tr("Figur {i} von {n} …", { i: i + 1, n: gemerkteRahmen.length });
+          const teil = await ausschnittBild(lastScanFile, gemerkteRahmen[i], bild);
+          const fd = new FormData();
+          fd.append("file", teil, "scan.jpg");
+          try {
+            const d = await api("/scan", { method: "POST", body: fd });
+            if (d.items && d.items[0]) gefunden.push(d.items[0]);
+          } catch (_) { /* eine weniger, der Rest läuft weiter */ }
+        }
+      } finally { bild.close(); }
       if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
       renderScanResults(gefunden);
       toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
@@ -2455,18 +2493,21 @@ async function alleFigurenErkennen(anzahlWunsch = 0) {
         + "anpassen."));
     }
     const gefunden = [];
-    for (let i = 0; i < boxen.length; i++) {
-      status.hidden = false;
-      status.querySelector("[data-scan-text]").textContent =
-        tr("Figur {i} von {n} …", { i: i + 1, n: boxen.length });
-      const teil = await ausschnittBild(lastScanFile, boxen[i]);
-      try {
-        const fd = new FormData();
-        fd.append("file", teil, "scan.jpg");
-        const d = await api("/scan", { method: "POST", body: fd });
-        if (d.items && d.items[0]) gefunden.push(d.items[0]);
-      } catch (_) { /* eine Figur weniger, der Rest läuft weiter */ }
-    }
+    const bild = await createImageBitmap(lastScanFile);
+    try {
+      for (let i = 0; i < boxen.length; i++) {
+        status.hidden = false;
+        status.querySelector("[data-scan-text]").textContent =
+          tr("Figur {i} von {n} …", { i: i + 1, n: boxen.length });
+        const teil = await ausschnittBild(lastScanFile, boxen[i], bild);
+        try {
+          const fd = new FormData();
+          fd.append("file", teil, "scan.jpg");
+          const d = await api("/scan", { method: "POST", body: fd });
+          if (d.items && d.items[0]) gefunden.push(d.items[0]);
+        } catch (_) { /* eine Figur weniger, der Rest läuft weiter */ }
+      }
+    } finally { bild.close(); }
     if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
     renderScanResults(gefunden);
     toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
@@ -2527,8 +2568,11 @@ function mehrfachRahmen(boxen) {
 
 /* Ausschnitt aus dem aufgenommenen Bild – mit etwas Rand, weil die
    Erkennung mit ein wenig Umgebung besser zurechtkommt. */
-async function ausschnittBild(file, a) {
-  const bmp = await createImageBitmap(file);
+async function ausschnittBild(file, a, fertigesBild = null) {
+  // Bei mehreren Ausschnitten wird **einmal** entpackt und wiederverwendet.
+  // Vorher entpackte jeder Ausschnitt das Foto neu – bei fünf Figuren fünfmal
+  // gut 20 MB, und die lagen zeitweise nebeneinander im Speicher.
+  const bmp = fertigesBild || await createImageBitmap(file);
   const rand = Math.round(Math.max(a.w, a.h) * 0.08);
   const x = Math.max(0, Math.round(a.x) - rand);
   const y = Math.max(0, Math.round(a.y) - rand);
@@ -2538,7 +2582,7 @@ async function ausschnittBild(file, a) {
   c.width = w;
   c.height = h;
   c.getContext("2d").drawImage(bmp, x, y, w, h, 0, 0, w, h);
-  bmp.close();
+  if (!fertigesBild) bmp.close();    // fremde Bilder schließt der Aufrufer
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;
   return new File([blob], "scan.jpg", { type: "image/jpeg" });

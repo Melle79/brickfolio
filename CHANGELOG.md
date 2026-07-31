@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.84.0 – Juli 2026
+
+### Behoben
+- 📷 **Ein Handyfoto wurde vollständig entpackt, bevor es verkleinert
+  wurde.** Bei 12 Megapixeln sind das **46 MB in einem Stück**, bei einem
+  50-MP-Handy rund 200 MB – außerhalb des JS-Speichers, wo keine Messung
+  etwas sieht. Jetzt wird schon **beim Entpacken** verkleinert: gemessen
+  **46 MB → 4 MB, 91 % weniger**
+- 🔁 **Jeder Ausschnitt entpackte das Foto neu.** Bei fünf Figuren fünfmal
+  gut 20 MB, zeitweise nebeneinander. Jetzt wird einmal entpackt und für
+  alle Ausschnitte wiederverwendet – gemessen **1 statt 5**
+
+> **Warum das jetzt kommt.** Der Absturz vom 31.7. um 21:58 trug „OHNE
+> ABSCHIED", geschah im **klassischen** Design – die Glasflächen aus 1.77.0
+> waren es also nicht – und zwar bei **980 Elementen und 6 Bildern**, während
+> fotografiert wurde. Die Seite war winzig, der JS-Speicher bei 6 MB. Was in
+> diesem Moment groß ist, ist das entpackte Foto.
+
 ## 1.83.0 – Juli 2026
 
 ### Neu

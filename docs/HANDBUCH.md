@@ -521,6 +521,11 @@ Nummer und – je nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
 keine spiegelnden Verpackungen. Bei Sets funktioniert das Boxbild oder das
 aufgebaute Modell.
 
+> **Was mit dem Foto passiert.** Es wird **im Browser** auf 1200 Pixel
+> verkleinert, bevor irgendetwas damit geschieht – und zwar schon beim
+> Entpacken. Ein 12-Megapixel-Foto belegt vollständig entpackt 46 MB, so
+> aber nur 4. Zum Server gehen danach rund 90 KB statt mehrerer Megabyte.
+
 **Mehrere Figuren auf einem Bild.** Die Erkennung sucht **ein** Objekt je
 Anfrage – so ist der Dienst gebaut. Liegen mehrere Figuren auf dem Foto,
 sucht sie sich eine aus. Damit man sieht, welche, umrahmt die Vorschau die

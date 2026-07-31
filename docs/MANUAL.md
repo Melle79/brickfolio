@@ -505,6 +505,11 @@ and ownership hints.
 **Tips for good hit rates:** a plain background, the figure from the front, no
 reflective packaging. For sets the box image or the built model works.
 
+> **What happens to the photo.** It is scaled down to 1200 pixels **in the
+> browser** before anything else happens – and already while being decoded. A
+> 12-megapixel photo takes 46 MB fully decoded, this way only 4. About 90 KB
+> then go to the server instead of several megabytes.
+
 **Several figures in one picture.** Recognition looks for **one** object per
 request – that is how the service is built. If several figures are on the
 photo, it picks one. So that you can see which, the preview frames the
