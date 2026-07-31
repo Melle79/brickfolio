@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.82.0 – Juli 2026
+
+### Neu
+- ➕ **Die BrickLink-Endung kommt beim Erfassen von selbst dazu.** Wer bei
+  einem Set `21306` eintippt – die Zahl von der Packung –, bekommt `21306-1`
+  und landet damit sofort in derselben Zeile wie ein gescanntes Exemplar.
+  Vorbeugen statt hinterher zusammenführen. Gilt auch für Wunschliste und
+  CSV-Import
+- 🏷 **Der Katalogname hat Vorrang.** Sind die BrickLink-Schlüssel hinterlegt,
+  wird beim Ergänzen der Nummer gleich der offizielle Name übernommen –
+  „Yellow Submarine" statt „gelbes U-Boot vom Flohmarkt". Ohne Schlüssel
+  bleibt der eingetippte stehen, und eine Erfassung scheitert nie daran,
+  dass der Katalog gerade nicht antwortet
+- Beim Zusammenführen zweier Zeilen gilt derselbe Grundsatz: Es bleibt die
+  BrickLink-Zeile **samt ihres Namens**
+
+> **Angefasst wird nur, was eindeutig ist:** eine reine Zahl bei einem
+> **Set**. Figurennummern, Teilenummern, eigene Nummern und alles mit
+> vorhandener Endung bleiben unverändert.
+
 ## 1.81.0 – Juli 2026
 
 ### Neu

@@ -29,13 +29,64 @@ def client(tmp_path, monkeypatch):
 
 
 def _erfassen(client, item_id, menge=1, preis=None, zustand="new"):
-    koerper = {"item_id": item_id, "item_type": "set",
-               "name": "The Beatles Yellow Submarine", "quantity": menge,
-               "condition": zustand}
-    if preis is not None:
-        koerper["paid_price"] = preis
-    r = client.post("/api/collection", json=koerper)
-    assert r.status_code == 200, r.text
+    """Eintrag anlegen, wie er **früher** entstanden ist.
+
+    Seit 1.82.0 ergänzt die App beim Erfassen die BrickLink-Endung, ein
+    Paar wie 21306/21306-1 kann also gar nicht mehr neu entstehen. Bestehende
+    Sammlungen haben es trotzdem – deshalb hier direkt in die Datenbank,
+    sonst prüfte der Test eine Lage, die es nicht mehr gibt.
+    """
+    now = int(time.time())
+    with core.db() as conn:
+        cur = conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity,"
+            " condition, added_at, added_by, paid_price, paid_source, paid_at)"
+            " VALUES (?, 'set', 'The Beatles Yellow Submarine', ?, ?, ?, 1,"
+            " ?, 'manual', ?)",
+            (item_id, menge, zustand, now, preis, now if preis else None))
+        if preis is not None:
+            conn.execute(
+                "INSERT INTO purchases (entry_id, quantity, unit_price,"
+                " source, bought_at, note, created_at)"
+                " VALUES (?, ?, ?, 'manual', ?, '', ?)",
+                (cur.lastrowid, menge, round(preis / max(1, menge), 4), now, now))
+
+
+def test_beim_erfassen_kommt_die_endung_dazu(client):
+    """Vorbeugen statt aufräumen: Wer die Zahl von der Packung tippt, soll
+    trotzdem in derselben Zeile landen wie ein gescanntes Exemplar."""
+    r = client.post("/api/collection", json={
+        "item_id": "21306", "item_type": "set", "name": "Yellow Submarine",
+        "quantity": 1, "condition": "new"})
+    assert r.status_code == 200
+    items = client.get("/api/collection").json()["items"]
+    assert [i["item_id"] for i in items] == ["21306-1"]
+
+
+def test_zweites_erfassen_landet_in_derselben_zeile(client):
+    client.post("/api/collection", json={
+        "item_id": "21306-1", "item_type": "set", "name": "Yellow Submarine",
+        "quantity": 1, "condition": "new"})
+    r = client.post("/api/collection", json={
+        "item_id": "21306", "item_type": "set", "name": "Gelbes U-Boot",
+        "quantity": 1, "condition": "new"})
+    assert r.json()["merged"] is True
+    items = client.get("/api/collection").json()["items"]
+    assert len(items) == 1 and items[0]["quantity"] == 2
+
+
+@pytest.mark.parametrize("nummer,typ", [
+    ("sw0312", "minifig"),          # Figurennummern bleiben, wie sie sind
+    ("3001", "part"),               # Teile ebenso
+    ("21306-2", "set"),             # schon eine Endung dran
+    ("manuell-001", "set"),         # eigene Nummern nicht anfassen
+])
+def test_endung_nur_wo_sie_hingehoert(client, nummer, typ):
+    client.post("/api/collection", json={
+        "item_id": nummer, "item_type": typ, "name": "X",
+        "quantity": 1, "condition": "used"})
+    items = client.get("/api/collection").json()["items"]
+    assert [i["item_id"] for i in items] == [nummer]
 
 
 # ------------------------------------------------------------ Erkennung
@@ -57,7 +108,6 @@ def test_nummernpaar_wird_erkannt(client, a, b):
 
 @pytest.mark.parametrize("a,b", [
     ("sw0312", "sw0313"),        # zwei verschiedene Figuren
-    ("21306-1", "21307-1"),      # zwei verschiedene Sets
     ("fig-001234", "fig-001235"),
 ])
 def test_verschiedene_artikel_bleiben_unbehelligt(client, a, b):

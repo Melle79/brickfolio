@@ -736,7 +736,19 @@ Die App merkt das und legt einen Hinweis auf die **Scan-Seite**:
   addiert und beide Käufe stehen danach im Kaufbuch.
 
 Bleiben darf die Zeile mit der **BrickLink-Nummer**: Sie hat Preise,
-Set-Inhalte und passt zum Katalog.
+Set-Inhalte und passt zum Katalog – **samt ihres Namens**. Der aus dem
+Katalog gilt, nicht der selbst getippte.
+
+**Vorbeugen statt aufräumen.** Beim **manuellen Erfassen** eines Sets ergänzt
+die App die Endung gleich selbst: Wer `21306` eintippt, bekommt `21306-1` –
+und landet damit sofort in derselben Zeile wie ein gescanntes Exemplar. Sind
+die BrickLink-Schlüssel hinterlegt, wird zusätzlich der **Katalogname**
+übernommen; ohne Schlüssel bleibt der eingetippte stehen. Das gilt auch für
+die Wunschliste und den CSV-Import.
+
+> Angefasst wird nur, was eindeutig ist: eine reine Zahl bei einem **Set**.
+> Figurennummern (`sw0312`), Teilenummern, eigene Nummern (`manuell-…`) und
+> alles, was schon eine Endung hat, bleibt unverändert.
 
 > **Wo sich die App heraushält:** Bei zwei echten Varianten – etwa `21306-1`
 > und `21306-2` – kommt kein Hinweis. Dort sind es zwei verschiedene

@@ -1109,6 +1109,35 @@ def _apply_new_number(old_id: str, new_id: str) -> int:
 # nicht von sich aus: Ob jemand wirklich zwei besitzt oder nur zweimal
 # erfasst hat, weiß nur er selbst.
 
+def _bricklink_nummer(item_id: str, item_type: str, name: str = "") -> tuple:
+    """Nummer und Namen auf den BrickLink-Stand bringen.
+
+    Auf der Packung steht `21306`, im Katalog heißt dasselbe Set `21306-1`.
+    Wer von Hand erfasst, tippt die Zahl von der Packung – und hat danach
+    eine Zeile, die zu keiner gescannten passt. Deshalb wird die Endung hier
+    ergänzt, bevor irgendetwas gespeichert wird.
+
+    Sind die BrickLink-Schlüssel hinterlegt, wird zusätzlich nachgefragt:
+    Dann gilt der Name aus dem Katalog. Er ist der, unter dem alle anderen
+    dasselbe Set führen – „Yellow Submarine" statt „gelbes U-Boot vom
+    Flohmarkt". Ohne Schlüssel bleibt der eingetippte Name stehen.
+
+    Gibt der Katalog nichts her (falsche Nummer, Dienst weg), bleibt alles
+    wie eingetippt: Eine Erfassung soll nicht daran scheitern.
+    """
+    nummer = (item_id or "").strip()
+    if item_type != "set" or not re.fullmatch(r"\d{2,8}", nummer):
+        return nummer, name
+    nummer = f"{nummer}-1"
+    if not integrations.bricklink_enabled():
+        return nummer, name
+    try:
+        d = integrations.bricklink_item("set", nummer)
+    except Exception:
+        return nummer, name          # Nummer ergänzt, Rest wie eingetippt
+    return d.get("item_id") or nummer, d.get("name") or name
+
+
 def _nummer_kern(item_id: str) -> str:
     """Nummer ohne die BrickLink-Endung. `21306-1` und `21306` werden gleich.
 
@@ -1209,6 +1238,11 @@ def dublette_zusammenfuehren(note_id: int, body: DubletteBody,
                              (a["id"],))
             conn.execute("DELETE FROM collection WHERE id = ?", (a["id"],))
             _kaufsumme_nachziehen(conn, ziel["id"])
+        # Der Katalogname gilt. Die bleibende Zeile trägt ihn schon – hier
+        # steht es trotzdem ausdrücklich, damit ein späterer Umbau der
+        # Auswahl ihn nicht versehentlich mitnimmt.
+        conn.execute("UPDATE collection SET name = COALESCE(NULLIF(name, ''), ?) "
+                     "WHERE id = ?", (alt[0]["name"], neu[0]["id"]))
         conn.execute("UPDATE notifications SET dismissed_at = ? WHERE id = ?",
                      (int(time.time()), note_id))
     return {"ok": True, "modus": body.modus, "uebernommen": menge}
@@ -1984,6 +2018,9 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
                 continue
             typ = CSV_TYPE_MAP.get(cell(row, "type").lower(), "minifig")
             name = cell(row, "name") or num
+            # Auch hier: Nummern aus fremden Listen tragen oft die Zahl von
+            # der Packung. Ohne Endung landeten sie neben den gescannten.
+            num, name = _bricklink_nummer(num, typ, name)
             cond = CSV_COND_MAP.get(cell(row, "cond").lower(), "used")
             try:
                 qty = int(cell(row, "qty") or 1)
@@ -3098,6 +3135,11 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
 
 @app.post("/api/collection")
 def add_item(body: AddItemBody, user: dict = Depends(current_user)):
+    # Vor allem anderen: Nummer und Name auf den Katalogstand bringen. Damit
+    # landet eine von Hand getippte `21306` in derselben Zeile wie die
+    # gescannte `21306-1`, statt daneben.
+    body.item_id, body.name = _bricklink_nummer(
+        body.item_id, body.item_type, body.name)
     with core.db() as conn:
         row = conn.execute(
             "SELECT id, quantity, paid_price, condition, price_new, "
@@ -3372,6 +3414,8 @@ def get_wanted(user: dict = Depends(current_user)):
 
 @app.post("/api/wanted")
 def add_wanted(body: WantedBody, user: dict = Depends(current_user)):
+    body.item_id, body.name = _bricklink_nummer(
+        body.item_id, body.item_type, body.name)
     with core.db() as conn:
         exists = conn.execute(
             "SELECT 1 FROM wanted WHERE item_id = ? AND item_type = ?",

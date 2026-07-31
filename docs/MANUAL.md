@@ -713,7 +713,18 @@ The app notices and puts a note on the **scan page**:
   purchases stay in the log.
 
 The row that stays is the one with the **BrickLink number**: it has prices,
-set contents and matches the catalogue.
+set contents and matches the catalogue – **including its name**. The
+catalogue name wins over the one you typed.
+
+**Prevention instead of clean-up.** When you **enter a set by hand**, the app
+adds the suffix itself: type `21306` and you get `21306-1` – landing straight
+away in the same row as a scanned copy. If the BrickLink keys are configured
+the **catalogue name** is taken as well; without keys the typed one stays.
+This also applies to the wishlist and the CSV import.
+
+> Only what is unambiguous gets touched: a plain number on a **set**. Figure
+> numbers (`sw0312`), part numbers, your own numbers (`manuell-…`) and
+> anything that already has a suffix stay as they are.
 
 > **Where the app stays out of it:** for two genuine variants – say `21306-1`
 > and `21306-2` – no note appears. Those are two different editions, and only
