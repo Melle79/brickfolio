@@ -505,6 +505,17 @@ and ownership hints.
 **Tips for good hit rates:** a plain background, the figure from the front, no
 reflective packaging. For sets the box image or the built model works.
 
+**Several figures in one picture.** Recognition looks for **one** object per
+request – that is how the service is built. If several figures are on the
+photo, it picks one. So that you can see which, the preview frames the
+recognised figure in **green**.
+
+For the others you do not need to take the photo again: just drag a **frame
+around the next figure** with your finger (or the mouse) and tap **🔍
+Recognise this crop**. The cropping happens in the browser, only the crop
+goes to the server – so five figures mean five frames instead of five
+photos.
+
 ### 4.2 By search (catalogue)
 
 Below the camera area sits the text search. It understands:

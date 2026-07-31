@@ -207,7 +207,17 @@ def recognize(raw_image: bytes) -> dict:
             "category": it.get("category", ""),
             "bricklink_url": bricklink_url,
         })
-    return {"items": items, "listing_id": data.get("listing_id", "")}
+    # Wo im Bild die Erkennung fündig wurde. Brickognize sucht **ein**
+    # Objekt je Anfrage – der Rahmen zeigt, welches. Liegen mehrere Figuren
+    # auf dem Foto, sieht man daran sofort, worüber geraten wurde.
+    box = data.get("bounding_box") or {}
+    rahmen = None
+    if all(k in box for k in ("left", "upper", "right", "lower")):
+        rahmen = {"left": box["left"], "upper": box["upper"],
+                  "right": box["right"], "lower": box["lower"],
+                  "score": box.get("score")}
+    return {"items": items, "listing_id": data.get("listing_id", ""),
+            "box": rahmen}
 
 
 def rebrickable_minifig_image(fig_num: str) -> str:

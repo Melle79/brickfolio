@@ -231,7 +231,17 @@
     </div>
 
     <div id="scan-preview" class="scan-preview" hidden>
-      <img id="preview-img" alt="Aufgenommenes Foto">
+      <div class="scan-bild">
+        <img id="preview-img" alt="Aufgenommenes Foto">
+        <div id="scan-rahmen" class="scan-rahmen" hidden></div>
+        <div id="scan-auswahl" class="scan-auswahl" hidden></div>
+      </div>
+      <p class="scan-tipp" id="scan-tipp" hidden>
+        Mehrere Figuren drauf? Zieh einen Rahmen um eine davon.
+      </p>
+      <button class="mini-btn add" id="scan-ausschnitt" hidden>
+        🔍 Diesen Ausschnitt erkennen
+      </button>
       <div id="scan-status" class="scan-status" hidden>
         <span class="spinner"></span> Erkenne …
       </div>

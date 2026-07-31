@@ -183,6 +183,21 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   max-width: 100%; max-height: 300px; border-radius: var(--radius);
   border: 2px solid var(--ink); box-shadow: var(--shadow);
 }
+/* Vorschau mit Rahmen: Brickognize erkennt **ein** Objekt je Anfrage und
+   sagt, wo es lag. Der Rahmen zeigt das – und wer mehrere Figuren auf dem
+   Bild hat, zieht einfach einen eigenen um die nächste. */
+.scan-bild { position: relative; display: inline-block; line-height: 0; }
+.scan-rahmen, .scan-auswahl {
+  position: absolute; pointer-events: none; border-radius: 6px;
+}
+.scan-rahmen {
+  border: 3px solid var(--green);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .28);
+}
+.scan-auswahl { border: 3px dashed var(--blue); background: rgba(0, 87, 166, .12); }
+.scan-bild img { touch-action: none; cursor: crosshair; }
+.scan-tipp { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+#scan-ausschnitt { margin-top: 10px; }
 .scan-status { margin-top: 12px; font-weight: 800; color: var(--blue); }
 .spinner {
   display: inline-block; width: 16px; height: 16px; vertical-align: -3px;

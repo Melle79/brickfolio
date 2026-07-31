@@ -521,6 +521,17 @@ Nummer und – je nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
 keine spiegelnden Verpackungen. Bei Sets funktioniert das Boxbild oder das
 aufgebaute Modell.
 
+**Mehrere Figuren auf einem Bild.** Die Erkennung sucht **ein** Objekt je
+Anfrage – so ist der Dienst gebaut. Liegen mehrere Figuren auf dem Foto,
+sucht sie sich eine aus. Damit man sieht, welche, umrahmt die Vorschau die
+erkannte Figur **grün**.
+
+Für die übrigen muss man das Foto nicht neu aufnehmen: Einfach mit dem
+Finger (oder der Maus) einen **Rahmen um die nächste Figur ziehen** und
+**🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird im Browser,
+zum Server geht nur der Ausschnitt – bei fünf Figuren also fünf Rahmen statt
+fünf Fotos.
+
 ### 4.2 Per Suche (Katalog)
 
 Unter dem Kamerabereich liegt die Textsuche. Sie versteht:

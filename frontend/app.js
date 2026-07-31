@@ -2059,6 +2059,9 @@ async function handlePhoto(file) {
   vorschauUrl = URL.createObjectURL(file);
   const url = vorschauUrl;
   $("preview-img").src = url;
+  rahmenZeigen(null);
+  auswahlAnzeigen(null);
+  scanAuswahl = null;
   $("scan-preview").hidden = false;
   $("scan-status").hidden = false;
   $("scan-results").innerHTML = "";
@@ -2068,11 +2071,149 @@ async function handlePhoto(file) {
   try {
     const data = await api("/scan", { method: "POST", body: form });
     renderScanResults(data.items || []);
+    rahmenZeigen(data.box);
   } catch (e) {
     toast(e.message);
   } finally {
     $("scan-status").hidden = true;
   }
+}
+
+/* ------------------------------------------------- Mehrere Figuren im Bild
+
+   Die Erkennung sucht **ein** Objekt je Anfrage – so ist der Dienst gebaut,
+   die Antwort enthält genau einen Rahmen. Liegen mehrere Figuren auf dem
+   Foto, rät sie über eine davon und der Rest bleibt unbeachtet.
+
+   Deshalb zeigt die Vorschau jetzt, *worüber* geraten wurde, und man kann
+   einen eigenen Rahmen um die nächste Figur ziehen. Das Zuschneiden
+   passiert hier im Browser; zum Server geht nur noch der Ausschnitt. */
+
+let scanBox = null;              // vom Dienst erkannter Bereich
+let scanAuswahl = null;          // selbst gezogener Bereich (Bildkoordinaten)
+
+function rahmenZeigen(box) {
+  scanBox = box || null;
+  const el = $("scan-rahmen");
+  const tipp = $("scan-tipp");
+  if (!el) return;
+  el.hidden = !box;
+  if (tipp) tipp.hidden = !box;
+  if (!box) return;
+  const img = $("preview-img");
+  const skal = () => {
+    if (!img.naturalWidth) return;
+    const fx = img.clientWidth / img.naturalWidth;
+    const fy = img.clientHeight / img.naturalHeight;
+    el.style.left = (box.left * fx) + "px";
+    el.style.top = (box.upper * fy) + "px";
+    el.style.width = ((box.right - box.left) * fx) + "px";
+    el.style.height = ((box.lower - box.upper) * fy) + "px";
+  };
+  if (img.complete) skal(); else img.addEventListener("load", skal, { once: true });
+}
+
+function auswahlAnzeigen(a) {
+  const el = $("scan-auswahl");
+  const knopf = $("scan-ausschnitt");
+  const img = $("preview-img");
+  if (!el || !img.naturalWidth) return;
+  if (!a) {
+    el.hidden = true;
+    knopf.hidden = true;
+    return;
+  }
+  const fx = img.clientWidth / img.naturalWidth;
+  const fy = img.clientHeight / img.naturalHeight;
+  el.hidden = false;
+  el.style.left = (a.x * fx) + "px";
+  el.style.top = (a.y * fy) + "px";
+  el.style.width = (a.w * fx) + "px";
+  el.style.height = (a.h * fy) + "px";
+  // Zu kleine Ausschnitte ergeben keine brauchbare Erkennung
+  knopf.hidden = !(a.w > 40 && a.h > 40);
+}
+
+function scanAuswahlEinrichten() {
+  const img = $("preview-img");
+  const knopf = $("scan-ausschnitt");
+  if (!img || !knopf) return;
+  let start = null;
+
+  const bildPunkt = (ev) => {
+    const r = img.getBoundingClientRect();
+    const p = ev.touches ? ev.touches[0] : ev;
+    return {
+      x: Math.max(0, Math.min(img.naturalWidth,
+        (p.clientX - r.left) / r.width * img.naturalWidth)),
+      y: Math.max(0, Math.min(img.naturalHeight,
+        (p.clientY - r.top) / r.height * img.naturalHeight)),
+    };
+  };
+  const ziehen = (ev) => {
+    if (!start) return;
+    ev.preventDefault();
+    const jetzt = bildPunkt(ev);
+    scanAuswahl = {
+      x: Math.min(start.x, jetzt.x), y: Math.min(start.y, jetzt.y),
+      w: Math.abs(jetzt.x - start.x), h: Math.abs(jetzt.y - start.y),
+    };
+    auswahlAnzeigen(scanAuswahl);
+  };
+  const ende = () => {
+    start = null;
+    document.removeEventListener("pointermove", ziehen);
+    document.removeEventListener("pointerup", ende);
+  };
+  img.addEventListener("pointerdown", (ev) => {
+    if (!lastScanFile) return;
+    ev.preventDefault();
+    start = bildPunkt(ev);
+    scanAuswahl = null;
+    auswahlAnzeigen(null);
+    document.addEventListener("pointermove", ziehen);
+    document.addEventListener("pointerup", ende);
+  });
+
+  knopf.addEventListener("click", async () => {
+    if (!scanAuswahl || !lastScanFile) return;
+    knopf.disabled = true;
+    $("scan-status").hidden = false;
+    try {
+      const teil = await ausschnittBild(lastScanFile, scanAuswahl);
+      const form = new FormData();
+      form.append("file", teil, "scan.jpg");
+      const data = await api("/scan", { method: "POST", body: form });
+      renderScanResults(data.items || []);
+      if (!(data.items || []).length) toast(tr("In diesem Ausschnitt nichts erkannt."));
+      auswahlAnzeigen(null);
+      scanAuswahl = null;
+    } catch (e) {
+      toast(e.message);
+    } finally {
+      knopf.disabled = false;
+      $("scan-status").hidden = true;
+    }
+  });
+}
+
+/* Ausschnitt aus dem aufgenommenen Bild – mit etwas Rand, weil die
+   Erkennung mit ein wenig Umgebung besser zurechtkommt. */
+async function ausschnittBild(file, a) {
+  const bmp = await createImageBitmap(file);
+  const rand = Math.round(Math.max(a.w, a.h) * 0.08);
+  const x = Math.max(0, Math.round(a.x) - rand);
+  const y = Math.max(0, Math.round(a.y) - rand);
+  const w = Math.min(bmp.width - x, Math.round(a.w) + rand * 2);
+  const h = Math.min(bmp.height - y, Math.round(a.h) + rand * 2);
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  c.getContext("2d").drawImage(bmp, x, y, w, h, 0, 0, w, h);
+  bmp.close();
+  const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
+  c.width = c.height = 0;
+  return new File([blob], "scan.jpg", { type: "image/jpeg" });
 }
 
 function renderScanResults(items) {
@@ -7952,6 +8093,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   wireInstallCard();
   zugZumNeuladen();
+  scanAuswahlEinrichten();
 });
 
 /* --------------------------------------- „Auf den Startbildschirm"

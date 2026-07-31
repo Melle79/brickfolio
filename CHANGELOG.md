@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.78.0 – Juli 2026
+
+### Neu
+- 🔍 **Mehrere Figuren auf einem Bild.** Die Erkennung sucht **ein** Objekt je
+  Anfrage – so ist der Dienst gebaut, seine Antwort enthält genau einen
+  Rahmen. Bisher hieß das: Bei fünf Figuren auf dem Tisch riet sie über eine
+  davon, und niemand sah, über welche.
+- Jetzt umrahmt die Vorschau die erkannte Figur **grün**, und für die
+  übrigen zieht man einfach einen **eigenen Rahmen** und tippt auf
+  **🔍 Diesen Ausschnitt erkennen**. Zugeschnitten wird im Browser, zum
+  Server geht nur der Ausschnitt – bei fünf Figuren fünf Rahmen statt fünf
+  Fotos
+
 ## 1.77.0 – Juli 2026
 
 ### Neu
