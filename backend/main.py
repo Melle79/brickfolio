@@ -4019,7 +4019,6 @@ class TradeStartBody(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
 
 
-@app.post("/api/hub/trades")
 def _fremder_schluessel(member_id: str, name: str = "") -> str:
     """Öffentlichen Schlüssel eines Gegenübers holen – und wiedererkennen.
 
@@ -4075,6 +4074,7 @@ def hub_key_accept(body: KeyAcceptBody, user: dict = Depends(admin_user)):
     return {"ok": True}
 
 
+@app.post("/api/hub/trades")
 def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
     """Interesse an einem Angebot anmelden – mit erster Nachricht."""
     if not hub.enabled():

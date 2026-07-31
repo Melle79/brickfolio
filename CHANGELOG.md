@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.74.1 – Juli 2026
+
+### Behoben
+- 💬 **„Anfrage senden" ging gar nicht.** Der Wegweiser für
+  `POST /api/hub/trades` stand seit dem 29. Juli über der falschen Funktion:
+  Beim Einbau der Schlüsselprüfung landete eine interne Hilfsfunktion
+  zwischen dem Wegweiser und dem Vorgang, der dort hingehört. Seitdem
+  beantwortete diese Hilfsfunktion die Anfrage – und verlangte eine Angabe,
+  die die App gar nicht schickt. Ein Test prüft jetzt, dass **keine** Route
+  auf eine Hilfsfunktion zeigt
+- 🇩🇪 **Halb deutsch, halb englisch.** Die Eingabeprüfung im Server schreibt
+  englisch („Field required"), und das stand ungefiltert mitten im deutschen
+  Satz. Jetzt wird daraus ein ganzer Satz in der eingestellten Sprache:
+  „Eingabe nicht gültig: Da fehlt eine Angabe" bzw. „Invalid input:
+  Something is missing here"
+
 ## 1.74.0 – Juli 2026
 
 ### Verbessert

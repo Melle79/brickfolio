@@ -223,6 +223,31 @@ function watchForTranslation() {
 }
 
 /* ---------------------------------------------------------------- API */
+/* Die Prüfung der Eingaben macht die Bibliothek im Server, und die schreibt
+   englisch: „Field required", „String should have at least 1 character".
+   Ungefiltert stand das mitten im deutschen Satz – halb deutsch, halb
+   englisch. Hier wird ein deutscher Satz daraus, der dann wie jeder andere
+   durch die Übersetzung geht. */
+const PRUEF_TEXTE = [
+  [/^Field required$/, "Da fehlt eine Angabe"],
+  [/^Input should be a valid integer/, "Hier gehört eine ganze Zahl hin"],
+  [/^Input should be a valid number/, "Hier gehört eine Zahl hin"],
+  [/^Input should be greater than or equal to (\d+)/, "Der Wert ist zu klein"],
+  [/^Input should be less than or equal to (\d+)/, "Der Wert ist zu groß"],
+  [/^String should have at least (\d+) character/, "Der Text ist zu kurz"],
+  [/^String should have at most (\d+) character/, "Der Text ist zu lang"],
+  [/^String should match pattern/, "Das passt nicht ins vorgegebene Format"],
+  [/^Value error/, "Der Wert passt nicht"],
+];
+
+function pruefText(msg) {
+  if (!msg) return "";
+  for (const [muster, satz] of PRUEF_TEXTE) {
+    if (muster.test(msg)) return tr(satz);
+  }
+  return msg;                    // Unbekanntes lieber im Original zeigen
+}
+
 async function api(path, options = {}) {
   const headers = options.headers || {};
   if (state.token) headers["Authorization"] = "Bearer " + state.token;
@@ -278,7 +303,7 @@ async function api(path, options = {}) {
     let text;
     if (typeof d === "string" && d) text = tr(d);
     else if (Array.isArray(d) && d.length) {
-      const grund = d.map((f) => f && f.msg).filter(Boolean).join("; ");
+      const grund = d.map((f) => pruefText(f && f.msg)).filter(Boolean).join("; ");
       text = grund ? tr("Eingabe nicht gültig: {grund}", { grund })
         : tr("Eingabe nicht gültig");
     } else text = tr("Fehler {code}", { code: resp.status });

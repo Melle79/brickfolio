@@ -29,6 +29,40 @@ def client(tmp_path, monkeypatch):
     return c
 
 
+# ------------------------------------------------------------- Wegweiser
+
+def test_keine_route_zeigt_auf_eine_hilfsfunktion():
+    """Ein `@app.post(...)` direkt über der falschen Funktion fällt beim
+    Lesen nicht auf – der Code sieht völlig normal aus.
+
+    Genau das ist passiert: Beim Einbau der Schlüsselprüfung landete
+    `_fremder_schluessel` zwischen dem Wegweiser für `/api/hub/trades` und
+    dem Vorgang, der dort hingehört. Zwei Tage lang beantwortete eine interne
+    Hilfsfunktion die Anfrage, und „Anfrage senden" endete in
+    „Eingabe nicht gültig: Field required".
+
+    Regel: Was mit `_` anfängt, ist Beiwerk und nie ein Endpunkt."""
+    schlecht = []
+    for r in main.app.routes:
+        name = getattr(getattr(r, "endpoint", None), "__name__", "")
+        if name.startswith("_"):
+            schlecht.append(f"{sorted(getattr(r, 'methods', []))} "
+                            f"{getattr(r, 'path', '?')} → {name}")
+    assert not schlecht, "Route zeigt auf eine Hilfsfunktion: " + "; ".join(schlecht)
+
+
+def test_anfrage_senden_erreicht_den_richtigen_vorgang(client, monkeypatch):
+    """Der Weg, den der Knopf „Anfrage senden" nimmt."""
+    monkeypatch.setattr(main.hub, "enabled", lambda: False)
+    r = client.post("/api/hub/trades", json={
+        "to": "bf_123", "item_id": "sw0312", "item_name": "TX-20",
+        "text": "Hallo Paul, hättest du Interesse?"})
+    # Ohne Hub ist 400 die richtige Antwort – 422 hieße, die Angaben kämen
+    # gar nicht erst an der richtigen Stelle an.
+    assert r.status_code == 400, r.text
+    assert "Hub" in r.json()["detail"]
+
+
 # ------------------------------------------------------------- CSV-Import
 
 def test_offenes_anfuehrungszeichen_wird_erklaert(client):
