@@ -2063,6 +2063,8 @@ async function handlePhoto(file) {
   auswahlAnzeigen(null);
   scanAuswahl = null;
   document.querySelectorAll(".scan-mehr").forEach((e) => e.remove());
+  gemerkteRahmen = [];
+  gemerkteAnzeigen();
   $("scan-anzahl").hidden = true;
   $("scan-alle").hidden = false;
   $("scan-preview").hidden = false;
@@ -2093,6 +2095,16 @@ async function handlePhoto(file) {
    passiert hier im Browser; zum Server geht nur noch der Ausschnitt. */
 
 let scanBox = null;              // vom Dienst erkannter Bereich
+let gemerkteRahmen = [];         // selbst gezogene, für mehrere Figuren
+
+function gemerkteAnzeigen() {
+  const box = $("scan-gemerkt");
+  if (!box) return;
+  box.hidden = !gemerkteRahmen.length;
+  const n = gemerkteRahmen.length;
+  box.querySelector("[data-gemerkt-zahl]").textContent = n === 1
+    ? tr("1 Rahmen gemerkt") : tr("{n} Rahmen gemerkt", { n });
+}
 let scanAuswahl = null;          // selbst gezogener Bereich (Bildkoordinaten)
 
 function rahmenZeigen(box) {
@@ -2103,6 +2115,10 @@ function rahmenZeigen(box) {
   el.hidden = !box;
   if (tipp) tipp.hidden = !box;
   if (!box) return;
+  // Beschriftung, damit der Rahmen für sich spricht. Ohne sie stand er
+  // neben den nummerierten Rahmen und sah aus wie eine weitere Figur –
+  // dabei sagt er nur, wo die Erkennung hingeschaut hat.
+  el.dataset.was = tr("hier geschaut");
   const img = $("preview-img");
   const skal = () => {
     if (!img.naturalWidth) return;
@@ -2124,6 +2140,7 @@ function auswahlAnzeigen(a) {
   if (!a) {
     el.hidden = true;
     knopf.hidden = true;
+    $("scan-merken").hidden = true;
     return;
   }
   const fx = img.clientWidth / img.naturalWidth;
@@ -2134,7 +2151,9 @@ function auswahlAnzeigen(a) {
   el.style.width = (a.w * fx) + "px";
   el.style.height = (a.h * fy) + "px";
   // Zu kleine Ausschnitte ergeben keine brauchbare Erkennung
-  knopf.hidden = !(a.w > 40 && a.h > 40);
+  const brauchbar = a.w > 40 && a.h > 40;
+  knopf.hidden = !brauchbar;
+  $("scan-merken").hidden = !brauchbar;
 }
 
 function scanAuswahlEinrichten() {
@@ -2181,6 +2200,54 @@ function scanAuswahlEinrichten() {
   $("scan-alle").addEventListener("click", () => alleFigurenErkennen(0));
   $("scan-weniger").addEventListener("click", () => anzahlAendern(-1));
   $("scan-mehr").addEventListener("click", () => anzahlAendern(1));
+
+  // Mehrere Rahmen sammeln. Für Figuren, die kreuz und quer liegen oder
+  // versetzt hintereinander stehen, findet keine automatische Trennung
+  // verlässlich die Grenzen – das habe ich in vier Anläufen gemessen. Von
+  // Hand gezogene Rahmen stimmen dagegen immer, und mehrere hintereinander
+  // sind schnell gezogen.
+  $("scan-merken").addEventListener("click", () => {
+    if (!scanAuswahl) return;
+    gemerkteRahmen.push({ ...scanAuswahl });
+    mehrfachRahmen(gemerkteRahmen);
+    $("scan-rahmen").hidden = true;
+    auswahlAnzeigen(null);
+    scanAuswahl = null;
+    gemerkteAnzeigen();
+  });
+
+  $("scan-gemerkt-los").addEventListener("click", async () => {
+    if (!gemerkteRahmen.length || !lastScanFile) return;
+    const status = $("scan-status");
+    const gefunden = [];
+    try {
+      for (let i = 0; i < gemerkteRahmen.length; i++) {
+        status.hidden = false;
+        status.querySelector("[data-scan-text]").textContent =
+          tr("Figur {i} von {n} …", { i: i + 1, n: gemerkteRahmen.length });
+        const teil = await ausschnittBild(lastScanFile, gemerkteRahmen[i]);
+        const fd = new FormData();
+        fd.append("file", teil, "scan.jpg");
+        try {
+          const d = await api("/scan", { method: "POST", body: fd });
+          if (d.items && d.items[0]) gefunden.push(d.items[0]);
+        } catch (_) { /* eine weniger, der Rest läuft weiter */ }
+      }
+      if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
+      renderScanResults(gefunden);
+      toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
+        : tr("{n} Figuren erkannt ✔", { n: gefunden.length }));
+    } finally {
+      status.hidden = true;
+      status.querySelector("[data-scan-text]").textContent = tr("Erkenne …");
+    }
+  });
+
+  $("scan-gemerkt-weg").addEventListener("click", () => {
+    gemerkteRahmen = [];
+    document.querySelectorAll(".scan-mehr").forEach((e) => e.remove());
+    gemerkteAnzeigen();
+  });
 
   knopf.addEventListener("click", async () => {
     if (!scanAuswahl || !lastScanFile) return;
@@ -2440,6 +2507,9 @@ function mehrfachRahmen(boxen) {
   const wrap = document.querySelector(".scan-bild");
   const img = $("preview-img");
   wrap.querySelectorAll(".scan-mehr").forEach((e) => e.remove());
+  // Zwei Bedeutungen in derselben Farbe verunsichern nur: Sobald die
+  // nummerierten Rahmen stehen, verschwindet der des Dienstes.
+  $("scan-rahmen").hidden = true;
   if (!img.naturalWidth) return;
   const fx = img.clientWidth / img.naturalWidth;
   const fy = img.clientHeight / img.naturalHeight;

@@ -527,6 +527,25 @@ nothing there, structure does.
 > is divided into that many equal strips and everything is asked again. That
 > helps with figures that touch – there is no gap to cut in.
 
+**Where the automatic route reaches its limit.** It looks for **vertical
+gaps**, so it is made for figures standing **side by side**: on a shelf, in a
+display case, in a row on the table. If they lie criss-cross, stand staggered
+behind one another or overlap, there is no clean gap to cut at.
+
+For those cases there is the **reliable route**, and it is quick:
+
+1. Drag a frame around one figure
+2. **➕ Keep frame**
+3. Repeat for every further figure – the kept ones stay, numbered
+4. **🔎 Recognise all**
+
+That works with any arrangement, because you set the boundaries instead of
+the app having to guess them. **Discard** clears the kept frames again.
+
+The single green frame labelled **"looked here"** is something else: it comes
+from the recognition service and shows what it guessed at during the first
+scan. As soon as numbered frames appear, it goes away.
+
 That one always works: drag a **frame around one figure** with your finger
 (or the mouse) and tap **🔍 Recognise this crop**. The cropping happens in
 the browser, only the crop goes to the server.

@@ -544,6 +544,27 @@ fände dort nichts, Struktur schon.
 > abgefragt. Das hilft bei Figuren, die sich berühren – dort gibt es keine
 > Lücke, in der man schneiden könnte.
 
+**Wo die Automatik an ihre Grenze kommt.** Sie sucht **senkrechte Lücken** –
+sie ist also für Figuren gemacht, die **nebeneinander** stehen: im Regal, in
+der Vitrine, in einer Reihe auf dem Tisch. Liegen sie kreuz und quer, stehen
+sie versetzt hintereinander oder verdecken sie einander, gibt es keine
+saubere Lücke, an der sich schneiden ließe.
+
+Für diese Fälle gibt es den **verlässlichen Weg**, und der ist schnell:
+
+1. Rahmen um eine Figur ziehen
+2. **➕ Rahmen merken**
+3. Für jede weitere Figur wiederholen – die gemerkten bleiben nummeriert
+   stehen
+4. **🔎 Alle erkennen**
+
+Das funktioniert bei jeder Anordnung, weil ihr die Grenzen setzt und nicht
+die App sie raten muss. **Verwerfen** räumt die gemerkten Rahmen wieder weg.
+
+Der einzelne grüne Rahmen mit der Beschriftung **„hier geschaut"** ist etwas
+anderes: Er kommt vom Erkennungsdienst und zeigt, worüber er beim ersten
+Scan geraten hat. Sobald nummerierte Rahmen da sind, verschwindet er.
+
 Der geht immer: mit dem Finger (oder der Maus) einen **Rahmen um eine Figur
 ziehen** und **🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird
 im Browser, zum Server geht nur der Ausschnitt.

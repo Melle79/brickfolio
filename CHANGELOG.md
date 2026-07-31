@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.83.0 – Juli 2026
+
+### Neu
+- 🖐 **Mehrere Rahmen sammeln.** Die automatische Trennung sucht senkrechte
+  Lücken – sie ist für Figuren gemacht, die **nebeneinander** stehen. Liegen
+  sie kreuz und quer oder versetzt hintereinander, gibt es keine Lücke, an
+  der sich schneiden ließe. Deshalb jetzt: Rahmen ziehen, **➕ Rahmen
+  merken**, für jede weitere Figur wiederholen, **🔎 Alle erkennen**. Das
+  funktioniert bei jeder Anordnung, weil die Grenzen von Hand kommen
+
+### Behoben
+- 🟩 **Zwei grüne Rahmen mit zwei Bedeutungen.** Der Rahmen des
+  Erkennungsdienstes stand neben den nummerierten und sah aus wie eine
+  weitere Figur. Er trägt jetzt die Beschriftung **„hier geschaut"** und
+  verschwindet, sobald nummerierte Rahmen da sind
+
+> **Was ich versucht und wieder verworfen habe.** Eine Trennung in Flächen
+> statt Streifen, damit auch kreuz und quer liegende Figuren automatisch
+> gefunden werden. In vier Anläufen kippte das Ergebnis jedes Mal: mal fehlten
+> Figuren, mal wurde ein Lichtreflex mitgezählt. Jede Stellschraube half
+> einem Fall und schadete einem anderen. Statt weiter an Schwellwerten zu
+> drehen, bleibt die Automatik bei dem, was sie nachweislich kann – Figuren
+> nebeneinander – und für alles andere gibt es den Weg von Hand, der immer
+> stimmt.
+
 ## 1.82.0 – Juli 2026
 
 ### Neu
