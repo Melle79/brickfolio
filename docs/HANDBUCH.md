@@ -526,11 +526,21 @@ Anfrage – so ist der Dienst gebaut. Liegen mehrere Figuren auf dem Foto,
 sucht sie sich eine aus. Damit man sieht, welche, umrahmt die Vorschau die
 erkannte Figur **grün**.
 
-Für die übrigen muss man das Foto nicht neu aufnehmen: Einfach mit dem
-Finger (oder der Maus) einen **Rahmen um die nächste Figur ziehen** und
-**🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird im Browser,
-zum Server geht nur der Ausschnitt – bei fünf Figuren also fünf Rahmen statt
-fünf Fotos.
+Damit trotzdem alle auf einmal gehen, trennt die App die Figuren **selbst**:
+**🔎 Alle Figuren erkennen** schätzt aus dem Bildrand die Hintergrundfarbe,
+sucht die davon abweichenden Flecken, fasst zusammen, was zusammengehört
+(Kopf, Körper, Beine einer Figur), und schickt jeden Bereich einzeln zur
+Erkennung. Die gefundenen Figuren werden nummeriert eingerahmt, und darunter
+steht für jede eine eigene Karte mit **＋ Zur Sammlung**.
+
+> **Damit das klappt:** einfarbiger Hintergrund und ein wenig Abstand
+> zwischen den Figuren – dieselben Bedingungen, die der Erkennung ohnehin
+> guttun. Auf einem gemusterten Tisch findet die Trennung nichts Sinnvolles;
+> dann sagt die App das und man nimmt den Weg von Hand.
+
+Der geht immer: mit dem Finger (oder der Maus) einen **Rahmen um eine Figur
+ziehen** und **🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird
+im Browser, zum Server geht nur der Ausschnitt.
 
 ### 4.2 Per Suche (Katalog)
 

@@ -2062,6 +2062,8 @@ async function handlePhoto(file) {
   rahmenZeigen(null);
   auswahlAnzeigen(null);
   scanAuswahl = null;
+  document.querySelectorAll(".scan-mehr").forEach((e) => e.remove());
+  $("scan-alle").hidden = false;
   $("scan-preview").hidden = false;
   $("scan-status").hidden = false;
   $("scan-results").innerHTML = "";
@@ -2175,6 +2177,8 @@ function scanAuswahlEinrichten() {
     document.addEventListener("pointerup", ende);
   });
 
+  $("scan-alle").addEventListener("click", alleFigurenErkennen);
+
   knopf.addEventListener("click", async () => {
     if (!scanAuswahl || !lastScanFile) return;
     knopf.disabled = true;
@@ -2194,6 +2198,173 @@ function scanAuswahlEinrichten() {
       knopf.disabled = false;
       $("scan-status").hidden = true;
     }
+  });
+}
+
+/* ------------------------------- Alle Figuren auf einem Bild finden
+
+   Der Erkennungsdienst sucht **ein** Objekt je Anfrage. Mehrere Figuren
+   gehen also nur, indem man sie vorher trennt – und das kann die App
+   selbst, solange der Hintergrund halbwegs einfarbig ist. Genau das steht
+   ohnehin auf der Scan-Karte: „Vor neutralem Hintergrund".
+
+   Vorgehen: Das Bild klein rechnen, aus dem Rand die Hintergrundfarbe
+   schätzen, alles deutlich Abweichende als Vordergrund markieren,
+   zusammenhängende Flecken suchen und daraus Rahmen machen. Jeder Rahmen
+   geht danach einzeln zur Erkennung. */
+
+const FIND_BREITE = 240;         // Analysegröße – mehr braucht es nicht
+const FIND_MAX = 8;              // mehr Figuren fragen wir nicht ab
+
+async function figurenFinden(file) {
+  const bmp = await createImageBitmap(file);
+  const f = FIND_BREITE / bmp.width;
+  const w = FIND_BREITE, h = Math.max(1, Math.round(bmp.height * f));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(bmp, 0, 0, w, h);
+  const px = g.getImageData(0, 0, w, h).data;
+  bmp.close();
+  c.width = c.height = 0;
+
+  // Hintergrund aus dem Rand schätzen – dort liegt selten eine Figur
+  const rand = [];
+  for (let x = 0; x < w; x++) { rand.push(0 * w + x); rand.push((h - 1) * w + x); }
+  for (let y = 0; y < h; y++) { rand.push(y * w); rand.push(y * w + w - 1); }
+  const mitte = (kanal) => {
+    const werte = rand.map((i) => px[i * 4 + kanal]).sort((a, b) => a - b);
+    return werte[Math.floor(werte.length / 2)];
+  };
+  const bg = [mitte(0), mitte(1), mitte(2)];
+
+  const GRENZE = 60;             // Farbabstand, ab dem etwas „nicht Hintergrund" ist
+  const vorn = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const d = Math.abs(px[i * 4] - bg[0]) + Math.abs(px[i * 4 + 1] - bg[1])
+      + Math.abs(px[i * 4 + 2] - bg[2]);
+    vorn[i] = d > GRENZE ? 1 : 0;
+  }
+
+  // Zusammenhängende Flecken einsammeln (4er-Nachbarschaft, ohne Rekursion)
+  const gesehen = new Uint8Array(w * h);
+  const flecken = [];
+  const stapel = [];
+  for (let start = 0; start < w * h; start++) {
+    if (!vorn[start] || gesehen[start]) continue;
+    stapel.length = 0;
+    stapel.push(start);
+    gesehen[start] = 1;
+    let x0 = w, y0 = h, x1 = 0, y1 = 0, n = 0;
+    while (stapel.length) {
+      const i = stapel.pop();
+      const x = i % w, y = (i - x) / w;
+      n++;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+      const nachbarn = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1,
+                        y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
+      for (const j of nachbarn) {
+        if (j >= 0 && vorn[j] && !gesehen[j]) { gesehen[j] = 1; stapel.push(j); }
+      }
+    }
+    // Zu kleine Flecken sind Schatten, Krümel oder Bildrauschen
+    if (n > w * h * 0.004 && (x1 - x0) > 6 && (y1 - y0) > 6) {
+      flecken.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, n });
+    }
+  }
+
+  // Was sich überlappt oder dicht beieinanderliegt, gehört zusammen –
+  // eine Figur zerfällt sonst leicht in Kopf, Körper und Beine.
+  const nah = 8;
+  let geaendert = true;
+  while (geaendert) {
+    geaendert = false;
+    for (let i = 0; i < flecken.length && !geaendert; i++) {
+      for (let j = i + 1; j < flecken.length; j++) {
+        const a = flecken[i], b = flecken[j];
+        if (a.x < b.x + b.w + nah && b.x < a.x + a.w + nah
+            && a.y < b.y + b.h + nah && b.y < a.y + a.h + nah) {
+          const x0 = Math.min(a.x, b.x), y0 = Math.min(a.y, b.y);
+          const x1 = Math.max(a.x + a.w, b.x + b.w);
+          const y1 = Math.max(a.y + a.h, b.y + b.h);
+          flecken[i] = { x: x0, y: y0, w: x1 - x0, h: y1 - y0, n: a.n + b.n };
+          flecken.splice(j, 1);
+          geaendert = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Größte zuerst, von links nach rechts ausgeben, zurück in Bildkoordinaten
+  return flecken
+    .sort((a, b) => b.n - a.n)
+    .slice(0, FIND_MAX)
+    .sort((a, b) => a.x - b.x)
+    .map((r) => ({ x: r.x / f, y: r.y / f, w: r.w / f, h: r.h / f }));
+}
+
+/* Alle gefundenen Figuren nacheinander erkennen lassen. */
+async function alleFigurenErkennen() {
+  if (!lastScanFile) return;
+  const knopf = $("scan-alle");
+  const status = $("scan-status");
+  knopf.disabled = true;
+  try {
+    const boxen = await figurenFinden(lastScanFile);
+    if (boxen.length < 2) {
+      toast(tr("Nur eine Figur gefunden – am besten mit etwas Abstand "
+        + "und vor einfarbigem Hintergrund fotografieren."));
+      return;
+    }
+    mehrfachRahmen(boxen);
+    const gefunden = [];
+    for (let i = 0; i < boxen.length; i++) {
+      status.hidden = false;
+      status.querySelector("[data-scan-text]").textContent =
+        tr("Figur {i} von {n} …", { i: i + 1, n: boxen.length });
+      const teil = await ausschnittBild(lastScanFile, boxen[i]);
+      try {
+        const d = await api("/scan", { method: "POST", body: (() => {
+          const fd = new FormData();
+          fd.append("file", teil, "scan.jpg");
+          return fd;
+        })() });
+        if (d.items && d.items[0]) gefunden.push(d.items[0]);
+      } catch (_) { /* eine Figur weniger, der Rest läuft weiter */ }
+    }
+    if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
+    renderScanResults(gefunden);
+    toast(tr("{n} Figuren erkannt ✔", { n: gefunden.length }));
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    knopf.disabled = false;
+    status.hidden = true;
+    status.querySelector("[data-scan-text]").textContent = tr("Erkenne …");
+  }
+}
+
+/* Alle gefundenen Bereiche gleichzeitig einrahmen. */
+function mehrfachRahmen(boxen) {
+  const wrap = document.querySelector(".scan-bild");
+  const img = $("preview-img");
+  wrap.querySelectorAll(".scan-mehr").forEach((e) => e.remove());
+  if (!img.naturalWidth) return;
+  const fx = img.clientWidth / img.naturalWidth;
+  const fy = img.clientHeight / img.naturalHeight;
+  boxen.forEach((b, i) => {
+    const d = document.createElement("div");
+    d.className = "scan-rahmen scan-mehr";
+    d.style.left = (b.x * fx) + "px";
+    d.style.top = (b.y * fy) + "px";
+    d.style.width = (b.w * fx) + "px";
+    d.style.height = (b.h * fy) + "px";
+    d.dataset.nr = i + 1;
+    wrap.appendChild(d);
   });
 }
 

@@ -239,11 +239,16 @@
       <p class="scan-tipp" id="scan-tipp" hidden>
         Mehrere Figuren drauf? Zieh einen Rahmen um eine davon.
       </p>
-      <button class="mini-btn add" id="scan-ausschnitt" hidden>
-        🔍 Diesen Ausschnitt erkennen
-      </button>
+      <div class="scan-knoepfe">
+        <button class="mini-btn add" id="scan-alle" hidden>
+          🔎 Alle Figuren erkennen
+        </button>
+        <button class="mini-btn" id="scan-ausschnitt" hidden>
+          🔍 Diesen Ausschnitt erkennen
+        </button>
+      </div>
       <div id="scan-status" class="scan-status" hidden>
-        <span class="spinner"></span> Erkenne …
+        <span class="spinner"></span> <span data-scan-text>Erkenne …</span>
       </div>
     </div>
 

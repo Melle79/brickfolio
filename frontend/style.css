@@ -197,7 +197,18 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .scan-auswahl { border: 3px dashed var(--blue); background: rgba(0, 87, 166, .12); }
 .scan-bild img { touch-action: none; cursor: crosshair; }
 .scan-tipp { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
-#scan-ausschnitt { margin-top: 10px; }
+.scan-knoepfe {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  margin-top: 10px;
+}
+/* Die Nummer am Rahmen, wenn mehrere Figuren gefunden wurden */
+.scan-mehr::after {
+  content: attr(data-nr);
+  position: absolute; top: -2px; left: -2px;
+  background: var(--green); color: #fff;
+  font: 900 12px/1 var(--font); padding: 3px 6px; border-radius: 6px;
+}
+.scan-mehr { box-shadow: none; }
 .scan-status { margin-top: 12px; font-weight: 800; color: var(--blue); }
 .spinner {
   display: inline-block; width: 16px; height: 16px; vertical-align: -3px;

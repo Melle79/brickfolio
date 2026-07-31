@@ -510,11 +510,21 @@ request – that is how the service is built. If several figures are on the
 photo, it picks one. So that you can see which, the preview frames the
 recognised figure in **green**.
 
-For the others you do not need to take the photo again: just drag a **frame
-around the next figure** with your finger (or the mouse) and tap **🔍
-Recognise this crop**. The cropping happens in the browser, only the crop
-goes to the server – so five figures mean five frames instead of five
-photos.
+So that all of them work in one go anyway, the app separates the figures
+**itself**: **🔎 Recognise all figures** estimates the background colour from
+the image border, looks for the patches that differ from it, merges what
+belongs together (a figure's head, body and legs) and sends each area to
+recognition separately. The figures found are framed and numbered, and below
+each gets its own card with **＋ To the collection**.
+
+> **For this to work:** a plain background and a little space between the
+> figures – the same conditions that help recognition anyway. On a patterned
+> table the separation finds nothing sensible; the app says so and you take
+> the manual route.
+
+That one always works: drag a **frame around one figure** with your finger
+(or the mouse) and tap **🔍 Recognise this crop**. The cropping happens in
+the browser, only the crop goes to the server.
 
 ### 4.2 By search (catalogue)
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.79.0 – Juli 2026
+
+### Neu
+- 🔎 **Alle Figuren auf einem Bild erkennen.** Der Dienst kann nur **ein**
+  Objekt je Anfrage – also trennt die App die Figuren jetzt selbst: Sie
+  schätzt aus dem Bildrand die Hintergrundfarbe, sucht die abweichenden
+  Flecken, fasst Kopf, Körper und Beine einer Figur zusammen und schickt
+  jeden Bereich einzeln zur Erkennung. Die Figuren werden nummeriert
+  eingerahmt, darunter steht für jede eine eigene Karte
+- Ein Foto von vier Figuren statt vier Fotos
+
+> **Bedingung:** einfarbiger Hintergrund und etwas Abstand zwischen den
+> Figuren – dieselben Bedingungen, die der Erkennung ohnehin guttun. Findet
+> die Trennung nur eine Figur, sagt die App das; dann hilft der Rahmen von
+> Hand aus 1.78.0.
+
 ## 1.78.0 – Juli 2026
 
 ### Neu
