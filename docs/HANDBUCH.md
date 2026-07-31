@@ -716,7 +716,33 @@ CSV-Import).
 
 *(Voraussetzung: hinterlegter BrickLink-Schlüssel.)*
 
-### 5.3 Sets und ihre Figuren
+### 5.3 Dieselbe Nummer, zweimal erfasst
+
+Auf der Packung steht **21306**, BrickLink führt dasselbe Set als
+**21306-1**. Wer eines von Hand einträgt und das andere scannt, hat zwei
+Zeilen für ein Set – und die Sammlung zählt es doppelt.
+
+Die App merkt das und legt einen Hinweis auf die **Scan-Seite**:
+
+> 🔔 **Dasselbe Set zweimal erfasst?**
+> „The Beatles Yellow Submarine" ist als 21306 und als 21306-1 in der
+> Sammlung – bei BrickLink ist das dieselbe Nummer, die Endung gehört dort
+> dazu. **Zusammenführen?** [ Ein Exemplar ] [ Zwei Exemplare ]
+
+- **Ein Exemplar** – derselbe Kasten, zweimal erfasst. Es bleibt eine Zeile
+  mit der Stückzahl der BrickLink-Nummer; das Kaufbuch der aufgegebenen
+  Zeile fällt weg, sonst stünde der Betrag doppelt drin.
+- **Zwei Exemplare** – ihr besitzt wirklich zwei. Die Stückzahlen werden
+  addiert und beide Käufe stehen danach im Kaufbuch.
+
+Bleiben darf die Zeile mit der **BrickLink-Nummer**: Sie hat Preise,
+Set-Inhalte und passt zum Katalog.
+
+> **Wo sich die App heraushält:** Bei zwei echten Varianten – etwa `21306-1`
+> und `21306-2` – kommt kein Hinweis. Dort sind es zwei verschiedene
+> Ausgaben, und welche gemeint ist, weiß nur ihr.
+
+### 5.4 Sets und ihre Figuren
 
 Brickfolio kennt die Figuren-Inventare eurer Sets (via BrickLink,
 automatisch geladen):
@@ -734,7 +760,7 @@ automatisch geladen):
   Set-Karte; Sets, die ihr nicht besitzt, erscheinen als blaue
   BrickLink-Links.
 
-### 5.4 Kaufpreise & Gewinn *(Sammlerprofi)*
+### 5.5 Kaufpreise & Gewinn *(Sammlerprofi)*
 
 Jeder Eintrag führt einen **Kaufpreis** (Gesamtbetrag der Position):
 

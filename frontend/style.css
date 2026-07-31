@@ -1721,3 +1721,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   25% { transform: translateX(-4px); }
   75% { transform: translateX(4px); }
 }
+
+/* Zwei Wege bei einer Dublette – nebeneinander, damit die Frage sichtbar
+   eine Wahl ist und kein Knopf mit Nebenwirkung. */
+.notice-wahl { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.notice-wahl .btn { flex: 1; min-width: 130px; }
+.notice-hint { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }

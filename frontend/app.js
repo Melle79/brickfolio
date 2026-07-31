@@ -7231,9 +7231,38 @@ function renderNotifications(items) {
       ${n.body ? `<p class="notice-body">${esc(n.body)}</p>` : ""}
       ${n.kind === "error"
         ? `<button class="btn btn-primary" data-goto-errors>Fehlerbericht öffnen</button>`
+        : n.kind === "dublette" ? `
+          <p class="notice-body">${esc(tr("Zusammenführen?"))}</p>
+          <div class="notice-wahl">
+            <button class="btn btn-primary" data-merge="${n.id}" data-modus="ersetzen">
+              ${esc(tr("Ein Exemplar"))}</button>
+            <button class="btn" data-merge="${n.id}" data-modus="zusammen">
+              ${esc(tr("Zwei Exemplare"))}</button>
+          </div>
+          <p class="notice-hint">${esc(tr("„Ein Exemplar\u201c heißt: derselbe "
+            + "Kasten, zweimal erfasst. „Zwei Exemplare\u201c addiert die "
+            + "Stückzahlen."))}</p>`
         : n.new_item_id ? `<button class="btn btn-primary notice-apply"
           data-apply="${n.id}">Nummer übernehmen</button>` : ""}`;
     box.appendChild(card);
+  });
+
+  box.querySelectorAll("[data-merge]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      box.querySelectorAll("[data-merge]").forEach((x) => { x.disabled = true; });
+      try {
+        const r = await api(`/notifications/${b.dataset.merge}/merge`,
+          { method: "POST", body: { modus: b.dataset.modus } });
+        toast(r.modus === "zusammen"
+          ? tr("Zusammengeführt – Stückzahlen addiert ✔")
+          : tr("Zusammengeführt ✔"));
+        loadNotifications();
+        loadCollection();
+      } catch (e) {
+        toast(e.message);
+        box.querySelectorAll("[data-merge]").forEach((x) => { x.disabled = false; });
+      }
+    });
   });
 
   // Direkt zur Stelle springen, statt den Weg zu beschreiben.

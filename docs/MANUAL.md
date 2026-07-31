@@ -693,7 +693,33 @@ entries that arrived without an image (for instance through the CSV import).
 
 *(Requires a stored BrickLink key.)*
 
-### 5.3 Sets and their figures
+### 5.3 The same number, recorded twice
+
+The box says **21306**, BrickLink lists the same set as **21306-1**. If you
+enter one by hand and scan the other, you have two rows for one set – and the
+collection counts it twice.
+
+The app notices and puts a note on the **scan page**:
+
+> 🔔 **The same set recorded twice?**
+> "The Beatles Yellow Submarine" is in the collection as 21306 and as
+> 21306-1 – on BrickLink that is the same number, the suffix belongs there.
+> **Merge them?** [ One copy ] [ Two copies ]
+
+- **One copy** – the same box, recorded twice. One row remains, with the
+  quantity of the BrickLink number; the purchase log of the abandoned row
+  goes, otherwise the amount would be in there twice.
+- **Two copies** – you really own two. The quantities are added up and both
+  purchases stay in the log.
+
+The row that stays is the one with the **BrickLink number**: it has prices,
+set contents and matches the catalogue.
+
+> **Where the app stays out of it:** for two genuine variants – say `21306-1`
+> and `21306-2` – no note appears. Those are two different editions, and only
+> you know which one you mean.
+
+### 5.4 Sets and their figures
 
 Brickfolio knows the figure inventories of your sets (via BrickLink, loaded
 automatically):
@@ -710,7 +736,7 @@ automatically):
   collection** are marked as **yellow chips with ✔** and jump to the set card;
   sets you do not own appear as blue BrickLink links.
 
-### 5.4 Purchase prices & profit *(Collector-Pro)*
+### 5.5 Purchase prices & profit *(Collector-Pro)*
 
 Every entry carries a **purchase price** (the total for that line):
 

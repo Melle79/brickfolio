@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.81.0 – Juli 2026
+
+### Neu
+- 🔗 **Dieselbe Nummer, zweimal erfasst.** Auf der Packung steht `21306`,
+  BrickLink führt dasselbe Set als `21306-1`. Wer eines von Hand einträgt und
+  das andere scannt, hatte zwei Zeilen für ein Set – und die Sammlung zählte
+  es doppelt. Die App erkennt solche Paare jetzt und fragt auf der Scan-Seite
+  nach, mit **zwei** Antworten statt einer:
+  - **Ein Exemplar** – derselbe Kasten, zweimal erfasst. Eine Zeile bleibt,
+    das Kaufbuch der aufgegebenen fällt weg (sonst stünde der Betrag doppelt
+    drin)
+  - **Zwei Exemplare** – ihr besitzt wirklich zwei. Stückzahlen werden
+    addiert, beide Käufe bleiben im Kaufbuch
+- Bleiben darf die Zeile mit der **BrickLink-Nummer** – sie hat Preise,
+  Set-Inhalte und passt zum Katalog
+
+> **Wo die App sich heraushält:** Bei zwei echten Varianten wie `21306-1` und
+> `21306-2` kommt kein Hinweis. Das sind zwei verschiedene Ausgaben, und
+> welche gemeint ist, weiß nur der Mensch davor. Aus demselben Grund führt
+> die App auch nichts von allein zusammen.
+
 ## 1.80.0 – Juli 2026
 
 ### Behoben

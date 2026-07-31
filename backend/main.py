@@ -1101,8 +1101,122 @@ def _apply_new_number(old_id: str, new_id: str) -> int:
     return changed
 
 
+# ------------------------------------------------- Dieselbe Nummer, zweimal
+#
+# Auf der Packung steht `21306`, BrickLink führt dasselbe Set als `21306-1`.
+# Wer eines von Hand erfasst und das andere scannt, hat zwei Zeilen für ein
+# Set – und die Sammlung zählt es doppelt. Zusammenführen kann die App das
+# nicht von sich aus: Ob jemand wirklich zwei besitzt oder nur zweimal
+# erfasst hat, weiß nur er selbst.
+
+def _nummer_kern(item_id: str) -> str:
+    """Nummer ohne die BrickLink-Endung. `21306-1` und `21306` werden gleich.
+
+    Nur die Endung `-<Ziffern>` fällt weg. Figurennummern wie `sw0312`
+    bleiben unangetastet, und `fig-001234` (Rebrickable) ebenfalls – dort
+    steht die Ziffernfolge nicht am Ende einer Variante, sondern *ist* die
+    Nummer.
+    """
+    kern = (item_id or "").strip().lower()
+    if kern.startswith(("fig-", "manuell-", "custom-")):
+        return kern
+    return re.sub(r"-\d+$", "", kern)
+
+
+def _dubletten_suchen(conn) -> list:
+    """Paare finden, die sich nur in der Endung unterscheiden."""
+    rows = conn.execute(
+        "SELECT id, item_id, item_type, name, quantity, condition "
+        "FROM collection ORDER BY id").fetchall()
+    nach_kern = {}
+    for r in rows:
+        schluessel = (r["item_type"], _nummer_kern(r["item_id"]))
+        nach_kern.setdefault(schluessel, []).append(r)
+    paare = []
+    for (typ, kern), gruppe in nach_kern.items():
+        if len(gruppe) < 2:
+            continue
+        # Die Zeile mit der BrickLink-Endung ist die belastbarere: Sie hat
+        # Preise, Set-Inhalte und passt zum Katalog.
+        mit = [g for g in gruppe if re.search(r"-\d+$", g["item_id"] or "")]
+        ohne = [g for g in gruppe if g not in mit]
+        if not mit or not ohne:
+            continue          # zwei echte Varianten – da mischt sich niemand ein
+        paare.append({"behalten": mit[0], "aufgeben": ohne[0], "typ": typ})
+    return paare
+
+
+def dubletten_pruefen() -> int:
+    """Hinweise für gefundene Paare hinterlegen. Gibt die Zahl zurück."""
+    with core.db() as conn:
+        paare = _dubletten_suchen(conn)
+    for p in paare:
+        a, b = p["behalten"], p["aufgeben"]
+        _notify("dublette",
+              "Dasselbe Set zweimal erfasst?",
+              f"\u201e{b['name']}\u201c ist als {b['item_id']} und als "
+              f"{a['item_id']} in der Sammlung \u2013 bei BrickLink ist das "
+              f"dieselbe Nummer, die Endung geh\u00f6rt dort dazu.",
+              item_type=p["typ"], item_id=b["item_id"], new_item_id=a["item_id"])
+    return len(paare)
+
+
+class DubletteBody(BaseModel):
+    modus: str = Field(pattern="^(zusammen|ersetzen)$")
+
+
+@app.post("/api/notifications/{note_id}/merge")
+def dublette_zusammenfuehren(note_id: int, body: DubletteBody,
+                             user: dict = Depends(current_user)):
+    """Zwei Zeilen zu einer machen.
+
+    `zusammen` addiert die Stückzahlen – für den Fall, dass wirklich zwei
+    Exemplare da sind. `ersetzen` behält die Stückzahl der bleibenden Zeile,
+    wenn dasselbe Set schlicht zweimal erfasst wurde.
+    """
+    with core.db() as conn:
+        note = conn.execute("SELECT * FROM notifications WHERE id = ?",
+                            (note_id,)).fetchone()
+        if not note or note["kind"] != "dublette":
+            raise HTTPException(404, "Hinweis nicht gefunden")
+        alt = conn.execute(
+            "SELECT * FROM collection WHERE item_id = ? AND item_type = ?",
+            (note["item_id"], note["item_type"])).fetchall()
+        neu = conn.execute(
+            "SELECT * FROM collection WHERE item_id = ? AND item_type = ?",
+            (note["new_item_id"], note["item_type"])).fetchall()
+        if not alt or not neu:
+            conn.execute("UPDATE notifications SET dismissed_at = ? WHERE id = ?",
+                         (int(time.time()), note_id))
+            raise HTTPException(400, "Einer der beiden Einträge gibt es nicht "
+                                     "mehr – der Hinweis ist erledigt.")
+        menge = 0
+        for a in alt:
+            # Zielzeile mit passendem Zustand suchen, sonst die erste
+            ziel = next((n for n in neu if n["condition"] == a["condition"]), neu[0])
+            if body.modus == "zusammen":
+                conn.execute("UPDATE collection SET quantity = quantity + ? "
+                             "WHERE id = ?", (a["quantity"], ziel["id"]))
+                conn.execute("UPDATE purchases SET entry_id = ? "
+                             "WHERE entry_id = ?", (ziel["id"], a["id"]))
+                menge += a["quantity"]
+            else:
+                # Beim Ersetzen zählt nur, was die bleibende Zeile hat – das
+                # Kaufbuch der aufgegebenen stünde sonst für einen Kasten
+                # zweimal drin. Erst löschen, dann die Zeile: umgekehrt wären
+                # die Posten schon umgezogen.
+                conn.execute("DELETE FROM purchases WHERE entry_id = ?",
+                             (a["id"],))
+            conn.execute("DELETE FROM collection WHERE id = ?", (a["id"],))
+            _kaufsumme_nachziehen(conn, ziel["id"])
+        conn.execute("UPDATE notifications SET dismissed_at = ? WHERE id = ?",
+                     (int(time.time()), note_id))
+    return {"ok": True, "modus": body.modus, "uebernommen": menge}
+
+
 @app.get("/api/notifications")
 def list_notifications(user: dict = Depends(current_user)):
+    dubletten_pruefen()
     with core.db() as conn:
         rows = conn.execute(
             "SELECT * FROM notifications WHERE dismissed_at IS NULL "
