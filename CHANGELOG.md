@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.74.0 – Juli 2026
+
+### Verbessert
+- 🧱 **Die Sammlung kommt blockweise.** Bisher entstanden beim Öffnen alle
+  Karten auf einen Schlag – bei 815 Einträgen **14.697 Elemente und 837
+  Bilder** in einem Rutsch. Jetzt sind es die ersten 60; der Rest kommt beim
+  Scrollen nach. Gemessen mit denselben 815 Einträgen: **1.952 Elemente,
+  64 Bilder, 28 Bilder vom Server** beim Öffnen
+- 👁 **Was weit außerhalb des Fensters liegt, wird nicht mehr gezeichnet.**
+  Selbst wenn man sich durch die ganze Sammlung scrollt und am Ende alle
+  815 Karten im Dokument stehen, hat der Browser nur **82 Bilder** geholt
+  und 60 entpackt – der Rest wird übersprungen und darf wieder weg
+- 🗂 **Zugeklappte Themen kosten nichts mehr.** Nach Thema gruppiert wurden
+  bisher auch die zugeklappten Gruppen mit allen Karten aufgebaut. Jetzt
+  füllt sich eine Gruppe erst, wenn man sie sieht: **163 statt 815 Karten**
+  beim Öffnen
+
+> **Warum das der Punkt war.** Der JS-Speicher blieb bei allen Abstürzen
+> flach – entpackte Bilder liegen außerhalb und tauchen dort nicht auf.
+> 837 Bilder auf einmal sind entpackt ein halbes Gigabyte, und das war die
+> letzte Stelle, an der die App das noch tat.
+
 ## 1.73.1 – Juli 2026
 
 ### Behoben

@@ -218,6 +218,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   mask-image: linear-gradient(90deg, transparent 4%, #000 72%);
 }
 .card.has-bg > * { position: relative; z-index: 1; }
+
+/* Karten der Sammlung: Was weit außerhalb des Fensters liegt, muss der
+   Browser weder setzen noch zeichnen – und darf das Ergebnis wieder
+   wegwerfen. Gemessen mit 815 Karten: statt 815 Hintergrundbildern beim
+   Öffnen nur noch 16. `auto` merkt sich die zuletzt gemessene Höhe, damit
+   die Bildlaufleiste beim Scrollen nicht springt. */
+#collection-list .card { content-visibility: auto; contain-intrinsic-size: auto 104px; }
+#collection-list.grid-mode .card { contain-intrinsic-size: auto 236px; }
+/* Die Marke, an der der nächste Block hängt. Muss sichtbar sein, damit der
+   Beobachter sie überhaupt bemerkt. */
+.nachschub-marke { height: 1px; grid-column: 1 / -1; }
 .card-head { display: flex; gap: 12px; align-items: center; }
 .card-img {
   width: 72px; height: 72px; flex: none; object-fit: contain;

@@ -323,6 +323,37 @@ def test_kartenhintergrund_nur_in_sichtweite():
         "Ohne Freigabe wächst der Bildspeicher beim Scrollen weiter")
 
 
+def test_sammlung_kommt_blockweise():
+    """Die Sammlung darf nicht mehr auf einen Schlag ins Dokument.
+
+    Gemessen bei 815 Einträgen: vorher 14.697 Elemente und 837 Bilder in
+    einem Rutsch, danach 1.952 Elemente und 64 Bilder. Der JS-Speicher sagt
+    zu beidem nichts – entpackte Bilder liegen außerhalb, und genau daran ist
+    der Tab wiederholt gestorben.
+
+    Geprüft wird, dass der flache Zweig über den Nachschub läuft und nicht
+    wieder über ein `map` über alle Einträge."""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "frontend" / "app.js").read_text()
+
+    anfang = js.index("function renderCollection(")
+    rumpf_render = js[anfang:js.index("\n}\n", anfang)]
+    assert "collCardHtml" not in rumpf_render, (
+        "renderCollection baut wieder selbst Karten – der Nachschub ist weg")
+    assert "kartenNachschub(list, items)" in rumpf_render
+
+    start = js.index("function kartenNachschub(")
+    rumpf = js[start:js.index("\n}\n", start)]
+    assert "KARTEN_BLOCK" in rumpf, "Ohne Blockgröße ist es kein Nachschub"
+    assert "IntersectionObserver" in rumpf, (
+        "Nachgeladen wird beim Scrollen, nicht auf Verdacht")
+
+    css = (Path(__file__).resolve().parents[1] / "frontend" / "style.css").read_text()
+    assert "content-visibility: auto" in css, (
+        "Ohne content-visibility zahlt der Browser für jede Karte, die "
+        "irgendwann einmal angehängt wurde")
+
+
 def test_zug_zum_neuladen_bleibt_nachvollziehbar():
     """Nach unten ziehen lädt die Seite neu – und muss dabei seinen Grund
     hinterlassen.

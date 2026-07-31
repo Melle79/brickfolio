@@ -1377,6 +1377,8 @@ async function jumpToSet(setNo) {
   const item = state.collection.find(
     (i) => i.item_id === setNo && i.item_type === "set");
   if (!item) { toast("Set nicht in der Sammlung gefunden"); return; }
+  // Liegt das Set hinter dem ersten Block, ist seine Karte noch gar nicht da.
+  karteSicherstellen(item.id);
   const card = $("collection-list").querySelector(`[data-id="${item.id}"]`);
   if (!card) return;
   const details = card.querySelector(".card-details");
@@ -2339,10 +2341,11 @@ function renderThemeGroups(list, items) {
   });
 
   const closed = collapsedThemes();
-  list.innerHTML = groups.map((g) => {
+  themenGruppen = groups;
+  list.innerHTML = groups.map((g, gi) => {
     const isClosed = closed.has(g.name);
     return `
-    <section class="theme-group${isClosed ? " closed" : ""}" data-theme="${esc(g.name)}">
+    <section class="theme-group${isClosed ? " closed" : ""}" data-theme="${esc(g.name)}" data-gruppe="${gi}">
       <button class="theme-head" aria-expanded="${!isClosed}">
         <span class="theme-caret" aria-hidden="true">▾</span>
         <span class="theme-name">${themeIcon(g.name)} ${esc(g.name)}</span>
@@ -2355,10 +2358,28 @@ function renderThemeGroups(list, items) {
       <div class="theme-body">${g.name === THEME_NONE
         ? `<p class="search-hint">${esc(tr("Für diese Einträge ist noch kein "
           + "Thema bestimmt."))} <button class="mini-btn" data-theme-fix>`
-          + `${esc(tr("🔄 Themen nachladen"))}</button></p>` : ""}${
-        g.items.map(collCardHtml).join("")}</div>
+          + `${esc(tr("🔄 Themen nachladen"))}</button></p>` : ""}</div>
     </section>`;
+    // Platzhalterhöhe, solange die Karten fehlen. Ohne sie stehen alle
+    // Gruppen übereinander auf einem Fleck, liegen damit alle im
+    // Sichtbereich – und füllen sich sofort alle auf einmal.
   }).join("");
+
+  // Die Karten einer Gruppe entstehen erst, wenn die Gruppe zu sehen ist.
+  // Zugeklappte Gruppen sind unsichtbar und kosten damit gar nichts – vorher
+  // steckten auch sie mit allen Karten im Dokument.
+  const koerper = [...list.querySelectorAll(".theme-body")];
+  const proKarte = list.classList.contains("grid-mode") ? 65 : 104;
+  koerper.forEach((b) => {
+    const g = groups[Number(b.closest(".theme-group").dataset.gruppe)];
+    if (g) b.style.minHeight = (g.items.length * proKarte) + "px";
+  });
+  if ("IntersectionObserver" in window) {
+    nachschubBeobachter = new IntersectionObserver((eintraege) => {
+      eintraege.forEach((e) => { if (e.isIntersecting) gruppeFuellen(e.target); });
+    }, { rootMargin: "800px 0px" });
+    koerper.forEach((b) => nachschubBeobachter.observe(b));
+  } else koerper.forEach(gruppeFuellen);
 
   // Der Knopf steckte bisher nur unter „Mehr → Sortierung" – also weit weg
   // von der Stelle, an der die Lücke auffällt.
@@ -2379,7 +2400,27 @@ function renderThemeGroups(list, items) {
       const set = collapsedThemes();
       nowClosed ? set.add(name) : set.delete(name);
       storeCollapsedThemes(set);
+      if (!nowClosed) gruppeFuellen(sec.querySelector(".theme-body"));
     });
+  });
+}
+
+/* Karten einer Themengruppe nachreichen – einmal je Gruppe. */
+let themenGruppen = [];
+
+function gruppeFuellen(body) {
+  if (!body || body.dataset.gefuellt) return;
+  const sec = body.closest(".theme-group");
+  const g = themenGruppen[Number(sec && sec.dataset.gruppe)];
+  if (!g) return;
+  body.dataset.gefuellt = "1";
+  body.style.minHeight = "";        // ab jetzt tragen die Karten die Höhe
+  const huelle = document.createElement("div");
+  huelle.innerHTML = g.items.map(collCardHtml).join("");
+  [...huelle.children].forEach((c) => {
+    body.appendChild(c);
+    karteVerdrahten(c, state.collection);
+    if (bgBeobachter && c.dataset.bg) bgBeobachter.observe(c);
   });
 }
 
@@ -2392,6 +2433,8 @@ function renderCollection() {
   $("collection-empty").hidden = items.length > 0 || gesucht;
   const grouped = $("sort").value === "theme" && items.length > 0;
   list.classList.toggle("by-theme", grouped);
+  nachschubBeenden();
+  hintergrundBeobachten(list);      // erst der Beobachter, dann die Karten
   if (grouped) renderThemeGroups(list, items);
   else if (!items.length && gesucht) {
     // Vorher blieb hier eine leere Fläche: keine Karten, kein Hinweis –
@@ -2404,9 +2447,95 @@ function renderCollection() {
       $("type-filter").value = "";
       loadCollection();
     });
-  } else list.innerHTML = items.map(collCardHtml).join("");
+  } else {
+    list.innerHTML = "";
+    kartenNachschub(list, items);
+    return;                          // verdrahtet wird blockweise
+  }
 
-  list.querySelectorAll(".card").forEach((card) => {
+  list.querySelectorAll(".card").forEach((card) => karteVerdrahten(card, items));
+}
+
+/* Karten kommen blockweise ins Dokument.
+
+   Bis hierher entstanden beim Öffnen der Sammlung alle Karten auf einmal:
+   gemessen 14.697 Elemente und 837 Bilder in einem Rutsch, bei 815
+   Einträgen. Der JS-Speicher blieb dabei klein – entpackte Bilder liegen
+   außerhalb, und genau daran ist der Tab wiederholt gestorben.
+
+   Jetzt steht am Ende der Liste eine Marke. Kommt sie in die Nähe des
+   Fensters, wird der nächste Block angehängt. Wer oben bleibt, hat nie mehr
+   als einen Block im Dokument; wer durchscrollt, bekommt sie nach und nach
+   statt alle gleichzeitig. */
+const KARTEN_BLOCK = 60;
+let nachschubBeobachter = null;
+let nachschubLaden = null;        // hängt den nächsten Block an
+
+function nachschubBeenden() {
+  if (nachschubBeobachter) {
+    nachschubBeobachter.disconnect();
+    nachschubBeobachter = null;
+  }
+  nachschubLaden = null;
+}
+
+function kartenNachschub(list, items) {
+  let gezeigt = 0;
+  const marke = document.createElement("div");
+  marke.className = "nachschub-marke";
+  list.appendChild(marke);
+
+  const block = () => {
+    const teil = items.slice(gezeigt, gezeigt + KARTEN_BLOCK);
+    if (!teil.length) { fertig(); return; }
+    const huelle = document.createElement("div");
+    huelle.innerHTML = teil.map(collCardHtml).join("");
+    const neue = [...huelle.children];
+    neue.forEach((c) => list.insertBefore(c, marke));
+    gezeigt += teil.length;
+    neue.forEach((c) => {
+      karteVerdrahten(c, items);
+      if (bgBeobachter && c.dataset.bg) bgBeobachter.observe(c);
+    });
+    if (gezeigt >= items.length) fertig();
+  };
+
+  const fertig = () => { nachschubBeenden(); marke.remove(); };
+
+  // `nachschub` gehört zur Liste, nicht zum Fenster: In der Rasteransicht
+  // liegt die Marke sonst neben den Karten statt darunter.
+  nachschubBeobachter = new IntersectionObserver((eintraege) => {
+    if (eintraege.some((e) => e.isIntersecting)) block();
+  }, { rootMargin: "1200px 0px" });
+
+  nachschubLaden = block;
+  block();                       // der erste Block sofort
+  if (nachschubBeobachter) nachschubBeobachter.observe(marke);
+}
+
+/* Sorgt dafür, dass ein bestimmter Eintrag wirklich im Dokument steht –
+   für den Sprung zu einem Set, das weiter hinten liegt. */
+function karteSicherstellen(id) {
+  const list = $("collection-list");
+  const da = () => list.querySelector(`[data-id="${id}"]`);
+  let schutz = 500;               // gegen eine Endlosschleife bei Unfug
+  while (!da() && nachschubLaden && schutz-- > 0) nachschubLaden();
+  // Nach Thema gruppiert gibt es keine Blöcke, sondern Gruppen – dann eben
+  // alle aufmachen, bis der Eintrag dabei ist.
+  if (!da()) {
+    for (const b of list.querySelectorAll(".theme-body")) {
+      gruppeFuellen(b);
+      if (da()) break;
+    }
+  }
+  return !!da();
+}
+
+/* Verdrahtung einer einzelnen Karte. Stand früher als Rumpf einer Schleife
+   über *alle* Karten hier – das ging nur, solange alle auf einmal im
+   Dokument standen. */
+function karteVerdrahten(card, items) {
+  {
     const id = Number(card.dataset.id);
     const item = items.find((i) => i.id === id);
     const canPrice = state.bricklinkPrices && !/^(fig-|manuell-|custom-)/.test(item.item_id);
@@ -2480,9 +2609,7 @@ function renderCollection() {
           || ev.target.closest(".set-link")) return;
       openCardModal(item, id, card, deleteEntry, wireQty, canPrice);
     });
-  });
-
-  hintergrundBeobachten(list);
+  }
 }
 
 /* Der weiche Hintergrund ist der teuerste Teil einer Karte: ein zweites Bild
