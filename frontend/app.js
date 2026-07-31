@@ -2063,6 +2063,7 @@ async function handlePhoto(file) {
   auswahlAnzeigen(null);
   scanAuswahl = null;
   document.querySelectorAll(".scan-mehr").forEach((e) => e.remove());
+  $("scan-anzahl").hidden = true;
   $("scan-alle").hidden = false;
   $("scan-preview").hidden = false;
   $("scan-status").hidden = false;
@@ -2177,7 +2178,9 @@ function scanAuswahlEinrichten() {
     document.addEventListener("pointerup", ende);
   });
 
-  $("scan-alle").addEventListener("click", alleFigurenErkennen);
+  $("scan-alle").addEventListener("click", () => alleFigurenErkennen(0));
+  $("scan-weniger").addEventListener("click", () => anzahlAendern(-1));
+  $("scan-mehr").addEventListener("click", () => anzahlAendern(1));
 
   knopf.addEventListener("click", async () => {
     if (!scanAuswahl || !lastScanFile) return;
@@ -2213,114 +2216,177 @@ function scanAuswahlEinrichten() {
    zusammenhängende Flecken suchen und daraus Rahmen machen. Jeder Rahmen
    geht danach einzeln zur Erkennung. */
 
-const FIND_BREITE = 240;         // Analysegröße – mehr braucht es nicht
-const FIND_MAX = 8;              // mehr Figuren fragen wir nicht ab
+const FIND_BREITE = 320;         // Analysegröße – mehr braucht es nicht
+const FIND_MAX = 10;             // mehr Figuren fragen wir nicht ab
 
-async function figurenFinden(file) {
+/* Kanten statt Farben.
+
+   Der erste Anlauf verglich jeden Bildpunkt mit einer aus dem Rand
+   geschätzten Hintergrundfarbe. Auf weißem Papier geht das; in einer
+   Vitrine nicht – dort spiegelt das Glas, der Regalboden ist hell, die
+   Rückwand blaugrau, und die Figuren sind genau so blaugrau. Es gibt keine
+   Hintergrundfarbe, von der sie sich abheben.
+
+   Figuren nebeneinander haben aber immer eines: **Struktur**. Wo eine Figur
+   steht, wechseln Helligkeiten dicht an dicht – Helm, Arme, Gürtel. In der
+   Lücke dazwischen liegt eine ruhige Fläche. Deshalb misst die App jetzt
+   die Kantendichte je Bildspalte und schneidet in den Tälern. */
+
+function graustufen(px, w, h) {
+  const g = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    g[i] = (px[i * 4] * 0.299 + px[i * 4 + 1] * 0.587 + px[i * 4 + 2] * 0.114);
+  }
+  return g;
+}
+
+function glaetten(werte, fenster) {
+  const out = new Float32Array(werte.length);
+  const r = Math.max(1, Math.round(fenster));
+  for (let i = 0; i < werte.length; i++) {
+    let s = 0, n = 0;
+    for (let j = Math.max(0, i - r); j <= Math.min(werte.length - 1, i + r); j++) {
+      s += werte[j];
+      n++;
+    }
+    out[i] = s / n;
+  }
+  return out;
+}
+
+async function figurenFinden(file, anzahlWunsch = 0) {
   const bmp = await createImageBitmap(file);
   const f = FIND_BREITE / bmp.width;
   const w = FIND_BREITE, h = Math.max(1, Math.round(bmp.height * f));
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
-  const g = c.getContext("2d", { willReadFrequently: true });
-  g.drawImage(bmp, 0, 0, w, h);
-  const px = g.getImageData(0, 0, w, h).data;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(bmp, 0, 0, w, h);
+  const px = ctx.getImageData(0, 0, w, h).data;
   bmp.close();
   c.width = c.height = 0;
+  const grau = graustufen(px, w, h);
 
-  // Hintergrund aus dem Rand schätzen – dort liegt selten eine Figur
-  const rand = [];
-  for (let x = 0; x < w; x++) { rand.push(0 * w + x); rand.push((h - 1) * w + x); }
-  for (let y = 0; y < h; y++) { rand.push(y * w); rand.push(y * w + w - 1); }
-  const mitte = (kanal) => {
-    const werte = rand.map((i) => px[i * 4 + kanal]).sort((a, b) => a - b);
-    return werte[Math.floor(werte.length / 2)];
-  };
-  const bg = [mitte(0), mitte(1), mitte(2)];
-
-  const GRENZE = 60;             // Farbabstand, ab dem etwas „nicht Hintergrund" ist
-  const vorn = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++) {
-    const d = Math.abs(px[i * 4] - bg[0]) + Math.abs(px[i * 4 + 1] - bg[1])
-      + Math.abs(px[i * 4 + 2] - bg[2]);
-    vorn[i] = d > GRENZE ? 1 : 0;
-  }
-
-  // Zusammenhängende Flecken einsammeln (4er-Nachbarschaft, ohne Rekursion)
-  const gesehen = new Uint8Array(w * h);
-  const flecken = [];
-  const stapel = [];
-  for (let start = 0; start < w * h; start++) {
-    if (!vorn[start] || gesehen[start]) continue;
-    stapel.length = 0;
-    stapel.push(start);
-    gesehen[start] = 1;
-    let x0 = w, y0 = h, x1 = 0, y1 = 0, n = 0;
-    while (stapel.length) {
-      const i = stapel.pop();
-      const x = i % w, y = (i - x) / w;
-      n++;
-      if (x < x0) x0 = x;
-      if (x > x1) x1 = x;
-      if (y < y0) y0 = y;
-      if (y > y1) y1 = y;
-      const nachbarn = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1,
-                        y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
-      for (const j of nachbarn) {
-        if (j >= 0 && vorn[j] && !gesehen[j]) { gesehen[j] = 1; stapel.push(j); }
-      }
-    }
-    // Zu kleine Flecken sind Schatten, Krümel oder Bildrauschen
-    if (n > w * h * 0.004 && (x1 - x0) > 6 && (y1 - y0) > 6) {
-      flecken.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, n });
+  // Kantenstärke je Bildpunkt (einfacher Gradient, reicht völlig)
+  const kante = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      kante[i] = Math.abs(grau[i + 1] - grau[i - 1])
+        + Math.abs(grau[i + w] - grau[i - w]);
     }
   }
 
-  // Was sich überlappt oder dicht beieinanderliegt, gehört zusammen –
-  // eine Figur zerfällt sonst leicht in Kopf, Körper und Beine.
-  const nah = 8;
-  let geaendert = true;
-  while (geaendert) {
-    geaendert = false;
-    for (let i = 0; i < flecken.length && !geaendert; i++) {
-      for (let j = i + 1; j < flecken.length; j++) {
-        const a = flecken[i], b = flecken[j];
-        if (a.x < b.x + b.w + nah && b.x < a.x + a.w + nah
-            && a.y < b.y + b.h + nah && b.y < a.y + a.h + nah) {
-          const x0 = Math.min(a.x, b.x), y0 = Math.min(a.y, b.y);
-          const x1 = Math.max(a.x + a.w, b.x + b.w);
-          const y1 = Math.max(a.y + a.h, b.y + b.h);
-          flecken[i] = { x: x0, y: y0, w: x1 - x0, h: y1 - y0, n: a.n + b.n };
-          flecken.splice(j, 1);
-          geaendert = true;
-          break;
-        }
-      }
+  // In welchem waagerechten Band stehen die Figuren? Dort ist am meisten los.
+  const jeZeile = new Float32Array(h);
+  for (let y = 0; y < h; y++) {
+    let s = 0;
+    for (let x = 0; x < w; x++) s += kante[y * w + x];
+    jeZeile[y] = s;
+  }
+  const zg = glaetten(jeZeile, h * 0.03);
+  // Schwelle am **Mittelwert**, nicht am Maximum: Eine einzelne sehr harte
+  // Kante – etwa die beleuchtete Regalkante – ist um ein Vielfaches
+  // stärker als eine Figur. Am Maximum gemessen fiele alles andere durch,
+  // und das Band landete auf der Kante statt auf den Figuren. Genau das
+  // ist beim ersten Versuch passiert: Zeile 165–187 von 198.
+  const mittel = zg.reduce((a, b) => a + b, 0) / h;
+  let oben = 0, unten = h - 1;
+  while (oben < h - 1 && zg[oben] < mittel) oben++;
+  while (unten > oben && zg[unten] < mittel) unten--;
+  if (unten - oben < h * 0.15) { oben = 0; unten = h - 1; }   // nichts erkennbar
+  // Das Band dient nur dem **Messen** der Spalten – als Schnittgrenze taugt
+  // es nicht. Es endet dort, wo die Kantendichte nachlässt, und das ist bei
+  // einer Figur der Helm: rund, ruhig, kaum Kanten. Gemessen fehlte er im
+  // Ausschnitt (Band ab y=247, Kopf ab y=204). Geschnitten wird deshalb
+  // über die **volle Höhe**; was oben und unten an Hintergrund mitkommt,
+  // stört die Erkennung nicht – sie sucht sich ihr Objekt selbst.
+
+  // Kantendichte je Spalte, nur im Figurenband
+  const jeSpalte = new Float32Array(w);
+  for (let x = 0; x < w; x++) {
+    let s = 0;
+    for (let y = oben; y <= unten; y++) s += kante[y * w + x];
+    jeSpalte[x] = s;
+  }
+  const sg = glaetten(jeSpalte, w * 0.012);
+  const maxS = Math.max(...sg);
+  if (!maxS) return [];
+
+  // Schnittstellen sind die **ausgeprägten** Täler, nicht die tiefsten.
+  //
+  // Ein fester Schwellwert scheitert, sobald Figuren dicht stehen: Gemessen
+  // an einer Vitrinenaufnahme lagen die Lücken bei 41 % des Höchstwerts,
+  // die Figuren bei 70–100 % – kein Wert trennt das sauber. Die Ausprägung
+  // schon: Wie weit fällt ein Tal unter die Gipfel links und rechts? Bei
+  // echten Lücken waren das 58, bei Rauschen 17 bis 22.
+  const AUSPRAEGUNG = 0.35;
+  const taeler = [];
+  for (let x = 2; x < w - 2; x++) {
+    if (!(sg[x] <= sg[x - 1] && sg[x] <= sg[x + 1])) continue;
+    let li = sg[x], re = sg[x];
+    for (let j = x; j >= 0 && sg[j] >= sg[x]; j--) li = Math.max(li, sg[j]);
+    for (let j = x; j < w && sg[j] >= sg[x]; j++) re = Math.max(re, sg[j]);
+    if ((Math.min(li, re) - sg[x]) / maxS >= AUSPRAEGUNG) taeler.push(x);
+  }
+  // Ein breites Tal liefert mehrere benachbarte Minima – die gehören zusammen
+  const schnitte = [];
+  for (const x of taeler) {
+    if (!schnitte.length || x - schnitte[schnitte.length - 1] > w * 0.04) {
+      schnitte.push(x);
+    } else {
+      schnitte[schnitte.length - 1] = Math.round(
+        (schnitte[schnitte.length - 1] + x) / 2);
     }
   }
+  // Zwischen den Schnitten liegen die Figuren; Ränder ohne Struktur weg
+  const bereiche = [];
+  const grenzen = [0, ...schnitte, w - 1];
+  for (let i = 0; i < grenzen.length - 1; i++) {
+    const a = grenzen[i], b = grenzen[i + 1];
+    if (b - a < w * 0.04) continue;
+    let hoch = 0;
+    for (let x = a; x <= b; x++) hoch = Math.max(hoch, sg[x]);
+    if (hoch >= maxS * 0.45) bereiche.push([a, b]);   // sonst ist da nichts
+  }
 
-  // Größte zuerst, von links nach rechts ausgeben, zurück in Bildkoordinaten
-  return flecken
-    .sort((a, b) => b.n - a.n)
-    .slice(0, FIND_MAX)
-    .sort((a, b) => a.x - b.x)
-    .map((r) => ({ x: r.x / f, y: r.y / f, w: r.w / f, h: r.h / f }));
+  // Wenn eine Zahl vorgegeben ist und die Trennung nicht passt: gleichmäßig
+  // teilen. Lieber gerade Schnitte als gar keine.
+  let spalten = bereiche;
+  if (anzahlWunsch > 0 && bereiche.length !== anzahlWunsch) {
+    const l = bereiche.length ? bereiche[0][0] : 0;
+    const r = bereiche.length ? bereiche[bereiche.length - 1][1] : w - 1;
+    const breite = (r - l + 1) / anzahlWunsch;
+    spalten = Array.from({ length: anzahlWunsch }, (_, i) =>
+      [Math.round(l + i * breite), Math.round(l + (i + 1) * breite) - 1]);
+  }
+
+  return spalten.slice(0, FIND_MAX).map(([x0, x1]) => ({
+    x: x0 / f, y: 0, w: (x1 - x0 + 1) / f, h: h / f,
+  }));
 }
 
 /* Alle gefundenen Figuren nacheinander erkennen lassen. */
-async function alleFigurenErkennen() {
+let letzteBoxen = [];
+
+async function alleFigurenErkennen(anzahlWunsch = 0) {
   if (!lastScanFile) return;
   const knopf = $("scan-alle");
   const status = $("scan-status");
   knopf.disabled = true;
   try {
-    const boxen = await figurenFinden(lastScanFile);
-    if (boxen.length < 2) {
-      toast(tr("Nur eine Figur gefunden – am besten mit etwas Abstand "
-        + "und vor einfarbigem Hintergrund fotografieren."));
+    const boxen = await figurenFinden(lastScanFile, anzahlWunsch);
+    if (!boxen.length) {
+      toast(tr("Keine Figuren gefunden – Rahmen von Hand ziehen."));
       return;
     }
+    letzteBoxen = boxen;
     mehrfachRahmen(boxen);
+    anzahlRegler(boxen.length);
+    if (boxen.length < 2 && !anzahlWunsch) {
+      toast(tr("Nur eine Figur gefunden. Stimmt das nicht, die Zahl unten "
+        + "anpassen."));
+    }
     const gefunden = [];
     for (let i = 0; i < boxen.length; i++) {
       status.hidden = false;
@@ -2328,17 +2394,16 @@ async function alleFigurenErkennen() {
         tr("Figur {i} von {n} …", { i: i + 1, n: boxen.length });
       const teil = await ausschnittBild(lastScanFile, boxen[i]);
       try {
-        const d = await api("/scan", { method: "POST", body: (() => {
-          const fd = new FormData();
-          fd.append("file", teil, "scan.jpg");
-          return fd;
-        })() });
+        const fd = new FormData();
+        fd.append("file", teil, "scan.jpg");
+        const d = await api("/scan", { method: "POST", body: fd });
         if (d.items && d.items[0]) gefunden.push(d.items[0]);
       } catch (_) { /* eine Figur weniger, der Rest läuft weiter */ }
     }
     if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
     renderScanResults(gefunden);
-    toast(tr("{n} Figuren erkannt ✔", { n: gefunden.length }));
+    toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
+      : tr("{n} Figuren erkannt ✔", { n: gefunden.length }));
   } catch (e) {
     toast(e.message);
   } finally {
@@ -2346,6 +2411,28 @@ async function alleFigurenErkennen() {
     status.hidden = true;
     status.querySelector("[data-scan-text]").textContent = tr("Erkenne …");
   }
+}
+
+/* Die Zahl der Figuren nachbessern.
+
+   Kein Verfahren trifft jede Vitrine. Statt an Schwellwerten zu drehen,
+   die man nie sieht, steht hier die gefundene Zahl – und wer sie ändert,
+   bekommt das Bild gleichmäßig in so viele Streifen geteilt. Ein Tipp
+   statt Raten. */
+function anzahlRegler(n) {
+  const box = $("scan-anzahl");
+  if (!box) return;
+  box.hidden = false;
+  box.querySelector("[data-anzahl]").textContent = n;
+  box.dataset.n = n;
+}
+
+function anzahlAendern(schritt) {
+  const box = $("scan-anzahl");
+  const n = Math.max(1, Math.min(FIND_MAX, Number(box.dataset.n || 1) + schritt));
+  if (String(n) === box.dataset.n) return;
+  anzahlRegler(n);
+  alleFigurenErkennen(n);
 }
 
 /* Alle gefundenen Bereiche gleichzeitig einrahmen. */

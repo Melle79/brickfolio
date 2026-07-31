@@ -511,16 +511,21 @@ photo, it picks one. So that you can see which, the preview frames the
 recognised figure in **green**.
 
 So that all of them work in one go anyway, the app separates the figures
-**itself**: **🔎 Recognise all figures** estimates the background colour from
-the image border, looks for the patches that differ from it, merges what
-belongs together (a figure's head, body and legs) and sends each area to
-recognition separately. The figures found are framed and numbered, and below
-each gets its own card with **＋ To the collection**.
+**itself**: **🔎 Recognise all figures** measures how much structure sits in
+each image column. Where a figure stands, brightness changes densely –
+helmet, arms, belt; in the gap next to it lies a calm surface. The cuts go
+into the gaps, and each strip is sent to recognition on its own. The figures
+found are framed and numbered, and below each gets its own card with
+**＋ To the collection**.
 
-> **For this to work:** a plain background and a little space between the
-> figures – the same conditions that help recognition anyway. On a patterned
-> table the separation finds nothing sensible; the app says so and you take
-> the manual route.
+This also copes with a **display case**: glass reflections, a bright shelf,
+a blue-grey back wall and blue-grey figures – a colour comparison would find
+nothing there, structure does.
+
+> **If the number is wrong:** below the picture it says how many figures were
+> found, with **−** and **＋** next to it. Change the number and the picture
+> is divided into that many equal strips and everything is asked again. That
+> helps with figures that touch – there is no gap to cut in.
 
 That one always works: drag a **frame around one figure** with your finger
 (or the mouse) and tap **🔍 Recognise this crop**. The cropping happens in

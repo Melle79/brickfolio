@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.80.0 – Juli 2026
+
+### Behoben
+- 📷 **Figurentrennung, die auch in der Vitrine funktioniert.** Der erste
+  Anlauf (1.79.0) verglich jeden Bildpunkt mit einer aus dem Bildrand
+  geschätzten Hintergrundfarbe. Auf weißem Papier geht das – in einer
+  Vitrine nicht: Das Glas spiegelt, der Regalboden ist hell, die Rückwand
+  blaugrau und die Figuren sind genau so blaugrau. Es gibt keine Farbe, von
+  der sie sich abheben
+- Jetzt zählt **Struktur statt Farbe**: Wo eine Figur steht, wechseln
+  Helligkeiten dicht an dicht – Helm, Arme, Gürtel; die Lücke daneben ist
+  ruhig. Geschnitten wird in den Tälern dieser Kantendichte, und zwar dort,
+  wo sie **ausgeprägt** sind: Gemessen lagen echte Lücken bei einer
+  Ausprägung von 58, Rauschen bei 17 bis 22
+- 🔢 **Die Zahl lässt sich nachbessern.** Unter dem Bild steht, wie viele
+  Figuren gefunden wurden, mit **−** und **＋**. Wer die Zahl ändert, bekommt
+  das Bild gleichmäßig geteilt und alles erneut abgefragt – das hilft bei
+  Figuren, die sich berühren, wo es keine Lücke zum Schneiden gibt
+- ✂️ **Der Ausschnitt geht über die volle Bildhöhe.** Vorher endete er dort,
+  wo die Kantendichte nachließ – und das ist bei einer Figur der Helm:
+  rund, ruhig, kaum Kanten. Gemessen fehlte er im Ausschnitt
+
 ## 1.79.0 – Juli 2026
 
 ### Neu

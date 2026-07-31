@@ -197,6 +197,13 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .scan-auswahl { border: 3px dashed var(--blue); background: rgba(0, 87, 166, .12); }
 .scan-bild img { touch-action: none; cursor: crosshair; }
 .scan-tipp { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.scan-anzahl {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 10px; font-weight: 800;
+}
+.scan-anzahl b { font-size: 18px; min-width: 22px; }
+.scan-anzahl .mini-btn { padding: 4px 12px; }
+.scan-anzahl-hint { color: var(--muted); font-weight: 700; }
 .scan-knoepfe {
   display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
   margin-top: 10px;
