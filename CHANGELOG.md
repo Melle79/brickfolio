@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.77.0 – Juli 2026
+
+### Neu
+- 🪟 **Eigene Fenster statt Browser-Abfragen.** Sechs Stellen benutzten das
+  graue `prompt()` des Browsers – eigene Schrift, eigene Farben, und für
+  zwei Angaben zwei Fenster hintereinander. Jetzt fragt ein Fenster im Stil
+  der App alles auf einmal: weiterer Kauf, neue Liste, mehr Einladungen,
+  Passwort setzen. Mit Enter bestätigen, mit Esc abbrechen
+
+### Verbessert
+- 🧊 **Nova: weniger Glasflächen.** „Glas" heißt, dass der Browser den
+  Hintergrund in Echtzeit weichzeichnet – jede solche Fläche kostet ihn eine
+  eigene Zeichenfläche im Grafikspeicher, und **den sieht keine Messung**.
+  Auf den Einstellungen lagen so **19 davon gleichzeitig**, und die Karte im
+  Popup zeichnete weich, was die Überlagerung darunter schon weichgezeichnet
+  hatte. Mehrfach vorkommende Flächen tragen jetzt eine durchscheinende
+  Farbe – kaum zu sehen, aber statt rund zwanzig Zeichenflächen sind es drei
+- 🔍 **Das Design steht jetzt im Speicher-Verlauf.** Nur so lässt sich
+  überhaupt feststellen, ob Abstürze an Nova hängen
+
+> **Warum das jetzt kommt.** Der Absturz vom 31.7. um 20:36 trug „OHNE
+> ABSCHIED" – ein echter also – und passierte bei **2.005 Elementen und 64
+> Bildern**. Die Seite war winzig. Damit ist klar, dass die Bilder nicht die
+> Ursache waren; die Kosten liegen woanders, und Echtzeit-Weichzeichner sind
+> der nächste Ort, an dem sie außerhalb jeder Messung anfallen.
+
 ## 1.76.1 – Juli 2026
 
 ### Verbessert

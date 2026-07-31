@@ -708,8 +708,9 @@ So below the profit line there is a **purchase log**:
 | 1× | 39.99 € | LEGO Store · 14/06/2026 |
 | 1× | 34.99 € | MediaMarkt · 02/07/2026 |
 
-**＋ Another purchase** adds an entry – you are asked for the total price of
-that purchase and optionally for the source; the quantity grows with it. The
+The **＋** at the end of the paid row opens a small window: total price of
+this purchase, quantity and optionally the source – all at once. The entry's
+quantity grows with it. The
 **✕** takes a purchase back, quantity included. The list only appears from the
 second entry onwards – with a single one it says nothing that is not already
 above. The same applies to figures as to sets.

@@ -733,9 +733,9 @@ Deshalb steht unter der Gewinnzeile ein **Kaufbuch**:
 | 1× | 39,99 € | LEGO Store · 14.6.2026 |
 | 1× | 34,99 € | MediaMarkt · 2.7.2026 |
 
-Mit **＋ Weiterer Kauf** kommt ein Posten dazu – gefragt wird nach dem
-Gesamtpreis dieses Kaufs und wahlweise nach der Quelle; die Stückzahl wächst
-mit. Das **✕** nimmt einen Kauf zurück, ebenfalls samt Stückzahl. Die
+Das **＋** am Ende der Bezahlt-Zeile öffnet ein kleines Fenster: Gesamtpreis
+dieses Kaufs, Stückzahl und wahlweise die Quelle – alles auf einmal. Die
+Stückzahl des Eintrags wächst mit. Das **✕** nimmt einen Kauf zurück, ebenfalls samt Stückzahl. Die
 Aufstellung erscheint erst ab dem zweiten Posten – bei einem einzigen sagt
 sie nichts, was nicht schon oben steht. Für Figuren gilt dasselbe wie für
 Sets.

@@ -2760,6 +2760,94 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
   document.addEventListener("keydown", cardModalKeyHandler);
 }
 
+/* ------------------------------------------------------- App-Dialog
+
+   `prompt()` des Browsers passt zu nichts: eigene Schrift, eigene Farben,
+   in der App vom Startbildschirm ein Fremdkörper – und für zwei Angaben
+   braucht es zwei Fenster hintereinander. Dieser Dialog fragt alles auf
+   einmal, im Stil der App, und liefert die Werte als Objekt (oder `null`,
+   wenn abgebrochen wurde).
+
+   `felder` ist eine Liste: { name, label, typ, wert, platzhalter, pflicht }
+*/
+function appDialog({ titel, text = "", felder = [], ok = "Übernehmen" }) {
+  return new Promise((fertig) => {
+    const alt = document.getElementById("app-dialog");
+    if (alt) alt.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "card-modal-overlay stacked";
+    overlay.id = "app-dialog";
+    overlay.innerHTML = `
+      <div class="card-modal">
+        <button class="card-modal-close" data-abbruch aria-label="${esc(tr("Schließen"))}">✕</button>
+        <div class="card modal-inner open" role="dialog" aria-modal="true">
+          <h3 style="margin:0 0 6px">${esc(titel)}</h3>
+          ${text ? `<p class="search-hint">${esc(text)}</p>` : ""}
+          ${felder.map((f) => `
+            <label for="dlg-${esc(f.name)}">${esc(f.label)}</label>
+            <input id="dlg-${esc(f.name)}" data-feld="${esc(f.name)}"
+              type="${esc(f.typ === "zahl" ? "text" : f.typ || "text")}"
+              ${f.typ === "zahl" ? 'inputmode="decimal"' : ""}
+              value="${esc(f.wert == null ? "" : f.wert)}"
+              placeholder="${esc(f.platzhalter || "")}"
+              maxlength="${Number(f.max) || 200}">`).join("")}
+          <div class="detail-row btn-grid">
+            <button class="mini-btn add" data-ok>${esc(ok)}</button>
+            <button class="mini-btn" data-abbruch>${esc(tr("Abbrechen"))}</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const werte = () => {
+      const d = {};
+      overlay.querySelectorAll("[data-feld]").forEach((e) => {
+        d[e.dataset.feld] = e.value.trim();
+      });
+      return d;
+    };
+    const schliessen = (ergebnis) => {
+      document.removeEventListener("keydown", taste);
+      overlay.remove();
+      fertig(ergebnis);
+    };
+    const bestaetigen = () => {
+      const d = werte();
+      const fehlt = felder.find((f) => f.pflicht && !d[f.name]);
+      if (fehlt) {
+        const e = overlay.querySelector(`[data-feld="${fehlt.name}"]`);
+        e.focus();
+        e.classList.add("feld-fehlt");
+        setTimeout(() => e.classList.remove("feld-fehlt"), 1200);
+        return;
+      }
+      schliessen(d);
+    };
+    const taste = (ev) => {
+      if (ev.key === "Escape") schliessen(null);
+      if (ev.key === "Enter" && ev.target.matches("[data-feld]")) {
+        ev.preventDefault();
+        bestaetigen();
+      }
+    };
+    overlay.querySelectorAll("[data-abbruch]").forEach((b) =>
+      b.addEventListener("click", () => schliessen(null)));
+    overlay.querySelector("[data-ok]").addEventListener("click", bestaetigen);
+    overlay.addEventListener("click", (ev) => {
+      if (ev.target === overlay) schliessen(null);
+    });
+    document.addEventListener("keydown", taste);
+    const erstes = overlay.querySelector("[data-feld]");
+    if (erstes) setTimeout(() => erstes.focus(), 50);
+  });
+}
+
+/* Betrag aus einem Feld lesen – Komma wie Punkt. */
+function betragLesen(text) {
+  const n = Number(String(text || "").replace(",", ".").trim());
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 /* Kaufbuch einer Karte: die einzelnen Käufe hinter der Summe.
 
    Zwei gleiche Sets liegen in einer Zeile – „einmal 39,99 bei LEGO, einmal
@@ -2801,14 +2889,26 @@ async function kaufbuchLaden(card, item, id) {
   knopf.dataset.wired = "1";
   knopf.addEventListener("click", async (ev) => {
     ev.stopPropagation();
-    const preis = prompt(tr("Was hat dieser Kauf gekostet? (gesamt)"), "");
-    if (preis == null) return;
-    const betrag = Number(String(preis).replace(",", ".").trim());
-    if (!(betrag >= 0)) { toast(tr("Das ist kein Betrag.")); return; }
-    const quelle = prompt(tr("Wo gekauft? (frei lassen, wenn egal)"), "") || "";
+    const d = await appDialog({
+      titel: tr("Weiterer Kauf"),
+      text: tr("Dasselbe noch einmal woanders gekauft? Der Betrag gilt für "
+        + "diesen Kauf, die Stückzahl wächst mit."),
+      felder: [
+        { name: "preis", label: tr("Gesamtpreis"), typ: "zahl",
+          platzhalter: "34,99", pflicht: true },
+        { name: "menge", label: tr("Stückzahl"), typ: "zahl", wert: "1" },
+        { name: "quelle", label: tr("Wo gekauft? (frei lassen, wenn egal)"),
+          platzhalter: "MediaMarkt", max: 80 },
+      ],
+      ok: tr("Kauf eintragen"),
+    });
+    if (!d) return;
+    const betrag = betragLesen(d.preis);
+    if (betrag == null) { toast(tr("Das ist kein Betrag.")); return; }
+    const menge = Math.max(1, Math.round(Number(d.menge) || 1));
     try {
       const r = await api(`/collection/${id}/purchases`, { method: "POST",
-        body: { quantity: 1, price: betrag, source: quelle.trim().slice(0, 80) } });
+        body: { quantity: menge, price: betrag, source: d.quelle.slice(0, 80) } });
       kaufStandUebernehmen(card, item, r);
       kaufbuchLaden(card, item, id);
       toast(tr("Kauf eingetragen ✔"));
@@ -3887,7 +3987,13 @@ async function pickListForManual() {
   box.querySelector("[data-ml-new]").addEventListener("click", async () => {
     const today = new Date().toLocaleDateString(dateLocale(),
       { day: "2-digit", month: "2-digit" });
-    const name = prompt("Name der neuen Liste:", `Flohmarkt ${today}`);
+    const d = await appDialog({
+      titel: tr("Neue Liste"),
+      felder: [{ name: "name", label: tr("Name der neuen Liste"),
+                 wert: `Flohmarkt ${today}`, pflicht: true, max: 80 }],
+      ok: tr("Anlegen"),
+    });
+    const name = d && d.name;
     if (name == null || !name.trim()) return;
     try {
       const res = await api("/lists", { method: "POST",
@@ -5930,11 +6036,19 @@ async function loadInviteQuota() {
 
 /* Anfrage nach mehr Einladungen stellen. */
 async function offerInviteRequest(hint) {
-  const want = prompt((hint ? hint + "\n\n" : "")
-    + "Wie viele zusätzliche Einladungen brauchst du?", "3");
-  if (want == null) return;
-  const n = Math.max(1, Math.min(Number(want) || 3, 50));
-  const reason = prompt("Kurz begründen (optional):", "") || "";
+  const d = await appDialog({
+    titel: tr("Mehr Einladungen anfragen"),
+    text: hint || "",
+    felder: [
+      { name: "want", label: tr("Wie viele zusätzliche Einladungen brauchst du?"),
+        typ: "zahl", wert: "3" },
+      { name: "reason", label: tr("Kurz begründen (optional)"), max: 300 },
+    ],
+    ok: tr("Anfragen"),
+  });
+  if (!d) return;
+  const n = Math.max(1, Math.min(Number(d.want) || 3, 50));
+  const reason = d.reason || "";
   try {
     await api("/hub/invite_request", { method: "POST",
       body: { want: n, reason } });
@@ -6395,6 +6509,10 @@ function diagMessen(grund = "", geplant = null) {
     knoten: document.getElementsByTagName("*").length,
     bilder: document.getElementsByTagName("img").length,
     v: (state.appVersion || "").slice(0, 12),
+    // Welches Design lief? Nova zeichnet Flächen mit Echtzeit-Weichzeichner
+    // („Glas"), und das kostet Grafikspeicher, den keine Messung hier sieht.
+    // Ohne diese Angabe ließe sich nie feststellen, ob Abstürze daran hängen.
+    d: (document.documentElement.getAttribute("data-theme") || "klassisch"),
     // Startzeit des Servers. Ändert sie sich, ist der Container neu
     // gestartet – und die App lädt sich daraufhin selbst neu. Ohne diese
     // Zahl sah genau das im Verlauf aus wie ein Absturz.
@@ -7322,10 +7440,17 @@ async function loadSettings() {
     });
     $("user-list").querySelectorAll("[data-pass-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const pw = prompt(tr("Neues Passwort für {name} (mind. 8 Zeichen):",
-          { name: btn.dataset.passName }));
-        if (pw == null) return;
-        if (pw.length < 8) { toast("Bitte mindestens 8 Zeichen"); return; }
+        const d = await appDialog({
+          titel: tr("Passwort setzen"),
+          text: tr("Neues Passwort für {name} (mind. 8 Zeichen):",
+                   { name: btn.dataset.passName }),
+          felder: [{ name: "pw", label: tr("Neues Passwort"),
+                     typ: "password", pflicht: true, max: 200 }],
+          ok: tr("Setzen"),
+        });
+        if (!d) return;
+        const pw = d.pw;
+        if (pw.length < 8) { toast(tr("Bitte mindestens 8 Zeichen")); return; }
         try {
           await api(`/users/${btn.dataset.passUser}/password`,
             { method: "POST", body: { password: pw } });
@@ -7502,7 +7627,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         new Date(p.t).toLocaleString(dateLocale()),
         p.heap != null ? p.heap + " MB" : "–",
         p.knoten + " Elemente", p.bilder + " Bilder",
-        p.v ? "v" + p.v : "", p.g || "",
+        p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
+        p.g || "",
         // Nur beim Start belegt: Woher kam er?
         p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
         p.g === "start" && !p.p && !p.disc

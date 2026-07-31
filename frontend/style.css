@@ -1453,10 +1453,22 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .theme-head:hover {
   background: rgba(255, 255, 255, .05);
 }
+/* Glas kostet den Browser jedes Mal eine eigene Zeichenfläche, auf der er
+   den Hintergrund weichzeichnet – und das außerhalb des JS-Speichers, wo
+   keine Messung es sieht. Auf Flächen, die es **einmal** gibt, ist das
+   vertretbar. Auf `.settings-card` lagen so 19 davon gleichzeitig, und die
+   Karte im Popup zeichnete den Hintergrund ein zweites Mal weich, den die
+   Überlagerung darunter schon weichgezeichnet hatte.
+
+   Deshalb tragen mehrfach vorkommende Flächen jetzt nur noch eine
+   durchscheinende Farbe. Der Unterschied ist kaum zu sehen, die Zahl der
+   Zeichenflächen fällt von rund zwanzig auf drei. */
 [data-theme="nova"] .stat-chip,
 [data-theme="nova"] .settings-card,
+[data-theme="nova"] .card-modal .modal-inner {
+  background: rgba(18, 30, 48, .72);
+}
 [data-theme="nova"] .login-box,
-[data-theme="nova"] .card-modal .modal-inner,
 [data-theme="nova"] .help-sheet {
   -webkit-backdrop-filter: blur(14px) saturate(1.25);
   backdrop-filter: blur(14px) saturate(1.25);
@@ -1661,3 +1673,18 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: 14px; line-height: 1; padding: 2px 4px;
 }
 .kauf-weg:hover { color: var(--red); }
+
+/* ---------- App-Dialog (statt prompt) ---------- */
+#app-dialog .modal-inner { max-width: 420px; }
+#app-dialog label { margin-top: 10px; }
+#app-dialog input { width: 100%; }
+#app-dialog .btn-grid { margin-top: 14px; }
+.feld-fehlt {
+  border-color: var(--red) !important;
+  animation: feld-wackeln .3s ease-in-out 2;
+}
+@keyframes feld-wackeln {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
