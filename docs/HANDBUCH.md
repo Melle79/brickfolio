@@ -211,6 +211,12 @@ Gerät ab:
   Externer Zugriff* (2.7), womit sich ein verschlüsselter Zugang einrichten
   lässt.
 
+**Nach unten ziehen lädt neu.** Vom Startbildschirm gestartet fehlt die
+Adressleiste und damit der Knopf zum Neuladen; auf iOS gibt es dort auch
+keine Geste dafür. Deshalb bringt Brickfolio eine eigene mit: oben in der
+Liste nach unten ziehen, bis der Stein grün wird, loslassen. Im Browser
+bleibt sie aus – da kann die Adressleiste das schon.
+
 Sobald die App vom Startbildschirm läuft, verschwindet die Karte von selbst –
 sie erkennt den Anzeigemodus. „Nicht mehr anzeigen" blendet sie dauerhaft
 aus, pro Gerät.
@@ -603,6 +609,14 @@ Hinweis „Sammlung wird geladen …" – die Suchleiste ist dabei schon
 benutzbar. Damit große Sammlungen zügig öffnen, bauen die Karten zunächst
 nur ihren Kopf auf; der Detailbereich entsteht erst beim Aufklappen.
 
+**Die Liste kommt blockweise.** Beim Öffnen stehen die ersten 60 Karten da,
+der Rest kommt beim Scrollen nach – man merkt es nicht, es sei denn, man
+springt mit der Bildlaufleiste ans Ende. Bei 815 Einträgen sind das beim
+Öffnen rund 2.000 Elemente statt 14.700. Verlässt man den Tab, gibt die
+Sammlung ihren Platz wieder frei und baut sich beim Zurückkommen neu auf;
+die Daten bleiben so lange im Speicher. Findet die Suche nichts, steht das
+auch da – samt Knopf, der die Filter räumt.
+
 **Sortierung nach Thema.** Wählt man bei der Sortierung „Thema", zeigt die
 Sammlung **aufklappbare Themenkarten** – Star Wars, City, Harry Potter,
 Custom, „Ohne Thema" – jeweils mit Anzahl und Wert. Das Thema leitet die
@@ -914,10 +928,14 @@ in der Karte Mehr → 💼 Sammlerprofi.)*
 
 ### 10.1 Export & Druck (alle Benutzer)
 
-Sammlung und Wunschliste als **CSV** (Semikolon-getrennt, deutsche
-Zahlenformate, Excel-/Numbers-tauglich) oder als **Druckansicht** – eine
-aufgeräumte Tabelle mit Seitenumbrüchen, ideal für Versicherung oder
-Vitrine.
+Sammlung und Wunschliste als **CSV** (Semikolon-getrennt,
+Excel-/Numbers-tauglich) oder als **Druckansicht** – eine aufgeräumte
+Tabelle mit Seitenumbrüchen, ideal für Versicherung oder Vitrine.
+
+Überschriften, Dateinamen und Zahlenformat folgen der **eingestellten
+Sprache**, die Geldspalten der **eingestellten Währung** – auf Englisch
+heißt die Datei `brickfolio-collection.csv` und die Spalte
+`avg used (GBP)`.
 
 ### 10.2 CSV-Import *(Sammlerprofi)*
 
@@ -1438,9 +1456,21 @@ JS-Speicher, Zahl der Elemente und Zahl der Bilder und legt das **im
 Browser** ab, wo es einen Abbruch übersteht. Nach dem nächsten Start steht
 in derselben Karte, was in den zwei Stunden davor passiert ist, samt Kurve.
 
-Senkrechte Linien markieren den Beginn einer Sitzung. Folgt eine davon
-unmittelbar auf einen Messwert, ohne dass jemand neu geladen hat, ist der
-Tab abgestürzt – die App zählt solche Fälle und sagt es.
+Senkrechte Linien markieren den Beginn einer Sitzung. Ob dahinter ein
+Absturz steckt, entscheidet der **Abschiedszettel**: Beim gewollten Ende –
+neu laden, weiterklicken, schließen – hinterlässt die Seite eine Notiz, beim
+Abwürgen durch den Browser nicht. Die Zusammenfassung unterscheidet deshalb
+vier Fälle:
+
+| Zeile | Bedeutung |
+| --- | --- |
+| „ohne sich zu verabschieden" | echter Absturz |
+| „von Hand neu geladen" | jemand hat neu geladen oder nach unten gezogen |
+| „hat die App selbst neu geladen" | z. B. nach einem Server-Neustart |
+| „vom Browser weggeräumt" | der Browser hat den Tab bei Speichermangel entsorgt |
+
+Dazu steht in jedem Messwert die **Startzeit des Servers**; springt sie, ist
+der Container neu gestartet.
 
 > **Was die Zahl aussagt – und was nicht.** Gemessen wird der
 > **JavaScript-Speicher**. Entpackte Bilder und der Aufbau der Seite selbst

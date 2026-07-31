@@ -209,6 +209,12 @@ the device:
   adding it. The card then says exactly that and points to *More → External
   access* (2.7), which sets up an encrypted address.
 
+**Pull down to reload.** Started from the home screen there is no address
+bar and therefore no reload button; on iOS there is no gesture for it either.
+So Brickfolio brings its own: at the top of the list, pull down until the
+brick turns green, then let go. In the browser it stays off – the address bar
+already does that.
+
 As soon as the app runs from the home screen the card disappears by itself –
 it detects the display mode. "Don't show again" hides it permanently, per
 device.
@@ -587,6 +593,13 @@ collection …" – the search bar is usable already. So that large collections
 open quickly, cards initially build only their header; the detail area appears
 when you unfold it.
 
+**The list arrives in blocks.** On opening, the first 60 cards are there; the
+rest follow as you scroll – you will not notice unless you jump to the end
+with the scrollbar. With 815 entries that is about 2,000 elements on opening
+instead of 14,700. Leave the tab and the collection gives its space back,
+rebuilding when you return; the data stays in memory meanwhile. If the search
+finds nothing, it says so – with a button that clears the filters.
+
 **Sorting by theme.** If you pick "Theme" as the sort order, the collection
 shows **collapsible theme cards** – Star Wars, City, Harry Potter, Custom,
 "Without a theme" – each with count and value. The app derives the theme for
@@ -883,9 +896,13 @@ the card More → 💼 Collector-Pro.)*
 
 ### 10.1 Export & printing (all users)
 
-Collection and wishlist as **CSV** (semicolon-separated, German number
-formats, works with Excel/Numbers) or as a **print view** – a tidy table with
-page breaks, ideal for insurance or the display cabinet.
+Collection and wishlist as **CSV** (semicolon-separated, works with
+Excel/Numbers) or as a **print view** – a tidy table with page breaks, ideal
+for insurance or the display cabinet.
+
+Headings, file names and the number format follow the **language you have
+set**, the money columns follow the **currency you have set** – in English the
+file is called `brickfolio-collection.csv` and the column `avg used (GBP)`.
 
 ### 10.2 CSV import *(Collector-Pro)*
 
@@ -1376,9 +1393,20 @@ elements, number of images – and stores it **in the browser**, where it
 survives such an abort. After the next start the same card shows what
 happened in the two hours before, with a curve.
 
-Vertical lines mark the start of a session. If one follows a reading
-immediately without anybody reloading, the tab crashed – the app counts those
-cases and says so.
+Vertical lines mark the start of a session. Whether a crash is behind it is
+decided by the **goodbye note**: on a deliberate end – reloading, clicking
+away, closing – the page leaves a note behind; when the browser kills it, it
+does not. The summary therefore tells four cases apart:
+
+| Line | Meaning |
+| --- | --- |
+| "without saying goodbye" | a real crash |
+| "reloaded by hand" | somebody reloaded or pulled down |
+| "the app reloaded itself" | e.g. after a server restart |
+| "the browser discarded the tab" | it does that when memory runs short |
+
+Every reading also carries the **server's start time**; if it jumps, the
+container has restarted.
 
 > **What the number says – and what it does not.** What is measured is the
 > **JavaScript memory**. Decoded images and the page structure itself are
