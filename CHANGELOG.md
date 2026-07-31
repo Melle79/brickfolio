@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.76.1 – Juli 2026
+
+### Verbessert
+- 🧹 **Die Kaufpreis-Ecke der Karte aufgeräumt.** „Bezahlt" stand zweimal
+  untereinander – einmal als Feld, einmal am Anfang der Gewinnzeile. Jetzt
+  steht der Betrag einmal, das **＋ für einen weiteren Kauf** sitzt am Ende
+  derselben Zeile statt als eigener Knopf in der Fläche, und die Gewinnzeile
+  beginnt mit dem Wert. Ohne Marktpreis fällt sie ganz weg, statt nur den
+  Betrag von oben zu wiederholen
+
 ## 1.76.0 – Juli 2026
 
 ### Neu

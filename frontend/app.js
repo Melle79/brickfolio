@@ -1271,18 +1271,21 @@ function paidSrcIcon(it) {
     : `<span title="automatisch: BrickLink-Ø${date ? " vom " + date : ""}">⚙️</span>`;
 }
 
+/* Was der Artikel heute wert ist, gegen das Bezahlte.
+
+   Der Betrag stand hier noch einmal, obwohl er direkt darüber im Feld
+   „Bezahlt" steht – zweimal dieselbe Zahl untereinander. Jetzt beginnt die
+   Zeile mit dem Wert; ohne Marktpreis bleibt sie leer, weil dann nur der
+   Betrag von oben dastünde. */
 function profitLine(it) {
   if (it.paid_price == null) return "";
   const value = unitValue(it) ? unitValue(it) * it.quantity : null;
-  let s = tr("Bezahlt {sum}", { sum: fmtEur(it.paid_price) });
-  if (value != null) {
-    const diff = value - it.paid_price;
-    const cls = diff >= 0 ? "profit-pos" : "profit-neg";
-    s += esc(tr(" · Wert {wert} · ", { wert: fmtEur(value) }))
-      + `<span class="${cls}">`
-      + `${diff >= 0 ? "+" : "−"}${fmtEur(Math.abs(diff))}</span>`;
-  }
-  return s;
+  if (value == null) return "";
+  const diff = value - it.paid_price;
+  const cls = diff >= 0 ? "profit-pos" : "profit-neg";
+  return esc(tr("Wert {wert}", { wert: fmtEur(value) })) + " · "
+    + `<span class="${cls}">`
+    + `${diff >= 0 ? "+" : "−"}${fmtEur(Math.abs(diff))}</span>`;
 }
 
 const TRASH_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" `
@@ -2266,10 +2269,11 @@ function collCardDetails(it) {
             <input data-paid class="paid-input" inputmode="decimal"
               placeholder="0,00" value="${fmtPaidInput(it.paid_price)}">
             <span class="paid-suffix" data-cur>${esc(curSymbol())} <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
+            <button class="kauf-plus" data-kauf-neu
+              title="Weiterer Kauf">＋</button>
           </div>
-          <div class="sub profit-line" data-profit>${profitLine(it)}</div>
           <div class="kaufbuch" data-kaufbuch hidden></div>
-          <button class="mini-btn" data-kauf-neu>＋ Weiterer Kauf</button>
+          <div class="sub profit-line" data-profit>${profitLine(it)}</div>
         </div>` : ""}
         ${state.hubConnected ? `
         <label class="share-toggle">

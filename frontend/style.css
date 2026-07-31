@@ -821,6 +821,16 @@ header .logo-studs.small i:first-child {
   white-space: nowrap;
 }
 .paid-row .mini-btn { flex: 1; min-height: 42px; }
+/* Weiterer Kauf: gehört zum Betrag, nicht als eigener Knopf in die Fläche.
+   Sitzt deshalb am Ende derselben Zeile. */
+.kauf-plus {
+  margin-left: auto; width: 34px; height: 34px; flex: none;
+  border: 2px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink);
+  font-size: 17px; font-weight: 900; line-height: 1; cursor: pointer;
+}
+.kauf-plus:hover { border-color: var(--yellow-dark); }
+.profit-line:empty { display: none; }
 
 .buy-paid { grid-column: 1 / -1; }
 .buy-paid .sub { margin-left: 2px; }
@@ -1637,7 +1647,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 
 /* ---------- Kaufbuch: Einzelposten hinter der Summe ---------- */
 .kaufbuch {
-  margin: 6px 0 4px; border-left: 3px solid var(--line); padding-left: 10px;
+  margin: 6px 0 2px; border-left: 3px solid var(--line); padding-left: 10px;
 }
 .kauf-zeile {
   display: flex; align-items: center; gap: 8px;

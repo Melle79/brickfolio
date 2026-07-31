@@ -719,9 +719,10 @@ above. The same applies to figures as to sets.
 > there by hand you mean the whole line – the purchase log is then reset to
 > that single entry, so that total and breakdown cannot drift apart.
 
-Below it the **profit line** calculates live: *Paid 12.50 € · Value 47.60 € ·
-**+35.10 €*** (green = profit, red = loss; value = current average price ×
-quantity).
+Below it the **profit line** calculates live: *Value 47.60 € · **+35.10 €***
+(green = profit, red = loss; value = current average price × quantity). It
+does not repeat the amount paid – that sits one line above in the field.
+Without a market price the line stays away.
 
 ---
 

@@ -746,9 +746,10 @@ Sets.
 > einen Eintrag zurückgesetzt, damit Summe und Aufstellung nicht
 > auseinanderlaufen.
 
-Darunter rechnet die **Gewinnzeile** live: *Bezahlt 12,50 € · Wert
-47,60 € · **+35,10 €*** (grün = Gewinn, rot = Verlust; Wert = aktueller
-Ø-Preis × Menge).
+Darunter rechnet die **Gewinnzeile** live: *Wert 47,60 € · **+35,10 €***
+(grün = Gewinn, rot = Verlust; Wert = aktueller Ø-Preis × Menge). Den
+bezahlten Betrag wiederholt sie nicht – der steht eine Zeile darüber im
+Feld. Ohne Marktpreis bleibt die Zeile weg.
 
 ---
 
