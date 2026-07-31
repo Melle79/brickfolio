@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.75.0"
+APP_VERSION = "1.76.0"
 
 
 def hash_password(password: str) -> str:
@@ -385,6 +385,39 @@ def init_db():
                      "WHERE paid_price IS NOT NULL AND paid_source IS NULL")
         conn.execute("UPDATE collection SET paid_at = strftime('%s','now') "
                      "WHERE paid_price IS NOT NULL AND paid_at IS NULL")
+
+        # Kaufbuch: einzelne Käufe zu einem Sammlungseintrag.
+        #
+        # `collection.paid_price` ist die Summe über die Zeile – zwei Exemplare
+        # desselben Sets liegen in *einer* Zeile, ihre Preise addieren sich.
+        # Damit stimmt zwar der Gesamtbetrag, aber „einmal 39,99 bei LEGO,
+        # einmal 34,99 im Markt" war danach nicht mehr zu erkennen. Hier
+        # stehen die Einzelposten; `paid_price` bleibt die Summe daraus und
+        # ändert sich für Statistik, Gewinn und Listen nicht.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS purchases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entry_id INTEGER NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                unit_price REAL,          -- je Stück, NULL = unbekannt
+                source TEXT NOT NULL DEFAULT '',   -- „LEGO Store", „Flohmarkt"
+                bought_at INTEGER,
+                note TEXT NOT NULL DEFAULT '',
+                created_at INTEGER NOT NULL
+            )""")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_purchases_entry "
+                     "ON purchases(entry_id)")
+        # Bestand einmalig überführen: Was heute als Summe dasteht, wird ein
+        # Posten. Ohne das stünde bei allem Bisherigen ein leeres Kaufbuch.
+        conn.execute(
+            "INSERT INTO purchases (entry_id, quantity, unit_price, source, "
+            "bought_at, note, created_at) "
+            "SELECT c.id, c.quantity, "
+            "  ROUND(c.paid_price / MAX(c.quantity, 1), 4), "
+            "  CASE c.paid_source WHEN 'auto' THEN 'geschätzt' ELSE '' END, "
+            "  c.paid_at, '', strftime('%s','now') "
+            "FROM collection c WHERE c.paid_price IS NOT NULL "
+            "AND NOT EXISTS (SELECT 1 FROM purchases p WHERE p.entry_id = c.id)")
         scols = {r[1] for r in conn.execute(
             "PRAGMA table_info(shopping_items)")}
         if scols and "paid_price" not in scols:

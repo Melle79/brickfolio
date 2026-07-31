@@ -2268,6 +2268,8 @@ function collCardDetails(it) {
             <span class="paid-suffix" data-cur>${esc(curSymbol())} <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
           </div>
           <div class="sub profit-line" data-profit>${profitLine(it)}</div>
+          <div class="kaufbuch" data-kaufbuch hidden></div>
+          <button class="mini-btn" data-kauf-neu>＋ Weiterer Kauf</button>
         </div>` : ""}
         ${state.hubConnected ? `
         <label class="share-toggle">
@@ -2754,6 +2756,89 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
   document.addEventListener("keydown", cardModalKeyHandler);
 }
 
+/* Kaufbuch einer Karte: die einzelnen Käufe hinter der Summe.
+
+   Zwei gleiche Sets liegen in einer Zeile – „einmal 39,99 bei LEGO, einmal
+   34,99 im Markt" ging dabei verloren. Oben steht weiterhin die Summe, hier
+   die Posten dazu. */
+async function kaufbuchLaden(card, item, id) {
+  const box = card.querySelector("[data-kaufbuch]");
+  const knopf = card.querySelector("[data-kauf-neu]");
+  if (!box || !knopf) return;
+  let kaeufe = [];
+  try {
+    kaeufe = (await api(`/collection/${id}/purchases`)).purchases || [];
+  } catch (_) { return; }
+
+  // Ein einzelner Posten sagt nichts, was nicht schon oben steht.
+  box.hidden = kaeufe.length < 2;
+  box.innerHTML = kaeufe.map((k) => `
+    <div class="kauf-zeile" data-kauf="${k.id}">
+      <span class="kauf-menge">${k.quantity}×</span>
+      <span class="kauf-preis">${k.unit_price != null ? fmtEur(k.unit_price) : "–"}</span>
+      <span class="kauf-quelle">${esc(kaufQuelle(k))}</span>
+      <button class="kauf-weg" aria-label="${esc(tr("Kauf zurücknehmen"))}">✕</button>
+    </div>`).join("");
+
+  box.querySelectorAll("[data-kauf]").forEach((zeile) => {
+    zeile.querySelector(".kauf-weg").addEventListener("click", async (ev) => {
+      ev.stopPropagation();
+      if (!confirm(tr("Diesen Kauf zurücknehmen? Die Stückzahl geht mit zurück."))) return;
+      try {
+        const r = await api(`/collection/${id}/purchases/${zeile.dataset.kauf}`,
+          { method: "DELETE" });
+        kaufStandUebernehmen(card, item, r);
+        kaufbuchLaden(card, item, id);
+      } catch (e) { toast(e.message); }
+    });
+  });
+
+  if (knopf.dataset.wired) return;
+  knopf.dataset.wired = "1";
+  knopf.addEventListener("click", async (ev) => {
+    ev.stopPropagation();
+    const preis = prompt(tr("Was hat dieser Kauf gekostet? (gesamt)"), "");
+    if (preis == null) return;
+    const betrag = Number(String(preis).replace(",", ".").trim());
+    if (!(betrag >= 0)) { toast(tr("Das ist kein Betrag.")); return; }
+    const quelle = prompt(tr("Wo gekauft? (frei lassen, wenn egal)"), "") || "";
+    try {
+      const r = await api(`/collection/${id}/purchases`, { method: "POST",
+        body: { quantity: 1, price: betrag, source: quelle.trim().slice(0, 80) } });
+      kaufStandUebernehmen(card, item, r);
+      kaufbuchLaden(card, item, id);
+      toast(tr("Kauf eingetragen ✔"));
+    } catch (e) { toast(e.message); }
+  });
+}
+
+/* Quelle lesbar machen – die internen Kürzel sagen niemandem etwas. */
+function kaufQuelle(k) {
+  const wann = k.bought_at
+    ? new Date(k.bought_at * 1000).toLocaleDateString(dateLocale()) : "";
+  const q = { manual: "", auto: tr("geschätzt"), CSV_IMPORT: "" }[k.source]
+    ?? k.source;
+  return [q, wann].filter(Boolean).join(" · ");
+}
+
+/* Stückzahl und Summe nach einem Kauf überall in der Karte nachziehen. */
+function kaufStandUebernehmen(card, item, r) {
+  if (r.quantity != null) {
+    item.quantity = r.quantity;
+    card.querySelectorAll("[data-qty-val]").forEach((s) => {
+      s.textContent = r.quantity;
+    });
+  }
+  if ("paid_price" in r) {
+    item.paid_price = r.paid_price;
+    const feld = card.querySelector("[data-paid]");
+    if (feld) feld.value = fmtPaidInput(r.paid_price);
+    const gewinn = card.querySelector("[data-profit]");
+    if (gewinn) gewinn.innerHTML = profitLine(item);
+  }
+  updateStatsOnly();
+}
+
 function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
   const details = card.querySelector(".card-details");
 
@@ -2814,6 +2899,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     paidEl.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") { ev.preventDefault(); paidEl.blur(); }
     });
+    kaufbuchLaden(card, item, id);
   }
 
   const shareBox = card.querySelector("[data-share]");

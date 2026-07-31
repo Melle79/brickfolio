@@ -1911,20 +1911,10 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
                 conn.execute("UPDATE collection SET quantity = quantity + ? "
                              "WHERE id = ?", (qty, ex["id"]))
                 if paid is not None:
-                    if ex["paid_price"] is None:
-                        conn.execute(
-                            "UPDATE collection SET paid_price = ?, "
-                            "paid_source = 'manual', paid_at = ? "
-                            "WHERE id = ?", (paid, now, ex["id"]))
-                    else:
-                        conn.execute(
-                            "UPDATE collection SET paid_price = "
-                            "paid_price + ?, paid_source = 'manual', "
-                            "paid_at = ? WHERE id = ?",
-                            (paid, now, ex["id"]))
+                    _kauf_buchen(conn, ex["id"], qty, paid, "CSV-Import", now)
                 merged += 1
             else:
-                conn.execute(
+                cur_csv = conn.execute(
                     "INSERT INTO collection (item_id, item_type, name, "
                     "img_url, bricklink_url, quantity, condition, notes, "
                     "year, paid_price, paid_source, paid_at, added_by, "
@@ -1933,6 +1923,9 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
                     (num, typ, name, qty, cond, notes, year, paid,
                      "manual" if paid is not None else None,
                      now if paid is not None else None, user["id"], now))
+                if paid is not None:
+                    _kauf_buchen(conn, cur_csv.lastrowid, qty, paid,
+                                 "CSV-Import", now)
                 created += 1
     return {"ok": True, "created": created, "merged": merged,
             "errors": errors[:20], "error_count": len(errors)}
@@ -3001,14 +2994,17 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
         if row:
             conn.execute("UPDATE collection SET quantity = quantity + ? WHERE id = ?",
                          (body.quantity, row["id"]))
-            if row["paid_price"] is not None and body.paid_source != "set":
+            if body.paid_price is not None:
+                # Ein angegebener Preis gehört als eigener Posten ins Buch –
+                # genau der Fall „dasselbe Set, anderswo, anderer Preis".
+                _kauf_buchen(conn, row["id"], body.quantity, body.paid_price,
+                             body.paid_source or "")
+            elif row["paid_price"] is not None and body.paid_source != "set":
                 unit = _unit_price(row["condition"], row["price_new"],
                                    row["price_used"])
                 if unit:
-                    conn.execute(
-                        "UPDATE collection SET paid_price = paid_price + ? "
-                        "WHERE id = ?",
-                        (round(unit * body.quantity, 2), row["id"]))
+                    _kauf_buchen(conn, row["id"], body.quantity,
+                                 round(unit * body.quantity, 2), "geschätzt")
             return {"ok": True, "merged": True,
                     "quantity": row["quantity"] + body.quantity}
         try:
@@ -3026,6 +3022,9 @@ def add_item(body: AddItemBody, user: dict = Depends(current_user)):
                  themes.for_item(body.item_id, body.item_type),
                  user["id"], int(time.time())),
             )
+            if body.paid_price is not None:
+                _kauf_buchen(conn, cur.lastrowid, body.quantity,
+                             body.paid_price, body.paid_source or "")
         except sqlite3.IntegrityError:
             # Zwei Anfragen für denselben, noch nicht vorhandenen Artikel
             # gleichzeitig: Beide sahen oben keine Zeile, eine legt sie an,
@@ -3094,8 +3093,13 @@ def update_item(entry_id: int, body: UpdateItemBody,
                      if paid_sum is not None else None,
                      int(time.time()) if paid_sum is not None else None,
                      other["id"]))
+                # Das Kaufbuch zieht mit um – sonst verlöre die
+                # zusammengeführte Zeile ihre Einzelposten.
+                conn.execute("UPDATE purchases SET entry_id = ? WHERE "
+                             "entry_id = ?", (other["id"], entry_id))
                 conn.execute("DELETE FROM collection WHERE id = ?",
                              (entry_id,))
+                _kaufsumme_nachziehen(conn, other["id"])
                 return {"ok": True, "merged": True,
                         "merged_into": other["id"]}
         fields, params = [], []
@@ -3115,12 +3119,89 @@ def update_item(entry_id: int, body: UpdateItemBody,
         params.append(entry_id)
         conn.execute(
             f"UPDATE collection SET {', '.join(fields)} WHERE id = ?", params)
+        if body.paid_price is not None:
+            # Von Hand gesetzt heißt: Das ist ab jetzt der Betrag für diese
+            # Zeile. Das Buch wird auf einen Posten zurückgesetzt, sonst
+            # stünde daneben eine Aufstellung, die etwas anderes ergibt.
+            menge = conn.execute("SELECT quantity FROM collection WHERE id = ?",
+                                 (entry_id,)).fetchone()
+            conn.execute("DELETE FROM purchases WHERE entry_id = ?", (entry_id,))
+            _kauf_buchen(conn, entry_id, menge["quantity"] if menge else 1,
+                         body.paid_price, "manual")
         if body.quantity == 0:
             conn.execute("DELETE FROM collection WHERE id = ?", (entry_id,))
+            conn.execute("DELETE FROM purchases WHERE entry_id = ?", (entry_id,))
             return {"ok": True, "deleted": True}
     if body.item_id:
         _maybe_fetch_prices_async(entry_id, body.item_id)
     return {"ok": True}
+
+
+class KaufBody(BaseModel):
+    quantity: int = Field(default=1, ge=1, le=999)
+    price: float | None = Field(default=None, ge=0)   # Gesamtpreis des Kaufs
+    source: str = Field(default="", max_length=80)
+    bought_at: int | None = Field(default=None, ge=0)
+    note: str = Field(default="", max_length=300)
+
+
+@app.get("/api/collection/{entry_id}/purchases")
+def kaeufe_lesen(entry_id: int, user: dict = Depends(current_user)):
+    """Die einzelnen Käufe zu einem Eintrag – neueste zuerst."""
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT id, quantity, unit_price, source, bought_at, note "
+            "FROM purchases WHERE entry_id = ? "
+            "ORDER BY COALESCE(bought_at, created_at) DESC, id DESC",
+            (entry_id,)).fetchall()
+    return {"purchases": [dict(r) for r in rows]}
+
+
+@app.post("/api/collection/{entry_id}/purchases")
+def kauf_anlegen(entry_id: int, body: KaufBody,
+                 user: dict = Depends(dealer_user)):
+    """Einen weiteren Kauf eintragen – dasselbe Set, anderswo, anderer Preis.
+
+    Die Stückzahl des Eintrags wächst mit: Wer einen zweiten Kauf einträgt,
+    hat auch ein zweites Exemplar.
+    """
+    with core.db() as conn:
+        row = conn.execute("SELECT id FROM collection WHERE id = ?",
+                           (entry_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "Eintrag nicht gefunden")
+        conn.execute("UPDATE collection SET quantity = quantity + ? WHERE id = ?",
+                     (body.quantity, entry_id))
+        _kauf_buchen(conn, entry_id, body.quantity, body.price,
+                     body.source, body.bought_at, body.note)
+        stand = conn.execute(
+            "SELECT quantity, paid_price FROM collection WHERE id = ?",
+            (entry_id,)).fetchone()
+    return {"ok": True, "quantity": stand["quantity"],
+            "paid_price": stand["paid_price"]}
+
+
+@app.delete("/api/collection/{entry_id}/purchases/{kauf_id}")
+def kauf_loeschen(entry_id: int, kauf_id: int,
+                  user: dict = Depends(dealer_user)):
+    """Einen Kauf zurücknehmen – die Stückzahl geht mit zurück."""
+    with core.db() as conn:
+        k = conn.execute(
+            "SELECT quantity FROM purchases WHERE id = ? AND entry_id = ?",
+            (kauf_id, entry_id)).fetchone()
+        if not k:
+            raise HTTPException(404, "Kauf nicht gefunden")
+        conn.execute("DELETE FROM purchases WHERE id = ?", (kauf_id,))
+        # Nie unter ein Stück: Der Eintrag selbst wird hier nicht gelöscht,
+        # dafür gibt es den Papierkorb an der Karte.
+        conn.execute("UPDATE collection SET quantity = MAX(1, quantity - ?) "
+                     "WHERE id = ?", (k["quantity"], entry_id))
+        _kaufsumme_nachziehen(conn, entry_id)
+        stand = conn.execute(
+            "SELECT quantity, paid_price FROM collection WHERE id = ?",
+            (entry_id,)).fetchone()
+    return {"ok": True, "quantity": stand["quantity"],
+            "paid_price": stand["paid_price"] if stand else None}
 
 
 @app.delete("/api/collection/{entry_id}")
@@ -3129,6 +3210,10 @@ def delete_item(entry_id: int, user: dict = Depends(current_user)):
         cur = conn.execute("DELETE FROM collection WHERE id = ?", (entry_id,))
         if cur.rowcount == 0:
             raise HTTPException(404, "Eintrag nicht gefunden")
+        # Das Kaufbuch gehört zum Eintrag – sonst bliebe es als Waise liegen
+        # und tauchte bei einer neu angelegten Zeile mit derselben Nummer
+        # wieder auf.
+        conn.execute("DELETE FROM purchases WHERE entry_id = ?", (entry_id,))
     return {"ok": True}
 
 
@@ -3291,22 +3376,11 @@ def acquire_wanted(wanted_id: int, body: AcquireBody,
             conn.execute("UPDATE collection SET quantity = quantity + 1 "
                          "WHERE id = ?", (row["id"],))
             if manual:
-                if row["paid_price"] is None:
-                    conn.execute(
-                        "UPDATE collection SET paid_price = ?, "
-                        "paid_source = 'manual', paid_at = ? WHERE id = ?",
-                        (paid_val, now, row["id"]))
-                else:
-                    conn.execute(
-                        "UPDATE collection SET paid_price = paid_price + ?, "
-                        "paid_source = 'manual', paid_at = ? WHERE id = ?",
-                        (paid_val, now, row["id"]))
+                _kauf_buchen(conn, row["id"], 1, paid_val, "manual", now)
             elif row["paid_price"] is not None and unit:
-                conn.execute(
-                    "UPDATE collection SET paid_price = paid_price + ? "
-                    "WHERE id = ?", (round(unit, 2), row["id"]))
+                _kauf_buchen(conn, row["id"], 1, round(unit, 2), "geschätzt", now)
         else:
-            conn.execute(
+            cur_neu = conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, img_url, "
                 "bricklink_url, quantity, condition, notes, year, price_new, "
                 "price_used, price_updated_at, price_data, paid_price, "
@@ -3319,6 +3393,9 @@ def acquire_wanted(wanted_id: int, body: AcquireBody,
                  ("manual" if manual else "auto") if paid_val is not None else None,
                  now if paid_val is not None else None,
                  user["id"], now))
+            if paid_val is not None:
+                _kauf_buchen(conn, cur_neu.lastrowid, 1, paid_val,
+                             "manual" if manual else "geschätzt", now)
         conn.execute("DELETE FROM wanted WHERE id = ?", (wanted_id,))
     return {"ok": True, "merged": bool(row)}
 
@@ -4709,6 +4786,46 @@ def _unit_price(condition, price_new, price_used):
     """Ø-Stückpreis passend zum Zustand, mit Fallback auf den anderen."""
     prefer = price_new if condition == "new" else price_used
     return prefer or price_used or price_new
+
+
+# ------------------------------------------------------------- Kaufbuch
+#
+# `collection.paid_price` ist die Summe über die Zeile. Sie wurde bisher an
+# sechs Stellen einzeln fortgeschrieben – beim Anlegen, Zusammenführen,
+# CSV-Import, Zustandswechsel, Bearbeiten und Verbuchen aus der Liste. Damit
+# Summe und Einzelposten nicht auseinanderlaufen, geht das jetzt überall
+# durch diese beiden Funktionen.
+
+def _kauf_buchen(conn, entry_id: int, quantity: int, betrag: float | None,
+                 quelle: str = "", wann: int | None = None,
+                 notiz: str = "") -> None:
+    """Einen Kauf ins Buch schreiben und die Summe nachziehen.
+
+    `betrag` ist der **Gesamtpreis** dieses Kaufs, nicht der Stückpreis –
+    so steht es auf dem Kassenzettel.
+    """
+    stueck = max(1, int(quantity or 1))
+    einzel = None if betrag is None else round(float(betrag) / stueck, 4)
+    conn.execute(
+        "INSERT INTO purchases (entry_id, quantity, unit_price, source, "
+        "bought_at, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (entry_id, stueck, einzel, quelle or "",
+         wann or int(time.time()), notiz or "", int(time.time())))
+    _kaufsumme_nachziehen(conn, entry_id)
+
+
+def _kaufsumme_nachziehen(conn, entry_id: int) -> None:
+    """`paid_price` = Summe des Kaufbuchs. Ohne Posten bleibt sie leer."""
+    row = conn.execute(
+        "SELECT ROUND(SUM(quantity * unit_price), 2) AS summe, "
+        "MAX(bought_at) AS zuletzt, COUNT(unit_price) AS mit_preis "
+        "FROM purchases WHERE entry_id = ?", (entry_id,)).fetchone()
+    if not row or not row["mit_preis"]:
+        conn.execute("UPDATE collection SET paid_price = NULL, paid_at = NULL "
+                     "WHERE id = ?", (entry_id,))
+        return
+    conn.execute("UPDATE collection SET paid_price = ?, paid_at = ? "
+                 "WHERE id = ?", (row["summe"], row["zuletzt"], entry_id))
 
 
 def _maybe_fetch_prices_async(entry_id: int, item_id: str,

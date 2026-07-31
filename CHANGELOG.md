@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.76.0 – Juli 2026
+
+### Neu
+- 🧾 **Kaufbuch: mehrere Käufe zum selben Artikel.** Dasselbe Set einmal bei
+  LEGO für 39,99 € und einmal im Markt für 34,99 € – in der Sammlung war das
+  **eine** Zeile mit Stückzahl 2, und danach ließ sich nicht mehr sagen,
+  welcher Kauf welcher war. Jetzt steht unter der Gewinnzeile die
+  Aufstellung: Stückzahl, Preis, Quelle, Datum. **＋ Weiterer Kauf** trägt
+  einen Posten ein (die Stückzahl wächst mit), **✕** nimmt ihn zurück
+- Gilt für **Sets und Figuren** gleichermaßen – der Kauf hängt am Eintrag,
+  nicht am Typ
+- Der bisherige Bestand wird **übernommen**: Was heute als Kaufpreis
+  dasteht, wird beim ersten Start ein Posten im Buch
+
+> **Was sich nicht ändert.** Oben steht weiterhin die Summe, und mit ihr
+> rechnen Statistik, Gewinn und die Einkaufslisten. Damit Summe und
+> Aufstellung nicht auseinanderlaufen können, gehen alle sechs Stellen, die
+> bisher einen Kaufpreis geschrieben haben – Anlegen, Zusammenführen,
+> CSV-Import, Zustandswechsel, Bearbeiten, Verbuchen aus der Liste – jetzt
+> durch denselben Weg.
+
 ## 1.75.0 – Juli 2026
 
 ### Neu

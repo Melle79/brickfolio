@@ -1634,3 +1634,20 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .diag-box { margin-top: 12px; }
 .diag-svg { width: 100%; height: auto; border: 1px solid var(--line);
   border-radius: 12px; background: var(--chart-bg); }
+
+/* ---------- Kaufbuch: Einzelposten hinter der Summe ---------- */
+.kaufbuch {
+  margin: 6px 0 4px; border-left: 3px solid var(--line); padding-left: 10px;
+}
+.kauf-zeile {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; padding: 3px 0;
+}
+.kauf-menge { font-weight: 800; min-width: 26px; }
+.kauf-preis { font-weight: 700; }
+.kauf-quelle { color: var(--muted); flex: 1; font-size: 12.5px; }
+.kauf-weg {
+  border: 0; background: none; color: var(--muted); cursor: pointer;
+  font-size: 14px; line-height: 1; padding: 2px 4px;
+}
+.kauf-weg:hover { color: var(--red); }

@@ -696,6 +696,29 @@ Every entry carries a **purchase price** (the total for that line):
 - When further copies arrive (scan merge, "bought" from the wishlist), the
   purchase price grows by that day's value or the amount you entered.
 
+**Several purchases of the same item.** The same set once at LEGO for 39.99
+and once in a shop for 34.99: in the collection that is **one** row with
+quantity 2 – number, type and condition are unique. The total was always
+right, but which purchase was which could no longer be told.
+
+So below the profit line there is a **purchase log**:
+
+| | | |
+| --- | --- | --- |
+| 1× | 39.99 € | LEGO Store · 14/06/2026 |
+| 1× | 34.99 € | MediaMarkt · 02/07/2026 |
+
+**＋ Another purchase** adds an entry – you are asked for the total price of
+that purchase and optionally for the source; the quantity grows with it. The
+**✕** takes a purchase back, quantity included. The list only appears from the
+second entry onwards – with a single one it says nothing that is not already
+above. The same applies to figures as to sets.
+
+> The "Paid" field above still holds the **total**, and that is what
+> statistics, profit and the shopping lists work with. If you type an amount
+> there by hand you mean the whole line – the purchase log is then reset to
+> that single entry, so that total and breakdown cannot drift apart.
+
 Below it the **profit line** calculates live: *Paid 12.50 € · Value 47.60 € ·
 **+35.10 €*** (green = profit, red = loss; value = current average price ×
 quantity).

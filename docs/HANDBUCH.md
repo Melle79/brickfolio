@@ -721,6 +721,31 @@ Jeder Eintrag führt einen **Kaufpreis** (Gesamtbetrag der Position):
   Wunschliste), erhöht sich der Kaufpreis um den jeweiligen Tages- bzw.
   angegebenen Wert.
 
+**Mehrere Käufe zum selben Artikel.** Dasselbe Set einmal bei LEGO für
+39,99 € und einmal im Markt für 34,99 €: In der Sammlung ist das **eine**
+Zeile mit Stückzahl 2 – Nummer, Typ und Zustand sind eindeutig. Die Summe
+stimmte immer, aber welcher Kauf welcher war, ließ sich nicht mehr sagen.
+
+Deshalb steht unter der Gewinnzeile ein **Kaufbuch**:
+
+| | | |
+| --- | --- | --- |
+| 1× | 39,99 € | LEGO Store · 14.6.2026 |
+| 1× | 34,99 € | MediaMarkt · 2.7.2026 |
+
+Mit **＋ Weiterer Kauf** kommt ein Posten dazu – gefragt wird nach dem
+Gesamtpreis dieses Kaufs und wahlweise nach der Quelle; die Stückzahl wächst
+mit. Das **✕** nimmt einen Kauf zurück, ebenfalls samt Stückzahl. Die
+Aufstellung erscheint erst ab dem zweiten Posten – bei einem einzigen sagt
+sie nichts, was nicht schon oben steht. Für Figuren gilt dasselbe wie für
+Sets.
+
+> Oben im Feld „Bezahlt" steht weiterhin die **Summe**, und mit ihr rechnen
+> Statistik, Gewinn und die Einkaufslisten. Wer dort von Hand einen Betrag
+> einträgt, meint den ganzen Posten – das Kaufbuch wird dann auf diesen
+> einen Eintrag zurückgesetzt, damit Summe und Aufstellung nicht
+> auseinanderlaufen.
+
 Darunter rechnet die **Gewinnzeile** live: *Bezahlt 12,50 € · Wert
 47,60 € · **+35,10 €*** (grün = Gewinn, rot = Verlust; Wert = aktueller
 Ø-Preis × Menge).
