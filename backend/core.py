@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.86.0"
+APP_VERSION = "1.87.0"
 
 
 def hash_password(password: str) -> str:
@@ -481,6 +481,21 @@ def init_db():
                 if t:
                     conn.execute(f"UPDATE {tbl} SET theme = ? WHERE id = ?",
                                  (t, r["id"]))
+        # BrickLink liefert Kategorienamen HTML-maskiert. Bis 1.87.0 landete
+        # das ungewandelt in der Sammlung und stand dann als „LEGO Ideas
+        # &#40;CUUSOO&#41;“ auf dem Bildschirm – die Oberfläche maskiert beim
+        # Anzeigen ja ein zweites Mal. Einmal geradeziehen.
+        import html as html_mod
+        for tbl in ("collection", "wanted"):
+            rows = conn.execute(
+                f"SELECT id, theme FROM {tbl} WHERE theme LIKE '%&%'"
+            ).fetchall()
+            for r in rows:
+                sauber = html_mod.unescape(r["theme"])
+                if sauber != r["theme"]:
+                    conn.execute(f"UPDATE {tbl} SET theme = ? WHERE id = ?",
+                                 (sauber, r["id"]))
+
         ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
         # Bevorzugte Sortierung der Sammlung, je Benutzer
         if "sort_pref" not in ucols:

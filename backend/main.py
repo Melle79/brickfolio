@@ -1,6 +1,7 @@
 """Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
 import base64
 import hashlib
+import html
 import json
 import os
 import re
@@ -2367,7 +2368,9 @@ def _top_category(cat_id: str) -> str | None:
         seen.add(cur)
         name, parent = cmap[cur]
         if not parent or parent in ("0", "") or parent not in cmap:
-            return name or None
+            # Auch hier entmaskieren: In einer schon gespeicherten
+            # Kategorieliste steckt noch „LEGO Ideas &#40;CUUSOO&#41;".
+            return html.unescape(name) if name else None
         cur = parent
     return None
 

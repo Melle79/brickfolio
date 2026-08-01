@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.87.0 – August 2026
+
+### Behoben
+- 🗂️ **„LEGO Ideas &#40;CUUSOO&#41;" statt „LEGO Ideas (CUUSOO)".** BrickLink
+  liefert Kategorienamen HTML-maskiert; bei Artikelnamen wurde das längst
+  umgewandelt, bei den Themen nicht. Da die Oberfläche beim Anzeigen ein
+  zweites Mal maskiert, stand die Maskierung selbst auf dem Bildschirm.
+  Betrifft alle Themen mit Klammern oder Sonderzeichen im Namen
+- 🔧 **Bestehende Einträge werden beim Start geradegezogen** – auch die schon
+  gespeicherte Kategorieliste, ohne neuen Abruf. Nichts nachzuladen, das
+  Update genügt
+
 ## 1.86.0 – August 2026
 
 ### Neu

@@ -398,3 +398,72 @@ def test_vorhandenes_thema_wird_nicht_ueberschrieben(client, monkeypatch):
         row = conn.execute("SELECT theme FROM collection WHERE item_id = "
                            "'75300-1'").fetchone()
     assert row["theme"] == "Von Hand"
+
+
+# ------------------------------------------ HTML-Maskierung aus dem Katalog
+
+def test_kategoriename_kommt_entmaskiert_an(monkeypatch):
+    """BrickLink liefert „LEGO Ideas &#40;CUUSOO&#41;“ – so darf es nicht
+    gespeichert werden: Die Oberfläche maskiert beim Anzeigen ein zweites Mal,
+    und auf dem Bildschirm stünde dann die Maskierung selbst."""
+    class Antwort:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"meta": {"code": 200}, "data": [
+                {"category_id": 396, "category_name":
+                    "LEGO Ideas &#40;CUUSOO&#41;", "parent_id": 0}]}
+
+    monkeypatch.setattr(integrations, "_bl_auth", lambda: None)
+    monkeypatch.setattr(integrations.requests, "get",
+                        lambda *a, **k: Antwort())
+    cmap = integrations.bricklink_categories()
+    assert cmap["396"][0] == "LEGO Ideas (CUUSOO)"
+
+
+def test_bereits_gespeicherte_kategorieliste_wird_geradegezogen(monkeypatch):
+    """Der Zwischenspeicher einer älteren Version enthält noch die Maskierung."""
+    monkeypatch.setattr(main, "_bl_category_map",
+                        lambda: {"396": ("LEGO Ideas &#40;CUUSOO&#41;", "0")})
+    assert main._top_category("396") == "LEGO Ideas (CUUSOO)"
+
+
+def test_migration_repariert_maskierte_themen(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "esc.db"))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, theme, added_at) VALUES ('21306-1','set','Yellow "
+            "Submarine',1,'new','LEGO Ideas &#40;CUUSOO&#41;', ?)", (now,))
+        conn.execute(
+            "INSERT INTO wanted (item_id, item_type, name, theme, added_at) "
+            "VALUES ('21335-1','set','Leuchtturm','LEGO Ideas "
+            "&#40;CUUSOO&#41;', ?)", (now,))
+    core.init_db()               # noch einmal: die Migration läuft mit
+    with core.db() as conn:
+        assert conn.execute("SELECT theme FROM collection").fetchone()[0] \
+            == "LEGO Ideas (CUUSOO)"
+        assert conn.execute("SELECT theme FROM wanted").fetchone()[0] \
+            == "LEGO Ideas (CUUSOO)"
+
+
+def test_migration_laesst_kaufmaennisches_und_zeichen_stehen(tmp_path,
+                                                             monkeypatch):
+    """`&` allein ist kein Anlass, etwas umzuschreiben."""
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "amp.db"))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity, "
+            "condition, theme, added_at) VALUES ('x-1','set','X',1,'new',"
+            "'Tom & Jerry', ?)", (now,))
+    core.init_db()
+    with core.db() as conn:
+        assert conn.execute("SELECT theme FROM collection").fetchone()[0] \
+            == "Tom & Jerry"

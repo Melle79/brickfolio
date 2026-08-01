@@ -1,4 +1,5 @@
 """Brickfolio – externe Dienste: Brickognize (Erkennung) & BrickLink (Preise)."""
+import html as html_mod
 import io
 import os
 import re
@@ -239,7 +240,6 @@ _BL_TYPE = {"minifig": "MINIFIG", "part": "PART", "set": "SET"}
 
 def bricklink_item(item_type: str, item_no: str) -> dict:
     """Artikeldetails (Name, Bild) von BrickLink per Katalognummer."""
-    import html as html_mod
 
     bl_type = _BL_TYPE.get(item_type.lower())
     if not bl_type:
@@ -274,7 +274,6 @@ def bricklink_item(item_type: str, item_no: str) -> dict:
 
 def bricklink_subsets(set_no: str) -> list:
     """Enthaltene Minifiguren eines Sets (BrickLink Subsets)."""
-    import html as html_mod
 
     if "-" not in set_no:
         set_no = f"{set_no}-1"
@@ -339,7 +338,10 @@ def bricklink_categories() -> dict:
     for c in payload.get("data", []):
         cid = c.get("category_id")
         if cid is not None:
-            out[str(cid)] = (c.get("category_name", ""),
+            # BrickLink liefert Namen HTML-maskiert: „LEGO Ideas &#40;CUUSOO&#41;".
+            # Ungewandelt steht das genau so in der Sammlung, denn die
+            # Oberfläche maskiert beim Anzeigen ein zweites Mal.
+            out[str(cid)] = (html_mod.unescape(c.get("category_name", "")),
                              str(c.get("parent_id") or ""))
     return out
 
@@ -365,7 +367,6 @@ def bricklink_category_id(item_type: str, item_no: str) -> str | None:
 def bricklink_minifig_parts(fig_no: str) -> list:
     """Aus welchen Teilen besteht diese Minifigur? (BrickLink Subsets auf
     MINIFIG). Liefert Teil-Nr., Name, Farbe, Anzahl und ein Bild."""
-    import html as html_mod
 
     auth = _bl_auth()
     safe = requests.utils.quote(fig_no)
@@ -408,7 +409,6 @@ def bricklink_minifig_parts(fig_no: str) -> list:
 
 def bricklink_supersets(fig_no: str) -> list:
     """In welchen Sets kommt diese Minifigur vor? (BrickLink Supersets)"""
-    import html as html_mod
 
     auth = _bl_auth()
     safe = requests.utils.quote(fig_no)
