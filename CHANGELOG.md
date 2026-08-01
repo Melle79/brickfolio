@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.1.0 – August 2026
+
+### Neu
+- 🔎 **Weitersuchen statt Wand.** Die Reihum-Suche hört nach 10 Figuren auf –
+  das ist keine technische Grenze, sondern Rücksicht auf einen kostenlos
+  bereitgestellten Dienst. Sind noch Figuren da, erscheint jetzt
+  **🔎 Weitersuchen**: Die App macht dort weiter, wo sie aufgehört hat, und
+  die neuen Funde kommen zu den bisherigen dazu
+- 🧠 **Der Suchstand bleibt liegen**, solange weitergesucht werden kann – und
+  wird freigegeben, sobald die Suche zu Ende ist oder ein neues Foto kommt.
+  So kostet das Weitersuchen keine zweite Runde durch das ganze Bild
+
+> **Gemessen an einem Bild mit 14 Figuren:** erster Durchgang 10, dann
+> „Weitersuchen" → insgesamt 13 (die vierzehnte Anfrage ging an den
+> Einzelscan beim Fotografieren). Rahmen und Karten stimmen nach beiden
+> Durchgängen überein, der Knopf verschwindet, sobald nichts mehr kommt.
+
 ## 2.0.0 – August 2026
 
 ### Neu

@@ -2115,6 +2115,7 @@ async function handlePhoto(file) {
   // damit kann die Erkennung wenig anfangen.
   originalScanFile = file;
   arbeitBildFreigeben();
+  reihumAufraeumen();
   file = await verkleinern(file);
   lastScanFile = file;          // fürs Anlegen einer eigenen Figur aufheben
   updateScanCustomBtns();
@@ -2262,7 +2263,8 @@ function scanAuswahlEinrichten() {
     document.addEventListener("pointerup", ende);
   });
 
-  $("scan-alle").addEventListener("click", alleFigurenErkennen);
+  $("scan-alle").addEventListener("click", () => alleFigurenErkennen(false));
+  $("scan-weiter").addEventListener("click", () => alleFigurenErkennen(true));
 
   // Mehrere Rahmen sammeln. Für Figuren, die kreuz und quer liegen oder
   // versetzt hintereinander stehen, findet keine automatische Trennung
@@ -2387,33 +2389,72 @@ function hintergrundFarbe(ctx, w, h) {
    kostet damit nicht mehr Anfragen als der alte (dort: einmal suchen, dann je
    Ausschnitt eine) – und er kommt auch mit mehreren Reihen zurecht, weil
    nicht mehr senkrecht geschnitten wird. */
-async function alleFigurenErkennen() {
+/* Zustand einer laufenden Reihum-Suche.
+
+   Die Suche hört nach FIND_MAX Figuren auf – nicht weil mehr technisch nicht
+   ginge, sondern weil jede Runde eine Anfrage an einen **kostenlos**
+   bereitgestellten Dienst ist. Statt einer Wand gibt es deshalb ein
+   „Weitersuchen": Die schon abgesuchte Zeichenfläche bleibt liegen, und wer
+   mehr will, sagt es ausdrücklich. So entscheidet der Anwender über den
+   Aufwand, nicht eine automatische Schleife.
+
+   Die Zeichenfläche kostet rund vier Megabyte. Sie wird deshalb beim nächsten
+   Foto und beim Verlassen des Ergebnisses wieder freigegeben. */
+let reihumZustand = null;
+
+function reihumAufraeumen() {
+  if (reihumZustand) {
+    reihumZustand.c.width = reihumZustand.c.height = 0;
+    reihumZustand = null;
+  }
+  const w = $("scan-weiter");
+  if (w) w.hidden = true;
+}
+
+async function alleFigurenErkennen(weiter = false) {
   if (!lastScanFile) return;
   const knopf = $("scan-alle");
+  const weiterKnopf = $("scan-weiter");
   const status = $("scan-status");
   knopf.disabled = true;
-  const gefunden = [], treffer = [];
-  const c = document.createElement("canvas");
-  spur("Reihum-Suche startet");
-  try {
-    // Die Bitmap wird nur einmal gebraucht: zum Füllen der Zeichenfläche.
-    // Danach halten beide dieselbe Bildfläche doppelt im Speicher – deshalb
-    // wird sie sofort wieder freigegeben und nicht erst am Ende.
-    const bmp = await createImageBitmap(lastScanFile);
-    c.width = bmp.width;
-    c.height = bmp.height;
-    const ctx = c.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(bmp, 0, 0);
-    bmp.close();
-    const farbe = hintergrundFarbe(ctx, c.width, c.height);
-    const flaeche = c.width * c.height;
+  if (weiterKnopf) weiterKnopf.disabled = true;
 
+  if (!weiter || !reihumZustand) {
+    reihumAufraeumen();
+    const c = document.createElement("canvas");
+    try {
+      // Die Bitmap wird nur einmal gebraucht: zum Füllen der Zeichenfläche.
+      // Danach hielten beide dieselbe Bildfläche doppelt im Speicher.
+      const bmp = await createImageBitmap(lastScanFile);
+      c.width = bmp.width;
+      c.height = bmp.height;
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(bmp, 0, 0);
+      bmp.close();
+      reihumZustand = { c, ctx, farbe: hintergrundFarbe(ctx, c.width, c.height),
+        gefunden: [], treffer: [] };
+    } catch (e) {
+      c.width = c.height = 0;
+      knopf.disabled = false;
+      if (weiterKnopf) weiterKnopf.disabled = false;
+      toast(e.message);
+      return;
+    }
+  }
+  const z = reihumZustand;
+  const flaeche = z.c.width * z.c.height;
+  const vorher = z.gefunden.length;
+  let anschlag = false;
+  spur(weiter ? "Reihum: weitersuchen" : "Reihum-Suche startet");
+
+  try {
     for (let runde = 0; runde < FIND_MAX; runde++) {
+      anschlag = runde === FIND_MAX - 1;
       status.hidden = false;
       status.querySelector("[data-scan-text]").textContent =
-        tr("Figur {i} suchen …", { i: runde + 1 });
-      const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
-      if (!blob) break;
+        tr("Figur {i} suchen …", { i: z.gefunden.length + 1 });
+      const blob = await new Promise((r) => z.c.toBlob(r, "image/jpeg", 0.9));
+      if (!blob) { anschlag = false; break; }
       const fd = new FormData();
       fd.append("file", new File([blob], "scan.jpg", { type: "image/jpeg" }),
         "scan.jpg");
@@ -2421,59 +2462,63 @@ async function alleFigurenErkennen() {
       try {
         d = await api("/scan", { method: "POST", body: fd });
       } catch (e) {
-        if (!gefunden.length) throw e;
-        break;                    // Kontingent erschöpft: mit dem Bisherigen weiter
+        if (!z.gefunden.length) throw e;
+        anschlag = false;
+        break;                   // Kontingent erschöpft: mit dem Bisherigen weiter
       }
       const b = d.box;
       if (!d.items || !d.items[0] || !b || b.right <= b.left
-          || b.lower <= b.upper) break;
+          || b.lower <= b.upper) { anschlag = false; break; }
       const kasten = { x: b.left, y: b.upper,
         w: b.right - b.left, h: b.lower - b.upper };
-      // Deckt der Rahmen fast das ganze Bild ab, ist nichts mehr zu trennen –
-      // sonst würde die nächste Runde auf einer leeren Fläche suchen.
+      // Deckt der Rahmen fast das ganze Bild ab, ist nichts mehr zu trennen.
       if (kasten.w * kasten.h > flaeche * 0.8) {
-        if (!gefunden.length) { gefunden.push(d.items[0]); treffer.push(kasten); }
+        if (!z.gefunden.length) { z.gefunden.push(d.items[0]); z.treffer.push(kasten); }
+        anschlag = false;
         break;
       }
-      // Derselbe Fleck zweimal? Dann bringt Weitersuchen nichts mehr – und
-      // zehn Anfragen für ein und dieselbe Figur schon gar nicht.
-      const doppelt = treffer.some((t) => {
+      // Derselbe Fleck zweimal? Dann bringt Weitersuchen nichts mehr.
+      const doppelt = z.treffer.some((t) => {
         const bx = Math.max(0, Math.min(t.x + t.w, kasten.x + kasten.w)
           - Math.max(t.x, kasten.x));
         const by = Math.max(0, Math.min(t.y + t.h, kasten.y + kasten.h)
           - Math.max(t.y, kasten.y));
         return bx * by > 0.7 * kasten.w * kasten.h;
       });
-      if (doppelt) { spur("Reihum: derselbe Bereich – Schluss"); break; }
-      gefunden.push(d.items[0]);
-      treffer.push(kasten);
-      spur(`Reihum ${gefunden.length}: ${d.items[0].item_id} `
+      if (doppelt) { spur("Reihum: derselbe Bereich – Schluss"); anschlag = false; break; }
+      z.gefunden.push(d.items[0]);
+      z.treffer.push(kasten);
+      spur(`Reihum ${z.gefunden.length}: ${d.items[0].item_id} `
         + `(${d.items[0].score} %)`);
-      ctx.fillStyle = farbe;
-      ctx.fillRect(kasten.x, kasten.y, kasten.w, kasten.h);
+      z.ctx.fillStyle = z.farbe;
+      z.ctx.fillRect(kasten.x, kasten.y, kasten.w, kasten.h);
     }
-    if (!gefunden.length) {
+
+    if (!z.gefunden.length) {
       mehrfachRahmen([]);
       letzteBoxen = [];
+      reihumAufraeumen();
       toast(tr("Nichts erkannt – Rahmen von Hand ziehen."));
       return;
     }
-    mehrfachRahmen(treffer);
-    letzteBoxen = treffer;
-    renderScanResults(gefunden);
-    toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
-      : tr("{n} Figuren erkannt ✔", { n: gefunden.length }));
-    if (gefunden.length === FIND_MAX) {
-      toast(tr("Mehr als {max} Figuren? Dann lieber in zwei Fotos aufteilen.",
-        { max: FIND_MAX }));
-    }
+    mehrfachRahmen(z.treffer);
+    letzteBoxen = z.treffer;
+    renderScanResults(z.gefunden);
+    const neu = z.gefunden.length - vorher;
+    toast(neu === 1 ? tr("1 Figur erkannt ✔")
+      : tr("{n} Figuren erkannt ✔", { n: neu }));
+    // Am Anschlag ist womöglich noch mehr da – aber die nächste Runde kostet
+    // wieder Anfragen, also entscheidet das der Anwender.
+    if (weiterKnopf) weiterKnopf.hidden = !anschlag;
+    if (!anschlag) reihumAufraeumen();
   } catch (e) {
     spur("Reihum abgebrochen: " + String(e.message).slice(0, 30));
     toast(e.message);
   } finally {
-    spur(`Reihum-Suche fertig (${gefunden.length})`);
-    c.width = c.height = 0;      // gibt die Zeichenfläche frei, auch bei Fehlern
+    spur(`Reihum-Suche fertig (${reihumZustand ? reihumZustand.gefunden.length
+      : "–"})`);
     knopf.disabled = false;
+    if (weiterKnopf) weiterKnopf.disabled = false;
     status.hidden = true;
     status.querySelector("[data-scan-text]").textContent = tr("Erkenne …");
   }

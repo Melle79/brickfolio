@@ -540,9 +540,17 @@ of 4 figures, 72 to 91 % certain, in 1.2 seconds** – the old method found
 > there is nothing left to set.
 
 **Where even this reaches its limit.** The service always finds the most
-prominent remaining object. Very small or half-hidden figures fall through, and
-after **10 figures** it stops – the app does not ask for more in one pass (see
-below). For whatever is left there is the manual route:
+prominent remaining object. Very small or half-hidden figures fall through.
+
+**After 10 figures the app asks back.** That is not a technical limit but
+consideration: every round is a request to a service provided **free of
+charge**. If figures are still left after ten finds, **🔎 Keep looking**
+appears – the app carries on where it stopped, and the new finds are added to
+the previous ones. Whoever does not continue has lost nothing; whoever wants to
+decides for themselves. When nothing more comes back, the button disappears on
+its own.
+
+For whatever is left there is the manual route:
 
 For those cases there is the **reliable route**, and it is quick:
 

@@ -556,9 +556,17 @@ Klonkriegern dicht nebeneinander: **4 von 4 Figuren, 72 bis 91 % sicher, in
 
 **Wo auch das an seine Grenze kommt.** Der Dienst findet immer das
 auffälligste verbliebene Objekt. Sehr kleine oder halb verdeckte Figuren
-fallen durch, und nach **10 Figuren** ist Schluss – mehr fragt die App in
-einem Durchgang nicht ab (siehe unten). Für alles, was übrig bleibt, gibt es
-den Weg von Hand:
+fallen durch.
+
+**Nach 10 Figuren fragt die App zurück.** Das ist keine technische Grenze,
+sondern Rücksicht: Jede Runde ist eine Anfrage an einen **kostenlos**
+bereitgestellten Dienst. Sind nach zehn Funden noch Figuren da, erscheint
+deshalb **🔎 Weitersuchen** – die App macht dort weiter, wo sie aufgehört hat,
+und die neuen Funde kommen zu den bisherigen dazu. Wer nicht weitersucht, hat
+nichts verloren; wer will, entscheidet das selbst. Kommt nichts mehr,
+verschwindet der Knopf von allein.
+
+Für alles, was übrig bleibt, gibt es den Weg von Hand:
 
 Für diese Fälle gibt es den **verlässlichen Weg**, und der ist schnell:
 
