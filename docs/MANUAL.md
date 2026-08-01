@@ -690,16 +690,24 @@ from BrickLink; under *More* it can be filled in for existing data.
 > wins. This requires the set contents to have been loaded already – which
 > happens by itself when the set is added.
 
-**Parts and their theme.** BrickLink files parts by **shape** ("Minifigure,
-Utensil, Decorated") – no theme there. Printed parts, however, carry a **second
-number** in the catalogue: the carbonite block with Han Solo has `sw0978` next
-to it, and `sw…` means Star Wars. That is what "🔄 Reload themes" reads since
-version 1.92.0.
+**Parts and their theme.** For parts, "🔄 Reload themes" queries the catalogue
+in two stages:
 
-> The two catalogues count printings differently: Rebrickable calls the same
-> part `87561pr0001`, BrickLink `87561pb01`. If your own number leads nowhere,
-> the app asks Rebrickable for the equivalent and tries again. This needs both
-> keys.
+1. **Second number.** Printed parts often carry the number of the figure they
+   belong to. The carbonite block with Han Solo has `sw0978` next to it – and
+   `sw…` means Star Wars. That is a **real theme**, so it takes precedence.
+2. **Catalogue path.** If a part has no second number – the Gungan shield
+   `2586ps1` has none – the category counts: *Catalog: Parts: Minifigure,
+   Shield* becomes the theme **"Minifigure, Shield"**. That is a shape rather
+   than a theme in the narrow sense, but it files the entry somewhere sensible
+   instead of leaving it under "No theme". If you dislike it, set "Star Wars"
+   by hand on the card – anything set by hand stays.
+
+> **Two catalogues, two numbers.** Rebrickable calls the same parts
+> `87561pr0001` and `2586pr0028`, BrickLink `87561pb01` and `2586ps1`. Asking
+> one catalogue with the other's number yields **nothing at all** – neither the
+> second number nor the category. So the app settles the number **once** via
+> Rebrickable and uses it for both routes afterwards. This needs both keys.
 
 If anything is left afterwards – a plain brick has no figure number – every
 card has a **Theme** field: type it (the

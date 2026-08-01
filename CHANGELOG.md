@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.94.0 – August 2026
+
+### Behoben
+- 🔢 **Die geklärte BrickLink-Nummer galt nur halb.** Seit 1.92.0 fragt die
+  App bei Rebrickable nach der BrickLink-Entsprechung (`2586pr0028` →
+  `2586ps1`) – benutzt hat sie sie aber nur für die Zweitnummer. Die
+  **Kategorie** wurde weiter mit der Nummer abgefragt, die BrickLink gar nicht
+  kennt, und lief deshalb ins Leere. Jetzt wird die Nummer **einmal** geklärt
+  und für beide Wege verwendet
+- 🗂️ **Damit greift auch der Katalogpfad.** Teile ohne Zweitnummer bekommen
+  ihre Kategorie als Thema: Aus *Catalog: Parts: Minifigure, Shield* wird
+  **„Minifigure, Shield"** statt „Ohne Thema"
+- ⚡ Die Kategorie-ID kommt jetzt mit dem Katalogeintrag mit – eine Abfrage
+  weniger je Teil
+
+> **Was das für die beiden Teile heißt.** Der Karbonitblock hat eine
+> Zweitnummer (`sw0978`) und landet unter **Star Wars**. Der Gungan-Schild
+> steht bei BrickLink ohne Zweitnummer, dort bleibt nur der Pfad: **Minifigure,
+> Shield**. Das ist eine Form und kein Thema – wem das nicht passt, setzt auf
+> der Karte von Hand „Star Wars".
+
 ## 1.93.0 – August 2026
 
 ### Behoben

@@ -561,11 +561,9 @@ def test_ohne_zweitnummer_bleibt_es_bei_der_kategorie(client, monkeypatch):
     assert main._theme_nachschlagen("3001", "part") == "Brick"
 
 
-def test_unbekanntes_kuerzel_in_der_zweitnummer_zaehlt_nicht(monkeypatch):
-    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
-    monkeypatch.setattr(integrations, "bricklink_item",
-                        lambda t, n: {"alternate_no": "xyz9999"})
-    assert main._thema_aus_zweitnummer("1234pb01") is None
+def test_unbekanntes_kuerzel_in_der_zweitnummer_zaehlt_nicht():
+    assert main._thema_aus_zweitnummer(
+        "1234pb01", {"alternate_no": "xyz9999"}) is None
 
 
 def test_zweitnummer_ohne_bricklink_schluessel_fragt_nicht(monkeypatch):
@@ -578,8 +576,42 @@ def test_zweitnummer_ohne_bricklink_schluessel_fragt_nicht(monkeypatch):
     assert main._thema_aus_zweitnummer("87561pb01") is None
 
 
-def test_mehrere_zweitnummern_erstes_treffendes_kuerzel_zaehlt(monkeypatch):
+def test_mehrere_zweitnummern_erstes_treffendes_kuerzel_zaehlt():
+    assert main._thema_aus_zweitnummer(
+        "1234pb01", {"alternate_no": "1234, cty0123"}) == "City"
+
+
+def test_teil_ohne_zweitnummer_faellt_auf_die_kategorie_zurueck(monkeypatch):
+    """Der Gungan-Schild steht bei BrickLink ohne Zweitnummer – dort bleibt
+    nur der Katalogpfad „Parts: Minifigure, Shield"."""
     monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
-    monkeypatch.setattr(integrations, "bricklink_item",
-                        lambda t, n: {"alternate_no": "1234, cty0123"})
-    assert main._thema_aus_zweitnummer("1234pb01") == "City"
+    monkeypatch.setattr(integrations, "rebrickable_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_nummer_fuer_teil",
+                        lambda nr: "2586ps1")
+    monkeypatch.setattr(integrations, "bricklink_item", lambda t, n: (
+        {"alternate_no": "", "category_id": 152} if n == "2586ps1"
+        else (_ for _ in ()).throw(LookupError())))
+    monkeypatch.setattr(main, "_top_category",
+                        lambda cid: "Minifigure, Shield" if cid == 152 else None)
+    assert main._theme_nachschlagen("2586pr0028", "part") == "Minifigure, Shield"
+
+
+def test_kategorie_wird_mit_der_bricklink_nummer_gefragt(monkeypatch):
+    """Der eigentliche Fehler aus 1.92.0: Die Nummer wurde nur für die
+    Zweitnummer umgeschrieben, die Kategorie fragte weiter mit der alten."""
+    gefragt = []
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "rebrickable_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_nummer_fuer_teil",
+                        lambda nr: "2586ps1")
+
+    def fake_item(typ, nr):
+        gefragt.append(nr)
+        if nr != "2586ps1":
+            raise LookupError("nicht im Katalog")
+        return {"alternate_no": "", "category_id": 152}
+
+    monkeypatch.setattr(integrations, "bricklink_item", fake_item)
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Minifigure, Shield")
+    main._theme_nachschlagen("2586pr0028", "part")
+    assert "2586ps1" in gefragt

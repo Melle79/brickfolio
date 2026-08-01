@@ -287,6 +287,8 @@ def bricklink_item(item_type: str, item_no: str) -> dict:
         # Nummer der Figur, zu der sie gehören („sw0978") – und darin steckt
         # das Thema, das der Kategorie eines Teils fehlt.
         "alternate_no": d.get("alternate_no") or "",
+        # Kommt gleich mit – spart die eigene Abfrage der Kategorie.
+        "category_id": d.get("category_id"),
         "year": d.get("year_released") or 0,
         "sub": str(d.get("year_released", "")),
         "bricklink_url": ("https://www.bricklink.com/v2/catalog/catalogitem.page?"

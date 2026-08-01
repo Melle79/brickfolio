@@ -712,16 +712,27 @@ nachziehen.
 > häufigsten vorkommt. Voraussetzung ist, dass die Set-Inhalte schon
 > geladen wurden – das passiert beim Erfassen von selbst.
 
-**Teile und ihr Thema.** BrickLink führt Teile nach **Form** („Minifigure,
-Utensil, Decorated") – ein Thema steht dort nicht. Bedruckte Teile tragen im
-Katalog aber eine **Zweitnummer**: Beim Karbonitblock mit Han Solo steht
-`sw0978` daneben, und `sw…` heißt Star Wars. Genau die liest „🔄 Themen
-nachladen" seit Version 1.92.0 aus.
+**Teile und ihr Thema.** Bei Teilen fragt „🔄 Themen nachladen" den Katalog
+in zwei Stufen ab:
 
-> Die beiden Kataloge zählen Bedruckungen unterschiedlich: Rebrickable nennt
-> dasselbe Teil `87561pr0001`, BrickLink `87561pb01`. Führt die eigene Nummer
-> zu nichts, fragt die App die Entsprechung bei Rebrickable nach und versucht
-> es damit erneut. Dafür braucht es beide Schlüssel.
+1. **Zweitnummer.** Bedruckte Teile tragen bei BrickLink oft die Nummer der
+   Figur, zu der sie gehören. Beim Karbonitblock mit Han Solo steht `sw0978`
+   daneben – und `sw…` heißt Star Wars. Das ist ein **echtes Thema** und hat
+   deshalb Vorrang.
+2. **Katalogpfad.** Hat ein Teil keine Zweitnummer – der Gungan-Schild
+   `2586ps1` etwa steht dort ohne –, zählt die Kategorie: aus
+   *Catalog: Parts: Minifigure, Shield* wird das Thema **„Minifigure,
+   Shield"**. Das ist eine Form und kein Thema im engeren Sinn, sortiert den
+   Eintrag aber sinnvoll ein statt ihn unter „Ohne Thema" liegen zu lassen.
+   Wem das nicht passt, setzt auf der Karte von Hand „Star Wars" – von Hand
+   Gesetztes bleibt stehen.
+
+> **Zwei Kataloge, zwei Nummern.** Rebrickable nennt dieselben Teile
+> `87561pr0001` und `2586pr0028`, BrickLink `87561pb01` und `2586ps1`. Wer mit
+> der einen Nummer beim anderen anfragt, bekommt **gar nichts** – weder
+> Zweitnummer noch Kategorie. Die App klärt die Nummer deshalb **einmal** über
+> Rebrickable und verwendet sie danach für beide Wege. Dafür braucht es beide
+> Schlüssel.
 
 Bleibt danach etwas übrig – ein schlichter Stein etwa hat keine
 Figurennummer –, steht auf jeder Karte
