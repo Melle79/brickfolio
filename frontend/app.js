@@ -2539,10 +2539,14 @@ async function alleFigurenErkennen(anzahlWunsch = 0) {
     mehrfachRahmen(boxen);
     anzahlRegler(boxen.length);
     if (boxen.length < 2 && !anzahlWunsch) {
-      toast(tr("Nur eine Figur gefunden. Stimmt das nicht, die Zahl unten "
-        + "anpassen."));
+      toast(tr("Nur eine Trennung gefunden – das Bild geht als Ganzes zur "
+        + "Erkennung. Stimmt das nicht, die Zahl unten anpassen."));
     }
     const gefunden = [];
+    // Ein Rahmen ist ein **Schnitt**, kein Fund. Stehen bleiben darf nur,
+    // wo hinterher wirklich eine Figur erkannt wurde – sonst behauptet das
+    // Bild fünf Figuren, während darunter „nichts erkannt" steht.
+    const treffer = [];
     const werk = await arbeitBildHolen();
     try {
       for (let i = 0; i < boxen.length; i++) {
@@ -2555,11 +2559,26 @@ async function alleFigurenErkennen(anzahlWunsch = 0) {
           const fd = new FormData();
           fd.append("file", teil, "scan.jpg");
           const d = await api("/scan", { method: "POST", body: fd });
-          if (d.items && d.items[0]) gefunden.push(d.items[0]);
+          if (d.items && d.items[0]) {
+            gefunden.push(d.items[0]);
+            treffer.push(boxen[i]);
+          }
         } catch (_) { /* eine Figur weniger, der Rest läuft weiter */ }
       }
     } finally { arbeitBildFreigeben(); }
-    if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
+    if (!gefunden.length) {
+      // Rahmen weg: Sie standen für Schnitte, hinter denen nichts steckt.
+      mehrfachRahmen([]);
+      letzteBoxen = [];
+      $("scan-anzahl").hidden = true;
+      toast(tr("In keinem Streifen wurde etwas erkannt – so lässt sich "
+        + "dieses Bild nicht zerlegen. Rahmen von Hand ziehen."));
+      return;
+    }
+    // Nur die Streifen behalten, in denen etwas gefunden wurde.
+    mehrfachRahmen(treffer);
+    letzteBoxen = treffer;
+    anzahlRegler(boxen.length);
     renderScanResults(gefunden);
     toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
       : tr("{n} Figuren erkannt ✔", { n: gefunden.length }));

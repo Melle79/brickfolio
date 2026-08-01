@@ -543,8 +543,17 @@ Das kommt auch mit einer **Vitrine** zurecht: Glasspiegelungen, heller
 Regalboden, blaugraue Rückwand und blaugraue Figuren – ein Farbvergleich
 fände dort nichts, Struktur schon.
 
-> **Wenn die Zahl nicht stimmt:** Unter dem Bild steht, wie viele Figuren
-> gefunden wurden, mit **−** und **＋** daneben. Wer die Zahl ändert, bekommt
+**Ein Rahmen ist ein Schnitt, kein Fund.** Unter dem Bild steht deshalb
+„Geteilt in: *n* Streifen" und nicht „Gefunden: *n* Figuren" – vor der
+Abfrage weiß die App nur, wo sie geschnitten hat. Nach der Abfrage bleiben
+**nur die Streifen stehen, in denen wirklich etwas erkannt wurde**; die
+übrigen Rahmen verschwinden. Wurde in keinem etwas erkannt, verschwinden alle
+und es steht dran, dass sich dieses Bild so nicht zerlegen lässt. (Bis
+Version 1.95.0 blieben fünf nummerierte Rahmen stehen, während darunter
+„Keine Übereinstimmung gefunden" stand.)
+
+> **Wenn die Zahl nicht stimmt:** Unter dem Bild steht, in wie viele Streifen
+> geteilt wurde, mit **−** und **＋** daneben. Wer die Zahl ändert, bekommt
 > das Bild gleichmäßig in so viele Streifen geteilt und alles erneut
 > abgefragt. Das hilft bei Figuren, die sich berühren – dort gibt es keine
 > Lücke, in der man schneiden könnte.

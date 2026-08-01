@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.95.0 – August 2026
+
+### Behoben
+- 🟩 **Fünf Rahmen, unter denen „nichts erkannt" stand.** Die nummerierten
+  Rahmen blieben stehen, egal was die Abfrage ergab – das Bild behauptete
+  fünf gefundene Figuren, während darunter „Keine Übereinstimmung gefunden"
+  zu lesen war. Jetzt bleiben **nur die Streifen stehen, in denen wirklich
+  etwas erkannt wurde**; ergab keiner etwas, verschwinden alle und es steht
+  dran, dass sich dieses Bild so nicht zerlegen lässt
+- 🏷 **„Geteilt in: 5 Streifen" statt „Gefunden: 5 Figuren".** Vor der
+  Abfrage weiß die App nur, wo sie geschnitten hat – nicht, was dort steht.
+  Die Beschriftung sagt das jetzt
+
+> **Warum die Warnung aus 1.93.0 hier nicht kam:** Sie misst die Figur, die
+> der Erkennungsdienst beim ersten Scan gefunden hat, an der Bildhöhe. Findet
+> er **gar nichts**, gibt es nichts zu messen. Für diesen Fall greift jetzt
+> das Ergebnis selbst: Keine Treffer, keine Rahmen.
+
 ## 1.94.0 – August 2026
 
 ### Behoben

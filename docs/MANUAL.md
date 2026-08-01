@@ -527,6 +527,14 @@ This also copes with a **display case**: glass reflections, a bright shelf,
 a blue-grey back wall and blue-grey figures – a colour comparison would find
 nothing there, structure does.
 
+**A frame is a cut, not a find.** Below the picture it therefore says "Split
+into: *n* strips" and not "Found: *n* figures" – before the query the app only
+knows where it cut. After the query **only the strips in which something was
+actually recognised stay**; the other frames disappear. If nothing was
+recognised in any of them, they all go and it says that this picture cannot be
+split that way. (Up to version 1.95.0 five numbered frames stayed on screen
+while "No match found" was written underneath.)
+
 > **If the number is wrong:** below the picture it says how many figures were
 > found, with **−** and **＋** next to it. Change the number and the picture
 > is divided into that many equal strips and everything is asked again. That
