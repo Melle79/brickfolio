@@ -1438,6 +1438,7 @@ function showTab(name) {
   ["scan", "collection", "lists", "stats", "hub", "settings"].forEach((t) => {
     $("view-" + t).hidden = t !== name;
   });
+  spur("Ansicht: " + name);
   sammlungFreigeben(name);
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
@@ -2056,6 +2057,8 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
     return file;                     // kein lesbares Bild – der Server sagt es
   }
   if (!masse.w || !masse.h) return file;
+  spur(`Foto ${Math.round(masse.w * masse.h / 1e5) / 10} MP, `
+    + `${Math.round(file.size / 104858) / 10} MB`);
   const faktor = Math.min(1, maxSeite / Math.max(masse.w, masse.h));
   if (faktor === 1) return file;                      // schon klein genug
   const bw = Math.round(masse.w * faktor);
@@ -2082,6 +2085,7 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
   bmp.close();                       // das Original sofort freigeben
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;            // auch die Zeichenfläche
+  spur(`verkleinert auf ${bw}×${bh}`);
   return blob ? new File([blob], "scan.jpg", { type: "image/jpeg" }) : file;
 }
 
@@ -2108,11 +2112,14 @@ async function handlePhoto(file) {
 
   const form = new FormData();
   form.append("file", file, "scan.jpg");
+  spur("Erkennung läuft");
   try {
     const data = await api("/scan", { method: "POST", body: form });
+    spur(`Erkennung fertig (${(data.items || []).length} Treffer)`);
     renderScanResults(data.items || []);
     rahmenZeigen(data.box);
   } catch (e) {
+    spur("Erkennung fehlgeschlagen");
     toast(e.message);
   } finally {
     $("scan-status").hidden = true;
@@ -7159,6 +7166,34 @@ function initErrorReporting() {
    JavaScript, und dann lohnt der Blick auf die anderen Tabs. Auch das ist
    ein Ergebnis. */
 
+/* Die Spur: was ist gerade passiert?
+
+   Zwei ausgewertete Abstürze fielen beide in die Scan-Ansicht, bei rund 980
+   Elementen und 6 MB – der JS-Speicher war also unschuldig, und die Messung
+   alle 30 Sekunden sagt nicht, was in den Sekunden davor lief. Genau das
+   fehlt: ob ein Foto kam und wie groß es war, ob die Erkennung lief, ob die
+   Seite in den Hintergrund ging (Kamera-App im Vordergrund – dann räumt das
+   Betriebssystem den Tab weg, ganz gleich wie klein er ist).
+
+   Geschrieben wird sofort, nicht im Takt: Ein Absturz wartet nicht auf die
+   nächste Messung. */
+const DIAG_SPUR_KEY = "bf_spur";
+const DIAG_SPUR_MAX = 20;
+
+function spurLesen() {
+  try { return JSON.parse(localStorage.getItem(DIAG_SPUR_KEY) || "[]"); }
+  catch (_) { return []; }
+}
+
+function spur(was) {
+  try {
+    const liste = spurLesen();
+    liste.push({ t: Date.now(), w: String(was).slice(0, 60) });
+    while (liste.length > DIAG_SPUR_MAX) liste.shift();
+    localStorage.setItem(DIAG_SPUR_KEY, JSON.stringify(liste));
+  } catch (_) { /* Speicher voll – dann eben nicht */ }
+}
+
 const DIAG_KEY = "bf_mem";
 const DIAG_MAX = 240;                 // 240 × 30 s = zwei Stunden
 const DIAG_TAKT = 30000;
@@ -7256,6 +7291,10 @@ function diagStarten() {
     catch (_) { /* egal */ }
   });
   document.addEventListener("visibilitychange", () => {
+    // Beide Richtungen: „im Hintergrund" ist der Zustand, in dem das
+    // Betriebssystem einen Tab wegräumt – wenn der letzte Eintrag vor einem
+    // Absturz „weg" heißt, war es nicht die App, die zu groß war.
+    spur(document.hidden ? "in den Hintergrund" : "wieder da");
     if (!document.hidden) diagMessen("zurück");
   });
 }
@@ -7362,6 +7401,17 @@ function renderDiag() {
   <div class="price-note">${esc(tr("Senkrechte Linien: hier begann eine neue "
     + "Sitzung. Steht darüber kein Grund, kam sie ohne Zutun – dann ist der "
     + "Tab abgestürzt."))}</div>`;
+
+  // Die letzten Ereignisse. Zwischen zwei Messwerten liegen 30 Sekunden –
+  // ein Absturz wartet darauf nicht. Hier steht, was zuletzt lief.
+  const spuren = spurLesen();
+  if (spuren.length) {
+    chart.innerHTML += `<div class="diag-spur">
+      <b>${esc(tr("Zuletzt passiert"))}</b><br>
+      ${spuren.slice(-10).reverse().map((e) =>
+    `${esc(new Date(e.t).toLocaleTimeString(dateLocale()))} · ${esc(e.w)}`)
+    .join("<br>")}</div>`;
+  }
 }
 
 /* ------------------------------------------- Benachrichtigung aufs Gerät
@@ -8337,7 +8387,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         sprung ? "SERVER NEU GESTARTET" : "",
       ].filter(Boolean).join("  ·  ");
     });
-    const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n");
+    // Die Spur kommt mit: Sie sagt, was zwischen zwei Messwerten passiert
+    // ist – und das ist bei einem Absturz die eigentliche Frage.
+    const spuren = spurLesen().map((e) =>
+      new Date(e.t).toLocaleString(dateLocale()) + "  ·  " + e.w);
+    const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n")
+      + (spuren.length ? "\n\nSpur (was zuletzt passierte)\n"
+        + spuren.join("\n") : "");
     try {
       await navigator.clipboard.writeText(text);
       toast(tr("Verlauf kopiert ✔"));
@@ -8347,6 +8403,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("btn-diag-clear").addEventListener("click", () => {
     localStorage.removeItem(DIAG_KEY);
+    localStorage.removeItem(DIAG_SPUR_KEY);
     renderDiag();
     toast(tr("Verlauf geleert"));
   });

@@ -1582,8 +1582,17 @@ container has restarted.
 > looking at `edge://crashes` and the browser's task manager (Shift+Esc) to
 > see which tab actually grows. That is a result too.
 
-The trace stays on the device. "📋 Copy the trace" puts it on the clipboard as
-text to paste elsewhere.
+**What happened last.** Below the curve is the **trail**: two readings are 30
+seconds apart, and a crash does not wait that long. So whatever is going on is
+noted immediately – photo taken (with megapixels and file size), downscaled,
+recognition running and done, view switched, and above all: **went to the
+background / back again**. If the last line before a crash says "went to the
+background", the page was not in front at all – then the operating system
+reclaimed the tab (typically while the camera app is running), rather than the
+app choking on something.
+
+The trace stays on the device. "📋 Copy the trace" puts it, trail included, on
+the clipboard as text to paste elsewhere.
 
 **An issue at the press of a button.** With a GitHub token stored, "🐙 Create an
 issue" turns an entry directly into an issue in the project. The button then

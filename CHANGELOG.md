@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.88.0 – August 2026
+
+### Neu
+- 🧭 **Eine Spur neben dem Speicher-Verlauf.** Zwischen zwei Messwerten
+  liegen 30 Sekunden – ein Absturz wartet darauf nicht. Deshalb wird jetzt
+  **sofort** festgehalten, was passiert: Foto aufgenommen (mit
+  **Megapixeln und Dateigröße**), verkleinert auf …, Erkennung läuft/fertig,
+  Ansicht gewechselt, **in den Hintergrund / wieder da**
+- 📋 Die Spur steht unter der Kurve und geht beim Kopieren mit
+
+> **Warum das nötig war.** Der Verlauf vom 1.8. zeigt zwei Stunden zwischen
+> 5 und 9 MB, ohne jedes Wachstum – und trotzdem starb der Tab um 16:41 bei
+> **7 MB und 981 Elementen**. Damit ist der JavaScript-Speicher als Ursache
+> erledigt. Beide bisher auswertbaren Abstürze fielen in dieselbe Lage: die
+> Scan-Ansicht bei rund 980 Elementen. Was dort groß ist, steht außerhalb
+> jeder Messung – das Foto selbst und die Kamera-App daneben. Ob die Seite in
+> dem Moment im Hintergrund war, sagt ab jetzt die Spur.
+
 ## 1.87.0 – August 2026
 
 ### Behoben
