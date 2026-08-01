@@ -2515,8 +2515,10 @@ async function alleFigurenErkennen(weiter = false) {
     spur("Reihum abgebrochen: " + String(e.message).slice(0, 30));
     toast(e.message);
   } finally {
-    spur(`Reihum-Suche fertig (${reihumZustand ? reihumZustand.gefunden.length
-      : "–"})`);
+    // Die Zahl vorher merken: Endet die Suche endgültig, ist der Suchstand an
+    // dieser Stelle schon freigegeben – im Protokoll stand dann „(–)" statt
+    // der Zahl der gefundenen Figuren.
+    spur(`Reihum-Suche fertig (${z.gefunden.length})`);
     knopf.disabled = false;
     if (weiterKnopf) weiterKnopf.disabled = false;
     status.hidden = true;

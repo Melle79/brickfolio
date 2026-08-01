@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.1 – August 2026
+
+### Behoben
+- 🧭 **„Reihum-Suche fertig (–)" statt der Zahl.** Endete die Suche endgültig,
+  war der Suchstand beim Schreiben der Protokollzeile schon freigegeben – im
+  Verlauf stand dann ein Strich statt der Zahl der gefundenen Figuren. Jetzt
+  steht dort, was wirklich gefunden wurde
+
+> **Was der Verlauf vom 2.8. sonst zeigt:** Die Wiederherstellung aus 2.0.0
+> hat gegriffen – nach dem Absturz um 00:16:19 setzte die App bei „Listen"
+> wieder auf, also genau dort, wo die Sitzung aufgehört hatte. Und das
+> Weitersuchen aus 2.1.0 lief: 10 Figuren, dann eine elfte.
+
 ## 2.1.0 – August 2026
 
 ### Neu
