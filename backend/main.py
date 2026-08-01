@@ -4491,6 +4491,72 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
             "ergebnis": ergebnis}
 
 
+class TradeGiveBody(BaseModel):
+    quantity: int = Field(default=1, ge=1, le=999)
+    # Ohne Angabe nur dann, wenn es die Nummer genau einmal gibt – sonst
+    # wüsste niemand, ob das neue oder das gebrauchte Stück weggeht.
+    condition: str | None = Field(default=None, pattern="^(new|used)$")
+
+
+@app.get("/api/hub/trades/{trade_id}/candidates")
+def hub_trade_candidates(trade_id: str, user: dict = Depends(current_user)):
+    """Welche Zeilen der Sammlung kommen für diesen Vorgang infrage?
+
+    Dieselbe Nummer kann zweimal dastehen – einmal neu, einmal gebraucht.
+    Vor dem Austragen muss klar sein, welches Stück gemeint ist.
+    """
+    with core.db() as conn:
+        t = conn.execute("SELECT * FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+        if not t:
+            raise HTTPException(404, "Vorgang nicht gefunden")
+        rows = conn.execute(
+            "SELECT id, item_type, name, condition, quantity FROM collection "
+            "WHERE item_id = ? ORDER BY condition", (t["item_id"],)).fetchall()
+    return {"candidates": [dict(r) for r in rows]}
+
+
+@app.post("/api/hub/trades/{trade_id}/give")
+def hub_trade_give(trade_id: str, body: TradeGiveBody,
+                   user: dict = Depends(current_user)):
+    """Gegenstück zum Übernehmen: ein zugesagtes Stück austragen.
+
+    Hier geht etwas weg, deshalb passiert nichts von allein und nichts ohne
+    Rückfrage in der Oberfläche. Bleibt nichts übrig, verschwindet die Zeile
+    ganz – wie beim Austragen über die Karte, samt Kaufbuch.
+    """
+    with core.db() as conn:
+        t = conn.execute("SELECT * FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+        if not t:
+            raise HTTPException(404, "Vorgang nicht gefunden")
+        if t["direction"] != "in":
+            raise HTTPException(400, "Dieser Artikel kommt zu dir.")
+        if t["status"] != "accepted":
+            raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
+        wo = "SELECT * FROM collection WHERE item_id = ?"
+        werte = [t["item_id"]]
+        if body.condition:
+            wo += " AND condition = ?"
+            werte.append(body.condition)
+        rows = conn.execute(wo + " ORDER BY condition", werte).fetchall()
+    if not rows:
+        raise HTTPException(404, "Der Artikel steht nicht in deiner Sammlung.")
+    if len(rows) > 1:
+        raise HTTPException(400, "Bitte den Zustand angeben – die Nummer "
+                                 "steht neu und gebraucht in der Sammlung.")
+    row = rows[0]
+    if row["quantity"] < body.quantity:
+        raise HTTPException(400, "So viele stehen gar nicht in der Sammlung.")
+    rest = row["quantity"] - body.quantity
+    ergebnis = update_item(row["id"], UpdateItemBody(quantity=rest), user)
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
+                     (int(time.time()), trade_id))
+    return {"ok": True, "rest": rest, "geloescht": rest == 0,
+            "condition": row["condition"], "ergebnis": ergebnis}
+
+
 class TradeReportBody(BaseModel):
     reason: str = Field(min_length=3, max_length=1000)
     include_history: bool = True

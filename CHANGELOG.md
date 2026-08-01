@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.86.0 – August 2026
+
+### Neu
+- 📤 **Gegenstück zum Übernehmen: austragen.** Fragt jemand nach einem
+  deiner Artikel und du nimmst an, geht das Stück ja weg. Dafür steht im
+  Gespräch jetzt **📤 Aus der Sammlung austragen** – in Rot, damit es nicht
+  mit dem grünen Übernehmen zu verwechseln ist
+- ❓ **Neu oder gebraucht? Wird gefragt, nicht geraten.** Steht dieselbe
+  Nummer zweimal in der Sammlung, fragt das Fenster **„Welches Stück?"**.
+  Ohne Antwort passiert nichts – ein geratener Zustand wäre ein verlorenes
+  Exemplar
+- ⏳ **„noch nicht ausgetragen"** an angenommenen eingehenden Vorgängen,
+  passend zum „noch nicht verbucht" der anderen Richtung
+
+Ausgetragen wird ausschließlich nach Bestätigung im App-Fenster: Artikel,
+Gegenüber und der Bestand stehen darin, dazu die Anzahl. Bleibt nichts übrig,
+verschwindet die Zeile samt Kaufbuch – wie beim Austragen über die Karte.
+
 ## 1.85.0 – August 2026
 
 ### Behoben

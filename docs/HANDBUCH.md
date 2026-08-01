@@ -1332,12 +1332,18 @@ Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
 
 ### 12.5 Angenommen – und dann?
 
-„Annehmen" ist zunächst nur die Zusage im Gespräch. Damit der Artikel auch
-in deinen Beständen auftaucht, gibt es den Knopf **📥 In die Sammlung
-übernehmen**. Er steht im Gespräch direkt unter dem Verlauf, sobald ein
-Vorgang **angenommen** ist und der Artikel **zu dir** kommt (also bei
-Anfragen, die du gestellt hast). Gleich nach dem Annehmen geht das Fenster
-von selbst auf.
+„Annehmen" ist zunächst nur die Zusage im Gespräch. Damit sich auch in deinen
+Beständen etwas tut, steht im Gespräch direkt unter dem Verlauf ein Knopf –
+welcher, hängt von der Richtung ab:
+
+| Richtung | Knopf |
+|---|---|
+| Der Artikel kommt **zu dir** (deine Anfrage) | **📥 In die Sammlung übernehmen** |
+| Der Artikel geht **weg** (Anfrage an dich) | **📤 Aus der Sammlung austragen** (rot) |
+
+Gleich nach dem Annehmen geht das passende Fenster von selbst auf.
+
+#### Was reinkommt: übernehmen
 
 Dort stellst du ein:
 
@@ -1361,9 +1367,18 @@ oft steht der Preis erst dann fest. Solange nichts gebucht ist, trägt der
 Vorgang in der Liste das Kennzeichen **„noch nicht verbucht"**. Danach steht
 auf dem Knopf, wann gebucht wurde; ein weiterer Klick erhöht die Anzahl.
 
-Bei **eingehenden** Anfragen (jemand möchte etwas von dir) gibt es den Knopf
-nicht: Da geht ein Stück weg, nicht rein. Austragen aus der Sammlung machst
-du wie gewohnt über die Karte.
+#### Was weggeht: austragen
+
+Bei **eingehenden** Anfragen geht ein Stück weg. Das Fenster nennt Artikel,
+Gegenüber und wie viele du davon hast, und fragt nach der **Anzahl**. Steht
+die Nummer **neu und gebraucht** in der Sammlung, kommt außerdem die Frage
+**„Welches Stück?"** dazu – geraten wird hier nichts, das wäre schnell das
+falsche Exemplar. Ist danach nichts mehr übrig, verschwindet die Zeile ganz,
+samt Kaufbuch – genau wie beim Austragen über die Karte.
+
+Von allein passiert das nie: Ohne Klick auf **Austragen** im App-Fenster
+bleibt die Sammlung, wie sie ist. In der Vorgangsliste steht so lange
+**„noch nicht ausgetragen"**.
 
 ### 12.6 Melden
 

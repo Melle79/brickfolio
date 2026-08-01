@@ -3283,7 +3283,8 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
 
    `felder` ist eine Liste: { name, label, typ, wert, platzhalter, pflicht }
 */
-function appDialog({ titel, text = "", felder = [], ok = "Übernehmen" }) {
+function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
+  gefahr = false }) {
   return new Promise((fertig) => {
     const alt = document.getElementById("app-dialog");
     if (alt) alt.remove();
@@ -3311,7 +3312,7 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen" }) {
               placeholder="${esc(f.platzhalter || "")}"
               maxlength="${Number(f.max) || 200}">`}`).join("")}
           <div class="detail-row btn-grid">
-            <button class="mini-btn add" data-ok>${esc(ok)}</button>
+            <button class="mini-btn ${gefahr ? "danger" : "add"}" data-ok>${esc(ok)}</button>
             <button class="mini-btn" data-abbruch>${esc(tr("Abbrechen"))}</button>
           </div>
         </div>
@@ -6265,8 +6266,9 @@ async function loadTrades(quiet = false) {
               ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
-            ${t.direction === "out" && t.status === "accepted" && !t.taken_at
-    ? `<span class="badge badge-wanted">${tr("noch nicht verbucht")}</span>` : ""}
+            ${t.status === "accepted" && !t.taken_at
+    ? `<span class="badge badge-wanted">${t.direction === "out"
+      ? tr("noch nicht verbucht") : tr("noch nicht ausgetragen")}</span>` : ""}
           </div>
         </div>
       </div>`).join("");
@@ -6303,6 +6305,56 @@ let offenerTausch = null;
    er war, und musste von Hand nachgetragen werden. Gebucht wird trotzdem
    nicht automatisch – zwischen Zusage und Karton in der Hand liegen beim
    Tauschen gern ein paar Tage, und der Preis steht oft erst dann fest. */
+/* Gegenstück: ein zugesagtes Stück geht weg.
+
+   Hier verschwindet etwas aus der Sammlung, deshalb passiert es nur nach
+   ausdrücklicher Bestätigung im App-Fenster – und nie von allein. */
+async function tauschAbgeben() {
+  const t = offenerTausch;
+  if (!t) return;
+  let kandidaten = [];
+  try {
+    kandidaten = (await api(`/hub/trades/${openTradeId}/candidates`))
+      .candidates || [];
+  } catch (e) { toast(e.message); return; }
+  if (!kandidaten.length) {
+    toast(tr("Der Artikel steht nicht in deiner Sammlung."));
+    return;
+  }
+  const vorhanden = kandidaten.reduce((s, k) => s + k.quantity, 0);
+  const felder = [];
+  // Dieselbe Nummer kann neu und gebraucht dastehen – dann muss die Wahl
+  // getroffen werden, bevor etwas verschwindet.
+  if (kandidaten.length > 1) {
+    felder.push({ name: "zustand", label: tr("Welches Stück?"),
+      typ: "auswahl", wert: kandidaten[0].condition,
+      optionen: kandidaten.map((k) => ({ wert: k.condition,
+        label: `${k.condition === "new" ? tr("Neu") : tr("Gebraucht")} · `
+          + tr("{n}× vorhanden", { n: k.quantity }) })) });
+  }
+  felder.push({ name: "anzahl", label: tr("Anzahl"), typ: "zahl", wert: "1" });
+  const d = await appDialog({
+    titel: tr("Aus der Sammlung austragen"),
+    text: tr("{was} geht an {wer}. In der Sammlung: {n}×.",
+      { was: t.item_name || t.item_id, wer: t.other_name || "?",
+        n: vorhanden }),
+    felder, ok: tr("Austragen"), gefahr: true,
+  });
+  if (!d) return;
+  try {
+    const res = await api(`/hub/trades/${openTradeId}/give`, {
+      method: "POST", body: {
+        quantity: Math.min(999, Math.max(1, Number(d.anzahl) || 1)),
+        condition: d.zustand || (kandidaten.length === 1
+          ? kandidaten[0].condition : null),
+      } });
+    toast(res.geloescht
+      ? tr("Ausgetragen – der Eintrag ist weg 📤")
+      : tr("Ausgetragen – noch {n}× in der Sammlung", { n: res.rest }));
+    renderTrade();
+  } catch (e) { toast(e.message); }
+}
+
 async function tauschUebernehmen() {
   const t = offenerTausch;
   if (!t) return;
@@ -6371,14 +6423,23 @@ async function renderTrade(quiet = false) {
     // Zugesagt heisst noch nicht verbucht: Solange der Tausch angenommen ist
     // und der Artikel zu mir kommt, steht hier der Weg in die Sammlung.
     offenerTausch = trade;
-    const holbar = trade.direction === "out" && trade.status === "accepted";
-    $("trade-take-row").hidden = !holbar;
-    if (holbar) {
-      $("trade-take").textContent = trade.taken_at
-        ? tr("✔ Verbucht am {datum} · noch einmal buchen",
-          { datum: new Date(trade.taken_at * 1000).toLocaleDateString(dateLocale()) })
-        : tr("📥 In die Sammlung übernehmen");
-      $("trade-take").classList.toggle("add", !trade.taken_at);
+    const zugesagt = trade.status === "accepted";
+    const kommt = zugesagt && trade.direction === "out";
+    const geht = zugesagt && trade.direction === "in";
+    $("trade-take-row").hidden = !(kommt || geht);
+    if (kommt || geht) {
+      const knopf = $("trade-take");
+      const wann = trade.taken_at
+        ? new Date(trade.taken_at * 1000).toLocaleDateString(dateLocale()) : "";
+      knopf.textContent = trade.taken_at
+        ? (kommt
+          ? tr("✔ Verbucht am {datum} · noch einmal buchen", { datum: wann })
+          : tr("✔ Ausgetragen am {datum} · noch einmal austragen",
+            { datum: wann }))
+        : (kommt ? tr("📥 In die Sammlung übernehmen")
+          : tr("📤 Aus der Sammlung austragen"));
+      knopf.classList.toggle("add", kommt && !trade.taken_at);
+      knopf.classList.toggle("danger", geht && !trade.taken_at);
     }
   zeigeSicherheitsnummer(trade.other_id);
     box.innerHTML = messages.map((m) => `
@@ -6533,13 +6594,18 @@ function wireHubViewOnce() {
         await renderTrade();
         // Zusage steht – jetzt gleich fragen, wohin der Artikel soll. Ohne
         // das passierte auf „Annehmen" sichtbar gar nichts.
-        if (status === "accepted" && offenerTausch
-            && offenerTausch.direction === "out") await tauschUebernehmen();
+        if (status === "accepted" && offenerTausch) {
+          if (offenerTausch.direction === "out") await tauschUebernehmen();
+          else await tauschAbgeben();
+        }
       }
     } catch (e) { toast(e.message); }
   };
   $("trade-accept").addEventListener("click", () => setStatus("accepted"));
-  $("trade-take").addEventListener("click", tauschUebernehmen);
+  $("trade-take").addEventListener("click", () => {
+    if (offenerTausch && offenerTausch.direction === "in") tauschAbgeben();
+    else tauschUebernehmen();
+  });
   $("trade-decline").addEventListener("click", () => setStatus("declined"));
   $("trade-report").addEventListener("click", openReport);
   $("trade-delete").addEventListener("click", async () => {

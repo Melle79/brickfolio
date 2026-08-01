@@ -1280,11 +1280,18 @@ area above the history say **"no longer offered"**.
 
 ### 12.5 Accepted – what now?
 
-"Accept" is only the promise inside the conversation. To make the item show up
-in your holdings there is the **📥 Add to my collection** button. It sits in the
-conversation right below the history as soon as a trade is **accepted** and the
-item is coming **to you** (that is, for requests you made yourself). Right
-after accepting, the window opens on its own.
+"Accept" is only the promise inside the conversation. To make something happen
+in your holdings, there is a button in the conversation right below the
+history – which one depends on the direction:
+
+| Direction | Button |
+|---|---|
+| The item comes **to you** (your request) | **📥 Add to my collection** |
+| The item **leaves** (someone's request to you) | **📤 Remove from my collection** (red) |
+
+Right after accepting, the matching window opens on its own.
+
+#### What comes in: adding
 
 There you set:
 
@@ -1307,9 +1314,18 @@ usually isn't final until then. Until something is booked, the trade carries the
 tag **"not booked yet"** in the list. Afterwards the button says when it was
 booked; another click raises the quantity.
 
-**Incoming** requests (someone wants something of yours) have no such button:
-there a piece is leaving, not arriving. Removing it from the collection works as
-usual via the card.
+#### What leaves: removing
+
+For **incoming** requests a piece is leaving. The window names the item, the
+other member and how many you have, and asks for the **quantity**. If the
+number is in your collection both **new and used**, it also asks **"Which
+one?"** – nothing is guessed here, that would too easily be the wrong copy. If
+nothing is left afterwards, the row disappears entirely, purchase log included –
+exactly as when removing it via the card.
+
+It never happens on its own: without a click on **Remove** in the app window
+your collection stays as it is. Until then the trade says **"not removed yet"**
+in the list.
 
 ### 12.6 Reporting
 

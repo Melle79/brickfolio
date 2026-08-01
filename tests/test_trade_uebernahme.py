@@ -1,9 +1,10 @@
-"""Angenommenen Tausch verbuchen (/api/hub/trades/{id}/take).
+"""Angenommene Tausche verbuchen: /take (kommt rein) und /give (geht raus).
 
 Bis 1.85.0 war „Annehmen" eine reine Zusage im Gespräch: Der Artikel landete
 nirgends und musste von Hand nachgetragen werden. Hier steht, was seitdem
-passiert – und was ausdrücklich nicht passieren darf (fremde Artikel, die
-weggehen; Vorgänge, die niemand angenommen hat).
+passiert – und was ausdrücklich nicht passieren darf. Beim Austragen (1.86.0)
+zählt das doppelt: Dort verschwindet etwas, und ein geratener Zustand wäre ein
+verlorenes Stück.
 """
 import time
 
@@ -171,3 +172,106 @@ def test_foreign_image_paths_are_not_taken_over(client):
     _trade(img="/uploads/fremd.jpg")
     client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
     assert _sammlung()[0]["img_url"] == ""
+
+
+# ---------------------------------------------- Gegenstück: austragen (give)
+
+def _sammlung_anlegen(client, item_id="sw1213", name="Yoda", qty=2,
+                      condition="used"):
+    r = client.post("/api/collection", json={
+        "item_id": item_id, "item_type": "minifig", "name": name,
+        "quantity": qty, "condition": condition})
+    assert r.status_code == 200, r.text
+
+
+def test_give_reduces_quantity(client):
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=3)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 200, r.text
+    assert r.json()["rest"] == 2 and r.json()["geloescht"] is False
+    assert _sammlung()[0]["quantity"] == 2
+
+
+def test_give_deletes_entry_when_nothing_is_left(client):
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=1)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.json()["geloescht"] is True
+    assert not _sammlung()
+
+
+def test_give_takes_the_purchase_log_along(client):
+    _trade(direction="in")
+    client.post("/api/collection", json={
+        "item_id": "sw1213", "item_type": "minifig", "name": "Yoda",
+        "quantity": 1, "condition": "used", "paid_price": 9.0})
+    client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM purchases").fetchone()[0] == 0
+
+
+def test_give_refuses_more_than_there_is(client):
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=1)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 2})
+    assert r.status_code == 400
+    assert _sammlung()[0]["quantity"] == 1
+
+
+def test_give_needs_a_condition_when_the_number_exists_twice(client):
+    """Neu und gebraucht nebeneinander – raten wäre hier ein verlorenes Stück."""
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=1, condition="used")
+    _sammlung_anlegen(client, qty=1, condition="new")
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 400
+    assert len(_sammlung()) == 2
+    r = client.post("/api/hub/trades/trd_1/give",
+                    json={"quantity": 1, "condition": "new"})
+    assert r.status_code == 200
+    rest = _sammlung()
+    assert len(rest) == 1 and rest[0]["condition"] == "used"
+
+
+def test_give_rejects_outgoing_trades(client):
+    _trade(direction="out")
+    _sammlung_anlegen(client)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 400
+    assert _sammlung()[0]["quantity"] == 2
+
+
+def test_give_rejects_trades_that_are_not_accepted(client):
+    _trade(direction="in", status="open")
+    _sammlung_anlegen(client)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 400
+
+
+def test_give_without_the_item_in_the_collection_is_404(client):
+    _trade(direction="in")
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 404
+
+
+def test_give_marks_the_trade(client):
+    _trade(direction="in")
+    _sammlung_anlegen(client)
+    client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert client.get("/api/hub/trades/trd_1").json()["trade"]["taken_at"]
+
+
+def test_candidates_list_both_conditions(client):
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=2, condition="used")
+    _sammlung_anlegen(client, qty=1, condition="new")
+    k = client.get("/api/hub/trades/trd_1/candidates").json()["candidates"]
+    assert [(c["condition"], c["quantity"]) for c in k] \
+        == [("new", 1), ("used", 2)]
+
+
+def test_candidates_are_empty_when_nothing_matches(client):
+    _trade(direction="in")
+    assert client.get("/api/hub/trades/trd_1/candidates").json()["candidates"] \
+        == []
