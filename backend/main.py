@@ -2406,6 +2406,48 @@ def _theme_aus_figuren(set_no: str) -> str | None:
     return max(zaehler.items(), key=lambda kv: kv[1])[0]
 
 
+def _thema_aus_zweitnummer(item_id: str) -> str | None:
+    """Thema eines **Teils** über seine Zweitnummer im BrickLink-Katalog.
+
+    Die Kategorie eines Teils sagt nichts über das Thema: BrickLink sortiert
+    Teile nach Form („Minifigure, Utensil, Decorated"). Bedruckte Teile tragen
+    dort aber eine zweite Nummer – die der Figur, zu der sie gehören. Beim
+    Karbonitblock steht `sw0978` daneben, und `sw…` heißt Star Wars.
+
+    Zwei Kataloge, zwei Nummern: Rebrickable nennt dasselbe Teil
+    `87561pr0001`, BrickLink `87561pb01`. Führt die eigene Nummer zu nichts,
+    wird die Entsprechung bei Rebrickable erfragt.
+    """
+    if not integrations.bricklink_enabled():
+        return None
+    nummern = [item_id]
+    # Bewusst über den Index: Die Liste wächst noch, während sie durchlaufen
+    # wird – die bei Rebrickable erfragte Nummer kommt hinten dran.
+    i = 0
+    while i < len(nummern):
+        nr = nummern[i]
+        i += 1
+        try:
+            d = integrations.bricklink_item("part", nr)
+        except Exception:
+            d = None
+        if d is None:
+            # Andere Schreibweise? Rebrickable kennt die Entsprechung.
+            if integrations.rebrickable_enabled() and len(nummern) == 1:
+                try:
+                    bl = integrations.bricklink_nummer_fuer_teil(item_id)
+                except Exception:
+                    bl = ""
+                if bl and bl not in nummern:
+                    nummern.append(bl)
+            continue
+        for stueck in re.split(r"[,;\s]+", d.get("alternate_no") or ""):
+            thema = themes.from_minifig_number(stueck.strip())
+            if thema:
+                return thema
+    return None
+
+
 def _theme_nachschlagen(item_id: str, item_type: str) -> str | None:
     """Thema für Sets und Teile – erst BrickLink, dann die eigenen Daten.
 
@@ -2417,7 +2459,11 @@ def _theme_nachschlagen(item_id: str, item_type: str) -> str | None:
     if item_id.startswith(("fig-", "manuell-", "custom-")):
         return None
     thema = None
-    if integrations.bricklink_enabled():
+    # Bei Teilen zuerst die Zweitnummer: Sie nennt ein echtes Thema, während
+    # die Kategorie nur die Form beschreibt.
+    if (item_type or "").lower() == "part":
+        thema = _thema_aus_zweitnummer(item_id)
+    if not thema and integrations.bricklink_enabled():
         try:
             cid = integrations.bricklink_category_id(item_type, item_id)
         except Exception:

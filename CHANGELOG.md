@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.92.0 – August 2026
+
+### Neu
+- 🗂️ **Teile bekommen ihr Thema doch – über die Zweitnummer.** BrickLink
+  führt Teile nach Form („Minifigure, Utensil, Decorated"), aber bedruckte
+  Teile tragen im Katalog die Nummer der Figur, zu der sie gehören: Beim
+  Karbonitblock mit Han Solo steht **`sw0978`** daneben – und `sw…` heißt
+  Star Wars. „🔄 Themen nachladen" liest das jetzt aus
+- 🔁 **Zwei Kataloge, zwei Nummern.** Rebrickable nennt dasselbe Teil
+  `87561pr0001`, BrickLink `87561pb01`. Führt die eigene Nummer zu nichts,
+  wird die Entsprechung bei Rebrickable erfragt und der Abruf wiederholt
+- ✅ Ein echtes Thema hat Vorrang vor der Formkategorie
+
+> **Korrektur zu 1.90.0.** Dort stand, für Teile ließe sich grundsätzlich
+> nichts abrufen. Das stimmte nicht: Die *Kategorie* eines Teils sagt nichts
+> über das Thema – die *Zweitnummer* sehr wohl. Der Hinweis bei „Ohne Thema"
+> ist entsprechend richtiggestellt.
+
 ## 1.91.0 – August 2026
 
 ### Behoben

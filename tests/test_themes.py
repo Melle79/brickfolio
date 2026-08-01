@@ -505,3 +505,81 @@ def test_zu_langes_thema_wird_abgewiesen(client):
     eid = client.get("/api/collection").json()["items"][0]["id"]
     r = client.patch(f"/api/collection/{eid}", json={"theme": "x" * 61})
     assert r.status_code == 422
+
+
+# ------------------------------- Teile: Thema über die Zweitnummer (1.92.0)
+
+def test_teil_bekommt_thema_aus_der_zweitnummer(client, monkeypatch):
+    """BrickLink führt den Karbonitblock als „Minifigure, Utensil, Decorated" –
+    das ist eine Form, kein Thema. Daneben steht aber `sw0978`."""
+    _add(client, "87561pb01", "Carbonite Block with Han Solo", item_type="part")
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_item", lambda t, n: {
+        "no": n, "name": "Carbonite Block", "alternate_no": "sw0978"})
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Minifigure, Utensil")
+    main._thema_nachtragen("87561pb01", "part")
+    assert client.get("/api/collection").json()["items"][0]["theme"] == "Star Wars"
+
+
+def test_zweitnummer_hat_vorrang_vor_der_form(client, monkeypatch):
+    """Ein echtes Thema schlägt „Minifigure, Utensil, Decorated"."""
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_item", lambda t, n: {
+        "alternate_no": "sw0978"})
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Minifigure, Utensil")
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, n: "65")
+    assert main._theme_nachschlagen("87561pb01", "part") == "Star Wars"
+
+
+def test_rebrickable_nummer_wird_auf_bricklink_umgeschrieben(client, monkeypatch):
+    """Rebrickable sagt `87561pr0001`, BrickLink `87561pb01` – erst die
+    Entsprechung führt zur Zweitnummer."""
+    gefragt = []
+
+    def fake_item(typ, nr):
+        gefragt.append(nr)
+        if nr != "87561pb01":
+            raise LookupError("nicht im Katalog")
+        return {"alternate_no": "sw0978"}
+
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "rebrickable_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_item", fake_item)
+    monkeypatch.setattr(integrations, "bricklink_nummer_fuer_teil",
+                        lambda nr: "87561pb01")
+    assert main._thema_aus_zweitnummer("87561pr0001") == "Star Wars"
+    assert gefragt == ["87561pr0001", "87561pb01"]
+
+
+def test_ohne_zweitnummer_bleibt_es_bei_der_kategorie(client, monkeypatch):
+    """Ein schlichter Stein hat keine Figurennummer – dann zählt die Form."""
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_item",
+                        lambda t, n: {"alternate_no": ""})
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, n: "5")
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Brick")
+    assert main._theme_nachschlagen("3001", "part") == "Brick"
+
+
+def test_unbekanntes_kuerzel_in_der_zweitnummer_zaehlt_nicht(monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_item",
+                        lambda t, n: {"alternate_no": "xyz9999"})
+    assert main._thema_aus_zweitnummer("1234pb01") is None
+
+
+def test_zweitnummer_ohne_bricklink_schluessel_fragt_nicht(monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: False)
+
+    def darf_nicht(*a, **k):
+        raise AssertionError("ohne Schlüssel darf nichts abgerufen werden")
+
+    monkeypatch.setattr(integrations, "bricklink_item", darf_nicht)
+    assert main._thema_aus_zweitnummer("87561pb01") is None
+
+
+def test_mehrere_zweitnummern_erstes_treffendes_kuerzel_zaehlt(monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_item",
+                        lambda t, n: {"alternate_no": "1234, cty0123"})
+    assert main._thema_aus_zweitnummer("1234pb01") == "City"

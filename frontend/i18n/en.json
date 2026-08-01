@@ -175,7 +175,7 @@
  "Bitte mindestens 8 Zeichen": "Please use at least 8 characters",
  "Bitte mindestens einen Namen angeben.": "Please enter at least a name.",
  "Bitte neu anmelden": "Please sign in again",
- "Bleiben welche übrig, hilft kein Abruf: Teile führt BrickLink nach Form, nicht nach Thema. Auf der Karte lässt sich das Thema von Hand setzen.": "If any are left, fetching will not help: BrickLink files parts by shape, not by theme. You can set the theme by hand on the card.",
+ "Bleibt danach etwas übrig, hat der Katalog dazu nichts: Teile führt BrickLink nach Form. Auf der Karte lässt sich das Thema von Hand setzen.": "If anything is left afterwards, the catalogue has nothing on it: BrickLink files parts by shape. You can set the theme by hand on the card.",
  "BrickLink Consumer Key": "BrickLink Consumer Key",
  "BrickLink Consumer Secret": "BrickLink Consumer Secret",
  "BrickLink Token": "BrickLink Token",

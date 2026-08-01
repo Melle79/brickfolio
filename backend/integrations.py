@@ -221,6 +221,24 @@ def recognize(raw_image: bytes) -> dict:
             "box": rahmen}
 
 
+def bricklink_nummer_fuer_teil(part_num: str) -> str:
+    """BrickLink-Nummer eines Teils über Rebrickable.
+
+    Die beiden Kataloge zählen Bedruckungen unterschiedlich: Bei Rebrickable
+    heißt der Karbonitblock `87561pr0001`, bei BrickLink `87561pb01`. Wer mit
+    der einen Nummer beim anderen anfragt, bekommt nichts. Rebrickable führt
+    die Entsprechung selbst mit.
+    """
+    resp = requests.get(
+        f"https://rebrickable.com/api/v3/lego/parts/{part_num}/",
+        params={"key": setting("rebrickable_key")},
+        headers={"User-Agent": USER_AGENT}, timeout=15)
+    if resp.status_code != 200:
+        return ""
+    ids = (resp.json().get("external_ids") or {}).get("BrickLink") or []
+    return ids[0] if ids else ""
+
+
 def rebrickable_minifig_image(fig_num: str) -> str:
     """Katalogbild einer Rebrickable-Minifigur (fig-…)."""
     resp = requests.get(
@@ -265,6 +283,10 @@ def bricklink_item(item_type: str, item_no: str) -> dict:
         "item_type": item_type,
         "name": html_mod.unescape(d.get("name", "")),
         "img_url": img,
+        # Zweitnummer aus dem Katalog. Bedruckte Teile tragen dort oft die
+        # Nummer der Figur, zu der sie gehören („sw0978") – und darin steckt
+        # das Thema, das der Kategorie eines Teils fehlt.
+        "alternate_no": d.get("alternate_no") or "",
         "year": d.get("year_released") or 0,
         "sub": str(d.get("year_released", "")),
         "bricklink_url": ("https://www.bricklink.com/v2/catalog/catalogitem.page?"

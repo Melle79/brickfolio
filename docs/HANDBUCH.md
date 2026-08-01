@@ -704,10 +704,19 @@ nachziehen.
 > häufigsten vorkommt. Voraussetzung ist, dass die Set-Inhalte schon
 > geladen wurden – das passiert beim Erfassen von selbst.
 
-**Teile bekommen kein Thema – und das lässt sich nicht abrufen.** BrickLink
-führt Teile nach **Form** („Brick, Modified"), nicht nach Thema. Für ein
-gedrucktes Teil wie `87561pr0001` gibt es dort schlicht kein „Star Wars" zu
-holen, „🔄 Themen nachladen" hilft also nicht. Dafür steht auf jeder Karte
+**Teile und ihr Thema.** BrickLink führt Teile nach **Form** („Minifigure,
+Utensil, Decorated") – ein Thema steht dort nicht. Bedruckte Teile tragen im
+Katalog aber eine **Zweitnummer**: Beim Karbonitblock mit Han Solo steht
+`sw0978` daneben, und `sw…` heißt Star Wars. Genau die liest „🔄 Themen
+nachladen" seit Version 1.92.0 aus.
+
+> Die beiden Kataloge zählen Bedruckungen unterschiedlich: Rebrickable nennt
+> dasselbe Teil `87561pr0001`, BrickLink `87561pb01`. Führt die eigene Nummer
+> zu nichts, fragt die App die Entsprechung bei Rebrickable nach und versucht
+> es damit erneut. Dafür braucht es beide Schlüssel.
+
+Bleibt danach etwas übrig – ein schlichter Stein etwa hat keine
+Figurennummer –, steht auf jeder Karte
 ein Feld **Thema**: eintippen (die Vorschlagsliste kennt alle Themen, die du
 schon hast), **Setzen** – fertig. Leeren stellt „Ohne Thema" wieder her. Ein
 von Hand gesetztes Thema bleibt stehen; die Automatik überschreibt nie eins,

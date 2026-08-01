@@ -681,10 +681,19 @@ from BrickLink; under *More* it can be filled in for existing data.
 > wins. This requires the set contents to have been loaded already – which
 > happens by itself when the set is added.
 
-**Parts get no theme – and no fetch can change that.** BrickLink files parts by
-**shape** ("Brick, Modified"), not by theme. For a printed part such as
-`87561pr0001` there simply is no "Star Wars" to fetch, so "🔄 Reload themes"
-will not help. Instead every card has a **Theme** field: type it (the
+**Parts and their theme.** BrickLink files parts by **shape** ("Minifigure,
+Utensil, Decorated") – no theme there. Printed parts, however, carry a **second
+number** in the catalogue: the carbonite block with Han Solo has `sw0978` next
+to it, and `sw…` means Star Wars. That is what "🔄 Reload themes" reads since
+version 1.92.0.
+
+> The two catalogues count printings differently: Rebrickable calls the same
+> part `87561pr0001`, BrickLink `87561pb01`. If your own number leads nowhere,
+> the app asks Rebrickable for the equivalent and tries again. This needs both
+> keys.
+
+If anything is left afterwards – a plain brick has no figure number – every
+card has a **Theme** field: type it (the
 suggestion list knows every theme you already have), press **Set** – done.
 Clearing it restores "No theme". A theme set by hand stays put; the automatic
 lookup never overwrites one that is already there. This is also how you fix a

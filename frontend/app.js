@@ -2980,8 +2980,8 @@ function renderThemeGroups(list, items) {
         ? `<p class="search-hint">${esc(tr("Für diese Einträge ist noch kein "
           + "Thema bestimmt."))} <button class="mini-btn" data-theme-fix>`
           + `${esc(tr("🔄 Themen nachladen"))}</button><br>`
-          + `${esc(tr("Bleiben welche übrig, hilft kein Abruf: Teile führt "
-            + "BrickLink nach Form, nicht nach Thema. Auf der Karte lässt "
+          + `${esc(tr("Bleibt danach etwas übrig, hat der Katalog dazu "
+            + "nichts: Teile führt BrickLink nach Form. Auf der Karte lässt "
             + "sich das Thema von Hand setzen."))}</p>` : ""}</div>
     </section>`;
     // Platzhalterhöhe, solange die Karten fehlen. Ohne sie stehen alle
