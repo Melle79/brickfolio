@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.99.0 – August 2026
+
+### Neu
+- 🔎 **Der Absturz ist gefunden – und er liegt nicht in der App.** Die
+  Absturzliste von Edge zeigt 17 Abstürze über vier Tage, **alle unter
+  derselben Bucket-ID** und an derselben Stelle im Programm: `P6 = renderer`
+  (der Tab selbst), `P3 = Microsoft_Edge_Framework` (Edges eigener Code),
+  `P7 = 0x6` (auf macOS SIGABRT). Drei davon treffen sekundengenau die
+  „OHNE ABSCHIED"-Einträge unseres Speicher-Verlaufs – die übrigen vierzehn
+  hat die App nie gesehen, weil sie gar nicht offen war
+- 💡 **Der Weg dorthin steht jetzt in der App.** Beim Speicher-Verlauf hängt
+  ein Hinweis: Bleibt die Kurve flach und der Tab stirbt trotzdem, steht der
+  echte Grund in `edge://crashes` – und gleiche Bucket-ID heißt gleicher
+  Fehler des Browsers
+
+> **Was das für die Diagnose bedeutet.** Sieben Versionen lang habe ich in der
+> App gesucht: Hintergrundbilder, Glasflächen im Nova-Design, entpackte Fotos,
+> die Sammlungsansicht. Jede These war messbar falsch, weil der Tab immer bei
+> 6 bis 8 Megabyte starb – zuletzt im **Vordergrund**, auf einem Mac mit
+> 16 GB. Die Zahlen haben die App früh entlastet; was fehlte, war der Blick in
+> die Absturzliste des Browsers. Der steht jetzt dort, wo man ihn sucht.
+
 ## 1.98.0 – August 2026
 
 ### Behoben

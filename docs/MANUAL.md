@@ -1619,6 +1619,22 @@ does not. The summary therefore tells four cases apart:
 Every reading also carries the **server's start time**; if it jumps, the
 container has restarted.
 
+> **When the curve stays flat and the tab dies anyway.** Then it is not the
+> app, and the only place with the real reason is the browser's own crash
+> list: `edge://crashes` or `chrome://crashes`. Every entry has a **bucket
+> ID** – it groups crashes with the same cause. If every entry carries the
+> same ID, it is **always the same fault**, and a fault of the browser.
+>
+> That is how it went here: 17 crashes across four days, all under bucket ID
+> `8e89b35907…`, all with `P6 = renderer` (the tab itself), `P3 =
+> Microsoft_Edge_Framework` (Edge's own code), `P7 = 0x6` (SIGABRT on macOS –
+> the process aborts itself) and always at the same spot in the program. Three
+> of them landed exactly on the moments where the memory trace also recorded
+> "without saying goodbye" – the other fourteen the app never saw. In such a
+> case what helps is: **update the browser**, **turn off hardware
+> acceleration** (`edge://settings/system`), and report one of the entries via
+> "Send feedback".
+
 > **What the number says – and what it does not.** What is measured is the
 > **JavaScript memory**. Decoded images and the page structure itself are
 > **not** in it. If the curve grows, it is the app. If it stays flat while the

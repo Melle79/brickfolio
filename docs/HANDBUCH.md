@@ -1693,6 +1693,23 @@ vier Fälle:
 Dazu steht in jedem Messwert die **Startzeit des Servers**; springt sie, ist
 der Container neu gestartet.
 
+> **Wenn die Kurve flach bleibt und der Tab trotzdem stirbt.** Dann liegt es
+> nicht an der App, und der einzige Ort mit dem echten Grund ist die
+> Absturzliste des Browsers: `edge://crashes` bzw. `chrome://crashes`. Jeder
+> Eintrag hat eine **Bucket-ID** – sie fasst Abstürze mit derselben Ursache
+> zusammen. Tragen alle Einträge dieselbe ID, ist es **immer derselbe Fehler**,
+> und zwar einer des Browsers.
+>
+> So war es hier: 17 Abstürze über vier Tage, alle unter der Bucket-ID
+> `8e89b35907…`, alle mit `P6 = renderer` (der Tab selbst), `P3 =
+> Microsoft_Edge_Framework` (Edges eigener Code), `P7 = 0x6` (auf macOS
+> SIGABRT – der Prozess bricht sich selbst ab) und immer an derselben Stelle
+> im Programm. Drei davon fielen genau auf die Zeitpunkte, an denen auch der
+> Speicher-Verlauf „OHNE ABSCHIED" verzeichnete – die übrigen vierzehn hat die
+> App nie gesehen. In so einem Fall hilft: **Browser aktualisieren**,
+> **Hardwarebeschleunigung abschalten** (`edge://settings/system`) und einen
+> der Einträge über „Feedback senden" melden.
+
 > **Was die Zahl aussagt – und was nicht.** Gemessen wird der
 > **JavaScript-Speicher**. Entpackte Bilder und der Aufbau der Seite selbst
 > stecken da **nicht** drin. Wächst die Kurve, liegt es an der App. Bleibt
