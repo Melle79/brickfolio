@@ -572,6 +572,15 @@ Erkennungsdienst beim ersten Scan gefunden hat, **weniger als ein Drittel der
 Bildhöhe**, steckt auf dem Bild mehr als eine Reihe. Dann kommt ein Hinweis
 mit dem Weg über gemerkte Rahmen – wer will, kann es trotzdem versuchen.
 
+**Wie viele Anfragen ein Foto auslöst – und warum es eine Grenze gibt.** Die
+Erkennung stammt von **Brickognize** und wird dort **kostenlos**
+bereitgestellt. Jeder Ausschnitt ist eine eigene Anfrage: Ein Foto mit fünf
+Figuren sind also sechs. Damit daraus kein Dauerfeuer wird, gilt zweierlei:
+höchstens **10 Ausschnitte je Foto** (für beide Wege – automatische Trennung
+wie gemerkte Rahmen), und auf dem Server zusätzlich **40 Erkennungen je
+Minute** für die ganze Instanz. Wer darüber kommt, bekommt eine Meldung und
+wartet eine Minute. Im Alltag merkt man davon nichts.
+
 Für diese Fälle gibt es den **verlässlichen Weg**, und der ist schnell:
 
 1. Rahmen um eine Figur ziehen

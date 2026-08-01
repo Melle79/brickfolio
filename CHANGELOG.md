@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.96.0 – August 2026
+
+### Neu
+- 🛡 **Bremse vor dem Erkennungsdienst.** Brickognize stellt seine Erkennung
+  kostenlos bereit; jeder Ausschnitt ist eine eigene Anfrage. Der Server lässt
+  jetzt **40 Erkennungen je Minute** für die ganze Instanz durch und weist
+  darüber hinaus mit einer verständlichen Meldung ab. Die Grenze sitzt
+  bewusst im Server – sie gilt damit für alle Benutzer und auch dann, wenn
+  jemand an der Oberfläche vorbei anfragt
+- 🔢 **Auch von Hand gemerkte Rahmen sind gedeckelt.** Die automatische
+  Trennung hörte seit jeher bei 10 auf, die gemerkten Rahmen waren
+  unbegrenzt. Jetzt gilt dieselbe Zahl für beide Wege
+
+> **Geprüft und wieder verworfen:** Brickognize hat einen eigenen Endpunkt für
+> Minifiguren (`/predict/figs/`). Zweimal gegen `/predict/` gemessen – einmal
+> mit einem sauberen Figurenbild, einmal mit einem Ausschnitt samt
+> Tischplatte und angeschnittenen Nachbarfiguren: **beide Male dasselbe
+> Ergebnis, 89 % bzw. 90 %.** Kein Gewinn, dafür der Nachteil, dass man dann
+> kein Set mehr einrahmen könnte. Bleibt also bei `/predict/`.
+
 ## 1.95.0 – August 2026
 
 ### Behoben

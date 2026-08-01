@@ -554,6 +554,15 @@ scan fills **less than a third of the picture's height**, there is more than one
 row in the picture. A note then points to the remembered frames – and you can
 still try anyway.
 
+**How many requests one photo triggers – and why there is a limit.** The
+recognition comes from **Brickognize** and is provided there **free of charge**.
+Every crop is its own request: a photo with five figures means six. To keep that
+from turning into rapid fire, two limits apply: at most **10 crops per photo**
+(for both routes – automatic split as well as remembered frames), and on the
+server an additional **40 recognitions per minute** for the whole instance.
+Above that you get a message and wait a minute. In everyday use you never notice
+it.
+
 For those cases there is the **reliable route**, and it is quick:
 
 1. Drag a frame around one figure

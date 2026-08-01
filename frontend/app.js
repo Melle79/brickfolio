@@ -2266,6 +2266,14 @@ function scanAuswahlEinrichten() {
 
   $("scan-gemerkt-los").addEventListener("click", async () => {
     if (!gemerkteRahmen.length || !lastScanFile) return;
+    // Von Hand gezogene Rahmen waren bisher unbegrenzt – anders als die
+    // automatische Trennung, die seit jeher bei FIND_MAX aufhört. Dieselbe
+    // Zahl gilt jetzt für beide Wege.
+    if (gemerkteRahmen.length > FIND_MAX) {
+      toast(tr("Höchstens {max} Rahmen auf einmal – der Erkennungsdienst wird "
+        + "kostenlos bereitgestellt.", { max: FIND_MAX }));
+      return;
+    }
     const status = $("scan-status");
     const gefunden = [];
     try {
@@ -2651,6 +2659,7 @@ function mehrfachRahmen(boxen) {
    Einmal auf 2400 entpacken kostet dieselben ~300 ms **insgesamt** und hält
    gut 17 MB, deren Lebensdauer wir kennen. */
 const ARBEIT_KANTE = 2400;
+
 
 function arbeitBildFreigeben() {
   if (arbeitBild) { arbeitBild.bmp.close(); arbeitBild = null; }

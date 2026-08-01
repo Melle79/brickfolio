@@ -2683,8 +2683,38 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
 
 # ---------------------------------------------------------------- Scan
 
+# Brickognize stellt seine Erkennung kostenlos bereit – ein einzelner Dienst,
+# keine bezahlte Schnittstelle. Ein Foto kostet normalerweise eine Anfrage, mit
+# Ausschnitten ein paar mehr. Was hier verhindert wird, ist der Ausreißer: eine
+# Schleife, die aus einem Regalfoto vierzig Anfragen im Sekundentakt macht.
+# Die Grenze sitzt bewusst **hier** und nicht nur in der Oberfläche – sie gilt
+# damit für alle Benutzer der Instanz und auch dann, wenn jemand am Browser
+# vorbei anfragt.
+SCAN_FENSTER = 60           # Sekunden
+SCAN_MAX = 40               # Anfragen je Fenster, über die ganze Instanz
+_scan_zeiten: list = []
+_scan_sperre = threading.Lock()
+
+
+def _scan_kontingent() -> None:
+    """Eine Anfrage buchen – oder mit 429 abweisen."""
+    jetzt = time.time()
+    with _scan_sperre:
+        while _scan_zeiten and jetzt - _scan_zeiten[0] > SCAN_FENSTER:
+            _scan_zeiten.pop(0)
+        if len(_scan_zeiten) >= SCAN_MAX:
+            # Bewusst ohne eingesetzte Sekundenzahl: Der Satz ist der
+            # Übersetzungsschlüssel, und ein eingebauter Zahlenwert fände dort
+            # nie seine Entsprechung.
+            raise HTTPException(429, "Zu viele Erkennungen in kurzer Zeit. Der "
+                                     "Dienst wird kostenlos bereitgestellt – "
+                                     "bitte eine Minute warten.")
+        _scan_zeiten.append(jetzt)
+
+
 @app.post("/api/scan")
 def scan(file: UploadFile = File(...), user: dict = Depends(current_user)):
+    _scan_kontingent()
     raw = file.file.read()
     if not raw:
         raise HTTPException(400, "Kein Bild empfangen")
