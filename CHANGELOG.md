@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.91.0 – August 2026
+
+### Behoben
+- 🔍 **Ausschnitte kamen aus der Vorschau statt aus dem Foto.** Zugeschnitten
+  wurde bisher aus der auf 1200 Pixel verkleinerten Fassung – bei vielen
+  Figuren im Bild blieb einer einzelnen damit kaum mehr als ein Daumennagel,
+  und genau der ging zur Erkennung. Jetzt wird aus einer **Arbeitskopie mit
+  2400 Pixeln** geschnitten: gemessen an einem 12-MP-Foto **238×334 statt
+  120×168 Pixel – die vierfache Fläche**
+- 💬 **Ein Hinweis statt Rätselraten.** Bleibt ein einzelner Treffer unter
+  60 %, steht jetzt darüber, woran es liegt: Die Erkennung sucht **ein**
+  Objekt je Anfrage – bei vielen Figuren im Bild hilft ein Rahmen oder ein
+  Foto aus der Nähe
+
+> **Warum nicht direkt aus dem Original geschnitten wird.** Gemessen: Ein
+> Ausschnitt per Quellrechteck aus der 12-MP-Datei kostet rund 50 ms – **je
+> Ausschnitt**, weil dabei jedes Mal das ganze Bild entpackt wird. Bei vierzig
+> Figuren wären das vierzig volle Entpackvorgänge; daran ist der Tab schon
+> gestorben. Einmal auf 2400 entpacken kostet dieselben ~300 ms **insgesamt**
+> und hält rund 17 MB, deren Lebensdauer bekannt ist.
+
 ## 1.90.0 – August 2026
 
 ### Neu

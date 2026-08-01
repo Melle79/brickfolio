@@ -574,6 +574,18 @@ Der geht immer: mit dem Finger (oder der Maus) einen **Rahmen um eine Figur
 ziehen** und **🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird
 im Browser, zum Server geht nur der Ausschnitt.
 
+> **Wie viele Figuren aufs Bild dürfen.** Je kleiner eine Figur im Foto ist,
+> desto weniger bleibt von ihr übrig, wenn man sie herausschneidet – und
+> genau dieser Ausschnitt geht zur Erkennung. Ein Regalfoto mit vierzig
+> Figuren gibt jeder davon rund ein Fünfzigstel der Bildfläche; da kommt
+> selten mehr als ein Rateergebnis heraus, und die Karte sagt das dann auch
+> („nur mäßig sicher"). **Fünf bis zehn Figuren aus der Nähe** bringen
+> deutlich mehr als vierzig aus zwei Metern. Ab Version 1.91.0 wird
+> zugeschnitten aus einer Arbeitskopie mit 2400 Pixeln statt aus der
+> Vorschau mit 1200 – jeder Ausschnitt hat damit die **vierfache Fläche**,
+> gemessen an einem 12-Megapixel-Foto: 238×334 statt 120×168 Pixel. Das
+> ersetzt die Nähe nicht, holt aber heraus, was im Foto steckt.
+
 ### 4.2 Per Suche (Katalog)
 
 Unter dem Kamerabereich liegt die Textsuche. Sie versteht:

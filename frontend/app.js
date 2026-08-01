@@ -2091,6 +2091,12 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
 
 async function handlePhoto(file) {
   if (!file) return;
+  // Das Original bleibt als Datei-Handle liegen (nicht entpackt, kostet also
+  // nichts): Ausschnitte kommen von dort, nicht aus der Vorschau. Aus 1200 px
+  // geschnitten hat eine einzelne Figur unter vielen kaum 150 px Breite –
+  // damit kann die Erkennung wenig anfangen.
+  originalScanFile = file;
+  arbeitBildFreigeben();
   file = await verkleinern(file);
   lastScanFile = file;          // fürs Anlegen einer eigenen Figur aufheben
   updateScanCustomBtns();
@@ -2263,13 +2269,14 @@ function scanAuswahlEinrichten() {
     const status = $("scan-status");
     const gefunden = [];
     try {
-      const bild = await createImageBitmap(lastScanFile);
+      const werk = await arbeitBildHolen();
       try {
         for (let i = 0; i < gemerkteRahmen.length; i++) {
           status.hidden = false;
           status.querySelector("[data-scan-text]").textContent =
             tr("Figur {i} von {n} …", { i: i + 1, n: gemerkteRahmen.length });
-          const teil = await ausschnittBild(lastScanFile, gemerkteRahmen[i], bild);
+          const teil = await ausschnittBild(gemerkteRahmen[i], werk);
+          if (!teil) continue;
           const fd = new FormData();
           fd.append("file", teil, "scan.jpg");
           try {
@@ -2277,7 +2284,7 @@ function scanAuswahlEinrichten() {
             if (d.items && d.items[0]) gefunden.push(d.items[0]);
           } catch (_) { /* eine weniger, der Rest läuft weiter */ }
         }
-      } finally { bild.close(); }
+      } finally { arbeitBildFreigeben(); }
       if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
       renderScanResults(gefunden);
       toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
@@ -2299,7 +2306,8 @@ function scanAuswahlEinrichten() {
     knopf.disabled = true;
     $("scan-status").hidden = false;
     try {
-      const teil = await ausschnittBild(lastScanFile, scanAuswahl);
+      const teil = await ausschnittBild(scanAuswahl);
+      arbeitBildFreigeben();
       const form = new FormData();
       form.append("file", teil, "scan.jpg");
       const data = await api("/scan", { method: "POST", body: form });
@@ -2500,13 +2508,14 @@ async function alleFigurenErkennen(anzahlWunsch = 0) {
         + "anpassen."));
     }
     const gefunden = [];
-    const bild = await createImageBitmap(lastScanFile);
+    const werk = await arbeitBildHolen();
     try {
       for (let i = 0; i < boxen.length; i++) {
         status.hidden = false;
         status.querySelector("[data-scan-text]").textContent =
           tr("Figur {i} von {n} …", { i: i + 1, n: boxen.length });
-        const teil = await ausschnittBild(lastScanFile, boxen[i], bild);
+        const teil = await ausschnittBild(boxen[i], werk);
+        if (!teil) continue;
         try {
           const fd = new FormData();
           fd.append("file", teil, "scan.jpg");
@@ -2514,7 +2523,7 @@ async function alleFigurenErkennen(anzahlWunsch = 0) {
           if (d.items && d.items[0]) gefunden.push(d.items[0]);
         } catch (_) { /* eine Figur weniger, der Rest läuft weiter */ }
       }
-    } finally { bild.close(); }
+    } finally { arbeitBildFreigeben(); }
     if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
     renderScanResults(gefunden);
     toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
@@ -2575,21 +2584,63 @@ function mehrfachRahmen(boxen) {
 
 /* Ausschnitt aus dem aufgenommenen Bild – mit etwas Rand, weil die
    Erkennung mit ein wenig Umgebung besser zurechtkommt. */
-async function ausschnittBild(file, a, fertigesBild = null) {
+/* Arbeitskopie fürs Zuschneiden: das Original, entpackt auf höchstens
+   ARBEIT_KANTE. Warum nicht die 1200-px-Vorschau nehmen, die ohnehin dasteht?
+   Weil eine einzelne Figur unter vierzig darin keine 150 Pixel breit ist – und
+   genau dieser Ausschnitt geht an die Erkennung. Mit 2400 hat derselbe
+   Ausschnitt die **vierfache Fläche**.
+
+   Warum nicht gleich das Original? Gemessen: Ein Ausschnitt direkt aus der
+   12-MP-Datei (Quellrechteck) kostet rund 50 ms – **je Ausschnitt**, weil
+   dabei jedes Mal das ganze Bild entpackt wird. Bei vierzig Figuren wären das
+   vierzig volle Entpackvorgänge, und genau daran ist der Tab schon gestorben.
+   Einmal auf 2400 entpacken kostet dieselben ~300 ms **insgesamt** und hält
+   gut 17 MB, deren Lebensdauer wir kennen. */
+const ARBEIT_KANTE = 2400;
+
+function arbeitBildFreigeben() {
+  if (arbeitBild) { arbeitBild.bmp.close(); arbeitBild = null; }
+}
+
+async function arbeitBildHolen() {
+  if (arbeitBild) return arbeitBild;
+  const vorschau = $("preview-img");
+  const quelle = originalScanFile || lastScanFile;
+  if (!quelle) return null;
+  let bmp;
+  try {
+    const m = await bildMasse(quelle);
+    const f = Math.min(1, ARBEIT_KANTE / Math.max(m.w, m.h));
+    bmp = f < 1
+      ? await createImageBitmap(quelle, {
+        resizeWidth: Math.round(m.w * f), resizeHeight: Math.round(m.h * f),
+        resizeQuality: "high" })
+      : await createImageBitmap(quelle);
+  } catch (_) {
+    try { bmp = await createImageBitmap(lastScanFile); } catch (_2) { return null; }
+  }
+  // Die Rahmen liegen in den Maßen der Vorschau – hier wird umgerechnet.
+  const breite = (vorschau && vorschau.naturalWidth) || bmp.width;
+  arbeitBild = { bmp, faktor: bmp.width / breite };
+  return arbeitBild;
+}
+
+async function ausschnittBild(a, arbeit = null) {
   // Bei mehreren Ausschnitten wird **einmal** entpackt und wiederverwendet.
   // Vorher entpackte jeder Ausschnitt das Foto neu – bei fünf Figuren fünfmal
   // gut 20 MB, und die lagen zeitweise nebeneinander im Speicher.
-  const bmp = fertigesBild || await createImageBitmap(file);
-  const rand = Math.round(Math.max(a.w, a.h) * 0.08);
-  const x = Math.max(0, Math.round(a.x) - rand);
-  const y = Math.max(0, Math.round(a.y) - rand);
-  const w = Math.min(bmp.width - x, Math.round(a.w) + rand * 2);
-  const h = Math.min(bmp.height - y, Math.round(a.h) + rand * 2);
+  const werk = arbeit || await arbeitBildHolen();
+  if (!werk) return null;
+  const bmp = werk.bmp, k = werk.faktor;
+  const rand = Math.round(Math.max(a.w, a.h) * k * 0.08);
+  const x = Math.max(0, Math.round(a.x * k) - rand);
+  const y = Math.max(0, Math.round(a.y * k) - rand);
+  const w = Math.min(bmp.width - x, Math.round(a.w * k) + rand * 2);
+  const h = Math.min(bmp.height - y, Math.round(a.h * k) + rand * 2);
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
   c.getContext("2d").drawImage(bmp, x, y, w, h, 0, 0, w, h);
-  if (!fertigesBild) bmp.close();    // fremde Bilder schließt der Aufrufer
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;
   return new File([blob], "scan.jpg", { type: "image/jpeg" });
@@ -2603,7 +2654,16 @@ function renderScanResults(items) {
       oder legt sie unten als <b>eigene Figur</b> mit diesem Foto an.</p>`;
     return;
   }
-  box.innerHTML = items.map((it, i) => {
+  // Unter 60 % ist der Treffer geraten. Beim Regalfoto ist der Grund fast
+  // immer derselbe: Die Figur füllt einen Bruchteil des Bildes, und die
+  // Erkennung sieht **ein** Objekt je Anfrage – nicht vierzig.
+  const unsicher = items.length === 1 && items[0].score < 60 && lastScanFile;
+  box.innerHTML = (unsicher
+    ? `<p class="search-hint">${esc(tr("Nur mäßig sicher. Die Erkennung "
+      + "sucht immer ein einzelnes Objekt im Bild – stehen viele Figuren "
+      + "darauf, zieh einen Rahmen um eine davon oder fotografiere ein paar "
+      + "wenige aus der Nähe."))}</p>` : "")
+    + items.map((it, i) => {
     const scoreCls = it.score >= 60 ? "badge-score" : "badge badge-low";
     const base = `${it.item_id}${it.category ? " · " + it.category : ""}`;
     return `
@@ -3866,6 +3926,8 @@ let suggestTimer;
 let manualSelection = null;   // übernommener Vorschlag (Bild + BrickLink-Link)
 let customImgUrl = "";        // hochgeladenes Bild für eine eigene Figur
 let lastScanFile = null;      // zuletzt fotografiertes Bild (für Custom-Figuren)
+let originalScanFile = null;  // dasselbe Foto unverkleinert – nur fürs Zuschneiden
+let arbeitBild = null;        // Arbeitskopie daraus, einmal entpackt
 
 /* Die beiden „Foto vom Scan"-Knöpfe erscheinen erst, wenn wirklich eines da
    ist – einer unter dem Scan, einer im Custom-Bereich des Formulars. */

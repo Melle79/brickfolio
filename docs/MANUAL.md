@@ -555,6 +555,17 @@ That one always works: drag a **frame around one figure** with your finger
 (or the mouse) and tap **🔍 Recognise this crop**. The cropping happens in
 the browser, only the crop goes to the server.
 
+> **How many figures may go into one picture.** The smaller a figure is in the
+> photo, the less of it is left once it is cropped out – and that crop is what
+> recognition gets. A shelf photo with forty figures gives each of them about a
+> fiftieth of the frame; rarely more than a guess comes out of that, and the
+> card says so ("only moderately certain"). **Five to ten figures close up**
+> beat forty from two metres. Since version 1.91.0 crops are taken from a 2400
+> pixel working copy instead of the 1200 pixel preview – every crop therefore
+> has **four times the area**, measured on a 12 megapixel photo: 238×334
+> instead of 120×168 pixels. That is no substitute for getting closer, but it
+> gets out what the photo actually holds.
+
 ### 4.2 By search (catalogue)
 
 Below the camera area sits the text search. It understands:
