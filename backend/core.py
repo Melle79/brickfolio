@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "1.84.0"
+APP_VERSION = "1.85.0"
 
 
 def hash_password(password: str) -> str:
@@ -449,6 +449,19 @@ def init_db():
         if tcols and "item_gone" not in tcols:
             conn.execute("ALTER TABLE trades ADD COLUMN item_gone "
                          "INTEGER NOT NULL DEFAULT 0")
+        # Was genau wird da getauscht? Beim Anfragen wissen wir es aus dem
+        # Angebot – gespeichert war bisher nur Nummer und Name. Ohne Art und
+        # Bild lässt sich ein angenommener Tausch nicht sauber in die Sammlung
+        # übernehmen. Ältere Vorgänge bleiben leer und werden beim Übernehmen
+        # nach der Nummer geraten.
+        if tcols and "item_type" not in tcols:
+            for spalte in ("item_type", "img_url", "bricklink_url",
+                           "condition"):
+                conn.execute(f"ALTER TABLE trades ADD COLUMN {spalte} "
+                             "TEXT NOT NULL DEFAULT ''")
+        # Wann wurde der Artikel in die Sammlung bzw. auf eine Liste gebucht?
+        if tcols and "taken_at" not in tcols:
+            conn.execute("ALTER TABLE trades ADD COLUMN taken_at INTEGER")
         # Thema (Star Wars, City …) für die Sortierung der Sammlung
         for tbl in ("collection", "wanted"):
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}

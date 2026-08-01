@@ -4252,6 +4252,13 @@ class TradeStartBody(BaseModel):
     item_id: str = Field(min_length=1, max_length=60)
     item_name: str = Field(default="", max_length=200)
     text: str = Field(min_length=1, max_length=2000)
+    # Aus dem Angebot mitgenommen, damit ein angenommener Tausch später ohne
+    # Rückfrage in der Sammlung landen kann. Das Bild darf hier auch eine
+    # fremde Adresse sein – es kommt vom Hub, nicht aus dem eigenen Katalog.
+    item_type: str = Field(default="", max_length=20)
+    img_url: str = Field(default="", max_length=600)
+    bricklink_url: str = Field(default="", max_length=600)
+    condition: str = Field(default="", max_length=10)
 
 
 def _fremder_schluessel(member_id: str, name: str = "") -> str:
@@ -4324,10 +4331,18 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
         with core.db() as conn:
             conn.execute(
                 "INSERT INTO trades (id, direction, other_id, other_name, "
-                "item_id, item_name, status, created_at, updated_at, read_at) "
-                "VALUES (?, 'out', ?, ?, ?, ?, 'open', ?, ?, ?)",
+                "item_id, item_name, status, created_at, updated_at, read_at, "
+                "item_type, img_url, bricklink_url, condition) "
+                "VALUES (?, 'out', ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?)",
                 (tid, body.to, "", body.item_id, body.item_name,
-                 now_ts, now_ts, now_ts))
+                 now_ts, now_ts, now_ts,
+                 body.item_type if body.item_type in
+                 ("minifig", "set", "part") else "",
+                 body.img_url if body.img_url.startswith(
+                     ("http://", "https://")) else "",
+                 body.bricklink_url if body.bricklink_url.startswith("http")
+                 else "",
+                 body.condition if body.condition in ("new", "used") else ""))
             conn.execute(
                 "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
                 "created_at) VALUES (?, ?, 1, ?, ?)",
@@ -4409,6 +4424,71 @@ def hub_trade_status(trade_id: str, body: TradeStatusBody,
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
+
+
+class TradeTakeBody(BaseModel):
+    ziel: str = Field(default="sammlung", pattern="^(sammlung|liste)$")
+    list_id: int | None = Field(default=None, ge=1)
+    quantity: int = Field(default=1, ge=1, le=999)
+    condition: str = Field(default="used", pattern="^(new|used)$")
+    paid_price: float | None = Field(default=None, ge=0)
+
+
+def _art_raten(item_id: str) -> str:
+    """Set oder Figur? Für Vorgänge, die noch ohne Art gespeichert wurden.
+
+    Setnummern sind reine Ziffern, gern mit Variante dahinter (`21306-1`).
+    Alles andere (`sw0001`, `TX-20`) ist im Zweifel eine Minifigur – das ist
+    die häufigere Sorte und im Zweifelsfall in zwei Handgriffen korrigiert.
+    """
+    return "set" if re.fullmatch(r"\d{2,7}(-\d{1,2})?", item_id) else "minifig"
+
+
+@app.post("/api/hub/trades/{trade_id}/take")
+def hub_trade_take(trade_id: str, body: TradeTakeBody,
+                   user: dict = Depends(current_user)):
+    """Einen angenommenen Tausch verbuchen: in die Sammlung oder auf eine Liste.
+
+    Bis hierher war „Annehmen" nur eine Zusage im Gespräch – der Artikel selbst
+    blieb außen vor und musste von Hand nachgetragen werden. Gebucht wird
+    bewusst erst auf Knopfdruck: Zwischen Zusage und Karton in der Hand liegen
+    beim Tauschen oft Tage.
+    """
+    with core.db() as conn:
+        t = conn.execute("SELECT * FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+    if not t:
+        raise HTTPException(404, "Vorgang nicht gefunden")
+    if t["direction"] != "out":
+        raise HTTPException(400, "Das ist ein eigener Artikel, der weggeht.")
+    if t["status"] != "accepted":
+        raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
+
+    art = t["item_type"] or _art_raten(t["item_id"])
+    name = t["item_name"] or t["item_id"]
+    bild = t["img_url"] if t["img_url"].startswith(("http://", "https://")) \
+        else ""
+    if body.ziel == "liste":
+        if not user["is_dealer"]:
+            raise HTTPException(403, "Listen gibt es nur für Sammlerprofis")
+        if not body.list_id:
+            raise HTTPException(400, "Keine Liste ausgewählt")
+        ergebnis = add_list_item(body.list_id, ListItemBody(
+            item_id=t["item_id"], item_type=art, name=name, img_url=bild,
+            bricklink_url=t["bricklink_url"], qty=min(99, body.quantity),
+            condition=body.condition, paid_price=body.paid_price), user)
+    else:
+        ergebnis = add_item(AddItemBody(
+            item_id=t["item_id"], item_type=art, name=name, img_url=bild,
+            bricklink_url=t["bricklink_url"], quantity=body.quantity,
+            condition=body.condition, paid_price=body.paid_price,
+            paid_source="manual" if body.paid_price is not None else None,
+            notes=f"Tausch mit {t['other_name'] or t['other_id']}"), user)
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
+                     (int(time.time()), trade_id))
+    return {"ok": True, "ziel": body.ziel, "item_type": art,
+            "ergebnis": ergebnis}
 
 
 class TradeReportBody(BaseModel):

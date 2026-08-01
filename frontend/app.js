@@ -3298,12 +3298,18 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen" }) {
           ${text ? `<p class="search-hint">${esc(text)}</p>` : ""}
           ${felder.map((f) => `
             <label for="dlg-${esc(f.name)}">${esc(f.label)}</label>
+            ${f.typ === "auswahl" ? `
+            <select id="dlg-${esc(f.name)}" data-feld="${esc(f.name)}">
+              ${(f.optionen || []).map((o) => `<option value="${esc(o.wert)}"
+                ${o.wert === f.wert ? "selected" : ""}>${esc(o.label)}</option>`)
+    .join("")}
+            </select>` : `
             <input id="dlg-${esc(f.name)}" data-feld="${esc(f.name)}"
               type="${esc(f.typ === "zahl" ? "text" : f.typ || "text")}"
               ${f.typ === "zahl" ? 'inputmode="decimal"' : ""}
               value="${esc(f.wert == null ? "" : f.wert)}"
               placeholder="${esc(f.platzhalter || "")}"
-              maxlength="${Number(f.max) || 200}">`).join("")}
+              maxlength="${Number(f.max) || 200}">`}`).join("")}
           <div class="detail-row btn-grid">
             <button class="mini-btn add" data-ok>${esc(ok)}</button>
             <button class="mini-btn" data-abbruch>${esc(tr("Abbrechen"))}</button>
@@ -6240,7 +6246,7 @@ async function loadTrades(quiet = false) {
     // Beim Hintergrund-Nachladen nur zeichnen, wenn sich wirklich etwas
     // geändert hat – sonst flackert die Liste im Takt.
     const sig = JSON.stringify(trades.map((t) =>
-      [t.id, t.status, t.unread, t.updated_at, t.last_body]));
+      [t.id, t.status, t.unread, t.updated_at, t.last_body, t.taken_at]));
     if (quiet && sig === tradesSig) return;
     tradesSig = sig;
     if (!trades.length) {
@@ -6259,6 +6265,8 @@ async function loadTrades(quiet = false) {
               ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
+            ${t.direction === "out" && t.status === "accepted" && !t.taken_at
+    ? `<span class="badge badge-wanted">${tr("noch nicht verbucht")}</span>` : ""}
           </div>
         </div>
       </div>`).join("");
@@ -6287,14 +6295,70 @@ async function openTrade(id) {
 }
 
 let tradeSig = "";
+let offenerTausch = null;
+
+/* Angenommener Tausch → Sammlung oder Liste.
+
+   „Annehmen" war bisher eine reine Zusage im Gespräch: Der Artikel blieb, wo
+   er war, und musste von Hand nachgetragen werden. Gebucht wird trotzdem
+   nicht automatisch – zwischen Zusage und Karton in der Hand liegen beim
+   Tauschen gern ein paar Tage, und der Preis steht oft erst dann fest. */
+async function tauschUebernehmen() {
+  const t = offenerTausch;
+  if (!t) return;
+  let listen = [];
+  if (state.user && state.user.is_dealer) {
+    try { listen = (await api("/lists")).lists || []; } catch (e) { listen = []; }
+  }
+  const ziele = [{ wert: "sammlung", label: tr("Sammlung") }].concat(
+    listen.map((l) => ({ wert: `l${l.id}`, label: `🛒 ${l.name}` })));
+  const d = await appDialog({
+    titel: tr("Tausch übernehmen"),
+    text: t.taken_at
+      ? tr("Dieser Vorgang wurde schon einmal verbucht – noch einmal buchen "
+        + "erhöht die Anzahl.")
+      : tr("{was} von {wer} eintragen.",
+        { was: t.item_name || t.item_id, wer: t.other_name || "?" }),
+    felder: [
+      { name: "ziel", label: tr("Wohin?"), typ: "auswahl", optionen: ziele,
+        wert: "sammlung" },
+      { name: "anzahl", label: tr("Anzahl"), typ: "zahl", wert: "1" },
+      { name: "zustand", label: tr("Zustand"), typ: "auswahl", optionen: [
+        { wert: "used", label: tr("Gebraucht") },
+        { wert: "new", label: tr("Neu") }], wert: t.condition || "used" },
+      { name: "preis", label: tr("Bezahlt (optional)"), typ: "zahl",
+        platzhalter: "0,00" },
+    ],
+    ok: tr("Übernehmen"),
+  });
+  if (!d) return;
+  const aufListe = d.ziel !== "sammlung";
+  try {
+    const res = await api(`/hub/trades/${openTradeId}/take`, {
+      method: "POST", body: {
+        ziel: aufListe ? "liste" : "sammlung",
+        list_id: aufListe ? Number(d.ziel.slice(1)) : null,
+        quantity: Math.min(999, Math.max(1, Number(d.anzahl) || 1)),
+        condition: d.zustand,
+        paid_price: betragLesen(d.preis),
+      } });
+    const e = res.ergebnis || {};
+    toast(aufListe
+      ? (e.merged ? tr("Schon auf der Liste – Anzahl erhöht (jetzt {n}×)",
+        { n: e.qty }) : tr("Auf die Liste gesetzt 🛒"))
+      : (e.merged ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)",
+        { n: e.quantity }) : tr("Zur Sammlung hinzugefügt ✔")));
+    renderTrade();
+  } catch (e) { toast(e.message); }
+}
 
 async function renderTrade(quiet = false) {
   try {
     const { trade, messages } = await api(`/hub/trades/${openTradeId}`);
     // Nur neu zeichnen, wenn sich etwas geändert hat: sonst springt beim
     // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
-    const sig = JSON.stringify([trade.status, trade.item_gone, messages.map((m) =>
-      [m.id, m.delivered])]);
+    const sig = JSON.stringify([trade.status, trade.item_gone, trade.taken_at,
+      messages.map((m) => [m.id, m.delivered])]);
     if (quiet && sig === tradeSig) return;
     const box = $("trade-msgs");
     const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
@@ -6304,6 +6368,18 @@ async function renderTrade(quiet = false) {
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
     $("trade-gone").hidden = !trade.item_gone;
+    // Zugesagt heisst noch nicht verbucht: Solange der Tausch angenommen ist
+    // und der Artikel zu mir kommt, steht hier der Weg in die Sammlung.
+    offenerTausch = trade;
+    const holbar = trade.direction === "out" && trade.status === "accepted";
+    $("trade-take-row").hidden = !holbar;
+    if (holbar) {
+      $("trade-take").textContent = trade.taken_at
+        ? tr("✔ Verbucht am {datum} · noch einmal buchen",
+          { datum: new Date(trade.taken_at * 1000).toLocaleDateString(dateLocale()) })
+        : tr("📥 In die Sammlung übernehmen");
+      $("trade-take").classList.toggle("add", !trade.taken_at);
+    }
   zeigeSicherheitsnummer(trade.other_id);
     box.innerHTML = messages.map((m) => `
       <div class="trade-msg${m.mine ? " mine" : ""}">
@@ -6321,6 +6397,7 @@ function closeTrade() {
   $("report-overlay").hidden = true;   // hing es noch daran, geht es mit
   document.body.style.overflow = "";
   openTradeId = null;
+  offenerTausch = null;
   updatePolling();
   if (hubTab === "trades" && !$("view-hub").hidden) loadTrades(true);
 }
@@ -6451,10 +6528,18 @@ function wireHubViewOnce() {
       // Ablehnen beendet das Gespräch – dann soll das Fenster auch zugehen,
       // sonst steht man vor einem Chat, in dem es nichts mehr zu sagen gibt.
       if (status === "declined") { toast("Abgelehnt"); closeTrade(); }
-      else renderTrade();
+      else {
+        toast("Angenommen ✔");
+        await renderTrade();
+        // Zusage steht – jetzt gleich fragen, wohin der Artikel soll. Ohne
+        // das passierte auf „Annehmen" sichtbar gar nichts.
+        if (status === "accepted" && offenerTausch
+            && offenerTausch.direction === "out") await tauschUebernehmen();
+      }
     } catch (e) { toast(e.message); }
   };
   $("trade-accept").addEventListener("click", () => setStatus("accepted"));
+  $("trade-take").addEventListener("click", tauschUebernehmen);
   $("trade-decline").addEventListener("click", () => setStatus("declined"));
   $("trade-report").addEventListener("click", openReport);
   $("trade-delete").addEventListener("click", async () => {
@@ -6611,7 +6696,11 @@ async function sendInterest() {
   btn.disabled = true;
   try {
     const res = await api("/hub/trades", { method: "POST", body: {
-      to: o.m, item_id: o.i, item_name: o.n, text } });
+      to: o.m, item_id: o.i, item_name: o.n, text,
+      // Aus dem Angebot mitgeben: Wird der Tausch angenommen, lässt sich der
+      // Artikel damit ohne Nachfragen in die Sammlung buchen.
+      item_type: o.typ || "", img_url: o.bild || "",
+      bricklink_url: o.bl || "", condition: o.zustand || "" } });
     closeInterest();
     toast("Angefragt – das Gespräch steht unter Meine Vorgänge 💬");
     showHubTab("trades");
@@ -6704,7 +6793,9 @@ async function loadHubOffers() {
       const o = offers[i];
       const data = { m: o.member_id, i: o.item_id, n: o.name,
                      who: o.display_name, img: o.img_data || o.img_url,
-                     id_: o.item_id };
+                     id_: o.item_id, typ: o.item_type || "",
+                     bild: o.img_url || "", bl: o.bricklink_url || "",
+                     zustand: o.condition || "" };
       card.addEventListener("click", (ev) => {
         if (ev.target.closest("a, .card-img")) return;
         openOffer(data);

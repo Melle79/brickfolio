@@ -1278,14 +1278,47 @@ The conversation also has:
 If the other side takes an item out of the network, the conversation and the
 area above the history say **"no longer offered"**.
 
-### 12.5 Reporting
+### 12.5 Accepted – what now?
+
+"Accept" is only the promise inside the conversation. To make the item show up
+in your holdings there is the **📥 Add to my collection** button. It sits in the
+conversation right below the history as soon as a trade is **accepted** and the
+item is coming **to you** (that is, for requests you made yourself). Right
+after accepting, the window opens on its own.
+
+There you set:
+
+| Field | Meaning |
+|---|---|
+| **Where to?** | *Collection* – or one of your shopping lists *(collector pro)* |
+| **Quantity** | defaults to 1 |
+| **Condition** | New / Used – prefilled from the offer |
+| **Paid** | optional; goes into the card's purchase log (chapter 5.5) |
+
+The entry is created like any other: if the number already exists, the quantity
+goes up instead of a second row appearing. The notes say "Tausch mit …" so you
+can still tell later where the piece came from. Picture, number and type come
+from the offer; for trades from before version 1.85.0 the type is guessed from
+the number (digits only = set) and can be changed on the card.
+
+**Promise now, book later.** Booking only happens on the button – between the
+promise and the box in your hands there are often a few days, and the price
+usually isn't final until then. Until something is booked, the trade carries the
+tag **"not booked yet"** in the list. Afterwards the button says when it was
+booked; another click raises the quantity.
+
+**Incoming** requests (someone wants something of yours) have no such button:
+there a piece is leaving, not arriving. Removing it from the collection works as
+usual via the card.
+
+### 12.6 Reporting
 
 If something goes wrong, "⚑ Report" sends a report to the hub admin. The
 tick **"Include the conversation"** is the only way a history ever becomes
 readable: your instance decrypts it and discloses it voluntarily. Without the
 tick the admin only sees your reason. There is no back door in the hub.
 
-### 12.6 When access has been blocked
+### 12.7 When access has been blocked
 
 A hub admin can block access. The Trade tab then shows a clear notice. What it
 means:
@@ -1300,7 +1333,7 @@ means:
 Hence the advice on the notice: **do not disconnect.** Disconnecting releases
 the account, and the way back gets more awkward.
 
-### 12.7 Administration
+### 12.8 Administration
 
 Managing members, deciding invitation requests, looking at reports, tidying up
 offers – that does **not** happen in the app but in a separate admin console.

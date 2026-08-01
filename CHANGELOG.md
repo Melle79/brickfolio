@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.85.0 – August 2026
+
+### Behoben
+- 🤝 **„Annehmen" tat sichtbar nichts.** Der Vorgang wurde zwar auf
+  *angenommen* gesetzt, aber bei einem schon angenommenen Tausch änderte sich
+  nichts auf dem Bildschirm – und vor allem: Der Artikel selbst blieb außen
+  vor und musste von Hand nachgetragen werden. Jetzt bestätigt eine Meldung
+  die Zusage, und es geht direkt das Fenster **Tausch übernehmen** auf
+
+### Neu
+- 📥 **Angenommene Tausche verbuchen.** Wohin (Sammlung oder eine
+  Einkaufsliste), Anzahl, Zustand, bezahlter Preis – der Eintrag entsteht wie
+  ein normaler: gleiche Nummer erhöht die Anzahl, der Preis landet im
+  Kaufbuch, in den Notizen steht „Tausch mit …". Der Knopf steht im Gespräch
+  unter dem Verlauf, solange der Tausch angenommen ist und der Artikel zu mir
+  kommt
+- ⏳ **„noch nicht verbucht"** an angenommenen Vorgängen in der Liste – bis
+  der Artikel wirklich eingetragen ist. Gebucht wird nur auf Knopfdruck:
+  Zwischen Zusage und Karton in der Hand liegen beim Tauschen gern ein paar
+  Tage, und der Preis steht oft erst dann fest
+- 🏷 **Art, Bild und Zustand reisen mit der Anfrage mit.** Gespeichert waren
+  bisher nur Nummer und Name; damit ließ sich ein Tausch nicht sauber
+  übernehmen. Ältere Vorgänge raten die Art aus der Nummer (reine Ziffern =
+  Set)
+
 ## 1.84.0 – Juli 2026
 
 ### Behoben

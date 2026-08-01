@@ -1330,7 +1330,42 @@ Im Gespräch gibt es außerdem:
 Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
 über dem Verlauf **„nicht mehr angeboten"**.
 
-### 12.5 Melden
+### 12.5 Angenommen – und dann?
+
+„Annehmen" ist zunächst nur die Zusage im Gespräch. Damit der Artikel auch
+in deinen Beständen auftaucht, gibt es den Knopf **📥 In die Sammlung
+übernehmen**. Er steht im Gespräch direkt unter dem Verlauf, sobald ein
+Vorgang **angenommen** ist und der Artikel **zu dir** kommt (also bei
+Anfragen, die du gestellt hast). Gleich nach dem Annehmen geht das Fenster
+von selbst auf.
+
+Dort stellst du ein:
+
+| Feld | Bedeutung |
+|---|---|
+| **Wohin?** | *Sammlung* – oder eine deiner Einkaufslisten *(Sammlerprofi)* |
+| **Anzahl** | Standard 1 |
+| **Zustand** | Neu / Gebraucht – vorbelegt mit dem Zustand aus dem Angebot |
+| **Bezahlt** | freiwillig; landet im Kaufbuch der Karte (Kapitel 5.5) |
+
+Der Eintrag entsteht wie ein normaler: Ist die Nummer schon vorhanden, wird
+die Anzahl erhöht statt eine zweite Zeile anzulegen. In den Notizen steht
+„Tausch mit …", damit später nachvollziehbar bleibt, woher das Stück kam.
+Bild, Nummer und Art kommen aus dem Angebot; bei Vorgängen von vor Version
+1.85.0 wird die Art aus der Nummer geraten (reine Ziffern = Set) und lässt
+sich auf der Karte ändern.
+
+**Erst zusagen, später buchen.** Gebucht wird nur auf Knopfdruck – zwischen
+Zusage und Karton in der Hand liegen beim Tauschen gern ein paar Tage, und
+oft steht der Preis erst dann fest. Solange nichts gebucht ist, trägt der
+Vorgang in der Liste das Kennzeichen **„noch nicht verbucht"**. Danach steht
+auf dem Knopf, wann gebucht wurde; ein weiterer Klick erhöht die Anzahl.
+
+Bei **eingehenden** Anfragen (jemand möchte etwas von dir) gibt es den Knopf
+nicht: Da geht ein Stück weg, nicht rein. Austragen aus der Sammlung machst
+du wie gewohnt über die Karte.
+
+### 12.6 Melden
 
 Läuft etwas schief, geht über „⚑ Melden" eine Meldung an den Hub-Admin.
 Der Haken **„Nachrichtenverlauf mitschicken"** ist dabei die einzige
@@ -1338,7 +1373,7 @@ Möglichkeit, wie ein Verlauf jemals lesbar wird: Deine Instanz entschlüsselt
 ihn und legt ihn freiwillig offen. Ohne Haken sieht der Admin nur deine
 Begründung. Eine Hintertür im Hub gibt es nicht.
 
-### 12.6 Wenn der Zugang gesperrt wurde
+### 12.7 Wenn der Zugang gesperrt wurde
 
 Ein Hub-Admin kann Zugänge sperren. Dann steht im Tausch-Tab ein deutlicher
 Hinweis. Was das bedeutet:
@@ -1353,7 +1388,7 @@ Hinweis. Was das bedeutet:
 Deshalb der Rat auf dem Hinweis: **nicht die Verbindung trennen.** Trennen
 löst das Konto, und der Weg zurück wird umständlicher.
 
-### 12.7 Verwaltung
+### 12.8 Verwaltung
 
 Mitglieder verwalten, Einladungsanfragen entscheiden, Meldungen ansehen,
 Angebote aufräumen – das läuft **nicht** in der App, sondern in einer
