@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.90.0 – August 2026
+
+### Neu
+- 🗂️ **Thema von Hand setzen.** Auf jeder Karte steht jetzt ein Feld
+  **Thema** – mit Vorschlagsliste aus den Themen, die in der Sammlung schon
+  vorkommen, damit nicht „Star wars" neben „Star Wars" entsteht. Leeren setzt
+  den Eintrag zurück auf „Ohne Thema"
+- 🔒 Ein von Hand gesetztes Thema **bleibt stehen**: Die Automatik rührt ein
+  vorhandenes nie an
+
+> **Warum das nötig ist.** Für **Teile** kann die Automatik grundsätzlich
+> nichts liefern: BrickLink führt sie nach **Form** („Brick, Modified"), nicht
+> nach Thema – da ist nichts abzurufen, was hier stehen könnte. Bei Minifiguren
+> steckt das Thema in der Nummer (`sw…`), bei Sets in der Kategorie; bei Teilen
+> gibt es diesen Weg nicht. „🔄 Themen nachladen" hilft dort also nie, und
+> genau das steht jetzt auch bei der Gruppe „Ohne Thema".
+
 ## 1.89.0 – August 2026
 
 ### Neu

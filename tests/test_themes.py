@@ -467,3 +467,41 @@ def test_migration_laesst_kaufmaennisches_und_zeichen_stehen(tmp_path,
     with core.db() as conn:
         assert conn.execute("SELECT theme FROM collection").fetchone()[0] \
             == "Tom & Jerry"
+
+
+# --------------------------------------------- Thema von Hand setzen (1.90.0)
+
+def test_thema_laesst_sich_von_hand_setzen(client):
+    """Für Teile findet die Automatik keins – BrickLink sortiert sie nach Form."""
+    _add(client, "87561pr0001", "Block with Han Solo in Carbonite",
+         item_type="part")
+    eid = client.get("/api/collection").json()["items"][0]["id"]
+    r = client.patch(f"/api/collection/{eid}", json={"theme": "Star Wars"})
+    assert r.status_code == 200, r.text
+    assert client.get("/api/collection").json()["items"][0]["theme"] == "Star Wars"
+
+
+def test_thema_laesst_sich_wieder_leeren(client):
+    _add(client, "sw1213", "Yoda")
+    eid = client.get("/api/collection").json()["items"][0]["id"]
+    client.patch(f"/api/collection/{eid}", json={"theme": ""})
+    assert client.get("/api/collection").json()["items"][0]["theme"] == ""
+
+
+def test_automatik_ueberschreibt_gesetztes_thema_nicht(client, monkeypatch):
+    """Wer von Hand einsortiert, soll das nicht beim nächsten Abruf verlieren."""
+    _add(client, "87561pr0001", "Block with Han Solo", item_type="part")
+    eid = client.get("/api/collection").json()["items"][0]["id"]
+    client.patch(f"/api/collection/{eid}", json={"theme": "Star Wars"})
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "bricklink_category_id", lambda t, i: "5")
+    monkeypatch.setattr(main, "_top_category", lambda cid: "Brick, Modified")
+    main._thema_nachtragen("87561pr0001", "part")
+    assert client.get("/api/collection").json()["items"][0]["theme"] == "Star Wars"
+
+
+def test_zu_langes_thema_wird_abgewiesen(client):
+    _add(client, "sw1213", "Yoda")
+    eid = client.get("/api/collection").json()["items"][0]["id"]
+    r = client.patch(f"/api/collection/{eid}", json={"theme": "x" * 61})
+    assert r.status_code == 422

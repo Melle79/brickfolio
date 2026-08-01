@@ -670,6 +670,15 @@ from BrickLink; under *More* it can be filled in for existing data.
 > wins. This requires the set contents to have been loaded already – which
 > happens by itself when the set is added.
 
+**Parts get no theme – and no fetch can change that.** BrickLink files parts by
+**shape** ("Brick, Modified"), not by theme. For a printed part such as
+`87561pr0001` there simply is no "Star Wars" to fetch, so "🔄 Reload themes"
+will not help. Instead every card has a **Theme** field: type it (the
+suggestion list knows every theme you already have), press **Set** – done.
+Clearing it restores "No theme". A theme set by hand stays put; the automatic
+lookup never overwrites one that is already there. This is also how you fix a
+wrong classification.
+
 > The value of a theme card counts figures that sit inside your own sets only
 > proportionally – exactly like the total at the top. Otherwise the sum of the
 > cards would exceed the total value.

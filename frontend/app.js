@@ -2800,6 +2800,13 @@ function collCardDetails(it) {
           <input type="checkbox" data-share ${it.shared ? "checked" : ""}>
           🤝 In der Tauschbörse anbieten
         </label>` : ""}
+        <label>Thema</label>
+        <div class="detail-row">
+          <input data-theme list="themen-liste" class="fix-input"
+            placeholder="${esc(tr("z. B. Star Wars – leer = Ohne Thema"))}"
+            value="${esc(it.theme || "")}" maxlength="60">
+          <button class="mini-btn add" data-theme-save>${esc(tr("Setzen"))}</button>
+        </div>
         <label>Notizen <span class="notes-status" data-notes-status aria-live="polite"></span></label>
         <textarea data-notes placeholder="z. B. Zustand, Herkunft, Set …">${esc(it.notes)}</textarea>
         ${needsBlNo && state.bricklinkLookup ? `
@@ -2912,7 +2919,10 @@ function renderThemeGroups(list, items) {
       <div class="theme-body">${g.name === THEME_NONE
         ? `<p class="search-hint">${esc(tr("Für diese Einträge ist noch kein "
           + "Thema bestimmt."))} <button class="mini-btn" data-theme-fix>`
-          + `${esc(tr("🔄 Themen nachladen"))}</button></p>` : ""}</div>
+          + `${esc(tr("🔄 Themen nachladen"))}</button><br>`
+          + `${esc(tr("Bleiben welche übrig, hilft kein Abruf: Teile führt "
+            + "BrickLink nach Form, nicht nach Thema. Auf der Karte lässt "
+            + "sich das Thema von Hand setzen."))}</p>` : ""}</div>
     </section>`;
     // Platzhalterhöhe, solange die Karten fehlen. Ohne sie stehen alle
     // Gruppen übereinander auf einem Fleck, liegen damit alle im
@@ -3369,6 +3379,16 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
   });
 }
 
+/* Welche Themen gibt es hier schon? Als Vorschlagsliste, damit niemand
+   „Star wars" neben „Star Wars" anlegt. */
+function themenVorschlaege() {
+  const liste = $("themen-liste");
+  if (!liste) return;
+  const namen = [...new Set((state.collection || [])
+    .map((i) => i.theme).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  liste.innerHTML = namen.map((n) => `<option value="${esc(n)}">`).join("");
+}
+
 /* Betrag aus einem Feld lesen – Komma wie Punkt. */
 function betragLesen(text) {
   const n = Number(String(text || "").replace(",", ".").trim());
@@ -3614,6 +3634,35 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
       } finally {
         fixBtn.disabled = false;
       }
+    });
+  }
+
+  // Thema von Hand. Für Teile findet die Automatik keins: BrickLink sortiert
+  // sie nach **Form** („Brick, Modified"), nicht nach Thema – da ist nichts
+  // abzurufen, was hier stehen könnte. Ein von Hand gesetztes bleibt stehen,
+  // die Automatik überschreibt nie ein vorhandenes.
+  const themaEl = card.querySelector("[data-theme]");
+  const themaBtn = card.querySelector("[data-theme-save]");
+  if (themaEl && themaBtn) {
+    themenVorschlaege();
+    const setzen = async () => {
+      const wert = themaEl.value.trim();
+      if (wert === (item.theme || "")) return;
+      themaBtn.disabled = true;
+      try {
+        await api("/collection/" + id, { method: "PATCH", body: { theme: wert } });
+        item.theme = wert;
+        const inState = (state.collection || []).find((x) => x.id === id);
+        if (inState) inState.theme = wert;
+        toast(wert ? tr("Thema gesetzt: {t}", { t: wert })
+          : tr("Thema entfernt – der Eintrag steht jetzt ohne Thema."));
+        if ($("sort").value === "theme") loadCollection();
+      } catch (e) { toast(e.message); }
+      themaBtn.disabled = false;
+    };
+    themaBtn.addEventListener("click", setzen);
+    themaEl.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); setzen(); }
     });
   }
 

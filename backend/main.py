@@ -287,6 +287,10 @@ class UpdateItemBody(BaseModel):
     img_url: str | None = Field(default=None, max_length=600)
     bricklink_url: str | None = Field(default=None, max_length=600)
     year: int | None = Field(default=None, ge=0, le=2100)
+    # Von Hand gesetztes Thema. Leer heißt „Ohne Thema“ – und die
+    # Automatik rührt ein vorhandenes ohnehin nicht an, ein von Hand
+    # gesetztes bleibt also stehen.
+    theme: str | None = Field(default=None, max_length=60)
     paid_price: float | None = Field(default=None, ge=0)
 
 
@@ -3263,7 +3267,8 @@ def update_item(entry_id: int, body: UpdateItemBody,
                         "merged_into": other["id"]}
         fields, params = [], []
         for key in ("quantity", "condition", "notes", "item_id", "name",
-                    "img_url", "bricklink_url", "year", "paid_price"):
+                    "img_url", "bricklink_url", "year", "paid_price",
+                    "theme"):
             value = getattr(body, key)
             if value is not None:
                 fields.append(f"{key} = ?")

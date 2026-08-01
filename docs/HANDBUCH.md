@@ -692,6 +692,16 @@ nachziehen.
 > häufigsten vorkommt. Voraussetzung ist, dass die Set-Inhalte schon
 > geladen wurden – das passiert beim Erfassen von selbst.
 
+**Teile bekommen kein Thema – und das lässt sich nicht abrufen.** BrickLink
+führt Teile nach **Form** („Brick, Modified"), nicht nach Thema. Für ein
+gedrucktes Teil wie `87561pr0001` gibt es dort schlicht kein „Star Wars" zu
+holen, „🔄 Themen nachladen" hilft also nicht. Dafür steht auf jeder Karte
+ein Feld **Thema**: eintippen (die Vorschlagsliste kennt alle Themen, die du
+schon hast), **Setzen** – fertig. Leeren stellt „Ohne Thema" wieder her. Ein
+von Hand gesetztes Thema bleibt stehen; die Automatik überschreibt nie eins,
+das schon da ist. Damit lässt sich auch eine falsche Einsortierung
+geradeziehen.
+
 > Der Wert einer Themenkarte rechnet Figuren, die in euren eigenen Sets
 > stecken, nur anteilig mit – genau wie die Gesamtsumme oben. Sonst läge
 > die Summe der Karten über dem Gesamtwert.
