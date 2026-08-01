@@ -1619,6 +1619,17 @@ does not. The summary therefore tells four cases apart:
 Every reading also carries the **server's start time**; if it jumps, the
 container has restarted.
 
+**If the tab breaks off anyway, it no longer costs anything.** Since version
+2.0.0 the app remembers two things in the browser: **which view was open** and
+**what stood in the "Add manually" form**. If the app then starts without the
+previous session having said goodbye properly, you land back where you were and
+the unfinished entry is in the form again. On a normal start this does **not**
+happen – the app opens the scan tab as always, because nobody wants to land in
+the settings just because that is where they last looked something up.
+
+> Only text is rescued. A selected photo cannot be restored – but a half-filled
+> form is what actually hurts.
+
 > **When the curve stays flat and the tab dies anyway.** Then it is not the
 > app, and the only place with the real reason is the browser's own crash
 > list: `edge://crashes` or `chrome://crashes`. Every entry has a **bucket

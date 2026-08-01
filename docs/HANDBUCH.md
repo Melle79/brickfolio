@@ -1693,6 +1693,19 @@ vier Fälle:
 Dazu steht in jedem Messwert die **Startzeit des Servers**; springt sie, ist
 der Container neu gestartet.
 
+**Wenn der Tab trotzdem abbricht, kostet es nichts mehr.** Seit Version 2.0.0
+merkt sich die App zwei Dinge im Browser: **welche Ansicht offen war** und
+**was im Formular „Manuell erfassen" stand**. Startet die App danach, ohne dass
+sich die vorige Sitzung ordentlich verabschiedet hat, landet man wieder dort,
+wo man war, und die angefangene Eingabe steht wieder im Formular. Bei einem
+normalen Start passiert das **nicht** – dann öffnet die App wie immer den
+Scan-Tab, denn niemand will nach dem Öffnen in den Einstellungen landen, nur
+weil er dort zuletzt etwas nachgesehen hat.
+
+> Gerettet wird nur Text. Ein ausgewähltes Foto lässt sich nicht
+> wiederherstellen – aber ein halb ausgefülltes Formular ist ohnehin das, was
+> wehtut.
+
 > **Wenn die Kurve flach bleibt und der Tab trotzdem stirbt.** Dann liegt es
 > nicht an der App, und der einzige Ort mit dem echten Grund ist die
 > Absturzliste des Browsers: `edge://crashes` bzw. `chrome://crashes`. Jeder

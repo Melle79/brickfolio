@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0 – August 2026
+
+### Neu
+- 💾 **Ein Abbruch kostet nichts mehr.** Verhindern lässt sich der
+  Edge-Absturz nicht (siehe 1.99.0) – aber die App kommt jetzt zurück: Sie
+  merkt sich die **offene Ansicht** und die **angefangene Eingabe** im
+  Formular „Manuell erfassen". Nach einem Abbruch steht beides wieder da
+- 🎯 **Nur nach einem Abbruch.** Bei einem normalen Start öffnet die App wie
+  immer den Scan-Tab – niemand will nach dem Öffnen in den Einstellungen
+  landen, nur weil er dort zuletzt etwas nachgesehen hat. Unterschieden wird
+  am Abschiedszettel, der beim gewollten Ende geschrieben wird und beim
+  Abwürgen eben nicht
+
+> **Was nicht gerettet wird:** ein ausgewähltes Foto. Das ließe sich nur mit
+> erheblichem Aufwand ablegen, und der Schaden ist gering – neu fotografieren
+> dauert Sekunden. Ein halb ausgefülltes Formular mit Preis und Notiz ist das,
+> was wirklich wehtut.
+
 ## 1.99.0 – August 2026
 
 ### Neu

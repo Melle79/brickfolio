@@ -1434,11 +1434,14 @@ function priceLine(label, d) {
     + `<strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}${scopeFlagHtml(d)}</div>`;
 }
 
+const ANSICHT_KEY = "bf_ansicht";
+
 function showTab(name) {
   ["scan", "collection", "lists", "stats", "hub", "settings"].forEach((t) => {
     $("view-" + t).hidden = t !== name;
   });
   spur("Ansicht: " + name);
+  try { localStorage.setItem(ANSICHT_KEY, name); } catch (_) { /* egal */ }
   sammlungFreigeben(name);
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
@@ -1824,10 +1827,25 @@ function showApp() {
     if (state.hubConnected) syncTrades(true).then(refreshUnread);
   }).catch(() => {});
   startUpdateWatch();
-  diagStarten();
+  diagStarten();                 // setzt absturzZuvor
   initErrorReporting();
   loadNotifications();
-  showTab("scan");
+  // Nach einem Abbruch dorthin zurück, wo man war. Bei einem normalen Start
+  // bleibt es beim Scan-Tab – niemand will nach dem Öffnen in den
+  // Einstellungen landen, nur weil er dort zuletzt etwas nachgesehen hat.
+  let ansicht = "scan";
+  if (absturzZuvor) {
+    try {
+      const gemerkt = localStorage.getItem(ANSICHT_KEY);
+      if (gemerkt && ["scan", "collection", "lists", "stats", "hub",
+        "settings"].includes(gemerkt)) ansicht = gemerkt;
+    } catch (_) { /* egal */ }
+  }
+  showTab(ansicht);
+  if (absturzZuvor) {
+    entwurfHolen();
+    if (ansicht !== "scan") toast(tr("Nach dem Abbruch wieder da, wo du warst."));
+  }
 }
 
 async function doLogin() {
@@ -3841,6 +3859,60 @@ function updateScanCustomBtns() {
   if (b) b.hidden = !lastScanFile;
 }
 
+/* Angefangene Eingabe retten.
+
+   Der Tab kann jederzeit weg sein – nicht wegen der App, sondern weil der
+   Browser abbricht (siehe Speicher-Verlauf). Verhindern können wir das nicht,
+   aber es soll nichts kosten: Was im Formular „Manuell erfassen" steht, liegt
+   deshalb im Browser-Speicher und ist nach einem Abbruch wieder da.
+
+   Nur Text, keine Bilder – ein ausgewähltes Foto lässt sich nicht
+   wiederherstellen, und ein halb gefülltes Formular ist ohnehin das, was
+   wehtut. */
+const ENTWURF_KEY = "bf_entwurf";
+const ENTWURF_FELDER = ["m-name", "m-id", "m-qty", "m-notes", "m-paid"];
+let entwurfTimer = null;
+
+function entwurfSichern() {
+  clearTimeout(entwurfTimer);
+  entwurfTimer = setTimeout(() => {
+    try {
+      const d = {};
+      ENTWURF_FELDER.forEach((id) => { const e = $(id); if (e) d[id] = e.value; });
+      d.typ = $("m-type") ? $("m-type").value : "";
+      d.zustand = $("m-cond") ? $("m-cond").value : "";
+      d.custom = !!($("m-custom") && $("m-custom").checked);
+      // Leeres Formular braucht keinen Entwurf.
+      const inhalt = (d["m-name"] || "") + (d["m-id"] || "")
+        + (d["m-notes"] || "") + (d["m-paid"] || "");
+      if (inhalt.trim()) localStorage.setItem(ENTWURF_KEY, JSON.stringify(d));
+      else localStorage.removeItem(ENTWURF_KEY);
+    } catch (_) { /* Speicher voll – dann eben nicht */ }
+  }, 500);
+}
+
+function entwurfLoeschen() {
+  clearTimeout(entwurfTimer);
+  try { localStorage.removeItem(ENTWURF_KEY); } catch (_) { /* egal */ }
+}
+
+function entwurfHolen() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem(ENTWURF_KEY) || "null"); }
+  catch (_) { return; }
+  if (!d) return;
+  ENTWURF_FELDER.forEach((id) => { const e = $(id); if (e && d[id]) e.value = d[id]; });
+  if (d.typ && $("m-type")) $("m-type").value = d.typ;
+  if (d.zustand && $("m-cond")) $("m-cond").value = d.zustand;
+  if (d.custom && $("m-custom") && !$("m-custom").checked) {
+    $("m-custom").checked = true;
+    applyCustomMode();
+  }
+  $("manual-form").hidden = false;
+  updateManualListBtn();
+  toast(tr("Angefangene Eingabe wiederhergestellt ✔"));
+}
+
 /* Aus dem Scan heraus eine eigene Figur anlegen: Formular öffnen, in den
    Custom-Modus schalten und das Foto gleich als Bild übernehmen. */
 async function customFromScan() {
@@ -4418,6 +4490,7 @@ async function addManual() {
     toast(res.merged
       ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
       : "Zur Sammlung hinzugefügt ✔");
+    entwurfLoeschen();
     $("m-name").value = ""; $("m-id").value = "";
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
@@ -4561,6 +4634,7 @@ async function addManualToList(listId) {
       ? tr("Schon auf der Liste – Anzahl erhöht (jetzt {n}×)", { n: res.qty })
       : "Auf die Liste gesetzt 🛒");
     $("manual-list-pick").hidden = true;
+    entwurfLoeschen();
     $("m-name").value = ""; $("m-id").value = "";
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
@@ -4593,6 +4667,7 @@ async function addManualWanted() {
     if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
     else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
     else toast("Auf die Wunschliste gesetzt ⭐");
+    entwurfLoeschen();
     $("m-name").value = ""; $("m-id").value = "";
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
     $("m-suggestions").innerHTML = "";
@@ -7208,6 +7283,8 @@ function spur(was) {
   } catch (_) { /* Speicher voll – dann eben nicht */ }
 }
 
+let absturzZuvor = false;   // vorige Sitzung endete ohne Abschied
+
 const DIAG_KEY = "bf_mem";
 const DIAG_MAX = 240;                 // 240 × 30 s = zwei Stunden
 const DIAG_TAKT = 30000;
@@ -7277,6 +7354,11 @@ function diagMessen(grund = "", geplant = null) {
       const vorher = diagLesen();
       const letzte = vorher.length ? vorher[vorher.length - 1].t : 0;
       if (weg && weg + 2000 >= letzte) punkt.sauber = 1;
+      // Kein Abschied, kein gewolltes Neuladen, nicht vom Browser weggeräumt:
+      // Dann ist die Sitzung abgebrochen. Danach holt die App zurück, was
+      // vorher offen war – der Absturz soll nichts mehr kosten.
+      absturzZuvor = !punkt.sauber && !geplant && !document.wasDiscarded
+        && vorher.length > 0;
     } catch (_) { /* egal */ }
   }
   const liste = diagLesen();
@@ -8632,6 +8714,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const f = $("manual-form");
     f.hidden = !f.hidden;
     if (!f.hidden) { updateManualListBtn(); $("m-name").focus(); }
+  });
+  ["m-name", "m-id", "m-qty", "m-notes", "m-paid"].forEach((id) => {
+    const e = $(id);
+    if (e) e.addEventListener("input", entwurfSichern);
+  });
+  ["m-type", "m-cond"].forEach((id) => {
+    const e = $(id);
+    if (e) e.addEventListener("change", entwurfSichern);
   });
   $("btn-manual-list").addEventListener("click", pickListForManual);
   $("btn-manual-add").addEventListener("click", addManual);
