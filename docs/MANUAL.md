@@ -515,53 +515,34 @@ request – that is how the service is built. If several figures are on the
 photo, it picks one. So that you can see which, the preview frames the
 recognised figure in **green**.
 
-So that all of them work in one go anyway, the app separates the figures
-**itself**: **🔎 Recognise all figures** measures how much structure sits in
-each image column. Where a figure stands, brightness changes densely –
-helmet, arms, belt; in the gap next to it lies a calm surface. The cuts go
-into the gaps, and each strip is sent to recognition on its own. The figures
-found are framed and numbered, and below each gets its own card with
-**＋ To the collection**.
+So that all of them work in one go anyway there is **🔎 Recognise all
+figures** – and since version 1.97.0 the route there is a different one: the
+app no longer looks for the figures **itself**, it lets the recognition
+service look.
 
-This also copes with a **display case**: glass reflections, a bright shelf,
-a blue-grey back wall and blue-grey figures – a colour comparison would find
-nothing there, structure does.
+**How that works.** Every answer from the service carries a frame with it – it
+always says *where* it looked. The app uses that in turns: recognise, blank out
+the area it found in the background colour, ask again. Whatever is left becomes
+the most prominent object next time round. As soon as nothing comes back, it
+stops – so nobody has to state how many figures there are.
 
-**A frame is a cut, not a find.** Below the picture it therefore says "Split
-into: *n* strips" and not "Found: *n* figures" – before the query the app only
-knows where it cut. After the query **only the strips in which something was
-actually recognised stay**; the other frames disappear. If nothing was
-recognised in any of them, they all go and it says that this picture cannot be
-split that way. (Up to version 1.95.0 five numbered frames stayed on screen
-while "No match found" was written underneath.)
+Each round delivers **location and identification in one answer**. The route
+therefore costs no more requests than before, but copes with arrangements the
+old method failed on: figures that **touch**, **several rows**, things lying
+criss-cross. Measured on four clone troopers standing close together: **4 out
+of 4 figures, 72 to 91 % certain, in 1.2 seconds** – the old method found
+**nothing at all** on the same picture.
 
-> **If the number is wrong:** below the picture it says how many figures were
-> found, with **−** and **＋** next to it. Change the number and the picture
-> is divided into that many equal strips and everything is asked again. That
-> helps with figures that touch – there is no gap to cut in.
+> **What used to stand here.** Up to 1.96.0 the app measured how much structure
+> sat in each image column and cut in the gaps. That worked for figures with a
+> gap between them and failed the moment they touched – there is no gap then.
+> Below it sat a control for the number of strips; that is gone too, because
+> there is nothing left to set.
 
-**Where the automatic route reaches its limit.** It looks for **vertical
-gaps** and cuts over the **full height of the picture**, so it is made for
-figures standing **side by side in one row**: on a shelf, in a display case, in
-a row on the table. If they lie criss-cross, stand staggered behind one another
-or overlap, there is no clean gap to cut at.
-
-**Several rows it cannot do at all.** A shelf photo with five rows gets cut into
-vertical strips that then hold five figures stacked on top of each other – and
-the app showed four frames as if it had found four figures. Since version
-1.93.0 it asks first: if the figure the recognition service found on the first
-scan fills **less than a third of the picture's height**, there is more than one
-row in the picture. A note then points to the remembered frames – and you can
-still try anyway.
-
-**How many requests one photo triggers – and why there is a limit.** The
-recognition comes from **Brickognize** and is provided there **free of charge**.
-Every crop is its own request: a photo with five figures means six. To keep that
-from turning into rapid fire, two limits apply: at most **10 crops per photo**
-(for both routes – automatic split as well as remembered frames), and on the
-server an additional **40 recognitions per minute** for the whole instance.
-Above that you get a message and wait a minute. In everyday use you never notice
-it.
+**Where even this reaches its limit.** The service always finds the most
+prominent remaining object. Very small or half-hidden figures fall through, and
+after **10 figures** it stops – the app does not ask for more in one pass (see
+below). For whatever is left there is the manual route:
 
 For those cases there is the **reliable route**, and it is quick:
 

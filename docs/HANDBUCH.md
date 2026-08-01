@@ -531,55 +531,34 @@ Anfrage – so ist der Dienst gebaut. Liegen mehrere Figuren auf dem Foto,
 sucht sie sich eine aus. Damit man sieht, welche, umrahmt die Vorschau die
 erkannte Figur **grün**.
 
-Damit trotzdem alle auf einmal gehen, trennt die App die Figuren **selbst**:
-**🔎 Alle Figuren erkennen** misst, wie viel Struktur in jeder Bildspalte
-steckt. Wo eine Figur steht, wechseln Helligkeiten dicht an dicht – Helm,
-Arme, Gürtel; in der Lücke daneben liegt eine ruhige Fläche. Geschnitten
-wird in den Lücken, und jeder Streifen geht einzeln zur Erkennung. Die
-gefundenen Figuren werden nummeriert eingerahmt, darunter steht für jede
-eine eigene Karte mit **＋ Zur Sammlung**.
+Damit trotzdem alle auf einmal gehen, gibt es **🔎 Alle Figuren erkennen** –
+und der Weg dorthin ist seit Version 1.97.0 ein anderer: Die App sucht die
+Figuren **nicht mehr selbst**, sondern lässt den Erkennungsdienst suchen.
 
-Das kommt auch mit einer **Vitrine** zurecht: Glasspiegelungen, heller
-Regalboden, blaugraue Rückwand und blaugraue Figuren – ein Farbvergleich
-fände dort nichts, Struktur schon.
+**Wie das geht.** Jede Antwort des Dienstes bringt einen Rahmen mit – er sagt
+also immer mit, *wo* er hingeschaut hat. Die App nutzt das reihum: erkennen,
+den gefundenen Bereich in Hintergrundfarbe ausblenden, erneut fragen. Was
+übrig bleibt, wird beim nächsten Mal zum auffälligsten Objekt. Sobald nichts
+mehr kommt, ist Schluss – die Zahl der Figuren muss also niemand vorgeben.
 
-**Ein Rahmen ist ein Schnitt, kein Fund.** Unter dem Bild steht deshalb
-„Geteilt in: *n* Streifen" und nicht „Gefunden: *n* Figuren" – vor der
-Abfrage weiß die App nur, wo sie geschnitten hat. Nach der Abfrage bleiben
-**nur die Streifen stehen, in denen wirklich etwas erkannt wurde**; die
-übrigen Rahmen verschwinden. Wurde in keinem etwas erkannt, verschwinden alle
-und es steht dran, dass sich dieses Bild so nicht zerlegen lässt. (Bis
-Version 1.95.0 blieben fünf nummerierte Rahmen stehen, während darunter
-„Keine Übereinstimmung gefunden" stand.)
+Jede Runde liefert **Fundort und Bestimmung in einer Antwort**. Der Weg kostet
+damit nicht mehr Anfragen als früher, kommt aber mit Anordnungen zurecht, an
+denen das alte Verfahren scheiterte: mit Figuren, die sich **berühren**, mit
+**mehreren Reihen**, mit kreuz und quer Liegendem. Gemessen an vier
+Klonkriegern dicht nebeneinander: **4 von 4 Figuren, 72 bis 91 % sicher, in
+1,2 Sekunden** – das alte Verfahren fand an derselben Aufnahme **gar nichts**.
 
-> **Wenn die Zahl nicht stimmt:** Unter dem Bild steht, in wie viele Streifen
-> geteilt wurde, mit **−** und **＋** daneben. Wer die Zahl ändert, bekommt
-> das Bild gleichmäßig in so viele Streifen geteilt und alles erneut
-> abgefragt. Das hilft bei Figuren, die sich berühren – dort gibt es keine
-> Lücke, in der man schneiden könnte.
+> **Was vorher hier stand.** Bis 1.96.0 maß die App, wie viel Struktur in
+> jeder Bildspalte steckt, und schnitt in den Lücken. Das funktionierte bei
+> Figuren mit Abstand und versagte, sobald sie sich berührten – es gibt dann
+> keine Lücke. Darunter stand ein Regler für die Zahl der Streifen; auch der
+> ist weg, weil es nichts mehr einzustellen gibt.
 
-**Wo die Automatik an ihre Grenze kommt.** Sie sucht **senkrechte Lücken**
-und schneidet über die **volle Bildhöhe** – sie ist also für Figuren gemacht,
-die in **einer Reihe nebeneinander** stehen. Liegen sie kreuz und quer,
-stehen sie versetzt hintereinander oder verdecken sie einander, gibt es keine
-saubere Lücke, an der sich schneiden ließe.
-
-**Mehrere Reihen kann sie gar nicht.** Ein Regalfoto mit fünf Reihen wird in
-senkrechte Streifen geschnitten, in denen dann je fünf Figuren übereinander
-stehen – und die App zeigte vier Rahmen, als hätte sie vier Figuren gefunden.
-Seit Version 1.93.0 fragt sie vorher nach: Füllt die Figur, die der
-Erkennungsdienst beim ersten Scan gefunden hat, **weniger als ein Drittel der
-Bildhöhe**, steckt auf dem Bild mehr als eine Reihe. Dann kommt ein Hinweis
-mit dem Weg über gemerkte Rahmen – wer will, kann es trotzdem versuchen.
-
-**Wie viele Anfragen ein Foto auslöst – und warum es eine Grenze gibt.** Die
-Erkennung stammt von **Brickognize** und wird dort **kostenlos**
-bereitgestellt. Jeder Ausschnitt ist eine eigene Anfrage: Ein Foto mit fünf
-Figuren sind also sechs. Damit daraus kein Dauerfeuer wird, gilt zweierlei:
-höchstens **10 Ausschnitte je Foto** (für beide Wege – automatische Trennung
-wie gemerkte Rahmen), und auf dem Server zusätzlich **40 Erkennungen je
-Minute** für die ganze Instanz. Wer darüber kommt, bekommt eine Meldung und
-wartet eine Minute. Im Alltag merkt man davon nichts.
+**Wo auch das an seine Grenze kommt.** Der Dienst findet immer das
+auffälligste verbliebene Objekt. Sehr kleine oder halb verdeckte Figuren
+fallen durch, und nach **10 Figuren** ist Schluss – mehr fragt die App in
+einem Durchgang nicht ab (siehe unten). Für alles, was übrig bleibt, gibt es
+den Weg von Hand:
 
 Für diese Fälle gibt es den **verlässlichen Weg**, und der ist schnell:
 

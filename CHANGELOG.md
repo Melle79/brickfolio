@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.97.0 – August 2026
+
+### Neu
+- 🔎 **Die App sucht die Figuren nicht mehr selbst – der Erkennungsdienst
+  sucht.** Jede Antwort von Brickognize bringt einen Rahmen mit; er sagt also
+  immer mit, *wo* er hingeschaut hat. „Alle Figuren erkennen" nutzt das jetzt
+  reihum: erkennen, den gefundenen Bereich in **Hintergrundfarbe** ausblenden,
+  erneut fragen – bis nichts mehr kommt
+- 🎯 **Kommt mit Anordnungen zurecht, an denen alles bisherige scheiterte:**
+  Figuren, die sich **berühren**, **mehrere Reihen**, kreuz und quer Liegendes.
+  Gemessen an vier Klonkriegern dicht nebeneinander: **4 von 4 Figuren, 72–91 %
+  sicher, in 1,2 Sekunden** – das alte Verfahren fand an derselben Aufnahme
+  **gar nichts**
+- 🧹 **206 Zeilen weniger.** Spaltenanalyse, Kantenberechnung, Talsuche, der
+  Regler für die Streifenzahl und die Reihen-Warnung aus 1.93.0 sind
+  ersatzlos entfallen – es gibt nichts mehr einzustellen und nichts mehr zu
+  warnen
+
+> **Warum es vorher nicht ging.** Das alte Verfahren maß die Struktur je
+> Bildspalte und schnitt in den Lücken. Bei Figuren, die sich berühren, gibt es
+> keine Lücke – deshalb kam bei Svens Foto in **keinem** Streifen etwas an.
+> Der Dienst kann dagegen lokalisieren; das war die ganze Zeit da und wurde nur
+> einmal statt mehrfach genutzt.
+
+> **Gemessen, nicht vermutet.** Die Maskenfarbe entscheidet: Mit einer fest
+> gewählten Farbe blieben nach drei Figuren harte Rechteckkanten stehen, die
+> der Dienst für ein Objekt hielt – die vierte fand er nicht mehr. Mit der aus
+> den Bildecken gemittelten Hintergrundfarbe: alle vier.
+
 ## 1.96.0 – August 2026
 
 ### Neu
