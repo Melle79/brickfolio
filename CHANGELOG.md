@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.93.0 – August 2026
+
+### Behoben
+- 🚫 **Vier Rahmen, die nichts bedeuteten.** Bei einem Regalfoto mit mehreren
+  Reihen schnitt „🔎 Alle Figuren erkennen" das Bild in senkrechte Streifen –
+  in jedem standen dann fünf Figuren übereinander. Angezeigt wurden vier
+  nummerierte Rahmen, als wären es vier Figuren. Das ist schlimmer als kein
+  Ergebnis
+- ❓ **Jetzt fragt die App vorher.** Füllt die Figur, die der Erkennungsdienst
+  beim ersten Scan gefunden hat, **weniger als ein Drittel der Bildhöhe**,
+  steckt mehr als eine Reihe im Bild. Dann kommt ein Hinweis samt dem Weg
+  über gemerkte Rahmen – „Trotzdem versuchen" bleibt möglich
+
+> **Woher die App das weiß, ohne zu raten:** Der Erkennungsdienst liefert
+> beim ersten Scan seinen eigenen Rahmen mit („hier geschaut"). Wie groß der
+> im Verhältnis zum Bild ist, ist eine gemessene Zahl – keine Schätzung. Bei
+> einem einreihigen Foto füllt die Figur 60 bis 90 % der Höhe, beim Regalfoto
+> 15 %.
+
 ## 1.92.0 – August 2026
 
 ### Neu

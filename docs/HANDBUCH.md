@@ -549,11 +549,19 @@ fände dort nichts, Struktur schon.
 > abgefragt. Das hilft bei Figuren, die sich berühren – dort gibt es keine
 > Lücke, in der man schneiden könnte.
 
-**Wo die Automatik an ihre Grenze kommt.** Sie sucht **senkrechte Lücken** –
-sie ist also für Figuren gemacht, die **nebeneinander** stehen: im Regal, in
-der Vitrine, in einer Reihe auf dem Tisch. Liegen sie kreuz und quer, stehen
-sie versetzt hintereinander oder verdecken sie einander, gibt es keine
+**Wo die Automatik an ihre Grenze kommt.** Sie sucht **senkrechte Lücken**
+und schneidet über die **volle Bildhöhe** – sie ist also für Figuren gemacht,
+die in **einer Reihe nebeneinander** stehen. Liegen sie kreuz und quer,
+stehen sie versetzt hintereinander oder verdecken sie einander, gibt es keine
 saubere Lücke, an der sich schneiden ließe.
+
+**Mehrere Reihen kann sie gar nicht.** Ein Regalfoto mit fünf Reihen wird in
+senkrechte Streifen geschnitten, in denen dann je fünf Figuren übereinander
+stehen – und die App zeigte vier Rahmen, als hätte sie vier Figuren gefunden.
+Seit Version 1.93.0 fragt sie vorher nach: Füllt die Figur, die der
+Erkennungsdienst beim ersten Scan gefunden hat, **weniger als ein Drittel der
+Bildhöhe**, steckt auf dem Bild mehr als eine Reihe. Dann kommt ein Hinweis
+mit dem Weg über gemerkte Rahmen – wer will, kann es trotzdem versuchen.
 
 Für diese Fälle gibt es den **verlässlichen Weg**, und der ist schnell:
 

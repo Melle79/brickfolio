@@ -2489,10 +2489,45 @@ async function figurenFinden(file, anzahlWunsch = 0) {
 /* Alle gefundenen Figuren nacheinander erkennen lassen. */
 let letzteBoxen = [];
 
+/* Taugt die senkrechte Trennung für dieses Bild überhaupt?
+
+   Geschnitten wird über die **volle Höhe** – das ist für Figuren gedacht, die
+   in **einer** Reihe nebeneinander stehen. Bei einem Regalfoto mit fünf
+   Reihen steckt in jedem Streifen ein halbes Dutzend Figuren, und die App
+   zeigt vier Rahmen, als hätte sie vier Figuren gefunden. Das ist schlimmer
+   als kein Ergebnis.
+
+   Woran es sich erkennen lässt, ohne zu raten: Der Erkennungsdienst liefert
+   beim ersten Scan seinen eigenen Rahmen mit („hier geschaut"). Füllt die
+   eine Figur, die er gefunden hat, nur einen kleinen Teil der Bildhöhe, dann
+   steht auf dem Bild deutlich mehr als eine Reihe. */
+const REIHE_ANTEIL = 0.35;
+
+function mehrereReihenVermutet() {
+  const img = $("preview-img");
+  if (!scanBox || !img || !img.naturalHeight) return 0;
+  const anteil = (scanBox.lower - scanBox.upper) / img.naturalHeight;
+  return anteil > 0 && anteil < REIHE_ANTEIL ? anteil : 0;
+}
+
 async function alleFigurenErkennen(anzahlWunsch = 0) {
   if (!lastScanFile) return;
   const knopf = $("scan-alle");
   const status = $("scan-status");
+  const anteil = anzahlWunsch ? 0 : mehrereReihenVermutet();
+  if (anteil) {
+    const weiter = await appDialog({
+      titel: tr("Mehrere Reihen auf dem Bild?"),
+      text: tr("Die gefundene Figur füllt nur {p} % der Bildhöhe. Die "
+        + "automatische Trennung schneidet ausschließlich senkrecht über die "
+        + "volle Höhe – bei mehreren Reihen steckten in jedem Streifen "
+        + "mehrere Figuren. Verlässlich geht es über die gemerkten "
+        + "Rahmen: einen Rahmen um eine Figur ziehen, merken, wiederholen.",
+      { p: Math.round(anteil * 100) }),
+      ok: tr("Trotzdem versuchen"),
+    });
+    if (!weiter) return;
+  }
   knopf.disabled = true;
   try {
     const boxen = await figurenFinden(lastScanFile, anzahlWunsch);

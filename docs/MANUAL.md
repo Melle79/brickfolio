@@ -533,9 +533,18 @@ nothing there, structure does.
 > helps with figures that touch – there is no gap to cut in.
 
 **Where the automatic route reaches its limit.** It looks for **vertical
-gaps**, so it is made for figures standing **side by side**: on a shelf, in a
-display case, in a row on the table. If they lie criss-cross, stand staggered
-behind one another or overlap, there is no clean gap to cut at.
+gaps** and cuts over the **full height of the picture**, so it is made for
+figures standing **side by side in one row**: on a shelf, in a display case, in
+a row on the table. If they lie criss-cross, stand staggered behind one another
+or overlap, there is no clean gap to cut at.
+
+**Several rows it cannot do at all.** A shelf photo with five rows gets cut into
+vertical strips that then hold five figures stacked on top of each other – and
+the app showed four frames as if it had found four figures. Since version
+1.93.0 it asks first: if the figure the recognition service found on the first
+scan fills **less than a third of the picture's height**, there is more than one
+row in the picture. A note then points to the remembered frames – and you can
+still try anyway.
 
 For those cases there is the **reliable route**, and it is quick:
 
