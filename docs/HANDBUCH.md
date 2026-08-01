@@ -1654,11 +1654,18 @@ der Container neu gestartet.
 > Task-Manager des Browsers (Umschalt+Esc), welcher Tab wirklich wächst.
 > Auch das ist ein Ergebnis.
 
+Am Beginn jeder Sitzung steht außerdem das **Gerät**: System, Browser, ob die
+App installiert ist oder im Browser läuft, Arbeitsspeicher und
+Bildschirmgröße. Bricht eine Sitzung ab, rechnet die Zusammenfassung ihre
+**Laufzeit** aus – zweimal dieselbe Dauer wäre ein Muster.
+
 **Zuletzt passiert.** Unter der Kurve steht die **Spur**: Zwischen zwei
 Messwerten liegen 30 Sekunden, ein Absturz wartet darauf nicht. Deshalb wird
 sofort festgehalten, was gerade lief – Foto aufgenommen (mit Megapixeln und
 Dateigröße), verkleinert, Erkennung läuft und fertig, Ansicht gewechselt und
-vor allem: **in den Hintergrund / wieder da**. Steht als letzte Zeile vor
+vor allem: **in den Hintergrund / wieder da**. Dazu der Update-Vorgang: nach
+Update gesucht, Update angefordert, Sperre sichtbar, Server nicht erreichbar,
+Server wieder da. Steht als letzte Zeile vor
 einem Absturz „in den Hintergrund", war die Seite gar nicht im Vordergrund –
 dann hat das Betriebssystem den Tab weggeräumt (typisch, während die
 Kamera-App läuft), und nicht die App sich verschluckt.

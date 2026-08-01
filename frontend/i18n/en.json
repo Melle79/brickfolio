@@ -828,6 +828,7 @@
  "↕️ Sortierung der Sammlung": "↕️ Collection sort order",
  "↩︎ Wiederherstellen": "↩︎ Restore",
  "↻ {n}× hat die App selbst neu geladen (z. B. nach einem Server-Neustart) – das ist kein Absturz.": "↻ The app reloaded itself {n}× (for example after a server restart) – that is not a crash.",
+ "⏱ Abgestürzt nach {liste} Minuten Laufzeit.": "⏱ Crashed after {liste} minutes of runtime.",
  "☆ Auf die Wunschliste": "☆ To the wishlist",
  "☆ {n} fehlende auf die Wunschliste": "☆ {n} missing ones to the wishlist",
  "⚑ Melden": "⚑ Report",

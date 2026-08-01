@@ -7230,6 +7230,20 @@ function diagMessen(grund = "", geplant = null) {
     // `disc` sagt, ob der Browser den Tab wegen Speichermangel weggeräumt
     // hat – das ist der einzige Hinweis auf Speicher, den er herausrückt.
     if (geplant) punkt.p = geplant;
+    // Welches Gerät? Handy und Rechner sterben aus ganz verschiedenen
+    // Gründen – in den bisherigen Verläufen stand nie, welches es war.
+    try {
+      const ua = navigator.userAgent;
+      punkt.ger = [/Android/.test(ua) ? "Android"
+        : /iPhone|iPad/.test(ua) ? "iOS"
+          : /Windows/.test(ua) ? "Windows"
+            : /Mac/.test(ua) ? "Mac" : "?",
+      /Edg\//.test(ua) ? "Edge" : /Chrome/.test(ua) ? "Chrome"
+        : /Safari/.test(ua) ? "Safari" : "?",
+      matchMedia("(display-mode: standalone)").matches ? "als App" : "im Browser",
+      navigator.deviceMemory ? navigator.deviceMemory + " GB" : "",
+      `${screen.width}×${screen.height}`].filter(Boolean).join(" · ");
+    } catch (_) { /* egal */ }
     const nav = performance.getEntriesByType("navigation")[0];
     if (nav && nav.type) punkt.nav = nav.type;
     if (document.wasDiscarded) punkt.disc = 1;
@@ -7357,6 +7371,27 @@ function renderDiag() {
       + "gemessen werden nur Elemente und Bilder."));
   }
   teile.push(tr("{n} Elemente, {b} Bilder", { n: letzte.knoten, b: letzte.bilder }));
+  // Gerät aus dem jüngsten Sitzungsbeginn – steht nur dort.
+  for (let i = liste.length - 1; i >= 0; i--) {
+    if (liste[i].ger) { teile.push("📱 " + liste[i].ger); break; }
+  }
+  // Wie lange lief eine Sitzung, bevor sie abbrach? Bei zwei Abstürzen
+  // hintereinander mit derselben Dauer wäre das ein Muster, kein Zufall.
+  const dauern = [];
+  for (let i = 1; i < liste.length; i++) {
+    const p2 = liste[i];
+    if (p2.g !== "start" || p2.p || p2.disc || p2.sauber) continue;
+    for (let j = i - 1; j >= 0; j--) {
+      if (liste[j].g === "start") {
+        dauern.push(Math.round((p2.t - liste[j].t) / 60000));
+        break;
+      }
+    }
+  }
+  if (dauern.length) {
+    teile.push(tr("⏱ Abgestürzt nach {liste} Minuten Laufzeit.",
+      { liste: dauern.join(", ") }));
+  }
   if (abbruch) {
     teile.push(tr("⚠️ {n}× brach die Seite ab, ohne sich zu verabschieden – "
       + "das ist ein echter Absturz.", { n: abbruch }));
@@ -7901,6 +7936,9 @@ const UPDATE_GIVEUP_MS = 8 * 60 * 1000;
 let updateTimer = null;
 let updateLockedSince = 0;
 let serverStartedKnown = null;   // Startzeit des Servers, von dem diese Seite stammt
+// Nur einmal notieren, wenn der Server wegbleibt – sonst füllt ein Update die
+// ganze Spur mit derselben Zeile.
+let serverWeg = false;
 
 function fmtCountdown(sec) {
   const m = Math.floor(sec / 60);
@@ -7940,6 +7978,7 @@ async function pollUpdateStatus() {
   let next = UPDATE_POLL_MS;
   try {
     const s = await api("/update/status");
+    if (serverWeg) { serverWeg = false; spur("Server wieder da"); }
     state.appVersion = s.version;
     state.serverStartedAt = s.started_at;
 
@@ -7951,6 +7990,7 @@ async function pollUpdateStatus() {
       if (serverStartedKnown === null) {
         serverStartedKnown = s.started_at;
       } else if (s.started_at !== serverStartedKnown) {
+        spur("Server neu gestartet – App lädt neu");
         neuLadenMit("Server neu gestartet");
         return;
       }
@@ -7977,11 +8017,13 @@ async function pollUpdateStatus() {
       next = s.seconds_left <= 30 ? 3000 : UPDATE_POLL_MS;
     } else {
       showUpdateBar(false);
+      if (lock.hidden) spur("Update-Sperre sichtbar");
       showUpdateLock(true);
       next = UPDATE_WAIT_MS;
     }
   } catch (_) {
     // Server nicht erreichbar: läuft das Update gerade, ist das erwartet.
+    if (!serverWeg) { serverWeg = true; spur("Server nicht erreichbar"); }
     if (!lock.hidden) next = UPDATE_WAIT_MS;
   }
   if (!lock.hidden) {
@@ -8383,6 +8425,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         p.g === "start" && !p.p && !p.disc
           ? (p.sauber ? "ordentlich beendet" : "OHNE ABSCHIED") : "",
         p.nav && p.g === "start" ? "nav=" + p.nav : "",
+        p.ger || "",
         // Server-Neustart dort, wo seine Startzeit springt
         sprung ? "SERVER NEU GESTARTET" : "",
       ].filter(Boolean).join("  ·  ");
@@ -8463,6 +8506,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!confirm(tr("Update {wann} einspielen?", { wann }) + "\n\n"
         + tr("Die App sperrt sich für alle Benutzer und lädt danach neu."))) return;
       b.disabled = true;
+      spur("Update angefordert (" + (delay ? delay + " s" : "sofort") + ")");
       try {
         await api("/update/request", { method: "POST", body: { delay } });
         toast(delay ? "Update angekündigt ✔" : "Update angefordert ✔");
@@ -8490,6 +8534,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-update-check").addEventListener("click", async (ev) => {
     const btn = ev.currentTarget;
     btn.disabled = true;
+    spur("nach Update gesucht");
     const info = await checkForUpdate(true);
     renderUpdateInfo(info);
     if (info && !info.update_available && !info.error) {

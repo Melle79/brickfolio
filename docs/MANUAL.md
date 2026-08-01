@@ -1582,11 +1582,17 @@ container has restarted.
 > looking at `edge://crashes` and the browser's task manager (Shift+Esc) to
 > see which tab actually grows. That is a result too.
 
+Each session start also records the **device**: system, browser, whether the
+app is installed or running in a browser, memory and screen size. When a
+session breaks off, the summary works out how long it **ran** – the same
+duration twice would be a pattern.
+
 **What happened last.** Below the curve is the **trail**: two readings are 30
 seconds apart, and a crash does not wait that long. So whatever is going on is
 noted immediately – photo taken (with megapixels and file size), downscaled,
 recognition running and done, view switched, and above all: **went to the
-background / back again**. If the last line before a crash says "went to the
+background / back again**. Plus the update flow: checked for an update,
+update requested, lock visible, server unreachable, server back. If the last line before a crash says "went to the
 background", the page was not in front at all – then the operating system
 reclaimed the tab (typically while the camera app is running), rather than the
 app choking on something.

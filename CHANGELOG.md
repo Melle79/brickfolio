@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.89.0 – August 2026
+
+### Neu
+- 📱 **Welches Gerät?** Der Verlauf hält beim Sitzungsbeginn fest, worauf die
+  App läuft: System, Browser, **als App oder im Browser**, Arbeitsspeicher des
+  Geräts und Bildschirmgröße. Nach vier Abstürzen stand das in den Daten
+  bisher nirgends
+- ⏱ **„Abgestürzt nach … Minuten Laufzeit."** Die Zusammenfassung rechnet aus,
+  wie lange eine Sitzung lief, bevor sie abbrach. Zweimal dieselbe Dauer wäre
+  ein Muster und kein Zufall
+- 🔄 **Der Update-Vorgang steht jetzt in der Spur**: nach Update gesucht,
+  Update angefordert, Update-Sperre sichtbar, Server nicht erreichbar, Server
+  wieder da, Server neu gestartet
+
+> **Warum genau das.** Die beiden Abstürze vom 1.8. um 16:41 und 16:51 fielen
+> beide in den Update-Vorgang – und die Sitzungen liefen **8:27** bzw. **9:14**
+> Minuten, bevor der Tab starb. Der zweite lag außerdem **nicht** in der
+> Scan-Ansicht, womit meine Vermutung von vorhin („beide beim Fotografieren")
+> widerlegt ist. Beide Male: 7 MB von 4096 MB Grenze.
+
 ## 1.88.0 – August 2026
 
 ### Neu
