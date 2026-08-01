@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.98.0 – August 2026
+
+### Behoben
+- 🧭 **Die Reihum-Suche stand nicht in der Spur.** Sie kam in 1.97.0 dazu,
+  schrieb aber nichts mit – und ausgerechnet in die 46 Sekunden davor fiel ein
+  Absturz. Jetzt steht jede Runde einzeln drin: Start, jede gefundene Figur
+  mit Nummer und Sicherheit, Ende
+- 🧹 **Halber Speicherbedarf beim Suchen.** Bitmap und Zeichenfläche hielten
+  dieselbe Bildfläche doppelt, bis die Schleife fertig war. Die Bitmap wird
+  jetzt sofort nach dem ersten Zeichnen freigegeben; die Zeichenfläche wird
+  auch bei einem Fehler zuverlässig geleert
+- 🔁 **Abbruch bei doppeltem Fund.** Liefert der Dienst zweimal denselben
+  Bereich, hört die Suche auf, statt bis zum Anschlag weiterzufragen
+
+> **Gemessen:** fünf vollständige Durchläufe hintereinander, JS-Speicher
+> 2,4 → 2,9 MB. Ein halbes Megabyte auf fünf Läufe ist kein Leck, das einen
+> Tab umbringt – der Verdacht gegen den neuen Ablauf ist damit **nicht**
+> bestätigt, aber auch nicht widerlegt. Dafür sagt es beim nächsten Mal die
+> Spur.
+
 ## 1.97.0 – August 2026
 
 ### Neu

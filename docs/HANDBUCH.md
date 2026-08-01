@@ -1710,9 +1710,9 @@ Bildschirmgröße. Bricht eine Sitzung ab, rechnet die Zusammenfassung ihre
 Messwerten liegen 30 Sekunden, ein Absturz wartet darauf nicht. Deshalb wird
 sofort festgehalten, was gerade lief – Foto aufgenommen (mit Megapixeln und
 Dateigröße), verkleinert, Erkennung läuft und fertig, Ansicht gewechselt und
-vor allem: **in den Hintergrund / wieder da**. Dazu der Update-Vorgang: nach
+vor allem: **in den Hintergrund / wieder da**. Dazu der Update-Vorgang (nach
 Update gesucht, Update angefordert, Sperre sichtbar, Server nicht erreichbar,
-Server wieder da. Steht als letzte Zeile vor
+Server wieder da) und die Reihum-Suche mit jeder gefundenen Figur einzeln. Steht als letzte Zeile vor
 einem Absturz „in den Hintergrund", war die Seite gar nicht im Vordergrund –
 dann hat das Betriebssystem den Tab weggeräumt (typisch, während die
 Kamera-App läuft), und nicht die App sich verschluckt.

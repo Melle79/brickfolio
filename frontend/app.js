@@ -2375,14 +2375,18 @@ async function alleFigurenErkennen() {
   const status = $("scan-status");
   knopf.disabled = true;
   const gefunden = [], treffer = [];
-  let bmp = null;
+  const c = document.createElement("canvas");
+  spur("Reihum-Suche startet");
   try {
-    bmp = await createImageBitmap(lastScanFile);
-    const c = document.createElement("canvas");
+    // Die Bitmap wird nur einmal gebraucht: zum Füllen der Zeichenfläche.
+    // Danach halten beide dieselbe Bildfläche doppelt im Speicher – deshalb
+    // wird sie sofort wieder freigegeben und nicht erst am Ende.
+    const bmp = await createImageBitmap(lastScanFile);
     c.width = bmp.width;
     c.height = bmp.height;
     const ctx = c.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(bmp, 0, 0);
+    bmp.close();
     const farbe = hintergrundFarbe(ctx, c.width, c.height);
     const flaeche = c.width * c.height;
 
@@ -2413,13 +2417,23 @@ async function alleFigurenErkennen() {
         if (!gefunden.length) { gefunden.push(d.items[0]); treffer.push(kasten); }
         break;
       }
+      // Derselbe Fleck zweimal? Dann bringt Weitersuchen nichts mehr – und
+      // zehn Anfragen für ein und dieselbe Figur schon gar nicht.
+      const doppelt = treffer.some((t) => {
+        const bx = Math.max(0, Math.min(t.x + t.w, kasten.x + kasten.w)
+          - Math.max(t.x, kasten.x));
+        const by = Math.max(0, Math.min(t.y + t.h, kasten.y + kasten.h)
+          - Math.max(t.y, kasten.y));
+        return bx * by > 0.7 * kasten.w * kasten.h;
+      });
+      if (doppelt) { spur("Reihum: derselbe Bereich – Schluss"); break; }
       gefunden.push(d.items[0]);
       treffer.push(kasten);
+      spur(`Reihum ${gefunden.length}: ${d.items[0].item_id} `
+        + `(${d.items[0].score} %)`);
       ctx.fillStyle = farbe;
       ctx.fillRect(kasten.x, kasten.y, kasten.w, kasten.h);
     }
-    c.width = c.height = 0;
-
     if (!gefunden.length) {
       mehrfachRahmen([]);
       letzteBoxen = [];
@@ -2436,9 +2450,11 @@ async function alleFigurenErkennen() {
         { max: FIND_MAX }));
     }
   } catch (e) {
+    spur("Reihum abgebrochen: " + String(e.message).slice(0, 30));
     toast(e.message);
   } finally {
-    if (bmp) bmp.close();
+    spur(`Reihum-Suche fertig (${gefunden.length})`);
+    c.width = c.height = 0;      // gibt die Zeichenfläche frei, auch bei Fehlern
     knopf.disabled = false;
     status.hidden = true;
     status.querySelector("[data-scan-text]").textContent = tr("Erkenne …");

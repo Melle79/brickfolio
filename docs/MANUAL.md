@@ -1635,8 +1635,9 @@ duration twice would be a pattern.
 seconds apart, and a crash does not wait that long. So whatever is going on is
 noted immediately – photo taken (with megapixels and file size), downscaled,
 recognition running and done, view switched, and above all: **went to the
-background / back again**. Plus the update flow: checked for an update,
-update requested, lock visible, server unreachable, server back. If the last line before a crash says "went to the
+background / back again**. Plus the update flow (checked for an update, update
+requested, lock visible, server unreachable, server back) and the turn-by-turn
+search with every figure it finds. If the last line before a crash says "went to the
 background", the page was not in front at all – then the operating system
 reclaimed the tab (typically while the camera app is running), rather than the
 app choking on something.
