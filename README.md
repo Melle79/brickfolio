@@ -158,8 +158,17 @@ API-Schlüssel (mit Prüfen-Knopf) und, falls vorhanden, die Einladung ins
 Tausch-Netzwerk. Überspringen geht überall; nachholen lässt sich alles unter
 *Mehr*. Die Datenbank liegt persistent unter `./data/brickfolio.db`.
 
-Das Image (`ghcr.io/melle79/brickfolio:latest`) gibt es für **amd64**
-(Synology, Intel-NAS, PC) und **arm64** (Raspberry Pi, ARM-NAS).
+Das Image gibt es für **amd64** (Synology, Intel-NAS, PC) und **arm64**
+(Raspberry Pi, ARM-NAS), auf zwei Registries – derselbe Build, nur zwei
+Adressen:
+
+| Registry | Name |
+|---|---|
+| GitHub Container Registry | `ghcr.io/melle79/brickfolio:latest` |
+| Docker Hub | `melle79/brickfolio:latest` |
+
+Die YAML oben nimmt `ghcr.io`. Docker Hub braucht ihr, wenn eure NAS-Oberfläche
+eine **Suchmaske** für Images hat – die durchsucht meist nur Docker Hub.
 
 ### Synology NAS
 
@@ -282,6 +291,13 @@ docker compose pull && docker compose up -d
 
 Auf einer Synology geht dasselbe ohne Konsole: *Container Manager → Projekt →
 brickfolio → Aktion → Erstellen neu starten*.
+
+> **Ohne Projekt, also von Hand aus der *Registrierung* geklickt?** Dann gibt
+> es diesen Knopf nicht – ein Container kann sein Image nicht wechseln, und
+> ohne YAML muss man ihn löschen und neu anlegen. Der Ablauf steht in
+> [`docs/SYNOLOGY.md`](docs/SYNOLOGY.md). Wichtig dabei: Liegt kein Ordner auf
+> `/data`, steckt die Datenbank in einem anonymen Volume und der neue
+> Container bekommt ein leeres – **vorher sichern**.
 
 Der Ordner `data/` bleibt dabei unberührt, Datenbank-Migrationen laufen beim
 Start automatisch und sind idempotent. **Ein Schnappschuss vorher schadet

@@ -1154,6 +1154,18 @@ docker compose pull && docker compose up -d
 On a Synology the same works **without a shell**: *Container Manager → Project
 → brickfolio → Action → Build and restart*.
 
+> **This needs a project.** If you created the container by hand via
+> *Registry → Create container*, that button is not there – and that is no
+> oversight by DSM: a container cannot swap its image, a new image always
+> means a new container. With a project the wizard handles it, because every
+> setting lives in the YAML. Clicked by hand it means: back up, pull the
+> image again, delete the container, create it anew. Step by step in
+> [`SYNOLOGY.md`](SYNOLOGY.md).
+>
+> Take particular care if **no folder is mapped to `/data`**: the database
+> then sits in an anonymous volume and the new container gets an empty one.
+> Download *More → Backup* first.
+
 > **`update.sh` is not here.** The script belongs to the source code and sits
 > neither in the image nor in your folder if you only fetched the
 > `docker-compose.yml`. The two commands above do the same – you only have to

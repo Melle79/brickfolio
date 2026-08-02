@@ -49,6 +49,15 @@ es. Beim ersten Mal dauert das ein bis zwei Minuten (rund 75 MB).
 > nach `brickfolio` suchen, `melle79/brickfolio` herunterladen, Marke
 > `latest` wählen. Danach unter **Container → Erstellen** das Image auswählen,
 > Port `8300` und den Ordner `/docker/brickfolio/data` auf `/data` legen.
+>
+> **Den Ordner auf `/data` nicht vergessen** – das ist der eine Schritt, den
+> man dabei übersieht. Ohne ihn legt Docker ein *anonymes Volume* an: Die
+> Datenbank landet namenlos unter `/volume1/@docker/volumes/…`, in der File
+> Station siehst du davon nichts. Sie ist dann nicht verloren, aber beim
+> nächsten Update (siehe unten) bekommt der neue Container ein **neues,
+> leeres** Volume – die Sammlung wäre scheinbar weg. Prüfen lässt sich das
+> im Container Manager unter *Container → Details → Volume*.
+>
 > Das Projekt oben ist trotzdem der bequemere Weg – dort steht alles in einem
 > Rutsch drin und bleibt für Updates erhalten.
 
@@ -67,6 +76,28 @@ bleibt unangetastet.
 
 Wer vorher einen Sicherungspunkt will: in der App unter **Mehr → Sicherung**
 die JSON-Datei herunterladen.
+
+#### Wenn der Container von Hand aus der Registrierung stammt
+
+Dann gibt es diesen einen Knopf **nicht**, und das liegt nicht an DSM: Ein
+Container kann sein Image nicht wechseln. Ein neues Image heißt bei Docker
+immer auch ein neuer Container. Beim Projekt erledigt das der Assistent,
+weil dort alle Einstellungen in der YAML stehen; von Hand geklickt stehen
+sie nur in DSMs eigener Verwaltung – und darum ist es dort jedes Mal
+Handarbeit:
+
+1. In der App **Mehr → 💾 Sicherung** herunterladen. Pflicht, wenn kein
+   Ordner auf `/data` liegt (siehe Kasten oben), sonst Vorsichtsmaßnahme.
+2. **Registrierung** → `melle79/brickfolio` erneut herunterladen, Marke
+   `latest`. Das überschreibt das vorhandene Image.
+3. Container **stoppen** und **löschen**.
+4. Aus dem Image einen neuen Container anlegen – gleicher Port, und diesmal
+   den Ordner auf `/data` legen.
+5. Falls nötig, die Sicherung aus Schritt 1 wieder einspielen.
+
+**Einmal auf ein Projekt umstellen erspart das für immer.** Der Ablauf ist
+derselbe wie oben, nur legt man am Ende statt eines Containers ein Projekt
+an. Danach ist jedes Update ein Klick.
 
 ---
 

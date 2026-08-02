@@ -1201,6 +1201,19 @@ docker compose pull && docker compose up -d
 Auf einer Synology geht dasselbe **ohne Konsole**: *Container Manager →
 Projekt → brickfolio → Aktion → Erstellen neu starten*.
 
+> **Ohne Projekt geht das nicht.** Wer den Container von Hand über
+> *Registrierung → Container erstellen* angelegt hat, findet diesen Knopf
+> nicht – und das ist kein Versäumnis von DSM: Ein Container kann sein Image
+> nicht wechseln, ein neues Image heißt immer auch ein neuer Container. Beim
+> Projekt erledigt das der Assistent, weil dort alle Einstellungen in der
+> YAML stehen. Von Hand geklickt heißt es: sichern, Image neu laden,
+> Container löschen, neu anlegen. Schritt für Schritt in
+> [`SYNOLOGY.md`](SYNOLOGY.md).
+>
+> Besonders aufpassen, wenn **kein Ordner auf `/data`** liegt: Dann steckt
+> die Datenbank in einem anonymen Volume, und der neue Container bekommt ein
+> leeres. Vorher unbedingt *Mehr → Sicherung* herunterladen.
+
 > **`update.sh` liegt hier nicht.** Das Skript gehört zum Quellcode und
 > steckt weder im Image noch im Ordner, wenn ihr nur die
 > `docker-compose.yml` geholt habt. Die beiden Befehle oben tun dasselbe –
