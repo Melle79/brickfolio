@@ -435,6 +435,12 @@ exists.
 **tapping their name at the top right** (profile popup); the admin can reset
 passwords and remove users.
 
+> **What happens to their things when removed:** collection, wishes, lists
+> and ticked-off list entries **stay** – they belong to the instance, not to
+> the person; only the name behind them goes. The one thing deleted with
+> them is their push registration, so their device stops receiving this
+> instance's messages.
+
 **Granting roles:** in the user list the **Admin** button makes a user another
 admin (👑) or takes the rights away again – but the **last** admin always
 stays an admin, so nobody can lock themselves out. The **Pro** button toggles

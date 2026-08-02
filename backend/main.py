@@ -1654,8 +1654,18 @@ def delete_user(user_id: int, user: dict = Depends(admin_user)):
     if user_id == user["id"]:
         raise HTTPException(400, "Du kannst dich nicht selbst löschen")
     with core.db() as conn:
-        conn.execute("UPDATE collection SET added_by = NULL WHERE added_by = ?",
-                     (user_id,))
+        # Was der Sammlung gehört, bleibt der Sammlung – nur der Name des
+        # Einstellers fällt weg. Sonst nähme das Löschen eines Benutzers
+        # Stücke, Wünsche und Listen mit, die alle gemeinsam pflegen.
+        for tabelle, spalte in (("collection", "added_by"),
+                                ("wanted", "added_by"),
+                                ("shopping_lists", "created_by"),
+                                ("shopping_items", "done_by")):
+            conn.execute(f"UPDATE {tabelle} SET {spalte} = NULL "
+                         f"WHERE {spalte} = ?", (user_id,))
+        # Die Push-Anmeldung gehört dagegen nur ihm und geht mit – sonst
+        # bekäme sein Gerät weiter Meldungen dieser Instanz.
+        conn.execute("DELETE FROM push_subs WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
     return {"ok": True}
 

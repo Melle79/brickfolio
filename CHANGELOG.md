@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.3.1 – August 2026
+
+### Behoben
+- 👥 **Fehler 500 beim Entfernen eines Benutzers.** Freigeräumt wurde nur die
+  Sammlung. Auf den Benutzer zeigen aber noch vier weitere Stellen – Wünsche,
+  angelegte Listen, abgehakte Listeneinträge und die Push-Anmeldung –, und die
+  Datenbank ließ das Löschen deshalb nicht zu. Wer also irgendetwas davon
+  hinterlassen hatte, war nicht zu entfernen
+
+> **Was jetzt mit seinen Sachen passiert:** Sammlung, Wünsche, Listen und
+> Haken bleiben – sie gehören der Instanz, nicht der Person; nur der Name
+> dahinter verschwindet. Mit gelöscht wird allein die Push-Anmeldung, damit
+> sein Gerät keine Meldungen dieser Instanz mehr bekommt.
+
 ## 2.3.0 – August 2026
 
 ### Behoben

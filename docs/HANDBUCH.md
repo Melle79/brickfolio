@@ -450,6 +450,12 @@ seinen Anzeigenamen selbst, indem er **oben rechts auf seinen Namen
 tippt** (Profil-Popup); der Admin kann Passwörter zurücksetzen und
 Benutzer entfernen.
 
+> **Was beim Entfernen mit seinen Sachen passiert:** Sammlung, Wünsche,
+> Listen und abgehakte Listeneinträge **bleiben** – sie gehören der
+> Instanz, nicht der Person; nur der Name dahinter verschwindet. Mit
+> gelöscht wird allein seine Push-Anmeldung, damit sein Gerät keine
+> Meldungen dieser Instanz mehr bekommt.
+
 **Rollen vergeben:** In der Benutzerliste macht der **Admin**-Knopf einen
 Benutzer zum weiteren Admin (👑) oder nimmt die Rechte wieder – der
 **letzte** Admin bleibt aber immer Admin, damit sich niemand aussperrt.
