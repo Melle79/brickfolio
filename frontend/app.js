@@ -2519,7 +2519,6 @@ function scanAuswahlEinrichten() {
 
 const FIND_MAX = 10;   // mehr Figuren fragen wir in einem Durchgang nicht ab
 
-let letzteBoxen = [];
 /* Zu jedem angezeigten Treffer der Rahmen, aus dem er stammt – in denselben
    Maßen wie die Vorschau, also direkt für `ausschnittBild` brauchbar. Leer,
    wo es keinen gibt; dann kommt das ganze Foto zum Zug. */
@@ -2668,14 +2667,12 @@ async function alleFigurenErkennen(weiter = false) {
 
     if (!z.gefunden.length) {
       mehrfachRahmen([]);
-      letzteBoxen = [];
       scanBoxen = [];
       reihumAufraeumen();
       toast(tr("Nichts erkannt – Rahmen von Hand ziehen."));
       return;
     }
     mehrfachRahmen(z.treffer);
-    letzteBoxen = z.treffer;
     scanBoxen = z.treffer;
     renderScanResults(z.gefunden);
     const neu = z.gefunden.length - vorher;
@@ -2858,7 +2855,7 @@ function renderScanResults(items) {
       + "sucht immer ein einzelnes Objekt im Bild – stehen viele Figuren "
       + "darauf, zieh einen Rahmen um eine davon oder fotografiere ein paar "
       + "wenige aus der Nähe."))}</p>` : "")
-    + (lastScanFile ? `<label class="eigenbild-wahl">
+    + (lastScanFile ? `<label class="wahl-kasten">
         <input type="checkbox" id="scan-eigenbild"${eigenbildAn ? " checked" : ""}>
         <span>📷 <b>Mein Foto zusätzlich am Artikel.</b> Das Katalogbild
           bleibt – mein Foto kommt in der Galerie daneben, bei mehreren

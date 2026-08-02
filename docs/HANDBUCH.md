@@ -1850,9 +1850,23 @@ weil er dort zuletzt etwas nachgesehen hat.
 > SIGABRT – der Prozess bricht sich selbst ab) und immer an derselben Stelle
 > im Programm. Drei davon fielen genau auf die Zeitpunkte, an denen auch der
 > Speicher-Verlauf „OHNE ABSCHIED" verzeichnete – die übrigen vierzehn hat die
-> App nie gesehen. In so einem Fall hilft: **Browser aktualisieren**,
-> **Hardwarebeschleunigung abschalten** (`edge://settings/system`) und einen
-> der Einträge über „Feedback senden" melden.
+> App nie gesehen.
+>
+> **Und wie es weiterging – das gehört zur Wahrheit dazu.** Nach dem Update
+> auf die nächste Edge-Fassung war jene Bucket-ID verschwunden. Es tauchte
+> aber sofort eine **neue** auf: andere ID, andere Stelle im Programm,
+> ansonsten dasselbe Bild – `renderer`, `Microsoft_Edge_Framework`, `0x6`.
+> Ein Browser-Update kann so einen Fehler also beheben, muss aber nicht: Es
+> tauscht ihn womöglich gegen den nächsten.
+>
+> **Was zu tun bleibt**, der Reihe nach:
+> 1. **Hardwarebeschleunigung abschalten** (`edge://settings/system`) und
+>    eine Weile so arbeiten. Renderer-Abbrüche kommen oft aus dem Grafikpfad
+> 2. **Schonender Bildmodus** (unten) – falls es beim Scannen passiert
+> 3. **Anderen Browser** nehmen und die App eine Stunde offen liegen lassen.
+>    Bleibt es dort ruhig, ist der Fall klar
+> 4. Einen Eintrag über **„Feedback senden"** melden. Berichte mit einer
+>    **Cab-ID** tragen einen echten Speicherabzug – die sind die nützlichsten
 
 **🐢 Schonender Bildmodus.** Ein Kästchen in derselben Karte, standardmäßig
 aus. „Aber andere Seiten stürzen doch nicht ab" – stimmt, und der Grund

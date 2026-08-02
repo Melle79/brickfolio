@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.8.1 – August 2026
+
+### Aufgeräumt
+- 🧹 **Totes Feld `letzteBoxen`** entfernt – wurde nie gelesen und stand
+  verwirrend neben `scanBoxen`, das dasselbe hält und tatsächlich benutzt wird
+- 🧹 **Vier CSS-Regeln** für den Anzahl-Block, den es seit 2.1.0 nicht mehr
+  gibt
+- 🏷 **Klasse `eigenbild-wahl` → `wahl-kasten`.** Sie gilt längst für drei
+  Kästchen – Scan-Foto, Sicherung, schonender Modus – und der alte Name
+  behauptete etwas anderes
+
+### Dokumentation
+- 📖 **„Browser aktualisieren" allein reicht nicht.** Das Handbuch legte das
+  nahe; tatsächlich war nach dem Edge-Update die alte Bucket-ID verschwunden
+  und sofort eine **neue** da – gleiche Art Fehler, andere Stelle. Steht
+  jetzt so drin, samt einer Reihenfolge, was zu tun bleibt
+
 ## 2.8.0 – August 2026
 
 ### Neu

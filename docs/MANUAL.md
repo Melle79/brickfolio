@@ -1767,10 +1767,23 @@ the settings just because that is where they last looked something up.
 > Microsoft_Edge_Framework` (Edge's own code), `P7 = 0x6` (SIGABRT on macOS –
 > the process aborts itself) and always at the same spot in the program. Three
 > of them landed exactly on the moments where the memory trace also recorded
-> "without saying goodbye" – the other fourteen the app never saw. In such a
-> case what helps is: **update the browser**, **turn off hardware
-> acceleration** (`edge://settings/system`), and report one of the entries via
-> "Send feedback".
+> "without saying goodbye" – the other fourteen the app never saw.
+>
+> **And how it continued – that belongs to the truth as well.** After the
+> update to the next Edge build that bucket ID was gone. But a **new** one
+> appeared right away: different ID, different spot in the program, otherwise
+> the same picture – `renderer`, `Microsoft_Edge_Framework`, `0x6`. So a
+> browser update can fix such a fault, but it need not: it may just swap it
+> for the next one.
+>
+> **What is left to do**, in order:
+> 1. **Turn off hardware acceleration** (`edge://settings/system`) and work
+>    that way for a while. Renderer aborts often come from the graphics path
+> 2. **Gentle image mode** (below) – if it happens while scanning
+> 3. Take **another browser** and leave the app open for an hour. If things
+>    stay calm there, the case is clear
+> 4. Report an entry via **"Send feedback"**. Reports carrying a **Cab ID**
+>    include a real memory dump – those are the most useful ones
 
 **🐢 Gentle image mode.** A checkbox in the same card, off by default. "But
 other sites don't crash" – true, and the likely reason is: hardly any other
