@@ -70,3 +70,13 @@ def test_zeichenflaechen_gehen_ueber_den_gemeinsamen_weg():
     quelle = js()
     assert "function flaeche2d(" in quelle
     assert "willReadFrequently: schonendAn || lesen" in quelle
+
+
+def test_verlauf_haelt_den_modus_fest():
+    """Ohne diese Angabe ließe sich hinterher nicht sagen, welcher Weg in
+    einer Sitzung lief – und der ganze Vergleich wäre wertlos."""
+    quelle = js()
+    anfang = quelle.index("function diagMessen(")
+    assert "if (schonendAn) punkt.sch = 1;" in quelle[anfang:anfang + 2000]
+    # …und im lesbaren Verlauf taucht er auch auf.
+    assert 'p.sch ? "🐢 schonend" : ""' in quelle

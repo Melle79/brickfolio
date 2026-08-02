@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.8.3 – August 2026
+
+### Neu
+- 🐢 **Der Speicher-Verlauf sagt jetzt, ob der schonende Bildmodus lief.**
+  Jede Messzeile trägt bei eingeschaltetem Modus ein `🐢 schonend`. Ohne
+  diese Angabe ließe sich hinterher nicht sagen, welcher der beiden Wege in
+  einer Sitzung aktiv war – und der Vergleich, wofür der Modus gebaut wurde,
+  wäre wertlos
+
 ## 2.8.2 – August 2026
 
 ### Behoben

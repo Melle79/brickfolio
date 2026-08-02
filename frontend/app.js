@@ -7819,6 +7819,10 @@ function diagMessen(grund = "", geplant = null) {
     // Zahl sah genau das im Verlauf aus wie ein Absturz.
     s: state.serverStartedAt || null,
   };
+  // Lief der schonende Bildmodus? Ohne diese Angabe ließe sich hinterher
+  // nicht sagen, welcher der beiden Wege in einer Sitzung aktiv war – und
+  // damit wäre der ganze Vergleich wertlos.
+  if (schonendAn) punkt.sch = 1;
   if (grund) punkt.g = grund;
   if (grund === "start") {
     // Woher kam dieser Start? `p` ist der Grund, falls die App selbst neu
@@ -9023,6 +9027,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         p.heap != null ? p.heap + " MB" : "–",
         p.knoten + " Elemente", p.bilder + " Bilder",
         p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
+        p.sch ? "🐢 schonend" : "",
         p.g || "",
         // Nur beim Start belegt: Woher kam er?
         p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
