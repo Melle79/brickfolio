@@ -1823,12 +1823,17 @@ Ohne Token bleibt der Fehlerbericht trotzdem nutzbar – „📋 Bericht
 kopieren" legt die ganze Liste als Text in die Zwischenablage, den man von
 Hand irgendwo einfügen kann. „Liste leeren" räumt auf.
 
-> **Kopieren über die IP-Adresse im Heimnetz.** Browser geben die
-> Zwischenablage nur an *sichere Kontexte* heraus – also `https://` oder
-> `localhost`. Ruft ihr die App über `http://192.168.…` auf, ist sie das
-> nicht. Alle Kopier-Knöpfe der App weichen dann auf einen zweiten Weg aus
-> (ein unsichtbares Textfeld) und kopieren trotzdem. Klappt auch der nicht,
-> sagt die App das offen – dann bleibt Markieren von Hand.
+> **Wenn Kopieren nicht klappt.** Die Zwischenablage geben Browser nur
+> ungern heraus: die moderne Schnittstelle nur an *sichere Kontexte*
+> (`https://` oder `localhost`), den alten Weg nur unmittelbar nach einem
+> Klick. Die App versucht deshalb **erst den alten, dann den modernen** –
+> anders herum wäre der Rückfallweg wertlos, weil das Warten auf die moderne
+> Schnittstelle den Klick „verbraucht".
+>
+> Klappt trotzdem keiner von beiden, ist der Text nicht verloren: Die App
+> legt ihn in einem Fenster **fertig markiert** hin, Strg/Cmd+C genügt. Und
+> die Meldung nennt den Grund in Klammern – der steht auch im Verlauf unter
+> *Speicher-Verlauf*, falls es später jemand nachsehen will.
 
 **Den Token anlegen** (einmalig, unter „GitHub-Token" in derselben Karte):
 auf GitHub unter *Settings → Developer settings → Personal access tokens →

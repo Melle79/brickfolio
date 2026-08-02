@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.4.4 – August 2026
+
+### Behoben
+- 📋 **Kopieren scheiterte trotz Rückfallweg.** Die Reihenfolge war falsch
+  herum. `navigator.clipboard.writeText` liefert ein Versprechen – wer darauf
+  wartet, gibt die **Benutzergeste** des Klicks aus der Hand, und genau die
+  verlangt der Rückfallweg `execCommand`. Schlug die moderne Schnittstelle
+  fehl, kam der Rückfall zu spät: Er half nur, wenn er gar nicht nötig war.
+  Jetzt läuft erst der **synchrone** Weg, das Versprechen danach
+
+### Neu
+- 🆘 **Und wenn beides nichts wird, ist der Text trotzdem da.** Statt einer
+  Absage legt die App ihn in einem Fenster **fertig markiert** hin –
+  Strg/Cmd+C genügt
+- 🔍 **Die Absage nennt jetzt den Grund.** In Klammern hinter der Meldung, und
+  zusätzlich im Verlauf unter *Speicher-Verlauf*. „Geht nicht" allein war als
+  Auskunft wertlos
+
 ## 2.4.3 – August 2026
 
 ### Geändert

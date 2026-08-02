@@ -1743,11 +1743,17 @@ the error report stays usable – "📋 Copy report" puts the whole list into th
 clipboard as text, which you can paste anywhere by hand. "Clear list" tidies
 up.
 
-> **Copying via the LAN IP address.** Browsers only hand out the clipboard to
-> *secure contexts* – that is `https://` or `localhost`. Open the app at
-> `http://192.168.…` and it is neither. Every copy button in the app then
-> falls back to a second route (an invisible text field) and still copies. If
-> even that fails, the app says so plainly – then it is select-by-hand.
+> **When copying does not work.** Browsers are reluctant to hand out the
+> clipboard: the modern interface only to *secure contexts* (`https://` or
+> `localhost`), the old route only right after a click. So the app tries
+> **the old one first, the modern one second** – the other way round the
+> fallback would be worthless, because waiting for the modern interface
+> "spends" the click.
+>
+> If neither works, the text is not lost: the app puts it up in a window,
+> **already selected**, so Ctrl/Cmd+C is enough. And the message names the
+> reason in brackets – it also goes into the trail under *Memory trail*, in
+> case somebody wants to look it up later.
 
 **Creating the token** (once, under "GitHub token" in the same card): on
 GitHub under *Settings → Developer settings → Personal access tokens →

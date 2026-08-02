@@ -2025,9 +2025,8 @@ function wireTfaOnce() {
   });
 
   $("btn-tfa-copy").addEventListener("click", async () => {
-    if (await inZwischenablage($("tfa-codeliste").textContent)) {
-      toast(tr("Rettungscodes kopiert 📋"));
-    } else { toast(tr("Kopieren nicht möglich – bitte abschreiben")); }
+    await kopieren($("tfa-codeliste").textContent,
+      tr("Rettungscodes kopiert 📋"));
   });
 
   $("btn-tfa-done").addEventListener("click", () => {
@@ -3479,13 +3478,28 @@ function themenVorschlaege() {
    `execCommand("copy")`. Veraltet, aber in jedem Browser vorhanden und ohne
    Anforderung an den Kontext. Auf iOS braucht die Auswahl eine Sonderlocke:
    Ein `readonly`-Feld lässt sich dort nicht markieren. */
+/* Warum bleibt hier ein Fehlschlag stehen? Weil „geht nicht" als einzige
+   Auskunft nichts wert ist – ohne Grund lässt sich nichts nachsehen. */
+let kopierGrund = "";
+
+function kopierGrundText() {
+  return kopierGrund ? ` (${kopierGrund})` : "";
+}
+
+/* Die Reihenfolge ist der Kern der Sache.
+
+   `navigator.clipboard.writeText` liefert ein Versprechen. Wer darauf wartet,
+   gibt die **Benutzergeste** des Klicks aus der Hand – und genau die verlangt
+   der Rückfallweg `execCommand`. Stand die moderne Schnittstelle also vorn
+   und schlug fehl, kam der Rückfall zu spät: Er hätte nur dann funktioniert,
+   wenn er gar nicht gebraucht wurde.
+
+   Deshalb erst der alte, **synchrone** Weg, solange die Geste frisch ist.
+   Erst wenn der nichts wird, das Versprechen – dann ist ohnehin nichts mehr
+   zu verlieren. */
 async function inZwischenablage(text) {
-  try {
-    if (window.isSecureContext && navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch (_) { /* dann eben der Rückfallweg */ }
+  const gruende = [];
+  if (!window.isSecureContext) gruende.push("kein sicherer Kontext");
   try {
     const feld = document.createElement("textarea");
     feld.value = text;
@@ -3505,8 +3519,65 @@ async function inZwischenablage(text) {
     }
     const ok = document.execCommand("copy");
     feld.remove();
-    return ok;
-  } catch (_) { return false; }
+    if (ok) { kopierGrund = ""; return true; }
+    gruende.push("execCommand sagt nein");
+  } catch (e) {
+    gruende.push("execCommand: " + ((e && e.message) || e));
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      kopierGrund = "";
+      return true;
+    }
+    gruende.push("keine Zwischenablage-Schnittstelle");
+  } catch (e) {
+    gruende.push("clipboard: " + ((e && e.message) || e));
+  }
+  kopierGrund = gruende.join(" · ");
+  spur("Kopieren fehlgeschlagen: " + kopierGrund);
+  return false;
+}
+
+/* Scheitert das Kopieren, war der Text bisher schlicht weg – und genau ihn
+   wollte man ja. Also hinlegen, fertig markiert: Strg/Cmd+C genügt. */
+function textZumMarkieren(text) {
+  const alt = document.getElementById("kopier-notausgang");
+  if (alt) alt.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "card-modal-overlay stacked";
+  overlay.id = "kopier-notausgang";
+  overlay.innerHTML = `
+    <div class="card-modal">
+      <button class="card-modal-close" data-zu aria-label="${esc(tr("Schließen"))}">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <h3 style="margin:0 0 6px">${esc(tr("Text zum Kopieren"))}</h3>
+        <p class="search-hint">${esc(tr("Der Browser gibt die Zwischenablage "
+          + "nicht her. Der Text ist markiert – mit Strg/Cmd+C kopieren."))}</p>
+        <textarea id="kopier-feld" rows="10" readonly
+          style="font-family:ui-monospace,monospace;font-size:12px"></textarea>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn add" data-zu>${esc(tr("Fertig"))}</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const feld = overlay.querySelector("#kopier-feld");
+  feld.value = text;                     // nicht ins HTML: Text bleibt Text
+  const zu = () => overlay.remove();
+  overlay.querySelectorAll("[data-zu]").forEach((b) =>
+    b.addEventListener("click", zu));
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay) zu(); });
+  setTimeout(() => { feld.focus(); feld.select(); }, 50);
+}
+
+/* Ein Weg für alle vier Kopier-Knöpfe: kopieren, und wenn das nichts wird,
+   den Text wenigstens hinlegen. */
+async function kopieren(text, erfolg) {
+  if (await inZwischenablage(text)) { toast(erfolg); return true; }
+  toast(tr("Kopieren nicht möglich") + kopierGrundText());
+  textZumMarkieren(text);
+  return false;
 }
 
 /* Betrag aus einem Feld lesen – Komma wie Punkt. */
@@ -7144,8 +7215,7 @@ function initExternalAccess() {
   const copy = $("cf-copy");
   if (copy) {
     copy.addEventListener("click", async () => {
-      if (await inZwischenablage(cfSnippet())) toast("Block kopiert ✔");
-      else toast("Kopieren nicht möglich – Block bitte von Hand markieren");
+      await kopieren(cfSnippet(), "Block kopiert ✔");
     });
   }
 }
@@ -8662,8 +8732,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-price-fill").addEventListener("click", fillMissingPrices);
 
   $("btn-errors-copy").addEventListener("click", async () => {
-    if (await inZwischenablage(errorsAsText())) toast("Bericht kopiert ✔");
-    else toast("Kopieren nicht möglich – Text bitte von Hand markieren");
+    await kopieren(errorsAsText(), "Bericht kopiert ✔");
   });
   $("btn-errors-clear").addEventListener("click", async () => {
     if (!confirm(tr("Alle aufgezeichneten Fehler löschen?"))) return;
@@ -8715,8 +8784,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n")
       + (spuren.length ? "\n\nSpur (was zuletzt passierte)\n"
         + spuren.join("\n") : "");
-    if (await inZwischenablage(text)) toast(tr("Verlauf kopiert ✔"));
-    else toast(tr("Kopieren nicht möglich – Text bitte von Hand markieren"));
+    await kopieren(text, tr("Verlauf kopiert ✔"));
   });
   $("btn-diag-clear").addEventListener("click", () => {
     localStorage.removeItem(DIAG_KEY);
