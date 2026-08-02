@@ -1974,10 +1974,9 @@ function wireTfaOnce() {
   });
 
   $("btn-tfa-copy").addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText($("tfa-codeliste").textContent);
+    if (await inZwischenablage($("tfa-codeliste").textContent)) {
       toast(tr("Rettungscodes kopiert 📋"));
-    } catch (_) { toast(tr("Kopieren nicht möglich – bitte abschreiben")); }
+    } else { toast(tr("Kopieren nicht möglich – bitte abschreiben")); }
   });
 
   $("btn-tfa-done").addEventListener("click", () => {
@@ -3415,6 +3414,48 @@ function themenVorschlaege() {
   const namen = [...new Set((state.collection || [])
     .map((i) => i.theme).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   liste.innerHTML = namen.map((n) => `<option value="${esc(n)}">`).join("");
+}
+
+/* Text in die Zwischenablage – auch ohne HTTPS.
+
+   `navigator.clipboard` gibt es nur im **sicheren Kontext**: über HTTPS oder
+   auf localhost. Eine Instanz im Heimnetz läuft aber meist unter
+   `http://192.168.…`, und dort fehlt die Schnittstelle schlicht. Sämtliche
+   Kopierknöpfe meldeten deshalb „Kopieren nicht möglich" – ausgerechnet die,
+   mit denen man einen Fehlerbericht oder den Speicher-Verlauf weitergibt.
+
+   Für diesen Fall der alte Weg über ein unsichtbares Feld und
+   `execCommand("copy")`. Veraltet, aber in jedem Browser vorhanden und ohne
+   Anforderung an den Kontext. Auf iOS braucht die Auswahl eine Sonderlocke:
+   Ein `readonly`-Feld lässt sich dort nicht markieren. */
+async function inZwischenablage(text) {
+  try {
+    if (window.isSecureContext && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (_) { /* dann eben der Rückfallweg */ }
+  try {
+    const feld = document.createElement("textarea");
+    feld.value = text;
+    feld.style.cssText = "position:fixed;top:0;left:0;opacity:0;"
+      + "pointer-events:none";
+    document.body.appendChild(feld);
+    if (/iP(hone|ad|od)/.test(navigator.userAgent)) {
+      feld.contentEditable = "true";
+      const bereich = document.createRange();
+      bereich.selectNodeContents(feld);
+      const auswahl = getSelection();
+      auswahl.removeAllRanges();
+      auswahl.addRange(bereich);
+      feld.setSelectionRange(0, text.length);
+    } else {
+      feld.select();
+    }
+    const ok = document.execCommand("copy");
+    feld.remove();
+    return ok;
+  } catch (_) { return false; }
 }
 
 /* Betrag aus einem Feld lesen – Komma wie Punkt. */
@@ -7052,12 +7093,8 @@ function initExternalAccess() {
   const copy = $("cf-copy");
   if (copy) {
     copy.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(cfSnippet());
-        toast("Block kopiert ✔");
-      } catch (_) {
-        toast("Kopieren nicht möglich – Block bitte von Hand markieren");
-      }
+      if (await inZwischenablage(cfSnippet())) toast("Block kopiert ✔");
+      else toast("Kopieren nicht möglich – Block bitte von Hand markieren");
     });
   }
 }
@@ -8523,12 +8560,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-price-fill").addEventListener("click", fillMissingPrices);
 
   $("btn-errors-copy").addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(errorsAsText());
-      toast("Bericht kopiert ✔");
-    } catch (_) {
-      toast("Kopieren nicht möglich – Text bitte von Hand markieren");
-    }
+    if (await inZwischenablage(errorsAsText())) toast("Bericht kopiert ✔");
+    else toast("Kopieren nicht möglich – Text bitte von Hand markieren");
   });
   $("btn-errors-clear").addEventListener("click", async () => {
     if (!confirm(tr("Alle aufgezeichneten Fehler löschen?"))) return;
@@ -8580,12 +8613,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n")
       + (spuren.length ? "\n\nSpur (was zuletzt passierte)\n"
         + spuren.join("\n") : "");
-    try {
-      await navigator.clipboard.writeText(text);
-      toast(tr("Verlauf kopiert ✔"));
-    } catch (_) {
-      toast(tr("Kopieren nicht möglich – Text bitte von Hand markieren"));
-    }
+    if (await inZwischenablage(text)) toast(tr("Verlauf kopiert ✔"));
+    else toast(tr("Kopieren nicht möglich – Text bitte von Hand markieren"));
   });
   $("btn-diag-clear").addEventListener("click", () => {
     localStorage.removeItem(DIAG_KEY);

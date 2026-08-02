@@ -1688,6 +1688,12 @@ the error report stays usable – "📋 Copy report" puts the whole list into th
 clipboard as text, which you can paste anywhere by hand. "Clear list" tidies
 up.
 
+> **Copying via the LAN IP address.** Browsers only hand out the clipboard to
+> *secure contexts* – that is `https://` or `localhost`. Open the app at
+> `http://192.168.…` and it is neither. Every copy button in the app then
+> falls back to a second route (an invisible text field) and still copies. If
+> even that fails, the app says so plainly – then it is select-by-hand.
+
 **Creating the token** (once, under "GitHub token" in the same card): on
 GitHub under *Settings → Developer settings → Personal access tokens →
 Fine-grained tokens* create a token, choose **only this one repository** as the

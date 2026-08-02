@@ -32,20 +32,20 @@ def client(tmp_path, monkeypatch):
 def test_manifest_traegt_den_eingestellten_namen(client):
     client.post("/api/settings/owner_name", json={"name": "Sven"})
     m = client.get("/manifest.webmanifest").json()
-    assert m["short_name"] == "Svens Brickfolio"
-    assert "Svens Brickfolio" in m["name"]
+    assert m["short_name"] == "Sven's Brickfolio"
+    assert "Sven's Brickfolio" in m["name"]
     assert "Finn" not in m["name"]
 
 
 def test_manifest_ohne_einstellung_bleibt_beim_standard(client):
     m = client.get("/manifest.webmanifest").json()
-    assert m["short_name"].endswith("s Brickfolio")
+    assert m["short_name"].endswith("'s Brickfolio")
 
 
 def test_titel_der_seite_traegt_den_namen(client):
     client.post("/api/settings/owner_name", json={"name": "Sven"})
     html = client.get("/").text
-    assert "<title>Svens Brickfolio</title>" in html
+    assert "<title>Sven's Brickfolio</title>" in html
     assert "__OWNER__" not in html          # Platzhalter muss ersetzt sein
 
 

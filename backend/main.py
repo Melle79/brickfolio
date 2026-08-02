@@ -5446,8 +5446,8 @@ def manifest():
     """
     wer = _owner_name()
     return JSONResponse({
-        "name": f"{wer}s Brickfolio – Deine LEGO-Sammlung",
-        "short_name": f"{wer}s Brickfolio",
+        "name": f"{wer}'s Brickfolio – Deine LEGO-Sammlung",
+        "short_name": f"{wer}'s Brickfolio",
         "description": "LEGO Minifiguren scannen, erkennen und "
                        "gemeinsam verwalten",
         "start_url": "/",

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.0 – August 2026
+
+### Behoben
+- 📋 **„Kopieren nicht möglich" im Heimnetz.** Die Knöpfe zum Kopieren –
+  Fehlerbericht, Wiederherstellungscode, Cloudflare-Befehl, Diagnose – gingen
+  nur über `https://` oder `localhost`. Ruft man die App über die IP-Adresse
+  im Heimnetz auf, ist das kein *sicherer Kontext*, und der Browser rückt die
+  Zwischenablage nicht heraus. Jetzt gibt es einen Rückfallweg über ein
+  unsichtbares Textfeld, der auch dort kopiert
+
+> Der Rückfallweg braucht einen echten Klick – das ist der Grund, warum er
+> nicht überall greifen kann, sondern nur an den Kopier-Knöpfen selbst.
+> Geprüft mit ausgeblendeter Zwischenablage: echter Klick, echter Text.
+
+### Geändert
+- 🔤 **Gleicher Name überall.** Fenstertitel und der Name der installierten
+  App schrieben `Svens Brickfolio`, die Überschrift in der App dagegen
+  `Sven's Brickfolio`. Jetzt steht überall dasselbe
+
 ## 2.2.0 – August 2026
 
 ### Behoben
