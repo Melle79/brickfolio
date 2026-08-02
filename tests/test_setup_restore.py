@@ -6,12 +6,15 @@ frisches Admin-Konto – das Einspielen würde es ohnehin gleich wieder
 Instanz leer ist.
 """
 import time
+from pathlib import Path
 
 import pytest
 
 import core
 import main
 from fastapi.testclient import TestClient
+
+INDEX = Path(__file__).resolve().parents[1] / "frontend" / "index.html"
 
 
 def _sicherung(mit_admin=True, extra_user=None):
@@ -70,13 +73,32 @@ def test_anmelden_mit_dem_alten_passwort(client):
     assert r.json().get("token")
 
 
-def test_admin_namen_kommen_zurueck(client):
-    """Damit die Anmeldung danach sagen kann, mit wem."""
+def test_keine_benutzernamen_in_der_antwort(client):
+    """Der Anmeldebogen danach ist offen – dort haben Namen nichts zu suchen.
+
+    Die Sicherung bringt sie mit, sie stehen also in der Datenbank; aber die
+    Antwort trägt sie nicht nach draußen und der Bogen zeigt keine an.
+    """
     r = client.post("/api/setup/restore", json=_sicherung(
         extra_user={"id": 2, "username": "paul", "password_hash": "x",
-                    "is_admin": 0, "is_dealer": 0,
+                    "is_admin": 1, "is_dealer": 0,
                     "created_at": int(time.time())}))
-    assert r.json()["admins"] == ["sven"]
+    assert r.status_code == 200
+    assert "admins" not in r.json()
+    text = r.text.lower()
+    assert "sven" not in text and "paul" not in text
+    # Angelegt wurden sie trotzdem – sonst käme niemand mehr hinein.
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"] == 2
+
+
+def test_anmeldebogen_nennt_keine_namen():
+    """Auch im Quelltext steht keine Vorlage, die Namen einsetzen würde."""
+    js = (INDEX.parent / "app.js").read_text(encoding="utf-8")
+    anfang = js.index("async function setupSicherungEinspielen(")
+    koerper = js[anfang:anfang + 2000]
+    assert "res.admins" not in koerper
+    assert 'login-user").value' not in koerper
 
 
 def test_zu_sobald_ein_benutzer_existiert(client):

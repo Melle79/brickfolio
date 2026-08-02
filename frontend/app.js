@@ -1672,21 +1672,19 @@ async function setupSicherungEinspielen(file) {
   try {
     const res = await api("/setup/restore", { method: "POST", body: data });
     const n = (res.restored && res.restored.collection) ?? "?";
-    const wer = (res.admins || []).join(", ");
     toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n }));
     // Der Anmeldebogen tritt an die Stelle des Assistenten – die Instanz
-    // ist ab jetzt eingerichtet.
+    // ist ab jetzt eingerichtet. Ohne Namen: Wer die Sicherung eingespielt
+    // hat, kennt seine Zugangsdaten; auf den Bildschirm gehören sie nicht.
     $("setup-box").hidden = true;
     $("login-box").hidden = false;
-    if (wer) {
-      const hinweis = $("login-hint");
-      if (hinweis) {
-        hinweis.textContent = tr("Jetzt anmelden als: {wer}", { wer });
-        hinweis.hidden = false;
-      }
-      if ((res.admins || []).length === 1) $("login-user").value = res.admins[0];
+    const hinweis = $("login-hint");
+    if (hinweis) {
+      hinweis.textContent = tr("Sicherung eingespielt – melde dich jetzt mit "
+                               + "deinen bisherigen Zugangsdaten an.");
+      hinweis.hidden = false;
     }
-    $("login-pass").focus();
+    $("login-user").focus();
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;

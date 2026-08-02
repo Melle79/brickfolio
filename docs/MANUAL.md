@@ -165,8 +165,11 @@ The wizard runs exactly once, right after the admin account is created.
 **Moving from another instance?** Then create nothing here: below the create
 button sits **"📥 Restore a backup"**. It brings the whole old state across –
 collection, lists, purchase book **and the accounts**. Afterwards you sign in
-with your **existing password**; the sign-in form even tells you which name to
-use.
+with your **existing credentials** – same name, same password as before.
+
+> The sign-in form deliberately names no one: it is a page where nobody is
+> signed in yet, and whoever restored the backup knows their own credentials
+> anyway.
 
 > The other way round would be awkward: an admin account created here would be
 > overwritten by the restore straight away, because the backup brings its own

@@ -165,8 +165,12 @@ Der Assistent läuft genau einmal, direkt nach dem Anlegen des Admin-Kontos.
 **Umzug von einer anderen Instanz?** Dann lege hier gar nichts an: Unter dem
 Knopf zum Anlegen steht **„📥 Sicherung einspielen"**. Damit kommt der ganze
 alte Stand herüber – Sammlung, Listen, Kaufbuch **und die Konten**. Danach
-meldest du dich mit deinem **bisherigen Passwort** an; der Anmeldebogen sagt
-dir sogar, mit welchem Namen.
+meldest du dich mit deinen **bisherigen Zugangsdaten** an – Name und Passwort
+wie vorher.
+
+> Namen nennt der Anmeldebogen dabei bewusst keine: Er ist eine Seite, an der
+> noch niemand angemeldet ist, und wer die Sicherung eingespielt hat, kennt
+> seine Zugangsdaten ohnehin.
 
 > Genau umgekehrt wäre es umständlich: Ein hier frisch angelegtes Admin-Konto
 > würde vom Einspielen sofort wieder überschrieben, denn die Sicherung bringt

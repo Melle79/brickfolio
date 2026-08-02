@@ -160,7 +160,8 @@ Tausch-Netzwerk. Überspringen geht überall; nachholen lässt sich alles unter
 
 **Umzug von einer anderen Instanz?** Dann leg hier kein Konto an – im
 Willkommens-Bogen steht **„📥 Sicherung einspielen"**. Der alte Stand kommt
-samt Konten herüber; danach meldest du dich mit deinem bisherigen Passwort an.
+samt Konten herüber; danach meldest du dich mit deinen bisherigen
+Zugangsdaten an.
 
 Das Image gibt es für **amd64** (Synology, Intel-NAS, PC) und **arm64**
 (Raspberry Pi, ARM-NAS), auf zwei Registries – derselbe Build, nur zwei

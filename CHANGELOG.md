@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.4.2 – August 2026
+
+### Behoben
+- 🙈 **Benutzernamen auf dem Anmeldebogen.** Nach dem Einspielen einer
+  Sicherung (2.4.0) stand dort „Jetzt anmelden als: Sven, nerdfan" – gedacht
+  als Hilfe, tatsächlich aber eine Liste aller Admin-Namen auf einer Seite,
+  an der noch niemand angemeldet ist. Der Hinweis nennt jetzt keine Namen
+  mehr, und auch das Namensfeld bleibt leer
+
+> Der Endpunkt gibt die Namen gar nicht erst heraus – nicht nur die Anzeige
+> ist weg, sondern die Quelle. Wer die Sicherung eingespielt hat, kennt seine
+> Zugangsdaten ohnehin.
+
 ## 2.4.1 – August 2026
 
 ### Neu
@@ -19,8 +32,8 @@
   bisher einen unnötigen Umweg: erst ein Admin-Konto anlegen, das die
   Sicherung gleich darauf wieder überschreibt. Jetzt steht im Willkommens-
   Bogen unter dem Anlegen-Knopf **„📥 Sicherung einspielen"** – der ganze
-  alte Stand kommt herüber, samt Konten. Danach meldet man sich mit dem
-  **bisherigen Passwort** an, und der Anmeldebogen nennt dazu den Namen
+  alte Stand kommt herüber, samt Konten. Danach meldet man sich mit den
+  **bisherigen Zugangsdaten** an
 
 > **Ohne Anmeldung – ist das in Ordnung?** Ja, denn es geht nur, solange die
 > Instanz **leer** ist. Wer sie in diesem Zustand erreicht, könnte ohnehin

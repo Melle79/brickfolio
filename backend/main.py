@@ -2273,12 +2273,11 @@ def setup_restore(body: RestoreBody):
         raise HTTPException(409, "Die Einrichtung ist bereits abgeschlossen – "
                                  "eine Sicherung spielt der Admin unter "
                                  "Mehr → Sicherung ein")
-    users = _sicherung_pruefen(body)
-    counts = _sicherung_einspielen(body)
-    # Die Namen zurückgeben, damit die Anmeldung danach sagen kann, mit wem.
-    admins = sorted(str(u.get("username") or "") for u in users
-                    if u.get("is_admin"))
-    return {"ok": True, "restored": counts, "admins": admins}
+    _sicherung_pruefen(body)
+    # Bewusst ohne die Benutzernamen aus der Sicherung: Der Anmeldebogen
+    # danach ist eine Seite, an der noch niemand angemeldet ist – dort haben
+    # fremde Namen nichts zu suchen, auch nicht als Hilfestellung.
+    return {"ok": True, "restored": _sicherung_einspielen(body)}
 
 
 # ---------------------------------------------------------------- API-Schlüssel (Admin)
