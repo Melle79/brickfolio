@@ -143,13 +143,15 @@ kommen von [BrickLink](https://www.bricklink.com) und
 
 | Scannen | Sammlung |
 |:---:|:---:|
-| <img src="docs/screenshots/scannen.png" width="260" alt="Scan-Treffer mit dem Kästchen für das eigene Foto und dem Knopf „Nur Foto dazu""> | <img src="docs/screenshots/sammlung.png" width="260" alt="Sammlung"> |
+| <img src="docs/screenshots/scannen.png" width="260" alt="Scan-Treffer mit Kaestchen fuer das eigene Foto"> | <img src="docs/screenshots/sammlung.png" width="260" alt="Sammlung"> |
 | **Statistik** | **Einkaufsliste (Flohmarkt-Modus)** |
 | <img src="docs/screenshots/statistik.png" width="260" alt="Statistik"> | <img src="docs/screenshots/einkaufsliste.png" width="260" alt="Einkaufsliste"> |
-| **Eigene Fotos am Artikel** | **Sicherung samt Bildern** |
-| <img src="docs/screenshots/eigene-fotos.png" width="260" alt="Galerie: Katalogbild und daneben das eigene Foto, mit Knopf zum Entfernen"> | <img src="docs/screenshots/sicherung-bilder.png" width="260" alt="Sicherungskarte mit dem Kästchen „Eigene Bilder mitsichern""> |
+| **Eigene Fotos in der Galerie** | **Sicherung samt Bildern** |
+| <img src="docs/screenshots/eigene-fotos.png" width="260" alt="Galerie mit eigenen Fotos"> | <img src="docs/screenshots/sicherung-bilder.png" width="260" alt="Sicherung mit eigenen Bildern"> |
 
-*(Screenshots mit Demo-Daten)*
+*(Screenshots mit Demo-Daten. Statt Katalogbildern steht überall der
+Platzhalter der App – fremdes Bildmaterial gehört nicht ins Repository. Die
+Fotos in der Galerie sind selbst erzeugte Beispielbilder.)*
 
 ## Schnellstart (Docker)
 

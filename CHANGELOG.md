@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.8.4 – August 2026
+
+### Behoben
+- 🖼 **Zwei Bilder im README wurden gar nicht angezeigt.** Die
+  Alternativtexte enthielten typografische Anführungszeichen („…"), womit
+  GitHub die `<img>`-Auszeichnung nicht mehr las – statt der Bilder stand
+  dort der nackte Quelltext. Die Alternativtexte sind jetzt schlicht
+
+### Geändert
+- 📸 **Kein fremdes Bildmaterial mehr in den Abzügen.** Die neuen
+  Bildschirmabzüge zeigten Katalogbilder von BrickLink. Die vorhandenen
+  Abzüge kommen seit jeher ohne aus – sie zeigen den Platzhalter der App.
+  Neu erzeugt, jetzt genauso; die Fotos in der Galerie sind selbst erzeugte
+  Beispielbilder
+
 ## 2.8.3 – August 2026
 
 ### Neu
