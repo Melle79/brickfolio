@@ -2159,8 +2159,74 @@ async function bildMasse(file) {
   }
 }
 
+/* ---------------------------------------------------------- Schonend
+   Was diese App mit Bildern tut, tun die wenigsten Seiten: entpacken,
+   auf Zeichenflächen malen, Bildpunkte auslesen, wieder als JPEG kodieren –
+   und das reihum ein Dutzend Mal. Der Browser schiebt das gern auf die
+   Grafikeinheit. Bricht der Renderer dort ab, sieht man auf einer
+   gewöhnlichen Seite nie etwas davon.
+
+   Der schonende Modus geht denselben Weg zu Fuß: Entpacken über ein
+   gewöhnliches Bildelement statt `createImageBitmap`, und alle
+   Zeichenflächen mit `willReadFrequently` – das hält sie im Hauptspeicher
+   statt auf der Grafikeinheit. Etwas langsamer, dafür ohne den Umweg, der
+   im Verdacht steht. */
+const SCHONEND_KEY = "bf_schonend";
+let schonendAn = localStorage.getItem(SCHONEND_KEY) === "1";
+
+function flaeche2d(c, lesen = false) {
+  return c.getContext("2d", { willReadFrequently: schonendAn || lesen });
+}
+
+/* Entpackt ein Bild und liefert etwas, das `drawImage` frisst – je nach
+   Modus eine Bitmap, ein Bildelement oder eine Zeichenfläche. Maße kommen
+   immer aus dem Rückgabewert, nie aus `.width` des Elements: Bei einem
+   Bildelement wäre das die Anzeigebreite, nicht die echte. */
+async function bildEntpacken(quelle, zielB = 0, zielH = 0) {
+  if (!schonendAn) {
+    const bmp = zielB
+      ? await createImageBitmap(quelle, { resizeWidth: zielB,
+        resizeHeight: zielH, resizeQuality: "high" })
+      : await createImageBitmap(quelle);
+    return { bild: bmp, breite: bmp.width, hoehe: bmp.height,
+      schliessen: () => bmp.close() };
+  }
+  const url = URL.createObjectURL(quelle);
+  let img;
+  try {
+    img = new Image();
+    // Kein `img.decode()`: Bei einem Bild, das nicht im Dokument hängt,
+    // kommt das Versprechen unter Umständen nie zurück – nachgemessen, der
+    // ganze Scan blieb daran stehen. `onload` genügt für `drawImage`.
+    await new Promise((fertig, schief) => {
+      img.onload = fertig;
+      img.onerror = () => schief(new Error("Bild nicht lesbar"));
+      img.src = url;
+    });
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    throw e;
+  }
+  const bw = img.naturalWidth, bh = img.naturalHeight;
+  if (!zielB || zielB >= bw) {
+    return { bild: img, breite: bw, hoehe: bh,
+      schliessen: () => URL.revokeObjectURL(url) };
+  }
+  // Verkleinern übernimmt hier die Zeichenfläche, nicht der Entpacker.
+  const c = document.createElement("canvas");
+  c.width = zielB;
+  c.height = zielH;
+  flaeche2d(c).drawImage(img, 0, 0, zielB, zielH);
+  URL.revokeObjectURL(url);
+  return { bild: c, breite: zielB, hoehe: zielH,
+    schliessen: () => { c.width = c.height = 0; } };
+}
+
 async function verkleinern(file, maxSeite = SCAN_KANTE) {
-  if (!file || !("createImageBitmap" in window)) return file;
+  // Kein `createImageBitmap` mehr vorausgesetzt: Der schonende Modus kommt
+  // ohne aus, und misslingt das Entpacken, geht die Datei ohnehin unverändert
+  // weiter.
+  if (!file) return file;
   let masse;
   try {
     masse = await bildMasse(file);
@@ -2174,26 +2240,23 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
   if (faktor === 1) return file;                      // schon klein genug
   const bw = Math.round(masse.w * faktor);
   const bh = Math.round(masse.h * faktor);
-  let bmp;
+  // **Beim Entpacken** verkleinern, nicht danach. Ein Handyfoto hat
+  // heute leicht 50 Megapixel – vollständig entpackt sind das rund
+  // 200 MB, in einem Stück, außerhalb des JS-Speichers. Genau dort sieht
+  // keine Messung etwas, und genau dort ist der Tab wiederholt gestorben,
+  // während die Kurve flach blieb.
+  let entpackt;
   try {
-    // **Beim Entpacken** verkleinern, nicht danach. Ein Handyfoto hat
-    // heute leicht 50 Megapixel – vollständig entpackt sind das rund
-    // 200 MB, in einem Stück, außerhalb des JS-Speichers. Genau dort sieht
-    // keine Messung etwas, und genau dort ist der Tab wiederholt gestorben,
-    // während die Kurve flach blieb. Mit `resizeWidth` entsteht das große
-    // Bild gar nicht erst.
-    bmp = await createImageBitmap(file, {
-      resizeWidth: bw, resizeHeight: bh, resizeQuality: "high",
-    });
+    entpackt = await bildEntpacken(file, bw, bh);
   } catch (_) {
-    try { bmp = await createImageBitmap(file); }       // älterer Browser
+    try { entpackt = await bildEntpacken(file); }      // älterer Browser
     catch (_2) { return file; }
   }
   const c = document.createElement("canvas");
   c.width = bw;
   c.height = bh;
-  c.getContext("2d").drawImage(bmp, 0, 0, bw, bh);
-  bmp.close();                       // das Original sofort freigeben
+  flaeche2d(c).drawImage(entpackt.bild, 0, 0, bw, bh);
+  entpackt.schliessen();             // das Original sofort freigeben
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;            // auch die Zeichenfläche
   spur(`verkleinert auf ${bw}×${bh}`);
@@ -2534,12 +2597,12 @@ async function alleFigurenErkennen(weiter = false) {
     try {
       // Die Bitmap wird nur einmal gebraucht: zum Füllen der Zeichenfläche.
       // Danach hielten beide dieselbe Bildfläche doppelt im Speicher.
-      const bmp = await createImageBitmap(lastScanFile);
-      c.width = bmp.width;
-      c.height = bmp.height;
+      const entpackt = await bildEntpacken(lastScanFile);
+      c.width = entpackt.breite;
+      c.height = entpackt.hoehe;
       const ctx = c.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(bmp, 0, 0);
-      bmp.close();
+      ctx.drawImage(entpackt.bild, 0, 0);
+      entpackt.schliessen();
       reihumZustand = { c, ctx, farbe: hintergrundFarbe(ctx, c.width, c.height),
         gefunden: [], treffer: [] };
     } catch (e) {
@@ -2682,7 +2745,7 @@ let arbeitBildTimer = null;
 function arbeitBildFreigeben() {
   clearTimeout(arbeitBildTimer);
   arbeitBildTimer = null;
-  if (arbeitBild) { arbeitBild.bmp.close(); arbeitBild = null; }
+  if (arbeitBild) { arbeitBild.schliessen(); arbeitBild = null; }
 }
 
 /* Wieder loslassen – aber nicht sofort: Wer mehrere Figuren nacheinander
@@ -2702,21 +2765,20 @@ async function arbeitBildHolen() {
   const vorschau = $("preview-img");
   const quelle = originalScanFile || lastScanFile;
   if (!quelle) return null;
-  let bmp;
+  let entpackt;
   try {
     const m = await bildMasse(quelle);
     const f = Math.min(1, ARBEIT_KANTE / Math.max(m.w, m.h));
-    bmp = f < 1
-      ? await createImageBitmap(quelle, {
-        resizeWidth: Math.round(m.w * f), resizeHeight: Math.round(m.h * f),
-        resizeQuality: "high" })
-      : await createImageBitmap(quelle);
+    entpackt = f < 1
+      ? await bildEntpacken(quelle, Math.round(m.w * f), Math.round(m.h * f))
+      : await bildEntpacken(quelle);
   } catch (_) {
-    try { bmp = await createImageBitmap(lastScanFile); } catch (_2) { return null; }
+    try { entpackt = await bildEntpacken(lastScanFile); }
+    catch (_2) { return null; }
   }
   // Die Rahmen liegen in den Maßen der Vorschau – hier wird umgerechnet.
-  const breite = (vorschau && vorschau.naturalWidth) || bmp.width;
-  arbeitBild = { bmp, faktor: bmp.width / breite };
+  const breite = (vorschau && vorschau.naturalWidth) || entpackt.breite;
+  arbeitBild = { ...entpackt, faktor: entpackt.breite / breite };
   return arbeitBild;
 }
 
@@ -2726,16 +2788,16 @@ async function ausschnittBild(a, arbeit = null) {
   // gut 20 MB, und die lagen zeitweise nebeneinander im Speicher.
   const werk = arbeit || await arbeitBildHolen();
   if (!werk) return null;
-  const bmp = werk.bmp, k = werk.faktor;
+  const k = werk.faktor;
   const rand = Math.round(Math.max(a.w, a.h) * k * 0.08);
   const x = Math.max(0, Math.round(a.x * k) - rand);
   const y = Math.max(0, Math.round(a.y * k) - rand);
-  const w = Math.min(bmp.width - x, Math.round(a.w * k) + rand * 2);
-  const h = Math.min(bmp.height - y, Math.round(a.h * k) + rand * 2);
+  const w = Math.min(werk.breite - x, Math.round(a.w * k) + rand * 2);
+  const h = Math.min(werk.hoehe - y, Math.round(a.h * k) + rand * 2);
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
-  c.getContext("2d").drawImage(bmp, x, y, w, h, 0, 0, w, h);
+  flaeche2d(c).drawImage(werk.bild, x, y, w, h, 0, 0, w, h);
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;
   return new File([blob], "scan.jpg", { type: "image/jpeg" });
@@ -8990,6 +9052,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderDiag();
     toast(tr("Verlauf geleert"));
   });
+  const schonend = $("diag-schonend");
+  if (schonend) {
+    schonend.checked = schonendAn;
+    schonend.addEventListener("change", () => {
+      schonendAn = schonend.checked;
+      localStorage.setItem(SCHONEND_KEY, schonendAn ? "1" : "0");
+      // Was schon entpackt ist, wurde auf dem alten Weg gemacht.
+      arbeitBildFreigeben();
+      spur("Schonender Bildmodus: " + (schonendAn ? "an" : "aus"));
+      toast(schonendAn ? tr("Schonender Bildmodus an 🐢")
+        : tr("Schonender Bildmodus aus"));
+    });
+  }
   $("btn-push-on").addEventListener("click", pushEinschalten);
   $("btn-push-off").addEventListener("click", pushAusschalten);
   $("btn-push-test").addEventListener("click", async () => {

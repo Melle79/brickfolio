@@ -1772,6 +1772,23 @@ the settings just because that is where they last looked something up.
 > acceleration** (`edge://settings/system`), and report one of the entries via
 > "Send feedback".
 
+**🐢 Gentle image mode.** A checkbox in the same card, off by default. "But
+other sites don't crash" – true, and the likely reason is: hardly any other
+page gives the browser this work. Brickfolio decodes photos, paints them onto
+canvases, reads pixels back and re-encodes as JPEG – a dozen times over during
+the round-robin search. Browsers like to push that onto the **graphics unit**,
+and that is exactly where renderers abort.
+
+The gentle mode walks the same road on foot: decoding via a plain image
+element, every canvas in main memory. A little slower, otherwise the same –
+same results, same crops.
+
+> **How to narrow it down:** switch the mode on and work as usual for a while.
+> If things stay calm, that road was the cause. If it keeps crashing –
+> especially **without you having scanned anything** – it is not that, and the
+> way forward runs through the browser: test another application, turn off
+> hardware acceleration, report it.
+
 > **What the number says – and what it does not.** What is measured is the
 > **JavaScript memory**. Decoded images and the page structure itself are
 > **not** in it. If the curve grows, it is the app. If it stays flat while the

@@ -1854,6 +1854,24 @@ weil er dort zuletzt etwas nachgesehen hat.
 > **Hardwarebeschleunigung abschalten** (`edge://settings/system`) und einen
 > der Einträge über „Feedback senden" melden.
 
+**🐢 Schonender Bildmodus.** Ein Kästchen in derselben Karte, standardmäßig
+aus. „Aber andere Seiten stürzen doch nicht ab" – stimmt, und der Grund
+dafür ist wahrscheinlich: Kaum eine andere Seite gibt dem Browser diese
+Arbeit. Brickfolio entpackt Fotos, malt sie auf Zeichenflächen, liest
+Bildpunkte aus und kodiert wieder als JPEG – bei der Reihum-Suche ein
+Dutzend Mal hintereinander. Der Browser schiebt so etwas gern auf die
+**Grafikeinheit**, und genau dort brechen Renderer ab.
+
+Der schonende Modus geht denselben Weg zu Fuß: Entpacken über ein
+gewöhnliches Bildelement, alle Zeichenflächen im Hauptspeicher. Etwas
+langsamer, sonst gleich – dieselben Ergebnisse, dieselben Ausschnitte.
+
+> **So grenzt ihr ein:** Modus einschalten, eine Weile wie gewohnt
+> arbeiten. Bleibt es ruhig, lag es an diesem Weg. Stürzt es weiter ab –
+> besonders **ohne dass ihr gescannt habt** –, liegt es nicht daran, und der
+> Weg führt über den Browser: andere Anwendung testen,
+> Hardwarebeschleunigung abschalten, melden.
+
 > **Was die Zahl aussagt – und was nicht.** Gemessen wird der
 > **JavaScript-Speicher**. Entpackte Bilder und der Aufbau der Seite selbst
 > stecken da **nicht** drin. Wächst die Kurve, liegt es an der App. Bleibt

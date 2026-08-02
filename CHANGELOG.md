@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.8.0 – August 2026
+
+### Neu
+- 🐢 **Schonender Bildmodus** (*Mehr → Fehlerbericht*, standardmäßig aus).
+  Diese App entpackt Fotos, malt sie auf Zeichenflächen, liest Bildpunkte
+  aus und kodiert wieder – Arbeit, die der Browser gern auf die
+  **Grafikeinheit** schiebt und die kaum eine andere Seite ihm gibt. Der
+  Modus geht denselben Weg zu Fuß, im Hauptspeicher: Entpacken über ein
+  gewöhnliches Bildelement statt `createImageBitmap`, Zeichenflächen mit
+  `willReadFrequently`. Etwas langsamer, sonst gleich
+
+> **Wofür das gut ist:** Bricht der Tab beim Scannen ab, während die
+> Speicherkurve flach bleibt, lässt sich damit prüfen, ob es an diesem Weg
+> liegt. Gemessen liefern beide Modi dasselbe Ergebnis (3000×2000 → Vorschau
+> 1200×800, gleicher Treffer, gleiche Dauer).
+>
+> Ehrlicherweise: Ein Absturz **ohne jeden Scan** zeigt, dass es nicht nur
+> daran liegen kann. Der Modus ist ein Werkzeug zum Eingrenzen, kein Heilmittel.
+
+### Behoben
+- ⏳ **`img.decode()` blieb an einem losen Bild hängen.** Beim Bauen des
+  schonenden Modus aufgefallen: Ein Bild, das nicht im Dokument hängt, gibt
+  das Versprechen unter Umständen nie zurück – der ganze Scan blieb stehen.
+  `onload` genügt für das Weiterzeichnen
+
 ## 2.7.1 – August 2026
 
 ### Behoben
