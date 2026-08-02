@@ -7268,6 +7268,19 @@ function errorWhen(ts) {
     + " " + d.toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" });
 }
 
+/* Ein Eintrag ohne Datei und Zeile kommt nicht aus der App (siehe
+   `istFremdfehler`). Ohne diesen Satz steht er zwischen echten Fehlern und
+   sieht aus wie einer – „?:0" ist die alte Schreibweise vor 2.4.3. */
+function fremdfehlerZeile(e) {
+  const fremd = istFremdfehler(e.message, "", 0)
+    && ["fremdes Skript", "?:0"].includes(e.context || "");
+  if (!fremd) return "";
+  return `<p class="search-hint" style="margin:6px 0 0">🧩 <b>Kein Fehler der
+    App.</b> Den meldet der Browser ohne Datei und Zeile – das tut er nur bei
+    Skripten fremder Herkunft, etwa aus einer Erweiterung oder einem
+    Inhaltsblocker. Näheres verschweigt er aus Sicherheitsgründen.</p>`;
+}
+
 function renderErrors() {
   const box = $("errors-list");
   const data = errorsState;
@@ -7289,6 +7302,7 @@ function renderErrors() {
         <div class="sub">${e.count}× · zuletzt ${errorWhen(e.last_at)}
           · v${esc(e.app_version || "?")}${
             e.context ? " · " + esc(e.context) : ""}</div>
+        ${fremdfehlerZeile(e)}
         ${e.detail ? `<details class="help" style="margin-top:6px">
           <summary>Details</summary>
           <pre class="update-cmd" style="white-space:pre-wrap">${esc(e.detail)}</pre>
@@ -7342,8 +7356,38 @@ function errorsAsText() {
   ).join("\n");
 }
 
+/* „Script error." ohne Datei und Zeile – das schreibt der Browser hin, wenn
+   ein Skript **fremder Herkunft** geworfen hat. Die Seite lädt nur zwei
+   eigene Dateien und kennt keine Rahmen, also kann es keine der unseren
+   sein: In Frage kommen Erweiterungen, Inhaltsblocker und was der Browser
+   selbst einspritzt (Passwort-Ausfüllhilfe etwa). Aus Sicherheitsgründen
+   verschweigt er dabei alles Nähere.
+
+   Ändern lässt sich das nicht. Aber statt einer nackten Zeile, die wie ein
+   Defekt der App aussieht, hängen wir wenigstens an, was gerade lief. */
+function istFremdfehler(message, filename, lineno) {
+  return /^Script error\.?$/i.test(String(message || "").trim())
+    && !filename && !lineno;
+}
+
+function spurAlsText(anzahl = 8) {
+  return spurLesen().slice(-anzahl)
+    .map((e) => new Date(e.t).toLocaleTimeString(dateLocale()) + "  ·  " + e.w)
+    .join("\n");
+}
+
 function initErrorReporting() {
   window.addEventListener("error", (ev) => {
+    if (istFremdfehler(ev.message, ev.filename, ev.lineno)) {
+      // Übersetzt schon beim Melden: Der Text landet als Ganzes in der
+      // Datenbank, dort greift der Katalog später nicht mehr.
+      reportError(ev.message,
+        tr("Der Browser nennt weder Datei noch Zeile – das tut er nur bei "
+           + "Skripten fremder Herkunft (Erweiterung, Inhaltsblocker, "
+           + "Einspritzung des Browsers). Keins davon gehört zur App. Was "
+           + "zuletzt lief:") + "\n\n" + spurAlsText(), "fremdes Skript");
+      return;
+    }
     reportError(ev.message, ev.error && ev.error.stack,
       `${ev.filename || "?"}:${ev.lineno || 0}`);
   });

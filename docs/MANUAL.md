@@ -1615,6 +1615,19 @@ browser; under "details" the complete information.
 not create a hundred entries but one with a counter. The list keeps the last
 100 distinct errors.
 
+**"Script error." – the one entry that isn't one.** If a message carries
+neither file nor line, the app is not at fault. For security reasons the
+browser boils errors from **foreign scripts** down to exactly that sentence
+and withholds everything else. The page loads only two files of its own and
+embeds no frames – so it cannot be one of ours. The candidates are browser
+extensions, content blockers and whatever the browser injects itself (password
+autofill, say); on the iPhone that is the most common case. Since 2.4.3 such
+entries are labelled **🧩 Not a fault of the app** and carry at least the last
+few steps before the error under *Details*.
+
+> If it bothers you, try once in a **private window** or with extensions
+> disabled. If it stays away there, that was exactly it.
+
 **What is not reported:** API keys and the GitHub token are removed from every
 text (`***`) before it is stored or sent. The report goes exclusively to your
 own server – the only thing that leaves it is what you send as an issue

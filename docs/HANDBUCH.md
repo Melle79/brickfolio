@@ -1688,6 +1688,19 @@ welcher Browser; unter „Details" die vollständigen Angaben.
 Seitenaufruf auftritt, erzeugt keine hundert Einträge, sondern einen mit
 Zähler. Die Liste hält die letzten 100 verschiedenen Fehler.
 
+**„Script error." – der einzige Eintrag, der keiner ist.** Steht dort eine
+Meldung ohne Datei und Zeile, ist die App nicht schuld. Der Browser kürzt
+Fehler aus **fremden Skripten** aus Sicherheitsgründen auf genau diesen Satz
+zusammen und verschweigt alles Nähere. Die Seite lädt nur zwei eigene Dateien
+und bindet keine Rahmen ein – es kann also keins von uns sein. In Frage kommen
+Browser-Erweiterungen, Inhaltsblocker und was der Browser selbst einspritzt
+(Passwort-Ausfüllhilfe etwa); auf dem iPhone ist das der häufigste Fall.
+Solche Einträge sind seit 2.4.3 als **🧩 Kein Fehler der App** beschriftet und
+tragen unter *Details* wenigstens die letzten Schritte vor dem Fehler.
+
+> Ärgert es dich, teste einmal im **privaten Fenster** oder mit
+> abgeschalteten Erweiterungen. Bleibt es dort aus, war es genau das.
+
 **Was nicht gemeldet wird:** API-Schlüssel und der GitHub-Token werden aus
 jedem Text entfernt (`***`), bevor er gespeichert oder verschickt wird.
 Die Meldung geht ausschließlich an euren eigenen Server – nach außen geht

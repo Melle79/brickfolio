@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.4.3 – August 2026
+
+### Geändert
+- 🧩 **„Script error." sieht nicht mehr nach einem Defekt aus.** Der Eintrag
+  stand ohne Datei und Zeile zwischen echten Fehlern. Er kommt aber gar nicht
+  aus der App: Fehler aus **fremden Skripten** kürzt der Browser aus
+  Sicherheitsgründen auf genau diesen Satz zusammen – in Frage kommen
+  Erweiterungen, Inhaltsblocker und was der Browser selbst einspritzt. Solche
+  Einträge sind jetzt als **🧩 Kein Fehler der App** beschriftet, auch die
+  schon gespeicherten
+- 🔎 **Und sie tragen jetzt etwas bei.** Wo der Browser Datei und Zeile
+  verschweigt, hängt die App die **letzten Schritte vor dem Fehler** an. Damit
+  lässt sich wenigstens sehen, wobei es passiert
+
+> Die Aussage steht auf einem prüfbaren Fundament: Die Seite lädt zwei eigene
+> Skripte und bindet keine Rahmen ein. Ein Test wacht darüber – käme je ein
+> fremdes Skript dazu, wäre die Beschriftung eine Lüge und der Test rot.
+
 ## 2.4.2 – August 2026
 
 ### Behoben
