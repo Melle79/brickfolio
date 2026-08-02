@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.8.2 – August 2026
+
+### Behoben
+- 🔢 **„1 Bilder, 24 KB".** In der Sicherungskarte stand die Mehrzahl auch bei
+  einem einzigen Bild. Beim Erstellen der neuen README-Bilder aufgefallen –
+  wer Abzüge macht, liest die Oberfläche eben zum ersten Mal wieder genau
+
+### Dokumentation
+- 📸 **Neue Bildschirmabzüge im README**: Scan-Treffer mit dem Kästchen fürs
+  eigene Foto und dem Knopf „Nur Foto dazu", die Galerie mit Katalogbild und
+  eigenem Foto nebeneinander, sowie die Sicherung mit „Eigene Bilder
+  mitsichern". Der alte Scan-Abzug zeigte den Stand von Mitte Juli
+- 📖 Die Funktionsliste nennt die eigenen Fotos und die Bilder in der Sicherung
+
 ## 2.8.1 – August 2026
 
 ### Aufgeräumt

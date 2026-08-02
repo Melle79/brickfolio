@@ -6420,13 +6420,13 @@ async function zeigeBilderWahl() {
     const mb = b.bytes < 1048576
       ? Math.max(1, Math.round(b.bytes / 1024)) + " KB"
       : (Math.round(b.bytes / 104858) / 10) + " MB";
+    const was = b.count === 1 ? tr("1 Bild") : tr("{n} Bilder", { n: b.count });
     const zuGross = b.bytes > b.max_bytes;
     $("backup-bilder-info").textContent = zuGross
-      ? tr("{n} Bilder, {mb} – zu viel für eine Sicherungsdatei. "
-           + "Sichert den Ordner data/uploads/ als Ganzes.",
-        { n: b.count, mb })
-      : tr("{n} Bilder, {mb}. Ohne sie zeigen die Artikel nach einem "
-           + "Umzug ins Leere.", { n: b.count, mb });
+      ? tr("{was}, {mb} – zu viel für eine Sicherungsdatei. "
+           + "Sichert den Ordner data/uploads/ als Ganzes.", { was, mb })
+      : tr("{was}, {mb}. Ohne sie zeigen die Artikel nach einem "
+           + "Umzug ins Leere.", { was, mb });
     $("backup-bilder").checked = !zuGross;
     $("backup-bilder").disabled = zuGross;
     wahl.hidden = false;

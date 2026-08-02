@@ -34,6 +34,12 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Figuren zeigen, in welchen euren Sets sie stecken; fehlende Set-Figuren
   landen mit einem Tipp gesammelt auf der Wunschliste
 - 🖼 **Bild nachladen** je Eintrag, falls es fehlt oder nicht passt
+- 📷 **Eigene Fotos am Artikel** – so wie die Bilder, die Käufer bei BrickLink
+  beisteuern. Ein Kästchen über den Scan-Treffern hängt das Scan-Foto an alles,
+  was ihr daraus anlegt; bei mehreren Figuren auf einem Bild bekommt **jede
+  ihren eigenen Ausschnitt**. Das Katalogbild bleibt, euer Foto kommt in der
+  Galerie daneben. Steht die Figur längst in der Sammlung, genügt **„📷 Nur
+  Foto dazu"** – ohne eine zweite Zeile anzulegen
 - 🔎 **Detailansicht überall**: Ein Tipp auf einen Such- oder Scan-Treffer
   öffnet ein Popup mit Jahr, Thema, Preisen und – bei Minifiguren – den
   **enthaltenen Teilen samt Farbnamen**
@@ -101,8 +107,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🔐 Mehrbenutzer mit Token-Login (PBKDF2-gehashte Passwörter), Admin- und
   Profi-Rollen (Admins können weitere Admins ernennen), eigene
   Passwort-/Namensänderung
-- 💾 Komplett-**Sicherung** als JSON (herunterladen & wieder einspielen),
-  CSV-Export und druckfertige Listen
+- 💾 Komplett-**Sicherung** als JSON (herunterladen & wieder einspielen) –
+  auf Wunsch **samt eurer eigenen Bilder**, damit nach einem Umzug nichts ins
+  Leere zeigt. CSV-Export und druckfertige Listen gibt es dazu
 - 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (Standard „Finn");
   ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
 - 🌌 Drei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell,
@@ -136,9 +143,11 @@ kommen von [BrickLink](https://www.bricklink.com) und
 
 | Scannen | Sammlung |
 |:---:|:---:|
-| <img src="docs/screenshots/scannen.png" width="260" alt="Scannen"> | <img src="docs/screenshots/sammlung.png" width="260" alt="Sammlung"> |
+| <img src="docs/screenshots/scannen.png" width="260" alt="Scan-Treffer mit dem Kästchen für das eigene Foto und dem Knopf „Nur Foto dazu""> | <img src="docs/screenshots/sammlung.png" width="260" alt="Sammlung"> |
 | **Statistik** | **Einkaufsliste (Flohmarkt-Modus)** |
 | <img src="docs/screenshots/statistik.png" width="260" alt="Statistik"> | <img src="docs/screenshots/einkaufsliste.png" width="260" alt="Einkaufsliste"> |
+| **Eigene Fotos am Artikel** | **Sicherung samt Bildern** |
+| <img src="docs/screenshots/eigene-fotos.png" width="260" alt="Galerie: Katalogbild und daneben das eigene Foto, mit Knopf zum Entfernen"> | <img src="docs/screenshots/sicherung-bilder.png" width="260" alt="Sicherungskarte mit dem Kästchen „Eigene Bilder mitsichern""> |
 
 *(Screenshots mit Demo-Daten)*
 
