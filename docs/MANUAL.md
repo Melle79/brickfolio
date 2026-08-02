@@ -142,7 +142,8 @@ about to create, so it applies on every device.
 After that you are signed in, and a wizard walks you through the rest in seven
 steps:
 
-1. **Display name** – the name in the logo and window title ("Finn's
+1. **Display name** – the name in the logo, the window title, the **app icon**
+   and the name on the phone's home screen ("Sven's Brickfolio")
    Brickfolio")
 2. **Price region and currency** – which market the average prices come from
    and in which currency; preselected is what matches your browser's language

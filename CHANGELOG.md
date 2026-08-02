@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.2.0 – August 2026
+
+### Behoben
+- 📱 **„Finn's Brickfolio" auf jedem Handy.** Legte man die App auf den
+  Startbildschirm, stand dort der fest eingebaute Name – auch auf einer
+  Instanz, die längst anders heißt. Manifest, Fenstertitel und der Name für
+  iOS kommen jetzt aus dem **Anzeigenamen** unter *Mehr → Anzeigename*
+- 🖼 **Und „FINN" stand im Symbol.** Das App-Symbol wird jetzt erzeugt: die
+  bekannte Zeichnung, darüber der Anzeigename der Instanz. Die Schriftgröße
+  richtet sich nach der Länge, damit auch längere Namen hineinpassen
+
+> Gebraucht wird dafür keine mitgelieferte Schriftdatei – Pillow bringt eine
+> skalierbare Standardschrift mit, die auch im schlanken Docker-Abbild
+> vorhanden ist. Erzeugt wird je Name und Größe einmal, danach kommt das
+> Symbol aus dem Zwischenspeicher.
+
 ## 2.1.1 – August 2026
 
 ### Behoben

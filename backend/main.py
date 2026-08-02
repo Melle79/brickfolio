@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import html
+import io
 import json
 import os
 import re
@@ -5437,8 +5438,72 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 @app.get("/manifest.webmanifest")
 def manifest():
-    return FileResponse(os.path.join(FRONTEND_DIR, "manifest.webmanifest"),
-                        media_type="application/manifest+json")
+    """Name der Installation aus der Einstellung, nicht aus einer Datei.
+
+    Legt man die App aufs Handy, steht dort der Name aus dem Manifest – bisher
+    fest „Finn's Brickfolio", auch wenn die Instanz längst anders heißt. Das
+    Manifest wird deshalb erzeugt statt ausgeliefert.
+    """
+    wer = _owner_name()
+    return JSONResponse({
+        "name": f"{wer}s Brickfolio – Deine LEGO-Sammlung",
+        "short_name": f"{wer}s Brickfolio",
+        "description": "LEGO Minifiguren scannen, erkennen und "
+                       "gemeinsam verwalten",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#E9EBEE",
+        "theme_color": "#FFCF00",
+        "lang": "de",
+        "icons": [
+            {"src": "/icon/192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/icon/512.png", "sizes": "512x512", "type": "image/png"},
+        ],
+    }, media_type="application/manifest+json")
+
+
+# Erzeugte Symbole je Name und Größe. Die Zeichnung ist immer dieselbe, nur
+# der Schriftzug wechselt – gerechnet wird deshalb einmal und dann gemerkt.
+_icon_cache: dict = {}
+
+
+@app.get("/icon/{groesse}.png")
+def icon(groesse: int):
+    """App-Symbol mit dem Namen der Instanz statt eines festen „FINN"."""
+    if groesse not in (180, 192, 512):
+        raise HTTPException(404, "Nicht gefunden")
+    wer = _owner_name().upper()[:12]
+    schluessel = (wer, groesse)
+    if schluessel not in _icon_cache:
+        _icon_cache.clear()          # Name geändert: alte Größen sind hinfällig
+        _icon_cache[schluessel] = _icon_bauen(wer, groesse)
+    return Response(_icon_cache[schluessel], media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=3600"})
+
+
+def _icon_bauen(wer: str, groesse: int) -> bytes:
+    from PIL import Image, ImageDraw, ImageFont
+    basis = os.path.join(FRONTEND_DIR, "icons", "icon-basis.png")
+    im = Image.open(basis).convert("RGBA")
+    d = ImageDraw.Draw(im)
+    # Größte Schrift, die in das freie Feld über dem Kopf passt.
+    breite, kasten = 0, 372
+    for gr in range(96, 20, -4):
+        f = ImageFont.load_default(size=gr)
+        l, t, r, b = d.textbbox((0, 0), wer, font=f)
+        breite = r - l
+        if breite <= kasten:
+            break
+    # Strichstärke: Die mitgelieferte Schrift ist dünner als der ursprüngliche
+    # Zug – ein Rand in derselben Farbe macht sie wieder kräftig.
+    d.text(((im.width - breite) / 2 - l, 105 - (b - t) / 2 - t), wer, font=f,
+           fill=(255, 255, 255, 255), stroke_width=max(1, gr // 28),
+           stroke_fill=(255, 255, 255, 255))
+    if groesse != im.width:
+        im = im.resize((groesse, groesse), Image.LANCZOS)
+    raus = io.BytesIO()
+    im.save(raus, "PNG")
+    return raus.getvalue()
 
 
 @app.get("/sw.js")
@@ -5458,5 +5523,6 @@ def index():
     Cachen der versionierten Dateien (siehe cache_control).
     """
     with open(os.path.join(FRONTEND_DIR, "index.html"), encoding="utf-8") as f:
-        html = f.read().replace("__APPVERSION__", core.APP_VERSION)
+        html = (f.read().replace("__APPVERSION__", core.APP_VERSION)
+                .replace("__OWNER__", _owner_name()))
     return HTMLResponse(html)

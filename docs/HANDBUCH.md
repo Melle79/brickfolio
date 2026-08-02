@@ -143,7 +143,8 @@ Beim ersten Aufruf im Browser wählst du Benutzername und Passwort für das
 **Admin-Konto** – danach bist du angemeldet, und ein Assistent führt in
 sieben Schritten durch den Rest:
 
-1. **Anzeigename** – der Name in Logo und Fenstertitel („Finn's Brickfolio")
+1. **Anzeigename** – der Name in Logo, Fenstertitel, **App-Symbol** und im
+   Namen auf dem Startbildschirm des Handys („Svens Brickfolio")
 2. **Preisgebiet und Währung** – aus welchem Markt die Ø-Preise kommen und
    in welcher Währung; vorausgewählt ist, was zu den Spracheinstellungen des
    Browsers passt (siehe Kapitel 13.1)
