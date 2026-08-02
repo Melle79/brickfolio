@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.1 – August 2026
+
+### Neu
+- 🔢 **Version steht auf dem Startbildschirm.** Klein und grau unter der
+  Anmeldekarte („Brickfolio 2.4.1"). Wer mehrere Instanzen betreibt, sieht
+  jetzt ohne Anmeldung, welche er gerade vor sich hat – und wer einen Fehler
+  meldet, muss die Version nicht erst suchen
+
+> Verraten wird damit nichts Neues: Die Version stand auf dieser Seite
+> ohnehin schon, nur unsichtbar – an den Versionsmarken der Dateien
+> (`style.css?v=…`), die jeder Seitenquelltext zeigt.
+
 ## 2.4.0 – August 2026
 
 ### Neu

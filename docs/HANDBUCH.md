@@ -1205,6 +1205,11 @@ GitHub-Release – automatisch beim App-Start und beim Öffnen des Mehr-Tabs
 Updates suchen". Wartet ein Update, erscheinen ein Hinweis-Toast und ein
 gelber Banner mit Link zu den Release-Notes.
 
+> **Ohne Anmeldung nachsehen:** Die laufende Version steht klein unter der
+> Anmeldekarte („Brickfolio 2.4.1"). Praktisch, wenn mehrere Instanzen
+> laufen und man wissen will, welche man gerade vor sich hat – oder wenn
+> jemand einen Fehler meldet und die Version dazu braucht.
+
 Wie eingespielt wird, hängt davon ab, wie ihr installiert habt.
 
 **Mit fertigem Image** (der übliche Weg, siehe 2.2):

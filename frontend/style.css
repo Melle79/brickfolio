@@ -82,7 +82,19 @@ button { font-family: inherit; }
 .view { padding: 16px 16px calc(env(safe-area-inset-bottom) + 84px); max-width: 640px; margin: 0 auto; }
 
 /* ---------- Login ---------- */
-#view-login { display: grid; place-items: center; min-height: 100dvh; padding: 24px; }
+#view-login {
+  display: grid; place-items: center; gap: 14px;
+  min-height: 100dvh; padding: 24px;
+  /* Nötig, seit unter der Karte noch die Versionszeile steht: Ohne diese
+     Angabe zieht das Raster die beiden Zeilen auf die volle Fensterhöhe
+     auseinander (gemessen: 219 px Lücke statt der 14 px von `gap`).
+     „safe" für den Fall, dass die Karte höher ist als das Fenster – dann
+     nach oben statt mittig, damit ihr Kopf erreichbar bleibt. */
+  align-content: safe center;
+}
+/* Steht ohnehin schon im Quelltext der Seite (?v=… an den Dateien) – hier
+   nur sichtbar, damit man beim Melden eines Fehlers nicht erst suchen muss. */
+.login-version { margin: 0; font-size: 12px; color: var(--muted); }
 .login-box {
   width: 100%; max-width: 360px; background: var(--card);
   border: 2px solid var(--ink); border-radius: var(--radius);

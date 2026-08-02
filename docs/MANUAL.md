@@ -1158,6 +1158,11 @@ automatically at app start and when opening the More tab (cached server-side
 for 6 hours), immediately via "Check for updates". If an update is waiting, a
 toast and a yellow banner with a link to the release notes appear.
 
+> **Checking without signing in:** the running version sits in small print
+> below the sign-in card ("Brickfolio 2.4.1"). Handy when several instances
+> are running and you want to know which one you are looking at – or when
+> somebody reports a fault and needs the version to go with it.
+
 How you apply it depends on how you installed.
 
 **With the ready-made image** (the usual way, see 2.2):
