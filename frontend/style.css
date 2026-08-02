@@ -1298,8 +1298,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 /* Fenster, die aus einem anderen Fenster heraus aufgehen (Melden aus dem
    Chat), müssen darüber liegen – sonst entscheidet die Reihenfolge im HTML,
-   und das Meldefenster verschwände hinter dem Gespräch. */
-.card-modal-overlay.stacked { z-index: 80; }
+   und das Meldefenster verschwände hinter dem Gespräch.
+
+   Und zwar auch über der **Großansicht** (z-index 100): Aus ihr heraus
+   fragt „Mein Foto entfernen?" nach, und diese Frage lag sonst hinter dem
+   abgedunkelten Bild. Eine Rückfrage ist immer das Oberste – nur der Toast
+   (110) bleibt darüber, sonst bliebe die Antwort auf die Aktion ausgerechnet
+   dort unsichtbar, wo sie ausgelöst wurde. */
+.card-modal-overlay.stacked { z-index: 105; }
 .card-modal {
   position: relative; margin: auto;
   width: 100%; max-width: 640px; max-height: 92vh; display: flex;

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.6.1 – August 2026
+
+### Behoben
+- 🪟 **„Mein Foto entfernen?" ging hinter der Großansicht auf.** Die Rückfrage
+  lag auf Ebene 80, die Großansicht auf 100 – man sah die Frage nur
+  abgedunkelt durchschimmern und die Aktion schien zu hängen. Rückfragen
+  liegen jetzt über allem außer dem Toast
+
+> Ein Test hält die Reihenfolge fest: Rückfrage über Großansicht, Toast über
+> allem. Sonst rutscht das beim nächsten Umbau wieder durcheinander.
+
 ## 2.6.0 – August 2026
 
 ### Geändert
