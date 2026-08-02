@@ -653,6 +653,15 @@ code {
   color: #fff; font-weight: 900; font-size: 15px;
   background: rgba(29,29,27,.6); padding: 4px 14px; border-radius: 999px;
 }
+/* Nur bei eigenen Fotos sichtbar – ein Katalogbild kann man nicht löschen.
+   Unten statt oben, damit er nicht neben dem Zähler klebt. */
+.lb-del {
+  position: absolute; bottom: calc(env(safe-area-inset-bottom) + 54px);
+  left: 50%; transform: translateX(-50%);
+  color: #fff; font: inherit; font-weight: 800; font-size: 14px;
+  background: rgba(200,32,32,.85); border: none; cursor: pointer;
+  padding: 8px 18px; border-radius: 999px;
+}
 
 .price-history { margin-top: 8px; }
 .history-svg {

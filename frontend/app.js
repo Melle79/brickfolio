@@ -843,12 +843,15 @@ function imgKey(u) {
 }
 
 function openGallery(startUrl, gid, gtype) {
-  gallery = { urls: startUrl ? [startUrl] : [], idx: 0 };
+  gallery = { urls: startUrl ? [startUrl] : [], idx: 0, eigene: {} };
   renderGallery();
   $("lightbox").hidden = false;
   if (gid && !gid.startsWith("manuell-")) {
     api(`/images/${encodeURIComponent(gtype || "minifig")}/${encodeURIComponent(gid)}`)
       .then((d) => {
+        // Welches Bild ist ein eigenes? Danach richtet sich der Löschknopf.
+        gallery.eigene = {};
+        (d.own || []).forEach((f) => { gallery.eigene[f.url] = f.id; });
         // Backend-Bilder bevorzugen (kanonisch, meist bessere Auflösung),
         // gleiches Motiv zusammenfassen; das Startbild nur behalten, wenn es
         // eine wirklich andere Quelle ist.
@@ -870,12 +873,41 @@ function openGallery(startUrl, gid, gtype) {
 }
 
 function renderGallery() {
-  $("lightbox-img").src = gallery.urls[gallery.idx] || "";
+  const aktuell = gallery.urls[gallery.idx] || "";
+  $("lightbox-img").src = aktuell;
   const many = gallery.urls.length > 1;
-  $("lb-count").textContent = many
-    ? `${gallery.idx + 1} / ${gallery.urls.length}` : "";
+  const eigen = gallery.eigene && gallery.eigene[aktuell];
+  $("lb-count").textContent = (many
+    ? `${gallery.idx + 1} / ${gallery.urls.length}` : "")
+    + (eigen ? (many ? " · " : "") + tr("mein Foto") : "");
   $("lb-prev").hidden = !many;
   $("lb-next").hidden = !many;
+  const weg = $("lb-del");
+  if (weg) weg.hidden = !eigen;
+}
+
+/* Ein eigenes Foto wieder vom Artikel lösen. Die Datei bleibt liegen – sie
+   kann an einem anderen Artikel hängen. */
+async function eigenesFotoEntfernen() {
+  const url = gallery.urls[gallery.idx];
+  const id = gallery.eigene && gallery.eigene[url];
+  if (!id) return;
+  if (!await appDialog({
+    titel: tr("Mein Foto entfernen?"),
+    text: tr("Der Artikel behält sein Katalogbild."),
+    ok: tr("Entfernen"), gefahr: true,
+  })) return;
+  try {
+    await api(`/item_photos/${id}`, { method: "DELETE" });
+    delete gallery.eigene[url];
+    gallery.urls.splice(gallery.idx, 1);
+    if (!gallery.urls.length) { closeGallery(); }
+    else {
+      gallery.idx = Math.min(gallery.idx, gallery.urls.length - 1);
+      renderGallery();
+    }
+    toast(tr("Foto entfernt"));
+  } catch (e) { toast(e.message); }
 }
 
 function stepGallery(delta) {
@@ -888,7 +920,9 @@ function stepGallery(delta) {
 function closeGallery() {
   $("lightbox").hidden = true;
   $("lightbox-img").src = "";
-  gallery = { urls: [], idx: 0 };
+  gallery = { urls: [], idx: 0, eigene: {} };
+  const weg = $("lb-del");
+  if (weg) weg.hidden = true;
 }
 
 function priceGuideUrl(it) {
@@ -1676,7 +1710,9 @@ async function setupSicherungEinspielen(file) {
   try {
     const res = await api("/setup/restore", { method: "POST", body: data });
     const n = (res.restored && res.restored.collection) ?? "?";
-    toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n }));
+    const bilder = (res.restored && res.restored.uploads) || 0;
+    toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n })
+      + (bilder ? tr(" · {n} eigene Bilder", { n: bilder }) : ""));
     // Der Anmeldebogen tritt an die Stelle des Assistenten – die Instanz
     // ist ab jetzt eingerichtet. Ohne Namen: Wer die Sicherung eingespielt
     // hat, kennt seine Zugangsdaten; auf den Bildschirm gehören sie nicht.
@@ -2688,10 +2724,12 @@ async function ausschnittBild(a, arbeit = null) {
 const EIGENBILD_KEY = "bf_eigenbild";
 let eigenbildAn = localStorage.getItem(EIGENBILD_KEY) === "1";
 
-/* Das eigene Foto an den Treffer heften, **bevor** er angelegt wird: Alle
-   drei Wege (Sammlung, Merken, Liste) schicken `it.img_url` mit, also genügt
-   es, die eine Stelle zu ersetzen. Hochgeladen wird erst beim Anlegen – wer
-   nur schaut, lädt nichts hoch. */
+/* Das eigene Foto **zusätzlich** an den Artikel hängen – wie die Bilder, die
+   Käufer bei BrickLink beisteuern. Das Katalogbild bleibt, wo es ist; das
+   Foto erscheint in der Galerie daneben.
+
+   Hochgeladen wird erst beim Anlegen, nicht beim Anzeigen der Treffer: Wer
+   nur schaut oder abbricht, lädt nichts hoch. */
 async function eigenbildAnhaengen(it, i) {
   if (!eigenbildAn || !it || it._eigenbild) return;
   let datei = null;
@@ -2704,13 +2742,12 @@ async function eigenbildAnhaengen(it, i) {
   form.append("file", datei);
   try {
     const res = await api("/upload_image", { method: "POST", body: form });
-    it.img_url = res.url;
+    await api("/item_photos", { method: "POST", body: {
+      item_type: it.item_type || "minifig", item_id: it.item_id,
+      url: res.url,
+    }});
     it._eigenbild = true;
-    spur("Eigenes Bild gespeichert");
-    // Sichtbar machen, dass es geklappt hat.
-    const karte = $("scan-results")
-      .querySelector(`[data-sug-id="${CSS.escape(it.item_id)}"] .card-img`);
-    if (karte) karte.src = res.url;
+    spur("Eigenes Foto am Artikel");
   } catch (e) {
     toast(e.message);
   }
@@ -2735,9 +2772,9 @@ function renderScanResults(items) {
       + "wenige aus der Nähe."))}</p>` : "")
     + (lastScanFile ? `<label class="eigenbild-wahl">
         <input type="checkbox" id="scan-eigenbild"${eigenbildAn ? " checked" : ""}>
-        <span>📷 <b>Mein Foto statt des Katalogbilds.</b> Was ich gleich
-          anlege, bekommt mein eigenes Bild – bei mehreren Figuren jeweils
-          den Ausschnitt, in dem sie gefunden wurde.</span>
+        <span>📷 <b>Mein Foto zusätzlich am Artikel.</b> Das Katalogbild
+          bleibt – mein Foto kommt in der Galerie daneben, bei mehreren
+          Figuren jeweils der Ausschnitt, in dem sie gefunden wurde.</span>
       </label>` : "")
     + items.map((it, i) => {
     const scoreCls = it.score >= 60 ? "badge-score" : "badge badge-low";
@@ -2768,7 +2805,7 @@ function renderScanResults(items) {
       eigenbildAn = schalter.checked;
       localStorage.setItem(EIGENBILD_KEY, eigenbildAn ? "1" : "0");
       toast(eigenbildAn ? tr("Eigene Fotos werden übernommen 📷")
-        : tr("Es bleibt beim Katalogbild"));
+        : tr("Eigene Fotos bleiben aus"));
     });
   }
 
@@ -6259,9 +6296,36 @@ async function printWanted() {
     ["num", "name", "year", "price", "price"]);
 }
 
+/* Wie viele eigene Bilder liegen hier? Erst wenn es welche gibt, ist die
+   Frage überhaupt eine – vorher bleibt das Kästchen weg. */
+async function zeigeBilderWahl() {
+  const wahl = $("backup-bilder-wahl");
+  if (!wahl) return;
+  try {
+    const b = await api("/uploads_info");
+    if (!b.count) { wahl.hidden = true; return; }
+    // Unter einem Megabyte stünde dort „0 MB" – das sieht nach nichts aus.
+    const mb = b.bytes < 1048576
+      ? Math.max(1, Math.round(b.bytes / 1024)) + " KB"
+      : (Math.round(b.bytes / 104858) / 10) + " MB";
+    const zuGross = b.bytes > b.max_bytes;
+    $("backup-bilder-info").textContent = zuGross
+      ? tr("{n} Bilder, {mb} – zu viel für eine Sicherungsdatei. "
+           + "Sichert den Ordner data/uploads/ als Ganzes.",
+        { n: b.count, mb })
+      : tr("{n} Bilder, {mb}. Ohne sie zeigen die Artikel nach einem "
+           + "Umzug ins Leere.", { n: b.count, mb });
+    $("backup-bilder").checked = !zuGross;
+    $("backup-bilder").disabled = zuGross;
+    wahl.hidden = false;
+  } catch (_) { wahl.hidden = true; }
+}
+
 async function downloadBackup() {
   try {
-    const data = await api("/backup");
+    const mitBildern = $("backup-bilder") && $("backup-bilder").checked
+      && !$("backup-bilder").disabled;
+    const data = await api("/backup" + (mitBildern ? "?images=1" : ""));
     const blob = new Blob([JSON.stringify(data)],
       { type: "application/json" });
     const a = document.createElement("a");
@@ -6271,7 +6335,9 @@ async function downloadBackup() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    toast("Sicherung heruntergeladen 💾");
+    const bilder = data.uploads ? Object.keys(data.uploads).length : 0;
+    toast(bilder ? tr("Sicherung heruntergeladen 💾 (mit {n} eigenen Bildern)",
+      { n: bilder }) : "Sicherung heruntergeladen 💾");
   } catch (e) { toast(e.message); }
 }
 
@@ -6291,7 +6357,9 @@ async function restoreBackupFile(file) {
   try {
     const res = await api("/restore", { method: "POST", body: data });
     const n = res.restored && res.restored.collection;
-    toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n: n ?? "?" }));
+    const bilder = (res.restored && res.restored.uploads) || 0;
+    toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n: n ?? "?" })
+      + (bilder ? tr(" · {n} eigene Bilder", { n: bilder }) : ""));
     setTimeout(() => neuLadenMit("Sicherung eingespielt"), 1200);
   } catch (e) { toast(e.message); }
 }
@@ -8573,6 +8641,7 @@ async function loadSettings() {
     $("owner-name").placeholder = "Finn";
   }
   $("backup-card").hidden = !isAdmin;
+  if (isAdmin) zeigeBilderWahl();
   if (isAdmin) {
     api("/backup_info").then((b) => {
       if (!b || b.keep <= 0) return;
@@ -9146,9 +9215,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
   $("lightbox").addEventListener("click", (ev) => {
-    if (ev.target.closest(".lb-nav")) return;
+    if (ev.target.closest(".lb-nav, .lb-del")) return;
     closeGallery();
   });
+  $("lb-del").addEventListener("click", eigenesFotoEntfernen);
   $("lb-prev").addEventListener("click", () => stepGallery(-1));
   $("lb-next").addEventListener("click", () => stepGallery(1));
   document.addEventListener("keydown", (ev) => {

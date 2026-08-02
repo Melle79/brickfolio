@@ -2103,7 +2103,7 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
 BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
                  "shopping_items", "price_history",
                  "set_contents", "set_meta", "fig_sets", "fig_parts",
-                 "settings"]
+                 "item_photos", "settings"]
 
 
 class OwnerNameBody(BaseModel):
@@ -2193,14 +2193,64 @@ def backup_restore_file(body: RestoreFileBody,
             "safety": os.path.basename(safety)}
 
 
+# Eigene Bilder sind Dateien, keine Datenbankzeilen – ohne sie trüge die
+# Sicherung nur den Verweis, und nach einem Umzug zeigten die Artikel ins
+# Leere. Mitgenommen werden sie deshalb als Base64 im selben Dokument: Eine
+# Datei bleibt eine Datei, und der Weg zum Einspielen (auch der aus der
+# Ersteinrichtung) muss nichts Neues können.
+UPLOAD_NAME = re.compile(r"^[0-9a-f]{32}\.jpg$")
+UPLOADS_MAX = 150 * 1024 * 1024      # darüber wird die JSON-Datei unhandlich
+UPLOAD_EINZEL_MAX = 8 * 1024 * 1024
+
+
+def _uploads_liste() -> list:
+    """Vorhandene eigene Bilder mit ihrer Größe."""
+    d = _uploads_dir()
+    raus = []
+    for name in sorted(os.listdir(d)):
+        if not UPLOAD_NAME.match(name):
+            continue
+        try:
+            raus.append({"name": name,
+                         "bytes": os.path.getsize(os.path.join(d, name))})
+        except OSError:
+            pass
+    return raus
+
+
+@app.get("/api/uploads_info")
+def uploads_info(user: dict = Depends(admin_user)):
+    """Wie viele eigene Bilder liegen hier, und wie schwer wiegen sie?"""
+    dateien = _uploads_liste()
+    return {"count": len(dateien), "bytes": sum(f["bytes"] for f in dateien),
+            "max_bytes": UPLOADS_MAX}
+
+
 @app.get("/api/backup")
-def download_backup(user: dict = Depends(admin_user)):
+def download_backup(images: int = 0, user: dict = Depends(admin_user)):
     dump = {"app": "brickfolio", "version": 1,
             "created_at": int(time.time()), "tables": {}}
     with core.db() as conn:
         for t in BACKUP_TABLES:
             rows = conn.execute(f"SELECT * FROM {t}").fetchall()
             dump["tables"][t] = [dict(r) for r in rows]
+    if images:
+        dateien = _uploads_liste()
+        gesamt = sum(f["bytes"] for f in dateien)
+        if gesamt > UPLOADS_MAX:
+            raise HTTPException(413, "Die eigenen Bilder sind zusammen zu "
+                                     "groß für eine Sicherungsdatei. Sichert "
+                                     "stattdessen den Ordner data/uploads/ "
+                                     "als Ganzes.")
+        d = _uploads_dir()
+        dump["uploads"] = {}
+        for f in dateien:
+            try:
+                with open(os.path.join(d, f["name"]), "rb") as fh:
+                    dump["uploads"][f["name"]] = base64.b64encode(
+                        fh.read()).decode("ascii")
+            except OSError:
+                pass                 # eine fehlende Datei kippt nicht alles
     return dump
 
 
@@ -2208,6 +2258,8 @@ class RestoreBody(BaseModel):
     app: str = ""
     version: int = 0
     tables: dict
+    # Ältere Sicherungen haben das nicht – dann bleibt es eben leer.
+    uploads: dict = {}
 
 
 def _sicherung_pruefen(body: "RestoreBody") -> list:
@@ -2243,7 +2295,40 @@ def _sicherung_einspielen(body: "RestoreBody") -> dict:
                 n += 1
             counts[t] = n
         conn.execute("PRAGMA foreign_keys = ON")
+    counts["uploads"] = _bilder_zurueckschreiben(body.uploads)
     return counts
+
+
+def _bilder_zurueckschreiben(uploads: dict) -> int:
+    """Eigene Bilder aus der Sicherung wieder als Dateien anlegen.
+
+    Der Name ist zugleich der Verweis aus der Datenbank – er muss also genau
+    so wiederkommen. Deshalb wird er streng geprüft: Was nicht wie ein von
+    uns vergebener Name aussieht, wird übergangen. Sonst könnte eine
+    manipulierte Sicherungsdatei irgendwohin schreiben.
+    """
+    if not isinstance(uploads, dict) or not uploads:
+        return 0
+    d = _uploads_dir()
+    n = 0
+    for name, roh in uploads.items():
+        if not isinstance(name, str) or not UPLOAD_NAME.match(name):
+            continue
+        if not isinstance(roh, str) or len(roh) > UPLOAD_EINZEL_MAX * 4 // 3 + 8:
+            continue
+        try:
+            daten = base64.b64decode(roh, validate=True)
+        except Exception:
+            continue
+        if not daten or len(daten) > UPLOAD_EINZEL_MAX:
+            continue
+        try:
+            with open(os.path.join(d, name), "wb") as f:
+                f.write(daten)
+            n += 1
+        except OSError:
+            pass
+    return n
 
 
 @app.post("/api/restore")
@@ -3078,6 +3163,58 @@ def upload_image(file: UploadFile = File(...),
     return {"url": f"/uploads/{name}"}
 
 
+class ItemPhotoBody(BaseModel):
+    item_type: str = Field(min_length=1, max_length=20)
+    item_id: str = Field(min_length=1, max_length=60)
+    url: str = Field(min_length=10, max_length=200)
+
+
+@app.post("/api/item_photos")
+def add_item_photo(body: ItemPhotoBody, user: dict = Depends(current_user)):
+    """Ein eigenes Foto an einen Artikel hängen – neben das Katalogbild.
+
+    Angenommen wird nur, was diese Instanz selbst abgelegt hat: Sonst könnte
+    hier jede beliebige fremde Adresse landen, und die Galerie holte beim
+    Anschauen unbemerkt etwas von außen.
+    """
+    name = body.url.rsplit("/", 1)[-1]
+    if not body.url.startswith("/uploads/") or not UPLOAD_NAME.match(name):
+        raise HTTPException(400, "Nur eigene Bilder dieser Instanz")
+    if not os.path.isfile(os.path.join(_uploads_dir(), name)):
+        raise HTTPException(404, "Bild nicht gefunden")
+    with core.db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO item_photos (item_type, item_id, url,"
+            " added_by, added_at) VALUES (?, ?, ?, ?, ?)",
+            (body.item_type, body.item_id, body.url, user["id"],
+             int(time.time())))
+        row = conn.execute(
+            "SELECT id FROM item_photos WHERE item_type = ? AND item_id = ?"
+            " AND url = ?", (body.item_type, body.item_id, body.url)).fetchone()
+    return {"ok": True, "id": row["id"] if row else None}
+
+
+@app.delete("/api/item_photos/{photo_id}")
+def delete_item_photo(photo_id: int, user: dict = Depends(current_user)):
+    """Foto vom Artikel lösen. Die Datei bleibt – sie kann an einem anderen
+    Artikel hängen, und ein verwaistes Bild schadet weniger als ein
+    verschwundenes."""
+    with core.db() as conn:
+        cur = conn.execute("DELETE FROM item_photos WHERE id = ?", (photo_id,))
+    if cur.rowcount == 0:
+        raise HTTPException(404, "Foto nicht gefunden")
+    return {"ok": True}
+
+
+def _eigene_fotos(item_type: str, item_id: str) -> list:
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT id, url FROM item_photos WHERE item_type = ? AND"
+            " item_id = ? ORDER BY added_at, id", (item_type, item_id)
+        ).fetchall()
+    return [{"id": r["id"], "url": r["url"]} for r in rows]
+
+
 @app.get("/uploads/{name}")
 def serve_upload(name: str):
     """Hochgeladenes Bild ausliefern. Bewusst ohne Login, damit die Bilder
@@ -3170,7 +3307,14 @@ def item_images(item_type: str, item_no: str,
         if code:
             safe = requests.utils.quote(item_no)
             add(f"https://img.bricklink.com/ItemImage/{code}/0/{safe}.png")
-    return {"images": urls}
+    # Eigene Fotos ans Ende, nicht an den Anfang: Das Katalogbild zeigt die
+    # Figur sauber freigestellt und bleibt das erste, was man sieht. Getrennt
+    # ausgewiesen, damit die Galerie sie kennzeichnen und löschen lassen kann.
+    eigene = _eigene_fotos(item_type, item_no)
+    for f in eigene:
+        if f["url"] not in urls:
+            urls.append(f["url"])
+    return {"images": urls, "own": eigene}
 
 
 # ---------------------------------------------------------------- Sammlung

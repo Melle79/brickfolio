@@ -845,6 +845,11 @@
         <button class="mini-btn" id="btn-restore">📥 Sicherung einspielen</button>
       </div>
       <input type="file" id="restore-file" accept=".json,application/json" hidden>
+      <label class="eigenbild-wahl" id="backup-bilder-wahl" hidden>
+        <input type="checkbox" id="backup-bilder" checked>
+        <span>🖼 <b>Eigene Bilder mitsichern.</b>
+          <span id="backup-bilder-info"></span></span>
+      </label>
       <p class="search-hint">Enthält alles: Benutzer, Sammlung, Wünsche,
         Preisverläufe, Set-Zuordnungen und Einstellungen.</p>
       <p class="search-hint" id="backup-auto-info">Zusätzlich sichert
@@ -1045,6 +1050,7 @@ sudo bash update.sh</pre>
   <img id="lightbox-img" alt="Großansicht">
   <button id="lb-next" class="lb-nav" aria-label="Nächstes Bild">›</button>
   <span id="lb-count" class="lb-count"></span>
+  <button id="lb-del" class="lb-del" hidden>🗑 Mein Foto entfernen</button>
   <span class="lightbox-hint">Wischen zum Blättern · Tippen zum Schließen</span>
 </div>
 

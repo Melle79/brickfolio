@@ -592,21 +592,30 @@ The single green frame labelled **"looked here"** is something else: it comes
 from the recognition service and shows what it guessed at during the first
 scan. As soon as numbered frames appear, it goes away.
 
-### 5.6 Your own photo instead of the catalogue picture
+### 5.6 Your own photo alongside the item
 
-Above the results sits a checkbox: **📷 My photo instead of the catalogue
-picture.** With it ticked, everything you add from this scan – collection,
-wish list **and** shopping list – gets your own image instead of the
-catalogue drawing.
+Above the results sits a checkbox: **📷 My photo alongside the item.** With
+it ticked, everything you add from this scan – collection, wish list **and**
+shopping list – gets your own photo attached to the item. Think of the
+pictures buyers contribute on BrickLink: the **catalogue picture stays** where
+it is, yours joins it.
+
+You see them in the **gallery**: tap an item's picture and page through. The
+catalogue picture comes first – it shows the figure cleanly cut out – and your
+photos follow. On one of yours the top says **"my photo"**, and at the bottom
+**🗑 Remove my photo** appears.
 
 With several minifigures in one photo each gets **its own crop**: exactly the
 frame it was found in. Whether that frame came from the round-robin search,
 from a kept frame or from one you dragged yourself makes no difference. Only
 when there is no frame at all does the whole photo get used.
 
-**It is off by default** – a catalogue picture is usually the cleaner one. The
-app remembers your choice on this device, so you do not have to make it again
-at every scan.
+**It is off by default.** The app remembers your choice on this device, so you
+do not have to make it again at every scan.
+
+> **The photos belong to the item, not to the row.** If you own the same
+> minifigure twice – once new, once used – both show the same photos. That is
+> deliberate: it is the same figure after all.
 
 > **The upload happens when you add, not before.** Anyone who only looks, who
 > cancels the condition step or closes the list chooser uploads nothing –
@@ -616,14 +625,9 @@ at every scan.
 > On arrival the image is scaled down to 800 px and stored as JPEG; that caps
 > the disk usage and incidentally strips the photo's EXIF data, GPS location
 > included.
-
-> ⚠️ **Custom images are files, not database rows.** They live in
-> `data/uploads/`. The backup under *More → Backup* contains the **database**,
-> that is the reference to the image – but not the file itself. So when moving
-> to another server, copy the `data/uploads/` folder along, otherwise the
-> items point at nothing afterwards. Taking the whole `data/` folder (or the
-> Docker volume) keeps everything together automatically. The same applies to
-> the images of custom minifigures.
+>
+> **Removing only breaks the link.** The file stays – it may be attached to
+> another item, and an orphaned image does less harm than a vanished one.
 
 That one always works: drag a **frame around one figure** with your finger
 (or the mouse) and tap **🔍 Recognise this crop**. The cropping happens in
@@ -1172,6 +1176,20 @@ while.
 histories, set links and settings. **📥 restore** brings that state back
 completely – after a confirmation showing its date; **all current data is
 replaced**. Backups without an admin user are rejected (lock-out protection).
+
+**🖼 Include your own images.** Photos attached to items (chapter 5.6) and the
+pictures of custom minifigures are **files**, not database rows – without them
+the backup would carry only the reference, and after a move the items would
+point at nothing. So the card shows a checkbox as soon as there are any; it
+names their number and size and is ticked by default. The images then travel
+inside the same JSON file, and on restore Brickfolio writes them back under
+their old names – so the references still fit. That applies to the backup you
+restore at the **very first start** as well (chapter 2.3).
+
+> **When it gets too much:** beyond roughly 150 MB of images a single JSON file
+> becomes unwieldy. The app then refuses to include them and says so – in that
+> case take the `data/uploads/` folder (or all of `data/`) along via your
+> normal backup.
 
 **It also happens automatically:** Brickfolio writes a consistent backup of the
 database to `data/backups/` every day and keeps the last 14 daily snapshots

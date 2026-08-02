@@ -610,12 +610,18 @@ Der einzelne grüne Rahmen mit der Beschriftung **„hier geschaut"** ist etwas
 anderes: Er kommt vom Erkennungsdienst und zeigt, worüber er beim ersten
 Scan geraten hat. Sobald nummerierte Rahmen da sind, verschwindet er.
 
-### 5.6 Das eigene Foto statt des Katalogbilds
+### 5.6 Das eigene Foto zusätzlich am Artikel
 
-Über den Treffern steht ein Kästchen: **📷 Mein Foto statt des
-Katalogbilds.** Ist es angehakt, bekommt alles, was ihr aus diesem Scan
-anlegt – Sammlung, Wunschliste **und** Einkaufsliste –, euer eigenes Bild
-statt der Zeichnung aus dem Katalog.
+Über den Treffern steht ein Kästchen: **📷 Mein Foto zusätzlich am
+Artikel.** Ist es angehakt, hängt alles, was ihr aus diesem Scan anlegt –
+Sammlung, Wunschliste **und** Einkaufsliste –, euer eigenes Foto an den
+Artikel. Gedacht ist es wie die Bilder, die Käufer bei BrickLink
+beisteuern: Das **Katalogbild bleibt**, wo es ist, euer Foto kommt daneben.
+
+Zu sehen sind sie in der **Galerie**: Tippt auf das Bild eines Artikels, und
+blättert. Das Katalogbild ist das erste – es zeigt die Figur sauber
+freigestellt –, eure Fotos folgen. Bei einem eigenen steht oben **„mein
+Foto"**, und unten erscheint **🗑 Mein Foto entfernen**.
 
 Bei mehreren Figuren auf einem Foto bekommt **jede ihren eigenen
 Ausschnitt**: genau den Rahmen, in dem sie gefunden wurde. Ob der aus der
@@ -623,9 +629,12 @@ Reihum-Suche stammt, von einem gemerkten Rahmen oder von einem, den ihr
 selbst gezogen habt, spielt keine Rolle. Nur wenn es gar keinen Rahmen gibt,
 wird das ganze Foto genommen.
 
-**Standardmäßig ist es aus** – ein Katalogbild ist meist das sauberere. Die
-Entscheidung merkt sich die App auf diesem Gerät, ihr müsst sie also nicht
-bei jedem Scan neu treffen.
+**Standardmäßig ist es aus.** Die Entscheidung merkt sich die App auf diesem
+Gerät, ihr müsst sie also nicht bei jedem Scan neu treffen.
+
+> **Die Fotos hängen am Artikel, nicht an der Zeile.** Wer dieselbe Figur
+> zweimal besitzt – einmal neu, einmal gebraucht –, sieht bei beiden
+> dieselben Fotos. Das ist Absicht: Es ist ja dieselbe Figur.
 
 > **Hochgeladen wird erst beim Anlegen.** Wer nur schaut, wer den Zustand
 > wieder abbricht oder die Listenauswahl schließt, lädt nichts hoch – sonst
@@ -634,14 +643,10 @@ bei jedem Scan neu treffen.
 > Das Bild wird beim Empfang auf 800 px verkleinert und als JPEG abgelegt;
 > das begrenzt den Platzbedarf und entfernt nebenbei die EXIF-Daten des
 > Fotos, also auch den GPS-Ort.
-
-> ⚠️ **Eigene Bilder sind Dateien, keine Datenbankeinträge.** Sie liegen in
-> `data/uploads/`. Die Sicherung unter *Mehr → Sicherung* enthält die
-> **Datenbank**, also den Verweis auf das Bild – die Datei selbst aber
-> nicht. Beim Umzug auf einen anderen Server kopiert also den Ordner
-> `data/uploads/` mit, sonst zeigen die Artikel danach ins Leere. Wer den
-> ganzen Ordner `data/` mitnimmt (oder das Docker-Volume), hat automatisch
-> alles beisammen. Das gilt genauso für die Bilder eigener Figuren.
+>
+> **Entfernen löst nur die Verbindung.** Die Datei bleibt liegen – sie kann
+> an einem anderen Artikel hängen, und ein verwaistes Bild schadet weniger
+> als ein verschwundenes.
 
 Der geht immer: mit dem Finger (oder der Maus) einen **Rahmen um eine Figur
 ziehen** und **🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird
@@ -1218,6 +1223,21 @@ Einkaufslisten, Preisverläufe, Set-Zuordnungen und Einstellungen.
 **📥 einspielen** stellt diesen Stand komplett wieder her – nach
 Sicherheitsabfrage mit Datum; **alle aktuellen Daten werden ersetzt**.
 Sicherungen ohne Admin-Benutzer werden abgelehnt (Aussperr-Schutz).
+
+**🖼 Eigene Bilder mitsichern.** Fotos an Artikeln (Kapitel 5.6) und die
+Bilder eigener Figuren sind **Dateien**, keine Datenbankzeilen – ohne sie
+trüge die Sicherung nur den Verweis, und nach einem Umzug zeigten die
+Artikel ins Leere. Deshalb steht in der Karte ein Kästchen, sobald es
+welche gibt; es nennt Anzahl und Größe und ist von Haus aus angehakt. Die
+Bilder wandern dann als Teil derselben JSON-Datei mit, und beim Einspielen
+legt Brickfolio sie unter ihren alten Namen wieder an – die Verweise passen
+also weiter. Das gilt auch für die Sicherung, die man beim **allerersten
+Start** einspielt (Kapitel 2.3).
+
+> **Wenn es zu viel wird:** Ab etwa 150 MB Bildern wird eine einzelne
+> JSON-Datei unhandlich. Dann verweigert die App das Mitsichern und sagt es
+> auch – nehmt in dem Fall den Ordner `data/uploads/` (oder gleich das ganze
+> `data/`) über euer normales Backup mit.
 
 **Automatisch passiert es außerdem von selbst:** Brickfolio legt täglich
 eine konsistente Sicherung der Datenbank unter `data/backups/` ab und

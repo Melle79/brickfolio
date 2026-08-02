@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.5.0"
+APP_VERSION = "2.6.0"
 
 
 def hash_password(password: str) -> str:
@@ -307,6 +307,21 @@ def init_db():
                 first_seen INTEGER NOT NULL,
                 name       TEXT
             );
+            -- Eigene Fotos zu einem Artikel – **zusätzlich** zum Katalogbild,
+            -- so wie die Bilder, die Käufer bei BrickLink beisteuern. Sie
+            -- hängen am Artikel, nicht an der einzelnen Sammlungszeile: Wer
+            -- dieselbe Figur zweimal hat, hat auch zweimal dieselben Fotos.
+            CREATE TABLE IF NOT EXISTS item_photos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_type TEXT NOT NULL,
+                item_id TEXT NOT NULL,
+                url TEXT NOT NULL,
+                added_by INTEGER REFERENCES users(id),
+                added_at INTEGER NOT NULL,
+                UNIQUE (item_type, item_id, url)
+            );
+            CREATE INDEX IF NOT EXISTS idx_item_photos
+                ON item_photos(item_type, item_id);
             CREATE TABLE IF NOT EXISTS push_subs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id),

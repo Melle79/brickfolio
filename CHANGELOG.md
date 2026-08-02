@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.6.0 – August 2026
+
+### Geändert
+- 📷 **Das eigene Foto kommt jetzt *neben* das Katalogbild, nicht an seine
+  Stelle.** In 2.5.0 hat es das Katalogbild ersetzt – das war nicht gemeint.
+  Gedacht ist es wie die Bilder, die Käufer bei BrickLink beisteuern: Das
+  Katalogbild bleibt das erste, was man sieht, das eigene Foto kommt daneben
+
+### Neu
+- 🖼 **Galerie mit den eigenen Fotos.** Tippt auf das Bild eines Artikels und
+  blättert: Erst das Katalogbild, dann eure Fotos. Bei einem eigenen steht
+  oben **„mein Foto"**, und unten erscheint **🗑 Mein Foto entfernen**
+- 💾 **Eigene Bilder gehen in die Sicherung mit.** Sie sind Dateien, keine
+  Datenbankzeilen – bisher trug die Sicherung nur den Verweis, und nach einem
+  Umzug zeigten die Artikel ins Leere. Jetzt steht in der Sicherungs-Karte
+  ein Kästchen mit Anzahl und Größe; die Bilder wandern als Teil derselben
+  JSON-Datei mit und werden beim Einspielen unter ihren alten Namen wieder
+  angelegt. Gilt auch für die Sicherung beim allerersten Start
+
+> **Die Fotos hängen am Artikel, nicht an der Sammlungszeile.** Wer dieselbe
+> Figur zweimal hat – einmal neu, einmal gebraucht –, sieht bei beiden
+> dieselben Fotos. Es ist ja dieselbe Figur.
+>
+> Ab etwa 150 MB Bildern verweigert die App das Mitsichern und sagt es auch;
+> dann gehört `data/uploads/` ins normale Backup.
+
 ## 2.5.0 – August 2026
 
 ### Neu

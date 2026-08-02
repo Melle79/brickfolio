@@ -1,9 +1,9 @@
-"""Das eigene Scan-Foto als Bild des Artikels.
+"""Das eigene Scan-Foto **zusätzlich** am Artikel.
 
-Der Weg dahin ist bewusst schmal: Alle drei Anlege-Wege (Sammlung, Merken,
-Liste) schicken `it.img_url` mit. Wird die eine Stelle vor dem Anlegen
-ersetzt, gilt das Foto überall – ohne dass die drei Wege es einzeln wissen
-müssen.
+Wie die Bilder, die Käufer bei BrickLink beisteuern: Das Katalogbild bleibt
+das erste, was man sieht, das eigene Foto kommt in der Galerie daneben. Es
+hängt am Artikel, nicht an der einzelnen Sammlungszeile – wer dieselbe Figur
+zweimal hat, hat auch zweimal dieselben Fotos.
 """
 import io
 import re
@@ -34,6 +34,15 @@ def test_schalter_wird_gefragt():
     assert 'localStorage.getItem(EIGENBILD_KEY) === "1"' in quelle
 
 
+def test_das_katalogbild_bleibt_unangetastet():
+    """Der Kern der Sache: zusätzlich, nicht statt."""
+    quelle = js()
+    anfang = quelle.index("async function eigenbildAnhaengen(")
+    koerper = quelle[anfang:quelle.index("\n}", anfang)]
+    assert "it.img_url =" not in koerper, "img_url darf nicht ersetzt werden"
+    assert '"/item_photos"' in koerper
+
+
 def test_ohne_schalter_passiert_nichts():
     quelle = js()
     anfang = quelle.index("async function eigenbildAnhaengen(")
@@ -42,17 +51,14 @@ def test_ohne_schalter_passiert_nichts():
 
 
 def test_hochgeladen_wird_erst_beim_anlegen():
-    """Wer nur schaut, soll nichts hochladen – der Haken hängt an den
-    Anlege-Wegen, nicht am Anzeigen der Treffer."""
+    """Wer nur schaut, soll nichts hochladen."""
     quelle = js()
     anfang = quelle.index("function renderScanResults(")
     koerper = quelle[anfang:anfang + 4000]
     assert "wireWantButtons(box, items, eigenbildAnhaengen)" in koerper
     assert "wireCartButtons(box, items, eigenbildAnhaengen)" in koerper
-    # …und in der Sammlung direkt vor dem POST.
     posten = quelle.index('await api("/collection", { method: "POST"', anfang)
-    davor = quelle[posten - 300:posten]
-    assert "eigenbildAnhaengen(it," in davor
+    assert "eigenbildAnhaengen(it," in quelle[posten - 300:posten]
 
 
 def test_jeder_treffer_bekommt_seinen_ausschnitt():
@@ -60,13 +66,10 @@ def test_jeder_treffer_bekommt_seinen_ausschnitt():
     anfang = quelle.index("async function eigenbildAnhaengen(")
     koerper = quelle[anfang:quelle.index("\n}", anfang)]
     assert "scanBoxen[i]" in koerper and "ausschnittBild(" in koerper
-    # Ohne Rahmen das ganze Foto – sonst käme gar nichts an.
     assert "lastScanFile" in koerper
 
 
 def test_alle_erkennungswege_fuehren_rahmen_mit():
-    """Vier Wege führen zu Treffern; jeder muss die Rahmen dazu setzen,
-    sonst bekäme der falsche Artikel den Ausschnitt eines anderen."""
     quelle = js()
     assert len(re.findall(r"\n\s*scanBoxen = ", quelle)) >= 6
 
@@ -78,17 +81,21 @@ def test_neues_foto_verwirft_alte_rahmen():
 
 
 def test_katalogsuche_haengt_kein_scanfoto_an():
-    """Dort gibt es keins – der Haken darf nur aus dem Scan kommen."""
     quelle = js()
-    # Nur die Aufrufe, nicht die Vereinbarungen der beiden Funktionen.
     aufrufe = re.findall(r"(?<!function )wire(?:Want|Cart)Buttons"
                          r"\(box, items([^)]*)\)", quelle)
     assert len(aufrufe) == 4, f"unerwartet viele Aufrufe: {aufrufe}"
     mit_foto = [a for a in aufrufe if "eigenbildAnhaengen" in a]
     ohne = [a for a in aufrufe if "eigenbildAnhaengen" not in a]
-    assert len(mit_foto) == 2, "Scan-Treffer müssen den Haken bekommen"
+    assert len(mit_foto) == 2
     assert all(a.strip() == "" for a in ohne), (
         f"Außerhalb des Scans darf kein Foto angehängt werden: {ohne}")
+
+
+def test_galerie_kann_eigene_fotos_wieder_loesen():
+    quelle = js()
+    assert "async function eigenesFotoEntfernen(" in quelle
+    assert 'gallery.eigene' in quelle
 
 
 # ------------------------------------------------------------------- Backend
@@ -113,45 +120,94 @@ def client(tmp_path, monkeypatch):
     return c
 
 
+def _hochladen(client, farbe=(200, 30, 30)):
+    return client.post("/api/upload_image",
+                       files={"file": ("scan.jpg", _bild(farbe), "image/jpeg")}
+                       ).json()["url"]
+
+
 def test_hochladen_liefert_eine_adresse(client):
-    r = client.post("/api/upload_image",
-                    files={"file": ("scan.jpg", _bild(), "image/jpeg")})
-    assert r.status_code == 200
-    assert re.fullmatch(r"/uploads/[0-9a-f]{32}\.jpg", r.json()["url"])
+    url = _hochladen(client)
+    assert re.fullmatch(r"/uploads/[0-9a-f]{32}\.jpg", url)
 
 
 def test_bild_wird_verkleinert_und_ist_abrufbar(client):
     """Ein Handyfoto darf die Platte nicht vollschreiben."""
-    url = client.post("/api/upload_image",
-                      files={"file": ("scan.jpg", _bild(), "image/jpeg")}
-                      ).json()["url"]
-    r = client.get(url)
+    r = client.get(_hochladen(client))
     assert r.status_code == 200
-    assert r.headers["content-type"] == "image/jpeg"
-    bild = Image.open(io.BytesIO(r.content))
-    assert max(bild.size) <= 800
+    assert max(Image.open(io.BytesIO(r.content)).size) <= 800
 
 
-def test_sammlungseintrag_haelt_das_eigene_bild(client):
-    """Der Kern: Das Bild bleibt am Artikel hängen, nicht nur am Upload."""
-    url = client.post("/api/upload_image",
-                      files={"file": ("scan.jpg", _bild(), "image/jpeg")}
-                      ).json()["url"]
-    r = client.post("/api/collection", json={
-        "item_id": "sw0978", "item_type": "minifig", "name": "Luke",
-        "img_url": url, "condition": "used"})
+def test_foto_haengt_am_artikel(client):
+    url = _hochladen(client)
+    r = client.post("/api/item_photos", json={
+        "item_type": "minifig", "item_id": "sw0978", "url": url})
     assert r.status_code == 200
-    eintrag = client.get("/api/collection").json()["items"][0]
-    assert eintrag["img_url"] == url
+    d = client.get("/api/images/minifig/sw0978").json()
+    assert [f["url"] for f in d["own"]] == [url]
+    assert url in d["images"]
 
 
-def test_zwei_ausschnitte_werden_zwei_bilder(client):
-    """Bei mehreren Figuren darf nicht eins für alle herhalten."""
-    a = client.post("/api/upload_image",
-                    files={"file": ("a.jpg", _bild((10, 200, 10)), "image/jpeg")}
-                    ).json()["url"]
-    b = client.post("/api/upload_image",
-                    files={"file": ("b.jpg", _bild((10, 10, 200)), "image/jpeg")}
-                    ).json()["url"]
-    assert a != b
-    assert client.get(a).content != client.get(b).content
+def test_zweimal_dasselbe_foto_bleibt_eins(client):
+    url = _hochladen(client)
+    for _ in range(2):
+        client.post("/api/item_photos", json={
+            "item_type": "minifig", "item_id": "sw0978", "url": url})
+    assert len(client.get("/api/images/minifig/sw0978").json()["own"]) == 1
+
+
+def test_mehrere_fotos_je_artikel(client):
+    for farbe in ((200, 30, 30), (30, 200, 30), (30, 30, 200)):
+        client.post("/api/item_photos", json={
+            "item_type": "minifig", "item_id": "sw0978",
+            "url": _hochladen(client, farbe)})
+    assert len(client.get("/api/images/minifig/sw0978").json()["own"]) == 3
+
+
+def test_fremde_adressen_werden_abgewiesen(client):
+    """Sonst holte die Galerie beim Anschauen unbemerkt etwas von außen."""
+    for url in ("https://example.invalid/bild.jpg", "/uploads/../geheim.jpg",
+                "/uploads/nicht-hex.jpg", "/static/app.js"):
+        r = client.post("/api/item_photos", json={
+            "item_type": "minifig", "item_id": "sw0978", "url": url})
+        assert r.status_code in (400, 404, 422), url
+    assert client.get("/api/images/minifig/sw0978").json()["own"] == []
+
+
+def test_foto_ohne_datei_wird_abgewiesen(client):
+    r = client.post("/api/item_photos", json={
+        "item_type": "minifig", "item_id": "sw0978",
+        "url": "/uploads/" + "0" * 32 + ".jpg"})
+    assert r.status_code == 404
+
+
+def test_entfernen_loest_nur_die_verbindung(client):
+    """Die Datei bleibt – sie kann an einem anderen Artikel hängen."""
+    url = _hochladen(client)
+    client.post("/api/item_photos", json={
+        "item_type": "minifig", "item_id": "sw0111", "url": url})
+    pid = client.post("/api/item_photos", json={
+        "item_type": "minifig", "item_id": "sw0222", "url": url}).json()["id"]
+    assert client.delete(f"/api/item_photos/{pid}").status_code == 200
+    assert client.get("/api/images/minifig/sw0222").json()["own"] == []
+    # Am anderen Artikel hängt es weiter, und die Datei ist noch da.
+    assert len(client.get("/api/images/minifig/sw0111").json()["own"]) == 1
+    assert client.get(url).status_code == 200
+
+
+def test_katalogbild_bleibt_das_erste(client):
+    """Das eigene Foto kommt daneben, nicht davor."""
+    url = _hochladen(client)
+    client.post("/api/item_photos", json={
+        "item_type": "minifig", "item_id": "sw0978", "url": url})
+    bilder = client.get("/api/images/minifig/sw0978").json()["images"]
+    assert bilder[-1] == url
+    assert len(bilder) > 1, "ohne Katalogbild sagt der Test nichts"
+
+
+def test_fotos_gehen_in_die_sicherung(client):
+    url = _hochladen(client)
+    client.post("/api/item_photos", json={
+        "item_type": "minifig", "item_id": "sw0978", "url": url})
+    dump = client.get("/api/backup").json()
+    assert dump["tables"]["item_photos"][0]["url"] == url
