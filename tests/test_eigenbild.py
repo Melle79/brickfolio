@@ -241,3 +241,32 @@ def test_fotos_gehen_in_die_sicherung(client):
         "item_type": "minifig", "item_id": "sw0978", "url": url})
     dump = client.get("/api/backup").json()
     assert dump["tables"]["item_photos"][0]["url"] == url
+
+
+def test_arbeitsbild_wird_wieder_freigegeben():
+    """Das entpackte Foto liegt außerhalb des JS-Speichers – in der Kurve
+    sieht man davon nichts, im Renderer ist es trotzdem da. Der Foto-Weg war
+    der einzige, der es nie wieder losließ."""
+    quelle = js()
+    anfang = quelle.index("async function eigenbildAnhaengen(")
+    koerper = quelle[anfang:quelle.index("\n}", anfang)]
+    assert "arbeitBildSpaeterFreigeben()" in koerper
+
+
+def test_ausschnitt_immer_mit_freigabe():
+    """Jede Stelle, die `ausschnittBild` ohne fertiges Arbeitsbild aufruft,
+    muss es auch wieder loslassen – sonst bleibt es bis zum nächsten Foto."""
+    quelle = js()
+    for stelle in re.finditer(r"await ausschnittBild\(([^)]*)\)", quelle):
+        if "," in stelle.group(1):
+            continue                      # bekommt das Arbeitsbild gereicht
+        umfeld = quelle[stelle.start():stelle.start() + 700]
+        assert "arbeitBildFreigeben()" in umfeld \
+            or "arbeitBildSpaeterFreigeben()" in umfeld, stelle.group(0)
+
+
+def test_ansichtswechsel_raeumt_auf():
+    quelle = js()
+    anfang = quelle.index("function showTab(")
+    koerper = quelle[anfang:anfang + 900]
+    assert 'if (name !== "scan") arbeitBildFreigeben();' in koerper

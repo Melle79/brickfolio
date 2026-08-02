@@ -1481,6 +1481,10 @@ function showTab(name) {
   spur("Ansicht: " + name);
   try { localStorage.setItem(ANSICHT_KEY, name); } catch (_) { /* egal */ }
   sammlungFreigeben(name);
+  // Wer den Scan-Tab verlässt, braucht das entpackte Foto nicht mehr. Es
+  // liegt außerhalb des JS-Speichers und taucht in keiner Messung auf –
+  // umso wichtiger, es an einer klaren Grenze loszuwerden.
+  if (name !== "scan") arbeitBildFreigeben();
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
   if (name === "collection") loadCollection(true);
@@ -2673,8 +2677,24 @@ function mehrfachRahmen(boxen) {
 const ARBEIT_KANTE = 2400;
 
 
+let arbeitBildTimer = null;
+
 function arbeitBildFreigeben() {
+  clearTimeout(arbeitBildTimer);
+  arbeitBildTimer = null;
   if (arbeitBild) { arbeitBild.bmp.close(); arbeitBild = null; }
+}
+
+/* Wieder loslassen – aber nicht sofort: Wer mehrere Figuren nacheinander
+   anlegt, soll das Foto nicht jedes Mal neu entpacken müssen.
+   **Warum das überhaupt zählt:** Eine entpackte Bitmap von 2400 px liegt bei
+   rund 23 MB, und die liegen **außerhalb** des JS-Speichers. In der Kurve
+   unter „Speicher-Verlauf" sieht man davon nichts – im Renderer des Browsers
+   ist sie trotzdem da. Genau solche unsichtbaren Brocken sind es, die einen
+   Tab umbringen, während die Kurve flach bleibt. */
+function arbeitBildSpaeterFreigeben(ms = 8000) {
+  clearTimeout(arbeitBildTimer);
+  arbeitBildTimer = setTimeout(arbeitBildFreigeben, ms);
 }
 
 async function arbeitBildHolen() {
@@ -2736,7 +2756,12 @@ async function eigenbildAnhaengen(it, i, erzwingen = false) {
   let datei = null;
   try {
     datei = scanBoxen[i] ? await ausschnittBild(scanBoxen[i]) : null;
-  } catch (_) { /* dann das ganze Foto */ }
+  } catch (_) { /* dann das ganze Foto */ } finally {
+    // `ausschnittBild` entpackt das Foto dafür in voller Arbeitsgröße. Ohne
+    // diese Zeile blieb es bis zum nächsten Foto liegen – unsichtbar für
+    // jede Messung, aber sehr wohl im Speicher des Browsers.
+    arbeitBildSpaeterFreigeben();
+  }
   if (!datei) datei = lastScanFile || null;
   if (!datei) return;
   const form = new FormData();

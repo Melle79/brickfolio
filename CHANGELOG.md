@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.7.1 – August 2026
+
+### Behoben
+- 🧹 **Das entpackte Foto blieb nach „Foto dazu" liegen.** Um den Ausschnitt
+  zu schneiden, entpackt die App das Original in Arbeitsgröße – bis zu
+  2400 px, gemessen **16 MB**. Alle anderen Wege gaben es danach wieder frei,
+  der neue Foto-Weg aus 2.5.0 als einziger nicht: Es lag bis zum nächsten
+  Foto herum. Jetzt geht es acht Sekunden nach dem letzten Gebrauch weg, und
+  beim Verlassen des Scan-Tabs sofort
+
+> **Warum das in keiner Kurve zu sehen war:** Eine entpackte Bitmap liegt
+> **außerhalb** des JS-Speichers. Der Verlauf unter *Mehr → Fehlerbericht*
+> zeigte weiter flache 6 MB – im Browser lagen die 16 MB trotzdem. Genau
+> solche unsichtbaren Brocken sind es, die einen Tab umbringen, während die
+> Kurve nichts anzeigt.
+>
+> Ein Test wacht darüber, dass **jede** Stelle, die einen Ausschnitt
+> schneidet, das Arbeitsbild auch wieder loslässt.
+
 ## 2.7.0 – August 2026
 
 ### Neu
