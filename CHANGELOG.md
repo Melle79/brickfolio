@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.9.0 – August 2026
+
+### Neu
+- 🔄 **Die Ansicht frischt sich auf, wenn ihr zum Tab zurückkommt.** Bisher
+  wurde beim Zurückkehren nur das Tausch-Netzwerk abgefragt – Sammlung,
+  Listen und Statistik blieben auf dem Stand von vorhin. Das fällt auf,
+  sobald **mehr als ein Weg** in die Daten führt: ein Familienmitglied am
+  Handy, ein zweiter Tab, oder ein Werkzeug an der Schnittstelle. Man sah
+  dann eine Liste, die es so nicht mehr gab
+
+> **Zwei Einschränkungen mit Absicht:** Der **Scannen-Tab** bleibt
+> unberührt – dort steht womöglich ein Foto samt Treffern, und das darf ein
+> Fensterwechsel nicht wegräumen. Und wer nur kurz hin- und herklickt, löst
+> nichts aus; erst ab vier Sekunden Abwesenheit wird geladen.
+>
+> Gemessen: Liste mit 1 Artikel offen, von außen ein zweiter dazu, Fenster
+> gewechselt – danach **2 Artikel, Einkauf 13,00 €**. Und bei 0,3 Sekunden
+> Wegklicken: kein einziger Ladevorgang.
+
 ## 2.8.4 – August 2026
 
 ### Behoben

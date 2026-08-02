@@ -979,6 +979,17 @@ The centrepiece for Collector-Pros: shopping in a structured way, with market
 knowledge. Standard users see active lists and may book in items that arrived;
 everything else is a pro matter.
 
+> **The view refreshes when you come back.** If you were away in another window
+> for a few seconds, Brickfolio reloads the open view on your return –
+> collection, lists or statistics. That matters as soon as **more than one
+> route** leads into the data: a family member on their phone, a second tab, or
+> a tool talking to the interface. Otherwise you would be looking at a list
+> that no longer exists in that form.
+>
+> The **Scan tab is exempt**: there may be a photo with results sitting there,
+> and switching windows must not sweep that away. And brief clicking back and
+> forth triggers nothing – only an absence of about four seconds does.
+
 ### 7.1 The typical routine at a stall
 
 **1. Create a list.** Either in the **Lists** tab ("New shopping list …") – or

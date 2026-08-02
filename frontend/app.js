@@ -1543,9 +1543,37 @@ function updateHubTab() {
 
 /* Nach dem Zurückkommen (Tab/App wieder im Vordergrund) sofort nachsehen,
    statt bis zum nächsten Takt zu warten. */
+/* Zurück am Tab: nachsehen, ob sich etwas geändert hat.
+
+   Bisher wurde nur das Tausch-Netzwerk abgefragt – die Ansicht selbst blieb
+   auf dem Stand von vorhin. Das fällt auf, sobald **mehr als ein Weg** in
+   die Daten führt: das Handy eines Familienmitglieds, ein zweiter Tab, oder
+   ein Werkzeug, das über die Schnittstelle etwas auf eine Einkaufsliste
+   legt. Man sah dann eine Liste, die es so nicht mehr gab.
+
+   Nur, wenn der Tab wirklich eine Weile weg war: Wer zwischen zwei Fenstern
+   hin- und herklickt, soll nicht bei jedem Klick ein Neuladen auslösen. */
+const AUFFRISCH_PAUSE = 4000;
+let zuletztWeg = 0;
+
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && state.hubConnected) pollTrades();
+  if (document.hidden) { zuletztWeg = Date.now(); return; }
+  if (state.hubConnected) pollTrades();
+  if (Date.now() - zuletztWeg < AUFFRISCH_PAUSE) return;
+  ansichtAuffrischen();
 });
+
+/* Die gerade offene Ansicht neu laden – ohne die Ladeanzeige, damit es
+   nicht flackert, und ohne den Scan-Tab: Dort steht ein Foto samt Treffern,
+   das niemand verlieren will, nur weil er kurz woanders war. */
+function ansichtAuffrischen() {
+  if (!state.token) return;
+  const offen = document.querySelector(".tab.active");
+  const name = offen && offen.dataset.tab;
+  if (name === "collection") loadCollection();
+  else if (name === "lists") showListsTab(listsTab);
+  else if (name === "stats") loadStats();
+}
 
 /* Escape schließt das oberste Tausch-Fenster. */
 document.addEventListener("keydown", (ev) => {

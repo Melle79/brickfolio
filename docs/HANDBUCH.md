@@ -1015,6 +1015,17 @@ Das Herzstück für Sammlerprofis: strukturiert einkaufen mit
 Marktwert-Wissen. Standard-Benutzer sehen aktive Listen und dürfen
 angekommene Artikel verbuchen; alles andere ist Profi-Sache.
 
+> **Die Ansicht frischt sich auf, wenn ihr zurückkommt.** Wart ihr ein paar
+> Sekunden in einem anderen Fenster, lädt Brickfolio beim Zurückwechseln die
+> offene Ansicht neu – Sammlung, Listen oder Statistik. Wichtig, sobald
+> **mehr als ein Weg** in die Daten führt: ein Familienmitglied am Handy, ein
+> zweiter Tab, oder ein Werkzeug an der Schnittstelle. Sonst sähe man eine
+> Liste, die es so nicht mehr gibt.
+>
+> Der **Scannen-Tab bleibt ausgenommen**: Dort steht womöglich ein Foto samt
+> Treffern, und das darf ein Fensterwechsel nicht wegräumen. Und kurzes
+> Hin- und Herklicken löst nichts aus – erst ab etwa vier Sekunden Abwesenheit.
+
 ### 7.1 Der typische Ablauf am Stand
 
 **1. Liste anlegen.** Entweder im Tab **Listen** („Neue Einkaufsliste …")
