@@ -54,11 +54,41 @@ def test_hochgeladen_wird_erst_beim_anlegen():
     """Wer nur schaut, soll nichts hochladen."""
     quelle = js()
     anfang = quelle.index("function renderScanResults(")
-    koerper = quelle[anfang:anfang + 4000]
+    koerper = quelle[anfang:anfang + 6000]
     assert "wireWantButtons(box, items, eigenbildAnhaengen)" in koerper
     assert "wireCartButtons(box, items, eigenbildAnhaengen)" in koerper
     posten = quelle.index('await api("/collection", { method: "POST"', anfang)
     assert "eigenbildAnhaengen(it," in quelle[posten - 300:posten]
+
+
+def test_nur_foto_ohne_alles_andere():
+    """Für Artikel, die längst in der Sammlung stehen: nur das Foto dazu,
+    ohne eine zweite Zeile anzulegen."""
+    quelle = js()
+    assert 'data-foto="${i}"' in quelle
+    anfang = quelle.index('box.querySelectorAll("[data-foto]")')
+    koerper = quelle[anfang:anfang + 900]
+    assert "eigenbildAnhaengen(it, i, true)" in koerper, (
+        "der Knopf muss auch ohne das Kästchen wirken")
+    # Und er legt nichts an.
+    for verboten in ('api("/collection"', 'api("/wanted"', "addToList("):
+        assert verboten not in koerper, verboten
+
+
+def test_kaestchen_gilt_nur_fuers_anlegen():
+    """Ohne Haken und ohne Zwang passiert nichts – sonst käme beim bloßen
+    Anlegen ungefragt ein Foto mit."""
+    quelle = js()
+    anfang = quelle.index("async function eigenbildAnhaengen(")
+    koerper = quelle[anfang:quelle.index("\n}", anfang)]
+    assert "if (!eigenbildAn && !erzwingen) return;" in koerper
+
+
+def test_ohne_foto_kein_knopf():
+    """Ohne Scan-Foto wäre der Knopf eine Sackgasse."""
+    quelle = js()
+    stelle = quelle.index('data-foto="${i}"')
+    assert "lastScanFile ?" in quelle[stelle - 200:stelle]
 
 
 def test_jeder_treffer_bekommt_seinen_ausschnitt():

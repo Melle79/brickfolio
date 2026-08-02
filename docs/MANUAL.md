@@ -613,6 +613,17 @@ when there is no frame at all does the whole photo get used.
 **It is off by default.** The app remembers your choice on this device, so you
 do not have to make it again at every scan.
 
+**Just the photo, nothing else.** If the figure has long been in your
+collection and you only want a picture of it on file, use the **📷 Just add my
+photo** button on the result card. It attaches the photo to the item and
+touches nothing else – no second row, no raised quantity, no list entry. The
+button works **regardless of the checkbox** above: that one is about adding,
+here the photo is the whole point. Afterwards it reads "📷 Photo added ✔".
+
+> Handy for illustrating your collection bit by bit: figure in front of the
+> camera, scan, one tap – done. The green badge **"✔ 1× in your collection"**
+> on the card tells you right away that you already have it.
+
 > **The photos belong to the item, not to the row.** If you own the same
 > minifigure twice – once new, once used – both show the same photos. That is
 > deliberate: it is the same figure after all.

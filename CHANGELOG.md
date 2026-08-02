@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.7.0 – August 2026
+
+### Neu
+- 📷 **„Nur Foto dazu" auf der Trefferkarte.** Steht die Figur längst in der
+  Sammlung und man will bloß ein Bild davon hinterlegen, genügt jetzt ein
+  Tipp. Der Knopf hängt das Foto an den Artikel und rührt sonst nichts an –
+  keine zweite Zeile, keine erhöhte Menge, kein Listeneintrag
+
+> Er wirkt **unabhängig vom Kästchen** oben: Das gilt fürs Anlegen, hier ist
+> das Foto der ganze Zweck. Bei mehreren erkannten Figuren nimmt auch dieser
+> Weg den Ausschnitt, in dem die jeweilige gefunden wurde.
+
 ## 2.6.1 – August 2026
 
 ### Behoben

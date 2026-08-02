@@ -632,6 +632,18 @@ wird das ganze Foto genommen.
 **Standardmäßig ist es aus.** Die Entscheidung merkt sich die App auf diesem
 Gerät, ihr müsst sie also nicht bei jedem Scan neu treffen.
 
+**Nur das Foto, sonst nichts.** Steht die Figur längst in der Sammlung und
+ihr wollt bloß ein Bild davon hinterlegen, nehmt den Knopf **📷 Nur Foto
+dazu** auf der Trefferkarte. Er hängt das Foto an den Artikel und rührt
+sonst nichts an – keine zweite Zeile, keine erhöhte Menge, kein Eintrag auf
+einer Liste. Der Knopf wirkt **unabhängig vom Kästchen** oben: Das gilt
+fürs Anlegen, hier ist das Foto ja der ganze Zweck. Danach heißt er
+„📷 Foto dabei ✔".
+
+> Praktisch, wenn man die Sammlung nach und nach bebildern will: Figur vor
+> die Kamera, scannen, ein Tipp – fertig. Das grüne Schild **„✔ 1× in eurer
+> Sammlung"** auf der Karte zeigt dabei gleich, dass ihr sie schon habt.
+
 > **Die Fotos hängen am Artikel, nicht an der Zeile.** Wer dieselbe Figur
 > zweimal besitzt – einmal neu, einmal gebraucht –, sieht bei beiden
 > dieselben Fotos. Das ist Absicht: Es ist ja dieselbe Figur.

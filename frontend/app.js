@@ -2730,8 +2730,9 @@ let eigenbildAn = localStorage.getItem(EIGENBILD_KEY) === "1";
 
    Hochgeladen wird erst beim Anlegen, nicht beim Anzeigen der Treffer: Wer
    nur schaut oder abbricht, lädt nichts hoch. */
-async function eigenbildAnhaengen(it, i) {
-  if (!eigenbildAn || !it || it._eigenbild) return;
+async function eigenbildAnhaengen(it, i, erzwingen = false) {
+  if (!it || it._eigenbild) return;
+  if (!eigenbildAn && !erzwingen) return;
   let datei = null;
   try {
     datei = scanBoxen[i] ? await ausschnittBild(scanBoxen[i]) : null;
@@ -2794,6 +2795,7 @@ function renderScanResults(items) {
         <button class="mini-btn add" data-add="${i}">＋ Zur Sammlung</button>
         <button class="mini-btn" data-want="${i}">☆ Merken</button>
         ${state.user && state.user.is_dealer ? `<button class="mini-btn" data-cart="${i}">🛒 Liste</button>` : ""}
+        ${lastScanFile ? `<button class="mini-btn" data-foto="${i}">📷 Nur Foto dazu</button>` : ""}
         ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
       </div>
     </div>`;
@@ -2808,6 +2810,32 @@ function renderScanResults(items) {
         : tr("Eigene Fotos bleiben aus"));
     });
   }
+
+  // Nur das Foto, sonst nichts – für Artikel, die längst in der Sammlung
+  // stehen. Unabhängig vom Kästchen oben: Das gilt fürs Anlegen, hier ist
+  // das Foto der ganze Zweck.
+  box.querySelectorAll("[data-foto]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const i = Number(btn.dataset.foto);
+      const it = items[i];
+      btn.disabled = true;
+      btn.textContent = tr("Lade …");
+      try {
+        await eigenbildAnhaengen(it, i, true);
+        if (it._eigenbild) {
+          btn.textContent = tr("📷 Foto dabei ✔");
+          toast(tr("Foto zum Artikel gelegt 📷"));
+        } else {
+          btn.textContent = tr("📷 Nur Foto dazu");
+          btn.disabled = false;
+        }
+      } catch (e) {
+        toast(e.message);
+        btn.textContent = tr("📷 Nur Foto dazu");
+        btn.disabled = false;
+      }
+    });
+  });
 
   enrichSuggestions(items);
   wireWantButtons(box, items, eigenbildAnhaengen);
