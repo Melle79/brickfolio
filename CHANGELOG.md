@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.10.0 – August 2026
+
+### Neu
+- 📡 **Die Ansicht hält sich von selbst aktuell – ohne Fensterwechsel.**
+  2.9.0 frischte beim Zurückkommen auf; wer die App aber **neben** einem
+  anderen Fenster liegen hat, will gar nicht erst wechseln müssen. Jetzt
+  fragt Brickfolio alle fünf Sekunden nach einem **Fingerabdruck** der Daten
+  – eine Handvoll Zahlen, kein Datenbestand – und lädt die offene Ansicht
+  nur dann neu, wenn er sich geändert hat
+
+> **Gemessen:** Einkaufsliste offen und aufgeklappt, von außen eine vierte
+> Figur dazugelegt, den Browser **nicht angefasst** – acht Sekunden später
+> stand sie da. Die Liste blieb dabei offen, und es wurde genau **einmal**
+> geladen.
+>
+> Der Fingerabdruck zählt nicht nur Zeilen: Menge, Haken und Preis gehen
+> mit ein, sonst fiele das Ändern einer bestehenden Zeile nicht auf. Ein Tab
+> im Hintergrund fragt gar nicht, und der Scannen-Tab wird nie aufgefrischt.
+
 ## 2.9.0 – August 2026
 
 ### Neu

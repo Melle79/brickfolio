@@ -2117,6 +2117,42 @@ def set_owner_name(body: OwnerNameBody, user: dict = Depends(admin_user)):
     return {"ok": True, "owner_name": _owner_name()}
 
 
+@app.get("/api/stand")
+def datenstand(user: dict = Depends(current_user)):
+    """Ein billiger Fingerabdruck der Daten – „hat sich etwas geändert?".
+
+    Gedacht zum häufigen Abfragen: Die Oberfläche holt das alle paar
+    Sekunden und lädt die Ansicht **nur dann** neu, wenn sich die Zahl
+    geändert hat. Damit sieht man, was ein anderes Gerät oder ein Werkzeug
+    an der Schnittstelle angelegt hat, ohne dafür ständig ganze Listen zu
+    übertragen.
+
+    Gezählt wird nicht nur die Anzahl: Ein Artikel, der weggeht, und einer,
+    der dazukommt, ergäben dieselbe. Die Summe der Schlüssel ändert sich
+    dabei aber – und die Summen von Menge, Haken und Preis fangen auch das
+    Ändern einer bestehenden Zeile.
+    """
+    def fingerabdruck(conn, tabelle: str, felder: tuple) -> str:
+        teile = ["COUNT(*)", "COALESCE(SUM(id), 0)"]
+        teile += [f"COALESCE(SUM({f}), 0)" for f in felder]
+        zeile = conn.execute(
+            f"SELECT {', '.join(teile)} FROM {tabelle}").fetchone()
+        return "-".join(str(w) for w in zeile)
+
+    with core.db() as conn:
+        return {
+            "collection": fingerabdruck(
+                conn, "collection",
+                ("quantity", "CAST(COALESCE(paid_price, 0) * 100 AS INTEGER)")),
+            "wanted": fingerabdruck(conn, "wanted", ()),
+            "lists": fingerabdruck(conn, "shopping_lists", ("archived",))
+            + "|" + fingerabdruck(
+                conn, "shopping_items",
+                ("qty", "done",
+                 "CAST(COALESCE(paid_price, 0) * 100 AS INTEGER)")),
+        }
+
+
 @app.get("/api/backup_info")
 def backup_info(user: dict = Depends(admin_user)):
     files = _backup_list()

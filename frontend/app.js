@@ -1487,6 +1487,7 @@ function showTab(name) {
   if (name !== "scan") arbeitBildFreigeben();
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
+  letzterStand = null;           // frisch geladen ist per Definition aktuell
   if (name === "collection") loadCollection(true);
   if (name === "lists") showListsTab(listsTab);
   if (name === "stats") loadStats();
@@ -1573,6 +1574,50 @@ function ansichtAuffrischen() {
   if (name === "collection") loadCollection();
   else if (name === "lists") showListsTab(listsTab);
   else if (name === "stats") loadStats();
+}
+
+/* ------------------------------------------------- Von selbst mitbekommen
+
+   Auf den Fensterwechsel zu warten reicht nicht, wenn zwei Fenster
+   nebeneinander liegen: Wer aus einem Werkzeug heraus etwas auf eine Liste
+   legt und dabei die App im Blick hat, will nicht erst hin- und herklicken
+   müssen.
+
+   Deshalb fragt die App alle paar Sekunden einen **Fingerabdruck** der Daten
+   ab – eine Handvoll Zahlen, kein Datenbestand. Nur wenn der sich ändert,
+   wird die offene Ansicht neu geladen. Das kostet fast nichts und wirkt
+   trotzdem sofort. */
+const STAND_TAKT = 5000;
+let standTimer = null;
+let letzterStand = null;
+
+async function standPruefen() {
+  if (!state.token || document.hidden) return;
+  const offen = document.querySelector(".tab.active");
+  const name = offen && offen.dataset.tab;
+  // Nur dort, wo ein Neuladen überhaupt etwas ändert.
+  if (!["collection", "lists", "stats"].includes(name)) return;
+  let jetzt;
+  try {
+    jetzt = await api("/stand");
+  } catch (_) {
+    return;                       // Server kurz weg – beim nächsten Mal
+  }
+  // Statistik hängt an der Sammlung, Listen an ihrem eigenen Abschnitt.
+  const schluessel = name === "lists" ? "lists"
+    : name === "stats" ? "collection" : "collection";
+  const wert = jetzt[schluessel];
+  const vorher = letzterStand && letzterStand[name];
+  letzterStand = { ...(letzterStand || {}), [name]: wert };
+  if (vorher !== undefined && vorher !== wert) {
+    spur("Daten haben sich geändert – lade neu");
+    ansichtAuffrischen();
+  }
+}
+
+function standTaktStarten() {
+  clearInterval(standTimer);
+  standTimer = setInterval(standPruefen, STAND_TAKT);
 }
 
 /* Escape schließt das oberste Tausch-Fenster. */
@@ -1944,6 +1989,7 @@ function showApp() {
     state.hubConnected = !!c.hub_connected;
     updateHubTab();
     updatePolling();
+    standTaktStarten();
     // Beim Öffnen einmal richtig nachsehen: `refreshUnread` allein liest nur
     // den zuletzt bekannten Stand aus der eigenen Datenbank – neue
     // Nachrichten lägen dann bis zum ersten Takt unbemerkt da.

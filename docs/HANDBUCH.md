@@ -1015,16 +1015,20 @@ Das Herzstück für Sammlerprofis: strukturiert einkaufen mit
 Marktwert-Wissen. Standard-Benutzer sehen aktive Listen und dürfen
 angekommene Artikel verbuchen; alles andere ist Profi-Sache.
 
-> **Die Ansicht frischt sich auf, wenn ihr zurückkommt.** Wart ihr ein paar
-> Sekunden in einem anderen Fenster, lädt Brickfolio beim Zurückwechseln die
-> offene Ansicht neu – Sammlung, Listen oder Statistik. Wichtig, sobald
-> **mehr als ein Weg** in die Daten führt: ein Familienmitglied am Handy, ein
-> zweiter Tab, oder ein Werkzeug an der Schnittstelle. Sonst sähe man eine
-> Liste, die es so nicht mehr gibt.
+> **Die Ansicht hält sich von selbst aktuell.** Alle fünf Sekunden fragt
+> Brickfolio nach, ob sich an den Daten etwas geändert hat – und lädt die
+> offene Ansicht **nur dann** neu. Legt also ein Familienmitglied am Handy
+> etwas auf eine Liste, oder ein Werkzeug an der Schnittstelle, steht es
+> Sekunden später da. Ohne Neuladen, ohne Fensterwechsel, und ohne dass die
+> Liste dabei zuklappt.
 >
-> Der **Scannen-Tab bleibt ausgenommen**: Dort steht womöglich ein Foto samt
-> Treffern, und das darf ein Fensterwechsel nicht wegräumen. Und kurzes
-> Hin- und Herklicken löst nichts aus – erst ab etwa vier Sekunden Abwesenheit.
+> Abgefragt wird dabei kein Datenbestand, sondern ein **Fingerabdruck**: eine
+> Handvoll Zahlen. Erst wenn der sich ändert, wird wirklich geladen.
+>
+> Der **Scannen-Tab bleibt ausgenommen** – dort steht womöglich ein Foto samt
+> Treffern, und das darf nichts wegräumen. Ein Tab im Hintergrund fragt gar
+> nicht erst. Und zusätzlich frischt die App auf, wenn ihr nach ein paar
+> Sekunden aus einem anderen Fenster zurückkommt.
 
 ### 7.1 Der typische Ablauf am Stand
 

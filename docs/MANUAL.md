@@ -979,16 +979,19 @@ The centrepiece for Collector-Pros: shopping in a structured way, with market
 knowledge. Standard users see active lists and may book in items that arrived;
 everything else is a pro matter.
 
-> **The view refreshes when you come back.** If you were away in another window
-> for a few seconds, Brickfolio reloads the open view on your return –
-> collection, lists or statistics. That matters as soon as **more than one
-> route** leads into the data: a family member on their phone, a second tab, or
-> a tool talking to the interface. Otherwise you would be looking at a list
-> that no longer exists in that form.
+> **The view keeps itself current.** Every five seconds Brickfolio asks
+> whether anything in the data has changed – and reloads the open view **only
+> then**. So if a family member puts something on a list from their phone, or
+> a tool talking to the interface does, it appears seconds later. No reload,
+> no window switching, and the list does not collapse in the process.
 >
-> The **Scan tab is exempt**: there may be a photo with results sitting there,
-> and switching windows must not sweep that away. And brief clicking back and
-> forth triggers nothing – only an absence of about four seconds does.
+> What is fetched is not a body of data but a **fingerprint**: a handful of
+> numbers. Only when that changes does a real load happen.
+>
+> The **Scan tab is exempt** – there may be a photo with results sitting
+> there, and nothing may sweep that away. A tab in the background does not ask
+> at all. And on top of that the app refreshes when you return from another
+> window after a few seconds.
 
 ### 7.1 The typical routine at a stall
 
