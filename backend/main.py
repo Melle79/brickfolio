@@ -2210,14 +2210,18 @@ class RestoreBody(BaseModel):
     tables: dict
 
 
-@app.post("/api/restore")
-def restore_backup(body: RestoreBody, user: dict = Depends(admin_user)):
+def _sicherung_pruefen(body: "RestoreBody") -> list:
+    """Ist das eine brauchbare Sicherung? Gibt die Benutzer daraus zurück."""
     if body.app != "brickfolio" or body.version != 1             or not isinstance(body.tables, dict)             or "collection" not in body.tables:
         raise HTTPException(400, "Das ist keine gültige Brickfolio-Sicherung")
     users = body.tables.get("users") or []
     if not any(u.get("is_admin") for u in users):
         raise HTTPException(400, "Sicherung enthält keinen Admin-Benutzer – "
                                  "Einspielen abgebrochen")
+    return users
+
+
+def _sicherung_einspielen(body: "RestoreBody") -> dict:
     counts = {}
     with core.db() as conn:
         conn.execute("PRAGMA foreign_keys = OFF")
@@ -2239,7 +2243,42 @@ def restore_backup(body: RestoreBody, user: dict = Depends(admin_user)):
                 n += 1
             counts[t] = n
         conn.execute("PRAGMA foreign_keys = ON")
-    return {"ok": True, "restored": counts}
+    return counts
+
+
+@app.post("/api/restore")
+def restore_backup(body: RestoreBody, user: dict = Depends(admin_user)):
+    _sicherung_pruefen(body)
+    return {"ok": True, "restored": _sicherung_einspielen(body)}
+
+
+@app.post("/api/setup/restore")
+def setup_restore(body: RestoreBody):
+    """Eine Sicherung einspielen, *bevor* es ein Konto gibt.
+
+    Der übliche Weg (Mehr → Sicherung) verlangt einen Admin – auf einer
+    frischen Instanz gibt es aber keinen, und ein eben angelegter würde vom
+    Einspielen sofort wieder überschrieben. Wer umzieht, soll deshalb gleich
+    hier ankommen können.
+
+    Ohne Anmeldung, aber **nur solange die Instanz leer ist**: Wer sie in
+    diesem Zustand erreicht, könnte ohnehin über `/api/setup` das erste
+    Admin-Konto anlegen und wäre damit Herr über alles. Dieser Weg gibt also
+    nichts preis, was nicht schon offenstünde – und sobald ein Benutzer
+    existiert, ist er zu.
+    """
+    with core.db() as conn:
+        count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
+    if count > 0:
+        raise HTTPException(409, "Die Einrichtung ist bereits abgeschlossen – "
+                                 "eine Sicherung spielt der Admin unter "
+                                 "Mehr → Sicherung ein")
+    users = _sicherung_pruefen(body)
+    counts = _sicherung_einspielen(body)
+    # Die Namen zurückgeben, damit die Anmeldung danach sagen kann, mit wem.
+    admins = sorted(str(u.get("username") or "") for u in users
+                    if u.get("is_admin"))
+    return {"ok": True, "restored": counts, "admins": admins}
 
 
 # ---------------------------------------------------------------- API-Schlüssel (Admin)

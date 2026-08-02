@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.4.0 – August 2026
+
+### Neu
+- 📥 **Sicherung gleich beim ersten Start einspielen.** Wer umzieht, hatte
+  bisher einen unnötigen Umweg: erst ein Admin-Konto anlegen, das die
+  Sicherung gleich darauf wieder überschreibt. Jetzt steht im Willkommens-
+  Bogen unter dem Anlegen-Knopf **„📥 Sicherung einspielen"** – der ganze
+  alte Stand kommt herüber, samt Konten. Danach meldet man sich mit dem
+  **bisherigen Passwort** an, und der Anmeldebogen nennt dazu den Namen
+
+> **Ohne Anmeldung – ist das in Ordnung?** Ja, denn es geht nur, solange die
+> Instanz **leer** ist. Wer sie in diesem Zustand erreicht, könnte ohnehin
+> das erste Admin-Konto anlegen und wäre damit Herr über alles; der Weg gibt
+> also nichts preis, was nicht schon offenstünde. Sobald ein Benutzer
+> existiert, antwortet er nur noch mit einer Absage.
+
 ## 2.3.1 – August 2026
 
 ### Behoben

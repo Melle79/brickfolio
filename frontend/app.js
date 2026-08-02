@@ -1642,6 +1642,59 @@ async function doSetup() {
   }
 }
 
+/* Umzug: Sicherung einspielen, bevor es ein Konto gibt. Danach meldet man
+   sich mit den Zugangsdaten aus der Sicherung an – ein hier angelegtes
+   Konto würde vom Einspielen ohnehin gleich wieder überschrieben. */
+async function setupSicherungEinspielen(file) {
+  const err = $("setup-error");
+  err.hidden = true;
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch (_) {
+    err.textContent = tr("Datei ist kein gültiges JSON");
+    err.hidden = false;
+    return;
+  }
+  const wann = data.created_at
+    ? new Date(data.created_at * 1000).toLocaleString(dateLocale())
+    : tr("unbekannt");
+  const ok = await appDialog({
+    titel: tr("Sicherung einspielen?"),
+    text: tr("Sicherung vom {wann}. Konten und Sammlung kommen daraus – "
+             + "danach meldest du dich mit deinem bisherigen Passwort an.",
+             { wann }),
+    ok: tr("Einspielen"),
+  });
+  if (!ok) return;
+  const knopf = $("btn-setup-restore");
+  knopf.disabled = true;
+  try {
+    const res = await api("/setup/restore", { method: "POST", body: data });
+    const n = (res.restored && res.restored.collection) ?? "?";
+    const wer = (res.admins || []).join(", ");
+    toast(tr("Sicherung eingespielt ✔ ({n} Sammlungseinträge)", { n }));
+    // Der Anmeldebogen tritt an die Stelle des Assistenten – die Instanz
+    // ist ab jetzt eingerichtet.
+    $("setup-box").hidden = true;
+    $("login-box").hidden = false;
+    if (wer) {
+      const hinweis = $("login-hint");
+      if (hinweis) {
+        hinweis.textContent = tr("Jetzt anmelden als: {wer}", { wer });
+        hinweis.hidden = false;
+      }
+      if ((res.admins || []).length === 1) $("login-user").value = res.admins[0];
+    }
+    $("login-pass").focus();
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
+  } finally {
+    knopf.disabled = false;
+  }
+}
+
 /* ------------------------------------------- Einrichtungsassistent
    Läuft genau einmal, direkt nach dem Anlegen des Admin-Kontos. Jeder
    Schritt ist überspringbar – die App ist ohne Schlüssel benutzbar (Scannen
@@ -8530,6 +8583,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-setup").addEventListener("click", doSetup);
   $("setup-pass2").addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") doSetup();
+  });
+  $("btn-setup-restore").addEventListener("click",
+    () => $("setup-restore-file").click());
+  $("setup-restore-file").addEventListener("change", (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    ev.target.value = "";
+    if (file) setupSicherungEinspielen(file);
   });
   $("login-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
   $("btn-logout").addEventListener("click", logout);

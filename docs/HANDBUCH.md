@@ -162,6 +162,22 @@ Schlüssel**. Nachtragen lässt sich alles unter *Mehr → API-Schlüssel*.
 
 Der Assistent läuft genau einmal, direkt nach dem Anlegen des Admin-Kontos.
 
+**Umzug von einer anderen Instanz?** Dann lege hier gar nichts an: Unter dem
+Knopf zum Anlegen steht **„📥 Sicherung einspielen"**. Damit kommt der ganze
+alte Stand herüber – Sammlung, Listen, Kaufbuch **und die Konten**. Danach
+meldest du dich mit deinem **bisherigen Passwort** an; der Anmeldebogen sagt
+dir sogar, mit welchem Namen.
+
+> Genau umgekehrt wäre es umständlich: Ein hier frisch angelegtes Admin-Konto
+> würde vom Einspielen sofort wieder überschrieben, denn die Sicherung bringt
+> ihre eigenen Benutzer mit. Deshalb der eigene Weg vor der Anmeldung.
+>
+> **Wieso geht das ohne Anmeldung?** Weil es nur geht, solange die Instanz
+> **leer** ist. Wer sie in diesem Zustand erreicht, könnte ohnehin einfach
+> das erste Admin-Konto anlegen und wäre damit Herr über alles. Sobald ein
+> Benutzer existiert, ist der Weg zu – ab dann führt er nur noch über
+> *Mehr → Sicherung* und einen angemeldeten Admin.
+
 *Für unbeaufsichtigte Setups:* Sind die Umgebungsvariablen
 `ADMIN_USER`/`ADMIN_PASSWORD` gesetzt, legt Brickfolio den Admin beim
 allerersten Start automatisch an; dann entfällt der Assistent und die

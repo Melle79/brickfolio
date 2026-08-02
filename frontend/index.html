@@ -45,6 +45,13 @@
     <input id="setup-pass2" type="password" autocomplete="new-password">
     <button id="btn-setup" class="btn btn-primary">Admin-Konto anlegen</button>
     <p id="setup-error" class="error" hidden></p>
+    <p class="setup-hint">📦 <b>Umzug von einer anderen Instanz?</b> Dann
+      brauchst du hier nichts anzulegen – spiel gleich deine Sicherung ein,
+      sie bringt Konten und Sammlung mit.</p>
+    <button id="btn-setup-restore" class="btn btn-outline">📥 Sicherung
+      einspielen</button>
+    <input type="file" id="setup-restore-file" accept="application/json,.json"
+           hidden>
     <p class="setup-hint">🌐 Von unterwegs zugreifen? Das lässt sich gleich
       danach unter <b>Mehr → Externer Zugriff</b> einrichten – optional und
       jederzeit möglich.</p>
@@ -56,6 +63,7 @@
       <h1>Brickfolio</h1>
       <p>Deine LEGO-Sammlung</p>
     </div>
+    <p id="login-hint" class="setup-hint" hidden></p>
     <label for="login-user">Benutzername</label>
     <input id="login-user" autocomplete="username" autocapitalize="none">
     <label for="login-pass">Passwort</label>

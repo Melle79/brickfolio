@@ -162,6 +162,22 @@ later under *More → API keys*.
 
 The wizard runs exactly once, right after the admin account is created.
 
+**Moving from another instance?** Then create nothing here: below the create
+button sits **"📥 Restore a backup"**. It brings the whole old state across –
+collection, lists, purchase book **and the accounts**. Afterwards you sign in
+with your **existing password**; the sign-in form even tells you which name to
+use.
+
+> The other way round would be awkward: an admin account created here would be
+> overwritten by the restore straight away, because the backup brings its own
+> users. Hence the separate route before signing in.
+>
+> **Why does this work without signing in?** Because it only works while the
+> instance is **empty**. Anyone who reaches it in that state could simply
+> create the first admin account and own everything anyway. As soon as one
+> user exists the route is closed – from then on it runs through
+> *More → Backup* and a signed-in admin.
+
 *For unattended setups:* if the environment variables
 `ADMIN_USER`/`ADMIN_PASSWORD` are set, Brickfolio creates the admin on the
 very first start; the wizard is then skipped and the keys come either from
