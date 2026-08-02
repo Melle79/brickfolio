@@ -610,6 +610,39 @@ Der einzelne grüne Rahmen mit der Beschriftung **„hier geschaut"** ist etwas
 anderes: Er kommt vom Erkennungsdienst und zeigt, worüber er beim ersten
 Scan geraten hat. Sobald nummerierte Rahmen da sind, verschwindet er.
 
+### 5.6 Das eigene Foto statt des Katalogbilds
+
+Über den Treffern steht ein Kästchen: **📷 Mein Foto statt des
+Katalogbilds.** Ist es angehakt, bekommt alles, was ihr aus diesem Scan
+anlegt – Sammlung, Wunschliste **und** Einkaufsliste –, euer eigenes Bild
+statt der Zeichnung aus dem Katalog.
+
+Bei mehreren Figuren auf einem Foto bekommt **jede ihren eigenen
+Ausschnitt**: genau den Rahmen, in dem sie gefunden wurde. Ob der aus der
+Reihum-Suche stammt, von einem gemerkten Rahmen oder von einem, den ihr
+selbst gezogen habt, spielt keine Rolle. Nur wenn es gar keinen Rahmen gibt,
+wird das ganze Foto genommen.
+
+**Standardmäßig ist es aus** – ein Katalogbild ist meist das sauberere. Die
+Entscheidung merkt sich die App auf diesem Gerät, ihr müsst sie also nicht
+bei jedem Scan neu treffen.
+
+> **Hochgeladen wird erst beim Anlegen.** Wer nur schaut, wer den Zustand
+> wieder abbricht oder die Listenauswahl schließt, lädt nichts hoch – sonst
+> lägen nach jedem Herumprobieren Bilder herum, die zu nichts gehören.
+>
+> Das Bild wird beim Empfang auf 800 px verkleinert und als JPEG abgelegt;
+> das begrenzt den Platzbedarf und entfernt nebenbei die EXIF-Daten des
+> Fotos, also auch den GPS-Ort.
+
+> ⚠️ **Eigene Bilder sind Dateien, keine Datenbankeinträge.** Sie liegen in
+> `data/uploads/`. Die Sicherung unter *Mehr → Sicherung* enthält die
+> **Datenbank**, also den Verweis auf das Bild – die Datei selbst aber
+> nicht. Beim Umzug auf einen anderen Server kopiert also den Ordner
+> `data/uploads/` mit, sonst zeigen die Artikel danach ins Leere. Wer den
+> ganzen Ordner `data/` mitnimmt (oder das Docker-Volume), hat automatisch
+> alles beisammen. Das gilt genauso für die Bilder eigener Figuren.
+
 Der geht immer: mit dem Finger (oder der Maus) einen **Rahmen um eine Figur
 ziehen** und **🔍 Diesen Ausschnitt erkennen** antippen. Zugeschnitten wird
 im Browser, zum Server geht nur der Ausschnitt.

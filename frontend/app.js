@@ -525,12 +525,16 @@ async function enrichSuggestions(items) {
   }
 }
 
-function wireWantButtons(box, items) {
+/* `vorbereiten` ist der Haken für das eigene Scan-Foto: Wer ihn mitgibt,
+   bekommt es vor dem Anlegen an den Treffer geheftet. Aus der Katalogsuche
+   heraus gibt es keins, dort bleibt der Parameter weg. */
+function wireWantButtons(box, items, vorbereiten = null) {
   box.querySelectorAll("[data-want]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const it = items[Number(btn.dataset.want)];
       btn.disabled = true;
       try {
+        if (vorbereiten) await vorbereiten(it, Number(btn.dataset.want));
         const res = await api("/wanted", { method: "POST", body: {
           item_id: it.item_id, item_type: it.item_type || "minifig",
           name: it.name, img_url: it.img_url || "",
@@ -2163,6 +2167,7 @@ async function handlePhoto(file) {
   // geschnitten hat eine einzelne Figur unter vielen kaum 150 px Breite –
   // damit kann die Erkennung wenig anfangen.
   originalScanFile = file;
+  scanBoxen = [];               // Rahmen des vorigen Fotos gelten nicht mehr
   arbeitBildFreigeben();
   reihumAufraeumen();
   file = await verkleinern(file);
@@ -2189,6 +2194,10 @@ async function handlePhoto(file) {
   try {
     const data = await api("/scan", { method: "POST", body: form });
     spur(`Erkennung fertig (${(data.items || []).length} Treffer)`);
+    const b = data.box;
+    scanBoxen = b && b.right > b.left && b.lower > b.upper
+      ? [{ x: b.left, y: b.upper, w: b.right - b.left, h: b.lower - b.upper }]
+      : [];
     renderScanResults(data.items || []);
     rahmenZeigen(data.box);
   } catch (e) {
@@ -2342,6 +2351,7 @@ function scanAuswahlEinrichten() {
     }
     const status = $("scan-status");
     const gefunden = [];
+    const kaesten = [];
     try {
       const werk = await arbeitBildHolen();
       try {
@@ -2355,11 +2365,15 @@ function scanAuswahlEinrichten() {
           fd.append("file", teil, "scan.jpg");
           try {
             const d = await api("/scan", { method: "POST", body: fd });
-            if (d.items && d.items[0]) gefunden.push(d.items[0]);
+            if (d.items && d.items[0]) {
+              gefunden.push(d.items[0]);
+              kaesten.push(gemerkteRahmen[i]);
+            }
           } catch (_) { /* eine weniger, der Rest läuft weiter */ }
         }
       } finally { arbeitBildFreigeben(); }
       if (!gefunden.length) { toast(tr("Nichts erkannt.")); return; }
+      scanBoxen = kaesten;
       renderScanResults(gefunden);
       toast(gefunden.length === 1 ? tr("1 Figur erkannt ✔")
         : tr("{n} Figuren erkannt ✔", { n: gefunden.length }));
@@ -2380,11 +2394,13 @@ function scanAuswahlEinrichten() {
     knopf.disabled = true;
     $("scan-status").hidden = false;
     try {
+      const gewaehlt = scanAuswahl;
       const teil = await ausschnittBild(scanAuswahl);
       arbeitBildFreigeben();
       const form = new FormData();
       form.append("file", teil, "scan.jpg");
       const data = await api("/scan", { method: "POST", body: form });
+      scanBoxen = (data.items || []).length ? [gewaehlt] : [];
       renderScanResults(data.items || []);
       if (!(data.items || []).length) toast(tr("In diesem Ausschnitt nichts erkannt."));
       auswahlAnzeigen(null);
@@ -2401,6 +2417,10 @@ function scanAuswahlEinrichten() {
 const FIND_MAX = 10;   // mehr Figuren fragen wir in einem Durchgang nicht ab
 
 let letzteBoxen = [];
+/* Zu jedem angezeigten Treffer der Rahmen, aus dem er stammt – in denselben
+   Maßen wie die Vorschau, also direkt für `ausschnittBild` brauchbar. Leer,
+   wo es keinen gibt; dann kommt das ganze Foto zum Zug. */
+let scanBoxen = [];
 
 /* Hintergrundfarbe des Fotos – aus den vier Ecken gemittelt.
 
@@ -2546,12 +2566,14 @@ async function alleFigurenErkennen(weiter = false) {
     if (!z.gefunden.length) {
       mehrfachRahmen([]);
       letzteBoxen = [];
+      scanBoxen = [];
       reihumAufraeumen();
       toast(tr("Nichts erkannt – Rahmen von Hand ziehen."));
       return;
     }
     mehrfachRahmen(z.treffer);
     letzteBoxen = z.treffer;
+    scanBoxen = z.treffer;
     renderScanResults(z.gefunden);
     const neu = z.gefunden.length - vorher;
     toast(neu === 1 ? tr("1 Figur erkannt ✔")
@@ -2663,6 +2685,37 @@ async function ausschnittBild(a, arbeit = null) {
   return new File([blob], "scan.jpg", { type: "image/jpeg" });
 }
 
+const EIGENBILD_KEY = "bf_eigenbild";
+let eigenbildAn = localStorage.getItem(EIGENBILD_KEY) === "1";
+
+/* Das eigene Foto an den Treffer heften, **bevor** er angelegt wird: Alle
+   drei Wege (Sammlung, Merken, Liste) schicken `it.img_url` mit, also genügt
+   es, die eine Stelle zu ersetzen. Hochgeladen wird erst beim Anlegen – wer
+   nur schaut, lädt nichts hoch. */
+async function eigenbildAnhaengen(it, i) {
+  if (!eigenbildAn || !it || it._eigenbild) return;
+  let datei = null;
+  try {
+    datei = scanBoxen[i] ? await ausschnittBild(scanBoxen[i]) : null;
+  } catch (_) { /* dann das ganze Foto */ }
+  if (!datei) datei = lastScanFile || null;
+  if (!datei) return;
+  const form = new FormData();
+  form.append("file", datei);
+  try {
+    const res = await api("/upload_image", { method: "POST", body: form });
+    it.img_url = res.url;
+    it._eigenbild = true;
+    spur("Eigenes Bild gespeichert");
+    // Sichtbar machen, dass es geklappt hat.
+    const karte = $("scan-results")
+      .querySelector(`[data-sug-id="${CSS.escape(it.item_id)}"] .card-img`);
+    if (karte) karte.src = res.url;
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 function renderScanResults(items) {
   const box = $("scan-results");
   if (!items.length) {
@@ -2680,6 +2733,12 @@ function renderScanResults(items) {
       + "sucht immer ein einzelnes Objekt im Bild – stehen viele Figuren "
       + "darauf, zieh einen Rahmen um eine davon oder fotografiere ein paar "
       + "wenige aus der Nähe."))}</p>` : "")
+    + (lastScanFile ? `<label class="eigenbild-wahl">
+        <input type="checkbox" id="scan-eigenbild"${eigenbildAn ? " checked" : ""}>
+        <span>📷 <b>Mein Foto statt des Katalogbilds.</b> Was ich gleich
+          anlege, bekommt mein eigenes Bild – bei mehreren Figuren jeweils
+          den Ausschnitt, in dem sie gefunden wurde.</span>
+      </label>` : "")
     + items.map((it, i) => {
     const scoreCls = it.score >= 60 ? "badge-score" : "badge badge-low";
     const base = `${it.item_id}${it.category ? " · " + it.category : ""}`;
@@ -2703,9 +2762,19 @@ function renderScanResults(items) {
     </div>`;
   }).join("");
 
+  const schalter = $("scan-eigenbild");
+  if (schalter) {
+    schalter.addEventListener("change", () => {
+      eigenbildAn = schalter.checked;
+      localStorage.setItem(EIGENBILD_KEY, eigenbildAn ? "1" : "0");
+      toast(eigenbildAn ? tr("Eigene Fotos werden übernommen 📷")
+        : tr("Es bleibt beim Katalogbild"));
+    });
+  }
+
   enrichSuggestions(items);
-  wireWantButtons(box, items);
-  wireCartButtons(box, items);
+  wireWantButtons(box, items, eigenbildAnhaengen);
+  wireCartButtons(box, items, eigenbildAnhaengen);
 
   // Tipp auf ein Scan-Ergebnis öffnet die Detailansicht – wie in der Suche.
   // Nicht bei Knopf/Link/Bild/Eingabefeld und nicht, solange ein Formular
@@ -2756,6 +2825,7 @@ function renderScanResults(items) {
           }
           b.disabled = true;
           try {
+            await eigenbildAnhaengen(it, Number(btn.dataset.add));
             const res = await api("/collection", { method: "POST", body: {
               item_id: it.item_id, item_type: it.item_type || "minifig",
               name: it.name, img_url: it.img_url,
@@ -5314,7 +5384,7 @@ async function addToList(list, it, condition, paidPrice) {
   } catch (e) { toast(e.message); }
 }
 
-function wireCartButtons(box, items) {
+function wireCartButtons(box, items, vorbereiten = null) {
   box.querySelectorAll("[data-cart]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       let lists;
@@ -5322,6 +5392,12 @@ function wireCartButtons(box, items) {
         lists = (await api("/lists")).lists || [];
       } catch (e) { toast(e.message); return; }
       const it = items[Number(btn.dataset.cart)];
+      // Erst unmittelbar vor dem Ablegen, nicht schon beim Öffnen der
+      // Auswahl – sonst läge nach jedem Abbrechen ein Bild ungenutzt herum.
+      const legen = async (liste, cond, preis) => {
+        if (vorbereiten) await vorbereiten(it, Number(btn.dataset.cart));
+        await addToList(liste, it, cond, preis);
+      };
       const card = btn.closest(".card");
       if (card.querySelector("[data-cart-row]")) return;
       const actions = card.querySelector(".card-actions");
@@ -5391,7 +5467,7 @@ function wireCartButtons(box, items) {
           try {
             const res = await api("/lists", { method: "POST",
               body: { name } });
-            await addToList({ id: res.id, name }, it, cond, price);
+            await legen({ id: res.id, name }, cond, price);
             updateListsTab();
             close();
           } catch (e) {
@@ -5426,7 +5502,7 @@ function wireCartButtons(box, items) {
               return;
             }
             const l = lists.find((x) => x.id === Number(b.dataset.cl));
-            await addToList(l, it, cond, price);
+            await legen(l, cond, price);
             close();
           });
         });

@@ -592,6 +592,39 @@ The single green frame labelled **"looked here"** is something else: it comes
 from the recognition service and shows what it guessed at during the first
 scan. As soon as numbered frames appear, it goes away.
 
+### 5.6 Your own photo instead of the catalogue picture
+
+Above the results sits a checkbox: **📷 My photo instead of the catalogue
+picture.** With it ticked, everything you add from this scan – collection,
+wish list **and** shopping list – gets your own image instead of the
+catalogue drawing.
+
+With several minifigures in one photo each gets **its own crop**: exactly the
+frame it was found in. Whether that frame came from the round-robin search,
+from a kept frame or from one you dragged yourself makes no difference. Only
+when there is no frame at all does the whole photo get used.
+
+**It is off by default** – a catalogue picture is usually the cleaner one. The
+app remembers your choice on this device, so you do not have to make it again
+at every scan.
+
+> **The upload happens when you add, not before.** Anyone who only looks, who
+> cancels the condition step or closes the list chooser uploads nothing –
+> otherwise every bit of trying things out would leave images behind that
+> belong to nothing.
+>
+> On arrival the image is scaled down to 800 px and stored as JPEG; that caps
+> the disk usage and incidentally strips the photo's EXIF data, GPS location
+> included.
+
+> ⚠️ **Custom images are files, not database rows.** They live in
+> `data/uploads/`. The backup under *More → Backup* contains the **database**,
+> that is the reference to the image – but not the file itself. So when moving
+> to another server, copy the `data/uploads/` folder along, otherwise the
+> items point at nothing afterwards. Taking the whole `data/` folder (or the
+> Docker volume) keeps everything together automatically. The same applies to
+> the images of custom minifigures.
+
 That one always works: drag a **frame around one figure** with your finger
 (or the mouse) and tap **🔍 Recognise this crop**. The cropping happens in
 the browser, only the crop goes to the server.

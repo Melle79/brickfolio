@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.5.0 – August 2026
+
+### Neu
+- 📷 **Das eigene Scan-Foto als Bild des Artikels.** Über den Treffern steht
+  ein Kästchen: **„Mein Foto statt des Katalogbilds"**. Ist es angehakt,
+  bekommt alles, was aus diesem Scan angelegt wird – Sammlung, Wunschliste
+  **und** Einkaufsliste – das eigene Bild
+- 🧩 **Bei mehreren Figuren jeweils der eigene Ausschnitt.** Nicht einmal das
+  ganze Regalfoto für alle, sondern genau der Rahmen, in dem die Figur
+  gefunden wurde – gleich, ob er aus der Reihum-Suche stammt, von einem
+  gemerkten Rahmen oder von einem selbst gezogenen
+
+> **Standardmäßig aus**, denn ein Katalogbild ist meist das sauberere; die
+> Entscheidung merkt sich die App auf dem Gerät. Hochgeladen wird erst beim
+> Anlegen – wer nur schaut oder abbricht, lädt nichts hoch.
+
+### Dokumentation
+- ⚠️ **Was die Sicherung nicht enthält.** Eigene Bilder sind Dateien in
+  `data/uploads/`, keine Datenbankeinträge. Die JSON-Sicherung trägt den
+  **Verweis** darauf, nicht die Datei. Beim Umzug gehört `data/uploads/`
+  also mit kopiert – das galt immer schon für eigene Figuren, stand aber
+  nirgends. Jetzt steht es in beiden Handbüchern
+
 ## 2.4.4 – August 2026
 
 ### Behoben
