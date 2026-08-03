@@ -1525,6 +1525,7 @@ function showTab(name) {
   spur("Ansicht: " + name);
   try { localStorage.setItem(ANSICHT_KEY, name); } catch (_) { /* egal */ }
   sammlungFreigeben(name);
+  listenFreigeben(name);
   // Wer den Scan-Tab verlässt, braucht das entpackte Foto nicht mehr. Es
   // liegt außerhalb des JS-Speichers und taucht in keiner Messung auf –
   // umso wichtiger, es an einer klaren Grenze loszuwerden.
@@ -1554,6 +1555,24 @@ function sammlungFreigeben(neuerTab) {
   if (!liste || !liste.firstChild) return;
   if (bgBeobachter) bgBeobachter.disconnect();
   liste.innerHTML = "";
+}
+
+/* Dasselbe für die Listen – dort fehlte es noch.
+
+   Aus einem eingeschickten Verlauf: Nach einem Blick in die Einkaufslisten
+   standen **4631 Elemente und 310 Bilder** im Dokument, und sie blieben dort
+   auch nach dem Weiterklicken in Sammlung, Statistik und Einstellungen –
+   fast eine Stunde lang unverändert, bis der Tab starb. Eine Ansicht, die
+   niemand mehr sieht, muss nicht im Dokument stehen.
+
+   Beim Zurückkommen baut `showListsTab` sie ohnehin neu auf (jeder Wechsel
+   in den Tab lädt frisch), es geht also nichts verloren. */
+function listenFreigeben(neuerTab) {
+  if (neuerTab === "lists") return;
+  ["lists-container", "archive-container", "wanted-list"].forEach((id) => {
+    const box = $(id);
+    if (box && box.firstChild) box.innerHTML = "";
+  });
 }
 
 /* Wünsche, Einkaufslisten und Archiv liegen in einem Tab.
@@ -5387,6 +5406,17 @@ async function loadLists() {
   } catch (e) { toast(e.message); }
 }
 
+/* Eine eingeklappte Liste baut ihre Zeilen gar nicht erst auf.
+
+   Sie stand zwar auf `display: none`, ihre Zeilen waren aber trotzdem im
+   Dokument – bei 310 Artikeln rund 3600 Elemente, die niemand sieht. Zum
+   Aufklappen wird die Ansicht neu gezeichnet; das kostet nichts, weil es
+   um eine Handvoll Karten geht, und erspart den Umbau der 300 Zeilen
+   Verdrahtung, die auf die fertigen Zeilen zugreifen. */
+function listeOffen(lid) {
+  return localStorage.getItem("bf_listcard_" + lid) === "open";
+}
+
 function renderLists(lists) {
   const dealer = state.user && state.user.is_dealer;
   const box = $(state.showArchive ? "archive-container" : "lists-container");
@@ -5403,7 +5433,7 @@ function renderLists(lists) {
         </div>
       </div>
       <div class="set-figs">
-        ${l.items.map((it) => listItemRow(it, dealer)).join("")}
+        ${listeOffen(l.id) ? l.items.map((it) => listItemRow(it, dealer)).join("") : ""}
         ${!l.items.length ? `<div class="price-note">Noch leer – beim Scannen oder Suchen auf 🛒 tippen.</div>` : ""}
       </div>
       ${dealer ? `<div class="card-actions btn-grid" style="margin-top:8px">
@@ -5418,14 +5448,14 @@ function renderLists(lists) {
   box.querySelectorAll(".list-card").forEach((card) => {
     const lid = Number(card.dataset.lid);
     const storeKey = "bf_listcard_" + lid;
-    if (localStorage.getItem(storeKey) !== "open") {
-      card.classList.add("collapsed");
-    }
+    if (!listeOffen(lid)) card.classList.add("collapsed");
     card.querySelector(".card-head").addEventListener("click", (ev) => {
       if (ev.target.closest("[data-l-rename]")) return;
-      card.classList.toggle("collapsed");
+      // Erst merken, dann neu zeichnen: Die Zeilen entstehen (und
+      // verschwinden) beim Zeichnen, nicht beim Umschalten der Klasse.
       localStorage.setItem(storeKey,
-        card.classList.contains("collapsed") ? "closed" : "open");
+        card.classList.contains("collapsed") ? "open" : "closed");
+      renderLists(lists);
     });
     const renameBtn = card.querySelector("[data-l-rename]");
     if (renameBtn) {

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.17.0 – August 2026
+
+### Behoben
+- 🧹 **Die Listen-Ansicht blieb für immer im Dokument stehen.** Ein Blick in
+  die Einkaufslisten legte bei 310 Artikeln rund **4600 Elemente und 310
+  Bilder** ab – und die blieben dort, auch wenn längst Sammlung, Statistik
+  oder Einstellungen offen waren. Für die Sammlung wird seit 2.9 beim
+  Verlassen geräumt; für die Listen fehlte es
+- 📦 **Eine eingeklappte Liste baute ihre Zeilen trotzdem auf.** Sie standen
+  nur auf `display: none` – unsichtbar, aber vollständig im Dokument. Jetzt
+  entstehen sie erst beim Aufklappen und verschwinden beim Zuklappen
+
+> Gemessen an 310 Listenposten:
+>
+> | | vorher | nachher |
+> |---|---|---|
+> | Listen-Tab, eingeklappt | 4631 Elemente · 310 Bilder | **973 · 4** |
+> | nach dem Weiterklicken | 4631 Elemente · 310 Bilder | **973 · 4** |
+>
+> Aufgeklappt sind es weiterhin rund 5900 Elemente – das ist die Liste, die
+> man gerade ansieht.
+
 ## 2.16.0 – August 2026
 
 ### Behoben
