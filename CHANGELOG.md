@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.10.1 – August 2026
+
+### Behoben
+- 🔁 **Jeder Ansichtswechsel lud die Ansicht ein zweites Mal.** Der neue
+  Änderungs-Fühler verglich mit `letzterStand && letzterStand[name]` – das
+  ergibt **`null`**, wenn noch nichts gemerkt ist, und `null !== undefined`
+  ist wahr. Damit galt der erste Blick nach jedem Wechsel als Änderung, und
+  die gerade frisch geladene Ansicht lud sofort erneut. Bei einer Sammlung
+  mit hundert Bildern ist das kein Schönheitsfehler
+
+> Im eingeschickten Verlauf war es gut zu sehen: `10:45:35 Ansicht: lists`,
+> zwei Sekunden später „lade neu"; `10:45:48 Ansicht: collection`, fünf
+> Sekunden später wieder. Jetzt: drei Wechsel, kein einziger Ladevorgang –
+> und eine echte Änderung von außen kommt weiterhin an.
+
 ## 2.10.0 – August 2026
 
 ### Neu

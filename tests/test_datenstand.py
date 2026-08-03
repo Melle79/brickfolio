@@ -143,3 +143,14 @@ def test_im_scan_tab_wird_nicht_aufgefrischt():
     anfang = quelle.index("async function standPruefen(")
     koerper = quelle[anfang:quelle.index("\n}\n", anfang)]
     assert '["collection", "lists", "stats"]' in koerper
+
+
+def test_erster_blick_nach_ansichtswechsel_laedt_nicht():
+    """`letzterStand && …` gäbe **null**, und `null !== undefined` ist wahr –
+    damit galt jeder erste Blick als Änderung und die gerade frisch geladene
+    Ansicht lud sofort ein zweites Mal."""
+    quelle = js()
+    anfang = quelle.index("async function standPruefen(")
+    koerper = quelle[anfang:quelle.index("\n}\n", anfang)]
+    assert "letzterStand ? letzterStand[name] : undefined" in koerper
+    assert "letzterStand && letzterStand[name]" not in koerper

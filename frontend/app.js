@@ -1607,7 +1607,12 @@ async function standPruefen() {
   const schluessel = name === "lists" ? "lists"
     : name === "stats" ? "collection" : "collection";
   const wert = jetzt[schluessel];
-  const vorher = letzterStand && letzterStand[name];
+  // `letzterStand && …` gäbe **null** zurück, wenn noch nichts gemerkt ist –
+  // und `null !== undefined` ist wahr. Damit galt jeder erste Blick nach
+  // einem Ansichtswechsel als Änderung, und die gerade frisch geladene
+  // Ansicht lud sofort ein zweites Mal. Bei einer Sammlung mit hundert
+  // Bildern ist das kein Schönheitsfehler.
+  const vorher = letzterStand ? letzterStand[name] : undefined;
   letzterStand = { ...(letzterStand || {}), [name]: wert };
   if (vorher !== undefined && vorher !== wert) {
     spur("Daten haben sich geändert – lade neu");
