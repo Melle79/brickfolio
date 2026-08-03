@@ -2010,6 +2010,15 @@ BrickLink-Entsprechung. Frisch importierte Artikel werden in 40er-Häppchen
 versorgt – Geduld oder im Detail-Popup das **↻** am Preisblock „Marktpreise"
 drücken. Grundsätzlich keine Preise? → Mehr → API-Schlüssel → „Verbindung testen".
 
+**Bedruckte Teile.** Die beiden Kataloge zählen Bedruckungen
+unterschiedlich: Der Gungan-Schild heißt bei Rebrickable `2586pr0028` und
+bei BrickLink `2586ps1`, der Karbonitblock `87561pr0001` bzw. `87561pb01`.
+Die App schlägt die BrickLink-Nummer selbst nach, sobald die eigene nichts
+ergibt, und merkt sie sich. Stammt der Preis von dieser Zweitnummer, steht
+sie unter den Marktpreisen – sonst sucht man den Preis auf BrickLink unter
+der eigenen Nummer vergebens. Dafür braucht es den
+Rebrickable-Schlüssel; ohne ihn bleiben solche Teile ohne Preis.
+
 **„Nur für Sammlerprofis" (403).** Die Funktion braucht die Profi-Rolle –
 der Admin vergibt sie unter Mehr → Benutzer verwalten.
 

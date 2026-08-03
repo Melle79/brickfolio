@@ -78,7 +78,7 @@ def test_recalc_updates_and_marks_region(ctx, monkeypatch):
     _add("sw0001", region=None)
     ctx.post("/api/settings/price_region", json={"region": "DE"})
 
-    def fake_guide(item_type, item_no, condition="U", scope=None):
+    def fake_guide(item_type, item_no, condition="U", scope=None, **kw):
         return {"currency": "EUR", "min": 1, "avg": 5.0, "max": 9,
                 "times_sold": 3, "condition": condition,
                 "scope": "DE", "used_scope": "DE", "fell_back": False}
@@ -134,7 +134,7 @@ def test_missing_counts_only_priceless_items(ctx):
 def test_refresh_missing_fills_from_fallback(ctx, monkeypatch):
     _add_missing("sw0002")
 
-    def fake_guide(item_type, item_no, condition="U", scope=None):
+    def fake_guide(item_type, item_no, condition="U", scope=None, **kw):
         return {"currency": "EUR", "min": 1, "avg": 4.0, "max": 8,
                 "times_sold": 2, "condition": condition,
                 "scope": "", "used_scope": "", "fell_back": True}
@@ -152,7 +152,7 @@ def test_refresh_missing_does_not_loop_on_truly_priceless(ctx, monkeypatch):
     """Wer nirgends verkauft wurde, bleibt preislos – aber der Lauf endet."""
     _add_missing("sw0002")
 
-    def empty_guide(item_type, item_no, condition="U", scope=None):
+    def empty_guide(item_type, item_no, condition="U", scope=None, **kw):
         return {"currency": "EUR", "min": None, "avg": None, "max": None,
                 "times_sold": 0, "condition": condition,
                 "scope": "", "used_scope": "", "fell_back": True}

@@ -1918,6 +1918,14 @@ equivalent. Freshly imported items are served in portions of 40 – be patient o
 press the **↻** on the "market prices" block in the detail popup. No prices at
 all? → More → API keys → "Test connection".
 
+**Printed parts.** The two catalogues count printings differently: the Gungan
+shield is `2586pr0028` on Rebrickable and `2586ps1` on BrickLink, the carbonite
+block `87561pr0001` and `87561pb01`. The app looks the BrickLink number up
+itself once its own number yields nothing, and remembers it. When the price
+comes from that secondary number, it is shown below the market prices –
+otherwise you would search for it on BrickLink under your own number in vain.
+This needs the Rebrickable key; without it such parts stay without a price.
+
 **"Collector-Pros only" (403).** The feature needs the pro role – the admin
 grants it under More → Manage users.
 

@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.11.0"
+APP_VERSION = "2.12.0"
 
 
 def hash_password(password: str) -> str:
@@ -322,6 +322,18 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_item_photos
                 ON item_photos(item_type, item_id);
+            -- Unter welcher Nummer BrickLink ein Teil führt. Die beiden
+            -- Kataloge zählen Bedruckungen verschieden: Der Gungan-Schild
+            -- heißt bei Rebrickable `2586pr0028`, bei BrickLink `2586ps1`.
+            -- Die Übersetzung kostet einen Abruf nach draußen und ändert
+            -- sich praktisch nie – also einmal fragen und behalten. Ein
+            -- leeres `bl_no` heißt „nachgesehen, nichts gefunden" und
+            -- bewahrt vor derselben vergeblichen Frage bei jedem Aufklappen.
+            CREATE TABLE IF NOT EXISTS bl_nummern (
+                item_id TEXT PRIMARY KEY,
+                bl_no TEXT NOT NULL,
+                checked_at INTEGER NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS push_subs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL REFERENCES users(id),

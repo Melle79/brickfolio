@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.12.0 – August 2026
+
+### Behoben
+- 💶 **Bedruckte Teile bekamen keine Preise.** Rebrickable nennt den
+  Gungan-Schild `2586pr0028`, BrickLink nennt ihn `2586ps1`; beim
+  Karbonitblock stehen `87561pr0001` und `87561pb01` nebeneinander. Fürs
+  Thema wurde diese Übersetzung längst gemacht, beim Preis nicht – dort ging
+  die Rebrickable-Nummer unverändert an BrickLink und kam als „kennt die
+  Nummer nicht" zurück. Jetzt wird bei einem Teil die BrickLink-Nummer
+  nachgeschlagen und der Preis noch einmal darunter geholt
+
+> Gefragt wird erst, wenn die eigene Nummer nichts ergeben hat, und die
+> Antwort bleibt gespeichert – auch eine leere, sonst ginge dieselbe
+> vergebliche Frage bei jedem Aufklappen erneut nach draußen. Stammt der
+> Preis von der Zweitnummer, steht sie im Popup dabei: Sonst sucht man ihn
+> auf BrickLink unter der eigenen Nummer vergebens.
+
+- ✍️ **Der Hinweis dazu stimmte nicht.** Er schob es pauschal auf eine
+  Rebrickable-Figurennummer und riet zu „BrickLink-Nr. setzen" – ein Feld,
+  das die Oberfläche bei einem Teil gar nicht anbietet. Bei einem Teil steht
+  dort jetzt, was wirklich los ist
+- ⬆️ **Die Liste sprang beim Auffrischen an den Anfang.** Sie baut sich
+  blockweise auf, und ein Neuaufbau fängt wieder bei den ersten 60 Karten an
+  – die Seite wird kurz sehr kurz, und der Browser setzt das Fenster nach
+  oben. Wer bei Nummer 300 stand, sah danach den Anfang. Jetzt werden Platz
+  und Kartenzahl gemerkt und danach wieder eingenommen
+
+> Ausgelöst wurde das nicht nur, wenn jemand etwas anlegt: auch beim bloßen
+> Zurückkommen aus einem anderen Fenster und nach jedem Preisabruf, der
+> einen Kaufpreis nachträgt – dessen Summe steckt im Fingerabdruck, an dem
+> die App Änderungen erkennt.
+
+- 🪟 **Ein offenes Popup wurde vom Auffrischen weggeräumt.** Wer darin gerade
+  etwas eintrug, verlor es mitten im Satz. Jetzt wartet das Auffrischen, bis
+  das Popup zu ist, und holt es dann nach
+
 ## 2.11.0 – August 2026
 
 ### Behoben

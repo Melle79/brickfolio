@@ -58,6 +58,7 @@ def test_kurzes_wegklicken_loest_nichts_aus():
 
 def test_ohne_ladeanzeige():
     """`loadCollection(true)` zeigt den Spinner – beim Auffrischen im
-    Hintergrund würde das nur flackern."""
-    assert "loadCollection()" in auffrischer()
+    Hintergrund würde das nur flackern. `mitPlatz` reicht die Funktion
+    weiter und ruft sie ohne Argument auf."""
+    assert "mitPlatz(loadCollection)" in auffrischer()
     assert "loadCollection(true)" not in auffrischer()

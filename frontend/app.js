@@ -1583,13 +1583,66 @@ document.addEventListener("visibilitychange", () => {
 /* Die gerade offene Ansicht neu laden – ohne die Ladeanzeige, damit es
    nicht flackert, und ohne den Scan-Tab: Dort steht ein Foto samt Treffern,
    das niemand verlieren will, nur weil er kurz woanders war. */
-function ansichtAuffrischen() {
+async function ansichtAuffrischen() {
   if (!state.token) return;
+  // Wer gerade ein Popup offen hat, arbeitet daran. Ein Neuaufbau nimmt ihm
+  // die Karten unter den Füßen weg – `renderCollection` schließt das Popup
+  // dabei mit. Also warten, bis es zu ist.
+  if (document.getElementById("card-modal")) { auffrischenOffen = true; return; }
+  auffrischenOffen = false;
   const offen = document.querySelector(".tab.active");
   const name = offen && offen.dataset.tab;
-  if (name === "collection") loadCollection();
+  if (name === "collection") await mitPlatz(loadCollection);
   else if (name === "lists") showListsTab(listsTab);
   else if (name === "stats") loadStats();
+}
+
+let auffrischenOffen = false;
+
+/* Ein aufgeschobenes Auffrischen nachholen, sobald das Popup zu ist.
+
+   Über eine Runde Verzögerung, weil `closeCardModal` auch am Anfang von
+   `openCardModal` steht: Wer von einem Popup ins nächste geht, soll nicht
+   dazwischen einen Neuaufbau bekommen. Ist gleich wieder eins offen, bleibt
+   der Merker stehen – sonst ginge die Änderung ganz verloren, denn der
+   Fingerabdruck gilt schon als gesehen. */
+function auffrischenNachholen() {
+  if (!auffrischenOffen) return;
+  setTimeout(() => {
+    if (document.getElementById("card-modal")) return;
+    auffrischenOffen = false;
+    ansichtAuffrischen();
+  }, 0);
+}
+
+/* Neu laden, ohne den Platz in der Liste zu verlieren.
+
+   Die Sammlung baut sich blockweise auf (`kartenNachschub`), und ein
+   Neuaufbau fängt wieder beim ersten Block von 60 Karten an. Die Seite wird
+   damit kurz sehr kurz – der Browser setzt das Fenster nach oben, und wer
+   bei Nummer 300 stand, sah danach den Anfang.
+
+   Ausgelöst wurde das nicht nur, wenn jemand etwas anlegt: auch beim bloßen
+   Zurückkommen aus einem anderen Fenster und nach jedem Preisabruf, der
+   einen Kaufpreis nachträgt – denn dessen Summe steckt im Fingerabdruck.
+
+   Deshalb wird gemerkt, wie viele Karten im Dokument standen und wo das
+   Fenster stand. Danach werden ebenso viele Karten nachgeschoben und der
+   Platz wieder eingenommen. */
+async function mitPlatz(laden) {
+  const list = $("collection-list");
+  const vorher = list ? list.querySelectorAll(".card").length : 0;
+  const hoehe = window.scrollY;
+  await laden();
+  if (!list || !vorher || !hoehe) return;
+  // `nachschubLaden` hängt je Aufruf einen Block an. Die Schranke bremst
+  // nur den Unfug – bei leerer Liste liefert der Aufruf nichts mehr nach.
+  let schutz = 100;
+  while (list.querySelectorAll(".card").length < vorher
+         && nachschubLaden && schutz-- > 0) nachschubLaden();
+  window.scrollTo(0, hoehe);
+  // Bilder kommen nachträglich und können die Höhe noch verschieben.
+  requestAnimationFrame(() => window.scrollTo(0, hoehe));
 }
 
 /* ------------------------------------------------- Von selbst mitbekommen
@@ -3612,6 +3665,7 @@ function closeCardModal() {
     document.removeEventListener("keydown", cardModalKeyHandler);
     cardModalKeyHandler = null;
   }
+  if (m) auffrischenNachholen();
 }
 
 function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
@@ -4254,10 +4308,16 @@ async function loadEntryPrice(card, item, refresh) {
     }
     const stand = p.updated_at
       ? new Date(p.updated_at * 1000).toLocaleDateString(dateLocale()) : "";
+    // Bedruckte Teile heißen bei BrickLink anders (`2586pr0028` → `2586ps1`).
+    // Steht die Nummer nicht dabei, sucht man den Preis dort vergebens.
+    const zweit = p.bl_no
+      ? `<div class="price-note">`
+        + esc(tr("BrickLink-Nr. {nr}", { nr: p.bl_no })) + `</div>`
+      : "";
     out.innerHTML = priceLine(tr("Neu"), p.new) + priceLine(tr("Gebraucht"), p.used)
       + `<div class="price-note">`
       + esc(tr("Ø-Verkaufspreise, letzte 6 Monate (BrickLink)"))
-      + `${stand ? esc(tr(" · Stand {d}", { d: stand })) : ""}</div>`;
+      + `${stand ? esc(tr(" · Stand {d}", { d: stand })) : ""}</div>` + zweit;
     // Frische Preise sofort in Karte und Rechnung übernehmen
     if (p.new && p.new.avg != null) item.price_new = p.new.avg;
     if (p.used && p.used.avg != null) item.price_used = p.used.avg;

@@ -5513,23 +5513,103 @@ def _maybe_fetch_prices_async(entry_id: int, item_id: str,
     threading.Thread(target=run, daemon=True).start()
 
 
+BL_NUMMER_TTL = 30 * 24 * 3600      # ein Fehlschlag wird irgendwann neu geprüft
+
+
+def _bl_nummer(item_type: str, item_id: str) -> str:
+    """Unter welcher Nummer BrickLink dieses **Teil** führt.
+
+    Die beiden Kataloge zählen Bedruckungen unterschiedlich: Der Gungan-Schild
+    heißt bei Rebrickable `2586pr0028` und bei BrickLink `2586ps1`, der
+    Karbonitblock `87561pr0001` bzw. `87561pb01`. Fürs Thema wird das seit
+    jeher übersetzt (`_bl_teil`), beim Preis nicht – und deshalb stand bei
+    genau diesen Teilen „BrickLink kennt diese Nummer nicht", obwohl der
+    Katalog sie sehr wohl führt.
+
+    Gefragt wird erst, wenn die eigene Nummer nichts ergeben hat. Das Ergebnis
+    bleibt gespeichert, auch ein leeres: Sonst ginge dieselbe vergebliche
+    Frage bei jedem Aufklappen erneut nach draußen.
+    """
+    if (item_type or "").lower() != "part":
+        return ""
+    jetzt = int(time.time())
+    with core.db() as conn:
+        row = conn.execute("SELECT bl_no, checked_at FROM bl_nummern "
+                           "WHERE item_id = ?", (item_id,)).fetchone()
+    if row and (row["bl_no"] or jetzt - row["checked_at"] < BL_NUMMER_TTL):
+        return row["bl_no"]
+    nummer = _bl_teil(item_id)[0]
+    if nummer == item_id:
+        nummer = ""                 # nichts Besseres gefunden
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO bl_nummern (item_id, bl_no, checked_at) "
+            "VALUES (?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET "
+            "bl_no = excluded.bl_no, checked_at = excluded.checked_at",
+            (item_id, nummer, jetzt))
+    return nummer
+
+
+def _unbekannt_meldung(item_id: str) -> str:
+    """Was man tun kann, wenn BrickLink zu einer Nummer nichts hergibt.
+
+    Der alte Text schob es pauschal auf eine Rebrickable-Figurennummer und
+    verwies auf „BrickLink-Nr. setzen“ – ein Feld, das die Oberfläche nur bei
+    `fig-`, `manuell-` und `custom-` überhaupt anbietet. Bei einem Teil stand
+    dort also ein falscher Grund und ein Rat, den man nicht befolgen kann.
+    """
+    if item_id.startswith(("fig-", "manuell-", "custom-")):
+        return ("BrickLink kennt diese Nummer nicht – vermutlich eine "
+                "Rebrickable-Nummer (fig-…). „BrickLink-Nr. setzen“ nutzen.")
+    return ("BrickLink führt zu dieser Nummer keine verkauften Artikel – "
+            "auch nicht unter einer Zweitnummer.")
+
+
+def _preise_beider_zustaende(item_type: str, item_no: str,
+                             use_cache: bool = False) -> tuple:
+    """(Ergebnis, Anzahl 404) für „neu" und „gebraucht".
+
+    Alles außer 404 fliegt weiter – ein Zeitüberlauf ist keine unbekannte
+    Nummer und darf nicht als solche durchgehen.
+    """
+    result, not_found = {}, 0
+    for cond, key in (("N", "new"), ("U", "used")):
+        try:
+            result[key] = integrations.price_guide(item_type, item_no, cond,
+                                                   use_cache=use_cache)
+        except requests.HTTPError as e:
+            code = e.response.status_code if e.response is not None else 0
+            if code != 404:
+                raise
+            not_found += 1
+            result[key] = None
+    return result, not_found
+
+
+def _preise_mit_zweitnummer(item_type: str, item_no: str,
+                            use_cache: bool = False) -> tuple:
+    """Preise holen und bei einem Teil notfalls die BrickLink-Nummer nehmen.
+
+    Zurück kommt (Ergebnis, Anzahl 404, benutzte Nummer).
+    """
+    result, not_found = _preise_beider_zustaende(item_type, item_no, use_cache)
+    if not_found < 2:
+        return result, not_found, item_no
+    ersatz = _bl_nummer(item_type, item_no)
+    if not ersatz:
+        return result, not_found, item_no
+    zweit, fehlt = _preise_beider_zustaende(item_type, ersatz, use_cache)
+    if fehlt == 2:
+        return result, not_found, item_no
+    return zweit, fehlt, ersatz
+
+
 def _fetch_and_store_prices(entry: dict, table: str = "collection",
                             source: str = "auto") -> dict:
     """Beide Zustände von BrickLink holen und Ø-Preise am Eintrag speichern."""
     assert table in PRICE_TABLES
-    result = {}
-    not_found = 0
-    for cond, key in (("N", "new"), ("U", "used")):
-        try:
-            result[key] = integrations.price_guide(
-                entry["item_type"], entry["item_id"], cond)
-        except requests.HTTPError as e:
-            code = e.response.status_code if e.response is not None else 0
-            if code == 404:
-                not_found += 1
-                result[key] = None
-                continue
-            raise
+    result, not_found, benutzt = _preise_mit_zweitnummer(
+        entry["item_type"], entry["item_id"])
     if not_found == 2:
         # Hatte der Artikel schon einmal einen Preis, kannte BrickLink die
         # Nummer früher – dann ist sie jetzt umbenannt oder gelöscht worden
@@ -5537,8 +5617,7 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection",
         # meist eine von Hand falsch eingetippte oder eine Rebrickable-Nummer.
         if entry.get("price_updated_at"):
             _note_item_gone(entry)
-        raise LookupError("BrickLink kennt diese Nummer nicht – vermutlich eine "
-                          "Rebrickable-Nummer (fig-…). „BrickLink-Nr. setzen“ nutzen.")
+        raise LookupError(_unbekannt_meldung(entry["item_id"]))
 
     def avg(d):
         try:
@@ -5601,6 +5680,11 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection",
                 (now, avg(result.get("new")), avg(result.get("used")),
                  last["id"]))
     result["updated_at"] = now
+    # Kam der Preis unter der BrickLink-Nummer, gehört die dazugesagt: Sonst
+    # steht im Popup ein Preis, den man auf BrickLink unter der eigenen
+    # Nummer nirgends wiederfindet.
+    if benutzt != entry["item_id"]:
+        result["bl_no"] = benutzt
     return result
 
 
@@ -5650,29 +5734,25 @@ def get_price(item_type: str, item_no: str,
     if not integrations.bricklink_enabled():
         raise HTTPException(501, "BrickLink-API nicht konfiguriert "
                                  "(Schlüssel unter Mehr → API-Schlüssel eintragen)")
-    result = {}
-    not_found = 0
-    for cond, key in (("N", "new"), ("U", "used")):
-        try:
-            result[key] = integrations.price_guide(item_type, item_no, cond,
-                                                   use_cache=True)
-        except requests.Timeout:
-            raise HTTPException(504, "BrickLink antwortet nicht")
-        except requests.HTTPError as e:
-            code = e.response.status_code if e.response is not None else 0
-            if code == 404:
-                not_found += 1
-                result[key] = None
-                continue
-            raise HTTPException(502, f"BrickLink-Fehler ({code})")
-        except requests.RequestException:
-            raise HTTPException(502, "BrickLink nicht erreichbar")
-        except (ValueError, RuntimeError) as e:
-            raise HTTPException(400, str(e))
+    try:
+        result, not_found, benutzt = _preise_mit_zweitnummer(
+            item_type, item_no, use_cache=True)
+    except requests.Timeout:
+        raise HTTPException(504, "BrickLink antwortet nicht")
+    except requests.HTTPError as e:
+        code = e.response.status_code if e.response is not None else 0
+        raise HTTPException(502, f"BrickLink-Fehler ({code})")
+    except requests.RequestException:
+        raise HTTPException(502, "BrickLink nicht erreichbar")
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(400, str(e))
     if not_found == 2:
-        raise HTTPException(404, "BrickLink kennt diese Nummer nicht – "
-                                 "vermutlich eine Rebrickable-Nummer (fig-…). "
-                                 "In den Details „BrickLink-Nr. setzen“ nutzen.")
+        raise HTTPException(404, _unbekannt_meldung(item_no))
+    # Kam der Preis unter der BrickLink-Nummer, gehört die dazugesagt: Sonst
+    # steht im Popup ein Preis, den man auf BrickLink unter der eigenen
+    # Nummer nirgends wiederfindet.
+    if benutzt != item_no:
+        result["bl_no"] = benutzt
     return result
 
 
