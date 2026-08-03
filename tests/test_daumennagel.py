@@ -90,12 +90,19 @@ def test_ein_fehlendes_bild_bleibt_ein_fehlendes_bild(client):
 
 def test_alle_karten_holen_klein():
     """Bliebe eine Stelle auf der vollen Fassung, trüge die Ansicht sie
-    weiterhin mit."""
+    weiterhin mit.
+
+    Diese Prüfung hat einmal versagt: Sie verlangte `class="card-img"`
+    **wörtlich** und übersah damit die neun Stellen mit
+    `class="card-img fig-img"` – Listen, Statistik, Dubletten, fehlende
+    Figuren, Set-Figuren, Hub-Angebote. Genau dort standen dann 336 Bilder
+    in voller Größe, und der Tab starb. Deshalb prüft sie jetzt auf den
+    **Anfang** der Klassenliste.
+    """
     quelle = js()
-    stellen = re.findall(r'<img class="card-img" src="\$\{imgSrc\(([^)]*)\)\}',
-                         quelle)
-    assert stellen, "keine Kartenbilder gefunden"
-    ohne = [s for s in stellen if "true" not in s]
+    stellen = re.findall(r'<img class="card-img[^"]*" src="\$\{([^}]*)\}', quelle)
+    assert len(stellen) >= 10, f"zu wenige Kartenbilder gefunden: {len(stellen)}"
+    ohne = [s for s in stellen if "imgSrc(" in s and "true" not in s]
     assert not ohne, f"holen noch die volle Fassung: {ohne}"
 
 

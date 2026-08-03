@@ -1008,7 +1008,7 @@ async function askSetFigures(item, condition) {
       ${figs.map((f, i) => `
         <label class="setfigs-row">
           <input type="checkbox" data-fig="${i}" checked>
-          <img class="card-img fig-img" src="${imgSrc(f.img_url)}" alt="" loading="lazy">
+          <img class="card-img fig-img" src="${imgSrc(f.img_url, true)}" alt="" loading="lazy">
           <span><strong>${esc(f.name)}</strong><br>
             <span class="sub">${esc(f.item_id)}${f.qty > 1 ? ` · ${f.qty}× im Set` : ""}</span>
           </span>
@@ -1081,7 +1081,7 @@ async function askRemoveSetFigures(item) {
       ${figs.map((f, i) => `
         <label class="setfigs-row">
           <input type="checkbox" data-fig="${i}" checked>
-          <img class="card-img fig-img" src="${imgSrc(f.img_url)}" alt="" loading="lazy">
+          <img class="card-img fig-img" src="${imgSrc(f.img_url, true)}" alt="" loading="lazy">
           <span><strong>${esc(f.name)}</strong><br>
             <span class="sub">${esc(f.item_id)} ·
               ${f.condition === "new" ? tr("Neu") : tr("Gebraucht")} ·
@@ -1153,7 +1153,7 @@ async function loadSetFigs(card, item, btn) {
     } else {
       out.innerHTML = figs.map((f, i) => `
         <div class="fig-row" data-fig-row="${i}">
-          <img class="card-img fig-img" src="${imgSrc(f.img_url)}" data-gid="${esc(f.item_id)}" data-gtype="minifig" alt="" loading="lazy">
+          <img class="card-img fig-img" src="${imgSrc(f.img_url, true)}" data-gid="${esc(f.item_id)}" data-gtype="minifig" alt="" loading="lazy">
           <div class="fig-info">
             <strong>${esc(f.name)}</strong>
             <div class="sub">${esc(f.item_id)}${f.qty > 1 ? ` · ${f.qty}× im Set` : ""}
@@ -1223,7 +1223,7 @@ async function loadFigParts(card, item, btn) {
     } else {
       out.innerHTML = parts.map((p) => `
         <div class="fig-row">
-          <img class="card-img fig-img" src="${imgSrc(p.img_url)}" alt="" loading="lazy">
+          <img class="card-img fig-img" src="${imgSrc(p.img_url, true)}" alt="" loading="lazy">
           <div class="fig-info">
             <strong>${esc(p.name)}</strong>
             <div class="sub">${esc(p.item_id)}${p.color_name ? ` · ${esc(p.color_name)}` : ""}${p.qty > 1 ? ` · ${p.qty}×` : ""}</div>
@@ -5731,7 +5731,7 @@ function listItemRow(it, dealer) {
     : "";
   return `
   <div class="fig-row ${it.done ? "done" : ""}" data-iid="${it.id}">
-    <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
+    <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
     <div class="fig-info">
       <strong>${esc(it.name)}</strong>
       <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${prices ? " · " + prices : ""}${it.paid_price != null ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(it.paid_price) })) : ""}</div>
@@ -5990,7 +5990,7 @@ function renderStats(data) {
     <div class="set-figs">
       ${data.top.map((it, i) => `
       <div class="fig-row">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
+        <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
         <div class="fig-info" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <strong style="font-size:14px">${i + 1}. ${esc(it.name)}${it.quantity > 1 ? ` (${it.quantity}×)` : ""}</strong>
           <b style="white-space:nowrap">${fmtEur(it.value)}</b>
@@ -6260,7 +6260,7 @@ function renderDuplicates(data) {
     <div class="set-figs">
       ${data.items.map((it) => `
       <div class="fig-row">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
+        <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}
@@ -6372,7 +6372,7 @@ function renderMissingFigs(data) {
     <div class="set-figs">
       ${data.items.map((it, i) => `
       <div class="fig-row" data-mf-row="${i}">
-        <img class="card-img fig-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
+        <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · <b>${it.missing}× fehlt</b>${
@@ -7640,7 +7640,7 @@ async function loadHubOffers() {
       return `
       <div class="card tappable" data-offer-card>
         <div class="card-head">
-          <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url)}" data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
+          <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url, true)}" data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(o.name)}</strong>
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>

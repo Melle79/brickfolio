@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.16.0 – August 2026
+
+### Behoben
+- 🖼 **Neun Stellen holten weiterhin Bilder in voller Größe.** 2.11.0 hat den
+  Daumennagel eingeführt, aber nur die Sammlungskarten umgestellt. Listen,
+  Statistik, Doppelte, fehlende Set-Figuren, die Set-Figuren-Dialoge und die
+  Hub-Angebote luden weiter 400 px – und die zugehörige Prüfung sah es nicht,
+  weil sie `class="card-img"` **wörtlich** verlangte und diese Stellen
+  `class="card-img fig-img"` heißen
+
+> **Aus einem eingeschickten Verlauf.** Der Tab stand drei Stunden ruhig bei
+> 1784 Elementen und 32 Bildern. Dann ging die Listen-Ansicht auf: **5094
+> Elemente, 336 Bilder** – 90 Sekunden später war der Renderer tot, bei 7 MB
+> JS-Speicher.
+>
+> | | vorher | nachher |
+> |---|---|---|
+> | 336 Bilder, entpackt | 215 MB | 34 MB |
+>
+> Entpackte Bilder liegen **außerhalb** des JS-Speichers. Deshalb blieb die
+> Kurve flach, während der Tab starb – und deshalb war die Ursache so lange
+> nicht zu sehen.
+
+- 🧪 **Die Prüfung dazu prüft jetzt den Anfang der Klassenliste.** Sonst
+  rutscht dieselbe Sorte Stelle beim nächsten Mal wieder durch
+
 ## 2.15.0 – August 2026
 
 Gefunden beim Durchtesten an einer laufenden Instanz.
