@@ -789,12 +789,15 @@ in two stages:
 > second number nor the category. So the app settles the number **once** via
 > Rebrickable and uses it for both routes afterwards. This needs both keys.
 
-If anything is left afterwards – a plain brick has no figure number – every
-card has a **Theme** field: type it (the
-suggestion list knows every theme you already have), press **Set** – done.
-Clearing it restores "No theme". A theme set by hand stays put; the automatic
-lookup never overwrites one that is already there. This is also how you fix a
-wrong classification.
+If anything is left afterwards – a plain brick has no figure number – the card
+details hold a **Theme** field: type it (the suggestion list knows every theme
+you already have), press **Set** – done. Clearing it restores "No theme".
+
+**Once the lookup found one, only the theme is shown since 2.14.0** – a field
+and a button for something that is already filled in correctly would be two
+rows too many. The **✏️** next to it brings them back when something really is
+classified wrongly. A theme set by hand stays put; the automatic lookup never
+overwrites one that is already there.
 
 > The value of a theme card counts figures that sit inside your own sets only
 > proportionally – exactly like the total at the top. Otherwise the sum of the

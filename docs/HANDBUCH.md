@@ -817,12 +817,15 @@ in zwei Stufen ab:
 > Schlüssel.
 
 Bleibt danach etwas übrig – ein schlichter Stein etwa hat keine
-Figurennummer –, steht auf jeder Karte
-ein Feld **Thema**: eintippen (die Vorschlagsliste kennt alle Themen, die du
-schon hast), **Setzen** – fertig. Leeren stellt „Ohne Thema" wieder her. Ein
-von Hand gesetztes Thema bleibt stehen; die Automatik überschreibt nie eins,
-das schon da ist. Damit lässt sich auch eine falsche Einsortierung
-geradeziehen.
+Figurennummer –, steht in den Karten-Details ein Feld **Thema**: eintippen
+(die Vorschlagsliste kennt alle Themen, die du schon hast), **Setzen** –
+fertig. Leeren stellt „Ohne Thema" wieder her.
+
+**Hat die Automatik eins gefunden, steht seit 2.14.0 nur das Thema da** –
+Feld und Knopf für etwas, das längst richtig ausgefüllt ist, wären zwei
+Zeilen zu viel. Der **✏️** daneben holt sie zurück, wenn doch etwas falsch
+einsortiert ist. Ein von Hand gesetztes Thema bleibt stehen; die Automatik
+überschreibt nie eins, das schon da ist.
 
 > Der Wert einer Themenkarte rechnet Figuren, die in euren eigenen Sets
 > stecken, nur anteilig mit – genau wie die Gesamtsumme oben. Sonst läge

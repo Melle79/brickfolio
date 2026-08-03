@@ -505,6 +505,21 @@ code {
 }
 .share-qty select { padding: 4px 8px; }
 .detail-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+/* `display: flex` aus dem eigenen Blatt schlägt das `display: none`, das der
+   Browser für `hidden` mitbringt – Autorenregeln gehen vor. Ohne diese Zeile
+   bliebe eine ausgeblendete Zeile sichtbar. */
+.detail-row[hidden] { display: none; }
+
+/* Steht ein Thema, steht nur das Thema da: Eingabefeld und Knopf für etwas,
+   das die Automatik längst richtig ausgefüllt hat, sind zwei Zeilen zu viel.
+   Der Stift holt sie zurück – falsch zugeordnet wird auch mal etwas. */
+.thema-fest { align-items: center; gap: 6px; }
+.thema-wert { font-weight: 700; }
+.thema-stift {
+  background: none; border: none; padding: 2px 4px; cursor: pointer;
+  font-size: 13px; line-height: 1; opacity: .6;
+}
+.thema-stift:hover, .thema-stift:focus-visible { opacity: 1; }
 .price-result { font-size: 14px; margin-top: 8px; color: var(--ink); }
 .meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
 

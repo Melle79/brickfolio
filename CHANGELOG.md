@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.14.0 – August 2026
+
+### Geändert
+- 🏷 **Das Themenfeld steht nur noch da, wenn keins gefunden wurde.** Als es
+  kam (1.90.0), standen Teile reihenweise unter „Ohne Thema" – BrickLink
+  sortiert sie nach **Form** („Brick, Modified"), nicht nach Thema. Seit das
+  Thema über die Zweitnummer gefunden wird, ist der Normalfall erledigt, und
+  Eingabefeld samt Knopf standen für etwas da, das längst richtig ausgefüllt
+  war. Jetzt steht bei einem gefundenen Thema nur noch das Thema
+
+> Ganz weg ist es nicht: Der Stift daneben holt das Feld zurück. Falsch
+> zugeordnet wird auch mal etwas, und ohne einen Weg dahin bliebe es falsch.
+> Wer das Thema leert, bekommt das Feld wieder offen – dann steht der
+> Eintrag ja wirklich ohne.
+
 ## 2.13.0 – August 2026
 
 ### Behoben

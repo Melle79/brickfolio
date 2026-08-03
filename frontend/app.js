@@ -3273,7 +3273,13 @@ function collCardDetails(it) {
           🤝 In der Tauschbörse anbieten
         </label>` : ""}
         <label>Thema</label>
-        <div class="detail-row">
+        <div class="detail-row thema-fest" data-thema-fest${it.theme ? "" : " hidden"}>
+          <span class="thema-wert" data-thema-wert>${esc(it.theme || "")}</span>
+          <button class="thema-stift" data-thema-aendern
+            title="${esc(tr("Thema ändern"))}"
+            aria-label="${esc(tr("Thema ändern"))}">✏️</button>
+        </div>
+        <div class="detail-row" data-thema-feld${it.theme ? " hidden" : ""}>
           <input data-theme list="themen-liste" class="fix-input"
             placeholder="${esc(tr("z. B. Star Wars – leer = Ohne Thema"))}"
             value="${esc(it.theme || "")}" maxlength="60">
@@ -4224,23 +4230,48 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     });
   }
 
-  // Thema von Hand. Für Teile findet die Automatik keins: BrickLink sortiert
-  // sie nach **Form** („Brick, Modified"), nicht nach Thema – da ist nichts
-  // abzurufen, was hier stehen könnte. Ein von Hand gesetztes bleibt stehen,
-  // die Automatik überschreibt nie ein vorhandenes.
+  /* Thema von Hand – aber nur, wenn die Automatik nichts fand.
+
+     Als das Feld kam (1.90.0), standen Teile reihenweise unter „Ohne
+     Thema": BrickLink sortiert sie nach **Form** („Brick, Modified"), nicht
+     nach Thema. Seit das Thema über die Zweitnummer des Teils gefunden wird,
+     ist der Normalfall erledigt – dann standen dort Eingabefeld und Knopf
+     für etwas, das längst richtig ausgefüllt war.
+
+     Steht ein Thema, steht jetzt nur das Thema da. Der Stift daneben holt
+     das Feld zurück: Falsch zugeordnet wird auch mal etwas, und ohne den
+     Weg dahin bliebe es falsch. Ein von Hand gesetztes bleibt stehen, die
+     Automatik überschreibt nie ein vorhandenes. */
   const themaEl = card.querySelector("[data-theme]");
   const themaBtn = card.querySelector("[data-theme-save]");
   if (themaEl && themaBtn) {
+    const festRow = card.querySelector("[data-thema-fest]");
+    const feldRow = card.querySelector("[data-thema-feld]");
+    const wertEl = card.querySelector("[data-thema-wert]");
+    const zeigen = (bearbeiten) => {
+      if (festRow) festRow.hidden = bearbeiten || !item.theme;
+      if (feldRow) feldRow.hidden = !bearbeiten && !!item.theme;
+    };
+    const aendern = card.querySelector("[data-thema-aendern]");
+    if (aendern) {
+      aendern.addEventListener("click", () => {
+        zeigen(true);
+        themaEl.focus();
+        themaEl.select();
+      });
+    }
     themenVorschlaege();
     const setzen = async () => {
       const wert = themaEl.value.trim();
-      if (wert === (item.theme || "")) return;
+      if (wert === (item.theme || "")) { zeigen(false); return; }
       themaBtn.disabled = true;
       try {
         await api("/collection/" + id, { method: "PATCH", body: { theme: wert } });
         item.theme = wert;
         const inState = (state.collection || []).find((x) => x.id === id);
         if (inState) inState.theme = wert;
+        if (wertEl) wertEl.textContent = wert;
+        zeigen(false);
         toast(wert ? tr("Thema gesetzt: {t}", { t: wert })
           : tr("Thema entfernt – der Eintrag steht jetzt ohne Thema."));
         if ($("sort").value === "theme") loadCollection();
