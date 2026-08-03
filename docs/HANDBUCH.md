@@ -1768,6 +1768,23 @@ welcher Browser; unter „Details" die vollständigen Angaben.
 Seitenaufruf auftritt, erzeugt keine hundert Einträge, sondern einen mit
 Zähler. Die Liste hält die letzten 100 verschiedenen Fehler.
 
+**Fehlschläge vom Server stehen seit 2.13.0 mit drin.** Vorher wurde nur
+aufgezeichnet, was niemand auffing – fast jeder Knopf fängt seinen Fehler
+aber ab und schreibt ihn in eine Kurzmeldung. Auf dem Bildschirm stand also
+„Fehler 502", und der Bericht meldete „keine Fehler". Jetzt landet jede
+Antwort ab Status 500 im Protokoll, mit dem Weg (`GET /api/lookup/…`) und
+dem **Anfang der Antwort**. Genau daran hängt die entscheidende Frage:
+
+- Steht dort `{"detail": …}`, kommt der Fehler **aus der App** – der Text
+  daneben sagt, was schiefging.
+- Steht dort eine **HTML-Seite** (`<html>…502 Bad Gateway…`), kommt er von
+  etwas **davor**: Zwischenserver, Cloudflare-Tunnel, Zugangsschutz. Dann
+  ist nicht die App das Problem, sondern der Weg dorthin – typischerweise,
+  weil die Antwort dem Tunnel zu lange gedauert hat.
+
+Ein 404 („kennt BrickLink nicht") und ein 400 („Eingabe nicht gültig")
+bleiben draußen: gewöhnlicher Betrieb, der die Liste nur zumüllt.
+
 **„Script error." – der einzige Eintrag, der keiner ist.** Steht dort eine
 Meldung ohne Datei und Zeile, ist die App nicht schuld. Der Browser kürzt
 Fehler aus **fremden Skripten** aus Sicherheitsgründen auf genau diesen Satz

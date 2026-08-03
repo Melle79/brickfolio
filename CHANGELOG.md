@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.13.0 – August 2026
+
+### Behoben
+- 🖼 **Das ↻ neben dem Bild holte bei bedruckten Teilen nichts.** Dieselbe
+  Verwechslung wie beim Preis: Die Rebrickable-Nummer ging unverändert an
+  BrickLink. Jetzt nimmt auch der Bildabruf die BrickLink-Nummer, wenn die
+  eigene nichts ergibt
+- 🚦 **Ein 404 wurde als „BrickLink nicht erreichbar" gemeldet.**
+  `requests.HTTPError` ist eine Unterklasse von `RequestException` – stand
+  kein eigener Zweig davor, fiel „kennt die Nummer nicht" in den Ast für
+  Ausfälle. Betroffen waren der Bildabruf und die Teileliste einer Figur
+- 📋 **Fehlgeschlagene Aufrufe standen in keinem Bericht.** Aufgezeichnet
+  wurde nur, was niemand auffing. Fast jeder Knopf fängt seinen Fehler aber
+  ab und schreibt ihn in eine Kurzmeldung – auf dem Bildschirm stand „Fehler
+  502", und der Bericht meldete „keine Fehler"
+
+> Jetzt landet jede Antwort ab Status 500 im Protokoll, mit Weg und dem
+> **Anfang der Antwort**. Genau daran hängt die Frage, die zählt: Kommt der
+> Fehler aus der App, steht dort ihr JSON mit `detail`; kommt er von etwas
+> davor – Zwischenserver, Tunnel, Zugangsschutz –, steht dort dessen
+> HTML-Seite. Ohne diesen Unterschied sucht man an der falschen Stelle.
+>
+> Ein 404 („kennt BrickLink nicht") und ein 400 („Eingabe nicht gültig")
+> bleiben draußen: gewöhnlicher Betrieb, der das Protokoll nur zumüllt.
+
 ## 2.12.0 – August 2026
 
 ### Behoben

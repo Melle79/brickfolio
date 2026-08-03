@@ -1691,6 +1691,23 @@ browser; under "details" the complete information.
 not create a hundred entries but one with a counter. The list keeps the last
 100 distinct errors.
 
+**Server-side failures are included since 2.13.0.** Before, only what nobody
+caught was recorded – but nearly every button catches its error and writes it
+into a toast. So "Error 502" was on screen while the report said "no errors".
+Now every response from status 500 up lands in the log, with the path
+(`GET /api/lookup/…`) and the **beginning of the response**. That is what the
+decisive question hangs on:
+
+- If it reads `{"detail": …}`, the error comes **from the app** – the text
+  next to it says what went wrong.
+- If it is an **HTML page** (`<html>…502 Bad Gateway…`), it comes from
+  something **in front of it**: reverse proxy, Cloudflare Tunnel, access
+  protection. Then the app is not the problem but the way to it – typically
+  because the response took too long for the tunnel.
+
+A 404 ("BrickLink does not know this") and a 400 ("input not valid") stay out:
+ordinary operation that would only clutter the list.
+
 **"Script error." – the one entry that isn't one.** If a message carries
 neither file nor line, the app is not at fault. For security reasons the
 browser boils errors from **foreign scripts** down to exactly that sentence

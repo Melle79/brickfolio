@@ -307,9 +307,37 @@ async function api(path, options = {}) {
       text = grund ? tr("Eingabe nicht gültig: {grund}", { grund })
         : tr("Eingabe nicht gültig");
     } else text = tr("Fehler {code}", { code: resp.status });
+    serverfehlerMelden(path, options, resp.status, text, roh);
     throw new Error(text);
   }
   return data;
+}
+
+/* Ein Fehlschlag vom Server gehört ins Protokoll.
+
+   Aufgezeichnet wurde bisher nur, was niemand auffing: `window.onerror`,
+   abgewiesene Versprechen, blockierte Anfragen. Ein `catch`, das den Text in
+   eine Kurzmeldung schreibt – und das tun fast alle Knöpfe – war unsichtbar.
+   Auf dem Bildschirm stand also „Fehler 502", und der Bericht meldete
+   „keine Fehler". Damit war die eine Frage, die zählt, nicht zu beantworten:
+   **wo** kam der Fehler her?
+
+   Genau dafür steht der Anfang der Antwort mit im Protokoll. Kommt der
+   Fehler aus der App, ist das ihr JSON mit `detail`; kommt er von etwas
+   davor – Zwischenserver, Tunnel, Zugangsschutz –, ist es deren HTML-Seite.
+   Ohne diesen Unterschied sucht man den Fehler an der falschen Stelle.
+
+   Nur ab 500: Ein 404 („kennt BrickLink nicht") und ein 400 („Eingabe nicht
+   gültig") sind gewöhnlicher Betrieb und würden das Protokoll zumüllen. */
+function serverfehlerMelden(path, options, code, text, roh) {
+  if (code < 500 || path.startsWith("/errors")) return;
+  const art = (options && options.method) || "GET";
+  const anfang = String(roh || "").replace(/\s+/g, " ").trim().slice(0, 300);
+  reportError(tr("{code} bei {weg}", { code, weg: art + " /api" + path }),
+    (text ? text + "\n\n" : "")
+    + (anfang ? tr("Antwort begann mit:") + " " + anfang
+       : tr("Die Antwort war leer.")),
+    "api " + code);
 }
 
 /* ---------------------------------------------------------------- UI-Helfer */

@@ -1583,16 +1583,47 @@ def bricklink_lookup(item_type: str, item_no: str,
     if not integrations.bricklink_enabled():
         raise HTTPException(501, "BrickLink-API nicht konfiguriert "
                                  "(BL_CONSUMER_KEY usw. in docker-compose setzen)")
-    try:
-        return integrations.bricklink_item(item_type, item_no.strip())
-    except LookupError as e:
-        raise HTTPException(404, str(e))
-    except requests.Timeout:
-        raise HTTPException(504, "BrickLink antwortet nicht")
-    except requests.RequestException:
-        raise HTTPException(502, "BrickLink nicht erreichbar")
-    except ValueError as e:
-        raise HTTPException(400, str(e))
+
+    def hole(nr: str) -> tuple:
+        """(Treffer, Fehler) – „kennt BrickLink nicht" ist beides nicht.
+
+        `requests.HTTPError` ist eine Unterklasse von `RequestException`.
+        Ohne eigenen Zweig davor landete ein schlichtes 404 im Ast
+        „BrickLink nicht erreichbar" – am ↻ neben dem Bild stand deshalb
+        **Fehler 502**, wo in Wahrheit nur die Nummer nicht passte.
+        """
+        try:
+            return integrations.bricklink_item(item_type, nr), None
+        except LookupError:
+            return None, None
+        except requests.HTTPError as e:
+            code = e.response.status_code if e.response is not None else 0
+            if code == 404:
+                return None, None
+            return None, HTTPException(502, f"BrickLink-Fehler ({code})")
+        except requests.Timeout:
+            return None, HTTPException(504, "BrickLink antwortet nicht")
+        except requests.RequestException:
+            return None, HTTPException(502, "BrickLink nicht erreichbar")
+        except ValueError as e:
+            return None, HTTPException(400, str(e))
+
+    nummer = item_no.strip()
+    treffer, fehler = hole(nummer)
+    if fehler:
+        raise fehler
+    if treffer:
+        return treffer
+    # Bedruckte Teile heißen bei BrickLink anders (`2586pr0028` → `2586ps1`).
+    # Dieselbe Übersetzung wie beim Preis – sonst holt das ↻ nie ein Bild.
+    ersatz = _bl_nummer(item_type, nummer)
+    if ersatz and ersatz != nummer:
+        treffer, fehler = hole(ersatz)
+        if fehler:
+            raise fehler
+        if treffer:
+            return treffer
+    raise HTTPException(404, _unbekannt_meldung(nummer))
 
 
 @app.get("/api/search")
@@ -2768,6 +2799,13 @@ def fig_parts(fig_no: str, user: dict = Depends(current_user)):
         raise HTTPException(404, str(e))
     except requests.Timeout:
         raise HTTPException(504, "BrickLink antwortet nicht")
+    except requests.HTTPError as e:
+        # Ohne eigenen Zweig fiele auch das in „nicht erreichbar" – ein 404
+        # heißt aber nur: zu dieser Figur führt BrickLink keine Teile.
+        code = e.response.status_code if e.response is not None else 0
+        if code == 404:
+            raise HTTPException(404, "BrickLink führt zu dieser Figur keine Teile")
+        raise HTTPException(502, f"BrickLink-Fehler ({code})")
     except requests.RequestException:
         raise HTTPException(502, "BrickLink nicht erreichbar")
 
