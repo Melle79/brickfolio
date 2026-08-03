@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.15.0 – August 2026
+
+Gefunden beim Durchtesten an einer laufenden Instanz.
+
+### Behoben
+- ⬆️ **Auch nach einer eigenen Änderung sprang die Liste nach oben.**
+  2.12.0 hat das fürs automatische Auffrischen erledigt – löschen, Nummer
+  richtigstellen, Thema setzen, Benachrichtigung übernehmen und die
+  Sammelaktionen unter „Mehr" luden aber weiter schlicht neu. Elf Stellen,
+  jetzt alle über denselben Weg
+- 🪟 **Ein Thema zu setzen räumte das Popup weg.** Bei Sortierung nach Thema
+  wechselt der Eintrag die Gruppe, die Liste muss also neu – aber nicht in
+  dem Moment, in dem man gerade „Setzen" gedrückt hat. Jetzt wartet es, bis
+  das Popup zu ist
+- ✍️ **Der Text beim Bildabruf sprach von Preisen.** „BrickLink führt zu
+  dieser Nummer keine verkauften Artikel" klang, als wäre nur gerade nichts
+  verkauft worden – beim Bild fehlt aber der **Eintrag**, nicht der Verkauf
+
+> **Sortierung, Suche und Filter landen weiter am Anfang.** Dort steht
+> danach etwas anderes in der Liste; die alte Stelle zu halten wäre kein
+> Dienst, sondern ein neuer Fehler.
+
 ## 2.14.0 – August 2026
 
 ### Geändert

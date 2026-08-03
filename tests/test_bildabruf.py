@@ -141,3 +141,17 @@ def test_figurenteile_melden_ein_404_als_404(ctx, monkeypatch):
     monkeypatch.setattr(main, "_fig_parts_cached", weg)
     r = ctx.get("/api/fig_parts/sw0001")
     assert r.status_code == 404, "ein 404 ging bisher als Ausfall durch"
+
+
+def test_der_text_passt_zum_bildabruf(ctx, monkeypatch):
+    """Beim Preis fehlen **Verkäufe**, beim Bild fehlt der **Eintrag**.
+    Die Preis-Fassung am Bild klang, als wäre nur gerade nichts verkauft
+    worden – dabei kennt der Katalog die Nummer schlicht nicht."""
+    def weg(item_type, item_no):
+        raise http_fehler(404)
+
+    monkeypatch.setattr(integrations, "bricklink_item", weg)
+    monkeypatch.setattr(main, "_bl_teil", lambda nr: (nr, None))
+    text = ctx.get("/api/lookup/part/9999xyz").json()["detail"]
+    assert "kennt diese Nummer nicht" in text
+    assert "verkauften Artikel" not in text

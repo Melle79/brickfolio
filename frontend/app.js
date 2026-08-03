@@ -1657,6 +1657,31 @@ function auffrischenNachholen() {
    Deshalb wird gemerkt, wie viele Karten im Dokument standen und wo das
    Fenster stand. Danach werden ebenso viele Karten nachgeschoben und der
    Platz wieder eingenommen. */
+/* Nach einer Änderung neu laden – ohne den Platz zu verlieren.
+
+   Für alles, was einen Eintrag ändert und danach die Liste braucht: löschen,
+   Nummer richtigstellen, Thema setzen, Benachrichtigung übernehmen. Der
+   nackte `loadCollection()` warf hier dieselbe Stelle weg wie das
+   Auffrischen – nur dass man die Änderung selbst ausgelöst hatte und
+   trotzdem oben landete.
+
+   **Nicht** hierfür: Sortierung, Suche, Filter. Dort steht danach etwas
+   anderes in der Liste, und der Anfang ist die richtige Stelle. */
+function sammlungAuffrischen() {
+  return mitPlatz(loadCollection);
+}
+
+/* Neu laden, aber erst wenn das Popup zu ist.
+
+   Ein Thema zu setzen ändert bei Sortierung nach Thema die Gruppe – die
+   Liste muss also neu. Mitten im Popup ist das der falsche Moment: Man hat
+   gerade „Setzen" gedrückt und steht plötzlich ohne Popup da. Der Merker
+   ist derselbe wie beim Takt, `closeCardModal` holt es nach. */
+function auffrischenSpaeter() {
+  if (document.getElementById("card-modal")) auffrischenOffen = true;
+  else ansichtAuffrischen();
+}
+
 async function mitPlatz(laden) {
   const list = $("collection-list");
   const vorher = list ? list.querySelectorAll(".card").length : 0;
@@ -3588,7 +3613,7 @@ function karteVerdrahten(card, items) {
         // Erst fragen (solange das Set noch da ist), dann löschen
         await askRemoveSetFigures(item);
         await api("/collection/" + id, { method: "DELETE" });
-        loadCollection();
+        sammlungAuffrischen();
       } catch (e) { toast(e.message); }
     };
 
@@ -4096,7 +4121,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         if (res.merged) {
           toast("Mit dem vorhandenen Eintrag in diesem Zustand "
             + "zusammengeführt ✔");
-          loadCollection();
+          sammlungAuffrischen();
           return;
         }
         item.condition = cond;
@@ -4196,7 +4221,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         }});
         toast(tr("Gefunden: {name} ({id}, {score} % sicher) ✔",
       { name: best.name, id: best.item_id, score: best.score }));
-        loadCollection();
+        sammlungAuffrischen();
       } catch (e) {
         toast(e.message);
       } finally {
@@ -4221,7 +4246,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         }});
         toast(tr("Aktualisiert: {name} ({id}) ✔",
       { name: found.name, id: found.item_id }));
-        loadCollection();
+        sammlungAuffrischen();
       } catch (e) {
         toast(e.message);
       } finally {
@@ -4274,7 +4299,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         zeigen(false);
         toast(wert ? tr("Thema gesetzt: {t}", { t: wert })
           : tr("Thema entfernt – der Eintrag steht jetzt ohne Thema."));
-        if ($("sort").value === "theme") loadCollection();
+        if ($("sort").value === "theme") auffrischenSpaeter();
       } catch (e) { toast(e.message); }
       themaBtn.disabled = false;
     };
@@ -6797,7 +6822,7 @@ async function refreshThemes() {
     sagen(fertig);
     toast(fertig);
     loadThemeStatus();
-    loadCollection();
+    sammlungAuffrischen();
   } catch (e) {
     sagen(e.message);
     toast(e.message);
@@ -8432,7 +8457,7 @@ function renderNotifications(items) {
           ? tr("Zusammengeführt – Stückzahlen addiert ✔")
           : tr("Zusammengeführt ✔"));
         loadNotifications();
-        loadCollection();
+        sammlungAuffrischen();
       } catch (e) {
         toast(e.message);
         box.querySelectorAll("[data-merge]").forEach((x) => { x.disabled = false; });
@@ -8467,7 +8492,7 @@ function renderNotifications(items) {
           { method: "POST" });
         toast(tr("Neue Nummer {id} übernommen", { id: res.new_item_id }));
         loadNotifications();
-        loadCollection();
+        sammlungAuffrischen();
       } catch (e) {
         toast(e.message || "Hat nicht geklappt");
         b.disabled = false;
@@ -8556,7 +8581,7 @@ async function savePriceRegion(region, waehrung) {
     toast(res.pending > 0
       ? tr("Gespeichert – {n} Artikel neu zu berechnen", { n: res.pending })
       : tr("Gespeichert ✔"));
-    if (!$("view-collection").hidden) loadCollection();
+    if (!$("view-collection").hidden) sammlungAuffrischen();
   } catch (e) {
     toast(e.message);
     loadPriceRegion();               // Auswahl zurück auf den echten Stand
@@ -8608,7 +8633,7 @@ async function fetchImages() {
     btn.disabled = false;
     btn.textContent = tr("🖼 Bilder jetzt holen");
     loadImagesStatus();
-    if (!$("view-collection").hidden) loadCollection();
+    if (!$("view-collection").hidden) sammlungAuffrischen();
   }
 }
 
@@ -8639,7 +8664,7 @@ async function recalcPrices() {
     btn.disabled = false;
     btn.textContent = tr("🔄 Preise jetzt umrechnen");
     renderPriceRegion();
-    if (!$("view-collection").hidden) loadCollection();
+    if (!$("view-collection").hidden) sammlungAuffrischen();
   }
 }
 
@@ -8672,7 +8697,7 @@ async function fillMissingPrices() {
     btn.disabled = false;
     btn.textContent = tr("🔄 Preislose erneut abrufen");
     loadPriceRegion();     // echten Reststand zeigen (nirgends verkauft bleibt)
-    if (!$("view-collection").hidden) loadCollection();
+    if (!$("view-collection").hidden) sammlungAuffrischen();
   }
 }
 

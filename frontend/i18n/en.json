@@ -189,6 +189,7 @@
  "BrickLink führt zu dieser Figur keine Teile": "BrickLink lists no parts for this minifigure",
  "BrickLink führt zu dieser Nummer keine verkauften Artikel – auch nicht unter einer Zweitnummer.": "BrickLink lists no sold items for this number – not under a secondary number either.",
  "BrickLink hat zu dieser Nummer kein Bild": "BrickLink has no image for that number",
+ "BrickLink kennt diese Nummer nicht – auch nicht unter einer Zweitnummer.": "BrickLink does not know this number – not under a secondary number either.",
  "BrickLink kennt diese Nummer nicht – vermutlich eine Rebrickable-Nummer (fig-…). „BrickLink-Nr. setzen“ nutzen.": "BrickLink does not know this number – probably a Rebrickable number (fig-…). Use „Set BrickLink no.“ in the details.",
  "BrickLink nicht erreichbar": "BrickLink cannot be reached",
  "BrickLink-API nicht konfiguriert": "BrickLink API not configured",

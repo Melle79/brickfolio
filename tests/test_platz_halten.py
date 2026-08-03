@@ -65,3 +65,34 @@ def test_das_aufgeschobene_auffrischen_wird_nachgeholt():
     # Beim Wechsel von einem Popup ins nächste bleibt der Merker stehen,
     # sonst ginge die Änderung ganz verloren.
     assert 'getElementById("card-modal")) return' in koerper
+
+
+# ------------------------------------------- Auch nach einer eigenen Änderung
+
+def test_aenderungen_laden_ueber_sammlungAuffrischen():
+    """Löschen, Nummer richtigstellen, Benachrichtigung übernehmen: Der
+    nackte Aufruf warf dieselbe Stelle weg wie das Auffrischen – nur dass
+    man die Änderung selbst ausgelöst hatte und trotzdem oben landete."""
+    quelle = js()
+    assert "function sammlungAuffrischen()" in quelle
+    assert quelle.count("sammlungAuffrischen()") >= 10
+
+
+def test_sortierung_und_filter_landen_weiter_oben():
+    """Dort steht danach etwas anderes in der Liste – der Anfang ist die
+    richtige Stelle. Bliebe hier der alte Platz, wäre es ein neuer Fehler."""
+    quelle = js()
+    for stelle in ('$("search").value = "";', "await saveSortPref(sel.value, false);"):
+        i = quelle.index(stelle)
+        assert "loadCollection();" in quelle[i:i + 200], f"{stelle} lädt nicht mehr schlicht"
+
+
+def test_das_thema_wartet_auf_das_geschlossene_popup():
+    """Man hat gerade „Setzen" gedrückt – da ist ein Neuaufbau, der das
+    Popup mitnimmt, der falsche Moment."""
+    quelle = js()
+    assert 'if ($("sort").value === "theme") auffrischenSpaeter();' in quelle
+    koerper = block("auffrischenSpaeter")
+    assert 'getElementById("card-modal")' in koerper
+    assert "auffrischenOffen = true" in koerper
+    assert "ansichtAuffrischen()" in koerper, "ohne Popup sofort, sonst ginge es verloren"

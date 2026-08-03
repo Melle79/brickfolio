@@ -1623,7 +1623,7 @@ def bricklink_lookup(item_type: str, item_no: str,
             raise fehler
         if treffer:
             return treffer
-    raise HTTPException(404, _unbekannt_meldung(nummer))
+    raise HTTPException(404, _unbekannt_meldung(nummer, katalog=True))
 
 
 @app.get("/api/search")
@@ -5588,17 +5588,25 @@ def _bl_nummer(item_type: str, item_id: str) -> str:
     return nummer
 
 
-def _unbekannt_meldung(item_id: str) -> str:
+def _unbekannt_meldung(item_id: str, katalog: bool = False) -> str:
     """Was man tun kann, wenn BrickLink zu einer Nummer nichts hergibt.
 
     Der alte Text schob es pauschal auf eine Rebrickable-Figurennummer und
     verwies auf „BrickLink-Nr. setzen“ – ein Feld, das die Oberfläche nur bei
     `fig-`, `manuell-` und `custom-` überhaupt anbietet. Bei einem Teil stand
     dort also ein falscher Grund und ein Rat, den man nicht befolgen kann.
+
+    `katalog` unterscheidet die beiden Fälle: Beim Preis fehlen **Verkäufe**,
+    beim Bild fehlt der **Eintrag**. Stand am Bild die Preis-Fassung, klang
+    es, als wäre nur gerade nichts verkauft worden – dabei kennt der Katalog
+    die Nummer schlicht nicht.
     """
     if item_id.startswith(("fig-", "manuell-", "custom-")):
         return ("BrickLink kennt diese Nummer nicht – vermutlich eine "
                 "Rebrickable-Nummer (fig-…). „BrickLink-Nr. setzen“ nutzen.")
+    if katalog:
+        return ("BrickLink kennt diese Nummer nicht – auch nicht unter einer "
+                "Zweitnummer.")
     return ("BrickLink führt zu dieser Nummer keine verkauften Artikel – "
             "auch nicht unter einer Zweitnummer.")
 
