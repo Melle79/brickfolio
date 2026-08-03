@@ -1901,6 +1901,14 @@ langsamer, sonst gleich – dieselben Ergebnisse, dieselben Ausschnitte.
 > Weg führt über den Browser: andere Anwendung testen,
 > Hardwarebeschleunigung abschalten, melden.
 
+> **Deshalb steht die Zahl der Bilder dabei.** Sie ist oft die eigentliche
+> Last: Ein Bild von 400 px belegt entpackt 0,6 MB, und zwar **außerhalb**
+> des JS-Speichers. Eine Ansicht mit 800 Bildern trug so über 500 MB, die in
+> keiner Kurve auftauchten. Seit 2.11.0 holen die Karten deshalb eine
+> Daumennagel-Fassung mit 160 px – dieselbe Ansicht kommt damit auf 85 MB.
+> Steigt die Bilderzahl bei euch in die Hunderte und der Tab bricht ab, ist
+> das der erste Ort zum Nachsehen.
+
 > **Was die Zahl aussagt – und was nicht.** Gemessen wird der
 > **JavaScript-Speicher**. Entpackte Bilder und der Aufbau der Seite selbst
 > stecken da **nicht** drin. Wächst die Kurve, liegt es an der App. Bleibt

@@ -1816,6 +1816,13 @@ same results, same crops.
 > way forward runs through the browser: test another application, turn off
 > hardware acceleration, report it.
 
+> **That is why the image count is shown too.** It is often the real load: a
+> 400 px image takes 0.6 MB once decoded, and that sits **outside** the JS
+> memory. A view holding 800 images carried over 500 MB that appeared in no
+> curve at all. Since 2.11.0 the cards therefore fetch a 160 px thumbnail –
+> the same view now comes to 85 MB. If your image count climbs into the
+> hundreds and the tab dies, that is the first place to look.
+
 > **What the number says – and what it does not.** What is measured is the
 > **JavaScript memory**. Decoded images and the page structure itself are
 > **not** in it. If the curve grows, it is the app. If it stays flat while the

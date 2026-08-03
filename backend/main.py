@@ -3011,8 +3011,39 @@ def _bild_holen_async(url: str) -> None:
     threading.Thread(target=run, daemon=True).start()
 
 
+# Erlaubte Daumennagel-Größen. Keine freie Zahl: Sonst könnte jemand mit
+# 500 Anfragen 500 Dateien erzeugen lassen.
+DAUMEN_GROESSEN = (160,)
+
+
+def _daumennagel(pfad: str, kante: int) -> str | None:
+    """Eine kleinere Fassung des Katalogbildes – einmal erzeugt, dann da.
+
+    **Warum das zählt:** Abgelegt wird mit 400 px, angezeigt in den Karten
+    mit 72. Der Browser entpackt aber die volle Größe – 400x400 sind gut
+    0,6 MB je Bild, und zwar **außerhalb** des JS-Speichers, wo keine
+    Messung sie sieht. Bei 130 Karten sind das rund 80 MB, die niemand
+    bemerkt. Mit 160 px bleiben davon 13 MB.
+    """
+    if kante not in DAUMEN_GROESSEN:
+        return None
+    ziel = f"{pfad}.{kante}.jpg"
+    if os.path.isfile(ziel):
+        return ziel
+    try:
+        with open(pfad, "rb") as f:
+            klein = integrations.prepare_image(f.read(), max_side=kante)
+        temp = ziel + f".{os.getpid()}.part"
+        with open(temp, "wb") as f:
+            f.write(klein)
+        os.replace(temp, ziel)
+        return ziel
+    except Exception:
+        return None
+
+
 @app.get("/catalog")
-def serve_katalogbild(u: str):
+def serve_katalogbild(u: str, s: int = 0):
     """Katalogbild ausliefern – aus dem eigenen Speicher.
 
     Die Oberfläche schickt jedes fremde Bild hierüber. Liegt es schon da, geht
@@ -3029,6 +3060,8 @@ def serve_katalogbild(u: str):
         # Verweis auf die Originaladresse: Das wäre genau der Abruf nach
         # außen, den dieser Endpunkt vermeiden soll.
         raise HTTPException(404, "Bild nicht verfügbar")
+    if s:
+        pfad = _daumennagel(pfad, s) or pfad
     return FileResponse(pfad, media_type="image/jpeg",
                         headers={"Cache-Control": "public, max-age=31536000"})
 

@@ -345,12 +345,28 @@ const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
    hier gerade welche Figur ansieht. Eigene Uploads und Daten-URLs bleiben,
    wie sie sind. Klappt der Abruf nicht, antwortet die Instanz mit 404, und
    der Platzhalter springt ein. */
-function imgSrc(url) {
+/* Die Kante, in der Karten-Daumennägel geholt werden. Angezeigt werden sie
+   mit 72 px, auf einem Retina-Schirm also mit 144 – 160 ist knapp darüber.
+
+   **Warum das wichtig ist:** Der Browser entpackt jedes Bild in voller
+   Größe, egal wie klein es dargestellt wird. Bei 400 px sind das 0,6 MB je
+   Bild, und zwar außerhalb des JS-Speichers, wo keine Messung hinschaut.
+   Eine Sammlungsansicht mit 130 Karten hielt so rund 80 MB entpackte
+   Bilder, ohne dass die Kurve etwas anzeigte. Mit 160 px sind es 13. */
+const DAUMEN_KANTE = 160;
+
+function imgSrc(url, klein = false) {
   if (!url) return IMG_PLACEHOLDER;
   if (/^(https?:)?\/\//.test(url)) {
-    return esc("/catalog?u=" + encodeURIComponent(url));
+    return esc("/catalog?u=" + encodeURIComponent(url)
+      + (klein ? "&s=" + DAUMEN_KANTE : ""));
   }
   return esc(url);
+}
+
+/* Die volle Fassung zu einer Daumennagel-Adresse – für die Großansicht. */
+function imgGross(adresse) {
+  return String(adresse || "").replace(/&s=\d+$/, "");
 }
 
 /* Drehender Klemmbaustein als Lade-Anzeige. */
@@ -577,7 +593,7 @@ function renderWanted(items) {
     return `
     <div class="card" data-wid="${it.id}">
       <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <img class="card-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
@@ -2946,7 +2962,7 @@ function renderScanResults(items) {
     return `
     <div class="card" data-sug-id="${esc(it.item_id)}" data-sug-base="${esc(base)}">
       <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <img class="card-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
           <div class="sub" data-sug-sub>${esc(base)}</div>
@@ -3224,7 +3240,7 @@ function collCardHtml(it) {
     <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}"${
       it.img_url ? ` data-bg="${imgSrc(it.img_url)}"` : ""}>
       <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <img class="card-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <span class="qty-badge" data-qty-val>${it.quantity}</span>
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
@@ -3609,7 +3625,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
           <div class="card-img-wrap">
-            <img class="card-img" src="${imgSrc(item.img_url)}" data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
+            <img class="card-img" src="${imgSrc(item.img_url, true)}" data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
             ${state.bricklinkLookup && !/^(fig-|manuell-|custom-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
           </div>
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
@@ -4640,7 +4656,7 @@ function renderSuggestions(items, meta) {
     return `
     <div class="card" data-sug-id="${esc(it.item_id)}" data-sug-base="${esc(base)}">
       <div class="card-head">
-        <img class="card-img" src="${imgSrc(it.img_url)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
+        <img class="card-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
           <div class="sub" data-sug-sub>${esc(base)}</div>
@@ -4734,7 +4750,7 @@ function openSuggestModal(it) {
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
           <div class="card-img-wrap">
-            <img class="card-img" src="${imgSrc(pit.img_url)}" data-gid="${esc(pit.item_id)}" data-gtype="${esc(type)}" alt="">
+            <img class="card-img" src="${imgSrc(pit.img_url, true)}" data-gid="${esc(pit.item_id)}" data-gtype="${esc(type)}" alt="">
           </div>
           <div class="card-title">
             <strong>${esc(pit.name)}</strong>
@@ -7133,7 +7149,7 @@ async function loadShareView() {
     box.innerHTML = s.items.length ? stale + s.items.map((it) => `
       <div class="card">
         <div class="card-head">
-          <img class="card-img" src="${imgSrc(it.img_url)}" alt="" loading="lazy">
+          <img class="card-img" src="${imgSrc(it.img_url, true)}" alt="" loading="lazy">
           <div class="card-title">
             <strong>${esc(it.name)}</strong>
             <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
@@ -9420,7 +9436,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.addEventListener("click", (ev) => {
     const img = ev.target.closest(".card-img");
     if (img && img.src && !img.src.startsWith("data:")) {
-      openGallery(img.src, img.dataset.gid, img.dataset.gtype);
+      openGallery(imgGross(img.src), img.dataset.gid, img.dataset.gtype);
     }
   });
   $("lightbox").addEventListener("click", (ev) => {

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.11.0 – August 2026
+
+### Behoben
+- 🖼 **Karten holten Bilder in sechsfacher Größe.** Katalogbilder liegen mit
+  400 px auf der Instanz, angezeigt werden sie in den Karten mit **72**. Der
+  Browser entpackt aber immer die volle Größe – 0,6 MB je Bild, und zwar
+  **außerhalb** des JS-Speichers, wo keine Messung hinschaut. Jetzt gibt es
+  eine Daumennagel-Fassung mit 160 px; die Großansicht bekommt weiter das
+  volle Bild
+
+> **Warum das kein Schönheitsfehler ist.** In einem eingeschickten Verlauf
+> standen **839 Bilder** in einer Ansicht, bei 8 MB JS-Speicher. Entpackt
+> sind das rund **500 MB**, die in keiner Kurve auftauchen – und wenige
+> Sekunden später brach der Tab ab. Mit 160 px bleiben davon 85 MB.
+>
+> | Ansicht | vorher | nachher |
+> |---|---|---|
+> | 130 Bilder | 79 MB | 13 MB |
+> | 839 Bilder | 512 MB | 85 MB |
+>
+> Erzeugt wird die kleine Fassung einmal und liegt dann neben dem Original.
+> Freie Größen bedient der Server nicht – sonst könnte man ihn mit 500
+> Anfragen 500 Dateien schreiben lassen.
+
 ## 2.10.1 – August 2026
 
 ### Behoben
