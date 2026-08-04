@@ -67,12 +67,23 @@ def test_der_fund_steht_im_fehlerbericht():
     assert "Fremdes in dieser Seite:" in umfeld
 
 
-def test_der_fund_steht_auch_in_jeder_startzeile():
-    """Bei den ausgewerteten Abstürzen gab es oft gar keinen Fehler, nur ein
-    fehlendes Lebenszeichen – dann bliebe der Bericht stumm."""
+def test_der_fund_steht_an_jedem_messpunkt():
+    """Nicht nur in der Startzeile.
+
+    In 2.19.0 stand er dort allein – und blieb leer. Das war kein Ergebnis,
+    sondern ein Messfehler: Die Startzeile entsteht beim Laden, also
+    **bevor** eine Erweiterung ihre Sachen einhängt. Bei den ausgewerteten
+    Abstürzen gab es außerdem oft gar keinen Fehlereintrag, nur ein
+    fehlendes Lebenszeichen – dann zählt allein der letzte Messpunkt.
+    """
     quelle = js()
     assert "punkt.fremd = fremd" in quelle
     assert 'p.fremd ? "FREMD: " + p.fremd : ""' in quelle
+    # Die Prüfung muss **vor** dem Start-Zweig stehen, sonst gilt sie wieder
+    # nur für die eine Zeile.
+    i = quelle.index("const fremd = fremdeSpuren(3);")
+    j = quelle.index('if (grund === "start") {', i - 1200)
+    assert i < j, "steckt wieder nur im Start-Zweig"
 
 
 def test_melden_stoert_nie():

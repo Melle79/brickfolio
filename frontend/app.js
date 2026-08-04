@@ -8153,6 +8153,20 @@ function diagMessen(grund = "", geplant = null) {
   // damit wäre der ganze Vergleich wertlos.
   if (schonendAn) punkt.sch = 1;
   if (grund) punkt.g = grund;
+  // Fremdes im Dokument gehört an **jeden** Messpunkt, nicht nur an den
+  // Start.
+  //
+  // In 2.19.0 stand es nur in der Startzeile – und blieb dort leer. Das war
+  // kein Ergebnis, sondern ein Messfehler: Die Startzeile entsteht beim
+  // Laden der Seite, also **bevor** eine Erweiterung ihre Sachen einhängt.
+  // Wer erst nach zwei Sekunden kommt, tauchte nie auf.
+  //
+  // Jetzt wird bei jeder Messung nachgesehen. Die Zeile bleibt kurz, weil
+  // nur geschrieben wird, wenn wirklich etwas da ist – und der letzte
+  // Messpunkt vor einem Absturz sagt dann, wer zu dem Zeitpunkt mit im Raum
+  // war. Der Blick kostet drei `querySelectorAll` auf wenige Elemente.
+  const fremd = fremdeSpuren(3);
+  if (fremd) punkt.fremd = fremd.replace(/\n/g, " · ");
   if (grund === "start") {
     // Woher kam dieser Start? `p` ist der Grund, falls die App selbst neu
     // geladen hat. `nav` unterscheidet Neuladen von normalem Aufruf, und
@@ -8173,12 +8187,6 @@ function diagMessen(grund = "", geplant = null) {
       navigator.deviceMemory ? navigator.deviceMemory + " GB" : "",
       `${screen.width}×${screen.height}`].filter(Boolean).join(" · ");
     } catch (_) { /* egal */ }
-    // Fremdes im Dokument gehört in **jede** Startzeile, nicht nur in einen
-    // „Script error."-Eintrag: Bei den ausgewerteten Abstürzen gab es oft
-    // gar keinen Fehler, nur ein fehlendes Lebenszeichen. Steht hier eine
-    // Erweiterung, weiß man wenigstens, wer sonst noch im Raum war.
-    const fremd = fremdeSpuren(3);
-    if (fremd) punkt.fremd = fremd.replace(/\n/g, " · ");
     const nav = performance.getEntriesByType("navigation")[0];
     if (nav && nav.type) punkt.nav = nav.type;
     if (document.wasDiscarded) punkt.disc = 1;

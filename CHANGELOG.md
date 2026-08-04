@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.19.1 – August 2026
+
+### Behoben
+- 🔎 **Die Suche nach fremdem Code lief zum falschen Zeitpunkt.** Sie stand
+  nur in der Startzeile – und die entsteht beim **Laden** der Seite, also
+  bevor eine Erweiterung ihre Sachen einhängt. Das leere Ergebnis war
+  deshalb kein Ergebnis, sondern ein Messfehler. Jetzt wird bei jeder
+  Messung nachgesehen; geschrieben wird nur, wenn etwas da ist
+
 ## 2.19.0 – August 2026
 
 ### Neu
