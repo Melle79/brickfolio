@@ -1239,7 +1239,15 @@ Die Regeln – bewusst gutmütig:
 
 Namen, Bilder, Preise, Jahre und Set-Inhalte holt die App nach dem Import
 automatisch im Hintergrund nach (siehe Kapitel 13) – bei großen Importen
-dauert das einige Zeit.
+dauert das einige Zeit. Wer nicht warten will, stößt es unter **Mehr →
+Wartung** von Hand an: **🖼 Bilder jetzt holen** trägt seit 2.18.0 auch
+fehlende Bildadressen nach, **🔄 Preislose erneut abrufen** auch die noch
+nie versuchten Artikel.
+
+> **Die Spalte „Typ" nicht vergessen.** Fehlt sie, gilt jede Zeile als
+> *Figur* – ein Set landet dann als Minifigur, und Preise, Themen und
+> Filter stimmen danach nicht mehr. Erkannt werden `Typ`, `type`,
+> `item_type` und `Art`.
 
 ---
 

@@ -775,8 +775,14 @@ def report_error(body: ErrorReportBody, user: dict = Depends(current_user),
     Problem nicht die Liste flutet.
     """
     import hashlib
+    # Bis 2.18.0 ging der **Detailtext** in die Kennung ein, der Ort aber
+    # nicht. Genau verkehrt herum: Die Stelle im Code ist stabil, das Detail
+    # ist der wechselnde Teil – bei „Script error." steht dort die Spur der
+    # letzten Schritte, die jedes Mal anders aussieht. Derselbe Fehler
+    # erzeugte so bei jedem Auftreten einen neuen Eintrag, und das
+    # Zusammenfassen, das die Liste sauber halten soll, lief ins Leere.
     fp = hashlib.sha256(
-        (body.message + "|" + (body.detail or "")[:400]).encode()).hexdigest()[:32]
+        (body.message + "|" + (body.context or "")).encode()).hexdigest()[:32]
     now = int(time.time())
     neu = False
     agent = (request.headers.get("User-Agent", "")[:200] if request else "")
@@ -1315,8 +1321,12 @@ def _prices_pending(conn, region: str, waehrung: str = None) -> int:
 # Artikel, die zwar abgefragt wurden, aber weder für neu noch für gebraucht
 # einen Preis haben. Meist, weil im gewählten Gebiet nichts verkauft wurde –
 # genau diese profitieren vom Rückfall Europa → weltweit.
+# `price_updated_at IS NOT NULL` stand hier bis 2.18.0 mit drin – gedacht als
+# „schon einmal versucht, nichts gefunden". Damit blieben aber ausgerechnet
+# die Artikel außen vor, die **noch nie** versucht wurden: Ein CSV-Import legt
+# sie ohne Preisstand an, und „Preislose erneut abrufen" fand sie nie. Sie
+# standen für immer ohne Preis da.
 _NO_PRICE = ("item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
-             "AND price_updated_at IS NOT NULL "
              "AND COALESCE(price_new, 0) = 0 AND COALESCE(price_used, 0) = 0")
 
 
@@ -1326,7 +1336,7 @@ def _prices_missing(conn, before: int = None) -> int:
     sql = f"SELECT COUNT(*) AS c FROM collection WHERE {_NO_PRICE}"
     args: tuple = ()
     if before is not None:
-        sql += " AND price_updated_at < ?"
+        sql += " AND COALESCE(price_updated_at, 0) < ?"
         args = (before,)
     return conn.execute(sql, args).fetchone()["c"]
 
@@ -1425,7 +1435,8 @@ def refresh_prices_missing(limit: int = 20, user: dict = Depends(admin_user)):
     with core.db() as conn:
         rows = conn.execute(
             f"SELECT * FROM collection WHERE {_NO_PRICE} "
-            "AND price_updated_at < ? ORDER BY price_updated_at LIMIT ?",
+            "AND COALESCE(price_updated_at, 0) < ? "
+            "ORDER BY COALESCE(price_updated_at, 0) LIMIT ?",
             (started, limit)).fetchall()
     done, filled, failed = 0, 0, []
     for r in rows:
@@ -2038,7 +2049,11 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
         return None
 
     idx = {"num": col("nummer", "item_id", "no", "number"),
-           "type": col("typ", "type"),
+           # `item_type` gehört dazu, seit `item_id` als Nummer gilt: Wer die
+           # eine Schreibweise nimmt, nimmt auch die andere. Fehlte die
+           # Spalte, wurde still „Figur" angenommen – ein Set landete als
+           # Minifigur, und Preise, Themen und Filter stimmten nie wieder.
+           "type": col("typ", "type", "item_type", "art"),
            "name": col("name"),
            "qty": col("anzahl", "menge", "qty", "quantity"),
            "cond": col("zustand", "condition"),
@@ -2131,8 +2146,12 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
 
 # ---------------------------------------------------------------- Sicherung (Admin)
 
-BACKUP_TABLES = ["users", "collection", "wanted", "shopping_lists",
-                 "shopping_items", "price_history",
+# `purchases` fehlte hier bis 2.18.0 – das Kaufbuch war damit nach jeder
+# Wiederherstellung leer, während der aufsummierte Kaufpreis an der Zeile
+# stehen blieb. Wer wissen wollte, was er wann und wo bezahlt hat, hatte es
+# verloren, ohne dass es jemandem auffiel.
+BACKUP_TABLES = ["users", "collection", "purchases", "wanted",
+                 "shopping_lists", "shopping_items", "price_history",
                  "set_contents", "set_meta", "fig_sets", "fig_parts",
                  "item_photos", "settings"]
 
@@ -3130,12 +3149,57 @@ def _bild_urls(conn, nur_offene: bool = True, limit: int | None = None) -> list:
     return urls
 
 
+# Artikel ganz ohne Bildadresse.
+#
+# Bis 2.18.0 gab es für sie **keinen Weg**. `_bild_urls` sammelt nur, was
+# schon eine Adresse hat – „🖼 Bilder jetzt holen" spiegelte also vorhandene
+# Bilder auf die Instanz, fand aber keine neuen. Wer per CSV importiert,
+# legt genau solche Zeilen an: Der Import schreibt `img_url = ''`, und der
+# nächtliche Lauf trägt Jahr und Preis nach, aber kein Bild. Die Artikel
+# blieben für immer beim Platzhalter – nur wer jede Karte einzeln aufmachte
+# und das ↻ drückte, kam an eins.
+#
+# Eigenbauten (`custom-`, `manuell-`, `fig-`) bleiben außen vor: Für die hat
+# BrickLink nichts, und ein Abruf je Durchgang wäre reine Wartezeit.
+_OHNE_BILD = ("(img_url IS NULL OR img_url = '') "
+              "AND item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' "
+              "AND item_id NOT LIKE 'custom-%'")
+
+
+def _ohne_bild(conn, limit: int | None = None) -> list:
+    sql = (f"SELECT id, item_type, item_id FROM collection WHERE {_OHNE_BILD}")
+    if limit:
+        sql += f" LIMIT {int(limit)}"
+    return [dict(r) for r in conn.execute(sql)]
+
+
+def _bildadressen_nachtragen(limit: int) -> int:
+    """Fehlende Bildadressen im Katalog nachschlagen und eintragen."""
+    if not integrations.bricklink_enabled():
+        return 0
+    with core.db() as conn:
+        offen = _ohne_bild(conn, limit)
+    getroffen = 0
+    for r in offen:
+        try:
+            d = integrations.bricklink_item(r["item_type"], r["item_id"])
+        except Exception:
+            continue                 # unbekannte Nummer, Dienst weg: später
+        if not d.get("img_url"):
+            continue
+        with core.db() as conn:
+            conn.execute("UPDATE collection SET img_url = ? WHERE id = ?",
+                         (d["img_url"], r["id"]))
+        getroffen += 1
+    return getroffen
+
+
 @app.get("/api/images/status")
 def bilder_status(user: dict = Depends(current_user)):
     """Wie viele Bilder liegen noch nicht auf der Instanz?"""
     with core.db() as conn:
-        offen = len(_bild_urls(conn))
-        gesamt = len(_bild_urls(conn, nur_offene=False))
+        offen = len(_bild_urls(conn)) + len(_ohne_bild(conn))
+        gesamt = len(_bild_urls(conn, nur_offene=False)) + len(_ohne_bild(conn))
     return {"pending": offen, "total": gesamt}
 
 
@@ -3148,13 +3212,17 @@ def bilder_holen(limit: int = 25, user: dict = Depends(admin_user)):
     sagt, wie viele noch offen sind, und die Oberfläche ruft nach.
     """
     limit = max(1, min(limit, 100))
+    # Erst die Adressen klären, die gar keine haben – sonst hätte der Lauf
+    # für einen CSV-Import nichts zu tun und meldete „fertig", während jede
+    # Karte weiter den Platzhalter zeigt.
+    nachgetragen = _bildadressen_nachtragen(limit)
     with core.db() as conn:
         urls = _bild_urls(conn, limit=limit)
     geholt = sum(1 for u in urls if _katalog_bild(u))
     with core.db() as conn:
-        offen = len(_bild_urls(conn))
+        offen = len(_bild_urls(conn)) + len(_ohne_bild(conn))
     return {"ok": True, "fetched": geholt, "tried": len(urls),
-            "remaining": offen}
+            "resolved": nachgetragen, "remaining": offen}
 
 
 @app.get("/api/themes/status")

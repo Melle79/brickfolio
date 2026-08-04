@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.18.0 – August 2026
+
+Gefunden beim vollständigen Durchlauf einer frisch aufgesetzten Instanz –
+von der Installation bis zur Wiederherstellung.
+
+### Behoben
+- 💾 **Das Kaufbuch fehlte in der Sicherung.** `purchases` stand nicht in
+  `BACKUP_TABLES`. Nach einer Wiederherstellung war es leer, während der
+  aufsummierte Kaufpreis an der Zeile stehen blieb: Man sah, **dass** etwas
+  bezahlt wurde, aber nicht mehr wann, wo und wie oft
+- 🖼 **Artikel ohne Bildadresse bekamen nie eins.** „🖼 Bilder jetzt holen"
+  spiegelte nur schon bekannte Adressen auf die Instanz – wer per CSV
+  importiert, legt aber Zeilen ganz ohne an. Der Lauf meldete „nichts zu
+  tun", während jede Karte den Platzhalter zeigte. Jetzt schlägt er die
+  fehlende Adresse erst im Katalog nach
+- 💶 **„Preislose erneut abrufen" übersprang die nie versuchten.** In der
+  Bedingung stand `price_updated_at IS NOT NULL` – gedacht als „schon
+  versucht, nichts gefunden". Damit blieben ausgerechnet die Artikel außen
+  vor, die noch nie an der Reihe waren
+- 🗂 **CSV: `item_type` galt nicht als Typspalte.** `item_id` zählte als
+  Nummer, das Gegenstück aber nicht – ein Set landete still als Minifigur,
+  und Preise, Themen und Filter stimmten danach nie wieder
+- 🐞 **Gleichartige Fehler wurden nicht zusammengefasst.** Die Kennung nahm
+  den **Detailtext** und ließ den **Ort** weg – genau verkehrt herum. Bei
+  „Script error." steht im Detail die Spur der letzten Schritte, die jedes
+  Mal anders aussieht: Jedes Auftreten erzeugte einen neuen Eintrag
+
+> **Warum das lange nicht auffiel.** Der übliche Weg führt über Scannen und
+> Suchen, und dort kommt schon eine Bildadresse mit, wird schon ein Preis
+> geholt, steht schon ein Typ fest. Hineingelaufen ist nur, wer importiert
+> oder wiederhergestellt hat.
+
 ## 2.17.0 – August 2026
 
 ### Behoben

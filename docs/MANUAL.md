@@ -1191,7 +1191,13 @@ The rules – deliberately forgiving:
 
 Names, images, prices, years and set contents are fetched by the app in the
 background after the import (see chapter 13) – with large imports that takes a
-while.
+while. If you would rather not wait, trigger it by hand under **More →
+Maintenance**: since 2.18.0 **🖼 Fetch images now** also resolves missing image
+addresses, and **🔄 Retry priceless items** also covers the ones never tried.
+
+> **Do not forget the "type" column.** Without it every row counts as a
+> *minifigure* – a set then lands as a minifig, and prices, themes and filters
+> never match again. Recognised are `Typ`, `type`, `item_type` and `Art`.
 
 ---
 
