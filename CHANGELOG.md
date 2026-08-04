@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.19.0 – August 2026
+
+### Neu
+- 🔎 **Der Bericht nennt jetzt, wer sonst noch in der Seite sitzt.** Bisher
+  stand dort „Script error." – der Satz, auf den der Browser jeden Fehler
+  aus **fremden Skripten** zusammenkürzt. Er sagt, *dass* fremder Code lief,
+  nicht *welcher*. Jetzt stehen die Erweiterungs-Adressen und die
+  nachträglich eingehängten Elemente daneben, im Fehlereintrag **und** in
+  jeder Startzeile des Speicher-Verlaufs
+
+> **Warum das jetzt zählt.** Vier ausgewertete Abstürze, vier verschiedene
+> Situationen: Listen offen mit 5094 Elementen, zweimal Leerlauf im
+> Hintergrund, zuletzt die **leere Scan-Ansicht mit 970 Elementen und 4
+> Bildern**. Derselbe Tab hat vorher 14.585 Elemente mit 822 Bildern
+> getragen. Kein Maß der App erklärt das – aber fremder Code läuft im
+> **selben Renderer-Prozess**, und stürzt der ab, nimmt er die Seite mit,
+> ganz gleich wie klein sie ist.
+>
+> Gemeldet wird nur, nie geblockt: Es ist euer Browser, und eine
+> Passwort-Ausfüllhilfe hat dort gute Gründe zu sein.
+
 ## 2.18.0 – August 2026
 
 Gefunden beim vollständigen Durchlauf einer frisch aufgesetzten Instanz –

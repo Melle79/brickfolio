@@ -1806,6 +1806,18 @@ Browser-Erweiterungen, Inhaltsblocker und was der Browser selbst einspritzt
 Solche Einträge sind seit 2.4.3 als **🧩 Kein Fehler der App** beschriftet und
 tragen unter *Details* wenigstens die letzten Schritte vor dem Fehler.
 
+**Seit 2.19.0 steht dort auch, wer es war** – soweit es sich sehen lässt:
+eingehängte Skripte und Stilblätter mit einer Erweiterungs-Adresse
+(`chrome-extension://…`) und Elemente, die jemand nachträglich an die Seite
+gehängt hat. Dasselbe steht in jeder Startzeile des Speicher-Verlaufs unter
+**FREMD:** – denn bei einem Absturz gibt es oft gar keinen Fehlereintrag,
+nur ein fehlendes Lebenszeichen.
+
+> Das ist wichtiger, als es klingt: Fremder Code läuft im **selben
+> Prozess** wie die App. Stürzt er ab, nimmt er den Tab mit – ganz gleich,
+> wie sparsam die Seite gerade ist. Die App entfernt trotzdem nichts; es ist
+> euer Browser.
+
 > Ärgert es dich, teste einmal im **privaten Fenster** oder mit
 > abgeschalteten Erweiterungen. Bleibt es dort aus, war es genau das.
 

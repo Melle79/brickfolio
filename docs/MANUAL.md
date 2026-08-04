@@ -1727,6 +1727,17 @@ autofill, say); on the iPhone that is the most common case. Since 2.4.3 such
 entries are labelled **🧩 Not a fault of the app** and carry at least the last
 few steps before the error under *Details*.
 
+**Since 2.19.0 it also says who it was** – as far as that can be seen:
+injected scripts and stylesheets with an extension address
+(`chrome-extension://…`) and elements someone attached to the page after
+loading. The same appears in every start line of the memory history under
+**FREMD:** – because a crash often leaves no error entry at all, only a
+missing sign of life.
+
+> This matters more than it sounds: foreign code runs in the **same process**
+> as the app. If it crashes, it takes the tab with it – no matter how frugal
+> the page happens to be. The app still removes nothing; it is your browser.
+
 > If it bothers you, try once in a **private window** or with extensions
 > disabled. If it stays away there, that was exactly it.
 

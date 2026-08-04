@@ -2142,6 +2142,10 @@ function showApp() {
     if (state.hubConnected) syncTrades(true).then(refreshUnread);
   }).catch(() => {});
   startUpdateWatch();
+  // **Vor** der Diagnose: Sie schreibt gleich in ihre Startzeile, was in der
+  // Seite fremd ist – und das geht nur, wenn vorher feststeht, was von uns
+  // stammt.
+  eigeneKinderMerken();
   diagStarten();                 // setzt absturzZuvor
   initErrorReporting();
   loadNotifications();
@@ -7965,6 +7969,59 @@ function istFremdfehler(message, filename, lineno) {
     && !filename && !lineno;
 }
 
+/* Wer sitzt sonst noch in dieser Seite?
+
+   „Script error." sagt: Es lief fremder Code. Es sagt nicht, **welcher** –
+   und ohne das kommt man nicht weiter. Genau daran hängt aber die Frage,
+   die seit Wochen offen ist: Der Tab stirbt bei 970 Elementen genauso wie
+   bei 14.585, im Hintergrund wie im Vordergrund. Was jedes Mal dabei ist,
+   ist fremder Code im selben Renderer – und stürzt der ab, nimmt er die
+   Seite mit, ganz gleich wie klein sie ist.
+
+   Sichtbar ist davon der Teil, der im Dokument landet: eingehängte
+   Skripte, Stilblätter und Rahmen mit einer Erweiterungs-Adresse, dazu
+   Elemente, die jemand nachträglich an `<body>` gehängt hat. Inhaltsskripte
+   laufen in einer eigenen Welt und bleiben unsichtbar – aber die wenigsten
+   Erweiterungen kommen ohne Spuren im Dokument aus.
+
+   Nur gemeldet, nie geblockt: Es ist Svens Browser, und eine
+   Passwort-Ausfüllhilfe hat dort gute Gründe zu sein. */
+let eigeneKinder = null;
+
+function eigeneKinderMerken() {
+  // Direkt nach dem Laden gehört alles unter <body> zu uns – es steht so im
+  // Dokument. Was später dazukommt und nicht von uns ist, fällt danach auf.
+  eigeneKinder = new Set([...document.body.children]);
+}
+
+const FREMD_SCHEMA = /^(chrome|moz|safari|edge|opera)-extension:/i;
+
+function fremdeSpuren(hoechstens = 6) {
+  const gefunden = new Set();
+  try {
+    document.querySelectorAll("script[src], link[href], iframe[src]")
+      .forEach((el) => {
+        const adresse = el.src || el.href || "";
+        if (FREMD_SCHEMA.test(adresse)) {
+          // Nur Herkunft und Dateiname – der Rest ist Rauschen.
+          gefunden.add(adresse.split("/").slice(0, 3).join("/") + "/…/"
+            + adresse.split("/").pop().slice(0, 40));
+        }
+      });
+    if (eigeneKinder) {
+      [...document.body.children].forEach((el) => {
+        if (eigeneKinder.has(el) || el.id === "card-modal") return;
+        gefunden.add("<" + el.tagName.toLowerCase()
+          + (el.id ? "#" + el.id : "")
+          + (el.className && typeof el.className === "string"
+             ? "." + el.className.trim().split(/\s+/)[0] : "") + ">");
+      });
+    }
+  } catch (_) { /* Melden darf nie selbst stören */ }
+  const liste = [...gefunden].slice(0, hoechstens);
+  return liste.length ? liste.join("\n") : "";
+}
+
 function spurAlsText(anzahl = 8) {
   return spurLesen().slice(-anzahl)
     .map((e) => new Date(e.t).toLocaleTimeString(dateLocale()) + "  ·  " + e.w)
@@ -7976,11 +8033,14 @@ function initErrorReporting() {
     if (istFremdfehler(ev.message, ev.filename, ev.lineno)) {
       // Übersetzt schon beim Melden: Der Text landet als Ganzes in der
       // Datenbank, dort greift der Katalog später nicht mehr.
+      const fremd = fremdeSpuren();
       reportError(ev.message,
         tr("Der Browser nennt weder Datei noch Zeile – das tut er nur bei "
            + "Skripten fremder Herkunft (Erweiterung, Inhaltsblocker, "
            + "Einspritzung des Browsers). Keins davon gehört zur App. Was "
-           + "zuletzt lief:") + "\n\n" + spurAlsText(), "fremdes Skript");
+           + "zuletzt lief:") + "\n\n" + spurAlsText()
+        + (fremd ? "\n\n" + tr("Fremdes in dieser Seite:") + "\n" + fremd : ""),
+        "fremdes Skript");
       return;
     }
     reportError(ev.message, ev.error && ev.error.stack,
@@ -8113,6 +8173,12 @@ function diagMessen(grund = "", geplant = null) {
       navigator.deviceMemory ? navigator.deviceMemory + " GB" : "",
       `${screen.width}×${screen.height}`].filter(Boolean).join(" · ");
     } catch (_) { /* egal */ }
+    // Fremdes im Dokument gehört in **jede** Startzeile, nicht nur in einen
+    // „Script error."-Eintrag: Bei den ausgewerteten Abstürzen gab es oft
+    // gar keinen Fehler, nur ein fehlendes Lebenszeichen. Steht hier eine
+    // Erweiterung, weiß man wenigstens, wer sonst noch im Raum war.
+    const fremd = fremdeSpuren(3);
+    if (fremd) punkt.fremd = fremd.replace(/\n/g, " · ");
     const nav = performance.getEntriesByType("navigation")[0];
     if (nav && nav.type) punkt.nav = nav.type;
     if (document.wasDiscarded) punkt.disc = 1;
@@ -9304,6 +9370,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           ? (p.sauber ? "ordentlich beendet" : "OHNE ABSCHIED") : "",
         p.nav && p.g === "start" ? "nav=" + p.nav : "",
         p.ger || "",
+        p.fremd ? "FREMD: " + p.fremd : "",
         // Server-Neustart dort, wo seine Startzeit springt
         sprung ? "SERVER NEU GESTARTET" : "",
       ].filter(Boolean).join("  ·  ");
