@@ -4052,13 +4052,16 @@ def acquire_wanted(wanted_id: int, body: AcquireBody,
             cur_neu = conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, img_url, "
                 "bricklink_url, quantity, condition, notes, year, price_new, "
-                "price_used, price_updated_at, price_data, paid_price, "
+                "price_used, price_updated_at, price_data, price_region, "
+                "price_currency, paid_price, "
                 "paid_source, paid_at, added_by, added_at) "
-                "VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                "?, ?, ?)",
                 (w["item_id"], w["item_type"], w["name"], w["img_url"],
                  w["bricklink_url"], body.condition, w["notes"], w["year"],
                  w["price_new"], w["price_used"], w["price_updated_at"],
-                 w["price_data"], paid_val,
+                 w["price_data"], w["price_region"], w["price_currency"],
+                 paid_val,
                  ("manual" if manual else "auto") if paid_val is not None else None,
                  now if paid_val is not None else None,
                  user["id"], now))
@@ -5500,14 +5503,16 @@ def receive_list_item(item_id: int, body: ReceiveBody,
             conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, img_url, "
                 "bricklink_url, quantity, condition, notes, year, price_new, "
-                "price_used, price_updated_at, price_data, paid_price, "
+                "price_used, price_updated_at, price_data, price_region, "
+                "price_currency, paid_price, "
                 "paid_source, paid_at, added_by, added_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, "
-                "?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+                "?, ?, ?)",
                 (it["item_id"], it["item_type"], it["name"], it["img_url"],
                  it["bricklink_url"], it["qty"], body.condition, it["year"],
                  it["price_new"], it["price_used"], it["price_updated_at"],
-                 it["price_data"], paid_val,
+                 it["price_data"], it["price_region"], it["price_currency"],
+                 paid_val,
                  ("manual" if manual else "auto") if paid_val is not None
                  else None,
                  now if paid_val is not None else None, user["id"], now))

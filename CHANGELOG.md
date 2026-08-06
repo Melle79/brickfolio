@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.20.1 – August 2026
+
+### Behoben
+- 🌍 **„30 Artikel haben noch Preise aus einem anderen Gebiet" – obwohl nie
+  ein Gebiet umgestellt wurde.** Der Zähler füllte sich selbst nach. Kaufte
+  man einen Wunsch („✔ Gekauft!") oder verbuchte einen angekommenen Posten
+  von einer Einkaufsliste, wanderten Preis, Zeitstempel und Rohdaten mit in
+  die Sammlung – **Gebiet und Währung aber nicht**. Der Artikel galt damit
+  sofort als „fremdes Gebiet", obwohl sein Preis aus genau dem eingestellten
+  stammte. Nachrechnen half bis zum nächsten Kauf und kostete dabei zwei
+  BrickLink-Abrufe je Artikel für nichts. Beide Wege reichen Gebiet und
+  Währung jetzt mit durch; ein Preis, der wirklich aus den USA stammt, wird
+  weiterhin gemeldet
+
 ## 2.20.0 – August 2026
 
 ### Neu
