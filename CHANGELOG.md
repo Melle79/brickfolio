@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.21.3 – August 2026
+
+### Behoben
+- 🐳 **`sudo bash update.sh` scheiterte auf Synology – nach getaner Arbeit.**
+  `sudo` bringt einen eigenen, kurzen Suchpfad mit, und dort fehlt
+  `/usr/local/bin`, wo auf der Synology `docker` liegt. Das Skript lief
+  deshalb bis zum letzten Schritt durch, legte den Datenbank-Schnappschuss
+  an, **tauschte den Quellstand auf der Platte aus** – und brach erst dann
+  mit `docker: command not found` ab. Zurück blieb der schlechteste
+  Zustand: auf der Platte der neue Stand, im Betrieb der alte Container,
+  und eine Ausgabe, die bis zur vorletzten Zeile nach Erfolg aussah. Das
+  Skript ergänzt den Suchpfad jetzt selbst und prüft **vor** dem ersten
+  Schreiben, ob es `docker` überhaupt gibt – fehlt es, bleibt die Instanz
+  unangetastet. Über den Aufgabenplaner fiel das nie auf, weil der einen
+  längeren Suchpfad mitbringt; betroffen war nur der Weg von Hand, den die
+  App selbst anzeigt
+
 ## 2.21.2 – August 2026
 
 ### Behoben
