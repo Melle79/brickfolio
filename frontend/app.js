@@ -1350,21 +1350,24 @@ function steckbriefSetsHtml(d) {
       + `${s.qty > 1 ? `, ${s.qty}×` : ""})</a>`);
   });
   if (!links.length) return "";
-  return `<div class="fi-block"><div class="fi-label">${esc(
-    tr("📦 Steckt in diesen Sets"))}</div>`
-    + `<div class="in-sets">${links.join(" ")}</div></div>`;
+  // Dieselben Klassen wie im Detailblock einer Karte: Abschnittszeile
+  // `price-head`, Inhalt darunter. Eigene Schriftgrößen führen sonst dazu,
+  // dass derselbe Inhalt an zwei Stellen verschieden aussieht.
+  return `<div class="price-head"><span>${esc(
+    tr("📦 Steckt in diesen Sets"))}</span></div>`
+    + `<div class="in-sets">${links.join(" ")}</div>`;
 }
 
 function steckbriefPreiseHtml(d) {
   const teile = [];
   if (d.new != null) teile.push(`${tr("Ø neu")} <b>${fmtEur(d.new)}</b>`);
   if (d.used != null) teile.push(`${tr("Ø gebr.")} <b>${fmtEur(d.used)}</b>`);
-  return `<div class="fi-block"><div class="fi-label">${esc(
-    tr("💶 Marktpreis"))}</div><div class="fi-prices">`
+  return `<div class="price-head"><span>${esc(tr("💶 Marktpreis"))}</span></div>`
+    + `<div class="price-result">`
     + (teile.length ? teile.join(" · ")
        : `<span class="price-note">${esc(
            tr("Bei BrickLink wurde dazu zuletzt nichts verkauft."))}</span>`)
-    + `</div></div>`;
+    + `</div>`;
 }
 
 async function steckbriefOeffnen(itemId, itemType, vorschau) {
@@ -9479,9 +9482,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape" && !$("help-overlay").hidden) closeHelp();
     if (ev.key === "Escape" && !$("profile-overlay").hidden) closeProfile();
-    // Nach der Galerie: erst das Bild zu, dann der Steckbrief darunter.
+    // Escape schließt immer nur das *oberste* Fenster. Der Steckbrief liegt
+    // über der Detail-Karte, aus der er meist aufgeht – ohne den Abbruch
+    // hier schlösse ein Druck beide auf einmal, weil die Karte ihren eigenen
+    // Escape-Empfänger mitbringt. Steht die Galerie darüber, hält sich der
+    // Steckbrief heraus und ist erst beim zweiten Druck dran.
     if (ev.key === "Escape" && $("lightbox").hidden
-        && !$("figinfo-overlay").hidden) steckbriefSchliessen();
+        && !$("figinfo-overlay").hidden) {
+      steckbriefSchliessen();
+      ev.stopImmediatePropagation();
+    }
   });
 
   /* Ein Klick auf Name oder Zeile öffnet den Steckbrief. Knöpfe, Verweise

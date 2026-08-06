@@ -71,16 +71,34 @@ def test_es_schliesst_auf_drei_wegen():
     assert "steckbriefSchliessen" in j and "Escape" in j, "Escape fehlt"
 
 
+def ebene(wähler: str) -> int:
+    treffer = re.search(rf"{re.escape(wähler)}\s*\{{[^}}]*z-index:\s*(\d+)", css())
+    assert treffer, f"z-index für {wähler} nicht gefunden"
+    return int(treffer.group(1))
+
+
 def test_die_galerie_liegt_ueber_dem_steckbrief():
     """Tippt man im Steckbrief aufs Bild, muss die Galerie **davor**
     erscheinen und nicht dahinter verschwinden."""
-    c = css()
-    overlay = re.search(r"\.help-overlay\s*\{[^}]*z-index:\s*(\d+)", c)
-    lightbox = re.search(r"\.lightbox\s*\{[^}]*z-index:\s*(\d+)", c)
-    assert overlay and lightbox, "z-index nicht gefunden"
-    assert int(lightbox.group(1)) > int(overlay.group(1)), (
-        f"Galerie ({lightbox.group(1)}) liegt nicht über dem Steckbrief "
-        f"({overlay.group(1)})")
+    assert ebene(".lightbox") > ebene("#figinfo-overlay"), (
+        "die Galerie liegt nicht über dem Steckbrief")
+
+
+def test_der_steckbrief_liegt_ueber_der_karte_aus_der_er_aufgeht():
+    """Aus dem Betrieb: Ein Tipp auf eine Set-Figur öffnete den Steckbrief
+    **hinter** dem Detail-Fenster der Karte – man sah nur, dass irgendwo
+    etwas aufging. Die Figurenliste steht ja *in* diesem Fenster."""
+    assert ebene("#figinfo-overlay") > ebene(".card-modal-overlay"), (
+        "der Steckbrief verschwindet hinter der Karte, aus der er aufgeht")
+
+
+def test_escape_schliesst_nur_das_oberste_fenster():
+    """Die Detail-Karte bringt einen eigenen Escape-Empfänger mit. Ohne
+    Abbruch schlösse ein Druck beide auf einmal."""
+    j = js()
+    stelle = j[j.index('!$("figinfo-overlay").hidden) {'):][:260]
+    assert "stopImmediatePropagation" in stelle, (
+        "Escape schließt Steckbrief und Karte gleichzeitig")
 
 
 # --------------------------------------------------------- Überall verdrahtet
@@ -133,6 +151,45 @@ def test_einkaufsliste_und_wunschliste_sehen_verschieden_aus():
 def test_es_gibt_nur_eine_klasse_fuer_die_einkaufsliste():
     assert "badge-onlist" not in js() and "badge-onlist" not in css(), (
         "zwei Klassen für dieselbe Aussage")
+
+
+# ------------------------------------------------------------------ Schrift
+
+def test_die_nummer_steht_so_klein_wie_ueberall_sonst():
+    """`.sub` hat keine Grundregel, sondern wird überall im Zusammenhang
+    gesetzt. Ohne eigene Regel fiel die Nummer im Steckbrief auf die
+    Grundschrift zurück – 16 px in voller Textfarbe statt 12,5 px gedämpft.
+    Sie stand damit fast so laut da wie der Name darüber."""
+    c = css()
+    karte = re.search(r"\.card-title \.sub\s*\{([^}]*)\}", c)
+    steck = re.search(r"\.fi-meta \.sub\s*\{([^}]*)\}", c)
+    assert steck, "der Steckbrief setzt keine eigene Regel für .sub"
+    for eigenschaft in ("font-size", "color"):
+        a = re.search(rf"{eigenschaft}:\s*([^;]+)", karte.group(1)).group(1)
+        b = re.search(rf"{eigenschaft}:\s*([^;]+)", steck.group(1)).group(1)
+        assert a.strip() == b.strip(), (
+            f"{eigenschaft}: Karte {a.strip()} vs. Steckbrief {b.strip()}")
+
+
+def test_der_steckbrief_erfindet_keine_eigenen_abschnitte():
+    """Abschnittszeile und Preiszeile gibt es im Detailblock einer Karte
+    längst. Zwei eigene Klassen bedeuten zwei Schriftgrößen für denselben
+    Inhalt – genau das fiel im Betrieb auf."""
+    j = js()
+    stelle = j[j.index("function steckbriefPreiseHtml"):][:700]
+    assert "price-head" in stelle and "price-result" in stelle, (
+        "der Steckbrief benutzt eigene Klassen statt der vorhandenen")
+    assert "fi-label" not in js() and "fi-label" not in css(), (
+        "die selbst erfundene Label-Klasse ist noch da")
+
+
+def test_der_name_ist_ein_artikelname_keine_ueberschrift():
+    """Die Browser-Vorgabe für h3 machte 18,7 px daraus. Bei Namen wie
+    „Snowtrooper – Male, Printed Legs, White Hands" ist das eine Wand."""
+    treffer = re.search(r"#figinfo-head\s*\{[^}]*font-size:\s*(\d+)px", css())
+    assert treffer, "der Titel behält die Browser-Vorgabe"
+    assert int(treffer.group(1)) <= 16, (
+        f"{treffer.group(1)} px ist für einen Artikelnamen zu groß")
 
 
 # --------------------------------------------------- „Nur Foto dazu"

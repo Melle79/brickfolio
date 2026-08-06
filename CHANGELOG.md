@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.21.2 – August 2026
+
+### Behoben
+- 🪟 **Der Steckbrief ging hinter der Karte auf, aus der er kam.** Die
+  Figurenliste eines Sets steht im Detail-Fenster einer Sammlungs-Karte
+  (Ebene 70) – der Steckbrief lag auf der Grundebene der Popups (60) und
+  damit dahinter. Man sah nur, dass irgendwo etwas aufging. Er liegt jetzt
+  auf 80: über der Karte, unter der Großansicht, damit ein Tipp auf sein
+  Bild die Galerie weiterhin davor öffnet
+- ⌨️ **Escape schloss beides auf einmal.** Die Detail-Karte bringt einen
+  eigenen Escape-Empfänger mit. Jetzt schließt jeder Druck nur das oberste
+  Fenster
+- 🔤 **Die Schrift im Steckbrief passte nicht zum Rest.** Die Artikelnummer
+  stand mit 16 px in voller Textfarbe da statt mit 12,5 px gedämpft wie
+  überall sonst – fast so laut wie der Name darüber. Grund: `.sub` hat keine
+  Grundregel, sondern wird immer im Zusammenhang gesetzt, und der Steckbrief
+  stand außerhalb. Auch die Abschnitte („Marktpreis", „Steckt in diesen
+  Sets") hatten eigene Größen; sie benutzen jetzt dieselben Klassen wie der
+  Detailblock einer Karte. Der Name selbst hatte die Browser-Vorgabe für
+  Überschriften (18,7 px) – bei „Snowtrooper – Male, Printed Legs, White
+  Hands" eine Wand, jetzt 16 px
+
 ## 2.21.1 – August 2026
 
 ### Behoben

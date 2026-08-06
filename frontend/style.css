@@ -658,11 +658,18 @@ code {
   background: var(--surface); border: 2px solid var(--ink); border-radius: 12px;
 }
 .fi-meta { min-width: 0; flex: 1; }
+/* Wortgleich mit `.card-title .sub`. `.sub` hat keine Grundregel, sondern
+   wird überall im Zusammenhang gesetzt – außerhalb davon fiel die Nummer auf
+   die Grundschrift zurück: 16 px in voller Textfarbe statt 12,5 px gedämpft.
+   Damit stand sie fast so laut da wie der Name darüber. */
+.fi-meta .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 .fi-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.fi-block { margin-top: 12px; }
-.fi-label { font-size: 12px; font-weight: 800; opacity: .7; margin-bottom: 3px; }
-.fi-prices { font-size: 15px; }
 .fi-actions { margin-top: 16px; }
+/* Der Name ist ein Artikelname, keine Überschrift. In den Karten steht er
+   mit 15 px; die Vorgabe des Browsers für h3 machte daraus 18,7 px – bei
+   Figurennamen wie „Snowtrooper – Male, Printed Legs, White Hands" eine
+   Wand. */
+#figinfo-head { font-size: 16px; line-height: 1.25; }
 
 /* „Noch nirgends erfasst" ist eine Feststellung, keine Warnung – deshalb
    neutral und nicht rot. */
@@ -1348,6 +1355,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    (110) bleibt darüber, sonst bliebe die Antwort auf die Aktion ausgerechnet
    dort unsichtbar, wo sie ausgelöst wurde. */
 .card-modal-overlay.stacked { z-index: 105; }
+
+/* Der Steckbrief geht fast immer aus einem anderen Fenster heraus auf: aus
+   der Detail-Karte einer Sammlung (70), wo die Figurenliste eines Sets
+   steht. Auf der Grundebene der Popups (60) lag er deshalb *dahinter* – man
+   sah nur, dass irgendwo etwas aufging.
+
+   Unter der Großansicht (100) bleibt er aber: Ein Tipp auf sein Bild öffnet
+   die Galerie, und die gehört davor. */
+#figinfo-overlay { z-index: 80; }
 .card-modal {
   position: relative; margin: auto;
   width: 100%; max-width: 640px; max-height: 92vh; display: flex;
