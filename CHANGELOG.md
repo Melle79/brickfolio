@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.20.0 – August 2026
+
+### Neu
+- 🛒 **Die Wunschliste sagt jetzt, was schon unterwegs ist.** Steht ein Wunsch
+  bereits auf einer offenen Einkaufsliste, trägt seine Karte einen blauen
+  Vermerk „🛒 auf Einkaufsliste: Flohmarkt". Bei mehreren Listen stehen alle
+  da, mit der zusammengezählten Stückzahl. Abgehakte Posten und archivierte
+  Listen zählen nicht mit – abgehakt heißt gekauft, archiviert heißt vorbei.
+  Zusammen mit dem grünen „✔ in eurer Sammlung" beantwortet die Wunschliste
+  damit auf einen Blick die Frage, die man vor dem Kauf hat: *haben wir das
+  schon, oder holt es gerade jemand anders?*
+
 ## 2.19.2 – August 2026
 
 ### Behoben

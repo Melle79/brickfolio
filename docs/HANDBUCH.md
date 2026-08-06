@@ -1006,6 +1006,11 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
   werden danach sofort neu geholt.
 - Artikel, die ihr schon besitzt, tragen ein Besitz-Badge – praktisch
   gegen Doppelkäufe.
+- Steht ein Wunsch schon auf einer **offenen Einkaufsliste**, trägt die
+  Karte den blauen Vermerk **🛒 auf Einkaufsliste: <Listenname>** – dann
+  ist er unterwegs und niemand muss ihn ein zweites Mal besorgen. Mehrere
+  Listen werden alle genannt, mit zusammengezählter Stückzahl. Abgehakte
+  Posten und archivierte Listen zählen nicht mehr mit.
 - Gehört eine gemerkte Figur zu einem **Set aus eurer Sammlung** und fehlt
   dort noch, steht auf der Karte **🧩 fehlt zu eurem Set: <Setname>**. Ein
   Tipp auf das Set springt direkt dorthin in die Sammlung.

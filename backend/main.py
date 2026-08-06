@@ -3895,12 +3895,32 @@ def get_wanted(user: dict = Depends(current_user)):
             "FROM wanted w "
             "LEFT JOIN users u ON u.id = w.added_by "
             "ORDER BY w.added_at DESC").fetchall()
+        # Steht der Wunsch schon auf einer offenen Einkaufsliste, ist er
+        # unterwegs – das gehört an die Karte, sonst kauft ihn jemand zweimal.
+        auf_listen: dict = {}
+        for r in conn.execute(
+                "SELECT i.item_id, i.item_type, i.qty, l.name "
+                "FROM shopping_items i "
+                "JOIN shopping_lists l ON l.id = i.list_id "
+                "WHERE i.done = 0 AND l.archived = 0"):
+            e = auf_listen.setdefault((r["item_id"], r["item_type"]),
+                                      {"qty": 0, "names": []})
+            e["qty"] += r["qty"] or 1
+            if r["name"] not in e["names"]:
+                e["names"].append(r["name"])
         stats = conn.execute(
             "SELECT COUNT(*) AS count, "
             "COALESCE(SUM(COALESCE(price_used, price_new)), 0) AS est_cost, "
             "COALESCE(SUM(COALESCE(price_new, price_used)), 0) AS est_cost_new "
             "FROM wanted").fetchone()
-    return {"items": [dict(r) for r in rows], "stats": dict(stats)}
+    items = []
+    for r in rows:
+        d = dict(r)
+        e = auf_listen.get((d["item_id"], d["item_type"]))
+        d["on_lists"] = e["names"] if e else []
+        d["on_lists_qty"] = e["qty"] if e else 0
+        items.append(d)
+    return {"items": items, "stats": dict(stats)}
 
 
 @app.post("/api/wanted")

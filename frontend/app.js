@@ -626,6 +626,7 @@ function renderWanted(items) {
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
           ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in eurer Sammlung</span>` : ""}
+          ${it.on_lists && it.on_lists.length ? `<span class="badge badge-onlist" title="${esc(tr("Schon eingeplant – nicht doppelt kaufen"))}">🛒 ${it.on_lists_qty > 1 ? it.on_lists_qty + "× " : ""}${esc(tr("auf Einkaufsliste"))}: ${esc(it.on_lists.join(", "))}</span>` : ""}
           ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">${esc(tr("🧩 fehlt zu eurem Set:"))}</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
       </div>

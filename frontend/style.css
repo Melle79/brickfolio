@@ -644,6 +644,10 @@ code {
 .badge-owned { background: var(--green); color: #fff; border: 1.5px solid var(--ink); }
 
 .badge-wanted { background: var(--yellow); border: 1.5px solid var(--yellow-dark); }
+
+/* Der Wunsch liegt schon in einem Einkaufskorb – blau, weil er weder „habt
+   ihr" (grün) noch „fehlt" (rot) ist, sondern unterwegs. */
+.badge-onlist { background: var(--blue); color: #fff; border: 1.5px solid var(--ink); }
 .tabbar .tab { font-size: 11px; }
 
 .lb-nav {
@@ -1253,9 +1257,11 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .btn-primary,
 [data-theme="galaxy"] .badge-score,
 [data-theme="galaxy"] .badge-owned,
+[data-theme="galaxy"] .badge-onlist,
 [data-theme="galaxy"] .mini-btn.add,
 [data-theme="galaxy"] .qty button.qty-del:active { color: #0B1220; }
-[data-theme="galaxy"] .badge-owned { border-color: var(--line); }
+[data-theme="galaxy"] .badge-owned,
+[data-theme="galaxy"] .badge-onlist { border-color: var(--line); }
 [data-theme="galaxy"] .qty-badge { color: #0B1220; }
 /* Gelbe Flächen erben sonst die (hier helle) Textfarbe – dunkel erzwingen */
 [data-theme="galaxy"] .qty button,
@@ -1611,6 +1617,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .btn-primary,
 [data-theme="nova"] .badge-score,
 [data-theme="nova"] .badge-owned,
+[data-theme="nova"] .badge-onlist,
 [data-theme="nova"] .mini-btn.add,
 [data-theme="nova"] .mini-btn.cond.sel,
 [data-theme="nova"] .cond-mini.sel,
@@ -1621,6 +1628,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .badge-owned,
 [data-theme="nova"] .set-link.owned,
 [data-theme="nova"] .pl-src.manual { border-color: var(--yellow-dark); }
+[data-theme="nova"] .badge-onlist { border-color: var(--line); }
 [data-theme="nova"] .qty button.qty-del {
   background: var(--surface); color: var(--red); border-color: var(--red);
 }
