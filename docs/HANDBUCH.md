@@ -640,6 +640,11 @@ einer Liste. Der Knopf wirkt **unabhängig vom Kästchen** oben: Das gilt
 fürs Anlegen, hier ist das Foto ja der ganze Zweck. Danach heißt er
 „📷 Foto dabei ✔".
 
+Er erscheint **nur, wenn es den Artikel schon gibt** – in eurer Sammlung
+oder auf einer Einkaufsliste. Sonst gäbe es ja nichts, woran das Foto hängen
+könnte. Die **Wunschliste zählt hier nicht**: Was ihr euch wünscht, habt ihr
+gerade nicht.
+
 > Praktisch, wenn man die Sammlung nach und nach bebildern will: Figur vor
 > die Kamera, scannen, ein Tipp – fertig. Das grüne Schild **„✔ 1× in eurer
 > Sammlung"** auf der Karte zeigt dabei gleich, dass ihr sie schon habt.
@@ -1006,6 +1011,7 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
   werden danach sofort neu geholt.
 - Artikel, die ihr schon besitzt, tragen ein Besitz-Badge – praktisch
   gegen Doppelkäufe.
+- Ein Tipp auf **Name oder Nummer** öffnet den **Steckbrief** (siehe unten).
 - Steht ein Wunsch schon auf einer **offenen Einkaufsliste**, trägt die
   Karte den blauen Vermerk **🛒 auf Einkaufsliste: <Listenname>** – dann
   ist er unterwegs und niemand muss ihn ein zweites Mal besorgen. Mehrere
@@ -1014,6 +1020,39 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
 - Gehört eine gemerkte Figur zu einem **Set aus eurer Sammlung** und fehlt
   dort noch, steht auf der Karte **🧩 fehlt zu eurem Set: <Setname>**. Ein
   Tipp auf das Set springt direkt dorthin in die Sammlung.
+
+### 6.1 Der Steckbrief
+
+Überall, wo eine Figur oder ein Teil nur als **Zeile** auftaucht, führt ein
+Tipp auf Name oder Nummer zum **Steckbrief**. Das gilt
+
+- unter einem Set in eurer Sammlung („👥 Enthaltene Figuren anzeigen"),
+- in der Teileliste einer Figur („🧩 Enthaltene Teile anzeigen"),
+- bei den **fehlenden Set-Figuren**,
+- auf der **Wunschliste** und den **Einkaufslisten**,
+- in der Statistik (Spitzenreiter) und bei den **Doppelten**.
+
+Er beantwortet die Frage, die man an dieser Stelle hat:
+
+| Zeile | Was sie sagt |
+|---|---|
+| Bild und Nummer | welche Variante genau, mit Erscheinungsjahr |
+| 🟢 ✔ *n*× in eurer Sammlung | habt ihr |
+| 🔵 🛒 <Listenname> | liegt schon im Einkaufskorb |
+| 🟡 ⭐ auf eurer Wunschliste | wollt ihr |
+| „noch nirgends erfasst" | kennt die App noch gar nicht |
+| 💶 Marktpreis | Ø neu und Ø gebraucht |
+| 📦 Steckt in diesen Sets | eure Sets zuerst und anklickbar, danach die übrigen bei BrickLink |
+
+Unten stehen **＋ Sammlung**, **☆ Merken** (fällt weg, wenn die Figur schon
+auf der Wunschliste liegt) und **BrickLink ↗**.
+
+Ein Tipp **neben** den Steckbrief schließt ihn wieder, ebenso ✕ und die
+Escape-Taste. Das Bild darin öffnet weiterhin die **Galerie** – Escape
+schließt dann erst das Bild und beim zweiten Druck den Steckbrief.
+
+> **Knöpfe bleiben Knöpfe.** In den Zeilen mit ＋ Sammlung und ☆ Merken
+> lösen diese weiterhin ihre eigene Aufgabe aus, nicht den Steckbrief.
 
 ---
 

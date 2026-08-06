@@ -645,9 +645,28 @@ code {
 
 .badge-wanted { background: var(--yellow); border: 1.5px solid var(--yellow-dark); }
 
-/* Der Wunsch liegt schon in einem Einkaufskorb – blau, weil er weder „habt
-   ihr" (grün) noch „fehlt" (rot) ist, sondern unterwegs. */
-.badge-onlist { background: var(--blue); color: #fff; border: 1.5px solid var(--ink); }
+/* ------------------------------------------------------------- Steckbrief */
+
+/* Zeigt, dass hier mehr dahintersteckt – zurückhaltend, weil fast jede
+   Figurenzeile es trägt. */
+.tappbar { cursor: pointer; }
+.tappbar:hover strong { text-decoration: underline; text-underline-offset: 2px; }
+
+.fi-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.fi-img {
+  width: 92px; height: 92px; flex: none; object-fit: contain;
+  background: var(--surface); border: 2px solid var(--ink); border-radius: 12px;
+}
+.fi-meta { min-width: 0; flex: 1; }
+.fi-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.fi-block { margin-top: 12px; }
+.fi-label { font-size: 12px; font-weight: 800; opacity: .7; margin-bottom: 3px; }
+.fi-prices { font-size: 15px; }
+.fi-actions { margin-top: 16px; }
+
+/* „Noch nirgends erfasst" ist eine Feststellung, keine Warnung – deshalb
+   neutral und nicht rot. */
+.badge-none { background: var(--surface); border: 1.5px dashed var(--line); opacity: .8; }
 .tabbar .tab { font-size: 11px; }
 
 .lb-nav {
@@ -983,9 +1002,11 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   background: #1a1a1a; color: #9fe28f; border-radius: 8px;
   padding: 8px 10px; font-size: 12px; overflow-x: auto;
 }
+/* Blau, weil „liegt im Einkaufskorb" weder „habt ihr" (grün) noch „wollt ihr"
+   (gelb) ist, sondern unterwegs. Vorher war die Marke gelb – also nicht von
+   der Wunschliste zu unterscheiden, obwohl sie das Gegenteil bedeutet. */
 .badge-list {
-  background: var(--yellow); border-color: var(--yellow-dark);
-  color: var(--ink);
+  background: var(--blue); border: 1.5px solid var(--ink); color: #fff;
 }
 .help-btn {
   width: 32px; height: 32px; border-radius: 50%;
@@ -1257,11 +1278,11 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .btn-primary,
 [data-theme="galaxy"] .badge-score,
 [data-theme="galaxy"] .badge-owned,
-[data-theme="galaxy"] .badge-onlist,
+[data-theme="galaxy"] .badge-list,
 [data-theme="galaxy"] .mini-btn.add,
 [data-theme="galaxy"] .qty button.qty-del:active { color: #0B1220; }
 [data-theme="galaxy"] .badge-owned,
-[data-theme="galaxy"] .badge-onlist { border-color: var(--line); }
+[data-theme="galaxy"] .badge-list { border-color: var(--line); }
 [data-theme="galaxy"] .qty-badge { color: #0B1220; }
 /* Gelbe Flächen erben sonst die (hier helle) Textfarbe – dunkel erzwingen */
 [data-theme="galaxy"] .qty button,
@@ -1617,7 +1638,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .btn-primary,
 [data-theme="nova"] .badge-score,
 [data-theme="nova"] .badge-owned,
-[data-theme="nova"] .badge-onlist,
+[data-theme="nova"] .badge-list,
 [data-theme="nova"] .mini-btn.add,
 [data-theme="nova"] .mini-btn.cond.sel,
 [data-theme="nova"] .cond-mini.sel,
@@ -1628,7 +1649,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .badge-owned,
 [data-theme="nova"] .set-link.owned,
 [data-theme="nova"] .pl-src.manual { border-color: var(--yellow-dark); }
-[data-theme="nova"] .badge-onlist { border-color: var(--line); }
+[data-theme="nova"] .badge-list { border-color: var(--line); }
 [data-theme="nova"] .qty button.qty-del {
   background: var(--surface); color: var(--red); border-color: var(--red);
 }

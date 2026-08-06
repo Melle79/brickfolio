@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.21.0 – August 2026
+
+### Neu
+- 👤 **Figuren-Steckbrief: ein Tipp auf die Zeile, und alles steht da.**
+  Überall, wo eine Figur bisher nur als Zeile auftauchte – unter einem Set in
+  eurer Sammlung, in der Teileliste, bei den fehlenden Set-Figuren, auf den
+  Einkaufslisten, auf der Wunschliste, in der Statistik und bei den Doppelten
+  –, öffnet ein Tipp jetzt den **Steckbrief**: Bild, Nummer, Jahr,
+  Marktpreise, ob ihr sie habt (Sammlung / Einkaufsliste / Wunschliste), in
+  welchen eurer Sets sie steckt, dazu ＋ Sammlung, ☆ Merken und BrickLink.
+  Schließt beim Tippen daneben, mit ✕ oder Escape. Das Bild behält seine
+  Aufgabe: ein Tipp darauf öffnet weiterhin die Bildergalerie – jetzt auch
+  aus dem Steckbrief heraus, und Escape schließt erst das Bild, dann den
+  Steckbrief
+
+### Geändert
+- 🛒 **„Auf einer Einkaufsliste" ist jetzt blau statt gelb.** Bisher sah die
+  Marke genauso aus wie „auf der Wunschliste" – dabei bedeuten die beiden das
+  Gegenteil voneinander: im Korb gegen fehlt euch. Gleiche Farbe hieß damit
+  gar nichts. Grün heißt *habt ihr*, blau *ist unterwegs*, gelb *wollt ihr*
+
+### Behoben
+- 📷 **„Nur Foto dazu" stand auch da, wenn es den Artikel gar nicht gab.**
+  Der Knopf hängt ein Foto an einen vorhandenen Artikel – ohne Artikel gibt
+  es nichts, woran es hängen könnte. Er erscheint jetzt nur noch, wenn das
+  Stück in eurer Sammlung oder auf einer Einkaufsliste steht. Die
+  Wunschliste zählt bewusst nicht: Was man sich wünscht, hat man gerade nicht
+
 ## 2.20.1 – August 2026
 
 ### Behoben

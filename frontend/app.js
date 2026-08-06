@@ -622,11 +622,11 @@ function renderWanted(items) {
     <div class="card" data-wid="${it.id}">
       <div class="card-head">
         <img class="card-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
-        <div class="card-title">
+        <div class="card-title tappbar" data-info="${esc(it.item_type || "minifig")}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
           ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in eurer Sammlung</span>` : ""}
-          ${it.on_lists && it.on_lists.length ? `<span class="badge badge-onlist" title="${esc(tr("Schon eingeplant – nicht doppelt kaufen"))}">🛒 ${it.on_lists_qty > 1 ? it.on_lists_qty + "× " : ""}${esc(tr("auf Einkaufsliste"))}: ${esc(it.on_lists.join(", "))}</span>` : ""}
+          ${it.on_lists && it.on_lists.length ? `<span class="badge badge-list" title="${esc(tr("Schon eingeplant – nicht doppelt kaufen"))}">🛒 ${it.on_lists_qty > 1 ? it.on_lists_qty + "× " : ""}${esc(tr("auf Einkaufsliste"))}: ${esc(it.on_lists.join(", "))}</span>` : ""}
           ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">${esc(tr("🧩 fehlt zu eurem Set:"))}</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
       </div>
@@ -851,6 +851,14 @@ function applySuggestInfo(info, withDetail) {
       ownedEl.classList.add("badge-wanted");
       ownedEl.hidden = false;
     }
+    // „Nur Foto dazu" hängt ein Foto an einen Artikel, den es schon gibt.
+    // Ohne Artikel gibt es nichts, woran es hängen könnte – der Knopf bleibt
+    // dann weg. Die Wunschliste zählt hier bewusst nicht: Was man sich
+    // wünscht, hat man gerade nicht.
+    const vorhanden = d.owned > 0 || (d.on_lists && d.on_lists.length > 0);
+    const fotoBtn = card.querySelector("[data-foto]");
+    if (fotoBtn && vorhanden) fotoBtn.hidden = false;
+
     if (d.on_lists && d.on_lists.length) {
       const card2 = ownedEl ? ownedEl.closest(".card") : null;
       if (card2 && !card2.querySelector(".badge-list")) {
@@ -1153,7 +1161,7 @@ async function loadSetFigs(card, item, btn) {
       out.innerHTML = `<div class="price-note">Laut BrickLink enthält dieses Set keine Minifiguren.</div>`;
     } else {
       out.innerHTML = figs.map((f, i) => `
-        <div class="fig-row" data-fig-row="${i}">
+        <div class="fig-row tappbar" data-fig-row="${i}" data-info="minifig|${esc(f.item_id)}" data-info-name="${esc(f.name)}" data-info-img="${esc(f.img_url || "")}">
           <img class="card-img fig-img" src="${imgSrc(f.img_url, true)}" data-gid="${esc(f.item_id)}" data-gtype="minifig" alt="" loading="lazy">
           <div class="fig-info">
             <strong>${esc(f.name)}</strong>
@@ -1223,8 +1231,8 @@ async function loadFigParts(card, item, btn) {
       out.innerHTML = `<div class="price-note">Für diese Figur hat BrickLink keine Teileliste.</div>`;
     } else {
       out.innerHTML = parts.map((p) => `
-        <div class="fig-row">
-          <img class="card-img fig-img" src="${imgSrc(p.img_url, true)}" alt="" loading="lazy">
+        <div class="fig-row tappbar" data-info="part|${esc(p.item_id)}" data-info-name="${esc(p.name)}" data-info-img="${esc(p.img_url || "")}">
+          <img class="card-img fig-img" src="${imgSrc(p.img_url, true)}" data-gid="${esc(p.item_id)}" data-gtype="part" alt="" loading="lazy">
           <div class="fig-info">
             <strong>${esc(p.name)}</strong>
             <div class="sub">${esc(p.item_id)}${p.color_name ? ` · ${esc(p.color_name)}` : ""}${p.qty > 1 ? ` · ${p.qty}×` : ""}</div>
@@ -1281,6 +1289,177 @@ async function markFigOwnership(out, figs) {
     } catch (_) { /* Badges sind nice-to-have */ }
   }
   return result;
+}
+
+/* ------------------------------------------------------------------ Steckbrief
+
+   Überall, wo eine Figur nur als Zeile auftaucht – im Set, in der Teileliste,
+   unter den fehlenden Set-Figuren, auf den Listen –, fehlte bisher die
+   Antwort auf die eine Frage, die man dort hat: *Was ist das, habe ich es
+   schon, und was ist es wert?* Der Steckbrief beantwortet sie an Ort und
+   Stelle, ohne dass man die Ansicht verlässt.                                */
+
+let steckbriefZuletzt = null;
+
+function steckbriefSchliessen() {
+  const ov = $("figinfo-overlay");
+  if (!ov || ov.hidden) return;
+  ov.hidden = true;
+  document.body.style.overflow = "";
+}
+
+function steckbriefBesitzHtml(d) {
+  const teile = [];
+  if (d.owned > 0) {
+    teile.push(`<span class="badge badge-owned">${esc(
+      tr("✔ {n}× in eurer Sammlung", { n: d.owned }))}</span>`);
+  }
+  (d.on_lists || []).forEach((name) => {
+    teile.push(`<span class="badge badge-list">🛒 ${esc(name)}</span>`);
+  });
+  if (d.wanted) {
+    teile.push(`<span class="badge badge-wanted">${esc(
+      tr("⭐ auf eurer Wunschliste"))}</span>`);
+  }
+  if (!teile.length) {
+    teile.push(`<span class="badge badge-none">${esc(
+      tr("noch nirgends erfasst"))}</span>`);
+  }
+  return `<div class="fi-badges">${teile.join(" ")}</div>`;
+}
+
+function steckbriefSetsHtml(d) {
+  const links = [];
+  const gesehen = new Set();
+  // Eigene Sets zuerst und anklickbar – dort steckt die Figur wirklich.
+  (d.in_sets || "").split(";;").filter(Boolean).forEach((s) => {
+    const teile = s.split("|");
+    const no = teile[0];
+    const anzahl = Number(teile[teile.length - 1]) || 1;
+    const name = teile.slice(1, -1).join("|");
+    gesehen.add(no);
+    links.push(`<button class="set-link owned" data-fi-jump="${esc(no)}">`
+      + `✔ ${esc(name)} (${esc(no)}${anzahl > 1 ? `, ${anzahl}×` : ""})</button>`);
+  });
+  (d.all_sets || []).forEach((s) => {
+    if (gesehen.has(s.no)) return;
+    gesehen.add(s.no);
+    links.push(`<a class="set-link ext" target="_blank" rel="noopener" href="`
+      + `https://www.bricklink.com/v2/catalog/catalogitem.page?S=`
+      + `${encodeURIComponent(s.no)}">${esc(s.name)} (${esc(s.no)}`
+      + `${s.qty > 1 ? `, ${s.qty}×` : ""})</a>`);
+  });
+  if (!links.length) return "";
+  return `<div class="fi-block"><div class="fi-label">${esc(
+    tr("📦 Steckt in diesen Sets"))}</div>`
+    + `<div class="in-sets">${links.join(" ")}</div></div>`;
+}
+
+function steckbriefPreiseHtml(d) {
+  const teile = [];
+  if (d.new != null) teile.push(`${tr("Ø neu")} <b>${fmtEur(d.new)}</b>`);
+  if (d.used != null) teile.push(`${tr("Ø gebr.")} <b>${fmtEur(d.used)}</b>`);
+  return `<div class="fi-block"><div class="fi-label">${esc(
+    tr("💶 Marktpreis"))}</div><div class="fi-prices">`
+    + (teile.length ? teile.join(" · ")
+       : `<span class="price-note">${esc(
+           tr("Bei BrickLink wurde dazu zuletzt nichts verkauft."))}</span>`)
+    + `</div></div>`;
+}
+
+async function steckbriefOeffnen(itemId, itemType, vorschau) {
+  const ov = $("figinfo-overlay");
+  const body = $("figinfo-body");
+  if (!ov || !body) return;
+  const typ = itemType || "minifig";
+  steckbriefZuletzt = { itemId, typ };
+  $("figinfo-head").textContent = vorschau && vorschau.name
+    ? vorschau.name : itemId;
+  body.innerHTML = `
+    <div class="fi-head">
+      <img class="fi-img card-img" src="${imgSrc(vorschau && vorschau.img_url, true)}"
+           data-gid="${esc(itemId)}" data-gtype="${esc(typ)}" alt="">
+      <div class="fi-meta"><div class="sub">${esc(itemId)}</div></div>
+    </div>
+    <div class="price-note">${esc(tr("Lade Steckbrief …"))}</div>`;
+  ov.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  let d = {};
+  try {
+    const info = await api("/suggest_info?detail=1", { method: "POST",
+      body: { items: [{ item_id: itemId, item_type: typ }] } });
+    d = info[itemId] || {};
+  } catch (e) {
+    // Der Steckbrief bleibt trotzdem stehen: Nummer und Bild kennen wir
+    // auch ohne die Anreicherung, und die Verknüpfungen funktionieren.
+    d = { _fehler: e.message };
+  }
+  // Zwischenzeitlich weitergetippt? Dann gehört die Antwort nicht mehr hierher.
+  if (!steckbriefZuletzt || steckbriefZuletzt.itemId !== itemId) return;
+
+  const jahr = d.year || (vorschau && vorschau.year) || 0;
+  const bl = (vorschau && vorschau.bricklink_url)
+    || `https://www.bricklink.com/v2/catalog/catalogitem.page?`
+       + `${typ === "set" ? "S" : typ === "part" ? "P" : "M"}=`
+       + encodeURIComponent(itemId);
+  body.innerHTML = `
+    <div class="fi-head">
+      <img class="fi-img card-img" src="${imgSrc(vorschau && vorschau.img_url, true)}"
+           data-gid="${esc(itemId)}" data-gtype="${esc(typ)}" alt="">
+      <div class="fi-meta">
+        <div class="sub">${esc(itemId)}${jahr > 0 ? " · " + jahr : ""}</div>
+        ${steckbriefBesitzHtml(d)}
+      </div>
+    </div>
+    ${steckbriefPreiseHtml(d)}
+    ${steckbriefSetsHtml(d)}
+    ${d._fehler ? `<div class="price-note">⚠️ ${esc(d._fehler)}</div>` : ""}
+    <div class="fi-actions btn-grid">
+      <button class="mini-btn add" data-fi-add>＋ Sammlung</button>
+      ${d.wanted ? "" : `<button class="mini-btn" data-fi-want>☆ Merken</button>`}
+      <a class="mini-btn link" href="${esc(bl)}" target="_blank" rel="noopener">BrickLink ↗</a>
+    </div>`;
+
+  body.querySelectorAll("[data-fi-jump]").forEach((b) => {
+    b.addEventListener("click", () => {
+      steckbriefSchliessen();
+      jumpToSet(b.dataset.fiJump);
+    });
+  });
+  const addBtn = body.querySelector("[data-fi-add]");
+  if (addBtn) {
+    addBtn.addEventListener("click", async () => {
+      addBtn.disabled = true;
+      try {
+        await api("/collection", { method: "POST", body: {
+          item_id: itemId, item_type: typ,
+          name: (vorschau && vorschau.name) || itemId,
+          img_url: (vorschau && vorschau.img_url) || "",
+          bricklink_url: bl, quantity: 1, condition: "used",
+        }});
+        toast(tr("In die Sammlung übernommen ✔"));
+        steckbriefSchliessen();
+        if (typeof loadCollection === "function") loadCollection();
+      } catch (e) { toast(e.message); addBtn.disabled = false; }
+    });
+  }
+  const wantBtn = body.querySelector("[data-fi-want]");
+  if (wantBtn) {
+    wantBtn.addEventListener("click", async () => {
+      wantBtn.disabled = true;
+      try {
+        await api("/wanted", { method: "POST", body: {
+          item_id: itemId, item_type: typ,
+          name: (vorschau && vorschau.name) || itemId,
+          img_url: (vorschau && vorschau.img_url) || "",
+          bricklink_url: bl,
+        }});
+        toast(tr("Auf die Wunschliste gesetzt ⭐"));
+        wantBtn.remove();
+      } catch (e) { toast(e.message); wantBtn.disabled = false; }
+    });
+  }
 }
 
 function wireFigActions(out, figs) {
@@ -2335,7 +2514,7 @@ function logout() {
   localStorage.removeItem("bf_user");
   // Offene Overlays schließen – sonst bleiben sie über dem Login stehen
   closeCardModal();
-  ["profile-overlay", "help-overlay"].forEach((id) => {
+  ["profile-overlay", "help-overlay", "figinfo-overlay"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.hidden = true;
   });
@@ -3104,7 +3283,7 @@ function renderScanResults(items) {
         <button class="mini-btn add" data-add="${i}">＋ Zur Sammlung</button>
         <button class="mini-btn" data-want="${i}">☆ Merken</button>
         ${state.user && state.user.is_dealer ? `<button class="mini-btn" data-cart="${i}">🛒 Liste</button>` : ""}
-        ${lastScanFile ? `<button class="mini-btn" data-foto="${i}">📷 Nur Foto dazu</button>` : ""}
+        ${lastScanFile ? `<button class="mini-btn" data-foto="${i}" hidden>📷 Nur Foto dazu</button>` : ""}
         ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
       </div>
     </div>`;
@@ -5765,7 +5944,7 @@ function listItemRow(it, dealer) {
     ? `<div class="sub done-note">✔ in Sammlung${it.done_by_name ? " von " + esc(it.done_by_name) : ""}${it.done_at ? " am " + new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) : ""}</div>`
     : "";
   return `
-  <div class="fig-row ${it.done ? "done" : ""}" data-iid="${it.id}">
+  <div class="fig-row tappbar ${it.done ? "done" : ""}" data-iid="${it.id}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
     <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
     <div class="fig-info">
       <strong>${esc(it.name)}</strong>
@@ -6024,7 +6203,7 @@ function renderStats(data) {
     <h3 style="margin:0 0 6px">${esc(tr("Top {n} nach Wert", { n: data.top.length }))}</h3>
     <div class="set-figs">
       ${data.top.map((it, i) => `
-      <div class="fig-row">
+      <div class="fig-row tappbar" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
         <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
         <div class="fig-info" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <strong style="font-size:14px">${i + 1}. ${esc(it.name)}${it.quantity > 1 ? ` (${it.quantity}×)` : ""}</strong>
@@ -6294,7 +6473,7 @@ function renderDuplicates(data) {
     </div></div>
     <div class="set-figs">
       ${data.items.map((it) => `
-      <div class="fig-row">
+      <div class="fig-row tappbar" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
         <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
@@ -6406,7 +6585,7 @@ function renderMissingFigs(data) {
     </div>` : ""}
     <div class="set-figs">
       ${data.items.map((it, i) => `
-      <div class="fig-row" data-mf-row="${i}">
+      <div class="fig-row tappbar" data-mf-row="${i}" data-info="minifig|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
         <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
@@ -9293,9 +9472,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("profile-overlay").addEventListener("click", (ev) => {
     if (ev.target === $("profile-overlay")) closeProfile();
   });
+  $("btn-figinfo-close").addEventListener("click", steckbriefSchliessen);
+  $("figinfo-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("figinfo-overlay")) steckbriefSchliessen();
+  });
   document.addEventListener("keydown", (ev) => {
     if (ev.key === "Escape" && !$("help-overlay").hidden) closeHelp();
     if (ev.key === "Escape" && !$("profile-overlay").hidden) closeProfile();
+    // Nach der Galerie: erst das Bild zu, dann der Steckbrief darunter.
+    if (ev.key === "Escape" && $("lightbox").hidden
+        && !$("figinfo-overlay").hidden) steckbriefSchliessen();
+  });
+
+  /* Ein Klick auf Name oder Zeile öffnet den Steckbrief. Knöpfe, Verweise
+     und das Bild behalten ihre eigene Aufgabe – das Bild die Galerie. */
+  document.addEventListener("click", (ev) => {
+    const ziel = ev.target.closest("[data-info]");
+    if (!ziel) return;
+    if (ev.target.closest("button, a, input, select, label, .card-img")) return;
+    const [typ, id] = (ziel.dataset.info || "").split("|");
+    if (!id) return;
+    ev.stopPropagation();
+    steckbriefOeffnen(id, typ, {
+      name: ziel.dataset.infoName || "",
+      img_url: ziel.dataset.infoImg || "",
+    });
   });
   $("btn-setup").addEventListener("click", doSetup);
   $("setup-pass2").addEventListener("keydown", (ev) => {
