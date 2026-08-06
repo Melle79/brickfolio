@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.21.1 – August 2026
+
+### Behoben
+- 👓 **Das Update-Banner war in Galaxie und Nova nicht zu lesen.** Seine
+  Fläche ist die Akzentfarbe – in Galaxie ein helles Gelb, in Nova ein
+  helles Blau –, die Schrift blieb aber die helle des dunklen Designs.
+  Gemessen waren das **1,22 : 1** (Galaxie) und **1,66 : 1** (Nova); lesbar
+  wären 4,5 : 1. Ausgerechnet die Meldung, die auffallen soll, war damit
+  unsichtbar. Jetzt steht dunkle Schrift darauf: 13,2 : 1 und 8,8 : 1
+- 🔗 **„Release-Notes ansehen" nahm die Browser-Vorgabe für Verweise.** Auf
+  der hellen Fläche kaum zu sehen, und einmal besucht vollends weg – im
+  Bildschirmfoto ein dunkles Rot auf Hellblau. Der Verweis erbt jetzt die
+  Schriftfarbe des Banners und bleibt über die Unterstreichung als Verweis
+  erkennbar
+
 ## 2.21.0 – August 2026
 
 ### Neu

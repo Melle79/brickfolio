@@ -997,7 +997,13 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   background: var(--yellow); border: 2px solid var(--ink);
   border-radius: 10px; padding: 8px 12px; font-size: 14px;
 }
-.update-banner a { margin-left: 6px; font-weight: 800; }
+/* Der Verweis erbt die Schriftfarbe des Banners. Ohne das nahm er die
+   Browser-Vorgabe – auf der hellen Akzentfläche kaum zu sehen, und einmal
+   besucht noch schlechter. Erkennbar bleibt er über die Unterstreichung. */
+.update-banner a {
+  margin-left: 6px; font-weight: 800;
+  color: inherit; text-decoration: underline; text-underline-offset: 2px;
+}
 .update-cmd {
   background: #1a1a1a; color: #9fe28f; border-radius: 8px;
   padding: 8px 10px; font-size: 12px; overflow-x: auto;
@@ -1279,6 +1285,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .badge-score,
 [data-theme="galaxy"] .badge-owned,
 [data-theme="galaxy"] .badge-list,
+[data-theme="galaxy"] .update-banner,
 [data-theme="galaxy"] .mini-btn.add,
 [data-theme="galaxy"] .qty button.qty-del:active { color: #0B1220; }
 [data-theme="galaxy"] .badge-owned,
@@ -1639,6 +1646,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .badge-score,
 [data-theme="nova"] .badge-owned,
 [data-theme="nova"] .badge-list,
+[data-theme="nova"] .update-banner,
 [data-theme="nova"] .mini-btn.add,
 [data-theme="nova"] .mini-btn.cond.sel,
 [data-theme="nova"] .cond-mini.sel,
