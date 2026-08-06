@@ -827,8 +827,17 @@ def list_errors(user: dict = Depends(admin_user)):
 
 @app.delete("/api/errors")
 def clear_errors(user: dict = Depends(admin_user)):
+    """Bericht leeren – und die Zettel dazu gleich mit.
+
+    Sie blieben bisher stehen und zeigten danach auf Fehler, die es nicht
+    mehr gab: „Ein Fehler wurde aufgezeichnet", und der Bericht dahinter
+    leer. Wer den Bericht wegräumt, will auch den Hinweis darauf los sein.
+    """
     with core.db() as conn:
         conn.execute("DELETE FROM error_log")
+        conn.execute("UPDATE notifications SET dismissed_at = ? "
+                     "WHERE kind = 'error' AND dismissed_at IS NULL",
+                     (int(time.time()),))
     return {"ok": True}
 
 
@@ -1024,9 +1033,25 @@ def _note_error(message: str, fp: str) -> None:
     neuer ist und nicht derselbe zum zweiten Mal.
     """
     with core.db() as conn:
+        # Nur ein Zettel blockiert, dessen Fehler es **noch gibt**.
+        #
+        # Vorher genügte irgendein offener Zettel. Wer den Bericht leerte,
+        # ließ damit einen verwaisten stehen – er zeigte auf einen Fehler,
+        # den es nicht mehr gab („Ein Fehler wurde aufgezeichnet", Bericht
+        # leer), und verhinderte obendrein **jede weitere** Meldung. Der
+        # Zettel, der auf Probleme hinweisen soll, machte die App also
+        # stumm, und zwar für immer.
+        verwaist = conn.execute(
+            "SELECT n.id FROM notifications n LEFT JOIN error_log e "
+            "ON e.fingerprint = n.item_id WHERE n.kind = 'error' "
+            "AND n.dismissed_at IS NULL AND e.id IS NULL").fetchall()
+        for r in verwaist:
+            conn.execute("UPDATE notifications SET dismissed_at = ? "
+                         "WHERE id = ?", (int(time.time()), r["id"]))
         offen = conn.execute(
-            "SELECT 1 FROM notifications WHERE kind = 'error' "
-            "AND dismissed_at IS NULL LIMIT 1").fetchone()
+            "SELECT 1 FROM notifications n JOIN error_log e "
+            "ON e.fingerprint = n.item_id WHERE n.kind = 'error' "
+            "AND n.dismissed_at IS NULL LIMIT 1").fetchone()
     if offen:
         return
     # Auch aufs Gerät, wenn jemand das eingeschaltet hat. Bewusst nach dem

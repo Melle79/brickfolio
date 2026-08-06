@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.19.2 – August 2026
+
+### Behoben
+- 🐞 **„Ein Fehler wurde aufgezeichnet" – und der Bericht war leer.** Wer den
+  Fehlerbericht leerte, ließ den Zettel dazu stehen. Er zeigte danach auf
+  einen Fehler, den es nicht mehr gab. Das Leeren räumt die Zettel jetzt mit
+  weg
+- 🔕 **Ein verwaister Zettel machte die App stumm.** Gemeldet wird nur, wenn
+  kein Zettel offen ist – damit ein Problem nicht zehn Karten übereinander
+  stapelt. Zeigte der offene aber ins Leere, kam **nie wieder** eine
+  Meldung. Jetzt blockiert nur noch ein Zettel, dessen Fehler wirklich
+  existiert; verwaiste werden dabei abgeräumt
+
+> Gefunden auf einer laufenden Instanz: drei Benachrichtigungen vom Typ
+> `error`, null Zeilen im Fehlerbericht. Der jüngste Zettel war offen – und
+> hätte jede weitere Fehlermeldung verschluckt.
+
 ## 2.19.1 – August 2026
 
 ### Behoben
