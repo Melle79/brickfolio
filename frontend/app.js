@@ -8306,10 +8306,70 @@ const DIAG_KEY = "bf_mem";
 const DIAG_MAX = 240;                 // 240 × 30 s = zwei Stunden
 const DIAG_TAKT = 30000;
 const DIAG_WEG_KEY = "bf_weg";        // Zeitpunkt des ordentlichen Abschieds
+const DIAG_TAB_KEY = "bf_tab";        // Kennung dieses Tabs (sessionStorage)
+const DIAG_TABS_KEY = "bf_tabs";      // Lebenszeichen aller Tabs (localStorage)
+const TAB_FRIST = DIAG_TAKT * 3;      // 90 s ohne Lebenszeichen = Tab ist weg
 
 function diagLesen() {
   try { return JSON.parse(localStorage.getItem(DIAG_KEY) || "[]"); }
   catch (_) { return []; }
+}
+
+/* ------------------------------------------------- Wer ist sonst noch offen?
+
+   Der Abschiedszettel liegt im localStorage, und der gehört **allen** Tabs
+   derselben Adresse gemeinsam. Ein frisch geöffneter zweiter Tab fand darin
+   deshalb keinen frischen Abschied – während der erste Tab munter weiterlief
+   – und trug sich selbst als Absturz ein.
+
+   Aus dem Betrieb: Am 06.08. um 23:31:40 stand „OHNE ABSCHIED", und drei
+   Sekunden später maßen **zwei** Reihen im Abstand von 30 Sekunden weiter.
+   Da war nichts abgestürzt, da war ein Tab dazugekommen.
+
+   Ein Zeitfenster half nicht: Der bisherige Notbehelf ließ einen zweiten Tab
+   nur durchgehen, wenn er 90 Sekunden nach dem letzten Messwert aufging.
+   Hier waren es 27. Deshalb jetzt ein echtes Signal – jeder Tab meldet sich
+   unter eigener Kennung, und beim Start wird nachgesehen, ob ein *anderer*
+   gerade lebt.                                                              */
+
+function tabKennung() {
+  try {
+    let id = sessionStorage.getItem(DIAG_TAB_KEY);
+    if (!id) {
+      id = Math.random().toString(36).slice(2, 10);
+      sessionStorage.setItem(DIAG_TAB_KEY, id);
+    }
+    return id;
+  } catch (_) { return null; }
+}
+
+function tabsLesen() {
+  try { return JSON.parse(localStorage.getItem(DIAG_TABS_KEY) || "{}"); }
+  catch (_) { return {}; }
+}
+
+/** Lebenszeichen setzen und abgelaufene entfernen. Gibt zurück, wie viele
+ *  Tabs gerade offen sind – diesen mitgezählt. */
+function tabsMelden(eigene) {
+  try {
+    const jetzt = Date.now();
+    const alle = tabsLesen();
+    for (const id of Object.keys(alle)) {
+      if (jetzt - alle[id] > TAB_FRIST) delete alle[id];
+    }
+    if (eigene) alle[eigene] = jetzt;
+    localStorage.setItem(DIAG_TABS_KEY, JSON.stringify(alle));
+    return Object.keys(alle).length;
+  } catch (_) { return 1; }
+}
+
+/** Läuft gerade ein anderer Tab? Muss **vor** dem eigenen Lebenszeichen
+ *  gefragt werden, sonst zählt man sich selbst mit. */
+function andererTabLebt(eigene) {
+  const jetzt = Date.now();
+  const alle = tabsLesen();
+  return Object.keys(alle).some(
+    (id) => id !== eigene && jetzt - alle[id] <= TAB_FRIST);
 }
 
 function diagMessen(grund = "", geplant = null) {
@@ -8350,6 +8410,10 @@ function diagMessen(grund = "", geplant = null) {
   // war. Der Blick kostet drei `querySelectorAll` auf wenige Elemente.
   const fremd = fremdeSpuren(3);
   if (fremd) punkt.fremd = fremd.replace(/\n/g, " · ");
+  // Wie viele Tabs teilen sich diesen Verlauf? Alle schreiben in dieselbe
+  // Liste, und ihre Messwerte wechseln sich dann ab – ohne diese Zahl sähe
+  // das nach wilden Sprüngen bei Speicher und Elementen aus.
+  punkt.tab = tabKennung();
   if (grund === "start") {
     // Woher kam dieser Start? `p` ist der Grund, falls die App selbst neu
     // geladen hat. `nav` unterscheidet Neuladen von normalem Aufruf, und
@@ -8384,18 +8448,25 @@ function diagMessen(grund = "", geplant = null) {
     // localStorage – sessionStorage verschwindet ausgerechnet dann, wenn die
     // App geschlossen wird, also im häufigsten sauberen Fall.
     try {
+      // Zuerst fragen, ob nebenan schon einer läuft – danach meldet sich
+      // dieser Tab selbst an und wäre nicht mehr von den anderen zu trennen.
+      if (andererTabLebt(punkt.tab)) punkt.mehr = 1;
       const weg = Number(localStorage.getItem(DIAG_WEG_KEY) || 0);
       localStorage.removeItem(DIAG_WEG_KEY);
       const vorher = diagLesen();
       const letzte = vorher.length ? vorher[vorher.length - 1].t : 0;
       if (weg && weg + 2000 >= letzte) punkt.sauber = 1;
-      // Kein Abschied, kein gewolltes Neuladen, nicht vom Browser weggeräumt:
-      // Dann ist die Sitzung abgebrochen. Danach holt die App zurück, was
-      // vorher offen war – der Absturz soll nichts mehr kosten.
-      absturzZuvor = !punkt.sauber && !geplant && !document.wasDiscarded
-        && vorher.length > 0;
+      // Kein Abschied, kein gewolltes Neuladen, nicht vom Browser weggeräumt,
+      // und daneben lief auch kein zweiter Tab: Dann ist die Sitzung
+      // abgebrochen. Danach holt die App zurück, was vorher offen war – der
+      // Absturz soll nichts mehr kosten.
+      absturzZuvor = !punkt.sauber && !punkt.mehr && !geplant
+        && !document.wasDiscarded && vorher.length > 0;
     } catch (_) { /* egal */ }
   }
+  // Erst hier anmelden – im Startfall hat `andererTabLebt` oben schon
+  // gefragt, und vorher anzumelden hieße, sich selbst zu finden.
+  punkt.tabs = tabsMelden(punkt.tab);
   const liste = diagLesen();
   liste.push(punkt);
   while (liste.length > DIAG_MAX) liste.shift();
@@ -8434,6 +8505,14 @@ function diagStarten() {
   addEventListener("pagehide", () => {
     try { localStorage.setItem(DIAG_WEG_KEY, String(Date.now())); }
     catch (_) { /* egal */ }
+    // Lebenszeichen zurücknehmen, sonst gilt dieser Tab noch 90 Sekunden
+    // als offen – und ein danach geöffneter zweiter Tab hielte ihn für
+    // lebendig, obwohl er längst zu ist.
+    try {
+      const alle = tabsLesen();
+      delete alle[tabKennung()];
+      localStorage.setItem(DIAG_TABS_KEY, JSON.stringify(alle));
+    } catch (_) { /* egal */ }
   });
   document.addEventListener("visibilitychange", () => {
     // Beide Richtungen: „im Hintergrund" ist der Zustand, in dem das
@@ -8483,10 +8562,14 @@ function renderDiag() {
     if (p.disc) weggeraeumt++;
     else if (p.p) geplant++;
     else if (p.sauber) sauber++;       // von Hand neu geladen o. Ä.
-    else if (p.nav === "navigate" && p.t - vor.t >= 90000) continue;
-    // Ein frisch geöffneter zweiter Tab lange nach dem letzten Messwert hat
-    // weder Zettel noch Vorgeschichte – der zählt nicht. Abgestürzt heißt:
-    // die Seite war weg, ohne sich zu verabschieden.
+    // Ein zweiter Tab neben einem laufenden ersten ist kein Absturz. Er hat
+    // keinen eigenen Abschiedszettel, weil der allen Tabs gemeinsam gehört –
+    // früher zählte er deshalb als Abbruch und blähte die Statistik auf.
+    else if (p.mehr) continue;
+    // Fallschirm für Verläufe aus einer Zeit ohne Tab-Kennung: ein Aufruf
+    // lange nach dem letzten Messwert war schon immer verdächtig harmlos.
+    else if (p.nav === "navigate" && !p.tab && p.t - vor.t >= 90000) continue;
+    // Abgestürzt heißt: die Seite war weg, ohne sich zu verabschieden.
     else abbruch++;
   }
   const teile = [
@@ -9574,7 +9657,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-diag-copy").addEventListener("click", async () => {
     const liste = diagLesen();
     let bekannt = null;
-    const zeilen = liste.map((p) => {
+    const zeilen = liste.map((p, i) => {
       const sprung = p.s && bekannt && p.s !== bekannt;
       if (p.s) bekannt = p.s;
       return [
@@ -9586,8 +9669,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         p.g || "",
         // Nur beim Start belegt: Woher kam er?
         p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
-        p.g === "start" && !p.p && !p.disc
-          ? (p.sauber ? "ordentlich beendet" : "OHNE ABSCHIED") : "",
+        // Der allererste Eintrag hat keinen Vorgänger, über dessen Ende sich
+        // etwas sagen ließe. Er stand trotzdem als „OHNE ABSCHIED" da – die
+        // Zählung überspringt ihn längst, die Anzeige tat es nicht.
+        i > 0 && p.g === "start" && !p.p && !p.disc
+          ? (p.sauber ? "ordentlich beendet"
+            : p.mehr ? "weiterer Tab" : "OHNE ABSCHIED") : "",
+        // Teilen sich mehrere Tabs den Verlauf, wechseln sich ihre Messwerte
+        // ab – dann gehören Speicher und Elemente nicht zu einer Sitzung.
+        p.tabs > 1 ? p.tabs + " Tabs offen" : "",
         p.nav && p.g === "start" ? "nav=" + p.nav : "",
         p.ger || "",
         p.fremd ? "FREMD: " + p.fremd : "",

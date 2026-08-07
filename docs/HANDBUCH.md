@@ -1916,12 +1916,23 @@ vier Fälle:
 | Zeile | Bedeutung |
 | --- | --- |
 | „ohne sich zu verabschieden" | echter Absturz |
+| „weiterer Tab" | ihr habt Brickfolio ein zweites Mal geöffnet |
 | „von Hand neu geladen" | jemand hat neu geladen oder nach unten gezogen |
 | „hat die App selbst neu geladen" | z. B. nach einem Server-Neustart |
 | „vom Browser weggeräumt" | der Browser hat den Tab bei Speichermangel entsorgt |
 
 Dazu steht in jedem Messwert die **Startzeit des Servers**; springt sie, ist
 der Container neu gestartet.
+
+> **Mehrere Tabs teilen sich einen Verlauf.** Der Zettel liegt beim Browser,
+> nicht beim einzelnen Tab – zwei offene Fenster schreiben also abwechselnd
+> in dieselbe Liste. Steht in einer Zeile **„2 Tabs offen"**, gehören
+> Speicher und Elemente der Zeilen darum herum nicht alle zur selben
+> Sitzung. Das erklärt Sprünge, die sonst nach einem Leck aussehen.
+
+> Bis Version 2.21.3 zählte ein zweiter Tab als **Absturz** – er findet den
+> gemeinsamen Abschiedszettel nicht frisch vor, während der erste Tab noch
+> läuft. Ältere Verläufe mit Abstürzen sind deshalb mit Vorsicht zu lesen.
 
 **Wenn der Tab trotzdem abbricht, kostet es nichts mehr.** Seit Version 2.0.0
 merkt sich die App zwei Dinge im Browser: **welche Ansicht offen war** und

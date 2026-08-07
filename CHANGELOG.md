@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.22.0 – August 2026
+
+### Behoben
+- 🧮 **Der Speicher-Verlauf erfand Abstürze.** Ein zweiter Tab wurde als
+  „OHNE ABSCHIED" eingetragen – also als Absturz. Der Abschiedszettel liegt
+  im localStorage, und der gehört **allen** Tabs derselben Adresse
+  gemeinsam: Ein frisch geöffneter Tab fand darin keinen frischen Abschied,
+  während der erste munter weiterlief, und trug sich selbst als Absturz ein.
+  Im Verlauf vom 06.08. um 23:31:40 stand genau das, und drei Sekunden
+  später maßen **zwei** Reihen im Abstand von 30 Sekunden weiter. Der alte
+  Notbehelf (ein Aufruf mehr als 90 Sekunden nach dem letzten Messwert zählt
+  nicht) griff dort nicht – es waren 27 Sekunden.
+
+  Das ist der schlimmste Fehler, den eine Messung haben kann: Sie erfand die
+  Ereignisse, die sie erklären sollte. Jeder Tab hat jetzt eine eigene
+  Kennung und meldet ein Lebenszeichen; beim Start wird nachgesehen, ob ein
+  *anderer* gerade läuft. Dann steht dort **„weiterer Tab"** statt eines
+  Absturzes. Echte Abstürze werden unverändert erkannt.
+
+### Neu
+- 🪟 **Der Verlauf sagt, wenn mehrere Tabs offen sind** („2 Tabs offen").
+  Alle schreiben in dieselbe Liste, ihre Messwerte wechseln sich also ab –
+  ohne diese Angabe sah das nach wilden Sprüngen bei Speicher und Elementen
+  aus. Genau danach hatten wir gesucht.
+
+### Geändert
+- 🔍 Der **allererste Eintrag** eines Verlaufs wird nicht mehr bewertet. Er
+  hat keinen Vorgänger, über dessen Ende sich etwas sagen ließe – stand aber
+  trotzdem als „OHNE ABSCHIED" da. Die Zählung überspringt ihn längst, die
+  Anzeige tat es nicht
+
 ## 2.21.3 – August 2026
 
 ### Behoben
