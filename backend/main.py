@@ -1999,6 +1999,17 @@ def stats_dashboard(user: dict = Depends(current_user)):
                         "quantity": r["quantity"], "value": value})
     top.sort(key=lambda x: x["value"], reverse=True)
     winners.sort(key=lambda x: x["gain"], reverse=True)
+    # Verluste bekommen eine eigene Liste. Vorher rutschten sie unten in die
+    # „Besten Wertsteigerungen" – aber nur dann, wenn es weniger als fünf
+    # Gewinner gab. Wer viel gewonnen *und* viel verloren hatte, sah seine
+    # Verluste nie; wer wenig gewonnen hatte, fand sie unter einer
+    # Überschrift, die das Gegenteil versprach.
+    #
+    # Getrennt heißt auch: In den Gewinnen steht ab jetzt nur Gewinn. Ein
+    # rotes Minus unter „Beste Wertsteigerungen" war immer schon seltsam.
+    losers = sorted((w for w in winners if w["gain"] < 0),
+                    key=lambda x: x["gain"])
+    winners = [w for w in winners if w["gain"] > 0]
 
     # Zeitreihe: pro Tag mit Preisdaten der Gesamtwert der heutigen Sammlung
     coll = {(r["item_id"], r["item_type"]): r for r in items}
@@ -2061,7 +2072,8 @@ def stats_dashboard(user: dict = Depends(current_user)):
                         for y, v in sorted(by_year.items())],
             "timeline": timeline[-240:],
             "top": top[:10],
-            "winners": winners[:5]}
+            "winners": winners[:5],
+            "losers": losers[:5]}
 
 
 class CsvImportBody(BaseModel):

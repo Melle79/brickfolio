@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.24.0 – August 2026
+
+### Neu
+- 📉 **Größte Wertverluste** in der Statistik, als Gegenstück zu den besten
+  Wertsteigerungen: die fünf Stücke, bei denen der Kaufpreis am weitesten
+  über dem heutigen Wert liegt. Ein Tipp auf eine Zeile öffnet den
+  Steckbrief.
+
+### Geändert
+- 📈 **Verluste stehen nicht mehr unter „Beste Wertsteigerungen".** Dort
+  landeten sie bisher nur dann, wenn es **weniger als fünf Gewinner** gab –
+  ausgerechnet in einer gewachsenen Sammlung sah man sie also nie, und wenn
+  doch, dann unter einer Überschrift, die das Gegenteil versprach. Die
+  Steigerungen zeigen jetzt nur noch Gewinne, die Verluste stehen daneben
+
 ## 2.23.0 – August 2026
 
 Vier Funde aus dem vollständigen Funktionstest, die lange liegen geblieben

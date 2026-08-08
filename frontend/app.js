@@ -6216,18 +6216,30 @@ function renderStats(data) {
     </div>
   </div>` : "";
 
-  const winners = dealer && data.winners.length ? `
+  /* Gewinne und Verluste in getrennten Blöcken – gleicher Aufbau, damit man
+     sie nebeneinander lesen kann. Ein Tipp auf den Namen öffnet den
+     Steckbrief, wie überall sonst auch. */
+  const wertliste = (titel, eintraege, hinweis) => eintraege.length ? `
   <div class="card">
-    <h3 style="margin:0 0 6px">Beste Wertsteigerungen</h3>
-    ${data.winners.map((it, i) => `
-      <div class="sub" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed var(--line)">
+    <h3 style="margin:0 0 6px">${esc(titel)}</h3>
+    ${eintraege.map((it, i) => `
+      <div class="sub tappbar" data-info="${esc(it.item_type || "minifig")}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}" style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)">
         <span>${i + 1}. ${esc(it.name)}</span>
-        <b class="${it.gain >= 0 ? "profit-pos" : "profit-neg"}">${it.gain >= 0 ? "+" : "−"}${fmtEur(Math.abs(it.gain))}</b>
+        <b class="${it.gain >= 0 ? "profit-pos" : "profit-neg"}" style="white-space:nowrap">${it.gain >= 0 ? "+" : "−"}${fmtEur(Math.abs(it.gain))}</b>
       </div>`).join("")}
-    <div class="price-note" style="margin-top:6px">Aktueller Wert minus Kaufpreis</div>
+    <div class="price-note" style="margin-top:6px">${esc(hinweis)}</div>
   </div>` : "";
 
-  $("stats-view").innerHTML = chips + chart + split + years + top + winners;
+  const winners = dealer
+    ? wertliste(tr("📈 Beste Wertsteigerungen"), data.winners || [],
+      tr("Aktueller Wert minus Kaufpreis")) : "";
+  const losers = dealer
+    ? wertliste(tr("📉 Größte Wertverluste"), data.losers || [],
+      tr("Kaufpreis minus aktueller Wert – solange ihr sie behaltet, "
+         + "ist das nur auf dem Papier")) : "";
+
+  $("stats-view").innerHTML = chips + chart + split + years + top
+    + winners + losers;
   wireYearChart();
 
   const lm = $("stats-view").querySelector("[data-lists-modal]");

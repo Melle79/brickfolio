@@ -1239,8 +1239,17 @@ Für alle sichtbar (📊 in der Tab-Leiste), lädt beim Öffnen automatisch:
   (Neu/Gebraucht), jeweils mit Stückzahl, Wert und Prozentanteil.
 - **Wert nach Erscheinungsjahr**: Balkendiagramm über alle Jahrgänge;
   das Spitzenjahr ist beschriftet, Antippen zeigt Details.
-- **Top 10 nach Wert** mit Bildern – und für Profis die **besten
-  Wertsteigerungen** (aktueller Wert minus Kaufpreis, Top 5).
+- **Top 10 nach Wert** mit Bildern.
+- Für Profis zwei Gegenstücke, jeweils die ersten fünf: **📈 Beste
+  Wertsteigerungen** und **📉 Größte Wertverluste** – beide aus
+  „aktueller Wert minus Kaufpreis", also nur für Artikel mit eingetragenem
+  Kaufpreis. Ein Tipp auf eine Zeile öffnet den Steckbrief.
+
+  > Die Verluste stehen bewusst getrennt. Vorher gab es nur die
+  > Steigerungen, und ein Verlust rutschte dort nur hinein, wenn es weniger
+  > als fünf Gewinner gab – ausgerechnet in einer gewachsenen Sammlung sah
+  > man sie also nie. Und solange ihr die Stücke behaltet, ist der Verlust
+  > ohnehin nur auf dem Papier.
 - **Einkauf auf Listen** *(Profi)*: die Summe aller eingetragenen
   Einkaufspreise. Auf der Übersicht zählen bewusst nur **offene** Listen –
   das ist das Geld, das gerade „unterwegs" ist. Ein Tipp öffnet ein Popup
