@@ -244,6 +244,34 @@ def admin_user(user: dict = Depends(current_user)) -> dict:
 
 # ---------------------------------------------------------------- Modelle
 
+def _benutzername(roh: str) -> str:
+    """Prüft einen Benutzernamen und gibt ihn aufgeräumt zurück.
+
+    Bisher stand an drei Stellen je eine eigene, halbe Fassung: Die
+    Längenprüfung von Pydantic zählt die **rohe** Eingabe, danach wurde
+    gestrippt. „  " kam damit als zwei Zeichen durch und landete als leerer
+    Name in der Datenbank – anmelden konnte sich damit niemand mehr, und in
+    der Benutzerverwaltung stand eine namenlose Zeile.
+
+    Steuerzeichen sind ebenfalls draußen: Ein Name mit Zeilenumbruch zerlegt
+    jede Liste, in der er auftaucht.
+
+    Doppelte Namen fängt die Datenbank ab (`UNIQUE … COLLATE NOCASE`), die
+    Aufrufer prüfen zusätzlich vorher, um eine verständliche Meldung zu geben.
+    """
+    name = (roh or "").strip()
+    if len(name) < 2:
+        raise HTTPException(400, "Der Benutzername braucht mindestens "
+                                 "zwei Zeichen")
+    if len(name) > 60:
+        raise HTTPException(400, "Der Benutzername ist zu lang "
+                                 "(höchstens 60 Zeichen)")
+    if any(ord(z) < 32 or ord(z) == 127 for z in name):
+        raise HTTPException(400, "Der Benutzername enthält Zeichen, die "
+                                 "nicht erlaubt sind")
+    return name
+
+
 class LoginBody(BaseModel):
     username: str = Field(min_length=1, max_length=60)
     password: str = Field(min_length=1, max_length=200)
@@ -322,23 +350,27 @@ class SetupBody(BaseModel):
 @app.post("/api/setup")
 def setup_create_admin(body: SetupBody):
     """Legt das erste Admin-Konto an – nur solange keine Benutzer existieren."""
-    username = body.username.strip()
-    if not username:
-        raise HTTPException(400, "Bitte einen Benutzernamen eingeben")
+    username = _benutzername(body.username)
     with core.db() as conn:
         count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
         if count > 0:
             raise HTTPException(409, "Die Einrichtung ist bereits "
                                      "abgeschlossen – bitte anmelden")
+        # Wer die Instanz einrichtet, ist ihr Eigner – und bekommt deshalb
+        # auch die Profi-Rolle. Vorher blieb er Standard-Benutzer: Kaufpreise,
+        # Einkaufslisten und Verkaufsliste waren ausgeblendet, und der Weg
+        # dorthin führte über die Benutzerverwaltung, wo er sich selbst zum
+        # Profi machen musste. Ein Einrichtungsassistent, nach dem man sich
+        # erst selbst freischaltet, ist keiner.
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, "
-            "created_at) VALUES (?, ?, 1, ?)",
+            "is_dealer, created_at) VALUES (?, ?, 1, 1, ?)",
             (username, core.hash_password(body.password),
              int(time.time())))
         uid = cur.lastrowid
     token = core.create_token(uid, username, True)
     return {"token": token, "username": username,
-            "is_admin": True, "is_dealer": False}
+            "is_admin": True, "is_dealer": True}
 
 
 @app.get("/api/me")
@@ -1701,16 +1733,16 @@ def list_users(user: dict = Depends(admin_user)):
 
 @app.post("/api/users")
 def create_user(body: UserBody, user: dict = Depends(admin_user)):
+    name = _benutzername(body.username)
     with core.db() as conn:
         exists = conn.execute(
-            "SELECT 1 FROM users WHERE username = ?", (body.username.strip(),)
-        ).fetchone()
+            "SELECT 1 FROM users WHERE username = ?", (name,)).fetchone()
         if exists:
             raise HTTPException(409, "Benutzername ist schon vergeben")
         conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at) "
             "VALUES (?, ?, ?, ?)",
-            (body.username.strip(), core.hash_password(body.password),
+            (name, core.hash_password(body.password),
              int(body.is_admin), int(time.time())),
         )
     return {"ok": True}
@@ -1753,9 +1785,7 @@ class UsernameBody(BaseModel):
 @app.post("/api/me/username")
 def change_own_username(body: UsernameBody,
                         user: dict = Depends(current_user)):
-    name = body.username.strip()
-    if len(name) < 2:
-        raise HTTPException(400, "Name ist zu kurz")
+    name = _benutzername(body.username)
     with core.db() as conn:
         row = conn.execute("SELECT id FROM users WHERE username = ?",
                            (name,)).fetchone()
@@ -3396,14 +3426,128 @@ def add_item_photo(body: ItemPhotoBody, user: dict = Depends(current_user)):
 
 @app.delete("/api/item_photos/{photo_id}")
 def delete_item_photo(photo_id: int, user: dict = Depends(current_user)):
-    """Foto vom Artikel lösen. Die Datei bleibt – sie kann an einem anderen
-    Artikel hängen, und ein verwaistes Bild schadet weniger als ein
-    verschwundenes."""
+    """Foto vom Artikel lösen.
+
+    Die Datei bleibt, solange **irgendein** Artikel noch auf sie zeigt – eine
+    Aufnahme kann an mehreren hängen, und einem anderen Artikel das Bild
+    wegzureißen wäre schlimmer als eine verwaiste Datei. Zeigt niemand mehr
+    darauf, ist sie durch nichts mehr erreichbar und kann weg.
+    """
     with core.db() as conn:
+        row = conn.execute("SELECT url FROM item_photos WHERE id = ?",
+                           (photo_id,)).fetchone()
         cur = conn.execute("DELETE FROM item_photos WHERE id = ?", (photo_id,))
     if cur.rowcount == 0:
         raise HTTPException(404, "Foto nicht gefunden")
-    return {"ok": True}
+    return {"ok": True, "file_removed": _datei_wegwerfen(row["url"])}
+
+
+_BILD_DA_CACHE: dict = {}
+BILD_DA_TTL_JA = 24 * 3600      # gibt es das Bild, ändert sich das kaum
+BILD_DA_TTL_NEIN = 10 * 60      # ein Aussetzer beim CDN soll nichts festnageln
+
+
+def _bild_fehlt_sicher(url: str) -> bool:
+    """Sagt der Server ausdrücklich, dass es dieses Bild **nicht** gibt?
+
+    Die ItemImage-Adresse wird aus Typ und Nummer zusammengebaut – das ist
+    eine Vermutung, keine Auskunft. Stimmt sie nicht (andere Bildkennung,
+    Artikel ohne Katalogbild), stand ein toter Verweis in der Galerie: ein
+    leerer Rahmen zum Durchblättern, den niemand erklären konnte.
+
+    Gefragt wird deshalb nach – aber die Beweislast liegt beim Weglassen.
+    Nur ein klares „gibt es nicht" (404/410) wirft die Adresse raus. Eine
+    Zeitüberschreitung, ein abgelehnter HEAD oder gar kein Netz heißen
+    *unbekannt*, und dann bleibt die Vermutung stehen: Ein Bild, das
+    vielleicht lädt, ist besser als eine leere Galerie, nur weil das CDN
+    gerade hustet.
+
+    Geprüft wird nur, was nicht ohnehin schon im Katalog liegt. Das Ergebnis
+    wird gemerkt, sonst fragt jede geöffnete Galerie erneut nach – ein „gibt
+    es nicht" allerdings deutlich kürzer als ein „gibt es".
+    """
+    if not url:
+        return False
+    try:
+        if os.path.isfile(os.path.join(_katalog_dir(), _katalog_name(url))):
+            return False                  # liegt hier, also gibt es das
+    except Exception:
+        pass
+    jetzt = time.time()
+    merk = _BILD_DA_CACHE.get(url)
+    if merk and jetzt - merk[0] < (BILD_DA_TTL_NEIN if merk[1]
+                                   else BILD_DA_TTL_JA):
+        return merk[1]
+    fehlt = False
+    try:
+        antwort = requests.head(url, timeout=4, allow_redirects=True)
+        # Nicht jeder Server mag HEAD. Wer es ablehnt, wird gefragt, ob er
+        # den Anfang der Datei herausrückt – gelesen wird davon nichts.
+        if antwort.status_code in (405, 501):
+            antwort = requests.get(url, timeout=4, stream=True)
+            antwort.close()
+        fehlt = antwort.status_code in (404, 410)
+    except requests.RequestException:
+        return False                      # unbekannt – nicht merken, nicht werfen
+    _BILD_DA_CACHE[url] = (jetzt, fehlt)
+    return fehlt
+
+
+def _datei_wegwerfen(url: str) -> bool:
+    """Löscht die hochgeladene Datei hinter `url` – aber nur, wenn kein
+    Artikel mehr auf sie zeigt. Dieselbe Aufnahme kann an mehreren Artikeln
+    hängen; wer das übersieht, reißt einem anderen Artikel das Bild weg."""
+    if not url or "/uploads/" not in url:
+        return False                      # kein eigenes Foto, nichts zu tun
+    with core.db() as conn:
+        noch_da = conn.execute(
+            "SELECT 1 FROM item_photos WHERE url = ? LIMIT 1", (url,)).fetchone()
+    if noch_da:
+        return False
+    name = url.rsplit("/", 1)[-1]
+    if not re.fullmatch(r"[0-9a-f]{32}\.jpg", name):
+        return False                      # nichts löschen, was wir nicht kennen
+    try:
+        os.remove(os.path.join(_uploads_dir(), name))
+        return True
+    except OSError:
+        return False
+
+
+def _fotos_aufraeumen(item_type: str, item_id: str) -> int:
+    """Fotos eines Artikels wegräumen, **wenn** ihn niemand mehr führt.
+
+    Aus dem Betrieb: Wer einen Artikel aus der Sammlung löschte, ließ seine
+    Fotos liegen – die Zeilen in `item_photos` **und** die Dateien. Sichtbar
+    war das nirgends, erreichbar auch nicht: Ohne Artikel gibt es keine
+    Galerie, in der sie auftauchen könnten. Nur der Platz auf der Platte
+    wuchs weiter.
+
+    Gelöscht wird trotzdem erst, wenn der Artikel **überall** weg ist. Das
+    Foto hängt am Artikel, nicht an der Zeile (Handbuch 5.6): Dieselbe Figur
+    kann ein zweites Mal in der Sammlung stehen – in anderem Zustand –, auf
+    der Wunschliste liegen oder auf einer Einkaufsliste warten. In all diesen
+    Fällen will man das Foto behalten.
+    """
+    with core.db() as conn:
+        for tabelle in ("collection", "wanted", "shopping_items"):
+            if conn.execute(
+                    f"SELECT 1 FROM {tabelle} WHERE item_id = ? "
+                    "AND item_type = ? LIMIT 1",
+                    (item_id, item_type)).fetchone():
+                return 0                  # es gibt ihn noch woanders
+        urls = [r["url"] for r in conn.execute(
+            "SELECT url FROM item_photos WHERE item_type = ? AND item_id = ?",
+            (item_type, item_id))]
+        if not urls:
+            return 0
+        conn.execute("DELETE FROM item_photos WHERE item_type = ? "
+                     "AND item_id = ?", (item_type, item_id))
+    # Erst nach dem Löschen der Zeilen fragen, ob die Datei noch gebraucht
+    # wird – sonst zählt man sich selbst mit.
+    for u in urls:
+        _datei_wegwerfen(u)
+    return len(urls)
 
 
 def _eigene_fotos(item_type: str, item_id: str) -> list:
@@ -3506,7 +3650,13 @@ def item_images(item_type: str, item_no: str,
         code = _BL_IMG_CODE.get(item_type.lower())
         if code:
             safe = requests.utils.quote(item_no)
-            add(f"https://img.bricklink.com/ItemImage/{code}/0/{safe}.png")
+            geraten = f"https://img.bricklink.com/ItemImage/{code}/0/{safe}.png"
+            # Die Adresse ist geraten – raus fliegt sie nur, wenn der Server
+            # ausdrücklich sagt, dass es das Bild nicht gibt. Steht ohnehin
+            # schon eine aus der API in der Liste, fasst `add` beide zusammen
+            # und der Abruf ist gespart.
+            if _img_key(geraten) in seen or not _bild_fehlt_sicher(geraten):
+                add(geraten)
     # Eigene Fotos ans Ende, nicht an den Anfang: Das Katalogbild zeigt die
     # Figur sauber freigestellt und bleibt das erste, was man sieht. Getrennt
     # ausgewiesen, damit die Galerie sie kennzeichnen und löschen lassen kann.
@@ -3854,6 +4004,9 @@ def kauf_loeschen(entry_id: int, kauf_id: int,
 @app.delete("/api/collection/{entry_id}")
 def delete_item(entry_id: int, user: dict = Depends(current_user)):
     with core.db() as conn:
+        row = conn.execute(
+            "SELECT item_id, item_type FROM collection WHERE id = ?",
+            (entry_id,)).fetchone()
         cur = conn.execute("DELETE FROM collection WHERE id = ?", (entry_id,))
         if cur.rowcount == 0:
             raise HTTPException(404, "Eintrag nicht gefunden")
@@ -3861,7 +4014,8 @@ def delete_item(entry_id: int, user: dict = Depends(current_user)):
         # und tauchte bei einer neu angelegten Zeile mit derselben Nummer
         # wieder auf.
         conn.execute("DELETE FROM purchases WHERE entry_id = ?", (entry_id,))
-    return {"ok": True}
+    fotos = _fotos_aufraeumen(row["item_type"], row["item_id"]) if row else 0
+    return {"ok": True, "photos_removed": fotos}
 
 
 # ---------------------------------------------------------------- Wunschliste
@@ -4017,10 +4171,14 @@ def refresh_wanted_prices(wanted_id: int, user: dict = Depends(current_user)):
 @app.delete("/api/wanted/{wanted_id}")
 def delete_wanted(wanted_id: int, user: dict = Depends(current_user)):
     with core.db() as conn:
+        row = conn.execute(
+            "SELECT item_id, item_type FROM wanted WHERE id = ?",
+            (wanted_id,)).fetchone()
         cur = conn.execute("DELETE FROM wanted WHERE id = ?", (wanted_id,))
         if cur.rowcount == 0:
             raise HTTPException(404, "Eintrag nicht gefunden")
-    return {"ok": True}
+    fotos = _fotos_aufraeumen(row["item_type"], row["item_id"]) if row else 0
+    return {"ok": True, "photos_removed": fotos}
 
 
 @app.post("/api/wanted/{wanted_id}/acquire")
@@ -5368,13 +5526,15 @@ def update_list_item(item_id: int, body: ItemPriceBody,
 @app.delete("/api/lists/items/{item_id}")
 def delete_list_item(item_id: int, user: dict = Depends(dealer_user)):
     with core.db() as conn:
-        row = conn.execute("SELECT list_id FROM shopping_items WHERE id = ?",
-                           (item_id,)).fetchone()
+        row = conn.execute(
+            "SELECT list_id, item_id AS nr, item_type FROM shopping_items "
+            "WHERE id = ?", (item_id,)).fetchone()
         if not row:
             raise HTTPException(404, "Artikel nicht gefunden")
         conn.execute("DELETE FROM shopping_items WHERE id = ?", (item_id,))
+    fotos = _fotos_aufraeumen(row["item_type"], row["nr"])
     _maybe_autoarchive(row["list_id"])
-    return {"ok": True}
+    return {"ok": True, "photos_removed": fotos}
 
 
 class OfferBody(BaseModel):

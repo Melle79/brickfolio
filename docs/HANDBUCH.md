@@ -140,8 +140,13 @@ alle Befehle per SSH mit `sudo` ausführen.
 ### 2.3 Erster Start: der Einrichtungsassistent
 
 Beim ersten Aufruf im Browser wählst du Benutzername und Passwort für das
-**Admin-Konto** – danach bist du angemeldet, und ein Assistent führt in
-sieben Schritten durch den Rest:
+**Admin-Konto**. Dieses erste Konto ist zugleich **Sammlerprofi** 💼 – wer
+die Instanz einrichtet, ist ihr Eigner und soll Kaufpreise, Einkaufslisten
+und Verkaufsliste von Anfang an sehen. Alle weiteren Benutzer starten als
+Standard-Konto; die Profi-Rolle vergibt der Admin in der Benutzerverwaltung.
+
+Danach bist du angemeldet, und ein Assistent führt in sieben Schritten durch
+den Rest:
 
 1. **Anzeigename** – der Name in Logo, Fenstertitel, **App-Symbol** und im
    Namen auf dem Startbildschirm des Handys („Svens Brickfolio")
@@ -652,6 +657,13 @@ gerade nicht.
 > **Die Fotos hängen am Artikel, nicht an der Zeile.** Wer dieselbe Figur
 > zweimal besitzt – einmal neu, einmal gebraucht –, sieht bei beiden
 > dieselben Fotos. Das ist Absicht: Es ist ja dieselbe Figur.
+>
+> Daraus folgt auch, wann sie **verschwinden**: Löscht ihr eine Zeile, bleiben
+> die Fotos, solange den Artikel noch irgendetwas führt – die zweite Zeile,
+> die Wunschliste, eine Einkaufsliste. Erst wenn er nirgends mehr auftaucht,
+> werden Fotos und Dateien mit entfernt. Sie wären danach ohnehin durch
+> nichts mehr erreichbar. Eine Aufnahme, die an mehreren Artikeln hängt,
+> bleibt liegen, solange einer davon sie noch braucht.
 
 > **Hochgeladen wird erst beim Anlegen.** Wer nur schaut, wer den Zustand
 > wieder abbricht oder die Listenauswahl schließt, lädt nichts hoch – sonst

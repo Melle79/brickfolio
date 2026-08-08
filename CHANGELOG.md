@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.23.0 – August 2026
+
+Vier Funde aus dem vollständigen Funktionstest, die lange liegen geblieben
+sind. Keiner davon hat je jemanden umgebracht – gemeinsam ist ihnen, dass
+sie **still** danebengehen.
+
+### Behoben
+- 👤 **„  " war ein gültiger Benutzername.** Die Längenprüfung zählte die
+  rohe Eingabe, abgeschnitten wurde erst danach – zwei Leerzeichen kamen
+  damit durch und landeten als **leerer** Name in der Datenbank. Anmelden
+  konnte sich damit niemand mehr, und in der Benutzerverwaltung stand eine
+  namenlose Zeile. Auch Steuerzeichen sind jetzt draußen: Ein Name mit
+  Zeilenumbruch zerlegt jede Liste, in der er auftaucht. Anlegen, Umbenennen
+  und Einrichten prüfen ab sofort **gleich** – vorher hatte jede Stelle ihre
+  eigene, halbe Fassung
+- 🖼️ **Gelöschte Artikel ließen ihre Fotos liegen** – die Einträge *und* die
+  Dateien. Sichtbar war das nirgends, erreichbar auch nicht: Ohne Artikel
+  gibt es keine Galerie, in der sie auftauchen könnten. Nur der Platz auf
+  der Platte wuchs. Aufgeräumt wird jetzt, sobald der Artikel **überall**
+  weg ist – Sammlung, Wunschliste, Einkaufslisten. Eine Aufnahme, die an
+  mehreren Artikeln hängt, bleibt liegen, solange einer sie noch braucht
+- 🔗 **Die Galerie zeigte Bilder, die es nicht gibt.** Findet die
+  BrickLink-API kein Bild, baut die App eine Adresse aus Typ und Nummer
+  zusammen – das ist eine Vermutung. Stimmte sie nicht, stand ein leerer
+  Rahmen zum Durchblättern in der Galerie. Jetzt wird nachgefragt, aber die
+  Beweislast liegt beim Weglassen: Nur ein klares „gibt es nicht" (404)
+  wirft die Adresse raus. Zeitüberschreitung oder gar kein Netz heißen
+  *unbekannt* – dann bleibt die Vermutung stehen, denn eine leere Galerie
+  wäre schlimmer als ein Bild, das vielleicht lädt
+
+### Geändert
+- 💼 **Wer die Instanz einrichtet, ist jetzt auch Sammlerprofi.** Vorher
+  bekam das erste Konto nur Admin-Rechte und sah damit weder Kaufpreise noch
+  Einkaufslisten oder Verkaufsliste – freischalten musste man sich in der
+  Benutzerverwaltung selbst. Ein Einrichtungsassistent, nach dem man sich
+  erst selbst freischaltet, ist keiner. Alle weiteren Benutzer starten
+  unverändert als Standard-Konto
+
 ## 2.22.0 – August 2026
 
 ### Behoben
