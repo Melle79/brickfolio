@@ -26,7 +26,21 @@ ssh -o BatchMode=yes -o ConnectTimeout=10 macmini \
   exit 0                     # kein Fehler: der Rechner darf mal aus sein
 }
 
-/usr/bin/rsync -a --itemize-changes -e 'ssh -o BatchMode=yes' \
-    "$QUELLE/" "$ZIEL/" | sed 's/^/  /'
+/usr/bin/rsync -a -e 'ssh -o BatchMode=yes' "$QUELLE/" "$ZIEL/"
+echo "Gedächtnis: $(ls -1 "$QUELLE" | wc -l | tr -d ' ') Notizen."
 
-echo "Gedächtnis abgeglichen ($(ls -1 "$QUELLE" | wc -l | tr -d ' ') Notizen)."
+# Die Gesprächsverläufe dazu. Sie sind **kein** fortsetzbarer Verlauf – eine
+# Sitzung auf dem Mac mini kann sie nicht als eigene Vorgeschichte laden.
+# Was sie sind: ein durchsuchbares Archiv. „Was haben wir am 9.8. zum Hub
+# besprochen?" lässt sich damit beantworten, und genau das fehlte bisher.
+#
+# rsync überträgt nur die Zuwächse; die Dateien wachsen, sie werden nicht
+# umgeschrieben. Der erste Lauf ist der teure.
+VERLAEUFE="$HOME/.claude/projects/-Users-sven-Downloads"
+ZIEL_V="macmini:.claude/projects/-Users-sven-Downloads"
+if [ -d "$VERLAEUFE" ]; then
+    /usr/bin/rsync -a --include='*.jsonl' --exclude='*/' --exclude='*' \
+        -e 'ssh -o BatchMode=yes' "$VERLAEUFE/" "$ZIEL_V/"
+    echo "Verläufe:  $(ls -1 "$VERLAEUFE"/*.jsonl 2>/dev/null | wc -l | tr -d ' ')" \
+         "Dateien, $(du -sh "$VERLAEUFE" 2>/dev/null | cut -f1)."
+fi
