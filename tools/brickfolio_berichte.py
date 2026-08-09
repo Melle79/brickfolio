@@ -125,6 +125,13 @@ def claude_fragen(neue: list, alte: list) -> str:
     # namenloser Hintergrundlauf untergeht. Ob die Handy-App ihn dadurch
     # anzeigt, ist ein Versuch – untitelt tat sie es jedenfalls nicht.
     name = "Brickfolio-Absturz " + datetime.datetime.now().strftime("%d.%m. %H:%M")
+    # Den Quellstand nachziehen, bevor jemand hineinsieht. Eine Einschätzung
+    # gegen zwei Wochen alten Code ist schlimmer als keine – sie erklärt
+    # Verhalten, das es längst nicht mehr gibt. `--ff-only`, damit ein
+    # versehentlich dort gemachter Stand nicht stillschweigend verschwindet.
+    if pathlib.Path(PROJEKT).is_dir():
+        subprocess.run(["git", "-C", PROJEKT, "pull", "--ff-only", "-q"],
+                       capture_output=True, text=True, timeout=120)
     try:
         r = subprocess.run([CLAUDE, "-n", name, "-p", "\n".join(teile)],
                            capture_output=True, text=True, timeout=600,
