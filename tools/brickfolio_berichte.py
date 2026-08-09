@@ -129,9 +129,25 @@ def claude_fragen(neue: list, alte: list) -> str:
     # gegen zwei Wochen alten Code ist schlimmer als keine – sie erklärt
     # Verhalten, das es längst nicht mehr gibt. `--ff-only`, damit ein
     # versehentlich dort gemachter Stand nicht stillschweigend verschwindet.
+    #
+    # Scheitert der Pull, wird **trotzdem** eingeschätzt – ein alter Stand ist
+    # besser als gar keine Einschätzung. Aber er wird protokolliert, samt dem
+    # Commit, gegen den gelesen wird.
+    #
+    # Aus dem Betrieb (09.08.2026): Genau das fehlte. Der Pull brach an einer
+    # untracked `CLAUDE.md` ab, das Ergebnis wurde nicht geprüft, und der Klon
+    # stand still zwei Commits zurück. Ausgerechnet die Zeilen gegen veralteten
+    # Code lasen selbst veralteten Code – und niemand hätte es gemerkt.
     if pathlib.Path(PROJEKT).is_dir():
-        subprocess.run(["git", "-C", PROJEKT, "pull", "--ff-only", "-q"],
-                       capture_output=True, text=True, timeout=120)
+        r = subprocess.run(["git", "-C", PROJEKT, "pull", "--ff-only"],
+                           capture_output=True, text=True, timeout=120)
+        if r.returncode != 0:
+            stand = subprocess.run(
+                ["git", "-C", PROJEKT, "log", "--oneline", "-1"],
+                capture_output=True, text=True, timeout=30).stdout.strip()
+            log("Pull fehlgeschlagen (%s) – Einschätzung gegen Stand %s"
+                % ((r.stderr or r.stdout).strip().splitlines()[-1][:120]
+                   if (r.stderr or r.stdout).strip() else "?", stand or "?"))
     try:
         r = subprocess.run([CLAUDE, "-n", name, "-p", "\n".join(teile)],
                            capture_output=True, text=True, timeout=600,
