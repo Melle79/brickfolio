@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.26.0 – August 2026
+
+### Neu
+- 🐞 **Fehlerbericht an den Hub senden.** Der Speicher-Verlauf liegt im
+  Browser und nirgends sonst – für die Absturzsuche fehlte damit genau das
+  Stück, das die Frage entscheidet: Stürzt es nur bei **einem** ab (dann
+  liegt es an dessen Gerät) oder bei **allen** (dann an der App)?
+
+  Der Knopf erscheint **nur nach einem erkannten Absturz**. Vor dem Senden
+  bekommt man wortwörtlich zu sehen, was rausgeht – derselbe Text wie bei
+  „Verlauf kopieren", aus derselben Funktion. Darin stehen Zeitpunkte,
+  Speicher, Elemente, Bilder, Version, Design, Ansicht, Gerät und die Namen
+  fremder Erweiterungen im Fenster; **keine** Artikel, Namen oder Preise.
+  Nach dem Senden wird der Verlauf auf dem Gerät geleert, damit derselbe
+  Absturz nicht dreimal ankommt.
+
+  **Eigener Token, nicht der des Tausch-Netzwerks.** Das ist keine
+  Ordnungsliebe: Von vier Instanzen im Haushalt sind zwei Mitglied im
+  Netzwerk. Hinge der Kanal am Mitgliedskonto, bliebe die Hälfte stumm – und
+  zwar ausgerechnet die, deren Berichte am meisten erklären würden.
+  Umgekehrt gibt niemand mit einem Bericht etwas über sein Tauschen preis,
+  und der Kanal lässt sich einzeln zurückziehen.
+
+  **Ohne hinterlegten Token** bietet derselbe Knopf den Bericht zum
+  Kopieren an, statt stumm zu bleiben.
+
+### Hub (1.5.0)
+- Neue Tabellen `report_tokens` und `crash_reports`, der Endpunkt
+  `POST /v1/crash` **vor** der Mitglieder-Anmeldung, und in der
+  Admin-Konsole eine Übersicht, die mehrere Berichte nebeneinanderlegt –
+  samt Auszählung, auf welchen Ansichten sich Abstürze häufen.
+
 ## 2.25.0 – August 2026
 
 ### Neu

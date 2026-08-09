@@ -8561,16 +8561,143 @@ function diagZeitraum(ms) {
   return min < 60 ? `${min} min` : `${Math.round(min / 60 * 10) / 10} h`;
 }
 
+/* Der Verlauf als Text – **eine** Quelle für Kopieren und Senden.
+   Zwei getrennte Fassungen hätten früher oder später auseinandergelebt,
+   und dann stimmte die Zusage „du siehst vorher, was rausgeht" nicht
+   mehr. */
+function diagText() {
+  const liste = diagLesen();
+  let bekannt = null;
+  const zeilen = liste.map((p, i) => {
+    const sprung = p.s && bekannt && p.s !== bekannt;
+    if (p.s) bekannt = p.s;
+    return [
+      new Date(p.t).toLocaleString(dateLocale()),
+      p.heap != null ? p.heap + " MB" : "–",
+      p.knoten + " Elemente", p.bilder + " Bilder",
+      p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
+      p.sch ? "🐢 schonend" : "",
+      p.g || "",
+      // Nur beim Start belegt: Woher kam er?
+      p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
+      // Der allererste Eintrag hat keinen Vorgänger, über dessen Ende sich
+      // etwas sagen ließe. Er stand trotzdem als „OHNE ABSCHIED" da – die
+      // Zählung überspringt ihn längst, die Anzeige tat es nicht.
+      i > 0 && p.g === "start" && !p.p && !p.disc
+        ? (p.sauber ? "ordentlich beendet"
+          : p.mehr ? "weiterer Tab" : "OHNE ABSCHIED") : "",
+      // Teilen sich mehrere Tabs den Verlauf, wechseln sich ihre Messwerte
+      // ab – dann gehören Speicher und Elemente nicht zu einer Sitzung.
+      p.tabs > 1 ? p.tabs + " Tabs offen" : "",
+      p.a ? "▸ " + p.a : "",
+      p.nav && p.g === "start" ? "nav=" + p.nav : "",
+      p.ger || "",
+      p.fremd ? "FREMD: " + p.fremd : "",
+      // Server-Neustart dort, wo seine Startzeit springt
+      sprung ? "SERVER NEU GESTARTET" : "",
+    ].filter(Boolean).join("  ·  ");
+  });
+  // Die Spur kommt mit: Sie sagt, was zwischen zwei Messwerten passiert
+  // ist – und das ist bei einem Absturz die eigentliche Frage.
+  const spuren = spurLesen().map((e) =>
+    new Date(e.t).toLocaleString(dateLocale()) + "  ·  " + e.w);
+  const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n")
+    + (spuren.length ? "\n\nSpur (was zuletzt passierte)\n"
+      + spuren.join("\n") : "");
+  return text;
+}
+
+/* ---------------------------------------------------- Fehlerbericht senden
+
+   Der Knopf erscheint **nur nach einem erkannten Absturz** – ohne Absturz
+   gibt es nichts zu melden. Vor dem Senden bekommt man wortwörtlich zu
+   sehen, was rausgeht: derselbe Text, den auch „Verlauf kopieren" liefert,
+   aus derselben Funktion. Danach wird der Verlauf hier gelöscht, damit
+   derselbe Absturz nicht dreimal ankommt.                                  */
+
+let diagAbsturzZahl = 0;        // was der letzte Bericht gezählt hat
+let diagAbsturzOrte = "";       // „scan (2×), collection"
+let diagKannSenden = null;      // null = noch nicht gefragt
+
+async function diagSendenMoeglich() {
+  if (diagKannSenden !== null) return diagKannSenden;
+  try {
+    const d = await api("/diag/report");
+    diagKannSenden = !!d.can_send;
+  } catch (_) {
+    // Ältere Instanz oder Endpunkt nicht erreichbar: dann eben kopieren.
+    diagKannSenden = false;
+  }
+  return diagKannSenden;
+}
+
+async function diagBerichtSenden() {
+  const text = diagText();
+  const senden = await diagSendenMoeglich();
+  const ov = $("figinfo-overlay");        // dasselbe Fenster wie der Steckbrief
+  const body = $("figinfo-body");
+  $("figinfo-head").textContent = senden
+    ? tr("🐞 Das geht an den Hub") : tr("🐞 Das ist dein Bericht");
+  body.innerHTML = `
+    <p class="search-hint">${esc(senden
+      ? tr("Genau dieser Text wird übertragen – nichts darüber hinaus. "
+           + "Keine Artikel, keine Namen, keine Preise.")
+      : tr("Diese Instanz hat keinen Berichts-Token hinterlegt. Kopier den "
+           + "Text und schick ihn dem, der die Instanz betreut."))}</p>
+    <pre class="code-block" style="max-height:40vh;overflow:auto;white-space:pre-wrap">${esc(text)}</pre>
+    <div class="fi-actions btn-grid">
+      <button class="mini-btn add" data-diag-ok>${esc(senden
+        ? tr("Senden") : tr("📋 Kopieren"))}</button>
+      <button class="mini-btn" data-diag-ab>${esc(tr("Abbrechen"))}</button>
+    </div>`;
+  ov.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  body.querySelector("[data-diag-ab]").addEventListener(
+    "click", steckbriefSchliessen);
+  const ok = body.querySelector("[data-diag-ok]");
+  ok.addEventListener("click", async () => {
+    ok.disabled = true;
+    if (!senden) {
+      await kopieren(text, tr("Bericht kopiert ✔"));
+      steckbriefSchliessen();
+      return;
+    }
+    try {
+      await api("/diag/report", { method: "POST", body: {
+        payload: text, crashes: diagAbsturzZahl, views: diagAbsturzOrte } });
+      // Erst nach dem Ja des Hubs löschen. Umgekehrt wäre der Bericht weg
+      // und nirgends angekommen.
+      localStorage.removeItem(DIAG_KEY);
+      localStorage.removeItem(DIAG_SPUR_KEY);
+      steckbriefSchliessen();
+      renderDiag();
+      toast(tr("Bericht gesendet – danke! 🐞"));
+    } catch (e) {
+      toast(e.message);
+      ok.disabled = false;
+    }
+  });
+}
+
 function renderDiag() {
   const box = $("diag-box");
   if (!box) return;
   const liste = diagLesen();
   const zus = $("diag-summary");
   const chart = $("diag-chart");
+  const sendeBox = $("diag-send-box");
   if (liste.length < 2) {
     zus.textContent = tr("Noch keine Messwerte – die erste Messung kommt "
       + "innerhalb einer Minute.");
     chart.innerHTML = "";
+    // Auch hier ausblenden, nicht nur weiter unten: Nach dem Senden ist der
+    // Verlauf leer, und der Weg führt genau durch diesen frühen Ausstieg.
+    // Der Knopf blieb sonst stehen und lud zum zweiten Senden desselben,
+    // nicht mehr vorhandenen Absturzes ein.
+    if (sendeBox) sendeBox.hidden = true;
+    diagAbsturzZahl = 0;
+    diagAbsturzOrte = "";
     return;
   }
   const heaps = liste.map((p) => p.heap).filter((x) => x != null);
@@ -8647,6 +8774,9 @@ function renderDiag() {
     teile.push(tr("⏱ Abgestürzt nach {liste} Minuten Laufzeit.",
       { liste: dauern.join(", ") }));
   }
+  // Der Sende-Knopf hängt daran: ohne Absturz gibt es nichts zu melden.
+  diagAbsturzZahl = abbruch;
+  if (sendeBox) sendeBox.hidden = !abbruch;
   if (abbruch) {
     teile.push(tr("⚠️ {n}× brach die Seite ab, ohne sich zu verabschieden – "
       + "das ist ein echter Absturz.", { n: abbruch }));
@@ -8656,9 +8786,10 @@ function renderDiag() {
     const wo = Object.entries(absturzAnsichten)
       .sort((a, b) => b[1] - a[1])
       .map(([name, n]) => n > 1 ? `${name} (${n}×)` : name);
+    diagAbsturzOrte = wo.join(", ");
     if (wo.length) {
       teile.push(tr("↳ zuletzt offen war dabei: {liste}",
-        { liste: wo.join(", ") }));
+        { liste: diagAbsturzOrte }));
     }
   }
   if (sauber) {
@@ -9706,46 +9837,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.disabled = false;
   });
   $("btn-diag-copy").addEventListener("click", async () => {
-    const liste = diagLesen();
-    let bekannt = null;
-    const zeilen = liste.map((p, i) => {
-      const sprung = p.s && bekannt && p.s !== bekannt;
-      if (p.s) bekannt = p.s;
-      return [
-        new Date(p.t).toLocaleString(dateLocale()),
-        p.heap != null ? p.heap + " MB" : "–",
-        p.knoten + " Elemente", p.bilder + " Bilder",
-        p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
-        p.sch ? "🐢 schonend" : "",
-        p.g || "",
-        // Nur beim Start belegt: Woher kam er?
-        p.disc ? "vom Browser weggeräumt" : "", p.p ? "geplant: " + p.p : "",
-        // Der allererste Eintrag hat keinen Vorgänger, über dessen Ende sich
-        // etwas sagen ließe. Er stand trotzdem als „OHNE ABSCHIED" da – die
-        // Zählung überspringt ihn längst, die Anzeige tat es nicht.
-        i > 0 && p.g === "start" && !p.p && !p.disc
-          ? (p.sauber ? "ordentlich beendet"
-            : p.mehr ? "weiterer Tab" : "OHNE ABSCHIED") : "",
-        // Teilen sich mehrere Tabs den Verlauf, wechseln sich ihre Messwerte
-        // ab – dann gehören Speicher und Elemente nicht zu einer Sitzung.
-        p.tabs > 1 ? p.tabs + " Tabs offen" : "",
-        p.a ? "▸ " + p.a : "",
-        p.nav && p.g === "start" ? "nav=" + p.nav : "",
-        p.ger || "",
-        p.fremd ? "FREMD: " + p.fremd : "",
-        // Server-Neustart dort, wo seine Startzeit springt
-        sprung ? "SERVER NEU GESTARTET" : "",
-      ].filter(Boolean).join("  ·  ");
-    });
-    // Die Spur kommt mit: Sie sagt, was zwischen zwei Messwerten passiert
-    // ist – und das ist bei einem Absturz die eigentliche Frage.
-    const spuren = spurLesen().map((e) =>
-      new Date(e.t).toLocaleString(dateLocale()) + "  ·  " + e.w);
-    const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n")
-      + (spuren.length ? "\n\nSpur (was zuletzt passierte)\n"
-        + spuren.join("\n") : "");
-    await kopieren(text, tr("Verlauf kopiert ✔"));
+    await kopieren(diagText(), tr("Verlauf kopiert ✔"));
   });
+  $("btn-diag-send").addEventListener("click", diagBerichtSenden);
   $("btn-diag-clear").addEventListener("click", () => {
     localStorage.removeItem(DIAG_KEY);
     localStorage.removeItem(DIAG_SPUR_KEY);

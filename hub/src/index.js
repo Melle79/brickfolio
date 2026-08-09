@@ -20,7 +20,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.4.0";
+const HUB_VERSION = "1.5.0";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -599,7 +599,96 @@ async function createReport(req, member, env) {
   return json({ ok: true }, 201);
 }
 
+/* ------------------------------------------------------- Fehlerberichte
+
+   Ein Kanal, der **neben** dem Tausch-Netzwerk steht: eigene Token, eigene
+   Tabellen, kein Mitgliedskonto nötig. Der Grund ist nicht Ordnungsliebe –
+   von vier Instanzen im Haushalt waren zwei Mitglied. Ein Kanal am
+   Mitglieds-Token hätte die Hälfte stumm gelassen, und zwar ausgerechnet
+   die, deren Berichte am meisten erklärt hätten.
+
+   Umgekehrt gilt: Wer hier etwas abliefert, gibt nichts über sein Tauschen
+   preis. Der Token kann nichts anderes als Berichte abgeben.               */
+
+async function reportToken(req, env) {
+  const tok = bearer(req);
+  if (!tok) return null;
+  const row = await env.DB.prepare(
+    "SELECT * FROM report_tokens WHERE token_hash = ?")
+    .bind(await sha256(tok)).first();
+  if (!row || row.revoked) return null;
+  env.DB.prepare("UPDATE report_tokens SET last_seen_at = ? WHERE id = ?")
+    .bind(now(), row.id).run();
+  return row;
+}
+
+async function createCrashReport(req, env) {
+  const tok = await reportToken(req, env);
+  if (!tok) return err(401, "Kein gültiger Berichts-Token");
+  const body = await req.json().catch(() => ({}));
+  // Der Verlauf, wie ihn der Absender vor dem Senden gesehen hat. Gekappt,
+  // damit ein kaputter oder böswilliger Absender die Datenbank nicht vollmüllt.
+  const payload = String(body.payload || "").slice(0, 200000);
+  if (!payload.trim()) return err(400, "payload fehlt");
+  await env.DB.prepare(
+    "INSERT INTO crash_reports (id, token_id, label, app_version, crashes, "
+    + "views, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(crypto.randomUUID(), tok.id, tok.label,
+      String(body.app_version || "").slice(0, 20),
+      Number(body.crashes) || 0,
+      String(body.views || "").slice(0, 200),
+      payload, now())
+    .run();
+  return json({ ok: true }, 201);
+}
+
 /* ------------------------------------------------------- Admin (Konsole) */
+
+async function adminCrashReports(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT id, label, app_version, crashes, views, created_at, "
+    + "length(payload) AS size FROM crash_reports "
+    + "ORDER BY created_at DESC LIMIT 200").all()).results || [];
+  // Nebeneinandergelegt: Auf welchen Ansichten häufen sich Abstürze, über
+  // alle Absender hinweg? Genau dafür ist der Kanal da.
+  const nachAnsicht = {};
+  for (const r of rows) {
+    for (const teil of String(r.views || "").split(",")) {
+      const m = teil.trim().match(/^([a-z]+)(?:\s*\((\d+)×\))?$/);
+      if (!m) continue;
+      nachAnsicht[m[1]] = (nachAnsicht[m[1]] || 0) + (Number(m[2]) || 1);
+    }
+  }
+  return json({ reports: rows, by_view: nachAnsicht });
+}
+
+async function adminCrashReport(env, id) {
+  const row = await env.DB.prepare(
+    "SELECT * FROM crash_reports WHERE id = ?").bind(id).first();
+  if (!row) return err(404, "Bericht nicht gefunden");
+  return json({ report: row });
+}
+
+async function adminReportTokens(req, env, method) {
+  if (method === "POST") {
+    const body = await req.json().catch(() => ({}));
+    const label = String(body.label || "").trim().slice(0, 60);
+    if (!label) return err(400, "label nötig");
+    const tok = randomToken("bfr");
+    await env.DB.prepare(
+      "INSERT INTO report_tokens (id, label, token_hash, created_at) "
+      + "VALUES (?, ?, ?, ?)")
+      .bind(crypto.randomUUID(), label, await sha256(tok), now()).run();
+    // Der Token steht **nur hier** im Klartext – danach nie wieder.
+    return json({ ok: true, label, token: tok }, 201);
+  }
+  const rows = (await env.DB.prepare(
+    "SELECT t.id, t.label, t.revoked, t.created_at, t.last_seen_at, "
+    + "(SELECT COUNT(*) FROM crash_reports c WHERE c.token_id = t.id) "
+    + "AS reports FROM report_tokens t ORDER BY t.label COLLATE NOCASE")
+    .all()).results || [];
+  return json({ tokens: rows });
+}
 
 async function adminOffers(env) {
   const rows = (await env.DB.prepare(
@@ -876,6 +965,17 @@ async function adminRoute(req, member, env, p, method) {
                                           ir[2] === "approve");
   }
 
+  if (p === "/v1/admin/crash_reports" && method === "GET") {
+    return await adminCrashReports(env);
+  }
+  const cm = p.match(/^\/v1\/admin\/crash_reports\/([^/]+)$/);
+  if (cm && method === "GET") {
+    return await adminCrashReport(env, decodeURIComponent(cm[1]));
+  }
+  if (p === "/v1/admin/report_tokens" && (method === "GET" || method === "POST")) {
+    return await adminReportTokens(req, env, method);
+  }
+
   if (p === "/v1/admin/overview" && method === "GET") return await adminOverview(env);
   if (p === "/v1/admin/members" && method === "GET") return await adminMembers(env);
   if (p === "/v1/admin/instances" && method === "GET") return await adminInstances(env);
@@ -913,6 +1013,14 @@ export default {
                       version: HUB_VERSION });
       }
       if (p === "/v1/register" && method === "POST") return await register(req, env);
+
+      // Fehlerberichte laufen **vor** der Mitglieder-Anmeldung durch: Sie
+      // brauchen kein Konto im Tausch-Netzwerk, sondern einen eigenen Token
+      // mit eigener Prüfung. Stünde der Endpunkt weiter unten, könnten nur
+      // Mitglieder berichten – und das war genau die Hälfte.
+      if (p === "/v1/crash" && method === "POST") {
+        return await createCrashReport(req, env);
+      }
 
       // ab hier: Auth nötig
       const member = await auth(req, env);

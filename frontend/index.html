@@ -934,6 +934,19 @@ sudo bash update.sh</pre>
           <button class="mini-btn" id="btn-diag-copy">📋 Verlauf kopieren</button>
           <button class="mini-btn danger" id="btn-diag-clear">Verlauf leeren</button>
         </div>
+        <!-- Erscheint nur, wenn ein Absturz erkannt wurde. Ohne Absturz gibt
+             es nichts zu melden, und ein dauerhaft sichtbarer Sende-Knopf
+             lädt nur dazu ein, ihn versehentlich zu drücken. -->
+        <div id="diag-send-box" hidden>
+          <p class="search-hint" style="margin:10px 0 6px"><b>🐞 Diesen
+            Absturz melden.</b> Der Bericht hilft, ein Muster zu erkennen –
+            gerade wenn er von mehreren Geräten kommt. Du siehst vorher
+            genau, was rausgeht.</p>
+          <div class="detail-row btn-grid">
+            <button class="mini-btn add" id="btn-diag-send">🐞 Fehlerbericht
+              an Hub senden</button>
+          </div>
+        </div>
       </div>
 
       <div id="push-box" class="push-box" hidden>

@@ -258,3 +258,31 @@ def last_publish() -> dict | None:
 def _now():
     import time
     return int(time.time())
+
+
+# --------------------------------------------------- Fehlerberichte
+
+# Eigener Token, eigener Weg. Bewusst **nicht** der Tausch-Token:
+#
+# 1. Nicht jede Instanz ist Mitglied im Tausch-Netzwerk. Von vier Instanzen
+#    im Haushalt waren es zwei – hinge der Kanal am Mitgliedskonto, bliebe
+#    die Hälfte stumm, und zwar ausgerechnet die aussagekräftige Hälfte.
+# 2. Wer einen Fehlerbericht schickt, gibt damit nichts über sein Tauschen
+#    preis. Dieser Token kann nichts anderes als Berichte abliefern.
+# 3. Er lässt sich einzeln zurückziehen, ohne jemandem das Tauschen zu nehmen.
+
+def report_enabled() -> bool:
+    return bool(core.get_setting("crash_token"))
+
+
+def send_crash_report(payload: str, app_version: str = "",
+                      crashes: int = 0, views: str = "") -> dict:
+    """Bericht abliefern. Wirft HubError, wenn es nicht klappt – die App
+    zeigt dann den Weg zum Kopieren, statt so zu tun, als sei es raus."""
+    token = core.get_setting("crash_token")
+    if not token:
+        raise HubError(400, "Für diese Instanz ist kein Berichts-Token "
+                            "hinterlegt")
+    return _request("POST", HUB_URL, "/v1/crash", token=token, body={
+        "payload": payload, "app_version": app_version,
+        "crashes": crashes, "views": views})

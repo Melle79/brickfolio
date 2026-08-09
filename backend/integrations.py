@@ -45,6 +45,10 @@ GEHEIME_SETTINGS = (
     "hub_token",              # Zugang dieser Instanz zum Tausch-Netzwerk
     "hub_privkey",            # entschlüsselt die Nachrichten anderer
     "hub_instance_secret",
+    "crash_token",            # liefert Fehlerberichte ab – bewusst getrennt
+                              # vom Tausch-Token: Wer berichtet, gibt damit
+                              # nichts über sein Tauschen preis, und der
+                              # Kanal lässt sich einzeln zurückziehen
     "vapid_private",          # signiert die Push-Meldungen dieser Instanz
 )
 

@@ -842,6 +842,56 @@ def report_error(body: ErrorReportBody, user: dict = Depends(current_user),
     return {"ok": True}
 
 
+class CrashReportBody(BaseModel):
+    # Der Verlauf, genau wie er vor dem Senden gezeigt wurde. Kein Objekt,
+    # sondern Text: Was der Absender liest, ist dann auch das, was ankommt.
+    payload: str = Field(min_length=1, max_length=200_000)
+    crashes: int = Field(default=0, ge=0, le=10_000)
+    views: str = Field(default="", max_length=200)
+
+
+@app.get("/api/diag/report")
+def crash_report_status(user: dict = Depends(current_user)):
+    """Kann diese Instanz Fehlerberichte abliefern?
+
+    Die Antwort entscheidet, was der Knopf im Verlauf tut: senden oder zum
+    Kopieren anbieten. Von vier Instanzen im Haushalt hatten zwei keinen
+    Hub-Zugang – ohne diese Auskunft wäre der Knopf dort tot gewesen, ohne
+    dass es jemandem auffällt.
+    """
+    return {"can_send": hub.report_enabled()}
+
+
+@app.post("/api/diag/report")
+def send_crash_report(body: CrashReportBody,
+                      user: dict = Depends(current_user)):
+    """Fehlerbericht an den Hub geben. Darf jeder, der die App benutzt –
+    es sind seine eigenen Messwerte, und er hat sie vorher gesehen."""
+    if not hub.report_enabled():
+        raise HTTPException(409, "Für diese Instanz ist kein Berichts-Token "
+                                 "hinterlegt")
+    try:
+        hub.send_crash_report(body.payload, app_version=core.APP_VERSION,
+                              crashes=body.crashes, views=body.views)
+    except hub.HubError as e:
+        raise HTTPException(502, f"Der Hub nahm den Bericht nicht an: "
+                                 f"{scrub(e.message)}")
+    except requests.RequestException:
+        raise HTTPException(502, "Der Hub ist nicht erreichbar")
+    return {"ok": True}
+
+
+class CrashTokenBody(BaseModel):
+    token: str = Field(default="", max_length=200)
+
+
+@app.post("/api/settings/crash_token")
+def set_crash_token(body: CrashTokenBody, user: dict = Depends(admin_user)):
+    """Berichts-Token hinterlegen. Leer bedeutet: Kanal wieder abschalten."""
+    core.set_setting("crash_token", body.token.strip())
+    return {"ok": True, "can_send": hub.report_enabled()}
+
+
 @app.get("/api/errors")
 def list_errors(user: dict = Depends(admin_user)):
     with core.db() as conn:
