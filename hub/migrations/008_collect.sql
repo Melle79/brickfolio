@@ -1,0 +1,11 @@
+-- Abholen und Wegräumen.
+--
+-- Der Hub soll ein **Postfach** sein, kein Archiv: Berichte kommen an, der
+-- Sammler auf dem Mac mini holt sie ab und bestätigt – danach sind sie hier
+-- weg. Sonst wächst die Datenbank still weiter, und die Frage „was liegt
+-- eigentlich alles beim Hub?" hätte irgendwann eine unangenehme Antwort.
+--
+-- Das Abholen braucht ein eigenes Recht, aber **kein** Hub-Admin-Konto. Sonst
+-- läge Svens Admin-Token auf dem Mac mini, und ein Sammler, der nur Berichte
+-- einsammeln soll, könnte damit das ganze Tausch-Netzwerk verwalten.
+ALTER TABLE report_tokens ADD COLUMN can_collect INTEGER NOT NULL DEFAULT 0;

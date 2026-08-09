@@ -20,7 +20,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.5.0";
+const HUB_VERSION = "1.6.0";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -642,6 +642,35 @@ async function createCrashReport(req, env) {
   return json({ ok: true }, 201);
 }
 
+/* Abholen und Bestätigen. Der Sammler auf dem Mac mini holt, was da ist,
+   und sagt danach Bescheid – erst dann wird gelöscht. Andersherum wäre ein
+   Bericht weg, sobald das Netz einmal mitten in der Übertragung abreißt.
+
+   Eigenes Recht (`can_collect`) statt eines Hub-Admin-Kontos: Ein Sammler,
+   der Berichte einsammeln soll, hat nichts im Tausch-Netzwerk zu suchen. */
+
+async function collectCrashReports(req, env) {
+  const tok = await reportToken(req, env);
+  if (!tok || !tok.can_collect) return err(401, "Kein Sammel-Token");
+  const rows = (await env.DB.prepare(
+    "SELECT id, label, app_version, crashes, views, payload, created_at "
+    + "FROM crash_reports ORDER BY created_at LIMIT 50").all()).results || [];
+  return json({ reports: rows });
+}
+
+async function ackCrashReports(req, env) {
+  const tok = await reportToken(req, env);
+  if (!tok || !tok.can_collect) return err(401, "Kein Sammel-Token");
+  const body = await req.json().catch(() => ({}));
+  const ids = Array.isArray(body.ids) ? body.ids.slice(0, 200) : [];
+  if (!ids.length) return json({ ok: true, deleted: 0 });
+  const platzhalter = ids.map(() => "?").join(",");
+  const res = await env.DB.prepare(
+    `DELETE FROM crash_reports WHERE id IN (${platzhalter})`)
+    .bind(...ids.map(String)).run();
+  return json({ ok: true, deleted: res.meta ? res.meta.changes : 0 });
+}
+
 /* ------------------------------------------------------- Admin (Konsole) */
 
 async function adminCrashReports(env) {
@@ -1020,6 +1049,14 @@ export default {
       // Mitglieder berichten – und das war genau die Hälfte.
       if (p === "/v1/crash" && method === "POST") {
         return await createCrashReport(req, env);
+      }
+      // Abholen gehört aus demselben Grund hierher: Der Sammler ist kein
+      // Mitglied im Tausch-Netzwerk und soll auch keines brauchen.
+      if (p === "/v1/collect" && method === "GET") {
+        return await collectCrashReports(req, env);
+      }
+      if (p === "/v1/collect/ack" && method === "POST") {
+        return await ackCrashReports(req, env);
       }
 
       // ab hier: Auth nötig
