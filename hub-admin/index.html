@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brickfolio-Hub – Verwaltung</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+
+<div class="head-stack">
+<header class="topbar">
+  <span class="brand">
+    <span class="studs" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <b>Hub-Verwaltung</b>
+  </span>
+  <span class="who" id="who" hidden></span>
+  <button class="icon-btn" id="btn-refresh" title="Alles neu laden" hidden>⟳</button>
+  <button class="btn ghost small" id="btn-logout" hidden>Abmelden</button>
+</header>
+
+<nav class="tabs" id="tabs" hidden>
+  <button class="tab" data-tab="overview">📊 Übersicht</button>
+  <button class="tab" data-tab="todo">⚑ Zu erledigen<span class="badge alert" id="b-todo" hidden></span></button>
+  <button class="tab" data-tab="crashes">🐞 Abstürze<span class="badge alert" id="b-crashes" hidden></span></button>
+  <button class="tab" data-tab="members">👥 Mitglieder<span class="badge" id="b-members" hidden></span></button>
+  <button class="tab" data-tab="instances">🏠 Instanzen<span class="badge" id="b-instances" hidden></span></button>
+  <button class="tab" data-tab="offers">📦 Angebote<span class="badge" id="b-offers" hidden></span></button>
+  <button class="tab" data-tab="invites">✉️ Einladungen<span class="badge" id="b-invites" hidden></span></button>
+</nav>
+</div>
+
+<!-- Anmeldung mit dem Hub-Admin-Token -->
+<section class="card login" id="login">
+  <span class="studs big" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  <h1>Anmelden</h1>
+  <p class="hint">Verwaltung des Brickfolio-Tausch-Netzwerks. Es wird der
+    <b>Admin-Token</b> deiner Hub-Mitgliedschaft gebraucht – er bleibt in
+    diesem Browser gespeichert und wird nur an den Hub geschickt.</p>
+  <label for="in-url">Hub-Adresse</label>
+  <input id="in-url" autocapitalize="none" spellcheck="false">
+  <label for="in-token">Admin-Token</label>
+  <input id="in-token" type="password" placeholder="bft_…" autocapitalize="none" spellcheck="false">
+  <label class="check"><input type="checkbox" id="in-remember" checked> Angemeldet bleiben</label>
+  <button class="btn primary" id="btn-login">Anmelden</button>
+  <p class="error" id="login-error" hidden></p>
+</section>
+
+<!-- Konsole -->
+<main id="app" hidden>
+
+  <section class="panel" id="panel-overview" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="card-head"><h2>Stand des Netzwerks</h2></div>
+      <div id="todo-summary"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-todo" hidden>
+    <div class="card">
+      <div class="card-head"><h2>⚑ Meldungen</h2></div>
+      <p class="note">Gemeldet wird von Mitglied zu Mitglied. Der Gesprächsverlauf
+        steht nur dann dabei, wenn die meldende Seite ihn freiwillig
+        offengelegt hat – der Hub kann Nachrichten nicht selbst lesen.</p>
+      <div id="reports"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>🙋 Anfragen nach mehr Einladungen</h2></div>
+      <div id="requests"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-crashes" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>🐞 Absturz-Einschätzungen</h2>
+        <div class="row"><small>Der Rohverlauf liegt auf dem Mac mini –
+          hier steht, was dabei herauskam.</small></div>
+      </div>
+      <div id="crashes"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-members" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>👥 Mitglieder</h2>
+        <div class="row">
+          <input id="mem-search" class="search" placeholder="Name suchen" maxlength="40">
+        </div>
+      </div>
+      <div id="members"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-instances" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>🏠 Instanzen</h2>
+        <div class="row">
+          <input id="inst-search" class="search" placeholder="Kennung suchen, z. B. BF-4K7P-2M9X-C"
+                 maxlength="20" autocapitalize="characters">
+        </div>
+      </div>
+      <p class="note">Eine Instanz ist die Installation bei jemandem zu Hause.
+        Sie bleibt dieselbe, auch wenn das Mitgliedskonto wechselt – daran lässt
+        sich jemand wiedererkennen und wieder freischalten.</p>
+      <div id="instances"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-offers" hidden>
+    <div class="card">
+      <div class="card-head">
+        <h2>📦 Angebote</h2>
+        <div class="row">
+          <button class="btn small danger" id="btn-del-orphans">Verwaiste löschen</button>
+        </div>
+      </div>
+      <div id="offers"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-invites" hidden>
+    <div class="card">
+      <div class="card-head"><h2>✉️ Neue Einladung</h2></div>
+      <div class="invite-form">
+        <input id="inv-note" placeholder="Notiz (z. B. für wen)" maxlength="120">
+        <input id="inv-days" type="number" min="0" max="365" placeholder="Tage gültig">
+        <button class="btn primary" id="btn-new-invite">Erstellen</button>
+      </div>
+      <div class="invite-out" id="invite-out" hidden>
+        <code id="invite-code"></code>
+        <button class="btn small" id="btn-copy-invite">Kopieren</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Vergebene Einladungen</h2></div>
+      <div id="invites"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot" id="foot" hidden><span id="ver"></span></footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js?v=5"></script>
+</body>
+</html>

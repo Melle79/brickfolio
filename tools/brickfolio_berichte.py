@@ -19,6 +19,7 @@ import sys
 import urllib.request
 
 HA = "http://192.168.0.222:8123"
+HUB = "https://brickfolio-hub.bfhub.workers.dev"
 TOKEN = (pathlib.Path.home() / ".ha_token").read_text().strip()
 SAMMLER = str(pathlib.Path.home() / "tools/sammle-fehlerberichte.sh")
 ABLAGE = pathlib.Path.home() / "brickfolio-berichte"
@@ -86,14 +87,28 @@ def vorgeschichte() -> list:
 
 def claude_fragen(neue: list, alte: list) -> str:
     """Claude auf die Berichte schauen lassen. Rein lesend: Der Auftrag ist
-    ausdrücklich, nichts zu ändern, sondern einzuschätzen."""
-    teile = ["Neue Brickfolio-Absturzberichte. Schau sie dir an und sag mir "
-             "in höchstens 5 Sätzen, was auffällt.\n",
+    ausdrücklich, nichts zu ändern, sondern einzuschätzen.
+
+    Die Antwort hat ein festes Kopfformat, weil daraus die Meldung aufs Handy
+    wird – und die muss **kurz** sein. Der erste Versuch schickte den ganzen
+    Fließtext, und die Benachrichtigung brach mitten im Wort ab.
+    """
+    teile = ["Neue Brickfolio-Absturzberichte. Schau sie dir an.\n",
              "WICHTIG: Nur lesen und einschätzen. Nichts ändern, nichts "
              "ausrollen, keine Dateien anfassen.\n",
+             "Antworte GENAU in diesem Format, die ersten beiden Zeilen "
+             "ohne alles Weitere:\n"
+             "PRIO: <1-5>\n"
+             "KURZ: <ein Satz, höchstens 120 Zeichen>\n"
+             "<danach die ausführliche Einschätzung, höchstens 10 Sätze>\n",
+             "PRIO bedeutet: 1 = Datenverlust oder alle betroffen, sofort "
+             "handeln. 2 = klares Muster, sollte diese Woche weg. "
+             "3 = auffällig, weiter beobachten. 4 = einzelner Fall ohne "
+             "Muster. 5 = unauffällig, nur zur Kenntnis.\n",
              "Wenn sich ein Muster zeigt (gleiche Ansicht, gleiche Version, "
              "gleiches Gerät), sag es deutlich. Wenn nicht, sag auch das – "
-             "eine erfundene Erklärung ist schlimmer als keine.\n",
+             "eine erfundene Erklärung ist schlimmer als keine, und bei "
+             "einem einzelnen Bericht ist PRIO 4 oder 5 fast immer richtig.\n",
              "Schließe mit einer Zeile 'VORSCHLAG: …' – was Sven tun "
              "sollte, oder 'VORSCHLAG: nichts, weiter beobachten'.\n"]
     for p in neue:
@@ -118,6 +133,64 @@ def claude_fragen(neue: list, alte: list) -> str:
     return ""
 
 
+def zerlegen(antwort: str) -> tuple:
+    """PRIO, KURZ und den Rest auseinandernehmen.
+
+    Hält sich Claude nicht ans Format, ist das kein Grund zu schweigen:
+    Dann gilt Priorität 5 und der erste Satz als Kurzfassung. Lieber eine
+    unscharfe Meldung als gar keine.
+    """
+    prio, kurz, rest = 5, "", antwort.strip()
+    zeilen = rest.splitlines()
+    ohne = []
+    for z in zeilen:
+        s = z.strip()
+        if s.upper().startswith("PRIO:") and prio == 5:
+            try:
+                p = int("".join(c for c in s[5:] if c.isdigit())[:1])
+                if 1 <= p <= 5:
+                    prio = p
+                continue
+            except ValueError:
+                pass
+        if s.upper().startswith("KURZ:") and not kurz:
+            kurz = s[5:].strip()[:120]
+            continue
+        ohne.append(z)
+    rest = "\n".join(ohne).strip()
+    if not kurz:
+        kurz = (rest.split(".")[0][:120] if rest else "")
+    return prio, kurz, rest
+
+
+def finding_hochladen(kopf: dict, prio: int, kurz: str, analyse: str) -> bool:
+    """Die Einschätzung in den Hub legen – dort sieht Sven sie in der
+    Konsole. Der Rohverlauf bleibt hier auf der Platte."""
+    token_datei = pathlib.Path.home() / ".brickfolio-collector-token"
+    try:
+        token = token_datei.read_text().strip()
+        req = urllib.request.Request(
+            HUB + "/v1/collect/finding", method="POST",
+            data=json.dumps({
+                "label": kopf.get("Absender", "?"),
+                "app_version": kopf.get("Version", ""),
+                "crashes": int(kopf.get("Abstürze", "0") or 0),
+                "views": kopf.get("Ansichten", ""),
+                "prio": prio, "kurz": kurz, "analyse": analyse,
+            }).encode(),
+            headers={"Authorization": "Bearer " + token,
+                     "Content-Type": "application/json",
+                     # Ohne eigene Kennung antwortet Cloudflare mit 403:
+                     # `Python-urllib/3.x` gilt dort als Bot. Der Hub selbst
+                     # hatte die Anfrage nie gesehen.
+                     "User-Agent": "Brickfolio-Sammler/1.0"})
+        urllib.request.urlopen(req, timeout=30).read()
+        return True
+    except Exception as e:
+        log("   Einschätzung nicht in den Hub bekommen: %s" % str(e)[:120])
+        return False
+
+
 def main():
     neue = abholen()
     if not neue:
@@ -125,22 +198,21 @@ def main():
 
     log("%d neue(r) Bericht(e): %s" % (len(neue), ", ".join(p.name for p in neue)))
     alte = vorgeschichte()
-    einschaetzung = claude_fragen(neue, alte)
+    prio, kurz, analyse = zerlegen(claude_fragen(neue, alte))
 
-    # Die Kurzfassung fürs Handy kommt aus den Kopfdaten – die steht auch
-    # dann, wenn Claude gerade nicht antwortet.
-    zeilen = []
-    for p in neue:
-        k = kopfdaten(p)
-        zeilen.append("%s: %s Absturz/Abstürze auf %s (v%s)" % (
-            k.get("Absender", "?"), k.get("Abstürze", "?"),
-            k.get("Ansichten", "–"), k.get("Version", "?")))
-    text = "\n".join(zeilen)
-    if einschaetzung:
-        text += "\n\n" + einschaetzung[:900]
-    else:
-        text += "\n\n(Keine Einschätzung – Claude war nicht erreichbar.)"
-    melde("🐞 Brickfolio: neuer Absturzbericht", text)
+    kopf = kopfdaten(neue[-1])
+    im_hub = finding_hochladen(kopf, prio, kurz, analyse)
+
+    # Aufs Handy kommt **nur** das Nötigste. Der erste Entwurf schickte die
+    # ganze Einschätzung, und die Benachrichtigung brach mitten im Wort ab.
+    wer = ", ".join(sorted({kopfdaten(p).get("Absender", "?") for p in neue}))
+    kopfzeile = "🐞 Prio %d · %s" % (prio, wer)
+    text = kurz or "%s Absturz/Abstürze auf %s (v%s)" % (
+        kopf.get("Abstürze", "?"), kopf.get("Ansichten", "–"),
+        kopf.get("Version", "?"))
+    text += "\n\n" + ("Ausführlich in der Hub-Konsole."
+                      if im_hub else "(Einschätzung liegt nur auf dem Mac mini.)")
+    melde(kopfzeile, text)
 
     # Weggelegt, damit der nächste Lauf sie als Vorgeschichte hat und nicht
     # noch einmal meldet.

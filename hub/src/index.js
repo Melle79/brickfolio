@@ -20,7 +20,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.6.0";
+const HUB_VERSION = "1.7.0";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -671,7 +671,50 @@ async function ackCrashReports(req, env) {
   return json({ ok: true, deleted: res.meta ? res.meta.changes : 0 });
 }
 
+/* Die Einschätzung zurücklegen. Der Rohbericht ist danach entbehrlich – was
+   Sven ansehen will, ist nicht die Zahlenkolonne, sondern was dabei
+   herauskam. Das bleibt hier, der Verlauf liegt auf dem Mac mini. */
+
+async function putFinding(req, env) {
+  const tok = await reportToken(req, env);
+  if (!tok || !tok.can_collect) return err(401, "Kein Sammel-Token");
+  const body = await req.json().catch(() => ({}));
+  const kurz = String(body.kurz || "").trim().slice(0, 300);
+  if (!kurz) return err(400, "kurz fehlt");
+  // Außerhalb von 1–5 landet alles auf 5: Eine erfundene Dringlichkeit ist
+  // schlimmer als eine niedrige.
+  let prio = Number(body.prio);
+  if (!Number.isInteger(prio) || prio < 1 || prio > 5) prio = 5;
+  await env.DB.prepare(
+    "INSERT INTO crash_findings (id, label, app_version, crashes, views, "
+    + "prio, kurz, analyse, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(crypto.randomUUID(), String(body.label || "?").slice(0, 60),
+      String(body.app_version || "").slice(0, 20),
+      Number(body.crashes) || 0, String(body.views || "").slice(0, 200),
+      prio, kurz, String(body.analyse || "").slice(0, 20000), now())
+    .run();
+  return json({ ok: true, prio }, 201);
+}
+
 /* ------------------------------------------------------- Admin (Konsole) */
+
+async function adminCrashFindings(req, env, method, id) {
+  if (method === "PATCH" && id) {
+    const body = await req.json().catch(() => ({}));
+    await env.DB.prepare("UPDATE crash_findings SET erledigt = ? WHERE id = ?")
+      .bind(body.erledigt ? 1 : 0, id).run();
+    return json({ ok: true });
+  }
+  if (method === "DELETE" && id) {
+    await env.DB.prepare("DELETE FROM crash_findings WHERE id = ?")
+      .bind(id).run();
+    return json({ ok: true });
+  }
+  const rows = (await env.DB.prepare(
+    "SELECT * FROM crash_findings ORDER BY erledigt, prio, created_at DESC "
+    + "LIMIT 200").all()).results || [];
+  return json({ findings: rows });
+}
 
 async function adminCrashReports(env) {
   const rows = (await env.DB.prepare(
@@ -994,6 +1037,13 @@ async function adminRoute(req, member, env, p, method) {
                                           ir[2] === "approve");
   }
 
+  if (p === "/v1/admin/crash_findings" && (method === "GET")) {
+    return await adminCrashFindings(req, env, method, null);
+  }
+  const fm = p.match(/^\/v1\/admin\/crash_findings\/([^/]+)$/);
+  if (fm && (method === "PATCH" || method === "DELETE")) {
+    return await adminCrashFindings(req, env, method, decodeURIComponent(fm[1]));
+  }
   if (p === "/v1/admin/crash_reports" && method === "GET") {
     return await adminCrashReports(env);
   }
@@ -1057,6 +1107,9 @@ export default {
       }
       if (p === "/v1/collect/ack" && method === "POST") {
         return await ackCrashReports(req, env);
+      }
+      if (p === "/v1/collect/finding" && method === "POST") {
+        return await putFinding(req, env);
       }
 
       // ab hier: Auth nötig
