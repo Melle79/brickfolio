@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.25.0 – August 2026
+
+### Neu
+- 🔎 **Der Speicher-Verlauf notiert die geöffnete Ansicht** an jedem
+  Messwert (`▸ scan`), und die Zusammenfassung sagt, wo die App bei einem
+  Absturz zuletzt stand: „↳ zuletzt offen war dabei: scan (2×)". Gezählt
+  wird die Ansicht des **letzten Messwerts davor** – der Starteintrag nennt
+  die nach dem Neustart und damit die falsche.
+
+  Anlass sind zwei bestätigte Abstürze (08. und 09.08.), die beide auf der
+  Scan-Ansicht passierten, bei identischem Zustand: 7 MB, 1007 Elemente,
+  6 Bilder. Ob das ein Muster ist oder Zufall, war nicht zu beantworten –
+  die Ansicht stand nur in der **Spur**, und die behält zwanzig Einträge und
+  ist nach einem Neustart weg. Jetzt zeigt der dritte und vierte Absturz es
+  von selbst.
+
 ## 2.24.0 – August 2026
 
 ### Neu

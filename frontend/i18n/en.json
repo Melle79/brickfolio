@@ -879,6 +879,7 @@
  "ℹ️ Quellen & Rechtliches": "ℹ️ Sources & legal",
  "↕️ Sortierung der Sammlung": "↕️ Collection sort order",
  "↩︎ Wiederherstellen": "↩︎ Restore",
+ "↳ zuletzt offen war dabei: {liste}": "↳ last open at the time: {liste}",
  "↻ {n}× hat die App selbst neu geladen (z. B. nach einem Server-Neustart) – das ist kein Absturz.": "↻ The app reloaded itself {n}× (for example after a server restart) – that is not a crash.",
  "⏱ Abgestürzt nach {liste} Minuten Laufzeit.": "⏱ Crashed after {liste} minutes of runtime.",
  "☆ Auf die Wunschliste": "☆ To the wishlist",

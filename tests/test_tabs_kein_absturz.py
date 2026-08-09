@@ -40,7 +40,10 @@ def test_die_tabkennung_liegt_im_sessionstorage():
     Kennung dort, hätten alle Tabs dieselbe und nichts wäre gewonnen."""
     j = js()
     anfang = j.index("function tabKennung")
-    stelle = j[anfang:j.index("function tabsLesen", anfang)]
+    # Nur der Rumpf dieser einen Funktion – bis zur schließenden Klammer am
+    # Zeilenanfang. Ein größeres Fenster fängt Nachbarcode mit ein, und ein
+    # Kommentar, der „localStorage" bloß *erwähnt*, ließ den Test umkippen.
+    stelle = j[anfang:j.index("\n}\n", anfang)]
     assert "sessionStorage.getItem(DIAG_TAB_KEY)" in stelle
     assert "sessionStorage.setItem(DIAG_TAB_KEY" in stelle
     assert "localStorage" not in stelle, "die Kennung wäre für alle Tabs gleich"

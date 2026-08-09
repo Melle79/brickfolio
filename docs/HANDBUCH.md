@@ -1943,7 +1943,10 @@ vier Fälle:
 | „vom Browser weggeräumt" | der Browser hat den Tab bei Speichermangel entsorgt |
 
 Dazu steht in jedem Messwert die **Startzeit des Servers**; springt sie, ist
-der Container neu gestartet.
+der Container neu gestartet. Ebenso die gerade **geöffnete Ansicht**
+(`▸ scan`). Kommt es zu Abstürzen, nennt die Zusammenfassung, wo die App
+dabei zuletzt stand – häufen sie sich auf einer Ansicht, steht das dort
+schwarz auf weiß.
 
 > **Mehrere Tabs teilen sich einen Verlauf.** Der Zettel liegt beim Browser,
 > nicht beim einzelnen Tab – zwei offene Fenster schreiben also abwechselnd

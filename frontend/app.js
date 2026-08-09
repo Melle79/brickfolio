@@ -8355,6 +8355,20 @@ function tabKennung() {
   } catch (_) { return null; }
 }
 
+const DIAG_ANSICHTEN = ["scan", "collection", "lists", "stats", "hub",
+  "settings"];
+
+/** Welche Ansicht ist gerade offen? Direkt aus dem Dokument gelesen und
+ *  nicht aus `localStorage`: Der Zettel dort gehört allen Tabs gemeinsam und
+ *  nennt die zuletzt *irgendwo* gewählte Ansicht, nicht die dieses Fensters. */
+function sichtbareAnsicht() {
+  for (const n of DIAG_ANSICHTEN) {
+    const el = document.getElementById("view-" + n);
+    if (el && !el.hidden) return n;
+  }
+  return null;                        // z. B. Anmeldung oder Einrichtung
+}
+
 function tabsLesen() {
   try { return JSON.parse(localStorage.getItem(DIAG_TABS_KEY) || "{}"); }
   catch (_) { return {}; }
@@ -8426,6 +8440,13 @@ function diagMessen(grund = "", geplant = null) {
   // Liste, und ihre Messwerte wechseln sich dann ab – ohne diese Zahl sähe
   // das nach wilden Sprüngen bei Speicher und Elementen aus.
   punkt.tab = tabKennung();
+  // Welche Ansicht war offen? Steht bisher nur in der Spur – und die behält
+  // zwanzig Einträge und ist nach einem Neustart weg. Über mehrere Abstürze
+  // hinweg ließ sich damit nichts vergleichen. Am Messpunkt bleibt sie
+  // erhalten, und der letzte Messwert vor einem Abbruch sagt dann, wo die
+  // App stand, als sie starb.
+  const ansicht = sichtbareAnsicht();
+  if (ansicht) punkt.a = ansicht;
   if (grund === "start") {
     // Woher kam dieser Start? `p` ist der Grund, falls die App selbst neu
     // geladen hat. `nav` unterscheidet Neuladen von normalem Aufruf, und
@@ -8558,6 +8579,10 @@ function renderDiag() {
   // Warum, steht am Eintrag – gewolltes Neuladen der App zählt nicht als
   // Absturz, sonst hätte jeder Server-Neustart wie einer ausgesehen.
   let abbruch = 0, geplant = 0, weggeraeumt = 0, serverNeu = 0, sauber = 0;
+  // Auf welcher Ansicht stand die App, als sie starb? Gezählt wird die des
+  // *letzten Messwerts davor* – der Starteintrag selbst nennt die Ansicht
+  // nach dem Neustart und damit die falsche.
+  const absturzAnsichten = {};
   // Verglichen wird mit der zuletzt *bekannten* Startzeit: Direkt nach einem
   // Neuladen steht sie noch nicht fest, der Eintrag hat dort kein `s`.
   let letzterServer = null;
@@ -8582,7 +8607,11 @@ function renderDiag() {
     // lange nach dem letzten Messwert war schon immer verdächtig harmlos.
     else if (p.nav === "navigate" && !p.tab && p.t - vor.t >= 90000) continue;
     // Abgestürzt heißt: die Seite war weg, ohne sich zu verabschieden.
-    else abbruch++;
+    else {
+      abbruch++;
+      const wo = vor && vor.a;
+      if (wo) absturzAnsichten[wo] = (absturzAnsichten[wo] || 0) + 1;
+    }
   }
   const teile = [
     tr("{n} Messwerte über {zeit}", { n: liste.length,
@@ -8621,6 +8650,16 @@ function renderDiag() {
   if (abbruch) {
     teile.push(tr("⚠️ {n}× brach die Seite ab, ohne sich zu verabschieden – "
       + "das ist ein echter Absturz.", { n: abbruch }));
+    // Häufen sie sich auf einer Ansicht? Genau die Frage ließ sich vorher
+    // nicht beantworten, weil die Ansicht nur in der Spur stand – und die
+    // ist nach einem Neustart weg.
+    const wo = Object.entries(absturzAnsichten)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, n]) => n > 1 ? `${name} (${n}×)` : name);
+    if (wo.length) {
+      teile.push(tr("↳ zuletzt offen war dabei: {liste}",
+        { liste: wo.join(", ") }));
+    }
   }
   if (sauber) {
     teile.push(tr("🔄 {n}× wurde die Seite von Hand neu geladen – kein "
@@ -9690,6 +9729,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Teilen sich mehrere Tabs den Verlauf, wechseln sich ihre Messwerte
         // ab – dann gehören Speicher und Elemente nicht zu einer Sitzung.
         p.tabs > 1 ? p.tabs + " Tabs offen" : "",
+        p.a ? "▸ " + p.a : "",
         p.nav && p.g === "start" ? "nav=" + p.nav : "",
         p.ger || "",
         p.fremd ? "FREMD: " + p.fremd : "",
