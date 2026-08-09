@@ -121,8 +121,12 @@ def claude_fragen(neue: list, alte: list) -> str:
             teile.append("%s | %s | Abstürze %s | Ansichten %s" % (
                 p.name, k.get("Absender", "?"), k.get("Abstürze", "?"),
                 k.get("Ansichten", "?")))
+    # Mit Namen, damit der Lauf in der Sitzungsliste auftaucht und nicht als
+    # namenloser Hintergrundlauf untergeht. Ob die Handy-App ihn dadurch
+    # anzeigt, ist ein Versuch – untitelt tat sie es jedenfalls nicht.
+    name = "Brickfolio-Absturz " + datetime.datetime.now().strftime("%d.%m. %H:%M")
     try:
-        r = subprocess.run([CLAUDE, "-p", "\n".join(teile)],
+        r = subprocess.run([CLAUDE, "-n", name, "-p", "\n".join(teile)],
                            capture_output=True, text=True, timeout=600,
                            cwd=PROJEKT if pathlib.Path(PROJEKT).is_dir() else None)
         if r.returncode == 0 and r.stdout.strip():
@@ -191,6 +195,40 @@ def finding_hochladen(kopf: dict, prio: int, kurz: str, analyse: str) -> bool:
         return False
 
 
+def lage_schreiben(neue: list, alte: list, prio: int, kurz: str, analyse: str):
+    """Eine Lagedatei, die den Einstieg trägt.
+
+    Der Wächter läuft ohne Gespräch – wer danach in der Claude-App eine
+    Sitzung öffnet, fängt sonst bei null an und muss sich alles erst wieder
+    zusammensuchen. Hier steht der Stand am Stück: was neu ist, wie es sich
+    zu den bisherigen fügt, was vorgeschlagen wurde.
+    """
+    zeilen = ["# Brickfolio – aktuelle Lage", "",
+              "Stand: " + datetime.datetime.now().strftime("%d.%m.%Y %H:%M"),
+              "", "## Neu in diesem Lauf", ""]
+    for p in neue:
+        k = kopfdaten(p)
+        zeilen.append("- **%s** · v%s · %s× Absturz · Ansicht %s · `%s`" % (
+            k.get("Absender", "?"), k.get("Version", "?"),
+            k.get("Abstürze", "?"), k.get("Ansichten", "–"), p.name))
+    zeilen += ["", "## Einschätzung", "",
+               "**Priorität %d** – %s" % (prio, kurz), "", analyse or "(keine)",
+               "", "## Bisher gesehen", ""]
+    if alte:
+        for p in alte[-12:]:
+            k = kopfdaten(p)
+            zeilen.append("- %s · %s× auf %s · v%s" % (
+                k.get("Absender", "?"), k.get("Abstürze", "?"),
+                k.get("Ansichten", "–"), k.get("Version", "?")))
+    else:
+        zeilen.append("- (nichts – das hier ist der erste Bericht)")
+    zeilen += ["", "---", "",
+               "Die Rohverläufe liegen in `~/brickfolio-berichte/gesehen/`.",
+               "Die Einschätzungen samt Priorität stehen in der Hub-Konsole",
+               "unter dem Reiter „🐞 Abstürze“.", ""]
+    (ABLAGE / "AKTUELL.md").write_text("\n".join(zeilen), encoding="utf-8")
+
+
 def main():
     neue = abholen()
     if not neue:
@@ -202,6 +240,7 @@ def main():
 
     kopf = kopfdaten(neue[-1])
     im_hub = finding_hochladen(kopf, prio, kurz, analyse)
+    lage_schreiben(neue, alte, prio, kurz, analyse)
 
     # Aufs Handy kommt **nur** das Nötigste. Der erste Entwurf schickte die
     # ganze Einschätzung, und die Benachrichtigung brach mitten im Wort ab.
@@ -210,8 +249,11 @@ def main():
     text = kurz or "%s Absturz/Abstürze auf %s (v%s)" % (
         kopf.get("Abstürze", "?"), kopf.get("Ansichten", "–"),
         kopf.get("Version", "?"))
-    text += "\n\n" + ("Ausführlich in der Hub-Konsole."
+    # Wohin man sich wenden kann, gehört in die Meldung. Ohne den Hinweis
+    # weiß man zwar, dass etwas ist, aber nicht, wo man weiterkommt.
+    text += "\n\n" + ("Details: Hub-Konsole → 🐞 Abstürze"
                       if im_hub else "(Einschätzung liegt nur auf dem Mac mini.)")
+    text += "\nBesprechen: Claude-App → Mac mini → „was liegt an?“"
     melde(kopfzeile, text)
 
     # Weggelegt, damit der nächste Lauf sie als Vorgeschichte hat und nicht
