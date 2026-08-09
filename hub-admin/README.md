@@ -1,16 +1,24 @@
-# Hub-Konsole – Absturz-Reiter
+# Hub-Konsole – wo sie wirklich liegt
 
-Die Konsole selbst liegt **nicht** in diesem Repo, sondern auf der NAS unter
-`/volume1/homes/Sven/brickfolio-hub-admin/`. Hier stehen nur die beiden
-Dateien, die für den Reiter „🐞 Abstürze" geändert wurden – damit die
-Änderung nachvollziehbar bleibt und bei einem Neuaufsetzen nicht verloren
-geht.
+Die Konsole hat ein **eigenes Repo**: `Melle79/brickfolio-hub-admin`.
+Betrieben wird sie auf der NAS unter
+`/volume1/homes/Sven/brickfolio-hub-admin/`, wo `update.sh` den Stand von
+dort holt und den Container neu baut.
 
-**Wichtig:** Die Dateien werden ins Image gebacken, nicht aus dem Ordner
-ausgeliefert. Nach einer Änderung ist ein Neubau nötig:
+Hier lagen bis zum 09.08.2026 Kopien von `app.js` und `index.html` – als
+Sicherheitsnetz angelegt, weil das eigene Repo damals nicht bekannt war.
+Sie sind wieder entfernt: Eine zweite Quelle für dieselbe Datei ist kein
+Netz, sondern eine Falle. Genau daran ist es schon einmal fast schiefgegangen
+– das Konsolen-Repo stand still, während auf der NAS von Hand weitergebaut
+wurde, und der nächste Lauf von `update.sh` hätte alles zurückgedreht.
 
-    cd /volume1/homes/Sven/brickfolio-hub-admin
-    sudo docker compose up -d --build
+**Änderungen gehören ins Konsolen-Repo**, nicht hierher:
 
-Ohne den Neubau ändert sich in der Konsole nichts, und man sucht den Fehler
-an der falschen Stelle.
+    gh repo clone Melle79/brickfolio-hub-admin
+    # ändern, commiten, pushen – dann auf der NAS:
+    cd /volume1/homes/Sven/brickfolio-hub-admin && sudo sh update.sh
+
+Zwei Dateien liegen bewusst **nur** auf der NAS und in keinem Repo:
+`htpasswd` (Passwort vor der Konsole) und `public/token.js` (hinterlegter
+Admin-Token). `update.sh` entpackt das Archiv mit `tar xz` über den Ordner –
+läge dort ein Platzhalter, überschriebe er die echte Passwortdatei.
