@@ -53,10 +53,33 @@ def test_eigene_elemente_werden_vorher_gemerkt():
     assert i < j, "wird erst nach der Diagnose gemerkt"
 
 
-def test_das_eigene_popup_gilt_nicht_als_fremd():
-    """`card-modal` hängt die App selbst nachträglich an <body> – ohne
-    Ausnahme meldete jeder geöffnete Artikel eine Erweiterung."""
-    assert 'el.id === "card-modal"' in block("fremdeSpuren")
+def test_eigenes_wird_am_element_gekennzeichnet():
+    """Was die App selbst nachträglich anhängt, gilt nicht als fremd.
+
+    Zuerst stand hier eine Ausnahme für `card-modal`. Sie hielt genau so
+    lange, bis das nächste Element dazukam: Finns Berichte vom 10.08.2026
+    meldeten in **jeder** Zeile `<div.ptr>` – die Zieh-Anzeige für
+    iOS-als-App, die nach dem Schnappschuss entsteht und stehen bleibt. Ein
+    Feld, das immer dasselbe sagt, sieht aus wie eine Antwort und ist keine.
+
+    Das Merkmal hängt jetzt am Element selbst, damit die Liste nicht mit
+    jedem neuen Overlay wachsen muss.
+    """
+    assert "function alsEigenMerken(" in js()
+    assert "el.dataset.eigen" in block("fremdeSpuren")
+
+
+def test_jedes_nachtraegliche_element_wird_gekennzeichnet():
+    """Die Regel ist nichts wert, wenn eine Stelle sie vergisst.
+
+    Neben `div.ptr` hängen Dialoge, der Kopier-Notausgang und die
+    Download-Verweise nachträglich an <body>. Jedes davon stünde während
+    einer Messung als fremd im Bericht.
+    """
+    offen = [z.strip() for z in js().splitlines()
+             if "document.body.appendChild(" in z
+             and "alsEigenMerken(" not in z]
+    assert not offen, "nicht als eigen gekennzeichnet:\n" + "\n".join(offen)
 
 
 def test_der_fund_steht_im_fehlerbericht():

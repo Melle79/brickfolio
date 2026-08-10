@@ -3964,7 +3964,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
         ${collCardDetails(item)}
       </div>
     </div>`;
-  document.body.appendChild(overlay);
+  document.body.appendChild(alsEigenMerken(overlay));
   const inner = overlay.querySelector(".modal-inner");
   inner.querySelector(".card-details").hidden = false;
 
@@ -4044,7 +4044,7 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
           </div>
         </div>
       </div>`;
-    document.body.appendChild(overlay);
+    document.body.appendChild(alsEigenMerken(overlay));
 
     const werte = () => {
       const d = {};
@@ -4138,7 +4138,7 @@ async function inZwischenablage(text) {
     feld.value = text;
     feld.style.cssText = "position:fixed;top:0;left:0;opacity:0;"
       + "pointer-events:none";
-    document.body.appendChild(feld);
+    document.body.appendChild(alsEigenMerken(feld));
     if (/iP(hone|ad|od)/.test(navigator.userAgent)) {
       feld.contentEditable = "true";
       const bereich = document.createRange();
@@ -4194,7 +4194,7 @@ function textZumMarkieren(text) {
         </div>
       </div>
     </div>`;
-  document.body.appendChild(overlay);
+  document.body.appendChild(alsEigenMerken(overlay));
   const feld = overlay.querySelector("#kopier-feld");
   feld.value = text;                     // nicht ins HTML: Text bleibt Text
   const zu = () => overlay.remove();
@@ -5129,7 +5129,7 @@ function openSuggestModal(it) {
         </div>
       </div>
     </div>`;
-  document.body.appendChild(overlay);
+  document.body.appendChild(alsEigenMerken(overlay));
   const inner = overlay.querySelector(".modal-inner");
 
   const done = () => closeCardModal();
@@ -6272,7 +6272,7 @@ function openListsPaidModal(breakdown, chipEl) {
         </div>
       </div>
     </div>`;
-  document.body.appendChild(overlay);
+  document.body.appendChild(alsEigenMerken(overlay));
   const inner = overlay.querySelector(".modal-inner");
 
   const recalc = () => {
@@ -6787,7 +6787,7 @@ function downloadCsv(filename, rows) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;
-  document.body.appendChild(a);
+  document.body.appendChild(alsEigenMerken(a));
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -6911,7 +6911,7 @@ async function downloadBackup() {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `brickfolio-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
+    document.body.appendChild(alsEigenMerken(a));
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -8189,6 +8189,25 @@ function eigeneKinderMerken() {
   eigeneKinder = new Set([...document.body.children]);
 }
 
+/* Was wir selbst nachträglich anhängen, als eigen kennzeichnen.
+
+   Der Schnappschuss oben kann nur kennen, was beim Laden schon dasteht.
+   Overlays, Dialoge und die Zieh-Anzeige entstehen später – und wurden
+   deshalb als fremd gemeldet. Aufgefallen an `<div.ptr>`: Die Zieh-Anzeige
+   für iOS-als-App entsteht nach dem Schnappschuss und bleibt stehen, stand
+   also in **jeder** Zeile von Finns Berichten. Ein Feld, das immer dasselbe
+   sagt, beantwortet die Frage nach fremdem Code nicht – es sieht nur aus
+   wie eine Antwort.
+
+   Merkmal am Element statt Ausnahmeliste nach id: Die Liste müsste mit
+   jedem neuen Overlay wachsen, und vergisst man eines, ist der nächste
+   Fehlalarm da. Das Merkmal überlebt außerdem Entfernen und erneutes
+   Anhängen und hält keine Verweise auf längst entfernte Knoten fest. */
+function alsEigenMerken(el) {
+  try { el.dataset.eigen = "1"; } catch (_) { /* Melden darf nie stören */ }
+  return el;
+}
+
 const FREMD_SCHEMA = /^(chrome|moz|safari|edge|opera)-extension:/i;
 
 function fremdeSpuren(hoechstens = 6) {
@@ -8205,7 +8224,7 @@ function fremdeSpuren(hoechstens = 6) {
       });
     if (eigeneKinder) {
       [...document.body.children].forEach((el) => {
-        if (eigeneKinder.has(el) || el.id === "card-modal") return;
+        if (eigeneKinder.has(el) || el.dataset.eigen) return;
         gefunden.add("<" + el.tagName.toLowerCase()
           + (el.id ? "#" + el.id : "")
           + (el.className && typeof el.className === "string"
@@ -9985,7 +10004,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = name;
-      document.body.appendChild(a);
+      document.body.appendChild(alsEigenMerken(a));
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -10213,7 +10232,7 @@ function zugZumNeuladen() {
   anzeige.className = "ptr";
   anzeige.setAttribute("aria-hidden", "true");
   anzeige.innerHTML = brickSpinner(tr("Neu laden"), 26);
-  document.body.appendChild(anzeige);
+  document.body.appendChild(alsEigenMerken(anzeige));
 
   let startY = null, startX = 0, zug = 0, laeuft = false;
 

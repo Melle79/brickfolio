@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.26.1 – August 2026
+
+### Behoben
+- 🔍 **Die Fremdsuche meldete die eigene Zieh-Anzeige.** In Finns Berichten
+  vom 10.08.2026 stand in **jeder** Zeile `FREMD: <div.ptr>` – und das war
+  die App selbst: die Anzeige für „nach unten ziehen = neu laden", die es
+  nur beim Start vom Startbildschirm gibt.
+
+  Der Grund ist eine Reihenfolge. Beim Laden merkt sich die App, was unter
+  `<body>` steht; alles, was später dazukommt, gilt als fremd. Die
+  Zieh-Anzeige entsteht danach und bleibt stehen.
+
+  Der Fehler ist nicht die falsche Zeile, sondern was sie verdeckt: Das Feld
+  soll die seit Wochen offene Frage beantworten, welcher fremde Code im
+  Renderer sitzt, wenn der Tab stirbt. Solange es in jeder Zeile dasselbe
+  meldet, liefert es null Information – und sieht dabei aus wie eine
+  Bestätigung.
+
+  Betroffen war nicht nur `div.ptr`: Dialoge, der Kopier-Notausgang und die
+  Download-Verweise hängen ebenfalls nachträglich an `<body>` und hätten
+  während einer Messung genauso im Bericht gestanden. Die bisherige Ausnahme
+  galt nur für das Artikel-Popup und hätte mit jedem neuen Overlay wachsen
+  müssen. Stattdessen kennzeichnet die App jetzt am Element selbst, was von
+  ihr stammt – ein Test hält fest, dass keine Stelle das vergisst.
+
 ## 2.26.0 – August 2026
 
 ### Neu
