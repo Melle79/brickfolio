@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.26.2 – August 2026
+
+### Behoben
+- 🔐 **CSP-Meldungen schleppten ein Access-JWT mit.** Aus Pauls Instanz kam
+  zweimal „Vom Browser blockiert: img-src →
+  flat-leaf-5175.cloudflareaccess.com". Kein Defekt: Die Instanz steht hinter
+  Cloudflare Access, und ist dessen Sitzung abgelaufen, antwortet Access auf
+  jede Anfrage – hier das Symbol der Web-App – mit einer Umleitung auf seine
+  Anmeldeseite. Die liegt auf einem anderen Host, und den erlaubt `img-src`
+  nicht.
+
+  In der Meldung stand bisher die vollständige Adresse samt einem JWT von
+  rund 1,5 kB. Das ist kein Zugangsschlüssel (ein `meta`-Token mit
+  `auth_status: NONE`, fünf Minuten gültig), es gehört aber weder ins
+  Fehlerprotokoll noch in einen Bericht an den Hub. Gespeichert wird jetzt
+  nur noch Herkunft und Pfad, ein `?…` zeigt an, dass gekürzt wurde.
+
+  Außerdem steht bei dieser einen Umleitung dabei, was sie bedeutet:
+  „(Access-Anmeldung abgelaufen)". Ohne den Hinweis sucht man den Fehler in
+  der App, obwohl niemand etwas zu reparieren hat.
+
 ## 2.26.1 – August 2026
 
 ### Behoben

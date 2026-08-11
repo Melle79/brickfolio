@@ -8273,9 +8273,25 @@ function initErrorReporting() {
   // einmal, nicht je Bild: Sonst stünden hundert gleiche Zeilen darin.
   document.addEventListener("securitypolicyviolation", (ev) => {
     let host = ev.blockedURI || "?";
-    try { host = new URL(ev.blockedURI).host || host; } catch (_) { /* inline */ }
-    reportError(`Vom Browser blockiert: ${ev.violatedDirective} → ${host}`,
-      ev.blockedURI, "csp");
+    let ziel = ev.blockedURI || "?";
+    try {
+      const u = new URL(ev.blockedURI);
+      host = u.host || host;
+      // **Ohne den Abfrageteil.** Steht eine Instanz hinter Cloudflare
+      // Access und ist die Sitzung abgelaufen, antwortet Access auf jede
+      // Anfrage mit einer Umleitung auf seine Anmeldeseite – mitsamt einem
+      // JWT von rund 1,5 kB in der Adresse. Das landete bisher wortwörtlich
+      // im Fehlerprotokoll, ginge beim Absenden eines Berichts an den Hub
+      // mit raus und sieht aus wie ein Zugangsschlüssel. (Es ist keiner: ein
+      // `meta`-Token mit `auth_status: NONE`, fünf Minuten gültig.) Für die
+      // Einordnung zählt, **wohin** es ging, nicht womit.
+      ziel = u.origin + u.pathname + (u.search ? "?…" : "");
+    } catch (_) { /* inline-Verstoß: hat keine Adresse, bleibt wie er ist */ }
+    // Diese eine Umleitung ist kein Defekt, sondern eine abgelaufene
+    // Anmeldung. Ohne den Hinweis sucht man den Fehler in der App.
+    const anmeldung = /\/cdn-cgi\/access\/login\//.test(ev.blockedURI || "");
+    reportError(`Vom Browser blockiert: ${ev.violatedDirective} → ${host}`
+      + (anmeldung ? " (Access-Anmeldung abgelaufen)" : ""), ziel, "csp");
   });
 
   // Ein Bild, das nicht lädt, wird **nicht** gemeldet.
