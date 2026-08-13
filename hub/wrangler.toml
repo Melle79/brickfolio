@@ -2,6 +2,16 @@ name = "brickfolio-hub"
 main = "src/index.js"
 compatibility_date = "2025-07-01"
 
+# Der Catch-all in `src/index.js` schreibt jede Ausnahme mit `console.error`
+# ins Protokoll und antwortet nach außen nur mit „interner Fehler" – bewusst,
+# damit kein Innenleben nach draußen geht. Ohne diesen Block behält Cloudflare
+# das Protokoll aber nicht: Sichtbar wäre es allein für den, der zufällig
+# gerade `wrangler tail` laufen lässt. Am 13.08.2026 ließ sich deshalb nicht
+# mehr klären, woran ein 500 lag – die Instanz meldete einen 502, und auf
+# beiden Seiten war der Grund weg.
+[observability]
+enabled = true
+
 # D1-Datenbank. Die database_id kommt aus `wrangler d1 create brickfolio-hub`
 # und wird hier eingetragen.
 [[d1_databases]]

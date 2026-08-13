@@ -87,18 +87,52 @@ def disconnect():
 
 # ------------------------------------------------------------------ HTTP
 
+def _stoerung(method, path, grund):
+    """Eine Störung des Hubs ins Container-Protokoll schreiben.
+
+    Am 13.08.2026 stand im Fehlerbericht zu einem 502 nur „Fehler 502" und
+    eine Cloudflare-Seite. Die App hatte ihre Erklärung dabei – „Hub: …" –,
+    aber der Rumpf ihrer Antwort wurde zwischen Instanz und Browser durch
+    eine Fehlerseite ersetzt. Der Hub wiederum antwortet nach außen nur mit
+    „interner Fehler". Beide Seiten kannten den Grund, keine behielt ihn,
+    und rückwirkend war er nicht mehr zu ermitteln.
+
+    Nur Störungen, keine Absagen: Ein 401 bei falschem Token und ein 403 für
+    einen gesperrten Zugang sind Antworten, keine Ausfälle – die gehören
+    nicht ins Protokoll.
+    """
+    print(f"[brickfolio] Hub {method} {path} – {grund}", flush=True)
+
+
 def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):
     headers = {"user-agent": USER_AGENT}
     if token:
         headers["authorization"] = "Bearer " + token
-    resp = requests.request(method, url.rstrip("/") + path, headers=headers,
-                            json=body, timeout=timeout)
+    try:
+        resp = requests.request(method, url.rstrip("/") + path,
+                                headers=headers, json=body, timeout=timeout)
+    except requests.RequestException as e:
+        # Der Typ trägt hier die Aussage: `ConnectTimeout` heißt „gar nicht
+        # erreicht", `ReadTimeout` heißt „angenommen und dann nichts mehr".
+        _stoerung(method, path, f"keine Antwort ({type(e).__name__}, "
+                                f"{timeout}s)")
+        raise
+    json_gelesen = True
     try:
         data = resp.json()
     except ValueError:
         data = {}
+        json_gelesen = False
     if not resp.ok:
         msg = data.get("error") if isinstance(data, dict) else None
+        if resp.status_code >= 500:
+            # Ob der Worker selbst geantwortet hat oder eine Fehlerseite von
+            # Cloudflare davor – daran hängt, wo man weitersucht. Sichtbar
+            # ist der Unterschied nur am Anfang der Antwort: Der Worker
+            # schickt JSON, Cloudflare eine HTML-Seite.
+            _stoerung(method, path, f"{resp.status_code} – " + (
+                msg if json_gelesen and msg
+                else "kein JSON: " + " ".join(resp.text.split())[:200]))
         if (isinstance(data, dict) and data.get("blocked")
                 and core.get_setting("hub_token")):
             # Der Zugang ist gesperrt, nicht kaputt. Das merken wir uns, damit

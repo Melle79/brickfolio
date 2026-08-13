@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.26.3 – August 2026
+
+### Behoben
+- 🔍 **Ein Hub-Ausfall hinterließ keine Spur.** Am 13.08.2026 um 10:03 meldete
+  eine Instanz einen 502 bei `POST /api/hub/trades/sync`. Im Fehlerbericht
+  stand davon nur „Fehler 502" und der Anfang einer Cloudflare-Fehlerseite.
+
+  Die App hatte ihre Erklärung durchaus dabei – „Hub: …" oder „Hub nicht
+  erreichbar" –, aber der Rumpf ihrer Antwort wurde zwischen Instanz und
+  Browser durch jene Fehlerseite ersetzt. Der Hub wiederum antwortet nach
+  außen grundsätzlich nur mit „interner Fehler", damit kein Innenleben nach
+  draußen geht, und seine eigenen Protokolle wurden nicht aufbewahrt.
+
+  Beide Seiten kannten den Grund, keine behielt ihn. Nicht einmal die Frage,
+  ob der Worker überhaupt zu Wort gekommen war oder etwas davor geantwortet
+  hatte, ließ sich nachträglich klären – und genau daran hängt, wo man
+  weitersucht.
+
+  Die Instanz schreibt eine Störung des Hubs jetzt selbst ins Protokoll:
+  Status, Grund und – wenn keine JSON-Antwort kam – den Anfang dessen, was
+  stattdessen kam. Bei einer Zeitüberschreitung steht dort die Art
+  (`ConnectTimeout` heißt „nie erreicht", `ReadTimeout` heißt „angenommen und
+  dann nichts mehr") samt Zeitgrenze. Abgelehnte Anfragen bleiben still: Ein
+  401 bei falschem Token ist eine Antwort, kein Ausfall. Der Instanz-Token
+  steht nie in der Zeile.
+
+  Im Hub ist zusätzlich die Aufbewahrung der Worker-Protokolle eingeschaltet
+  (`[observability]`). Ohne sie sah `console.error` nur, wer zufällig gerade
+  `wrangler tail` laufen ließ.
+
 ## 2.26.2 – August 2026
 
 ### Behoben
