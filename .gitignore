@@ -17,3 +17,9 @@ __pycache__/
 .DS_Store
 
 .claude/settings.local.json
+# Arbeitsbäume von Agentenläufen – ein vollständiger Abzug des Repos im Repo.
+# Auf dem Mac mini lag so einer mit 3,5 MB unversioniert herum. Genau diese
+# Sorte hat am 09.08.2026 schon einmal Ärger gemacht: Eine unversionierte
+# Datei im Klon wurde später mit commitet, und der Wächter zog wochenlang
+# nicht mehr nach.
+.claude/worktrees/
