@@ -22,7 +22,15 @@ services:
       - "8300:8300"
     volumes:
       - ./data:/data
-    # Alle Umgebungsvariablen sind optional – ohne sie führt die App beim
+    environment:
+      # **Nicht optional, auch wenn alles darunter es ist.** Ohne sie läuft
+      # der Container in UTC, und das merkt man erst spät: Zeitstempel in der
+      # Fehlerliste und in automatisch angelegten GitHub-Issues stehen dann
+      # zwei Stunden neben der eigenen Uhr (`main.py` rechnet sie mit
+      # `time.localtime` um). Am 19.08.2026 hat genau das die Suche nach
+      # einem Fehler ins falsche Zeitfenster geschickt.
+      TZ: "Europe/Berlin"
+    # Alle weiteren Umgebungsvariablen sind optional – ohne sie führt die App beim
     # ersten Aufruf durch die Ersteinrichtung im Browser (empfohlen) – die
     # API-Schlüssel fragt der Assistent dort gleich mit ab.
     # Zum Aktivieren: den environment-Block einkommentieren.
