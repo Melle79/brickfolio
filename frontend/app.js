@@ -8353,6 +8353,22 @@ const DIAG_KEY = "bf_mem";
 const DIAG_MAX = 240;                 // 240 × 30 s = zwei Stunden
 const DIAG_TAKT = 30000;
 const DIAG_WEG_KEY = "bf_weg";        // Zeitpunkt des ordentlichen Abschieds
+/* Lag die Seite im Hintergrund, als sie verschwand?
+
+   Das Betriebssystem wirft Apps im Hintergrund aus dem Speicher – auf iOS
+   ist das der Normalfall, kein Fehler. `pagehide` läuft dabei nicht, also
+   sah das für die Erkennung genauso aus wie ein Absturz.
+
+   Was das angerichtet hat: Von 23 Abbrüchen im Archiv lagen am 19.08.2026
+   **15** nach einer Pause von einer bis achtunddreißig Stunden. Sie haben
+   zwei Wochen lang eine Spur erzeugt, die es nicht gab – bis hin zu der
+   These, die Sammlung sei zu groß. Der eine Messwert, der sie trug, hatte
+   danach eine Lücke von 8,7 Stunden.
+
+   Der Vermerk wird beim Wechsel in den Hintergrund gesetzt und beim
+   Zurückkommen gelöscht. Liegt er beim Neustart noch da und fehlt der
+   Abschied, war die App im Hintergrund. */
+const DIAG_BG_KEY = "bf_bg";
 const DIAG_TAB_KEY = "bf_tab";        // Kennung dieses Tabs (sessionStorage)
 const DIAG_TABS_KEY = "bf_tabs";      // Lebenszeichen aller Tabs (localStorage)
 const TAB_FRIST = DIAG_TAKT * 3;      // 90 s ohne Lebenszeichen = Tab ist weg
@@ -8524,11 +8540,25 @@ function diagMessen(grund = "", geplant = null) {
       const vorher = diagLesen();
       const letzte = vorher.length ? vorher[vorher.length - 1].t : 0;
       if (weg && weg + 2000 >= letzte) punkt.sauber = 1;
+      // Lag die Seite im Hintergrund? Dann war es das Betriebssystem, nicht
+      // die App. **Ohne Zeitvergleich**, anders als beim Abschied oben: Der
+      // Vermerk verschwindet beim Zurückkommen, liegt er also noch da, war
+      // der Hintergrund das Letzte, was passiert ist. Auf dem Schreibtisch
+      // misst ein verborgener Tab gedrosselt weiter – ein Vergleich mit dem
+      // letzten Messwert ginge dort schief.
+      const hintergrund = Number(localStorage.getItem(DIAG_BG_KEY) || 0);
+      localStorage.removeItem(DIAG_BG_KEY);
+      if (!punkt.sauber && hintergrund) {
+        punkt.bg = 1;
+        // Wie lange lag sie dort? Fünf Minuten sind etwas anderes als
+        // achtunddreißig Stunden, auch wenn beides kein Absturz ist.
+        punkt.bgm = Math.max(0, Math.round((punkt.t - hintergrund) / 60000));
+      }
       // Kein Abschied, kein gewolltes Neuladen, nicht vom Browser weggeräumt,
-      // und daneben lief auch kein zweiter Tab: Dann ist die Sitzung
-      // abgebrochen. Danach holt die App zurück, was vorher offen war – der
-      // Absturz soll nichts mehr kosten.
-      absturzZuvor = !punkt.sauber && !punkt.mehr && !geplant
+      // nicht im Hintergrund, und daneben lief auch kein zweiter Tab: Dann ist
+      // die Sitzung abgebrochen. Danach holt die App zurück, was vorher offen
+      // war – der Absturz soll nichts mehr kosten.
+      absturzZuvor = !punkt.sauber && !punkt.bg && !punkt.mehr && !geplant
         && !document.wasDiscarded && vorher.length > 0;
     } catch (_) { /* egal */ }
   }
@@ -8587,6 +8617,10 @@ function diagStarten() {
     // Betriebssystem einen Tab wegräumt – wenn der letzte Eintrag vor einem
     // Absturz „weg" heißt, war es nicht die App, die zu groß war.
     spur(document.hidden ? "in den Hintergrund" : "wieder da");
+    try {
+      if (document.hidden) localStorage.setItem(DIAG_BG_KEY, String(Date.now()));
+      else localStorage.removeItem(DIAG_BG_KEY);
+    } catch (_) { /* Speicher voll – dann eben ohne */ }
     if (!document.hidden) diagMessen("zurück");
   });
 }
@@ -8620,7 +8654,13 @@ function diagText() {
       // Zählung überspringt ihn längst, die Anzeige tat es nicht.
       i > 0 && p.g === "start" && !p.p && !p.disc
         ? (p.sauber ? "ordentlich beendet"
-          : p.mehr ? "weiterer Tab" : "OHNE ABSCHIED") : "",
+          : p.mehr ? "weiterer Tab"
+          // Im Hintergrund geholt sieht im Verlauf genauso aus wie ein
+          // Absturz – bis auf diese Zeile. Sie ist der Unterschied zwischen
+          // „da stimmt etwas nicht" und „so arbeitet das Betriebssystem".
+          : p.bg ? "im Hintergrund weggeräumt"
+            + (p.bgm ? " (nach " + diagZeitraum(p.bgm * 60000) + ")" : "")
+          : "OHNE ABSCHIED") : "",
       // Teilen sich mehrere Tabs den Verlauf, wechseln sich ihre Messwerte
       // ab – dann gehören Speicher und Elemente nicht zu einer Sitzung.
       p.tabs > 1 ? p.tabs + " Tabs offen" : "",
@@ -8741,6 +8781,7 @@ function renderDiag() {
   // Warum, steht am Eintrag – gewolltes Neuladen der App zählt nicht als
   // Absturz, sonst hätte jeder Server-Neustart wie einer ausgesehen.
   let abbruch = 0, geplant = 0, weggeraeumt = 0, serverNeu = 0, sauber = 0;
+  let imHintergrund = 0, bgDauern = [];
   // Auf welcher Ansicht stand die App, als sie starb? Gezählt wird die des
   // *letzten Messwerts davor* – der Starteintrag selbst nennt die Ansicht
   // nach dem Neustart und damit die falsche.
@@ -8761,6 +8802,9 @@ function renderDiag() {
     if (p.disc) weggeraeumt++;
     else if (p.p) geplant++;
     else if (p.sauber) sauber++;       // von Hand neu geladen o. Ä.
+    // Im Hintergrund vom Betriebssystem geholt. Zählt getrennt, nicht als
+    // Absturz – sonst steht hier wieder eine Spur, die es nicht gibt.
+    else if (p.bg) { imHintergrund++; if (p.bgm) bgDauern.push(p.bgm); }
     // Ein zweiter Tab neben einem laufenden ersten ist kein Absturz. Er hat
     // keinen eigenen Abschiedszettel, weil der allen Tabs gemeinsam gehört –
     // früher zählte er deshalb als Abbruch und blähte die Statistik auf.
@@ -8797,7 +8841,10 @@ function renderDiag() {
   const dauern = [];
   for (let i = 1; i < liste.length; i++) {
     const p2 = liste[i];
-    if (p2.g !== "start" || p2.p || p2.disc || p2.sauber) continue;
+    // `bg` gehört hier genauso ausgenommen wie der Rest: Eine Sitzung, die
+    // achtunddreißig Stunden im Hintergrund lag, verzerrt jede Aussage über
+    // die Laufzeit vor einem Absturz.
+    if (p2.g !== "start" || p2.p || p2.disc || p2.sauber || p2.bg) continue;
     for (let j = i - 1; j >= 0; j--) {
       if (liste[j].g === "start") {
         dauern.push(Math.round((p2.t - liste[j].t) / 60000));
@@ -8834,6 +8881,16 @@ function renderDiag() {
   if (weggeraeumt) {
     teile.push(tr("🧹 {n}× hat der Browser den Tab weggeräumt – das tut er "
       + "bei Speichermangel.", { n: weggeraeumt }));
+  }
+  if (imHintergrund) {
+    // Die längste Liegezeit statt eines Durchschnitts: Sie sagt, ob es um
+    // Minuten oder um Tage ging, und ein Mittelwert aus beidem sagt nichts.
+    const laengste = bgDauern.length ? Math.max(...bgDauern) : 0;
+    teile.push(tr("💤 {n}× lag die App im Hintergrund, als sie verschwand – "
+      + "das holt sich das Betriebssystem zurück, kein Absturz.",
+      { n: imHintergrund })
+      + (laengste ? " " + tr("Am längsten: {zeit}.",
+        { zeit: diagZeitraum(laengste * 60000) }) : ""));
   }
   if (geplant) {
     teile.push(tr("↻ {n}× hat die App selbst neu geladen (z. B. nach einem "

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.27.0 – August 2026
+
+### Behoben
+- 💤 **Die Absturzerkennung zählte das Betriebssystem mit.** Wirft iOS eine
+  App im Hintergrund aus dem Speicher, läuft `pagehide` nicht – für die
+  Erkennung sah das aus wie ein Abbruch. Das war nicht bloß unsauber, es hat
+  zwei Wochen Suche in die falsche Richtung geschickt.
+
+  Von 23 Abbrüchen im Archiv lagen **15** nach einer Pause von einer bis
+  achtunddreißig Stunden. Aus einem davon – 15.351 Elemente am 15.08., danach
+  8,7 Stunden Lücke – entstand die These, die Sammlung sei zu groß. Sie war
+  es nicht: Am 19.08. hat ein iPhone die Sammlung mit 664 Bildern
+  durchgescrollt und lief weiter, ein Mac mit 886 Bildern ebenso. Von den
+  acht verbleibenden echten Abbrüchen kamen sieben in Sitzungen vor, die nie
+  über 2.000 Elemente hinauskamen.
+
+  Die App merkt sich jetzt beim Wechsel in den Hintergrund einen Vermerk und
+  löscht ihn beim Zurückkommen. Fehlt der Abschied und liegt der Vermerk noch
+  da, heißt es „im Hintergrund weggeräumt" und zählt in einer eigenen Zeile –
+  mitsamt der Liegezeit. Die Fälle verschwinden also nicht, sie stehen nur
+  nicht mehr in derselben Spalte wie die echten Abstürze.
+
+  **Ohne Zeitvergleich**, anders als beim Abschiedszettel: Auf dem
+  Schreibtisch misst ein verborgener Tab gedrosselt weiter, sein letzter
+  Messwert ist dann jünger als der Vermerk. Auch die Auswertung „wie lange
+  lief eine Sitzung vor dem Abbruch" lässt diese Fälle jetzt aus – 38 Stunden
+  im Hintergrund verzerren dort jede Aussage.
+
 ## 2.26.3 – August 2026
 
 ### Behoben
