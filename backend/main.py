@@ -4014,6 +4014,69 @@ def suggest_collection(q: str = "", item_type: str = "",
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
 
+# Wie viele übersetzte Begriffe im Katalog wirklich versucht werden.
+#
+# In der Sammlung ist ein Begriff mehr fast gratis – die Einträge liegen
+# schon im Speicher. Hier geht jeder Versuch als eigene Anfrage zu
+# Rebrickable: mehr Wartezeit für den Tippenden und mehr Last auf einem
+# fremden Kontingent. Zwei decken den Fall ab, für den das hier gebaut wurde
+# („roter c3 po" → `C-3PO`, dann `C-3PO red`), ohne aus einer Suche fünf zu
+# machen.
+KATALOG_KI_VERSUCHE = 2
+
+
+@app.get("/api/search/suggest")
+def suggest_catalog(q: str = "", item_type: str = "minifig",
+                    user: dict = Depends(current_user)):
+    """Zweiter Versuch für eine Katalogsuche, die nichts gefunden hat.
+
+    Das Gegenstück zu `/api/collection/suggest`, und aus demselben Grund:
+    Rebrickable kennt nur englische Namen. Wer beim manuellen Erfassen
+    „Roter c3po" eintippt, bekam eine leere Liste – dabei ist genau das der
+    Ort, an dem eine Übersetzung am meisten hilft. In der Sammlung sucht man
+    etwas, das man schon hat und notfalls durchblättern kann; im Katalog
+    sucht man etwas Unbekanntes, und ohne Treffer hat man gar nichts.
+
+    Gemeldet wird nur der Begriff, der wirklich etwas gefunden hat – ein vom
+    Modell erfundener bleibt unsichtbar, weil er im Katalog nichts trifft.
+    """
+    if not q.strip() or not integrations.ollama_enabled():
+        return {"begriffe": [], "items": []}
+    if not integrations.rebrickable_enabled():
+        return {"begriffe": [], "items": []}
+    begriffe = integrations.suchbegriffe(q)
+    if not begriffe:
+        return {"begriffe": [], "items": []}
+    # Dieselbe Sortierung wie in der Sammlung: der genaueste Begriff zuerst,
+    # nach Wortzahl und ausdrücklich nicht nach Länge. Sonst liefe wieder
+    # `Minifigure` vor `Knight`.
+    begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
+    gesehen: set = set()
+    items: list = []
+    treffer: list = []
+    for begriff in begriffe[:KATALOG_KI_VERSUCHE]:
+        try:
+            gefunden = integrations.search_catalog(begriff, item_type, page=1)
+        except (requests.RequestException, ValueError):
+            # Ein Fehlschlag beim Zusatzversuch darf die Suche nicht mit
+            # einem Fehler beenden – ohne KI stand hier vorher schlicht eine
+            # leere Liste, und dabei soll es bleiben.
+            continue
+        neu = 0
+        for eintrag in gefunden.get("items", []):
+            kennung = (eintrag.get("item_id"), eintrag.get("item_type"))
+            if kennung in gesehen:
+                continue
+            gesehen.add(kennung)
+            items.append(eintrag)
+            neu += 1
+        if neu:
+            treffer.append(begriff)
+        if len(items) >= SUGGEST_MAX:
+            break
+    return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
+
+
 @app.post("/api/collection")
 def add_item(body: AddItemBody, user: dict = Depends(current_user)):
     # Vor allem anderen: Nummer und Name auf den Katalogstand bringen. Damit

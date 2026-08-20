@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.29.0 – August 2026
+
+### Neu
+- 🤖 **Die KI-Suche gilt jetzt auch für den Katalog.** 2.28.0 hat die
+  Übersetzung an die Sammlungssuche gehängt. Ausprobiert wird sie aber
+  zuerst dort, wo man beim Erfassen tippt: im Feld **Name** unter
+  „✏️ Manuell erfassen". Das sucht im Katalog, und dort gab es die
+  Übersetzung nicht – „Roter c3po" blieb leer, und von außen sah das aus,
+  als funktioniere die KI nicht.
+
+  Dabei ist der Katalog der Ort, an dem sie am meisten hilft: In der eigenen
+  Sammlung kann man notfalls blättern, im Katalog sucht man etwas
+  Unbekanntes. Ohne Treffer hat man gar nichts.
+
+  Findet der Katalog nichts, übersetzt die App und fragt noch einmal nach –
+  wie in der Sammlung mit dem genauesten Begriff zuerst, sortiert nach
+  Wortzahl und ausdrücklich nicht nach Länge (daran hing 2.28.1). Über den
+  Treffern steht, wonach zusätzlich gesucht wurde.
+
+  **Höchstens zwei Versuche.** In der Sammlung kostet ein Begriff mehr fast
+  nichts, die Einträge liegen im Speicher. Hier ist jeder Versuch eine
+  eigene Anfrage an Rebrickable – mehr Wartezeit beim Tippen und mehr Last
+  auf einem fremden Kontingent. Zwei decken den Anlassfall ab („roter c3 po"
+  → `C-3PO`, dann `C-3PO red`), ohne aus einer Suche fünf zu machen.
+
+  Unverändert gilt: Das Modell liefert **Suchbegriffe, niemals Ergebnisse**.
+  Jede Zeile kommt weiter von Rebrickable, ein erfundener Begriff findet
+  dort nichts. Antwortet der Katalog beim Zusatzversuch nicht, bleibt es bei
+  der leeren Liste – ein Fehlschlag der Zugabe ist kein Fehler der Suche.
+
 ## 2.28.1 – August 2026
 
 ### Behoben

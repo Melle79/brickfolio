@@ -5008,10 +5008,42 @@ async function runCatalogSearch() {
     renderSuggestions(suggestState.items,
       { count: suggestState.count, hasMore: suggestState.hasMore });
     hint.hidden = true;
+    // Nichts gefunden? Dann übersetzen lassen und noch einmal fragen.
+    // Genau hier hilft es am meisten: In der Sammlung kann man notfalls
+    // blättern, im Katalog sucht man Unbekanntes – ohne Treffer hat man
+    // gar nichts. „Roter c3po" war der Anlass.
+    if (!suggestState.items.length) await katalogKiVersuch(q, type, seq, hint);
   } catch (e) {
     if (seq !== searchSeq) return;
     hint.textContent = e.message;
   }
+}
+
+async function katalogKiVersuch(q, type, seq, hint) {
+  if (!state.kiSuche) return;
+  hint.textContent = tr("Nichts gefunden – die lokale KI übersetzt …");
+  hint.hidden = false;
+  let daten;
+  try {
+    daten = await api(`/search/suggest?q=${encodeURIComponent(q)}`
+      + `&item_type=${type}`);
+  } catch (e) {
+    // Stumm: Die leere Liste steht schon da, und ein Zusatzversuch, der
+    // scheitert, ist kein Fehler der Suche.
+    if (seq === searchSeq) hint.hidden = true;
+    return;
+  }
+  // Inzwischen weitergetippt? Dann gehört die Antwort zu einer alten Frage.
+  if (seq !== searchSeq) return;
+  if (!daten || !daten.items || !daten.items.length) { hint.hidden = true; return; }
+  suggestState = { q, type, page: 1, items: daten.items,
+                   count: daten.items.length, hasMore: false };
+  renderSuggestions(daten.items, { count: daten.items.length, hasMore: false });
+  // Der Begriff gehört dazu: Sonst steht da ein Treffer, den man mit dem
+  // Getippten nicht zusammenbringt – und weiß nicht, ob er zufällig kam.
+  hint.textContent = tr("Auch gesucht nach: {begriffe}",
+    { begriffe: (daten.begriffe || []).join(", ") });
+  hint.hidden = false;
 }
 
 async function loadMoreSuggestions() {

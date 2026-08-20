@@ -1,0 +1,187 @@
+"""„Roter c3po" fand im Katalog nichts, obwohl die KI eingerichtet war.
+
+2.28.0 hat die Übersetzung an die **Sammlungssuche** gehängt. Sven hat sie
+am 20.08.2026 dort ausprobiert, wo man sie zuerst vermutet: im Feld „Name"
+unter „✏️ Manuell erfassen". Das sucht im **Katalog** (Rebrickable), und
+dort gab es die Übersetzung nicht – die Suche blieb leer, und von außen sah
+das aus, als funktioniere die KI nicht.
+
+Dabei ist der Katalog der Ort, an dem es am meisten hilft: In der eigenen
+Sammlung kann man notfalls blättern, im Katalog sucht man Unbekanntes.
+Findet man nichts, hat man gar nichts.
+
+Wie in der Sammlung gilt: Das Modell liefert **Suchbegriffe, niemals
+Ergebnisse**. Jede Zeile kommt weiter von Rebrickable; ein erfundener
+Begriff findet dort schlicht nichts.
+"""
+import time
+
+import pytest
+
+import core
+import integrations
+import main
+from fastapi.testclient import TestClient
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "kat.db"))
+    core.init_db()
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute("INSERT INTO users (username, password_hash, is_admin,"
+                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     (now,))
+    integrations._begriff_cache.clear()
+    core.set_setting("rebrickable_key", "test-key")
+    c = TestClient(main.app)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    return c
+
+
+def _ollama(monkeypatch, antwort):
+    import json as json_mod
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content":
+                                json_mod.dumps({"begriffe": antwort})}}
+
+    monkeypatch.setattr(integrations.requests, "post",
+                        lambda url, **kw: Fake())
+
+
+def _katalog(monkeypatch, treffer_je_begriff, gefragt=None):
+    """Rebrickable vortäuschen: je Suchbegriff eine Trefferliste."""
+    def fake_search(query, item_type="minifig", page=1, page_size=10):
+        if gefragt is not None:
+            gefragt.append(query)
+        namen = treffer_je_begriff.get(query, [])
+        return {"items": [{"item_id": "sw%04d" % i, "item_type": "minifig",
+                           "name": n, "img_url": "", "bricklink_url": "",
+                           "year": 0} for i, n in enumerate(namen)],
+                "count": len(namen), "page": 1, "has_more": False}
+    monkeypatch.setattr(integrations, "search_catalog", fake_search)
+
+
+def _einrichten(client):
+    r = client.post("/api/settings/ollama",
+                    json={"url": "http://127.0.0.1:11434", "model": "test"})
+    assert r.status_code == 200, r.text
+
+
+# ------------------------------------------------------------- der Vorfall
+
+def test_deutsche_eingabe_findet_den_englischen_katalogeintrag(client,
+                                                               monkeypatch):
+    """Der Fall aus dem Bild: „Roter c3po" muss den roten C-3PO finden."""
+    _einrichten(client)
+    _ollama(monkeypatch, ["C-3PO", "C-3PO red"])
+    _katalog(monkeypatch, {"C-3PO red": ["C-3PO - Dark Red Arm"],
+                           "C-3PO": ["C-3PO"]})
+
+    r = client.get("/api/search/suggest?q=Roter%20c3po")
+    assert r.status_code == 200, r.text
+    daten = r.json()
+    assert "C-3PO - Dark Red Arm" in [i["name"] for i in daten["items"]]
+
+
+def test_der_genaueste_begriff_kommt_zuerst(client, monkeypatch):
+    """Dieselbe Reihenfolge wie in der Sammlung: nach Wortzahl, nicht nach
+    Länge. Sonst liefe der breite Begriff zuerst und sammelte alles ein,
+    bevor die Eingrenzung drankommt."""
+    _einrichten(client)
+    gefragt = []
+    _ollama(monkeypatch, ["C-3PO", "C-3PO red"])
+    _katalog(monkeypatch, {"C-3PO red": ["C-3PO - Dark Red Arm"],
+                           "C-3PO": ["C-3PO"]}, gefragt)
+
+    client.get("/api/search/suggest?q=Roter%20c3po")
+    assert gefragt[0] == "C-3PO red", "der breite Begriff lief zuerst"
+
+
+def test_nur_begriffe_mit_treffern_werden_genannt(client, monkeypatch):
+    """Ein erfundener Begriff darf nicht im Hinweis stehen – sonst sieht es
+    aus, als hätte er etwas beigetragen."""
+    _einrichten(client)
+    _ollama(monkeypatch, ["Knight", "Medieval Figure"])
+    _katalog(monkeypatch, {"Knight": ["Castle Knight"], "Medieval Figure": []})
+
+    daten = client.get("/api/search/suggest?q=Ritter").json()
+    assert daten["begriffe"] == ["Knight"]
+
+
+def test_hoechstens_zwei_anfragen_an_rebrickable(client, monkeypatch):
+    """Jeder Versuch ist hier eine eigene Anfrage an einen fremden Dienst –
+    anders als in der Sammlung, wo die Einträge schon im Speicher liegen.
+    Aus einer Suche dürfen nicht fünf werden."""
+    _einrichten(client)
+    gefragt = []
+    _ollama(monkeypatch, ["A", "B", "C", "D", "E"])
+    _katalog(monkeypatch, {}, gefragt)
+
+    client.get("/api/search/suggest?q=irgendwas")
+    assert len(gefragt) <= main.KATALOG_KI_VERSUCHE, gefragt
+
+
+def test_ohne_eingerichtete_ki_passiert_nichts(client, monkeypatch):
+    _katalog(monkeypatch, {"Knight": ["Castle Knight"]})
+    daten = client.get("/api/search/suggest?q=Ritter").json()
+    assert daten == {"begriffe": [], "items": []}
+
+
+def test_ohne_katalogzugang_passiert_nichts(client, monkeypatch):
+    """Ohne Rebrickable-Schlüssel gibt es nichts zu durchsuchen – dann soll
+    auch das Modell nicht bemüht werden."""
+    _einrichten(client)
+    core.set_setting("rebrickable_key", "")
+    gefragt = []
+    _ollama(monkeypatch, ["Knight"])
+    _katalog(monkeypatch, {"Knight": ["Castle Knight"]}, gefragt)
+
+    daten = client.get("/api/search/suggest?q=Ritter").json()
+    assert daten == {"begriffe": [], "items": []}
+    assert gefragt == [], "Rebrickable wurde trotzdem gefragt"
+
+
+def test_ein_stoerender_katalog_beendet_die_suche_nicht_mit_fehler(
+        client, monkeypatch):
+    """Der Zusatzversuch ist eine Zugabe. Antwortet Rebrickable nicht, bleibt
+    es bei der leeren Liste von vorher – kein Fehler, kein roter Kasten."""
+    _einrichten(client)
+    _ollama(monkeypatch, ["Knight"])
+
+    def kaputt(*a, **k):
+        raise integrations.requests.RequestException("weg")
+    monkeypatch.setattr(integrations, "search_catalog", kaputt)
+
+    r = client.get("/api/search/suggest?q=Ritter")
+    assert r.status_code == 200
+    assert r.json() == {"begriffe": [], "items": []}
+
+
+def test_jede_zeile_nur_einmal(client, monkeypatch):
+    """Zwei Begriffe können denselben Katalogeintrag finden."""
+    _einrichten(client)
+    _ollama(monkeypatch, ["C-3PO", "C-3PO red"])
+    _katalog(monkeypatch, {"C-3PO red": ["C-3PO"], "C-3PO": ["C-3PO"]})
+
+    items = client.get("/api/search/suggest?q=Roter%20c3po").json()["items"]
+    kennungen = [(i["item_id"], i["item_type"]) for i in items]
+    assert len(kennungen) == len(set(kennungen))
+
+
+def test_die_oberflaeche_fragt_erst_nach_einer_leeren_suche(client):
+    """Sonst liefe bei jedem Tastendruck eine Modellanfrage mit."""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1]
+          / "frontend" / "app.js").read_text(encoding="utf-8")
+    i = js.index("async function runCatalogSearch(")
+    block = js[i:js.index("async function katalogKiVersuch(")]
+    assert "if (!suggestState.items.length) await katalogKiVersuch(" in block

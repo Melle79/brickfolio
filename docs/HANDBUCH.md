@@ -461,8 +461,9 @@ Ganz freiwillig – ohne diesen Abschnitt funktioniert Brickfolio vollständig.
 **Wozu.** Die Oberfläche ist deutsch, die Artikelnamen kommen von BrickLink
 und sind englisch. „Ritter" fand deshalb nichts, obwohl die Figur als
 „Castle Knight" in der Sammlung liegt. Ist hier eine lokale KI hinterlegt,
-übersetzt die App erfolglose Suchbegriffe ins Englische und sucht erneut
-(siehe 5.1).
+übersetzt die App erfolglose Suchbegriffe ins Englische und sucht erneut –
+sowohl in der eigenen Sammlung (siehe 5.1) als auch im Katalog beim manuellen
+Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
@@ -737,6 +738,11 @@ im Browser, zum Server geht nur der Ausschnitt.
 
 ### 4.2 Per Suche (Katalog)
 
+> **Deutsch eingetippt?** Findet der Katalog nichts und ist eine lokale
+> KI eingerichtet (siehe 2.9), übersetzt die App den Begriff und fragt
+> noch einmal nach. „Roter c3po" findet so den `C-3PO - Dark Red Arm`.
+> Über den Treffern steht, wonach zusätzlich gesucht wurde.
+
 Unter dem Kamerabereich liegt die Textsuche. Sie versteht:
 
 - **Namen** („Shoretrooper", „TIE Striker") – via Rebrickable
@@ -850,6 +856,14 @@ Auch Schreibweisen sind egal: BrickLink führt `C-3PO` und `R2-D2` mit
 Bindestrich, „c3 po" oder „r2d2" finden sie trotzdem. Nennt man eine
 Eigenschaft – „roter c3 po" –, steht der passende zuerst und die übrigen
 C-3POs darunter.
+
+**Auch beim Erfassen.** Dasselbe gilt im Feld **Name** unter „✏️ Manuell
+erfassen", das im Katalog sucht. Dort hilft es sogar mehr: In der eigenen
+Sammlung kann man notfalls blättern, im Katalog sucht man etwas Unbekanntes –
+ohne Treffer hat man gar nichts. Findet der Katalog nichts, übersetzt die App
+und fragt mit den zwei genauesten Begriffen noch einmal nach; darüber steht
+dann, wonach gesucht wurde. Mehr als zwei sind es bewusst nicht: Jeder Versuch
+ist eine eigene Anfrage an Rebrickable.
 
 Wichtig zu wissen: **Die KI liefert nur Suchbegriffe, niemals Ergebnisse.**
 Jede angezeigte Karte kommt weiter aus der eigenen Datenbank – die Funktion
