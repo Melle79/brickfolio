@@ -733,6 +733,28 @@
       </div>
       <p id="keys-status" class="search-hint" hidden></p>
     </div>
+    <div id="ollama-panel" class="settings-card" hidden>
+      <h3>🤖 Lokale KI für die Suche</h3>
+      <p class="search-hint">Optional. Die Namen in der Sammlung kommen von
+        BrickLink und sind <b>englisch</b> – „Ritter“ findet deshalb nichts,
+        obwohl die Figur als „Knight“ dasteht. Ist hier ein
+        <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>
+        hinterlegt, übersetzt es erfolglose Suchbegriffe ins Englische und
+        sucht damit erneut. Gefunden wird weiterhin <b>nur in der eigenen
+        Datenbank</b>: Die KI liefert Suchbegriffe, keine Ergebnisse.
+        Ohne Adresse bleibt alles wie bisher.</p>
+      <label for="ollama-url">Adresse (z. B. http://192.168.0.10:11434)</label>
+      <input id="ollama-url" autocapitalize="none" autocomplete="off"
+             spellcheck="false" inputmode="url" placeholder="leer = aus">
+      <label for="ollama-model">Modell</label>
+      <input id="ollama-model" autocapitalize="none" autocomplete="off"
+             spellcheck="false">
+      <div class="detail-row">
+        <button id="btn-save-ollama" class="mini-btn add">Speichern</button>
+        <button id="btn-test-ollama" class="mini-btn">Verbindung testen</button>
+      </div>
+      <p id="ollama-status" class="search-hint" hidden></p>
+    </div>
     <div class="settings-card" id="price-region-card" hidden>
       <h3>🌍 Preisgebiet</h3>
       <p class="search-hint">Aus welchem Markt sollen die

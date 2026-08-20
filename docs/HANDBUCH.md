@@ -454,6 +454,48 @@ vergeben und den Zugang auf bekannte Adressen einschränken.
 
 ---
 
+### 2.9 Lokale KI für die Suche (Admin, optional)
+
+Ganz freiwillig – ohne diesen Abschnitt funktioniert Brickfolio vollständig.
+
+**Wozu.** Die Oberfläche ist deutsch, die Artikelnamen kommen von BrickLink
+und sind englisch. „Ritter" fand deshalb nichts, obwohl die Figur als
+„Castle Knight" in der Sammlung liegt. Ist hier eine lokale KI hinterlegt,
+übersetzt die App erfolglose Suchbegriffe ins Englische und sucht erneut
+(siehe 5.1).
+
+**Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
+
+1. Auf einem Rechner im Heimnetz [Ollama](https://ollama.com) installieren
+   und ein Modell laden, z. B. `ollama pull qwen2.5:14b`.
+2. Damit Brickfolio es erreicht, muss Ollama im Netz lauschen, nicht nur
+   lokal – bei der Ollama-App über deren Einstellungen, sonst über
+   `OLLAMA_HOST=0.0.0.0:11434`.
+3. In der App die **Adresse** eintragen, etwa
+   `http://192.168.0.10:11434`, dazu den **Modellnamen**. Bleibt das
+   Modellfeld leer, nimmt die App `qwen2.5:14b`.
+4. **„Verbindung testen"** drücken: Die App fragt das Modell nach „Ritter"
+   und zeigt, was zurückkommt. Steht dort `Knight`, passt alles.
+
+Alternativ über die Umgebungsvariablen `OLLAMA_URL` und `OLLAMA_MODEL`
+(siehe `docker-compose.example.yml`); die Einstellung in der App hat
+Vorrang.
+
+**Was die KI darf – und was nicht.** Sie bekommt ausschließlich den
+Suchbegriff zu sehen, nie die Sammlung. Sie liefert **Suchbegriffe, niemals
+Ergebnisse**: Gesucht wird weiterhin nur in der eigenen Datenbank, ein
+unpassender Begriff findet einfach nichts. Deshalb reicht hier ein kleines
+Modell, und deshalb kann nichts erscheinen, was es nicht gibt.
+
+**Wenn der Dienst schweigt.** Antwortet er nicht innerhalb von acht
+Sekunden, bleibt es beim gewohnten Hinweis „Nichts gefunden" – die Suche
+wartet nicht und meldet keinen Fehler. Ein leeres Adressfeld schaltet die
+Funktion wieder ab.
+
+> **Die Adresse gilt als Geheimnis.** Sie verrät den Aufbau des Heimnetzes
+> und kann Zugangsdaten enthalten. Brickfolio entfernt sie deshalb wie einen
+> API-Schlüssel aus Fehlerberichten – die können als öffentliches Issue enden.
+
 ## 3. Benutzer & Rollen
 
 Brickfolio kennt drei Stufen, die sich kombinieren lassen:
@@ -795,6 +837,24 @@ springt mit der Bildlaufleiste ans Ende. Bei 815 Einträgen sind das beim
 Sammlung ihren Platz wieder frei und baut sich beim Zurückkommen neu auf;
 die Daten bleiben so lange im Speicher. Findet die Suche nichts, steht das
 auch da – samt Knopf, der die Filter räumt.
+
+**Deutsch suchen, englisch finden.** Die Namen in der Sammlung kommen von
+BrickLink und sind englisch. Wer „Ritter" eintippte, bekam deshalb eine leere
+Liste, obwohl die Figur als „Castle Knight" in der Datenbank steht – dasselbe
+galt für „Kopf" (Head), „Schwert" (Sword) oder „Piraten" (Pirate). Ist eine
+**lokale KI eingerichtet** (siehe 2.9), übersetzt die App in genau diesem Fall
+den Suchbegriff und sucht erneut. Über den Treffern steht dann, wonach
+zusätzlich gesucht wurde.
+
+Auch Schreibweisen sind egal: BrickLink führt `C-3PO` und `R2-D2` mit
+Bindestrich, „c3 po" oder „r2d2" finden sie trotzdem. Nennt man eine
+Eigenschaft – „roter c3 po" –, steht der passende zuerst und die übrigen
+C-3POs darunter.
+
+Wichtig zu wissen: **Die KI liefert nur Suchbegriffe, niemals Ergebnisse.**
+Jede angezeigte Karte kommt weiter aus der eigenen Datenbank – die Funktion
+kann keine Figur anzeigen, die es in der Sammlung nicht gibt. Ohne
+eingerichtete KI bleibt es beim gewohnten Hinweis „Nichts gefunden".
 
 **Sortierung nach Thema.** Wählt man bei der Sortierung „Thema", zeigt die
 Sammlung **aufklappbare Themenkarten** – Star Wars, City, Harry Potter,

@@ -163,6 +163,9 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 
 .error { color: var(--red); font-size: 14px; margin-top: 12px; }
 .empty { text-align: center; color: var(--muted); margin-top: 48px; line-height: 1.6; }
+/* Treffer der lokalen KI-Suche stehen ueber den Karten und nicht mitten auf
+   einer leeren Flaeche – deshalb ohne den grossen Abstand von `.empty`. */
+.ki-hinweis { margin-top: 8px; margin-bottom: 16px; font-size: 0.9em; }
 
 /* ---------- Lade-Anzeige (Sammlung) ---------- */
 .list-loading {

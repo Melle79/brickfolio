@@ -1,6 +1,7 @@
 """Brickfolio – externe Dienste: Brickognize (Erkennung) & BrickLink (Preise)."""
 import html as html_mod
 import io
+import json
 import os
 import re
 import time
@@ -50,6 +51,11 @@ GEHEIME_SETTINGS = (
                               # nichts über sein Tauschen preis, und der
                               # Kanal lässt sich einzeln zurückziehen
     "vapid_private",          # signiert die Push-Meldungen dieser Instanz
+    "ollama_url",             # Adresse der lokalen KI. Kein Schlüssel, aber
+                              # sie kann Zugangsdaten enthalten
+                              # (https://benutzer:wort@host) und verrät sonst
+                              # den Aufbau des Heimnetzes – beides hat in
+                              # einem öffentlichen Issue nichts zu suchen.
 )
 
 
@@ -773,3 +779,139 @@ def find_number_change(item_id: str, since: int) -> dict | None:
         if month > 12:
             year, month = year + 1, 1
     return None
+
+
+# ---------------------------------------------------------------- Lokale KI (Ollama)
+#
+# Ein einziger Zweck: deutsche Suchbegriffe in englische uebersetzen. Die
+# Sammlungsnamen kommen von BrickLink und sind **englisch** – wer „Ritter" in
+# das Suchfeld tippt, findet nichts, obwohl die Figuren da sind. Der Vorfall
+# war nicht exotisch, sondern die naheliegendste Suche eines deutschen
+# Nutzers.
+#
+# Bewusst eng gefasst: Das Modell liefert **Suchbegriffe, niemals Ergebnisse**.
+# Jede angezeigte Zeile kommt weiter aus der eigenen Datenbank. Ein erfundener
+# Begriff findet schlicht nichts – er kann keine Figur erfinden, die es nicht
+# gibt. Das ist der Grund, warum hier ein kleines lokales Modell genuegt.
+#
+# Vollstaendig optional: Ohne hinterlegte Adresse passiert nichts, und wenn
+# der Dienst schweigt oder trödelt, verhaelt sich die Suche wie vorher.
+
+OLLAMA_ENV = {"ollama_url": "OLLAMA_URL", "ollama_model": "OLLAMA_MODEL"}
+OLLAMA_STD_MODELL = "qwen2.5:14b"
+# Kurz gehalten: Die Uebersetzung ist eine Zugabe, keine Bedingung. Lieber
+# ohne Vorschlag bleiben als die Suche haengen lassen.
+OLLAMA_TIMEOUT = 8
+
+
+def ollama_setting(name: str) -> str:
+    return core.get_setting(name) or os.environ.get(OLLAMA_ENV[name], "")
+
+
+def ollama_enabled() -> bool:
+    return bool(ollama_setting("ollama_url").strip())
+
+
+def ollama_modell() -> str:
+    return ollama_setting("ollama_model").strip() or OLLAMA_STD_MODELL
+
+
+_OLLAMA_SYSTEM = (
+    "Du uebersetzt deutsche Suchbegriffe fuer eine LEGO-Sammlung in englische "
+    "BrickLink-Begriffe. BrickLink-Namen sind englisch und meist SINGULAR "
+    '(also "Pirate Captain", nicht "Pirates").\n\n'
+    "Regeln:\n"
+    "1. Eigennamen NIE durch einen Oberbegriff ersetzen. Wer C-3PO sucht, "
+    'will nicht "Droid".\n'
+    "2. Nennt die Anfrage eine Eigenschaft (Farbe, Ausruestung), gib ZUERST "
+    "den reinen Eigennamen zurueck und danach Varianten mit der "
+    "Eigenschaft.\n"
+    "3. Sonst: 2 bis 4 Varianten, Singular zuerst, dazu passende "
+    "Oberbegriffe.\n"
+    "4. Nur kurze Begriffe, keine Saetze, keine Erklaerung.\n\n"
+    "Setnummern und bereits englische Begriffe gibst du unveraendert zurueck."
+)
+# Regel 1 und 2 stammen aus einer Messung: Ohne sie beantwortete das Modell
+# „C3PO" mit „Droid, Astro Droid, Robot" – der gesuchte Eigenname war weg.
+# Und „roter c3 po" verlor die Farbe ersatzlos. Eine dritte Regel („Namen mit
+# Bindestrich schreiben") wurde wieder verworfen: Das Modell hat sie
+# uebergeneralisiert und lieferte danach „Darth-Vader" und „Knight-Hunter".
+# Die Schreibweise loest stattdessen der Vergleich in main.py.
+
+# Antwortform hart vorgeben: Damit muss niemand freien Text auseinanderpfluecken
+# und ein plauderndes Modell kann die Suche nicht zerlegen.
+_OLLAMA_SCHEMA = {
+    "type": "object",
+    "properties": {"begriffe": {"type": "array", "items": {"type": "string"}}},
+    "required": ["begriffe"],
+}
+
+# Gleiche Frage, gleiche Antwort – und die Suche feuert beim Tippen alle
+# 300 ms. Ohne diesen Zwischenspeicher liefe je Tastendruck ein Modellaufruf.
+_begriff_cache: dict = {}
+_CACHE_MAX = 500
+
+# Fehlschläge verfallen wieder. Das ist aus einem Vorfall entstanden: Die
+# erste Fassung merkte sich auch die leere Antwort **dauerhaft**. Lief ein
+# einziger Aufruf in den Zeitablauf – etwa weil Ollama das Modell erst laden
+# musste; gemessen 1,4 s im Normalfall, aber 48,9 s bei Speicherdruck –,
+# dann blieb genau dieser Suchbegriff bis zum Neustart tot. „roter c3 po"
+# fand deshalb nichts mehr, während „c3 po" daneben tadellos lief. Ein
+# Treffer darf bleiben, ein Fehlschlag nicht.
+_MISSERFOLG_GILT = 60
+
+
+def _ollama_keep_alive() -> str:
+    """Wie lange Ollama das Modell geladen lassen soll.
+
+    Ohne das entlädt Ollama nach fünf Minuten Ruhe, und die nächste Suche
+    zahlt die Ladezeit – bei einem 9-GB-Modell trifft das genau den, der
+    nach längerer Pause etwas sucht.
+    """
+    return "30m"
+
+
+def suchbegriffe(q: str) -> list:
+    """Deutsche Suchanfrage in englische BrickLink-Begriffe uebersetzen.
+
+    Gibt im Zweifel eine leere Liste zurueck – jeder Fehler ist hier
+    unkritisch, weil die normale Suche bereits gelaufen ist.
+    """
+    q = (q or "").strip()
+    if not q or not ollama_enabled():
+        return []
+    key = q.casefold()
+    gemerkt = _begriff_cache.get(key)
+    if gemerkt is not None:
+        bis, treffer = gemerkt
+        if bis is None or time.time() < bis:
+            return treffer
+    basis = ollama_setting("ollama_url").strip().rstrip("/")
+    try:
+        resp = requests.post(
+            basis + "/api/chat",
+            json={"model": ollama_modell(), "stream": False, "think": False,
+                  "format": _OLLAMA_SCHEMA, "options": {"temperature": 0},
+                  "keep_alive": _ollama_keep_alive(),
+                  "messages": [{"role": "system", "content": _OLLAMA_SYSTEM},
+                               {"role": "user", "content": q}]},
+            timeout=OLLAMA_TIMEOUT, headers={"User-Agent": USER_AGENT})
+        resp.raise_for_status()
+        inhalt = resp.json().get("message", {}).get("content", "")
+        roh = json.loads(inhalt).get("begriffe", [])
+    except Exception:
+        roh = []
+    begriffe = []
+    for b in roh if isinstance(roh, list) else []:
+        b = str(b).strip()
+        # Der eigene Begriff bringt nichts – danach wurde schon gesucht.
+        if b and b.casefold() != key and b not in begriffe:
+            begriffe.append(b[:60])
+    begriffe = begriffe[:4]
+    if len(_begriff_cache) >= _CACHE_MAX:
+        _begriff_cache.clear()
+    # Treffer gelten dauerhaft, ein leeres Ergebnis nur kurz: Sonst macht ein
+    # einzelner Aussetzer den Suchbegriff bis zum Neustart unbrauchbar.
+    _begriff_cache[key] = ((None if begriffe else time.time() + _MISSERFOLG_GILT),
+                           begriffe)
+    return begriffe

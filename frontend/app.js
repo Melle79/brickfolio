@@ -2316,6 +2316,7 @@ function showApp() {
     applyOwnerName(state.ownerName);
     setCurrency(c.currency);
     state.hubConnected = !!c.hub_connected;
+    state.kiSuche = !!c.ki_suche;
     updateHubTab();
     updatePolling();
     standTaktStarten();
@@ -3720,6 +3721,7 @@ function renderCollection() {
       $("type-filter").value = "";
       loadCollection();
     });
+    kiNachschlagen(list, $("search").value.trim());
   } else {
     list.innerHTML = "";
     kartenNachschub(list, items);
@@ -3727,6 +3729,46 @@ function renderCollection() {
   }
 
   list.querySelectorAll(".card").forEach((card) => karteVerdrahten(card, items));
+}
+
+/* Zweiter Anlauf, wenn die Suche nichts fand.
+
+   Die Namen in der Sammlung kommen von BrickLink und sind englisch, die
+   Oberfläche ist deutsch: „Ritter" fand nichts, obwohl die Figur als
+   „Castle Knight" in der Datenbank liegt. Die optionale lokale KI übersetzt
+   den Begriff; gefunden wird weiterhin nur in der eigenen Datenbank.
+
+   Läuft bewusst **nach** dem Hinweis „Nichts gefunden": Wer keine KI
+   eingerichtet hat oder wessen Dienst schweigt, sieht genau das, was vorher
+   auch dastand. */
+async function kiNachschlagen(list, q) {
+  if (!state.kiSuche || !q) return;
+  const warten = document.createElement("p");
+  warten.className = "empty ki-hinweis";
+  warten.textContent = tr("Lokale KI sucht nach englischen Begriffen …");
+  list.appendChild(warten);
+  let daten;
+  try {
+    daten = await api("/collection/suggest?q=" + encodeURIComponent(q)
+      + "&item_type=" + encodeURIComponent($("type-filter").value));
+  } catch (e) {
+    warten.remove();
+    return;                      // stumm: die normale Suche steht schon da
+  }
+  // Inzwischen weitergetippt? Dann gehört die Antwort zu einer alten Frage
+  // und würde eine längst überholte Liste einblenden.
+  if ($("search").value.trim() !== q) { warten.remove(); return; }
+  warten.remove();
+  if (!daten || !daten.items || !daten.items.length) return;
+  // Die Karten lesen ihre Daten aus `state.collection` – sonst zeigt ein
+  // Klick auf einen Vorschlag die Angaben des alten Suchlaufs.
+  state.collection = daten.items;
+  nachschubBeenden();
+  const begriffe = (daten.begriffe || []).join(", ");
+  list.innerHTML = `<p class="empty ki-hinweis">`
+    + `${esc(tr("Nichts gefunden – die lokale KI hat übersetzt."))}<br>`
+    + `${esc(tr("Auch gesucht nach: {begriffe}", { begriffe }))}</p>`;
+  kartenNachschub(list, daten.items);
 }
 
 /* Karten kommen blockweise ins Dokument.
@@ -5433,6 +5475,50 @@ async function testApiKeys() {
     out.textContent =
       `BrickLink: ${r.bricklink.ok ? "✅" : "❌"} ${r.bricklink.info} — ` +
       `Rebrickable: ${r.rebrickable.ok ? "✅" : "❌"} ${r.rebrickable.info}`;
+  } catch (e) {
+    out.textContent = e.message;
+  }
+}
+
+/* ---------------------------------------------------------------- Lokale KI */
+
+async function loadOllama() {
+  try {
+    const d = await api("/settings/ollama");
+    // Anders als die API-Schlüssel im Klartext: Eine Adresse muss man beim
+    // Einrichten sehen, sonst tippt man sie bei jeder Korrektur neu.
+    $("ollama-url").value = d.url || "";
+    $("ollama-model").value = d.model || "";
+    $("ollama-model").placeholder = d.default_model || "";
+    state.kiSuche = !!d.enabled;
+  } catch (e) { /* kein Admin oder alte Fassung: Karte bleibt leer */ }
+}
+
+async function saveOllama() {
+  const out = $("ollama-status");
+  try {
+    const r = await api("/settings/ollama", { method: "POST", body: {
+      url: $("ollama-url").value.trim(),
+      model: $("ollama-model").value.trim(),
+    }});
+    state.kiSuche = !!r.enabled;
+    out.textContent = r.enabled
+      ? tr("Gespeichert – die KI-Suche ist aktiv ✔")
+      : tr("Gespeichert – die KI-Suche ist aus.");
+    out.hidden = false;
+  } catch (e) {
+    out.textContent = e.message;
+    out.hidden = false;
+  }
+}
+
+async function testOllama() {
+  const out = $("ollama-status");
+  out.textContent = tr("Teste Verbindung …");
+  out.hidden = false;
+  try {
+    const r = await api("/settings/ollama/test", { method: "POST" });
+    out.textContent = (r.ok ? "✅ " : "❌ ") + r.info;
   } catch (e) {
     out.textContent = e.message;
   }
@@ -9628,6 +9714,8 @@ async function loadSettings() {
   $("own-name").value = state.user ? state.user.username : "";
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
+  $("ollama-panel").hidden = !isAdmin;
+  if (isAdmin) loadOllama();
   $("name-card").hidden = !isAdmin;
   document.querySelectorAll(".theme-default-star").forEach((s) => {
     s.hidden = !isAdmin;
@@ -10114,6 +10202,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-print-want").addEventListener("click", () => printWanted().catch((e) => toast(e.message)));
   $("btn-save-keys").addEventListener("click", saveApiKeys);
   $("btn-test-keys").addEventListener("click", testApiKeys);
+  $("btn-save-ollama").addEventListener("click", saveOllama);
+  $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-camera").addEventListener("click", () => $("file-input").click());
   $("btn-manual-toggle").addEventListener("click", () => {
     const f = $("manual-form");

@@ -1681,6 +1681,7 @@ def config(user: dict = Depends(current_user)):
             "owner_name": _owner_name(),
             "currency": integrations.currency(),
             "price_region": integrations.price_region(),
+            "ki_suche": integrations.ollama_enabled(),
             "hub_connected": hub.enabled()}
 
 
@@ -2608,6 +2609,61 @@ def save_settings(body: SettingsBody, user: dict = Depends(admin_user)):
             core.set_setting(name, value.strip())
             changed += 1
     return {"ok": True, "changed": changed, "flags": _config_flags()}
+
+
+# ---------------------------------------------------------------- Lokale KI (Admin)
+
+@app.get("/api/settings/ollama")
+def get_ollama(user: dict = Depends(admin_user)):
+    """Adresse und Modell im Klartext – anders als bei den API-Schlüsseln.
+
+    Eine Adresse muss man beim Einrichten sehen können, sonst tippt man sie
+    bei jeder Korrektur neu. Aus Fehlerberichten wird sie trotzdem entfernt,
+    dafür steht sie in `GEHEIME_SETTINGS`.
+    """
+    return {"url": integrations.ollama_setting("ollama_url"),
+            "model": integrations.ollama_setting("ollama_model"),
+            "default_model": integrations.OLLAMA_STD_MODELL,
+            "enabled": integrations.ollama_enabled()}
+
+
+class OllamaBody(BaseModel):
+    url: str = Field(default="", max_length=200)
+    model: str = Field(default="", max_length=100)
+
+
+@app.post("/api/settings/ollama")
+def set_ollama(body: OllamaBody, user: dict = Depends(admin_user)):
+    url = body.url.strip()
+    if url and not re.match(r"^https?://", url):
+        raise HTTPException(400, "Die Adresse muss mit http:// oder https:// "
+                                 "beginnen")
+    core.set_setting("ollama_url", url)
+    core.set_setting("ollama_model", body.model.strip())
+    # Der Zwischenspeicher hängt am alten Dienst – nach einem Wechsel wäre
+    # sonst nicht nachvollziehbar, warum die neue Adresse nichts ändert.
+    integrations._begriff_cache.clear()
+    return {"ok": True, "enabled": integrations.ollama_enabled()}
+
+
+@app.post("/api/settings/ollama/test")
+def test_ollama(user: dict = Depends(admin_user)):
+    """Einmal wirklich fragen statt nur die Adresse anzuschauen.
+
+    Geprüft wird mit einem festen deutschen Begriff: Kommt „Knight" zurück,
+    stimmen Adresse, Modell und Antwortform.
+    """
+    if not integrations.ollama_enabled():
+        return {"ok": False, "info": "Keine Adresse hinterlegt"}
+    integrations._begriff_cache.pop("ritter", None)
+    begriffe = integrations.suchbegriffe("Ritter")
+    if not begriffe:
+        return {"ok": False,
+                "info": f"{integrations.ollama_modell()} antwortet nicht "
+                        "(Adresse, Modellname oder Dienst prüfen)"}
+    return {"ok": True,
+            "info": f"Verbunden mit {integrations.ollama_modell()} – "
+                    f"„Ritter“ ergibt: {', '.join(begriffe)}"}
 
 
 def scrub(msg: str, limit: int = 200) -> str:
@@ -3833,6 +3889,97 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
                               if unit else None)
             items.append(d)
     return {"items": items, "stats": stats}
+
+
+# Wie viele Zeilen ein Vorschlag höchstens zurückgibt. „Ritter" kann über die
+# Oberbegriffe halbe Themen einsammeln – die Liste soll eine Hilfe bleiben und
+# nicht die eigentliche Suche verdrängen.
+SUGGEST_MAX = 200
+
+
+def _such_norm(text: str) -> str:
+    """Alles außer Buchstaben und Ziffern weg, klein geschrieben.
+
+    BrickLink schreibt `C-3PO` und `R2-D2` mit Bindestrichen, getippt wird
+    „c3 po" oder „r2d2". Ein einfaches LIKE fand deshalb nichts – und das
+    ausgerechnet bei den bekanntesten Figuren überhaupt.
+    """
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
+def _such_woerter(text: str) -> list:
+    return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if len(t) >= 2]
+
+
+def _passt(begriff: str, name: str) -> bool:
+    """Trifft ein vorgeschlagener Begriff diesen Artikelnamen?
+
+    Zwei Wege, und der zweite ist nicht bloß Feinschliff: Das Modell liefert
+    je nach Anfrage „C-3PO red" (dann greift der erste) oder „Blue-Ninja",
+    während der Artikel „Ninja - Blue" heißt (dann greift der zweite).
+    Mehrere Wörter müssen **alle** vorkommen – sonst zöge „Knight Hunter"
+    jeden Ritter herein, obwohl es den Begriff so nicht gibt.
+    """
+    ganz_name = _such_norm(name)
+    if not ganz_name:
+        return False
+    ganz = _such_norm(begriff)
+    if ganz and ganz in ganz_name:
+        return True
+    woerter = _such_woerter(begriff)
+    return len(woerter) >= 2 and all(w in ganz_name for w in woerter)
+
+
+@app.get("/api/collection/suggest")
+def suggest_collection(q: str = "", item_type: str = "",
+                       user: dict = Depends(current_user)):
+    """Zweiter Versuch für eine Suche, die nichts gefunden hat.
+
+    Die Namen in der Sammlung kommen von BrickLink und sind englisch; die
+    Oberfläche ist deutsch. Wer „Ritter" sucht, bekam bisher nichts, obwohl
+    die Figuren als „Knight" in der Datenbank liegen. Die lokale KI übersetzt
+    nur den **Suchbegriff** – gefunden wird weiterhin ausschließlich in der
+    eigenen Datenbank, und gemeldet werden nur Begriffe, die wirklich etwas
+    getroffen haben.
+
+    Ohne eingerichtete KI ist die Antwort leer; die Oberfläche zeigt dann
+    denselben Hinweis wie vorher.
+    """
+    if not q.strip() or not integrations.ollama_enabled():
+        return {"begriffe": [], "items": []}
+    begriffe = integrations.suchbegriffe(q)
+    if not begriffe:
+        return {"begriffe": [], "items": []}
+    # Einmal alles holen und in Python vergleichen: Der Vergleich ignoriert
+    # Satzzeichen, das bekäme SQL nur mit verschachtelten replace() hin – und
+    # der Zweig läuft ohnehin nur, wenn die gewöhnliche Suche nichts fand.
+    alle = get_collection(q="", sort="name", item_type=item_type,
+                          user=user)["items"]
+    gesehen: set = set()
+    items: list = []
+    treffer: list = []
+    # Der genaueste Begriff zuerst, nicht der vom Modell zuerst genannte.
+    # „roter c3 po" ergibt `C-3PO` und `C-3PO (red)`; in Modellreihenfolge
+    # sammelte der breite Begriff alle drei C-3POs ein, und die Farbvariante
+    # kam auf null neue Treffer – die Eingrenzung verpuffte. Nach Wortzahl
+    # und Länge sortiert steht der rote oben, die übrigen darunter.
+    begriffe.sort(key=lambda b: (len(_such_woerter(b)), len(_such_norm(b))),
+                  reverse=True)
+    for begriff in begriffe:
+        neu = 0
+        for eintrag in alle:
+            if eintrag["id"] in gesehen:
+                continue
+            if not _passt(begriff, eintrag["name"] or ""):
+                continue
+            gesehen.add(eintrag["id"])
+            items.append(eintrag)
+            neu += 1
+        if neu:
+            treffer.append(begriff)
+        if len(items) >= SUGGEST_MAX:
+            break
+    return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
 
 @app.post("/api/collection")

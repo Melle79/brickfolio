@@ -1,5 +1,55 @@
 # Changelog
 
+## 2.28.0 – August 2026
+
+### Neu
+- 🤖 **„Ritter" fand nichts, obwohl die Figuren im Regal lagen.** Die
+  Oberfläche ist deutsch, die Namen in der Sammlung kommen von BrickLink und
+  sind **englisch**. Die Suche war ein reines `LIKE '%…%'` auf Name und
+  Nummer – wer „Ritter" eintippte, bekam eine leere Liste, obwohl die Figur
+  als „Castle Knight" in der eigenen Datenbank steht. Das war kein Randfall,
+  sondern die naheliegendste Suche eines deutschen Nutzers. Dasselbe galt für
+  „Kopf" (Head), „Schwert" (Sword) und „Piraten" (Pirate).
+
+  Findet die Suche nichts, fragt die App jetzt eine **optionale** lokale KI
+  nach englischen Begriffen und sucht damit erneut. Über den Treffern steht,
+  wonach zusätzlich gesucht wurde – gemeldet werden nur Begriffe, die
+  wirklich etwas gefunden haben.
+
+  **Die KI liefert Suchbegriffe, niemals Ergebnisse.** Jede angezeigte Zeile
+  kommt weiter aus der eigenen Datenbank; ein erfundener Begriff findet
+  schlicht nichts. Deshalb genügt hier ein kleines Modell auf dem eigenen
+  Rechner, und deshalb kann die Funktion nichts erfinden, was es nicht gibt.
+
+  Einzurichten unter **Einstellungen → Lokale KI für die Suche** mit der
+  Adresse eines [Ollama](https://ollama.com) und einem Modellnamen
+  (Vorgabe `qwen2.5:14b`), wahlweise über `OLLAMA_URL` und `OLLAMA_MODEL` aus
+  der `docker-compose.yml`. **Ohne Adresse ist alles wie vorher** – nicht
+  jeder betreibt eine lokale KI. Antwortet der Dienst nicht innerhalb von
+  acht Sekunden, bleibt es beim gewohnten Hinweis „Nichts gefunden".
+
+  Die Adresse wird wie ein API-Schlüssel aus Fehlerberichten entfernt: Sie
+  verrät den Aufbau des Heimnetzes und kann Zugangsdaten enthalten, und ein
+  Fehlerbericht kann als öffentliches Issue enden.
+
+  **Satzzeichen zählen nicht mit.** BrickLink schreibt die bekanntesten
+  Figuren mit Bindestrich – `C-3PO`, `R2-D2` –, getippt wird „c3 po" oder
+  „r2d2". Der Vergleich lässt deshalb alles außer Buchstaben und Ziffern weg.
+  Aus mehreren Wörtern müssen **alle** vorkommen, sonst zöge ein erfundener
+  Begriff wie „Knight Hunter" jeden Ritter herein.
+
+  **Der genaueste Begriff zuerst.** „roter c3 po" ergibt `C-3PO (red)` und
+  `C-3PO`. In der Reihenfolge des Modells sammelte der breite Begriff alle
+  C-3POs ein, und die Farbvariante kam auf null neue Treffer – die Eingrenzung
+  verpuffte. Jetzt steht der rote oben, die übrigen darunter als Rückfall.
+
+  Gleiche Frage, gleiche Antwort: Ein Zwischenspeicher verhindert, dass beim
+  Tippen alle 300 ms ein Modellaufruf losläuft. **Ein Fehlschlag verfällt nach
+  einer Minute** – die erste Fassung merkte ihn sich dauerhaft, sodass ein
+  einziger Aussetzer (etwa während Ollama das Modell lud) genau diesen
+  Suchbegriff bis zum Neustart tot bleiben ließ. Damit das seltener vorkommt,
+  bittet die App Ollama, das Modell 30 Minuten geladen zu lassen.
+
 ## 2.27.0 – August 2026
 
 ### Behoben

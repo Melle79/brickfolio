@@ -46,3 +46,9 @@ services:
     #   BL_TOKEN_SECRET: ""
     #   # Rebrickable-API (https://rebrickable.com/api/):
     #   REBRICKABLE_KEY: ""
+    #   # Optional: lokale KI (Ollama) uebersetzt erfolglose deutsche
+    #   # Suchbegriffe ins Englische – die Sammlungsnamen von BrickLink
+    #   # sind englisch, „Ritter" findet sonst den „Knight" nicht.
+    #   # Leer lassen = aus; die App verhaelt sich dann wie bisher.
+    #   OLLAMA_URL: ""
+    #   OLLAMA_MODEL: "qwen2.5:14b"
