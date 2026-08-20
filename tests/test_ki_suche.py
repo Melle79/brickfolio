@@ -360,3 +360,61 @@ def test_adresse_steht_nicht_in_fehlerberichten(client):
     sauber = main.scrub("Fehler bei http://geheim.fritz.box:11434 beim Abruf",
                         limit=2000)
     assert "geheim.fritz.box" not in sauber
+
+
+# ------------------------------------- aus einer echten Sammlung (888 Figuren)
+
+def test_fuellbegriff_verdraengt_den_eigennamen_nicht(client, monkeypatch):
+    """Greedo stand unter den Rittern.
+
+    Für „Ritter" liefert das Modell `Knight, Minifigure, Hero, Character`.
+    Die erste Fassung sortierte bei gleicher Wortzahl nach Länge – damit lief
+    `Minifigure` (10 Zeichen) vor `Knight` (6) und griff sich als Erstes
+    alles, was „Minifigure" im Namen trägt. In der Testsammlung fiel das nie
+    auf, weil dort nichts so hieß; in einer echten mit 888 Einträgen standen
+    dann Greedo und Obi-Wan unter den Rittern.
+    """
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity,"
+            " condition, added_at, added_by) "
+            "VALUES ('sw0100', 'minifig', 'Greedo - SMART Minifigure', 1,"
+            " 'used', ?, 1)", (now,))
+    _einrichten(client)
+    _ollama(monkeypatch, ["Knight", "Minifigure", "Hero", "Character"])
+
+    daten = client.get("/api/collection/suggest?q=Ritter").json()
+    assert daten["items"][0]["name"] == "Castle Knight with Sword", \
+        [i["name"] for i in daten["items"]]
+    assert daten["begriffe"][0] == "Knight"
+
+
+def test_kurzer_begriff_trifft_nicht_mitten_im_wort(client, monkeypatch):
+    """„Zauberer" lieferte einen kampfbeschädigten Anakin Skywalker.
+
+    Das Modell schlug `Mage` vor – und „mage" steckt in „Damaged". Weil der
+    Vergleich Satzzeichen wegwirft, verschwand auch die Wortgrenze. Ein
+    Begriff muss jetzt dort stehen, wo ein Wort anfängt.
+    """
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity,"
+            " condition, added_at, added_by) VALUES ('sw0011', 'minifig',"
+            " 'Anakin Skywalker - Battle Damaged', 1, 'used', ?, 1)", (now,))
+    _einrichten(client)
+    _ollama(monkeypatch, ["Mage"])
+
+    assert client.get("/api/collection/suggest?q=Zauberer").json()["items"] == []
+
+
+def test_bindestrichname_bleibt_trotz_wortgrenze_auffindbar(client,
+                                                            monkeypatch):
+    """Die Wortgrenze darf „c3 po" gegen „C-3PO" nicht wieder kaputtmachen."""
+    _einrichten(client)
+    _ollama(monkeypatch, ["C-3PO"])
+
+    namen = [i["name"] for i in
+             client.get("/api/collection/suggest?q=c3 po").json()["items"]]
+    assert "C-3PO" in namen and "C-3PO - Red Arm" in namen

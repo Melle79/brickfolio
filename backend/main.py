@@ -3911,6 +3911,23 @@ def _such_woerter(text: str) -> list:
     return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if len(t) >= 2]
 
 
+def _wortanfaenge(name: str) -> tuple:
+    """Der Name ohne Satzzeichen – und die Stellen, an denen ein Wort beginnt.
+
+    Die Satzzeichen müssen weg, damit „c3 po" den Artikel „C-3PO" findet.
+    Ohne die Wortanfänge wäre der Vergleich aber zu großzügig: „Mage" steckt
+    in „Damaged", und „Zauberer" lieferte damit einen kampfbeschädigten
+    Anakin Skywalker aus einer echten Sammlung.
+    """
+    ganz, anfaenge = "", []
+    for wort in re.split(r"[^a-z0-9]+", name.lower()):
+        if not wort:
+            continue
+        anfaenge.append(len(ganz))
+        ganz += wort
+    return ganz, tuple(anfaenge)
+
+
 def _passt(begriff: str, name: str) -> bool:
     """Trifft ein vorgeschlagener Begriff diesen Artikelnamen?
 
@@ -3920,14 +3937,24 @@ def _passt(begriff: str, name: str) -> bool:
     Mehrere Wörter müssen **alle** vorkommen – sonst zöge „Knight Hunter"
     jeden Ritter herein, obwohl es den Begriff so nicht gibt.
     """
-    ganz_name = _such_norm(name)
+    ganz_name, anfaenge = _wortanfaenge(name)
     if not ganz_name:
         return False
+
+    def steht_da(teil: str) -> bool:
+        """Kommt der Teil vor – und beginnt dort auch ein Wort?"""
+        stelle = ganz_name.find(teil)
+        while stelle != -1:
+            if stelle in anfaenge:
+                return True
+            stelle = ganz_name.find(teil, stelle + 1)
+        return False
+
     ganz = _such_norm(begriff)
-    if ganz and ganz in ganz_name:
+    if ganz and steht_da(ganz):
         return True
     woerter = _such_woerter(begriff)
-    return len(woerter) >= 2 and all(w in ganz_name for w in woerter)
+    return len(woerter) >= 2 and all(steht_da(w) for w in woerter)
 
 
 @app.get("/api/collection/suggest")
@@ -3960,11 +3987,16 @@ def suggest_collection(q: str = "", item_type: str = "",
     treffer: list = []
     # Der genaueste Begriff zuerst, nicht der vom Modell zuerst genannte.
     # „roter c3 po" ergibt `C-3PO` und `C-3PO (red)`; in Modellreihenfolge
-    # sammelte der breite Begriff alle drei C-3POs ein, und die Farbvariante
-    # kam auf null neue Treffer – die Eingrenzung verpuffte. Nach Wortzahl
-    # und Länge sortiert steht der rote oben, die übrigen darunter.
-    begriffe.sort(key=lambda b: (len(_such_woerter(b)), len(_such_norm(b))),
-                  reverse=True)
+    # sammelte der breite Begriff alle C-3POs ein, und die Farbvariante kam
+    # auf null neue Treffer – die Eingrenzung verpuffte.
+    #
+    # **Nur** nach Wortzahl, ausdrücklich nicht nach Länge: „Ritter" ergibt
+    # `Knight, Minifigure, Hero, Character`, und mit der Länge als zweitem
+    # Maß lief `Minifigure` vor `Knight`. In einer echten Sammlung stand
+    # daraufhin Greedo unter den Rittern. Innerhalb gleicher Wortzahl bleibt
+    # deshalb die Reihenfolge des Modells stehen – es nennt den Eigennamen
+    # zuerst und die Oberbegriffe zuletzt.
+    begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
     for begriff in begriffe:
         neu = 0
         for eintrag in alle:

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.28.1 – August 2026
+
+### Behoben
+- 🎭 **Greedo stand unter den Rittern.** Beim ersten Einsatz an einer echten
+  Sammlung (888 Figuren) zeigte die neue KI-Suche für „Ritter" neun Treffer –
+  darunter Greedo und Obi-Wan. Für „Zauberer" kam ein kampfbeschädigter
+  Anakin Skywalker. Zwei Ursachen, beide in der Testsammlung unsichtbar, weil
+  dort schlicht nichts so hieß:
+
+  **Die Länge war das falsche Maß für Genauigkeit.** Das Modell liefert für
+  „Ritter" die Begriffe `Knight, Minifigure, Hero, Character`. Sortiert wurde
+  nach Wortzahl *und Länge* – damit lief `Minifigure` (10 Zeichen) vor
+  `Knight` (6) und griff sich als Erstes alles, was „Minifigure" im Namen
+  trägt. Innerhalb gleicher Wortzahl bleibt jetzt die Reihenfolge des Modells
+  stehen; es nennt den Eigennamen zuerst.
+
+  **„Mage" steckt in „Damaged".** Damit „c3 po" den Artikel „C-3PO" findet,
+  wirft der Vergleich Satzzeichen weg – und verlor dabei die Wortgrenze. Ein
+  Begriff muss jetzt dort stehen, wo auch ein Wort anfängt. Bindestrichnamen
+  bleiben trotzdem auffindbar.
+
 ## 2.28.0 – August 2026
 
 ### Neu
