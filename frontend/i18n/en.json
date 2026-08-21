@@ -423,6 +423,7 @@
  "Jetzt neu laden": "Reload now",
  "Kanada": "Canada",
  "Kanadischer Dollar (C$)": "Canadian dollar (C$)",
+ "Katalogsuche ist nicht eingerichtet – Name und Nummer lassen sich trotzdem von Hand eintragen.": "Catalog search is not set up – you can still enter name and number by hand.",
  "Katalogsuche nicht konfiguriert (REBRICKABLE_KEY in docker-compose setzen)": "Catalogue search not configured (set REBRICKABLE_KEY in docker-compose)",
  "Kauf eingetragen ✔": "Purchase recorded ✔",
  "Kauf eintragen": "Record purchase",

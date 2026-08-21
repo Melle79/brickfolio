@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.30.1 – August 2026
+
+### Behoben
+- 🔇 **Die Katalogsuche endete stumm.** Wer beim manuellen Erfassen einen
+  Begriff eintippte, der nichts fand, bekam **gar keine Meldung** – nicht
+  einmal „Nichts gefunden". Man wusste nicht, ob noch gesucht wird, ob die
+  KI dran ist oder ob etwas kaputt ist.
+
+  Die Ursache stand schon länger im Code: `renderSuggestions` setzt bei
+  leerer Liste selbst „Nichts gefunden …", und eine Zeile später löschte ein
+  pauschales `hint.hidden = true` die Meldung wieder – ohne Ansehen des
+  Ergebnisses. Jetzt wird der Hinweis nur weggenommen, wenn es Treffer gibt.
+
+  Zwei weitere stumme Ausgänge kamen mit 2.29.0 dazu: Fand die KI nichts
+  oder fiel sie aus, blendete der Zweig den Hinweis ebenfalls aus. Beide
+  hinterlassen jetzt wieder die „Nichts gefunden"-Meldung.
+
+  Und ohne eingerichtete Katalogsuche steht endlich da, warum nichts
+  passiert, statt dass man tippt und ins Leere schaut.
+
+  Geprüft am laufenden Programm, alle vier Wege: kein Katalog, KI ohne
+  Treffer, KI ausgefallen, KI erfolgreich.
+
 ## 2.30.0 – August 2026
 
 ### Neu

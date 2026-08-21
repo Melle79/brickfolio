@@ -185,3 +185,47 @@ def test_die_oberflaeche_fragt_erst_nach_einer_leeren_suche(client):
     i = js.index("async function runCatalogSearch(")
     block = js[i:js.index("async function katalogKiVersuch(")]
     assert "if (!suggestState.items.length) await katalogKiVersuch(" in block
+
+
+# ------------------------------------------------- Eine Suche endet nie stumm
+
+def _js():
+    from pathlib import Path
+    return (Path(__file__).resolve().parents[1]
+            / "frontend" / "app.js").read_text(encoding="utf-8")
+
+
+def _katalogsuche():
+    js = _js()
+    i = js.index("async function runCatalogSearch(")
+    return js[i:js.index("function nichtsGefundenHinweis(")]
+
+
+def test_die_nichts_gefunden_meldung_wird_nicht_gleich_wieder_geloescht():
+    """`renderSuggestions` setzt bei leerer Liste selbst „Nichts gefunden …".
+
+    Eine Zeile später stand `hint.hidden = true` – pauschal, ohne Ansehen des
+    Ergebnisses. Damit war die Meldung weg, kaum dass sie da war: Wer nichts
+    fand, sah nicht einmal, dass gesucht worden war. Aufgefallen am
+    21.08.2026 beim manuellen Erfassen.
+    """
+    block = _katalogsuche()
+    assert "if (suggestState.items.length) hint.hidden = true;" in block, \
+        "der Hinweis wird weiterhin pauschal ausgeblendet"
+
+
+def test_jeder_ausgang_des_ki_versuchs_hinterlaesst_eine_meldung():
+    """Fehlschlag und leeres Ergebnis blendeten den Hinweis aus – dann stand
+    gar nichts mehr da, und man wusste nicht, ob noch gesucht wird."""
+    js = _js()
+    i = js.index("async function katalogKiVersuch(")
+    block = js[i:js.index("async function loadMoreSuggestions(")]
+    assert block.count("nichtsGefundenHinweis(hint)") >= 2
+    assert "hint.hidden = true" not in block, \
+        "es gibt weiterhin einen stummen Ausgang"
+
+
+def test_ohne_katalogzugang_sagt_die_oberflaeche_warum():
+    """Vorher tippte man und es passierte sichtbar nichts – ununterscheidbar
+    von „findet nichts" und von „ist kaputt"."""
+    assert "Katalogsuche ist nicht eingerichtet" in _katalogsuche()

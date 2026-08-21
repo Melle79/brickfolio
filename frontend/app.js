@@ -4992,7 +4992,11 @@ async function runCatalogSearch() {
   }
   if (!state.catalogSearch) {
     box.innerHTML = "";
-    hint.hidden = true;
+    // Auch das sagen: Vorher tippte man und es passierte sichtbar nichts –
+    // ununterscheidbar von „findet nichts" und von „ist kaputt".
+    hint.textContent = tr("Katalogsuche ist nicht eingerichtet – Name und "
+      + "Nummer lassen sich trotzdem von Hand eintragen.");
+    hint.hidden = false;
     return;
   }
   hint.textContent = tr("Suche im Katalog …");
@@ -5007,7 +5011,11 @@ async function runCatalogSearch() {
                      hasMore: !!data.has_more };
     renderSuggestions(suggestState.items,
       { count: suggestState.count, hasMore: suggestState.hasMore });
-    hint.hidden = true;
+    // **Nur bei Treffern** wegnehmen. `renderSuggestions` setzt bei leerer
+    // Liste selbst „Nichts gefunden …" – ein pauschales Ausblenden löschte
+    // genau diese Meldung eine Zeile später wieder, und die Suche endete
+    // stumm. Wer nichts fand, sah nicht einmal, dass gesucht wurde.
+    if (suggestState.items.length) hint.hidden = true;
     // Nichts gefunden? Dann übersetzen lassen und noch einmal fragen.
     // Genau hier hilft es am meisten: In der Sammlung kann man notfalls
     // blättern, im Katalog sucht man Unbekanntes – ohne Treffer hat man
@@ -5019,7 +5027,19 @@ async function runCatalogSearch() {
   }
 }
 
+/* Die Meldung, mit der eine erfolglose Suche endet.
+
+   Jeder Ausgang muss hier landen. Vorher blendeten die Fehlschläge den
+   Hinweis einfach aus – dann stand da gar nichts mehr, und man wusste nicht,
+   ob noch gesucht wird, ob die KI dran ist oder ob nichts da war. */
+function nichtsGefundenHinweis(hint) {
+  hint.textContent =
+    tr("Nichts gefunden – einfach weitertippen oder unten manuell speichern.");
+  hint.hidden = false;
+}
+
 async function katalogKiVersuch(q, type, seq, hint) {
+  // Ohne KI bleibt die Meldung stehen, die `renderSuggestions` gesetzt hat.
   if (!state.kiSuche) return;
   hint.textContent = tr("Nichts gefunden – die lokale KI übersetzt …");
   hint.hidden = false;
@@ -5028,14 +5048,17 @@ async function katalogKiVersuch(q, type, seq, hint) {
     daten = await api(`/search/suggest?q=${encodeURIComponent(q)}`
       + `&item_type=${type}`);
   } catch (e) {
-    // Stumm: Die leere Liste steht schon da, und ein Zusatzversuch, der
-    // scheitert, ist kein Fehler der Suche.
-    if (seq === searchSeq) hint.hidden = true;
+    // Ein Zusatzversuch, der scheitert, ist kein Fehler der Suche – aber
+    // stumm enden darf er auch nicht.
+    if (seq === searchSeq) nichtsGefundenHinweis(hint);
     return;
   }
   // Inzwischen weitergetippt? Dann gehört die Antwort zu einer alten Frage.
   if (seq !== searchSeq) return;
-  if (!daten || !daten.items || !daten.items.length) { hint.hidden = true; return; }
+  if (!daten || !daten.items || !daten.items.length) {
+    nichtsGefundenHinweis(hint);
+    return;
+  }
   suggestState = { q, type, page: 1, items: daten.items,
                    count: daten.items.length, hasMore: false };
   renderSuggestions(daten.items, { count: daten.items.length, hasMore: false });
