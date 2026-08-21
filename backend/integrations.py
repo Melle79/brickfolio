@@ -894,6 +894,21 @@ _BILD_FRAGE = ("Welche Farben hat diese LEGO-Minifigur? Nenne hoechstens "
                "Woerter.")
 
 
+def _ollama_inhalt(nachricht: dict) -> str:
+    """Die Antwort – auch wenn das Modell sie ins Denken geschrieben hat.
+
+    `qwen3-vl` ist ein Denkmodell und legt seine Antwort in `thinking` ab;
+    `content` bleibt leer, und `think: false` ändert daran nichts (geprüft
+    am 21.08.2026). Ohne diesen Griff sah ausgerechnet das neueste Modell
+    aus, als könne es gar nichts – dabei stand die richtige Antwort da, nur
+    im falschen Feld.
+    """
+    inhalt = (nachricht or {}).get("content") or ""
+    if inhalt.strip():
+        return inhalt
+    return (nachricht or {}).get("thinking") or ""
+
+
 def ollama_bild_modell() -> str:
     return (core.get_setting("ollama_bild_model")
             or os.environ.get("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD)
@@ -918,8 +933,8 @@ def bild_farben(bild: bytes) -> list:
                                 "images": [base64.b64encode(bild).decode()]}]},
             timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
-        roh = json.loads(resp.json().get("message", {})
-                         .get("content", "")).get("farben", [])
+        roh = json.loads(
+            _ollama_inhalt(resp.json().get("message", {}))).get("farben", [])
     except Exception:
         return []
     farben = []
@@ -1049,7 +1064,7 @@ def suchbegriffe(q: str) -> list:
                                {"role": "user", "content": q}]},
             timeout=OLLAMA_TIMEOUT, headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
-        inhalt = resp.json().get("message", {}).get("content", "")
+        inhalt = _ollama_inhalt(resp.json().get("message", {}))
         roh = json.loads(inhalt).get("begriffe", [])
     except Exception:
         roh = []

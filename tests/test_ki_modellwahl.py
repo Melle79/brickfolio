@@ -204,3 +204,66 @@ def test_die_oberflaeche_sortiert_statt_zu_filtern():
     block = js[i:i + 400]
     assert "sort(" in block, "die Liste wird nicht sortiert"
     assert "filter(" not in block, "die Liste wird gefiltert statt sortiert"
+
+
+# ------------------------------------------------- Denkmodelle antworten anders
+
+def test_die_antwort_wird_auch_aus_dem_denkfeld_gelesen(client, monkeypatch):
+    """`qwen3-vl` ist ein Denkmodell: Es legt seine Antwort in `thinking` ab,
+    `content` bleibt leer, und `think: false` ändert daran nichts (geprüft
+    21.08.2026). Ohne diesen Griff sah ausgerechnet das beste Bildmodell im
+    Haus aus, als könne es gar nichts – dabei stand die richtige Antwort da,
+    nur im falschen Feld."""
+    client.post("/api/settings/ollama",
+                json={"url": "http://127.0.0.1:11434", "model": "denker"})
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": "",
+                                "thinking": '{"begriffe": ["Knight"]}'}}
+    monkeypatch.setattr(integrations.requests, "post",
+                        lambda url, **kw: Fake())
+    assert integrations.suchbegriffe("Ritter") == ["Knight"]
+
+
+def test_content_hat_vorrang_vor_dem_denkfeld(client, monkeypatch):
+    """Das Denkfeld ist der Notnagel, nicht die Quelle: Wo beides steht,
+    zählt die eigentliche Antwort."""
+    client.post("/api/settings/ollama",
+                json={"url": "http://127.0.0.1:11434", "model": "denker"})
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": '{"begriffe": ["Knight"]}',
+                                "thinking": '{"begriffe": ["Unsinn"]}'}}
+    monkeypatch.setattr(integrations.requests, "post",
+                        lambda url, **kw: Fake())
+    assert integrations.suchbegriffe("Ritter") == ["Knight"]
+
+
+def test_auch_die_farben_kommen_aus_dem_denkfeld(client, monkeypatch):
+    client.post("/api/settings/ollama",
+                json={"url": "http://127.0.0.1:11434", "model": "denker"})
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": "",
+                                "thinking": '{"farben": ["rot", "schwarz"]}'}}
+    monkeypatch.setattr(integrations.requests, "post",
+                        lambda url, **kw: Fake())
+    assert integrations.bild_farben(b"BILD") == ["rot", "schwarz"]

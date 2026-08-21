@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.34.1 – August 2026
+
+### Behoben
+- 🧠 **Denkmodelle antworten woanders hin.** `qwen3-vl` legt seine Antwort
+  in `thinking` ab; `content` bleibt leer, und `think: false` ändert daran
+  nichts. Für die App sah das aus, als liefere das Modell gar nichts –
+  ausgerechnet das beste Bildmodell im Haus wirkte kaputt, obwohl die
+  richtige Antwort dastand, nur im falschen Feld.
+
+  Ist `content` leer, wird jetzt `thinking` gelesen. Wo beides steht, zählt
+  weiter `content`: Das Denkfeld ist der Notnagel, nicht die Quelle.
+
+  Gemessen am 21.08.2026 gegen dieselben drei Figuren – `qwen3-vl` erkennt
+  R-3PO als Droiden, den AT-AT-Fahrer als Soldaten und Darth Vader
+  **namentlich**, bei richtigen Farben in allen drei Fällen. `gemma3:12b`
+  liegt knapp dahinter, `qwen2.5vl:7b` und `minicpm-v` deutlicher.
+
 ## 2.34.0 – August 2026
 
 ### Neu
