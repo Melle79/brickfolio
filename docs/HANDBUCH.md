@@ -579,9 +579,9 @@ Begriffe gelernt, davon 12 eigene"); **Ansehen und pflegen** öffnet die Liste
 in einem eigenen Fenster, mit Suchfeld und seitenweise. Sie wächst mit jedem
 Suchlauf und hätte die Einstellungen sonst zugeschüttet. Gesucht wird in
 beiden Richtungen: „ritter" über den deutschen Begriff, „Knight" über das,
-was dabei herauskommt. Jede erfolgreiche Übersetzung wandert
-automatisch hinein („ritter → Knight, Minifigure, Hero"); eigene Zeilen trägst
-du selbst ein und sie haben **Vorrang**:
+was dabei herauskommt. Hinein wandert, **was wirklich etwas gefunden hat** –
+„ritter → Knight", nicht die ganze Modellantwort; eigene Zeilen trägst du
+selbst ein und sie haben **Vorrang**:
 
 | Gesucht wird nach | Finden soll er |
 |---|---|
@@ -598,6 +598,13 @@ Drei Dinge sind dabei absichtlich so:
   am Modell. Ein Wechsel des Modells oder des Rechners nimmt es mit.
 - **Die KI überschreibt deine Zeilen nicht.** Sonst wäre das Beigebrachte beim
   nächsten Suchlauf wieder weg.
+- **Gemerkt wird nur, was getroffen hat.** Nicht jede Suche. Bis 2.37.5
+  landete jede Modellantwort dauerhaft in der Liste, auch wenn kein einziger
+  Treffer dabei herauskam – und die Liste wird **vor** dem Modell befragt.
+  Eine erfundene Übersetzung war damit für immer festgeschrieben, und die
+  Liste füllte sich mit Anfragen, die nie wiederkehren. Von den vier
+  Begriffen, die das Modell zu „Ritter" nennt, bleibt jetzt der stehen, der
+  in der Sammlung wirklich etwas gefunden hat.
 - **Tippzwischenstände räumen sich selbst weg.** Ab dem dritten Zeichen löst
   jeder Tastendruck eine Suche aus, und jede merkte sich ihren Begriff: In der
   Liste standen „rit", „ritt", „ritte" neben „ritter". Ein kürzerer Begriff,

@@ -1135,11 +1135,12 @@ def suchbegriffe(q: str) -> list:
     # einzelner Aussetzer den Suchbegriff bis zum Neustart unbrauchbar.
     _begriff_cache[key] = ((None if begriffe else time.time() + _MISSERFOLG_GILT),
                            begriffe)
-    # Nur Treffer in die Liste: Ein Fehlschlag ist kein Wissen, und dauerhaft
-    # gespeichert würde er den Begriff für immer tot stellen.
-    if begriffe:
-        try:
-            begriffe_merken(key, begriffe, "ki")
-        except Exception:
-            pass          # Merken darf die Suche nie stören
+    # **Hier wird nichts mehr gemerkt.** Was das Modell sagt, ist noch kein
+    # Wissen – erst was damit gefunden wurde. Bis 2.37.5 landete jede
+    # Modellantwort dauerhaft in der Liste, auch wenn kein einziger Treffer
+    # dabei herauskam; und die Liste wird **vor** dem Modell befragt. Eine
+    # erfundene Übersetzung war damit für immer festgeschrieben.
+    #
+    # Wer merkt, ist jetzt der Aufrufer: Er allein weiß, welche Begriffe
+    # wirklich etwas getroffen haben.
     return begriffe

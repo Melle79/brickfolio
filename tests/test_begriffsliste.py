@@ -93,12 +93,41 @@ def test_von_hand_gilt_auch_ohne_ki(client):
     assert integrations.suchbegriffe("ritter") == ["Knight", "Castle"]
 
 
-def test_was_das_modell_liefert_landet_in_der_liste(client, monkeypatch):
+def test_eine_blosse_modellantwort_landet_nicht_in_der_liste(client,
+                                                             monkeypatch):
+    """Sven am 21.08.2026: „was macht das eigentlich für einen sinn, dass er
+    jede suche jetzt anlegt".
+
+    Er hat recht: Was das Modell sagt, ist noch kein Wissen – erst was damit
+    gefunden wurde. Die Liste wird **vor** dem Modell befragt, eine erfundene
+    Übersetzung wäre also für immer festgeschrieben. Und sie füllte sich mit
+    Anfragen, die nie wiederkehren.
+    """
     _ki_an(client)
     _ollama(monkeypatch, ["Knight"])
-    integrations.suchbegriffe("Ritter")
+    assert integrations.suchbegriffe("Ritter") == ["Knight"]
+    assert integrations.begriffe_gelernt("ritter") == ([], ""), \
+        "die Modellantwort wurde ungeprüft festgeschrieben"
+
+
+def test_gemerkt_wird_was_wirklich_etwas_gefunden_hat(client, monkeypatch):
+    """Das Gegenstück: Was in der Sammlung wirklich getroffen hat, gehört in
+    die Liste – von dort ist es einseh-, korrigier- und dauerhaft."""
+    _ki_an(client)
+    _ollama(monkeypatch, ["Knight", "Erfundenes"])
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity,"
+            " added_by, added_at) VALUES ('cas001', 'minifig',"
+            " 'Castle Knight', 1, 1, ?)", (now,))
+
+    d = client.get("/api/collection/suggest?q=Ritter").json()
+    assert d["begriffe"] == ["Knight"], d
+
     begriffe, quelle = integrations.begriffe_gelernt("ritter")
     assert begriffe == ["Knight"] and quelle == "ki"
+    assert "Erfundenes" not in begriffe, "auch das Erfundene wurde gemerkt"
 
 
 def test_ein_fehlschlag_wird_nicht_gelernt(client, monkeypatch):
@@ -112,11 +141,23 @@ def test_ein_fehlschlag_wird_nicht_gelernt(client, monkeypatch):
 
 
 def test_das_gelernte_ueberlebt_den_neustart(client, monkeypatch):
-    """Der Zwischenspeicher ist weg, die Liste bleibt."""
+    """Der Zwischenspeicher ist weg, die Liste bleibt.
+
+    Gelernt wird jetzt erst, wenn ein Begriff wirklich etwas gefunden hat –
+    deshalb geht der Weg hier über die Suche und nicht mehr über die
+    Übersetzung allein.
+    """
     _ki_an(client)
     gerufen: list = []
     _ollama(monkeypatch, ["Knight"], mitzaehler=gerufen)
-    integrations.suchbegriffe("Ritter")
+    now = int(time.time())
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, quantity,"
+            " added_by, added_at) VALUES ('cas001', 'minifig',"
+            " 'Castle Knight', 1, 1, ?)", (now,))
+
+    client.get("/api/collection/suggest?q=Ritter")
     integrations._begriff_cache.clear()          # wie nach einem Neustart
     assert integrations.suchbegriffe("Ritter") == ["Knight"]
     assert len(gerufen) == 1, "das Modell wurde erneut befragt"

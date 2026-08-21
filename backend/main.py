@@ -4555,6 +4555,23 @@ def _passt(begriff: str, name: str) -> bool:
     return len(woerter) >= 2 and all(steht_da(w) for w in woerter)
 
 
+def _begriffe_bewaehrt(q: str, treffer: list):
+    """Merken, was sich bewährt hat – und nur das.
+
+    Bis 2.37.5 merkte sich die Übersetzung selbst, was das Modell gesagt
+    hatte, ganz gleich ob damit etwas gefunden wurde. Die Liste wird aber
+    **vor** dem Modell befragt: Eine erfundene Übersetzung war damit für
+    immer festgeschrieben, und die Liste füllte sich mit Anfragen, die nie
+    wiederkehren. Gemerkt wird jetzt nur, was wirklich etwas getroffen hat.
+    """
+    if not treffer:
+        return
+    try:
+        integrations.begriffe_merken(q, treffer, "ki")
+    except Exception:
+        pass              # Merken darf eine gelungene Suche nie stören
+
+
 @app.get("/api/collection/suggest")
 def suggest_collection(q: str = "", item_type: str = "",
                        user: dict = Depends(current_user)):
@@ -4609,6 +4626,7 @@ def suggest_collection(q: str = "", item_type: str = "",
             treffer.append(begriff)
         if len(items) >= SUGGEST_MAX:
             break
+    _begriffe_bewaehrt(q, treffer)
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
 
@@ -4671,6 +4689,7 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf
     # einem fremden Kontingent.
     if items:
+        _begriffe_bewaehrt(q, treffer)
         return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
     for begriff in begriffe[:KATALOG_KI_VERSUCHE]:
         try:
@@ -4692,6 +4711,7 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
             treffer.append(begriff)
         if len(items) >= SUGGEST_MAX:
             break
+    _begriffe_bewaehrt(q, treffer)
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
 
