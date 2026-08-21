@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.33.1 – August 2026
+
+### Behoben
+- 📚 **Die Karte des Katalog-Abzugs sprach noch von Star Wars.** Sie hieß
+  „Katalog-Abzug (Star Wars)" und versprach „rund 25 Minuten" – beides war
+  seit 2.33.0 falsch: Sie kann alle Themen, und die 25 Minuten stammten aus
+  einer Schätzung mit 0,5 s je Abruf.
+
+  Gemessen sind es **0,38 Abrufe je Sekunde** – BrickLink antwortet unter
+  Dauerlast langsamer als bei Einzelabfragen. Das heißt rund **eine Stunde
+  je 1.500 Nummern**, für alle sieben Themen zusammen etwa fünf. Handbuch
+  und Oberfläche nennen jetzt diese Zahl.
+
 ## 2.33.0 – August 2026
 
 ### Neu

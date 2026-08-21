@@ -467,8 +467,8 @@ Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
-**📚 Katalog-Abzug (Star Wars).** Holt die Star-Wars-Figuren einmal von
-BrickLink und legt Namen und Jahr in der eigenen Datenbank ab. Danach findet
+**📚 Katalog-Abzug.** Holt die Figuren eines Themas einmal von BrickLink
+und legt Namen und Jahr in der eigenen Datenbank ab. Danach findet
 die Suche sie über **beschreibende Wörter**: „Protokolldroide" findet
 `R-3PO Protocol Droid`. Über den gewöhnlichen Katalog geht das nicht –
 Rebrickable nennt dieselbe Figur nur `R-3PO`, ohne ein einziges Wort zum
@@ -483,8 +483,13 @@ Weitere trägt man einfach dazu; der Lauf prüft selbst, ob es sie gibt.
 
 Der Abzug läuft die Nummern der Reihe nach ab (`sw0002`, `sw0003`, …), denn
 eine Auflistung einer Kategorie bietet BrickLink nicht an. **Bewusst
-gedrosselt** auf einen Abruf je Sekunde – rund 25 Minuten für etwa 1.500
-Figuren. Das ist keine Höflichkeit: Es ist derselbe Zugang, über den die
+gedrosselt** um eine Sekunde je Abruf. Zusammen mit BrickLinks eigener
+Antwortzeit ergibt das **gemessen 0,38 Abrufe je Sekunde** – also rund eine
+Stunde je 1.500 Nummern. So viel hat etwa Star Wars; `cty` mehr, `cas`,
+`hp` und `col` deutlich weniger. Für alle sieben Themen zusammen sind es
+rund fünf Stunden.
+
+Die Drosselung ist keine Höflichkeit: Es ist derselbe Zugang, über den die
 Preise laufen, und ein Durchlauf mit Vollgas könnte das Tageskontingent
 aufbrauchen. Dann stünde der Scanner ohne Preise da.
 
