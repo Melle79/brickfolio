@@ -537,3 +537,109 @@ def test_doppelte_und_unsinnige_themen_fallen_raus(client):
     d = client.post("/api/katalog/themen",
                     json={"themen": "sw, SW , ../x, , cty"}).json()
     assert d["themen"] == ["sw", "cty"]
+
+
+# ------------------------------ Ein Ausfall ist kein „nichts erkannt"
+
+def _farbzeilen(anzahl=10):
+    with core.db() as conn:
+        for i in range(anzahl):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " img_url, updated_at) VALUES (?, 'minifig', ?, ?,"
+                " 'https://img.bricklink.com/ML/x.jpg', 0)",
+                ("sw%04d" % i, "Figur %d" % i, "figur"))
+
+
+def test_ein_ausfall_hakt_die_figur_nicht_als_angesehen_ab(client, monkeypatch):
+    """Am 21.08.2026 antwortete Ollama nicht mehr – und der Farbenlauf hakte
+    trotzdem eine Figur nach der anderen als erledigt ab. 45 waren so schon
+    verbrannt: Sie stehen als „angesehen, nichts erkannt" in der Datenbank
+    und kämen nie wieder an die Reihe.
+
+    „Nichts erkannt" ist ein Ergebnis. „Gar nicht erst gefragt bekommen" ist
+    ein Ausfall. Das darf nicht dasselbe sein.
+    """
+    _farbzeilen()
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image",
+                        lambda *a, **k: b"BILD")
+    monkeypatch.setattr(main.integrations, "prepare_image",
+                        lambda roh, n=512: roh)
+    monkeypatch.setattr(main.integrations, "bild_merkmale",
+                        lambda b: {"art": "", "farben": [],
+                                   "fehler": "ReadTimeout: 120s"})
+    monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+
+    main._katalog_farben()
+
+    with core.db() as conn:
+        offen = conn.execute("SELECT COUNT(*) AS n FROM katalog_index "
+                             "WHERE farben = ''").fetchone()["n"]
+    assert offen == 10, "der Ausfall wurde als Ergebnis verbucht"
+    assert "antwortet nicht" in main._farb_lauf["fehler"]
+
+
+def test_nach_fuenf_ausfaellen_ist_schluss(client, monkeypatch):
+    """Sonst läuft er durch den ganzen Index – bei 7.000 Figuren wären das
+    7.000 verbrannte Zeilen statt fünf verlorenen Versuchen."""
+    _farbzeilen()
+    versuche = []
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image",
+                        lambda *a, **k: b"BILD")
+    monkeypatch.setattr(main.integrations, "prepare_image",
+                        lambda roh, n=512: roh)
+
+    def kaputt(b):
+        versuche.append(1)
+        return {"art": "", "farben": [], "fehler": "ReadTimeout"}
+    monkeypatch.setattr(main.integrations, "bild_merkmale", kaputt)
+    monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+
+    main._katalog_farben()
+    assert len(versuche) == main.KATALOG_FARB_PATZER
+
+
+def test_ein_fehlendes_bild_gilt_als_erledigt(client, monkeypatch):
+    """BrickLink hat nicht zu jeder Figur ein Bild – `sw0307` (Embo) etwa
+    liefert 404. Das ist ein Ergebnis: Sonst versuchte es jeder Lauf wieder
+    und käme nie ans Ende."""
+    _farbzeilen(3)
+
+    def kein_bild(*a, **k):
+        raise ValueError("404")
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image", kein_bild)
+    monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+
+    main._katalog_farben()
+
+    with core.db() as conn:
+        offen = conn.execute("SELECT COUNT(*) AS n FROM katalog_index "
+                             "WHERE farben = ''").fetchone()["n"]
+    assert offen == 0
+    assert main._farb_lauf["fehler"] == ""
+
+
+def test_ein_einzelner_aussetzer_beendet_den_lauf_nicht(client, monkeypatch):
+    """Das Modell wird gerade geladen – das kommt vor und darf keinen
+    Abbruch auslösen. Erst fünf in Folge sind ein Ausfall."""
+    _farbzeilen(6)
+    n = {"i": 0}
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image",
+                        lambda *a, **k: b"BILD")
+    monkeypatch.setattr(main.integrations, "prepare_image",
+                        lambda roh, m=512: roh)
+
+    def mal_so_mal_so(b):
+        n["i"] += 1
+        if n["i"] in (2, 5):
+            return {"art": "", "farben": [], "fehler": "ReadTimeout"}
+        return {"art": "droid", "farben": ["red"], "fehler": ""}
+    monkeypatch.setattr(main.integrations, "bild_merkmale", mal_so_mal_so)
+    monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+
+    main._katalog_farben()
+    assert main._farb_lauf["fehler"] == ""
+    with core.db() as conn:
+        fertig = conn.execute("SELECT COUNT(*) AS n FROM katalog_index "
+                              "WHERE farben <> ''").fetchone()["n"]
+    assert fertig == 6, "die Aussetzer wurden nicht wiederholt"

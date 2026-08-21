@@ -938,9 +938,15 @@ def bild_merkmale(bild: bytes) -> dict:
 
     Leere Werte heißen „nicht erkannt", und das ist kein Fehler: Der Abzug
     ist auch ohne brauchbar, der Name trägt die Hauptlast.
+
+    **`fehler` trennt zwei Dinge, die gleich aussehen.** „Angesehen und
+    nichts erkannt" ist ein Ergebnis; „gar nicht erst gefragt bekommen"
+    ist ein Ausfall. Bis 2.37.3 war beides dasselbe – als Ollama nicht mehr
+    antwortete, hakte der Farbenlauf trotzdem eine Figur nach der anderen
+    als erledigt ab. Die sieht sich nie wieder jemand an.
     """
     if not bild or not ollama_enabled():
-        return {"art": "", "farben": []}
+        return {"art": "", "farben": [], "fehler": ""}
     basis = ollama_setting("ollama_url").strip().rstrip("/")
     try:
         resp = requests.post(
@@ -954,8 +960,9 @@ def bild_merkmale(bild: bytes) -> dict:
         resp.raise_for_status()
         d = json.loads(_ollama_inhalt(resp.json().get("message", {})))
         roh, art = d.get("colors", []), d.get("kind", "")
-    except Exception:
-        return {"art": "", "farben": []}
+    except Exception as e:
+        return {"art": "", "farben": [],
+                "fehler": "%s: %s" % (type(e).__name__, e)}
     farben = []
     for f in roh if isinstance(roh, list) else []:
         f = re.sub(r"[^a-z]", "", str(f).lower())
@@ -964,7 +971,7 @@ def bild_merkmale(bild: bytes) -> dict:
     # Die Art knapp halten: Ein ganzer Satz im Suchtext trifft irgendwann
     # alles. Zwei Wörter reichen für „Alien", „Clone Trooper", „Droide".
     art = " ".join(re.sub(r"[^a-z ]", " ", str(art).lower()).split()[:2])
-    return {"art": art, "farben": farben[:3]}
+    return {"art": art, "farben": farben[:3], "fehler": ""}
 
 
 def ollama_modelle(url: str = "") -> list:

@@ -5860,9 +5860,13 @@ function farbenStand(d) {
     start.hidden = true; stop.hidden = false;
   } else {
     start.hidden = false; stop.hidden = true;
-    feld.textContent = f.offen
-      ? tr("{o} Figuren noch nicht angesehen", { o: f.offen })
-      : tr("Alle Bilder angesehen.");
+    // Ein Lauf, der wegen der KI aufgegeben hat, sieht sonst genauso aus
+    // wie einer, den jemand von Hand angehalten hat.
+    feld.textContent = f.fehler
+      ? tr("Abgebrochen: {f}", { f: f.fehler })
+      : (f.offen
+        ? tr("{o} Figuren noch nicht angesehen", { o: f.offen })
+        : tr("Alle Bilder angesehen."));
   }
 }
 

@@ -557,6 +557,20 @@ Alien, Leia → Mensch); `minicpm-v` lag in zwei von drei Proben daneben und
 hielt Darth Vader für einen Droiden. Ein schwaches Modell schreibt hier
 Unsinn in den Suchtext — wähle es unter *Modell fürs Bilderansehen*.
 
+> **Antwortet die KI nicht, hört der Lauf auf.** Das klingt selbstverständlich,
+> war es aber nicht: Bis 2.37.3 galt „gar keine Antwort" als dasselbe wie
+> „nichts erkannt". Als Ollama am 21.08.2026 nicht mehr antwortete, hakte der
+> Lauf trotzdem eine Figur nach der anderen als angesehen ab – 45 waren so
+> verbrannt, bevor es auffiel. Die sieht sich sonst nie wieder jemand an.
+>
+> Jetzt gilt: Ein Ausfall schreibt **nichts**, die Figur bleibt offen. Nach
+> fünf Ausfällen in Folge endet der Lauf mit dem Grund in der Anzeige. Ein
+> einzelner Aussetzer – das Modell wird gerade geladen – ändert nichts.
+>
+> Ein **fehlendes Bild** ist dagegen ein Ergebnis: BrickLink hat nicht zu
+> jeder Figur eins (`sw0307`, Embo, liefert 404). Die Figur gilt als
+> abgearbeitet, sonst versuchte es jeder Lauf wieder.
+
 Rund 5,5 Sekunden je Figur, jederzeit anhaltbar. Ein leeres Ergebnis wird
 festgehalten, sonst versuchte der nächste Lauf dieselbe Figur wieder.
 

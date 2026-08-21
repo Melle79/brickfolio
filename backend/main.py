@@ -2840,9 +2840,18 @@ _farb_lauf = {"aktiv": False, "getan": 0, "gefunden": 0, "offen": 0,
               "stop": False, "fehler": ""}
 
 
+# Wie viele Ausfälle hintereinander, bevor der Lauf aufgibt. Fünf, weil ein
+# einzelner Aussetzer (Modell wird gerade geladen) normal ist – fünf in Folge
+# heißt, dass die KI nicht mehr antwortet. Weiterzulaufen wäre das Schlimmste:
+# Der Lauf hakte dann eine Figur nach der anderen als „angesehen" ab, ohne
+# je hingesehen zu haben, und keine davon käme je wieder an die Reihe.
+KATALOG_FARB_PATZER = 5
+
+
 def _katalog_farben(grenze: int = 0):
     _farb_lauf.update({"aktiv": True, "getan": 0, "gefunden": 0,
                        "stop": False, "fehler": ""})
+    patzer = 0
     try:
         while not _farb_lauf["stop"]:
             with core.db() as conn:
@@ -2860,10 +2869,27 @@ def _katalog_farben(grenze: int = 0):
                 try:
                     roh = integrations.fetch_catalog_image(
                         r["img_url"], integrations.BILD_HOSTS)
-                    m = integrations.bild_merkmale(
-                        integrations.prepare_image(roh, 512))
+                    bild = integrations.prepare_image(roh, 512)
                 except Exception:
-                    m = {"art": "", "farben": []}
+                    # Kein Bild vorhanden (BrickLink liefert für manche
+                    # Figuren keins) oder unlesbar. Das ist ein Ergebnis,
+                    # kein Ausfall – die Figur ist damit abgearbeitet.
+                    m = {"art": "", "farben": [], "fehler": ""}
+                else:
+                    m = integrations.bild_merkmale(bild)
+
+                if m.get("fehler"):
+                    # Nichts schreiben: Die Figur wurde nie angesehen. Sie
+                    # bleibt offen und kommt beim nächsten Lauf wieder dran.
+                    patzer += 1
+                    if patzer >= KATALOG_FARB_PATZER:
+                        _farb_lauf["fehler"] = (
+                            "Die lokale KI antwortet nicht (%d Versuche in "
+                            "Folge): %s" % (patzer, m["fehler"]))
+                        return
+                    time.sleep(KATALOG_FARB_TAKT)
+                    continue
+                patzer = 0
                 # Auch ein leeres Ergebnis festhalten – sonst versucht der
                 # nächste Lauf dieselbe Figur wieder und käme nie ans Ende.
                 with core.db() as conn:
@@ -2959,7 +2985,8 @@ def katalog_status(user: dict = Depends(admin_user)):
             "farben": {"laeuft": _farb_lauf["aktiv"],
                        "getan": _farb_lauf["getan"],
                        "gefunden": _farb_lauf["gefunden"],
-                       "offen": _farb_lauf["offen"]},
+                       "offen": _farb_lauf["offen"],
+                       "fehler": _farb_lauf["fehler"]},
             "themen": _katalog_themen_lesen(),
             "takt": KATALOG_TAKT,
             "laeufe": [{"praefix": r["praefix"], "zuletzt": r["zuletzt"],
