@@ -5547,7 +5547,7 @@ async function loadOllama() {
     $("ollama-model-frei").placeholder = d.default_model || "";
     state.kiSuche = !!d.enabled;
     if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
-    begriffeLaden();      // auch ohne KI: die eigenen Zeilen gelten trotzdem
+    begriffeBilanz();     // auch ohne KI: die eigenen Zeilen gelten trotzdem
   } catch (e) { /* kein Admin oder alte Fassung: Karte bleibt leer */ }
 }
 
@@ -5598,22 +5598,114 @@ function modellwahlGeaendert() {
   frei.focus();
 }
 
-/* ------------------------------------------------- Gelernte Begriffe */
+/* ------------------------------------------------- Gelernte Begriffe
 
-async function begriffeLaden() {
+   In den Einstellungen steht nur die Bilanz. Die Liste wächst mit jedem
+   Suchlauf – und ein Durchlauf über die BrickLink-Nummern brächte Tausende
+   Zeilen auf einen Schlag. Vollständig in die Einstellungskarte gesetzt
+   machte sie diese unbenutzbar, deshalb ein eigenes Fenster mit Suche. */
+
+let begriffStand = { q: "", offset: 0 };
+/* Laufnummer gegen überholte Antworten.
+
+   Beim Öffnen läuft der Erstaufbau, und wer sofort ins Suchfeld tippt, löst
+   eine zweite Abfrage aus. Kommt die erste später zurück, überschreibt sie
+   das gefilterte Ergebnis – die Suche sah dann aus, als täte sie nichts.
+   Dieselbe Laufnummer schützt schon die Katalogsuche. */
+let begriffSeq = 0;
+
+async function begriffeBilanz() {
+  const feld = $("begriff-bilanz");
+  if (!feld) return;
+  try {
+    const d = await api("/settings/begriffe?limit=1");
+    feld.textContent = d.gesamt
+      ? tr("{n} Begriffe gelernt, davon {e} eigene",
+           { n: d.gesamt, e: d.eigene })
+      : tr("Noch nichts gelernt.");
+  } catch (e) { feld.textContent = ""; }
+}
+
+async function begriffeFenster() {
+  const alt = document.getElementById("begriff-modal");
+  if (alt) alt.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "card-modal-overlay stacked";
+  overlay.id = "begriff-modal";
+  overlay.innerHTML = `
+    <div class="card-modal">
+      <button class="card-modal-close" data-zu aria-label="${esc(tr("Schließen"))}">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <h3 style="margin:0 0 6px">${esc(tr("Gelernte Begriffe"))}</h3>
+        <p class="search-hint">${esc(tr("Eigene Zeilen haben Vorrang vor der KI und gelten auch ohne sie."))}</p>
+        <label for="begriff-neu">${esc(tr("Gesucht wird nach …"))}</label>
+        <input id="begriff-neu" autocapitalize="none" spellcheck="false" maxlength="60">
+        <label for="begriffe-neu">${esc(tr("Finden soll er … (mit Komma trennen)"))}</label>
+        <input id="begriffe-neu" autocapitalize="none" spellcheck="false" maxlength="300">
+        <div class="detail-row">
+          <button id="btn-add-begriff" class="mini-btn add">${esc(tr("Eintragen"))}</button>
+        </div>
+        <p id="begriff-status" class="search-hint" hidden></p>
+        <hr>
+        <label for="begriff-suche">${esc(tr("In der Liste suchen"))}</label>
+        <input id="begriff-suche" autocapitalize="none" spellcheck="false"
+               placeholder="${esc(tr("deutsch oder englisch"))}">
+        <div id="begriff-liste" class="results"></div>
+        <div class="detail-row">
+          <button id="btn-begriff-mehr" class="mini-btn" hidden>${esc(tr("Mehr laden"))}</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(alsEigenMerken(overlay));
+  const zu = () => { overlay.remove(); begriffeBilanz(); };
+  overlay.querySelectorAll("[data-zu]").forEach((b) =>
+    b.addEventListener("click", zu));
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay) zu(); });
+  $("btn-add-begriff").addEventListener("click", begriffEintragen);
+  $("begriffe-neu").addEventListener("keydown",
+    (e) => { if (e.key === "Enter") begriffEintragen(); });
+  // Bei jedem Tastendruck zu suchen hieße eine Abfrage je Buchstabe; eine
+  // Viertelsekunde Ruhe genügt und ist beim Tippen nicht zu merken.
+  let takt = null;
+  $("begriff-suche").addEventListener("input", () => {
+    clearTimeout(takt);
+    takt = setTimeout(() => {
+      begriffStand = { q: $("begriff-suche").value.trim(), offset: 0 };
+      begriffeLaden();
+    }, 250);
+  });
+  $("btn-begriff-mehr").addEventListener("click", () => {
+    begriffStand.offset += 25;
+    begriffeLaden(true);
+  });
+  $("begriff-liste").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-begriff-weg]");
+    if (b) begriffLoeschen(b.dataset.begriffWeg);
+  });
+  begriffStand = { q: "", offset: 0 };
+  begriffeLaden();
+}
+
+async function begriffeLaden(anhaengen = false) {
   const box = $("begriff-liste");
   if (!box) return;
+  const seq = ++begriffSeq;
   let d;
-  try { d = await api("/settings/begriffe"); }
-  catch (e) { box.innerHTML = ""; return; }
+  try {
+    d = await api("/settings/begriffe?limit=25"
+      + "&offset=" + begriffStand.offset
+      + "&q=" + encodeURIComponent(begriffStand.q));
+  } catch (e) { if (seq === begriffSeq) box.innerHTML = ""; return; }
+  if (seq !== begriffSeq) return;      // eine neuere Abfrage läuft schon
   const liste = (d && d.begriffe) || [];
-  if (!liste.length) {
-    box.innerHTML = `<p class="empty">${esc(tr("Noch nichts gelernt."))}</p>`;
-    return;
+  if (!anhaengen) box.innerHTML = "";
+  if (!liste.length && !anhaengen) {
+    box.innerHTML = `<p class="empty">${esc(begriffStand.q
+      ? tr("Nichts gefunden.") : tr("Noch nichts gelernt."))}</p>`;
   }
   // Herkunft sichtbar machen: Eine eigene Zeile ist eine Entscheidung, eine
   // vom Modell nur eine Vermutung – und die will man anders behandeln.
-  box.innerHTML = liste.map((b) => `
+  box.insertAdjacentHTML("beforeend", liste.map((b) => `
     <div class="row-item">
       <div class="row-main">
         <strong>${esc(b.begriff)}</strong>
@@ -5625,11 +5717,18 @@ async function begriffeLaden() {
         <button class="mini-btn" data-begriff-weg="${esc(b.begriff)}"
           >${esc(tr("Löschen"))}</button>
       </div>
-    </div>`).join("");
+    </div>`).join(""));
+  const mehr = $("btn-begriff-mehr");
+  if (mehr) mehr.hidden = !d.mehr;
+  const st = $("begriff-status");
+  if (st && begriffStand.q) {
+    st.textContent = tr("{n} Treffer", { n: d.gefunden });
+    st.hidden = false;
+  }
 }
 
 async function begriffEintragen() {
-  const out = $("ollama-status");
+  const out = $("begriff-status");
   try {
     await api("/settings/begriffe", { method: "POST", body: {
       begriff: $("begriff-neu").value.trim(),
@@ -5639,6 +5738,7 @@ async function begriffEintragen() {
     $("begriffe-neu").value = "";
     out.textContent = tr("Eingetragen ✔");
     out.hidden = false;
+    begriffStand.offset = 0;
     begriffeLaden();
   } catch (e) {
     out.textContent = e.message;
@@ -5650,6 +5750,7 @@ async function begriffLoeschen(begriff) {
   try {
     await api("/settings/begriffe/" + encodeURIComponent(begriff),
               { method: "DELETE" });
+    begriffStand.offset = 0;
     begriffeLaden();
   } catch (e) { toast(e.message); }
 }
@@ -10374,13 +10475,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-save-ollama").addEventListener("click", saveOllama);
   $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-reload-models").addEventListener("click", modelleLaden);
-  $("btn-add-begriff").addEventListener("click", begriffEintragen);
-  $("begriffe-neu").addEventListener("keydown",
-    (e) => { if (e.key === "Enter") begriffEintragen(); });
-  $("begriff-liste").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-begriff-weg]");
-    if (b) begriffLoeschen(b.dataset.begriffWeg);
-  });
+  $("btn-begriffe").addEventListener("click", begriffeFenster);
   $("ollama-model").addEventListener("change", modellwahlGeaendert);
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.

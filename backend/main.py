@@ -2651,22 +2651,58 @@ class BegriffBody(BaseModel):
     begriffe: str = Field(default="", max_length=300)
 
 
+BEGRIFFE_SEITE = 25
+
+
 @app.get("/api/settings/begriffe")
-def get_begriffe(user: dict = Depends(admin_user)):
+def get_begriffe(q: str = "", nur: str = "", limit: int = BEGRIFFE_SEITE,
+                 offset: int = 0, user: dict = Depends(admin_user)):
     """Was die Suche gelernt hat – von Hand Gepflegtes zuerst.
 
     Sichtbar zu machen ist der halbe Zweck: Bis 2.31.0 lag diese Zuordnung
     nur im Arbeitsspeicher, und man konnte nicht nachsehen, warum „roter
     c3po" ausgerechnet C-3PO-Varianten ergab.
+
+    **Seitenweise und durchsuchbar**, nicht am Stück: Die Liste wächst mit
+    jedem Suchlauf, und ein geplanter Durchlauf über die BrickLink-Nummern
+    brächte Tausende Zeilen auf einen Schlag. Vollständig ausgegeben würde
+    sie die Einstellungen unbrauchbar machen – und die Antwort nebenbei
+    megabyteweise aufblähen.
+
+    Gesucht wird in beiden Richtungen: „ritter" findet man über den
+    deutschen Begriff, „Knight" über das, was dabei herauskommt.
     """
+    limit = max(1, min(limit, 200))
+    offset = max(0, offset)
+    wo, werte = [], []
+    if q.strip():
+        wo.append("(begriff LIKE ? OR begriffe LIKE ?)")
+        werte += ["%" + q.strip() + "%"] * 2
+    if nur in ("hand", "ki"):
+        wo.append("quelle = ?")
+        werte.append(nur)
+    bedingung = (" WHERE " + " AND ".join(wo)) if wo else ""
     with core.db() as conn:
+        gesamt = conn.execute("SELECT COUNT(*) AS n FROM suchbegriffe"
+                              + bedingung, werte).fetchone()["n"]
+        # Die beiden Zahlen für die Übersicht gelten immer für alles, nicht
+        # für die gefilterte Sicht – sonst sagt „12 eigene" plötzlich etwas
+        # anderes, nur weil jemand etwas ins Suchfeld getippt hat.
+        alle = conn.execute("SELECT COUNT(*) AS n, "
+                            "SUM(quelle = 'hand') AS eigene "
+                            "FROM suchbegriffe").fetchone()
         rows = conn.execute(
-            "SELECT begriff, begriffe, quelle, created_at FROM suchbegriffe "
-            "ORDER BY quelle = 'ki', begriff").fetchall()
+            "SELECT begriff, begriffe, quelle, created_at FROM suchbegriffe"
+            + bedingung + " ORDER BY quelle = 'ki', begriff LIMIT ? OFFSET ?",
+            werte + [limit, offset]).fetchall()
     return {"begriffe": [{"begriff": r["begriff"],
                           "begriffe": json.loads(r["begriffe"]),
                           "quelle": r["quelle"],
-                          "created_at": r["created_at"]} for r in rows]}
+                          "created_at": r["created_at"]} for r in rows],
+            "gefunden": gesamt,
+            "mehr": offset + len(rows) < gesamt,
+            "gesamt": alle["n"] or 0,
+            "eigene": alle["eigene"] or 0}
 
 
 @app.post("/api/settings/begriffe")

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.31.1 – August 2026
+
+### Geändert
+- 📖 **Die gelernten Begriffe haben ein eigenes Fenster.** In den
+  Einstellungen stand die vollständige Liste – bei ein paar Zeilen ging das,
+  aber sie wächst mit jedem Suchlauf, und ein geplanter Durchlauf über die
+  BrickLink-Nummern brächte Tausende auf einen Schlag. Die Einstellungen
+  wären damit unbrauchbar geworden.
+
+  Dort steht jetzt nur die Bilanz („38 Begriffe gelernt, davon 12 eigene").
+  **Ansehen und pflegen** öffnet die Liste mit Suchfeld, seitenweise zu 25.
+  Gesucht wird in beiden Richtungen: „ritter" über den deutschen Begriff,
+  „Knight" über das, was dabei herauskommt – wer eine Zeile korrigieren
+  will, weiß mal das eine und mal das andere.
+
+  Die Bilanz gilt dabei immer für alles, nie für die gefilterte Sicht: Sonst
+  sagte „12 eigene" plötzlich etwas anderes, nur weil jemand etwas ins
+  Suchfeld getippt hat.
+
+  Die Liste trägt jetzt dieselbe Laufnummer gegen überholte Antworten wie
+  die Katalogsuche. Wer sofort nach dem Öffnen tippt, löst eine zweite
+  Abfrage aus, während der Erstaufbau noch läuft – käme der später zurück,
+  überschriebe er das gefilterte Ergebnis.
+
 ## 2.31.0 – August 2026
 
 ### Neu

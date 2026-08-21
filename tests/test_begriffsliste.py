@@ -173,3 +173,60 @@ def test_nur_fuer_admins(client):
     assert c.post("/api/settings/begriffe",
                   json={"begriff": "x", "begriffe": "y"}
                   ).status_code in (401, 403)
+
+
+# ------------------------------------------------- Die Liste darf wachsen
+
+def test_die_liste_kommt_seitenweise(client):
+    """Sie wächst mit jedem Suchlauf, und ein Durchlauf über die
+    BrickLink-Nummern brächte Tausende Zeilen auf einen Schlag. Am Stück
+    ausgegeben machte sie die Einstellungen unbenutzbar und die Antwort
+    megabyteweise groß."""
+    for i in range(40):
+        integrations.begriffe_merken("wort%02d" % i, ["Term%02d" % i], "ki")
+
+    d = client.get("/api/settings/begriffe?limit=25").json()
+    assert len(d["begriffe"]) == 25
+    assert d["gesamt"] == 40 and d["mehr"] is True
+
+    rest = client.get("/api/settings/begriffe?limit=25&offset=25").json()
+    assert len(rest["begriffe"]) == 15 and rest["mehr"] is False
+
+
+def test_gesucht_wird_in_beiden_richtungen(client):
+    """„ritter" findet man über den deutschen Begriff, „Knight" über das,
+    was dabei herauskommt – wer eine Zeile korrigieren will, weiß mal das
+    eine und mal das andere."""
+    integrations.begriffe_merken("ritter", ["Knight", "Castle"], "ki")
+    integrations.begriffe_merken("pirat", ["Pirate"], "ki")
+
+    assert [b["begriff"] for b in
+            client.get("/api/settings/begriffe?q=ritt").json()["begriffe"]] \
+        == ["ritter"]
+    assert [b["begriff"] for b in
+            client.get("/api/settings/begriffe?q=Knight").json()["begriffe"]] \
+        == ["ritter"]
+
+
+def test_die_bilanz_gilt_immer_fuer_alles(client):
+    """Sonst sagte „12 eigene" plötzlich etwas anderes, nur weil jemand
+    etwas ins Suchfeld getippt hat."""
+    integrations.begriffe_merken("ritter", ["Knight"], "ki")
+    client.post("/api/settings/begriffe",
+                json={"begriff": "roter c3po", "begriffe": "R-3PO"})
+
+    d = client.get("/api/settings/begriffe?q=ritter").json()
+    assert d["gefunden"] == 1, "die Suche filtert nicht"
+    assert d["gesamt"] == 2 and d["eigene"] == 1
+
+
+def test_die_einstellungen_zeigen_nur_die_bilanz():
+    """Die Liste selbst gehört in ein eigenes Fenster."""
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1]
+            / "frontend" / "index.html").read_text(encoding="utf-8")
+    i = html.index("Gelernte Begriffe")
+    karte = html[i:i + 900]
+    assert 'id="begriff-bilanz"' in karte
+    assert 'id="begriff-liste"' not in karte, \
+        "die vollständige Liste steht wieder in den Einstellungen"

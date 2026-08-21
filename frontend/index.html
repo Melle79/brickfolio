@@ -767,16 +767,13 @@
         beibringst. Eigene Zeilen haben Vorrang vor der KI und gelten auch
         ohne sie. Nützlich, wenn ihr etwas anders nennt als der Katalog:
         <code>roter c3po → R-3PO</code>.</p>
+      <!-- Hier steht nur die Bilanz. Die Liste wächst mit jedem Suchlauf und
+           würde die Einstellungen sonst unbenutzbar machen; sie hat ein
+           eigenes Fenster mit Suche. -->
       <div class="detail-row">
-        <input id="begriff-neu" placeholder="Gesucht wird nach …"
-               autocapitalize="none" spellcheck="false" maxlength="60">
-        <input id="begriffe-neu" placeholder="Finden soll er … (Komma)"
-               autocapitalize="none" spellcheck="false" maxlength="300">
+        <span id="begriff-bilanz" class="search-hint"></span>
+        <button id="btn-begriffe" class="mini-btn">Ansehen und pflegen</button>
       </div>
-      <div class="detail-row">
-        <button id="btn-add-begriff" class="mini-btn add">Eintragen</button>
-      </div>
-      <div id="begriff-liste" class="results"></div>
     </div>
     <div class="settings-card" id="price-region-card" hidden>
       <h3>🌍 Preisgebiet</h3>

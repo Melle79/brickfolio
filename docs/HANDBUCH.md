@@ -467,8 +467,12 @@ Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
-**📖 Gelernte Begriffe.** Unter der KI-Karte steht, was die Suche gelernt
-hat – und dort bringst du ihr etwas bei. Jede erfolgreiche Übersetzung wandert
+**📖 Gelernte Begriffe.** Unter der KI-Karte steht die Bilanz („1.243
+Begriffe gelernt, davon 12 eigene"); **Ansehen und pflegen** öffnet die Liste
+in einem eigenen Fenster, mit Suchfeld und seitenweise. Sie wächst mit jedem
+Suchlauf und hätte die Einstellungen sonst zugeschüttet. Gesucht wird in
+beiden Richtungen: „ritter" über den deutschen Begriff, „Knight" über das,
+was dabei herauskommt. Jede erfolgreiche Übersetzung wandert
 automatisch hinein („ritter → Knight, Minifigure, Hero"); eigene Zeilen trägst
 du selbst ein und sie haben **Vorrang**:
 
