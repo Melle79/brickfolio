@@ -2685,7 +2685,12 @@ KATALOG_MAX = 4000            # Notbremse gegen eine endlose Schleife
 # der Präfixe gibt BrickLink nicht heraus. Die Ziffernbreite unterscheidet
 # sich je Thema und wird zur Laufzeit ermittelt (siehe `_katalog_breite`).
 KATALOG_THEMEN = ["sw", "cty", "njo", "sh", "frnd", "cas", "pi", "hp",
-                  "jw", "sp", "ww", "lor", "iaj", "gen"]
+                  "jw", "sp", "ww", "lor", "iaj", "gen",
+                  # Am 21.08.2026 mit dem Prüfknopf nachgemessen – alle drei
+                  # dreistellig: col001 „Tribal Hunter", adv001 „Achu",
+                  # trn001 (Bahnarbeiter). `trn` ist ein eigenes Präfix und
+                  # nicht in `cty` enthalten.
+                  "col", "adv", "trn"]
 
 _katalog_lauf = {"aktiv": False, "praefix": "", "nummer": 0, "gefunden": 0,
                  "neu": 0, "stop": False, "fehler": "", "seit": 0,

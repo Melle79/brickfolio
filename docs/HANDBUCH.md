@@ -486,10 +486,14 @@ ermittelt – eine Liste gibt BrickLink nicht heraus):
 | `frnd` | Friends | `sp` | Weltraum |
 | `gen` | Allgemein | `ww` | Western |
 | `iaj` | Indiana Jones | `lor` | Herr der Ringe |
+| `col` | Sammelfiguren | `adv` | Adventurers |
+| `trn` | Eisenbahn | | |
 
 Das ist **keine vollständige Liste** – weitere trägt man einfach dazu, der
-Lauf prüft selbst, ob es sie gibt. Und Präfix ≠ Kategorie: `cty` deckt
-„Town" *und* „Train" ab.
+Lauf prüft selbst, ob es sie gibt. Und Präfix ≠ Kategorie: Die Figuren unter
+`cty` sind bei BrickLink teils als „Town", teils als „Train" einsortiert –
+**eigene** Eisenbahnfiguren gibt es daneben trotzdem, unter `trn` (geprüft
+21.08.2026: `trn001` existiert).
 
 **Der Prüfknopf** nimmt einem das Raten ab: Präfix eintippen, *Prüfen*, und
 es steht da, ob es das Thema gibt, wie viele Ziffern es hat und welche Figur
