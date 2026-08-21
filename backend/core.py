@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.31.1"
+APP_VERSION = "2.32.0"
 
 
 def hash_password(password: str) -> str:
@@ -280,6 +280,46 @@ def init_db():
                 quelle TEXT NOT NULL DEFAULT 'ki',
                 created_at INTEGER NOT NULL,
                 used_at INTEGER
+            );
+            -- Ein lokaler Abzug des BrickLink-Katalogs, Thema für Thema.
+            --
+            -- Wozu: Rebrickable nennt die Figur schlicht `R-3PO`, BrickLink
+            -- „R-3PO Protocol Droid". Wer den roten Protokolldroiden sucht,
+            -- ohne seinen Namen zu kennen, findet ihn nur über die
+            -- beschreibenden Wörter – und die gibt es nur hier. Kein Modell
+            -- muss dafür etwas wissen; gesucht wird in eigenem Text.
+            --
+            -- Gefüllt wird über die Nummern: `sw0001`, `sw0002`, … Das
+            -- Präfix kodiert das Thema, eine Auflistung bietet BrickLink
+            -- nicht an (`items/MINIFIG?category_id=…` ist dort kein
+            -- gültiger Weg, geprüft am 21.08.2026).
+            CREATE TABLE IF NOT EXISTS katalog_index (
+                item_no TEXT NOT NULL,
+                item_type TEXT NOT NULL DEFAULT 'minifig',
+                name TEXT NOT NULL,
+                -- Derselbe Name ohne Satzzeichen, kleingeschrieben. Der
+                -- Vorfilter in SQL muss dieselbe Elle benutzen wie der
+                -- Vergleich in Python: „c3 po" soll `C-3PO` finden, und
+                -- `LIKE '%c3%'` auf dem rohen Namen scheitert am
+                -- Bindestrich. Ohne diese Spalte müsste der ganze Index
+                -- durch Python – bei einem Thema egal, bei allen nicht.
+                such TEXT NOT NULL DEFAULT '',
+                category_id TEXT,
+                jahr INTEGER,
+                updated_at INTEGER NOT NULL,
+                PRIMARY KEY (item_no, item_type)
+            );
+            CREATE INDEX IF NOT EXISTS idx_katalog_such
+                ON katalog_index(such);
+            -- Wie weit der Anbau gekommen ist, je Präfix. Ohne das begänne
+            -- ein abgebrochener Lauf wieder bei eins – bei 1.400 Nummern im
+            -- Sekundentakt wäre das eine halbe Stunde für nichts.
+            CREATE TABLE IF NOT EXISTS katalog_lauf (
+                praefix TEXT PRIMARY KEY,
+                zuletzt INTEGER NOT NULL DEFAULT 0,
+                hoechste INTEGER NOT NULL DEFAULT 0,
+                gefunden INTEGER NOT NULL DEFAULT 0,
+                fertig_at INTEGER
             );
             -- Gemeldete Fehler. Gleichartige Fehler werden über den
             -- fingerprint zusammengefasst und nur hochgezählt.

@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.32.0 – August 2026
+
+### Neu
+- 📚 **Ein eigener Abzug des BrickLink-Katalogs (Star Wars).** Damit findet
+  die Suche endlich, was man nur beschreiben kann: „Protokolldroide" führt
+  zu `R-3PO Protocol Droid`. Über den gewöhnlichen Katalog ging das nicht –
+  Rebrickable nennt dieselbe Figur schlicht `R-3PO`, ohne ein einziges Wort
+  zum Suchen. Kein Modell muss dafür etwas wissen; gesucht wird in eigenem
+  Text.
+
+  Der Abzug läuft die Nummern der Reihe nach ab (`sw0002`, `sw0003`, …).
+  Eine Auflistung einer Kategorie bietet BrickLink nicht an – geprüft: dort
+  gibt es nur das Nachschlagen einer einzelnen Nummer. Gemessen liegen die
+  Nummern dicht: Von `sw0002` bis etwa `sw1500` fehlt praktisch keine.
+
+  **Gedrosselt auf einen Abruf je Sekunde**, rund 25 Minuten. Das ist keine
+  Höflichkeit gegenüber BrickLink, sondern Selbstschutz: Es ist derselbe
+  Zugang, über den die Preise laufen. Ein Durchlauf mit Vollgas könnte das
+  Tageskontingent aufbrauchen – und dann stünde der Scanner ohne Preise da.
+
+  Jederzeit anhaltbar, der Fortschritt bleibt: Zwanzig Minuten Arbeit dürfen
+  nicht verfallen, nur weil jemand gestoppt hat. Lücken in der Nummerierung
+  beenden den Lauf nicht (25 am Stück gelten als Ende), ein anderer Fehler
+  als „gibt es nicht" dagegen sofort – `429` heißt Kontingent erschöpft, und
+  stur weiterzulaufen machte das schlimmer.
+
+  Findet der eigene Abzug etwas, wird Rebrickable gar nicht mehr gefragt.
+
+### Behoben
+- Der Vorfilter der Abzugssuche benutzte den rohen Namen, der Vergleich
+  danach die satzzeichenfreie Form – „c3 po" fand `C-3PO` deshalb nicht,
+  weil `LIKE '%c3%'` am Bindestrich scheitert. Beide benutzen jetzt dieselbe
+  Elle.
+
 ## 2.31.1 – August 2026
 
 ### Geändert

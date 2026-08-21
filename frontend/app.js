@@ -5548,6 +5548,7 @@ async function loadOllama() {
     state.kiSuche = !!d.enabled;
     if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
     begriffeBilanz();     // auch ohne KI: die eigenen Zeilen gelten trotzdem
+    katalogStand();
   } catch (e) { /* kein Admin oder alte Fassung: Karte bleibt leer */ }
 }
 
@@ -5752,6 +5753,54 @@ async function begriffLoeschen(begriff) {
               { method: "DELETE" });
     begriffStand.offset = 0;
     begriffeLaden();
+  } catch (e) { toast(e.message); }
+}
+
+/* ------------------------------------------------- Katalog-Abzug */
+
+let katalogTakt = null;
+
+async function katalogStand() {
+  const feld = $("katalog-stand");
+  if (!feld) return;
+  let d;
+  try { d = await api("/katalog/status"); }
+  catch (e) { feld.textContent = ""; return; }
+  const start = $("btn-katalog-start"), stop = $("btn-katalog-stop");
+  if (d.laeuft) {
+    feld.textContent = tr("Läuft … bei Nummer {n}, {g} Figuren, {neu} neu",
+      { n: d.nummer, g: d.anzahl, neu: d.neu });
+    start.hidden = true;
+    stop.hidden = false;
+    // Nur solange etwas passiert nachfragen. Ein Takt, der ewig weiterläuft,
+    // fragt die Instanz auch dann alle drei Sekunden, wenn niemand hinsieht.
+    if (!katalogTakt) katalogTakt = setInterval(katalogStand, 3000);
+  } else {
+    clearInterval(katalogTakt);
+    katalogTakt = null;
+    start.hidden = false;
+    stop.hidden = true;
+    const lauf = (d.laeufe || []).find((l) => l.praefix === "sw");
+    feld.textContent = d.fehler
+      ? tr("Abgebrochen: {grund}", { grund: d.fehler })
+      : d.anzahl
+        ? tr("{n} Figuren im Abzug{fertig}", { n: d.anzahl,
+            fertig: lauf && lauf.fertig_at ? tr(" – vollständig") : "" })
+        : tr("Noch kein Abzug geholt.");
+  }
+}
+
+async function katalogStarten() {
+  try {
+    await api("/katalog/start", { method: "POST" });
+    katalogStand();
+  } catch (e) { toast(e.message); }
+}
+
+async function katalogAnhalten() {
+  try {
+    await api("/katalog/stop", { method: "POST" });
+    $("katalog-stand").textContent = tr("Wird angehalten …");
   } catch (e) { toast(e.message); }
 }
 
@@ -10476,6 +10525,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-reload-models").addEventListener("click", modelleLaden);
   $("btn-begriffe").addEventListener("click", begriffeFenster);
+  $("btn-katalog-start").addEventListener("click", katalogStarten);
+  $("btn-katalog-stop").addEventListener("click", katalogAnhalten);
   $("ollama-model").addEventListener("change", modellwahlGeaendert);
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.

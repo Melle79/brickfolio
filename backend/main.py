@@ -2653,6 +2653,185 @@ class BegriffBody(BaseModel):
 
 BEGRIFFE_SEITE = 25
 
+# ------------------------------------------------------- Katalog-Anbau
+#
+# Ein lokaler Abzug des BrickLink-Katalogs, damit die Suche nach dem
+# Aussehen funktioniert: „Protokolldroide" findet `R-3PO Protocol Droid`,
+# ohne dass irgendein Modell die Figur kennen muss.
+#
+# Gedrosselt, ausdrücklich. Gemessen braucht ein Abruf 0,5 s; mit einer
+# Sekunde Abstand dauert Star Wars rund 25 Minuten. Das ist der Punkt: Der
+# BrickLink-Zugang ist derselbe, über den die Preise laufen. Ein Durchlauf
+# mit Vollgas könnte das Tageskontingent aufbrauchen, und dann steht der
+# Scanner ohne Preise da – für eine Bequemlichkeit bei der Suche.
+KATALOG_TAKT = 1.0            # Sekunden zwischen zwei Abrufen
+# Lücken sind normal: BrickLink vergibt Nummern, die es später nicht mehr
+# gibt. Beim ersten 404 abzubrechen hieße, mitten im Katalog stehen zu
+# bleiben. 25 am Stück heißt dagegen zuverlässig: Hier ist das Ende.
+KATALOG_LUECKE = 25
+KATALOG_MAX = 4000            # Notbremse gegen eine endlose Schleife
+
+_katalog_lauf = {"aktiv": False, "praefix": "", "nummer": 0, "gefunden": 0,
+                 "neu": 0, "stop": False, "fehler": "", "seit": 0}
+
+
+def _katalog_eintragen(item_no: str, daten: dict) -> bool:
+    """Eine Figur in den Index schreiben. Wahr, wenn sie neu war."""
+    name = (daten.get("name") or "").strip()
+    if not name:
+        return False
+    jetzt = int(time.time())
+    with core.db() as conn:
+        vorher = conn.execute(
+            "SELECT name FROM katalog_index WHERE item_no = ? AND "
+            "item_type = 'minifig'", (item_no,)).fetchone()
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " category_id, jahr, updated_at) VALUES (?, 'minifig', ?, ?, ?, ?, ?) "
+            "ON CONFLICT(item_no, item_type) DO UPDATE SET "
+            "name = excluded.name, such = excluded.such, "
+            "category_id = excluded.category_id, "
+            "jahr = excluded.jahr, updated_at = excluded.updated_at",
+            (item_no, name, _wortanfaenge(name)[0],
+             str(daten.get("category_id") or ""),
+             daten.get("year_released") or 0, jetzt))
+    return vorher is None
+
+
+def _katalog_anbau(praefix: str = "sw"):
+    """Die Nummern eines Themas der Reihe nach abklappern.
+
+    Setzt dort fort, wo der letzte Lauf aufgehört hat – ein Abbruch nach
+    zwanzig Minuten soll nicht bedeuten, dass man wieder bei eins beginnt.
+    """
+    _katalog_lauf.update({"aktiv": True, "praefix": praefix, "neu": 0,
+                          "stop": False, "fehler": "",
+                          "seit": int(time.time())})
+    try:
+        with core.db() as conn:
+            r = conn.execute("SELECT zuletzt FROM katalog_lauf WHERE "
+                             "praefix = ?", (praefix,)).fetchone()
+        nummer = (r["zuletzt"] if r else 0) + 1
+        luecke = 0
+        while nummer <= KATALOG_MAX and luecke < KATALOG_LUECKE:
+            if _katalog_lauf["stop"]:
+                break
+            item_no = "%s%04d" % (praefix, nummer)
+            _katalog_lauf["nummer"] = nummer
+            try:
+                daten = integrations.bricklink_item("minifig", item_no)
+                if _katalog_eintragen(item_no, daten):
+                    _katalog_lauf["neu"] += 1
+                _katalog_lauf["gefunden"] += 1
+                luecke = 0
+            except requests.HTTPError as e:
+                code = e.response.status_code if e.response is not None else 0
+                if code == 404:
+                    luecke += 1
+                else:
+                    # Alles andere ist ein Grund aufzuhören: 401 heißt
+                    # falscher Zugang, 429 heißt Kontingent erschöpft. Stur
+                    # weiterzulaufen machte beides schlimmer.
+                    _katalog_lauf["fehler"] = f"BrickLink antwortet mit {code}"
+                    break
+            except Exception as e:
+                _katalog_lauf["fehler"] = scrub(str(e))
+                break
+            with core.db() as conn:
+                conn.execute(
+                    "INSERT INTO katalog_lauf (praefix, zuletzt, hoechste,"
+                    " gefunden) VALUES (?, ?, ?, ?) "
+                    "ON CONFLICT(praefix) DO UPDATE SET zuletzt = ?, "
+                    "hoechste = MAX(hoechste, ?), gefunden = ?",
+                    (praefix, nummer, nummer, _katalog_lauf["gefunden"],
+                     nummer, nummer - luecke, _katalog_lauf["gefunden"]))
+            nummer += 1
+            time.sleep(KATALOG_TAKT)
+        if luecke >= KATALOG_LUECKE:
+            # Am Ende angekommen: Den Zeiger hinter die letzte gefundene
+            # Nummer zurücksetzen, damit der nächste Lauf die Lücke erneut
+            # abtastet – dort können neue Figuren erscheinen.
+            with core.db() as conn:
+                conn.execute("UPDATE katalog_lauf SET zuletzt = hoechste, "
+                             "fertig_at = ? WHERE praefix = ?",
+                             (int(time.time()), praefix))
+            print(f"[brickfolio] Katalog-Anbau {praefix}: fertig, "
+                  f"{_katalog_lauf['gefunden']} Figuren "
+                  f"({_katalog_lauf['neu']} neu)", flush=True)
+    finally:
+        _katalog_lauf["aktiv"] = False
+
+
+def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
+    """Im eigenen Abzug suchen – mit derselben Elle wie die Sammlung.
+
+    Nicht per SQL-LIKE: `_passt` wirft Satzzeichen weg und verlangt alle
+    Wörter. „c3 po" findet damit `C-3PO`, und „Knight Hunter" zieht nicht
+    jeden Ritter herein. Genau daran hing 2.28.1.
+    """
+    woerter = _such_woerter(begriff)
+    if not woerter:
+        return []
+    with core.db() as conn:
+        # Vorauswahl über das längste Wort, damit nicht der ganze Index
+        # durch Python muss: Bei 1.400 Figuren egal, bei allen Themen nicht.
+        laengstes = max(woerter, key=len)
+        rows = conn.execute(
+            "SELECT item_no, name, jahr FROM katalog_index "
+            "WHERE such LIKE ? LIMIT 400", ("%" + laengstes + "%",)).fetchall()
+    treffer = []
+    for r in rows:
+        if not _passt(begriff, r["name"] or ""):
+            continue
+        treffer.append({"item_id": r["item_no"], "item_type": "minifig",
+                        "name": r["name"], "img_url": "",
+                        "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,
+                        "bricklink_url":
+                            "https://www.bricklink.com/v2/catalog/"
+                            "catalogitem.page?M=" + r["item_no"]})
+        if len(treffer) >= hoechstens:
+            break
+    return treffer
+
+
+@app.get("/api/katalog/status")
+def katalog_status(user: dict = Depends(admin_user)):
+    with core.db() as conn:
+        anzahl = conn.execute("SELECT COUNT(*) AS n FROM "
+                              "katalog_index").fetchone()["n"]
+        laeufe = conn.execute("SELECT * FROM katalog_lauf").fetchall()
+    return {"anzahl": anzahl,
+            "laeuft": _katalog_lauf["aktiv"],
+            "nummer": _katalog_lauf["nummer"],
+            "neu": _katalog_lauf["neu"],
+            "fehler": _katalog_lauf["fehler"],
+            "takt": KATALOG_TAKT,
+            "laeufe": [{"praefix": r["praefix"], "zuletzt": r["zuletzt"],
+                        "gefunden": r["gefunden"],
+                        "fertig_at": r["fertig_at"]} for r in laeufe]}
+
+
+@app.post("/api/katalog/start")
+def katalog_start(user: dict = Depends(admin_user)):
+    if not integrations.bricklink_enabled():
+        raise HTTPException(400, "BrickLink ist nicht eingerichtet")
+    if _katalog_lauf["aktiv"]:
+        return {"ok": True, "info": "läuft bereits"}
+    threading.Thread(target=_katalog_anbau, args=("sw",), daemon=True).start()
+    return {"ok": True}
+
+
+@app.post("/api/katalog/stop")
+def katalog_stop(user: dict = Depends(admin_user)):
+    """Jederzeit anhalten – der Fortschritt bleibt stehen.
+
+    Wichtiger als es klingt: Der Lauf teilt sich das BrickLink-Kontingent
+    mit den Preisen. Wer merkt, dass es knapp wird, muss ihn stoppen können,
+    ohne den Container neu zu starten.
+    """
+    _katalog_lauf["stop"] = True
+    return {"ok": True}
+
 
 @app.get("/api/settings/begriffe")
 def get_begriffe(q: str = "", nur: str = "", limit: int = BEGRIFFE_SEITE,
@@ -4159,6 +4338,26 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     gesehen: set = set()
     items: list = []
     treffer: list = []
+    # **Zuerst der eigene Index.** Er kostet nichts, kennt die beschreibenden
+    # BrickLink-Namen und findet damit, was Rebrickable nicht hergibt:
+    # `R-3PO` heißt dort nur so, bei BrickLink „R-3PO Protocol Droid".
+    for begriff in begriffe:
+        for eintrag in _katalog_suchen(begriff):
+            kennung = (eintrag["item_id"], eintrag["item_type"])
+            if kennung in gesehen:
+                continue
+            gesehen.add(kennung)
+            items.append(eintrag)
+            if begriff not in treffer:
+                treffer.append(begriff)
+        if len(items) >= SUGGEST_MAX:
+            break
+    # Hat der eigene Abzug etwas, ist Rebrickable nicht mehr nötig: Die
+    # Antwort ist da, kostenlos und mit den beschreibenden Namen. Jede
+    # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf
+    # einem fremden Kontingent.
+    if items:
+        return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
     for begriff in begriffe[:KATALOG_KI_VERSUCHE]:
         try:
             gefunden = integrations.search_catalog(begriff, item_type, page=1)
