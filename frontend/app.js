@@ -5813,7 +5813,11 @@ async function katalogStand() {
   const start = $("btn-katalog-start"), stop = $("btn-katalog-stop");
   farbenStand(d);
   const feldThemen = $("katalog-themen");
-  if (feldThemen && !feldThemen.value && (d.themen || []).length) {
+  // Nicht dazwischenfunken: Der Stand wird alle drei Sekunden geholt, und
+  // wer das Feld gerade leert, um neu zu tippen, bekäme es sonst mitten im
+  // Tippen wieder vollgeschrieben.
+  if (feldThemen && !feldThemen.value && (d.themen || []).length
+      && document.activeElement !== feldThemen) {
     feldThemen.value = d.themen.join(", ");
   }
   if (d.laeuft) {
@@ -5872,10 +5876,53 @@ async function farbenAnhalten() {
   catch (e) { toast(e.message); }
 }
 
+/* Gibt es dieses Präfix? Ohne die Auskunft trägt man ein Thema ein und
+   wartet, bis der Lauf dort ankommt – bei vierzehn in der Warteschlange
+   können das Stunden sein. Ein Treffer wandert gleich in die Themenliste. */
+async function katalogPruefen() {
+  const feld = $("katalog-neu"), out = $("katalog-pruefung");
+  const p = feld.value.trim().toLowerCase();
+  if (!p) return;
+  out.textContent = tr("Wird geprüft …");
+  out.hidden = false;
+  let d;
+  try { d = await api("/katalog/pruefen?praefix=" + encodeURIComponent(p)); }
+  catch (e) { out.textContent = e.message; return; }
+  if (!d.gibt_es) {
+    out.textContent = tr("„{p}“ gibt es bei BrickLink nicht.", { p });
+    return;
+  }
+  out.textContent = tr("„{p}“ gibt es – {n} Ziffern, z. B. {b}: {name}",
+    { p, n: d.breite, b: d.beispiel, name: d.name });
+  if (d.bekannt) return;
+  // Noch nicht in der Liste? Dann gleich dazu – dafür hat man ja geprüft.
+  const liste = $("katalog-themen");
+  liste.value = (liste.value.trim() ? liste.value.trim() + ", " : "") + p;
+  feld.value = "";
+  katalogThemenMerken();
+}
+
+/* Die Liste sichern, ohne einen Lauf zu starten – sonst ist alles selbst
+   Eingetragene beim nächsten Öffnen wieder weg. */
+async function katalogThemenMerken() {
+  const v = $("katalog-themen").value.trim();
+  if (!v) return;
+  try { await api("/katalog/themen", { method: "POST", body: { themen: v } }); }
+  catch (e) { toast(e.message); }
+}
+
 async function katalogStarten() {
   try {
-    await api("/katalog/start", { method: "POST",
+    const d = await api("/katalog/start", { method: "POST",
       body: { themen: $("katalog-themen").value.trim() || "sw" } });
+    // Läuft schon einer, wandern die neuen Themen hinten an die Schlange.
+    // Das gehört gesagt – sonst sieht es aus, als sei nichts passiert.
+    if (d && d.ergaenzt && d.ergaenzt.length) {
+      toast(tr("{n} Themen an die Warteschlange angehängt",
+        { n: d.ergaenzt.length }));
+    } else if (d && d.info) {
+      toast(tr("Der Abzug läuft bereits"));
+    }
     katalogStand();
   } catch (e) { toast(e.message); }
 }
@@ -10618,6 +10665,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-begriffe").addEventListener("click", begriffeFenster);
   $("btn-katalog-start").addEventListener("click", katalogStarten);
   $("btn-katalog-stop").addEventListener("click", katalogAnhalten);
+  $("btn-katalog-pruefen").addEventListener("click", katalogPruefen);
+  $("katalog-themen").addEventListener("change", katalogThemenMerken);
+  $("katalog-neu").addEventListener("keydown",
+    (e) => { if (e.key === "Enter") katalogPruefen(); });
   $("btn-farben-start").addEventListener("click", farbenStarten);
   $("btn-farben-stop").addEventListener("click", farbenAnhalten);
   $("ollama-model").addEventListener("change", modellwahlGeaendert);

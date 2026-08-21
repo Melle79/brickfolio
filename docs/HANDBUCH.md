@@ -491,6 +491,12 @@ Das ist **keine vollständige Liste** – weitere trägt man einfach dazu, der
 Lauf prüft selbst, ob es sie gibt. Und Präfix ≠ Kategorie: `cty` deckt
 „Town" *und* „Train" ab.
 
+**Der Prüfknopf** nimmt einem das Raten ab: Präfix eintippen, *Prüfen*, und
+es steht da, ob es das Thema gibt, wie viele Ziffern es hat und welche Figur
+sich hinter der ersten Nummer verbirgt. Ein Treffer wandert gleich in die
+Themenliste. Ohne ihn trägt man ein Thema ein und merkt erst Stunden später
+– wenn der Lauf dort ankommt –, dass es ein Tippfehler war.
+
 > **Die Ziffernbreite unterscheidet sich.** `sw0002` hat vier, `cas001` nur
 > drei. Der Lauf ermittelt sie zu Beginn mit ein paar Abrufen selbst. Vorher
 > war sie fest auf vier verdrahtet – dadurch gingen die Themen mit drei
@@ -514,6 +520,14 @@ rund fünf Stunden.
 Die Drosselung ist keine Höflichkeit: Es ist derselbe Zugang, über den die
 Preise laufen, und ein Durchlauf mit Vollgas könnte das Tageskontingent
 aufbrauchen. Dann stünde der Scanner ohne Preise da.
+
+**Themen nachreichen**, während schon einer läuft, geht: Sie hängen sich
+hinten an die Warteschlange. Bis 2.37.0 kam stattdessen ein freundliches
+„läuft bereits" zurück – und die neu eingetragenen Themen waren weg, ohne
+Fehler und ohne Hinweis. Auch die Liste selbst war nie gespeichert: Beim
+Öffnen wurde das Feld aus der eingebauten Liste gefüllt, alles Eigene war
+beim nächsten Aufruf verschwunden. Beides ist behoben; die Liste wird
+gesichert, sobald man das Feld verlässt.
 
 **Anhalten** geht jederzeit, der Fortschritt bleibt stehen; der nächste Lauf
 setzt dort fort. Antwortet BrickLink mit einem anderen Fehler als „gibt es

@@ -450,3 +450,90 @@ def test_ein_kontingentfehler_beendet_auch_die_breitenerkennung(
 
     main._katalog_breite("cas")
     assert len(gefragt) == 1, gefragt
+
+
+# ----------------------------------------------------- Ein Präfix prüfen
+
+def test_der_pruefknopf_nennt_praefix_und_breite(client, monkeypatch):
+    """Ohne diese Auskunft trägt man ein Thema ein und wartet, bis der Lauf
+    dort ankommt – bei vierzehn in der Warteschlange können das Stunden
+    sein, und am Ende war es ein Tippfehler."""
+    core.set_setting("bl_consumer_key", "x")
+    core.set_setting("bl_consumer_secret", "x")
+    core.set_setting("bl_token", "x")
+    core.set_setting("bl_token_secret", "x")
+    _bricklink(monkeypatch, {"cas001": "Castle Knight"})
+
+    d = client.get("/api/katalog/pruefen?praefix=cas").json()
+    assert d["gibt_es"] is True and d["breite"] == 3
+    assert d["beispiel"] == "cas001" and d["name"] == "Castle Knight"
+
+
+def test_ein_fantasiepraefix_wird_als_solches_gemeldet(client, monkeypatch):
+    """`_katalog_breite` gibt im Zweifel 4 zurück – das heißt „nicht
+    entschieden", nicht „gefunden". Ohne die zweite Prüfung meldete der
+    Knopf jedes erfundene Präfix als gültig."""
+    core.set_setting("bl_consumer_key", "x")
+    core.set_setting("bl_consumer_secret", "x")
+    core.set_setting("bl_token", "x")
+    core.set_setting("bl_token_secret", "x")
+    _bricklink(monkeypatch, {})
+
+    d = client.get("/api/katalog/pruefen?praefix=xyz").json()
+    assert d["gibt_es"] is False
+
+
+def test_nur_buchstaben_beim_pruefen(client):
+    assert client.get("/api/katalog/pruefen?praefix=../x").status_code == 400
+    assert client.get("/api/katalog/pruefen?praefix=a").status_code == 400
+
+
+# ------------------------------------------- Die Themenliste geht verloren
+
+def test_nachgereichte_themen_landen_in_der_warteschlange(client, monkeypatch):
+    """Sven trug bei Finns Instanz Themen nach – und sie waren weg.
+
+    Lief schon ein Abzug, kam ein freundliches „läuft bereits" zurück und
+    die neuen Themen wurden verworfen: kein Fehler, kein Hinweis, nichts.
+    Bei einem Lauf über vierzehn Themen ist „warte, bis er durch ist" keine
+    zumutbare Antwort – ein Abzug läuft hier Stunden.
+    """
+    core.set_setting("bl_consumer_key", "x")
+    core.set_setting("bl_consumer_secret", "x")
+    core.set_setting("bl_token", "x")
+    core.set_setting("bl_token_secret", "x")
+    main._katalog_lauf["aktiv"] = True
+    main._katalog_lauf["praefix"] = "sw"
+    main._katalog_lauf["warteschlange"] = ["cty"]
+    try:
+        d = client.post("/api/katalog/start",
+                        json={"themen": "sw, cty, njo, cas"}).json()
+        assert d["ergaenzt"] == ["njo", "cas"], "die Themen wurden verworfen"
+        assert main._katalog_lauf["warteschlange"] == ["cty", "njo", "cas"]
+    finally:
+        main._katalog_lauf["aktiv"] = False
+        main._katalog_lauf["warteschlange"] = []
+
+
+def test_die_themenliste_ueberlebt_das_neuladen(client, monkeypatch):
+    """Das Feld war nie eine Einstellung: Beim Öffnen wurde es aus der
+    eingebauten Liste gefüllt, alles Eigene war beim nächsten Aufruf weg."""
+    core.set_setting("bl_consumer_key", "x")
+    core.set_setting("bl_consumer_secret", "x")
+    core.set_setting("bl_token", "x")
+    core.set_setting("bl_token_secret", "x")
+
+    client.post("/api/katalog/themen", json={"themen": "sw, cty, adv"})
+    assert client.get("/api/katalog/status").json()["themen"] == \
+        ["sw", "cty", "adv"]
+
+
+def test_ohne_eigene_liste_gilt_die_eingebaute(client):
+    assert client.get("/api/katalog/status").json()["themen"] == \
+        main.KATALOG_THEMEN
+
+
+def test_doppelte_und_unsinnige_themen_fallen_raus(client):
+    d = client.post("/api/katalog/themen",
+                    json={"themen": "sw, SW , ../x, , cty"}).json()
+    assert d["themen"] == ["sw", "cty"]

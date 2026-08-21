@@ -2949,7 +2949,7 @@ def katalog_status(user: dict = Depends(admin_user)):
                        "getan": _farb_lauf["getan"],
                        "gefunden": _farb_lauf["gefunden"],
                        "offen": _farb_lauf["offen"]},
-            "themen": KATALOG_THEMEN,
+            "themen": _katalog_themen_lesen(),
             "takt": KATALOG_TAKT,
             "laeufe": [{"praefix": r["praefix"], "zuletzt": r["zuletzt"],
                         "gefunden": r["gefunden"],
@@ -2963,12 +2963,14 @@ def _katalog_reihe(praefixe: list):
     denselben BrickLink-Zugang. Zwei gleichzeitig hieße doppelter Takt,
     also die Drosselung ausgehebelt, für die es hier gute Gründe gibt.
     """
-    for p in praefixe:
+    # Die Warteschlange ist die Wahrheit, nicht `praefixe`: Wer während des
+    # Laufs ein Thema nachreicht, hängt es hier an – bei einem Lauf über
+    # Stunden ist „warte, bis er durch ist" keine zumutbare Antwort.
+    _katalog_lauf["warteschlange"] = list(praefixe)
+    while _katalog_lauf["warteschlange"]:
         if _katalog_lauf["stop"]:
             break
-        _katalog_lauf["warteschlange"] = [x for x in praefixe
-                                          if x != p and praefixe.index(x)
-                                          > praefixe.index(p)]
+        p = _katalog_lauf["warteschlange"].pop(0)
         _katalog_anbau(p)
         # Ein Abbruch aus dem Lauf heraus (429, falscher Zugang) gilt für
         # alle folgenden Themen mit – der Zugang ist derselbe.
@@ -2981,20 +2983,105 @@ class KatalogBody(BaseModel):
     themen: str = Field(default="sw", max_length=200)
 
 
+def _katalog_praefixe(themen: str) -> list:
+    """Aus dem Eingabefeld eine geprüfte Präfixliste machen.
+
+    Nur Buchstaben: Das Präfix wandert in eine Adresse, und „../“ oder ein
+    Fragezeichen hätten dort nichts zu suchen.
+    """
+    roh = [x.strip().lower() for x in (themen or "").split(",")]
+    liste, gesehen = [], set()
+    for x in roh:
+        if x and x not in gesehen and re.fullmatch(r"[a-z]{2,6}", x):
+            gesehen.add(x)
+            liste.append(x)
+    return liste
+
+
+def _katalog_themen_merken(praefixe: list):
+    """Die Themenliste überlebt das Neuladen.
+
+    Sie war nie eine Einstellung: Das Feld wurde beim Öffnen aus der
+    eingebauten Liste gefüllt, und alles selbst Eingetragene war beim
+    nächsten Aufruf verschwunden.
+    """
+    if praefixe:
+        core.set_setting("katalog_themen", ",".join(praefixe))
+
+
+def _katalog_themen_lesen() -> list:
+    gemerkt = _katalog_praefixe(core.get_setting("katalog_themen") or "")
+    return gemerkt or list(KATALOG_THEMEN)
+
+
+@app.post("/api/katalog/themen")
+def katalog_themen(body: KatalogBody, user: dict = Depends(admin_user)):
+    """Die Liste sichern, ohne einen Lauf zu starten.
+
+    Wer sie ergänzt und dann weiterblättert, hat sie sonst verloren – die
+    Eingabe war bis dahin nur ein Übergabewert an `/start`.
+    """
+    praefixe = _katalog_praefixe(body.themen)
+    if not praefixe:
+        raise HTTPException(400, "Kein gültiges Thema angegeben")
+    _katalog_themen_merken(praefixe)
+    return {"ok": True, "themen": praefixe}
+
+
+@app.get("/api/katalog/pruefen")
+def katalog_pruefen(praefix: str = "", user: dict = Depends(admin_user)):
+    """Gibt es dieses Präfix – und mit wie vielen Ziffern?
+
+    Ohne diese Auskunft trägt man ein Thema ein und wartet, bis der Lauf
+    dort ankommt, um dann zu sehen, dass es nichts findet. Bei vierzehn
+    Themen in der Warteschlange kann das Stunden dauern.
+
+    Nimmt dieselbe Erkennung wie der Lauf selbst – was hier steht, gilt
+    dort auch.
+    """
+    praefix = praefix.strip().lower()
+    if not re.fullmatch(r"[a-z]{2,6}", praefix):
+        raise HTTPException(400, "Nur zwei bis sechs Buchstaben")
+    if not integrations.bricklink_enabled():
+        raise HTTPException(400, "BrickLink ist nicht eingerichtet")
+    breite = _katalog_breite(praefix)
+    # `_katalog_breite` gibt im Zweifel 4 zurück – das heißt „nicht
+    # entschieden", nicht „gefunden". Deshalb hier noch einmal wirklich
+    # nachsehen, sonst meldet der Knopf jedes Fantasiepräfix als gültig.
+    beispiel, name = "", ""
+    for n in (1, 2, 3, 5, 10):
+        kandidat = "%s%0*d" % (praefix, breite, n)
+        try:
+            d = integrations.bricklink_item("minifig", kandidat)
+            beispiel, name = kandidat, (d.get("name") or "")
+            break
+        except Exception:
+            continue
+    return {"praefix": praefix, "gibt_es": bool(beispiel), "breite": breite,
+            "beispiel": beispiel, "name": name,
+            "bekannt": praefix in KATALOG_THEMEN}
+
+
 @app.post("/api/katalog/start")
 def katalog_start(body: KatalogBody | None = None,
                   user: dict = Depends(admin_user)):
     if not integrations.bricklink_enabled():
         raise HTTPException(400, "BrickLink ist nicht eingerichtet")
-    if _katalog_lauf["aktiv"]:
-        return {"ok": True, "info": "läuft bereits"}
-    # Nur Buchstaben: Das Präfix wandert in eine Adresse, und „../" oder ein
-    # Fragezeichen hätten dort nichts zu suchen.
-    themen = (body.themen if body else "") or "sw"
-    praefixe = [t.strip().lower() for t in themen.split(",")]
-    praefixe = [t for t in praefixe if t and re.fullmatch(r"[a-z]{2,6}", t)]
+    praefixe = _katalog_praefixe((body.themen if body else "") or "sw")
     if not praefixe:
         raise HTTPException(400, "Kein gültiges Thema angegeben")
+    if _katalog_lauf["aktiv"]:
+        _katalog_themen_merken(praefixe)
+        # Nicht still verwerfen: Bisher kam hier ein freundliches „läuft
+        # bereits" und die neu eingetragenen Themen waren weg – ohne Fehler,
+        # ohne Hinweis. Wer sie einträgt, will sie abgearbeitet haben.
+        laeuft = [_katalog_lauf["praefix"]] + _katalog_lauf["warteschlange"]
+        dazu = [x for x in praefixe if x not in laeuft]
+        _katalog_lauf["warteschlange"].extend(dazu)
+        return {"ok": True, "info": "läuft bereits", "ergaenzt": dazu}
+    # Nur Buchstaben: Das Präfix wandert in eine Adresse, und „../" oder ein
+    # Fragezeichen hätten dort nichts zu suchen.
+    _katalog_themen_merken(praefixe)
     _katalog_lauf["stop"] = False
     _katalog_lauf["fehler"] = ""
     threading.Thread(target=_katalog_reihe, args=(praefixe,),
