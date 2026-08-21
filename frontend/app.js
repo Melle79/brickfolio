@@ -6216,7 +6216,9 @@ function renderLists(lists) {
             toast("Bitte einen gültigen Gesamtpreis eingeben");
             return;
           }
-          ev.currentTarget.disabled = true;
+          // Vor dem `await` festhalten – danach ist `currentTarget` null.
+          const knopf = ev.currentTarget;
+          knopf.disabled = true;
           try {
             const res = await api(`/lists/${lid}/offer`, { method: "POST",
               body: { total } });
@@ -6225,7 +6227,7 @@ function renderLists(lists) {
             loadLists();
           } catch (e) {
             toast(e.message);
-            ev.currentTarget.disabled = false;
+            knopf.disabled = false;
           }
         });
     });
@@ -10511,13 +10513,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
   $("btn-update-abort").addEventListener("click", async (ev) => {
-    ev.currentTarget.disabled = true;
+    // Den Knopf **vor** dem `await` festhalten: Sobald der Handler das
+    // erste Mal zurückkehrt, setzt der Browser `currentTarget` auf `null`.
+    // Danach wirft jeder Zugriff darauf – gemeldet als „Cannot set
+    // properties of null (setting 'disabled')".
+    const knopf = ev.currentTarget;
+    knopf.disabled = true;
     try {
       await api("/update/cancel", { method: "POST" });
       toast("Update abgebrochen");
       showUpdateBar(false);
     } catch (e) { toast(e.message); }
-    ev.currentTarget.disabled = false;
+    knopf.disabled = false;
     pollUpdateStatus();
   });
   $("btn-update-reload").addEventListener("click",

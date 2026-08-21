@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.35.2 – August 2026
+
+### Behoben
+- 🔘 **„Cannot set properties of null (setting 'disabled')".** Aus dem
+  Betrieb gemeldet, aus dem Abbrechen-Knopf der Update-Leiste: Der Handler
+  schaltet den Knopf ab, wartet auf die Antwort und schaltet ihn wieder
+  ein – nur ist `ev.currentTarget` dann **null**. Der Browser räumt es auf,
+  sobald der Handler das erste Mal zurückkehrt, und das ist beim ersten
+  `await`.
+
+  Der Knopf wird jetzt vor dem `await` festgehalten. Dieselbe Stelle gab es
+  ein zweites Mal beim anteiligen Verteilen eines Gesamtpreises auf eine
+  Einkaufsliste – dort ausgerechnet im Fehlerzweig, wo der Knopf hängen
+  blieb und die Fehlermeldung verschluckt wurde.
+
+  Ein Test sucht das Muster im ganzen Frontend, damit es nicht wieder
+  hineinwächst.
+
 ## 2.35.1 – August 2026
 
 ### Behoben
