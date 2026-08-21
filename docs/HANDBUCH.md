@@ -467,6 +467,15 @@ Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
+> **Das Modell aussuchen statt abtippen.** Steht die Adresse, holt die App
+> die Liste der dort installierten Modelle und stellt sie zur Wahl. Das ist
+> mehr als Bequemlichkeit: Der Name muss exakt stimmen, und auf einem Server
+> liegen leicht `qwen2.5:14b` **und** `qwen2.5:14b-instruct` nebeneinander –
+> ein Vertipper sah bisher aus wie ein kaputter Dienst. Antwortet der Server
+> nicht, bleibt das Textfeld; wer den Namen kennt, trägt ihn weiter von Hand
+> ein. Über **Modelle laden** lässt sich die Liste erneut holen, etwa nach
+> einem `ollama pull`.
+
 1. Auf einem Rechner im Heimnetz [Ollama](https://ollama.com) installieren
    und ein Modell laden, z. B. `ollama pull qwen2.5:14b`.
 2. Damit Brickfolio es erreicht, muss Ollama im Netz lauschen, nicht nur

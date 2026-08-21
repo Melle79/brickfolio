@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.30.0 – August 2026
+
+### Neu
+- 📋 **Das KI-Modell wird ausgesucht, nicht abgetippt.** Der Name musste
+  exakt so eingetragen werden, wie Ollama ihn führt – `qwen2.5:14b`, nicht
+  `qwen2.5-14b` und nicht `qwen 2.5`. Ein Tippfehler sah dabei aus wie ein
+  kaputter Dienst: Die Verbindung stand, nur das Modell gab es nicht. Auf
+  dem Server im Haushalt liegen 14 Stück, darunter `qwen2.5:14b` **und**
+  `qwen2.5:14b-instruct` – die Verwechslung ist keine Theorie.
+
+  Steht die Adresse, holt die App jetzt die Liste der installierten Modelle
+  und stellt sie zur Wahl. **Modelle laden** holt sie erneut, etwa nach
+  einem `ollama pull`.
+
+  **Kein `datalist`.** Der wäre der kürzere Weg gewesen, aber iOS zeigt ihn
+  bis heute nicht an – und dort wird die App am meisten benutzt. Also eine
+  echte Auswahlliste.
+
+  **Das Textfeld bleibt.** Schweigt der Dienst oder ist die Adresse noch
+  nicht gespeichert, übernimmt es wie bisher; die Auswahl ist eine
+  Bequemlichkeit, kein Zugangsweg. Auch abfragen lässt sich eine noch nicht
+  gespeicherte Adresse – sonst müsste man erst eine ungeprüfte Einstellung
+  sichern, um zu sehen, was dort zur Wahl steht.
+
+  Ein bereits gespeichertes Modell bleibt wählbar, auch wenn es nicht mehr
+  auf dem Server liegt – sonst überschriebe ein Speichern still eine noch
+  gültige Einstellung.
+
 ## 2.29.0 – August 2026
 
 ### Neu

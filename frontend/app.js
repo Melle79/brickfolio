@@ -5520,10 +5520,67 @@ async function loadOllama() {
     // Anders als die API-Schlüssel im Klartext: Eine Adresse muss man beim
     // Einrichten sehen, sonst tippt man sie bei jeder Korrektur neu.
     $("ollama-url").value = d.url || "";
-    $("ollama-model").value = d.model || "";
-    $("ollama-model").placeholder = d.default_model || "";
+    $("ollama-model-frei").value = d.model || "";
+    $("ollama-model-frei").placeholder = d.default_model || "";
     state.kiSuche = !!d.enabled;
+    if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
   } catch (e) { /* kein Admin oder alte Fassung: Karte bleibt leer */ }
+}
+
+/* Die Modelle vom Server holen und zur Wahl stellen.
+
+   Vorher musste man den Namen exakt so tippen, wie Ollama ihn führt –
+   `qwen2.5:14b`, nicht `qwen2.5-14b`. Ein Tippfehler sah dabei aus wie ein
+   kaputter Dienst: Die Verbindung stand, nur das Modell gab es nicht.
+
+   Kein `datalist`: Das zeigt iOS bis heute nicht an, und dort wird die App
+   am meisten benutzt. Also eine echte Auswahlliste – und daneben bleibt das
+   Textfeld für den Fall, dass der Dienst schweigt oder ein Name noch nicht
+   geladen ist. */
+async function modelleLaden() {
+  const wahl = $("ollama-model");
+  const frei = $("ollama-model-frei");
+  let d;
+  try {
+    d = await api("/settings/ollama/models?url="
+      + encodeURIComponent($("ollama-url").value.trim()));
+  } catch (e) {
+    wahl.hidden = true; frei.hidden = false;
+    return;
+  }
+  const liste = (d && d.models) || [];
+  if (!liste.length) { wahl.hidden = true; frei.hidden = false; return; }
+  // Das gespeicherte Modell gehört dazu, auch wenn es dort nicht mehr liegt –
+  // sonst überschriebe ein Speichern still eine noch gültige Einstellung.
+  const jetzt = frei.value.trim() || (d && d.current) || "";
+  const fehlt = jetzt && !liste.includes(jetzt);
+  wahl.innerHTML =
+    liste.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("")
+    + (fehlt ? `<option value="${esc(jetzt)}">`
+        + `${esc(tr("{modell} (nicht auf dem Server)", { modell: jetzt }))}`
+        + "</option>" : "")
+    + `<option value="__frei__">${esc(tr("Anderes Modell eintippen …"))}</option>`;
+  wahl.value = jetzt || (d.default_model && liste.includes(d.default_model)
+    ? d.default_model : liste[0]);
+  wahl.hidden = false;
+  frei.hidden = true;
+}
+
+function modellwahlGeaendert() {
+  const frei = $("ollama-model-frei");
+  if ($("ollama-model").value !== "__frei__") { frei.hidden = true; return; }
+  frei.hidden = false;
+  frei.value = "";
+  frei.focus();
+}
+
+/* Welcher Name gilt – die Liste oder das Textfeld? */
+function ollamaModell() {
+  const wahl = $("ollama-model");
+  if (wahl.hidden || wahl.value === "__frei__") {
+    return $("ollama-model-frei").value.trim();
+  }
+  return wahl.value;
 }
 
 async function saveOllama() {
@@ -5531,7 +5588,7 @@ async function saveOllama() {
   try {
     const r = await api("/settings/ollama", { method: "POST", body: {
       url: $("ollama-url").value.trim(),
-      model: $("ollama-model").value.trim(),
+      model: ollamaModell(),
     }});
     state.kiSuche = !!r.enabled;
     out.textContent = r.enabled
@@ -10236,6 +10293,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-test-keys").addEventListener("click", testApiKeys);
   $("btn-save-ollama").addEventListener("click", saveOllama);
   $("btn-test-ollama").addEventListener("click", testOllama);
+  $("btn-reload-models").addEventListener("click", modelleLaden);
+  $("ollama-model").addEventListener("change", modellwahlGeaendert);
+  // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
+  // sonst zeigt die Liste die Modelle des alten Servers.
+  $("ollama-url").addEventListener("change", modelleLaden);
   $("btn-camera").addEventListener("click", () => $("file-input").click());
   $("btn-manual-toggle").addEventListener("click", () => {
     const f = $("manual-form");

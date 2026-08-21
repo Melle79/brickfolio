@@ -871,6 +871,40 @@ def _ollama_keep_alive() -> str:
     return "30m"
 
 
+def ollama_modelle(url: str = "") -> list:
+    """Welche Modelle liegen auf dem Server?
+
+    `url` erlaubt das Abfragen einer **noch nicht gespeicherten** Adresse.
+    Ohne das müsste man erst eine ungeprüfte Einstellung sichern, um zu
+    sehen, was dort überhaupt zur Wahl steht – genau die Reihenfolge, die
+    man beim Einrichten nicht will.
+
+    Im Fehlerfall eine leere Liste: Die Auswahl ist eine Bequemlichkeit,
+    kein Zugangsweg. Wer den Namen kennt, muss ihn weiterhin von Hand
+    eintragen können, auch wenn der Dienst gerade schweigt.
+    """
+    basis = (url or ollama_setting("ollama_url")).strip().rstrip("/")
+    if not basis:
+        return []
+    try:
+        resp = requests.get(basis + "/api/tags", timeout=OLLAMA_TIMEOUT,
+                            headers={"User-Agent": USER_AGENT})
+        resp.raise_for_status()
+        roh = resp.json().get("models", [])
+    except Exception:
+        return []
+    namen = []
+    for m in roh:
+        name = (m or {}).get("name") or (m or {}).get("model") or ""
+        name = str(name).strip()
+        # Ollama liefert dieselbe Ablage teils doppelt (`name` und `model`),
+        # und bei mehreren Marken desselben Modells wiederholt sich der Name.
+        if name and name not in namen:
+            namen.append(name)
+    namen.sort(key=str.casefold)
+    return namen
+
+
 def suchbegriffe(q: str) -> list:
     """Deutsche Suchanfrage in englische BrickLink-Begriffe uebersetzen.
 

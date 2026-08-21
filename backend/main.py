@@ -2646,6 +2646,28 @@ def set_ollama(body: OllamaBody, user: dict = Depends(admin_user)):
     return {"ok": True, "enabled": integrations.ollama_enabled()}
 
 
+@app.get("/api/settings/ollama/models")
+def ollama_models(url: str = "", user: dict = Depends(admin_user)):
+    """Die auf dem Server liegenden Modelle zur Auswahl anbieten.
+
+    Vorher stand hier ein leeres Textfeld, in das man den Namen exakt so
+    tippen musste, wie Ollama ihn führt – `qwen2.5:14b`, nicht `qwen2.5-14b`
+    und nicht `qwen 2.5`. Ein Tippfehler sah aus wie ein kaputter Dienst:
+    Die Verbindung stand, nur das Modell gab es nicht.
+
+    `url` fragt eine noch nicht gespeicherte Adresse ab – sonst müsste man
+    erst sichern, um zu sehen, was zur Wahl steht.
+    """
+    url = (url or "").strip()
+    if url and not re.match(r"^https?://", url):
+        raise HTTPException(400, "Die Adresse muss mit http:// oder https:// "
+                                 "beginnen")
+    modelle = integrations.ollama_modelle(url)
+    return {"models": modelle,
+            "current": integrations.ollama_setting("ollama_model"),
+            "default_model": integrations.OLLAMA_STD_MODELL}
+
+
 @app.post("/api/settings/ollama/test")
 def test_ollama(user: dict = Depends(admin_user)):
     """Einmal wirklich fragen statt nur die Adresse anzuschauen.

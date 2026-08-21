@@ -747,8 +747,15 @@
       <input id="ollama-url" autocapitalize="none" autocomplete="off"
              spellcheck="false" inputmode="url" placeholder="leer = aus">
       <label for="ollama-model">Modell</label>
-      <input id="ollama-model" autocapitalize="none" autocomplete="off"
-             spellcheck="false">
+      <!-- Die Liste kommt vom Server. Schweigt er, bleibt sie verborgen und
+           das Textfeld darunter übernimmt – wer den Namen kennt, soll ihn
+           auch dann eintragen können. -->
+      <select id="ollama-model" hidden></select>
+      <input id="ollama-model-frei" autocapitalize="none" autocomplete="off"
+             spellcheck="false" placeholder="z. B. qwen2.5:14b">
+      <div class="detail-row">
+        <button id="btn-reload-models" class="mini-btn">Modelle laden</button>
+      </div>
       <div class="detail-row">
         <button id="btn-save-ollama" class="mini-btn add">Speichern</button>
         <button id="btn-test-ollama" class="mini-btn">Verbindung testen</button>
