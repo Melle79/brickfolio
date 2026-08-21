@@ -878,12 +878,39 @@ OLLAMA_BILD_STD = "minicpm-v:latest"
 # leere Ergebnisse und hält das Modell für unfähig.
 OLLAMA_BILD_TIMEOUT = 120
 
-_BILD_SCHEMA = {"type": "object",
-                "properties": {"kind": {"type": "string"},
-                               "colors": {"type": "array",
-                                          "items": {"type": "string"},
-                                          "maxItems": 3}},
-                "required": ["kind", "colors"]}
+_BILD_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "kind": {"type": "string"},
+        "parts": {"type": "array", "maxItems": 6, "items": {
+            "type": "object",
+            "properties": {"part": {"type": "string"},
+                           "color": {"type": "string"},
+                           "print": {"type": "string"}},
+            "required": ["part", "color", "print"]}},
+        "accessories": {"type": "array", "maxItems": 3,
+                        "items": {"type": "string"}}},
+    "required": ["kind", "parts"]}
+# **Teil für Teil, nicht nur „rot".**
+#
+# Vorher standen hier Art und bis zu drei Farben. Damit fand „roter Droide"
+# zwar den roten Droiden – aber „roter Protokolldroide mit schwarzem
+# Aufdruck" hatte nichts, woran es sich festhalten konnte: Der Aufdruck kam
+# im Suchtext gar nicht vor.
+#
+# Gemessen am 21.08.2026 an sechs echten Figuren: Der Dragon Master
+# (`cas001`) kam als „Umhang gelb, grüner Drache mit roten Flügeln, Torso
+# rot, Helm schwarz mit gelben Hörnern" heraus – das deckt sich mit dem
+# BrickLink-Namen bis ins Detail.
+#
+# „Nur auffällige Teile" steht aus einem gemessenen Grund in der Frage: Ohne
+# das schrieb das Modell zu jedem Arm „no visible printing" und brauchte
+# 9,3 s je Figur. Mit dem Zusatz sind es 5,4 s – so schnell wie das alte,
+# dünne Schema, bei einem Vielfachen an Inhalt.
+#
+# Die Frage nach der **Art** steht bewusst zuerst und mit Beispielen. Im
+# ersten Anlauf hing sie hinten dran und wurde prompt unbrauchbar
+# („LEGO minifigure", „Ninjago"); davor traf sie zehn von zehn.
 # Art **und** Farbe – aber das hing am Modell.
 #
 # Zunächst stand hier nur die Farbfrage, weil `minicpm-v` die Art in zwei
@@ -907,10 +934,17 @@ _BILD_SCHEMA = {"type": "object",
 # Merkmalen ist der Index einsprachig, und die Übersetzung greift wie
 # überall sonst. Gemessen liefert `qwen3-vl` auf Englisch sogar bessere
 # Antworten – beim Wookiee „Wookiee" statt nur „Alien".
-_BILD_FRAGE = ("This LEGO minifigure: what kind of figure is it? Answer with "
-               "one or two English words (e.g. Soldier, Droid, Robot, Animal, "
-               "Knight, Pilot, Alien). And which colors does it have? At most "
-               "three, the most prominent first, in English.")
+_BILD_FRAGE = (
+    "This LEGO minifigure. First: what kind of figure is it? Answer with one "
+    "or two English words (e.g. Soldier, Droid, Robot, Animal, Knight, Pilot, "
+    "Alien, Police, Wizard). "
+    "Then describe it part by part for a catalogue search: head, hair, "
+    "helmet or headgear, torso, arms, legs, cape. For each, give its main "
+    "colour in plain English (red, dark blue, light gray, tan) and a short "
+    "description of what is printed on it - pattern, markings, face, insignia, "
+    "and the colours of that printing. "
+    "Only list parts that stand out by colour or printing; skip plain parts "
+    "and anything you cannot see. Finally list what the figure holds.")
 
 
 def _ollama_inhalt(nachricht: dict) -> str:
@@ -959,19 +993,51 @@ def bild_merkmale(bild: bytes) -> dict:
             timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
         d = json.loads(_ollama_inhalt(resp.json().get("message", {})))
-        roh, art = d.get("colors", []), d.get("kind", "")
+        art = d.get("kind", "")
+        teile = d.get("parts") or []
+        halt = d.get("accessories") or []
     except Exception as e:
-        return {"art": "", "farben": [],
+        return {"art": "", "farben": [], "merkmale": "",
                 "fehler": "%s: %s" % (type(e).__name__, e)}
-    farben = []
-    for f in roh if isinstance(roh, list) else []:
-        f = re.sub(r"[^a-z]", "", str(f).lower())
-        if len(f) >= 3 and f not in farben:
-            farben.append(f)
+    farben, stuecke = [], []
+    for teil in teile if isinstance(teile, list) else []:
+        if not isinstance(teil, dict):
+            continue
+        name = _bild_wort(teil.get("part"), 3)
+        farbe = _bild_wort(teil.get("color"), 3)
+        druck = _bild_wort(teil.get("print"), 12)
+        # „none" ist die Art, wie das Modell „hat es nicht" sagt – als Wort
+        # im Suchtext träfe es jede Suche nach Nichtvorhandenem.
+        if farbe in ("none", "nonoe", ""):
+            farbe = ""
+        if druck in ("none", "plain", "n a", ""):
+            druck = ""
+        if not name or (not farbe and not druck):
+            continue
+        stuecke.append(" ".join(x for x in (name, farbe, druck) if x))
+        for wort in farbe.split():
+            if len(wort) >= 3 and wort not in farben:
+                farben.append(wort)
+    for ding in halt if isinstance(halt, list) else []:
+        d2 = _bild_wort(ding, 4)
+        if d2 and d2 != "none":
+            stuecke.append("holding " + d2)
     # Die Art knapp halten: Ein ganzer Satz im Suchtext trifft irgendwann
     # alles. Zwei Wörter reichen für „Alien", „Clone Trooper", „Droide".
     art = " ".join(re.sub(r"[^a-z ]", " ", str(art).lower()).split()[:2])
-    return {"art": art, "farben": farben[:3], "fehler": ""}
+    return {"art": art, "farben": farben[:5], "merkmale": "; ".join(stuecke),
+            "fehler": ""}
+
+
+def _bild_wort(roh, hoechstens: int) -> str:
+    """Ein Stück Modellantwort auf durchsuchbaren Text eintrocknen.
+
+    Kleinschreibung und nur Buchstaben, damit `_passt` dieselbe Elle anlegt
+    wie beim Namen. Die Wortgrenze hält die Beschreibung knapp: Ein ganzer
+    Satz im Suchtext trifft irgendwann alles.
+    """
+    return " ".join(re.sub(r"[^a-z ]", " ", str(roh or "").lower())
+                    .split()[:hoechstens])
 
 
 def ollama_modelle(url: str = "") -> list:

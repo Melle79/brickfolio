@@ -263,10 +263,13 @@ def test_auch_die_farben_kommen_aus_dem_denkfeld(client, monkeypatch):
 
         def json(self):
             return {"message": {"content": "", "thinking":
-                                '{"kind": "Droid", "colors": ["red"]}'}}
+                                '{"kind": "Droid", "parts": [{"part":'
+                                ' "torso", "color": "red", "print":'
+                                ' "black chest panel"}]}'}}
     monkeypatch.setattr(integrations.requests, "post",
                         lambda url, **kw: Fake())
     m = integrations.bild_merkmale(b"BILD")
     # `fehler` trennt „angesehen, nichts erkannt" von „gar nicht erst
     # gefragt bekommen" – hier hat das Modell geantwortet.
-    assert m == {"art": "droid", "farben": ["red"], "fehler": ""}
+    assert m == {"art": "droid", "farben": ["red"], "fehler": "",
+                 "merkmale": "torso red black chest panel"}

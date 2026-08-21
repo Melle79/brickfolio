@@ -545,11 +545,31 @@ selbst auf, statt es schlimmer zu machen.
 > Set-Suche danach gar nicht mehr statt.
 
 **🎨 Was auf den Bildern zu sehen ist.** Zweiter Durchgang nach dem Abzug:
-Die lokale KI sieht sich jedes Katalogbild an und schreibt **Art und Farben**
-dazu – **englisch wie der Katalog**: „Soldier", „Droid", „Alien", „red,
+Die lokale KI sieht sich jedes Katalogbild an und beschreibt die Figur
+**Teil für Teil** – Kopf, Haare, Helm, Torso, Arme, Beine, Umhang, jeweils
+mit Farbe *und* Aufdruck – **englisch wie der Katalog**: „Soldier", „Droid", „Alien", „red,
 black". Deutsch abgelegt träfen sie nie, denn die Suchbegriffe kommen aus
 der Übersetzung und sind englisch. Viele Namen sagen davon nichts: `R-3PO Protocol Droid` nennt keine Farbe, `Wicket (Ewok)` keine Art.
 Erst damit findet „roter Droide" beides.
+
+Beim Dragon Master (`cas001`) kommt so heraus: „torso red black and yellow
+dragon design; helmet black yellow horns; cape yellow green dragon with red
+wings" – und damit findet **„roter Ritter mit grünem Drachen"** genau diese
+Figur. Farbe allein reichte dafür nicht: Bis 2.38.0 standen im Index nur Art
+und bis zu drei Farben, der Aufdruck kam im Suchtext gar nicht vor.
+
+> **„Nur auffällige Teile"** steht aus einem gemessenen Grund in der Frage:
+> Ohne den Zusatz schrieb das Modell zu jedem Arm „no visible printing" und
+> brauchte 9,3 s je Figur. Mit ihm sind es **5,4 s** – so schnell wie das
+> alte, dünne Schema, bei einem Vielfachen an Inhalt.
+>
+> Und die Frage nach der **Art** steht bewusst zuerst und mit Beispielen. Im
+> ersten Anlauf hing sie hinten dran und wurde prompt unbrauchbar („LEGO
+> minifigure", „Ninjago"); davor traf sie zehn von zehn.
+
+**Beim Umstieg läuft alles noch einmal durch.** Die Warteschlange hängt an
+der neuen Spalte, nicht an der Farbe – sonst bliebe die Hälfte des Index auf
+dem alten, dünnen Stand stehen. Bei 7.500 Figuren sind das rund elf Stunden.
 
 **Das steht und fällt mit dem Modell.** An zehn echten Figuren traf
 `qwen3-vl` die Art zehnmal (Stormtrooper → Soldat, R2-D2 → Droide, Yoda →

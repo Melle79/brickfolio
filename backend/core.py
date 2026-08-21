@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.37.5"
+APP_VERSION = "2.38.0"
 
 
 def hash_password(password: str) -> str:
@@ -320,6 +320,17 @@ def init_db():
                 -- Getrennt von der Farbe, damit man beides einzeln
                 -- verwerfen kann, wenn ein Modell danebenliegt.
                 art TEXT NOT NULL DEFAULT '',
+                -- Die Figur Teil für Teil: „torso red black and yellow
+                -- dragon design; cape yellow green dragon with red wings".
+                --
+                -- Farbe allein reichte nicht: „roter Droide" fand etwas,
+                -- „roter Droide mit schwarzem Aufdruck" nicht – der Aufdruck
+                -- kam im Suchtext gar nicht vor. Englisch wie der Katalog,
+                -- weil die Suchbegriffe aus der Übersetzung kommen.
+                --
+                -- Leer heißt „noch nicht angesehen": Die Spalte ist zugleich
+                -- die Warteschlange des Bilderlaufs.
+                merkmale TEXT NOT NULL DEFAULT '',
                 category_id TEXT,
                 jahr INTEGER,
                 updated_at INTEGER NOT NULL,
@@ -480,6 +491,16 @@ def init_db():
         if kat_cols and "art" not in kat_cols:
             conn.execute("ALTER TABLE katalog_index ADD COLUMN "
                          "art TEXT NOT NULL DEFAULT ''")
+        # Migration: Die Figur Teil für Teil – Torso, Kopf, Haare, Helm, samt
+        # Aufdruck und dessen Farben. Vorher standen hier Art und bis zu drei
+        # Farben; damit fand „roter Droide" zwar etwas, „roter Droide mit
+        # schwarzem Aufdruck" aber nicht, weil der Aufdruck im Suchtext gar
+        # nicht vorkam. Leer heißt „noch nicht angesehen" – die Spalte ist
+        # deshalb zugleich die Warteschlange des Bilderlaufs, und alles
+        # bisher Angesehene wird mit der neuen Frage noch einmal geholt.
+        if kat_cols and "merkmale" not in kat_cols:
+            conn.execute("ALTER TABLE katalog_index ADD COLUMN "
+                         "merkmale TEXT NOT NULL DEFAULT ''")
         if kat_cols:
             n = conn.execute(
                 "UPDATE katalog_index SET img_url = "

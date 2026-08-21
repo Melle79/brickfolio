@@ -2855,12 +2855,16 @@ def _katalog_farben(grenze: int = 0):
     try:
         while not _farb_lauf["stop"]:
             with core.db() as conn:
+                # `merkmale` ist die Warteschlange, nicht `farben`: Beim
+                # Umstieg auf die Teilbeschreibung sollen auch die Figuren
+                # noch einmal drankommen, die nach dem alten, dünnen Schema
+                # schon eine Farbe bekommen haben.
                 rows = conn.execute(
                     "SELECT item_no, img_url FROM katalog_index "
-                    "WHERE farben = '' AND img_url != '' LIMIT 25").fetchall()
+                    "WHERE merkmale = '' AND img_url != '' LIMIT 25").fetchall()
                 _farb_lauf["offen"] = conn.execute(
                     "SELECT COUNT(*) AS n FROM katalog_index WHERE "
-                    "farben = '' AND img_url != ''").fetchone()["n"]
+                    "merkmale = '' AND img_url != ''").fetchone()["n"]
             if not rows:
                 break
             for r in rows:
@@ -2894,11 +2898,11 @@ def _katalog_farben(grenze: int = 0):
                 # nächste Lauf dieselbe Figur wieder und käme nie ans Ende.
                 with core.db() as conn:
                     conn.execute("UPDATE katalog_index SET farben = ?, "
-                                 "art = ? WHERE item_no = ?",
-                                 (", ".join(m["farben"]) or "–",
-                                  m["art"], r["item_no"]))
+                                 "art = ?, merkmale = ? WHERE item_no = ?",
+                                 (", ".join(m["farben"]) or "–", m["art"],
+                                  m.get("merkmale") or "–", r["item_no"]))
                 _farb_lauf["getan"] += 1
-                if m["farben"] or m["art"]:
+                if m["farben"] or m["art"] or m.get("merkmale"):
                     _farb_lauf["gefunden"] += 1
                 if grenze and _farb_lauf["getan"] >= grenze:
                     return
@@ -2946,16 +2950,16 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20,
         # Farben zählen mit: „R-3PO Protocol Droid" sagt nirgends „rot",
         # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
         rows = conn.execute(
-            "SELECT item_no, item_type, name, jahr, img_url, farben, art "
-            "FROM katalog_index WHERE item_type = ? AND (such LIKE ? "
-            "OR farben LIKE ? OR art LIKE ?) LIMIT 400",
-            (item_type,) + ("%" + laengstes + "%",) * 3).fetchall()
+            "SELECT item_no, item_type, name, jahr, img_url, farben, art, "
+            "merkmale FROM katalog_index WHERE item_type = ? AND (such LIKE ? "
+            "OR farben LIKE ? OR art LIKE ? OR merkmale LIKE ?) LIMIT 400",
+            (item_type,) + ("%" + laengstes + "%",) * 4).fetchall()
     treffer = []
     for r in rows:
         # Name **und** Farben als ein Text: „roter Protokolldroide" braucht
         # beides – die Art aus dem Namen, die Farbe aus dem Bild.
         volltext = " ".join((r["name"] or "", r["farben"] or "",
-                             r["art"] or ""))
+                             r["art"] or "", r["merkmale"] or ""))
         if not _passt(begriff, volltext):
             continue
         treffer.append({"item_id": r["item_no"], "item_type": r["item_type"],

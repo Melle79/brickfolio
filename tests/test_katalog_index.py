@@ -334,7 +334,7 @@ def test_alte_zeilen_bekommen_ihre_bildadresse_nachgetragen(client):
 
 # ------------------------------------------------- Farben aus den Bildern
 
-def _bild_und_farbe(monkeypatch, farben, gefragt=None, art=""):
+def _bild_und_farbe(monkeypatch, farben, gefragt=None, art="", merkmale=""):
     monkeypatch.setattr(integrations, "fetch_catalog_image",
                         lambda url, hosts=None: b"BILD")
     monkeypatch.setattr(integrations, "prepare_image",
@@ -343,7 +343,8 @@ def _bild_und_farbe(monkeypatch, farben, gefragt=None, art=""):
     def fake(bild):
         if gefragt is not None:
             gefragt.append(bild)
-        return {"art": art, "farben": list(farben)}
+        return {"art": art, "farben": list(farben),
+                "merkmale": merkmale, "fehler": ""}
     monkeypatch.setattr(integrations, "bild_merkmale", fake)
 
 
@@ -367,7 +368,8 @@ def test_die_art_der_figur_wird_mitgefragt(client, monkeypatch):
     genau das, was „roter Droide" braucht und in vielen Namen fehlt."""
     # Englisch gefragt: Der Index ist einsprachig, sonst treffen sich die
     # deutschen Merkmale und die englischen Suchbegriffe nie.
-    assert set(integrations._BILD_SCHEMA["properties"]) == {"kind", "colors"}
+    assert set(integrations._BILD_SCHEMA["properties"]) == {
+        "kind", "parts", "accessories"}
 
     _bricklink(monkeypatch, {"sw0002": "Astromech Droid, R2-D2"})
     main._katalog_anbau("sw")
@@ -643,3 +645,95 @@ def test_ein_einzelner_aussetzer_beendet_den_lauf_nicht(client, monkeypatch):
         fertig = conn.execute("SELECT COUNT(*) AS n FROM katalog_index "
                               "WHERE farben <> ''").fetchone()["n"]
     assert fertig == 6, "die Aussetzer wurden nicht wiederholt"
+
+
+# ------------------------------ Teil für Teil, nicht nur „rot"
+
+def test_der_aufdruck_ist_durchsuchbar(client, monkeypatch):
+    """Svens Ziel vom 21.08.2026: „wie z.B welche Farbe hat der Torso, der
+    Kopf, die Haare, der Helm. Welche farbe haben die bedruckungen auf den
+    jeweiligen Teilen und wie sehen diese aus."
+
+    Vorher standen im Index Art und bis zu drei Farben. Damit fand „roter
+    Droide" zwar etwas – „roter Droide mit schwarzem Aufdruck" aber nicht,
+    weil der Aufdruck im Suchtext gar nicht vorkam.
+    """
+    _bricklink(monkeypatch, {"sw0002": "R-3PO Protocol Droid"})
+    main._katalog_anbau("sw")
+    _bild_und_farbe(monkeypatch, ["red", "black"], art="droid",
+                    merkmale="head red simple face; torso red black chest "
+                             "panel with concentric circles")
+    main._katalog_farben()
+
+    assert main._katalog_suchen("red droid")
+    assert main._katalog_suchen("black chest panel")
+    assert main._katalog_suchen("red droid black panel"), \
+        "der Aufdruck ist nicht durchsuchbar"
+
+
+def test_ein_anderer_droide_faellt_dabei_heraus(client, monkeypatch):
+    """Die Probe aufs Exempel: Nur der mit schwarzem Aufdruck, nicht jeder
+    rote Droide."""
+    _bricklink(monkeypatch, {"sw0002": "R-3PO Protocol Droid",
+                             "sw0003": "R2-D2 Astromech Droid"})
+    main._katalog_anbau("sw")
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET farben='red, black',"
+                     " art='droid', merkmale=? WHERE item_no='sw0002'",
+                     ("torso red black chest panel",))
+        conn.execute("UPDATE katalog_index SET farben='white, blue',"
+                     " art='droid', merkmale=? WHERE item_no='sw0003'",
+                     ("torso white blue panel",))
+
+    treffer = [x["item_id"] for x in main._katalog_suchen("red droid black")]
+    assert treffer == ["sw0002"], treffer
+
+
+def test_der_bilderlauf_holt_alles_noch_einmal(client, monkeypatch):
+    """Beim Umstieg auf die Teilbeschreibung müssen auch die Figuren wieder
+    dran, die nach dem alten, dünnen Schema schon eine Farbe haben – sonst
+    bliebe die Hälfte des Index auf dem alten Stand stehen."""
+    _bricklink(monkeypatch, {"sw0002": "C-3PO"})
+    main._katalog_anbau("sw")
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET farben='gold', art='droid'")
+
+    gefragt: list = []
+    _bild_und_farbe(monkeypatch, ["gold"], gefragt=gefragt, art="droid",
+                    merkmale="torso gold panel lines")
+    monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+    main._katalog_farben()
+
+    assert gefragt, "die schon angesehene Figur blieb auf dem alten Stand"
+    with core.db() as conn:
+        r = conn.execute("SELECT merkmale FROM katalog_index").fetchone()
+    assert r["merkmale"] == "torso gold panel lines"
+
+
+def test_none_wird_nicht_zum_suchwort(client, monkeypatch):
+    """Das Modell sagt „none", wenn ein Teil nichts hat. Als Wort im
+    Suchtext träfe es jede Suche nach Nichtvorhandenem."""
+    monkeypatch.setattr(integrations, "ollama_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "ollama_setting",
+                        lambda n: "http://x" if n == "ollama_url" else "m")
+    monkeypatch.setattr(integrations, "ollama_bild_modell", lambda: "m")
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": '{"kind": "Knight", "parts": ['
+                                '{"part": "torso", "color": "red",'
+                                ' "print": "dragon"},'
+                                '{"part": "cape", "color": "none",'
+                                ' "print": "none"}],'
+                                ' "accessories": ["none"]}'}}
+    monkeypatch.setattr(integrations.requests, "post",
+                        lambda url, **kw: Fake())
+
+    m = integrations.bild_merkmale(b"BILD")
+    assert m["merkmale"] == "torso red dragon"
+    assert "none" not in m["farben"]
