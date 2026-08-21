@@ -1026,12 +1026,26 @@ def begriffe_gelernt(begriff: str) -> tuple:
     return [b for b in json.loads(r["begriffe"]) if b], r["quelle"]
 
 
+# Wie lange ein kürzerer Begriff als Tippzwischenstand gilt. Wer „Ritter"
+# eintippt, löst nach dem dritten Zeichen bei jedem weiteren eine Suche aus –
+# und jede merkte sich ihren Begriff. In der Liste standen dann „rit", „ritt",
+# „ritte" neben „ritter". Zwei Minuten sind großzügig fürs Tippen und kurz
+# genug, dass eine Suche von gestern nicht angetastet wird.
+BEGRIFF_TIPPFENSTER = 120
+
+
 def begriffe_merken(begriff: str, begriffe: list, quelle: str = "ki"):
     """Eine Zeile in die Liste schreiben.
 
     Eine von Hand eingetragene Zeile wird vom Modell **nicht** überschrieben –
     sonst wäre das Gelernte beim nächsten Suchlauf wieder weg. Umgekehrt darf
     von Hand jederzeit korrigiert werden.
+
+    **Zwischenstände fliegen wieder raus.** Sie sind nicht nur Krempel: Das
+    Modell reimt sich aus einem abgeschnittenen Wort etwas zusammen, das es
+    gar nicht gibt. Aus „at st captain phasm" wurde am 21.08.2026 ein
+    „Phantom Captain" – sechs Sekunden bevor „at st captain phasma" die
+    richtige Antwort brachte. Beides stand danach nebeneinander in der Liste.
     """
     schluessel = begriff.casefold().strip()
     if not schluessel:
@@ -1049,6 +1063,17 @@ def begriffe_merken(begriff: str, begriffe: list, quelle: str = "ki"):
             "ON CONFLICT(begriff) DO UPDATE SET begriffe = excluded.begriffe,"
             " quelle = excluded.quelle, used_at = excluded.used_at",
             (schluessel, json.dumps(begriffe[:8]), quelle, jetzt, jetzt))
+        if quelle == "ki":
+            # Alles wegräumen, was ein Anfang des neuen Begriffs ist und
+            # eben erst dazukam – das war der Weg dorthin, nicht das Ziel.
+            # `substr` statt `LIKE`, weil ein `_` im Begriff sonst als
+            # Platzhalter wirkte. Von Hand Eingetragenes bleibt unberührt.
+            conn.execute(
+                "DELETE FROM suchbegriffe WHERE quelle = 'ki' "
+                "AND length(begriff) < length(?) "
+                "AND substr(?, 1, length(begriff)) = begriff "
+                "AND created_at >= ?",
+                (schluessel, schluessel, jetzt - BEGRIFF_TIPPFENSTER))
 
 
 def suchbegriffe(q: str) -> list:

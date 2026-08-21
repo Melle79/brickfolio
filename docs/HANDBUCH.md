@@ -598,6 +598,18 @@ Drei Dinge sind dabei absichtlich so:
   am Modell. Ein Wechsel des Modells oder des Rechners nimmt es mit.
 - **Die KI überschreibt deine Zeilen nicht.** Sonst wäre das Beigebrachte beim
   nächsten Suchlauf wieder weg.
+- **Tippzwischenstände räumen sich selbst weg.** Ab dem dritten Zeichen löst
+  jeder Tastendruck eine Suche aus, und jede merkte sich ihren Begriff: In der
+  Liste standen „rit", „ritt", „ritte" neben „ritter". Ein kürzerer Begriff,
+  der ein Anfang des neuen ist und in den letzten zwei Minuten entstand,
+  fliegt jetzt wieder raus. Von Hand Eingetragenes und ältere Suchen bleiben
+  unberührt.
+
+  Es ging dabei nicht nur um Krempel: Aus einem abgeschnittenen Wort reimt
+  sich das Modell etwas zusammen, das es nicht gibt. Aus `at st captain
+  phasm` wurde am 21.08.2026 ein „Phantom Captain" – sechs Sekunden bevor
+  `at st captain phasma` die richtige Antwort brachte. Beides stand danach
+  nebeneinander in der Liste, und beides galt gleich viel.
 - **Fehlschläge werden nicht gelernt.** Ein leeres Ergebnis ist kein Wissen –
   dauerhaft gespeichert stellte es den Begriff für immer tot.
 

@@ -230,3 +230,66 @@ def test_die_einstellungen_zeigen_nur_die_bilanz():
     assert 'id="begriff-bilanz"' in karte
     assert 'id="begriff-liste"' not in karte, \
         "die vollständige Liste steht wieder in den Einstellungen"
+
+
+# ------------------------------------------- Tippen legt keine Liste an
+
+def test_zwischenstaende_beim_tippen_verschwinden_wieder(client):
+    """Sven am 21.08.2026: „da wird der suchbegriff mit jedem zweiten
+    tastendruck angelegt".
+
+    Ab dem dritten Zeichen löst jeder Tastendruck eine Suche aus, und jede
+    merkte sich ihren Begriff. In der Liste standen dann „rit", „ritt",
+    „ritte" neben „ritter".
+    """
+    for teil in ("rit", "ritt", "ritte", "ritter"):
+        integrations.begriffe_merken(teil, ["Knight"], "ki")
+
+    with core.db() as conn:
+        drin = [r["begriff"] for r in conn.execute(
+            "SELECT begriff FROM suchbegriffe ORDER BY begriff")]
+    assert drin == ["ritter"], "die Zwischenstände blieben stehen"
+
+
+def test_erfundene_begriffe_aus_wortfragmenten_bleiben_nicht_stehen(client):
+    """Der eigentliche Schaden: Aus einem abgeschnittenen Wort reimt sich
+    das Modell etwas zusammen, das es nicht gibt. Aus „at st captain phasm"
+    wurde ein „Phantom Captain" – sechs Sekunden bevor „at st captain
+    phasma" die richtige Antwort brachte."""
+    integrations.begriffe_merken("at st captain phasm",
+                                 ["Phantom Captain"], "ki")
+    integrations.begriffe_merken("at st captain phasma",
+                                 ["First Order Captain Phasma"], "ki")
+
+    with core.db() as conn:
+        drin = [r["begriff"] for r in conn.execute(
+            "SELECT begriff FROM suchbegriffe")]
+    assert drin == ["at st captain phasma"]
+
+
+def test_von_hand_eingetragenes_wird_nie_weggeraeumt(client):
+    """Sonst löschte eine beiläufige Suche das mühsam Gepflegte."""
+    integrations.begriffe_merken("roter", ["red"], "hand")
+    integrations.begriffe_merken("roter c3po", ["R-3PO"], "ki")
+
+    with core.db() as conn:
+        drin = sorted(r["begriff"] for r in conn.execute(
+            "SELECT begriff FROM suchbegriffe"))
+    assert drin == ["roter", "roter c3po"]
+
+
+def test_eine_aeltere_suche_bleibt_unangetastet(client):
+    """„gelber" ist für sich nützlich. Nur was im selben Atemzug entstand,
+    ist ein Zwischenstand – nicht, was gestern gesucht wurde."""
+    integrations.begriffe_merken("gelber", ["yellow"], "ki")
+    with core.db() as conn:
+        conn.execute("UPDATE suchbegriffe SET created_at = created_at - ? "
+                     "WHERE begriff = 'gelber'",
+                     (integrations.BEGRIFF_TIPPFENSTER + 60,))
+
+    integrations.begriffe_merken("gelber r2-d2", ["yellow R2-D2"], "ki")
+
+    with core.db() as conn:
+        drin = sorted(r["begriff"] for r in conn.execute(
+            "SELECT begriff FROM suchbegriffe"))
+    assert drin == ["gelber", "gelber r2-d2"]
