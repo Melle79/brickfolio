@@ -2820,18 +2820,19 @@ def _katalog_farben(grenze: int = 0):
                 try:
                     roh = integrations.fetch_catalog_image(
                         r["img_url"], integrations.BILD_HOSTS)
-                    farben = integrations.bild_farben(
+                    m = integrations.bild_merkmale(
                         integrations.prepare_image(roh, 512))
                 except Exception:
-                    farben = []
+                    m = {"art": "", "farben": []}
                 # Auch ein leeres Ergebnis festhalten – sonst versucht der
                 # nächste Lauf dieselbe Figur wieder und käme nie ans Ende.
                 with core.db() as conn:
-                    conn.execute("UPDATE katalog_index SET farben = ? WHERE "
-                                 "item_no = ?",
-                                 (", ".join(farben) or "–", r["item_no"]))
+                    conn.execute("UPDATE katalog_index SET farben = ?, "
+                                 "art = ? WHERE item_no = ?",
+                                 (", ".join(m["farben"]) or "–",
+                                  m["art"], r["item_no"]))
                 _farb_lauf["getan"] += 1
-                if farben:
+                if m["farben"] or m["art"]:
                     _farb_lauf["gefunden"] += 1
                 if grenze and _farb_lauf["getan"] >= grenze:
                     return
@@ -2873,14 +2874,16 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
         # Farben zählen mit: „R-3PO Protocol Droid" sagt nirgends „rot",
         # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
         rows = conn.execute(
-            "SELECT item_no, name, jahr, img_url, farben FROM katalog_index "
-            "WHERE such LIKE ? OR farben LIKE ? LIMIT 400",
-            ("%" + laengstes + "%", "%" + laengstes + "%")).fetchall()
+            "SELECT item_no, name, jahr, img_url, farben, art "
+            "FROM katalog_index WHERE such LIKE ? OR farben LIKE ? "
+            "OR art LIKE ? LIMIT 400",
+            ("%" + laengstes + "%",) * 3).fetchall()
     treffer = []
     for r in rows:
         # Name **und** Farben als ein Text: „roter Protokolldroide" braucht
         # beides – die Art aus dem Namen, die Farbe aus dem Bild.
-        volltext = (r["name"] or "") + " " + (r["farben"] or "")
+        volltext = " ".join((r["name"] or "", r["farben"] or "",
+                             r["art"] or ""))
         if not _passt(begriff, volltext):
             continue
         treffer.append({"item_id": r["item_no"], "item_type": "minifig",

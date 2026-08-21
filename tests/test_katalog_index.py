@@ -320,7 +320,7 @@ def test_alte_zeilen_bekommen_ihre_bildadresse_nachgetragen(client):
 
 # ------------------------------------------------- Farben aus den Bildern
 
-def _bild_und_farbe(monkeypatch, farben, gefragt=None):
+def _bild_und_farbe(monkeypatch, farben, gefragt=None, art=""):
     monkeypatch.setattr(integrations, "fetch_catalog_image",
                         lambda url, hosts=None: b"BILD")
     monkeypatch.setattr(integrations, "prepare_image",
@@ -329,8 +329,8 @@ def _bild_und_farbe(monkeypatch, farben, gefragt=None):
     def fake(bild):
         if gefragt is not None:
             gefragt.append(bild)
-        return list(farben)
-    monkeypatch.setattr(integrations, "bild_farben", fake)
+        return {"art": art, "farben": list(farben)}
+    monkeypatch.setattr(integrations, "bild_merkmale", fake)
 
 
 def test_die_farbe_ergaenzt_was_im_namen_fehlt(client, monkeypatch):
@@ -346,12 +346,19 @@ def test_die_farbe_ergaenzt_was_im_namen_fehlt(client, monkeypatch):
     assert main._katalog_suchen("rot Protocol Droid")
 
 
-def test_die_art_der_figur_wird_nicht_erraten(client):
-    """Gemessen liegt das Modell dabei in zwei von drei Fällen daneben, und
-    die Art steht ohnehin im Namen. Gefragt wird deshalb nur nach Farben."""
-    assert "farben" in integrations._BILD_SCHEMA["properties"]
-    assert len(integrations._BILD_SCHEMA["properties"]) == 1
-    assert "Farben" in integrations._BILD_FRAGE
+def test_die_art_der_figur_wird_mitgefragt(client, monkeypatch):
+    """Erst nicht, dann doch: Mit `minicpm-v` lag die Art in zwei von drei
+    Proben daneben, mit `qwen3-vl` an zehn echten Figuren zehnmal richtig
+    (Stormtrooper → Soldat, Wookiee → Alien, R2-D2 → Droide). Sie ist
+    genau das, was „roter Droide" braucht und in vielen Namen fehlt."""
+    assert set(integrations._BILD_SCHEMA["properties"]) == {"art", "farben"}
+
+    _bricklink(monkeypatch, {"sw0002": "Astromech Droid, R2-D2"})
+    main._katalog_anbau("sw")
+    _bild_und_farbe(monkeypatch, ["weiß", "blau"], art="droide")
+    main._katalog_farben()
+    assert main._katalog_suchen("droide")
+    assert main._katalog_suchen("weiß droide")
 
 
 def test_ein_leeres_ergebnis_wird_auch_festgehalten(client, monkeypatch):

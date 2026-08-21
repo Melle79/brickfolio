@@ -5857,7 +5857,7 @@ function farbenStand(d) {
   } else {
     start.hidden = false; stop.hidden = true;
     feld.textContent = f.offen
-      ? tr("{o} Figuren ohne Farbe", { o: f.offen })
+      ? tr("{o} Figuren noch nicht angesehen", { o: f.offen })
       : tr("Alle Bilder angesehen.");
   }
 }

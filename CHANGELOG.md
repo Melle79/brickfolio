@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.35.0 – August 2026
+
+### Neu
+- 🎨 **Auch die Art der Figur kommt jetzt aus dem Bild**, nicht nur die
+  Farbe. „Soldat", „Droide", „Alien" – vieles davon steht in keinem Namen:
+  `R-3PO Protocol Droid` nennt keine Farbe, `Wicket (Ewok)` keine Art. Erst
+  mit beidem findet „roter Droide", was gemeint ist.
+
+  **Das ist eine Rücknahme.** 2.34.0 fragte bewusst nur nach Farben, weil
+  `minicpm-v` die Art in zwei von drei Proben verfehlte und Darth Vader für
+  einen Droiden hielt. Diese Messung stammte aus einer Zeit, in der es das
+  beste verfügbare Modell war. Mit `qwen3-vl` sieht es anders aus: an zehn
+  echten Figuren aus dem Abzug **zehn Treffer** – Stormtrooper → Soldat,
+  Wookiee → Alien, R2-D2 → Droide, Luke im Fluganzug → Pilot, Yoda → Alien,
+  Leia → Mensch.
+
+  Die Einschränkung hing also am Modell, nicht an der Aufgabe. Wer ein
+  schwächeres einstellt, bekommt entsprechend schwächere Antworten – die
+  landen dann als Rauschen im Suchtext. Das ist der Preis der freien Wahl
+  und steht so im Handbuch.
+
+  Art und Farbe stehen in getrennten Spalten, damit sich eines verwerfen
+  lässt, ohne das andere zu verlieren.
+
 ## 2.34.1 – August 2026
 
 ### Behoben

@@ -879,19 +879,30 @@ OLLAMA_BILD_STD = "minicpm-v:latest"
 OLLAMA_BILD_TIMEOUT = 120
 
 _BILD_SCHEMA = {"type": "object",
-                "properties": {"farben": {"type": "array",
+                "properties": {"art": {"type": "string"},
+                               "farben": {"type": "array",
                                           "items": {"type": "string"},
                                           "maxItems": 3}},
-                "required": ["farben"]}
-# **Nur nach Farben fragen.** Gemessen am 21.08.2026: Die Farbe trifft das
-# Modell in allen Proben, die Art der Figur in zwei von drei nicht (Darth
-# Vader → „Droide", AT-AT-Fahrer → „Roboter"). Die Art steht schon im
-# BrickLink-Namen; sie hier noch einmal raten zu lassen brächte nur Fehler
-# hinein. Und den Namen mitzugeben macht es schlechter: Mit „das ist R-3PO"
-# antwortete dasselbe Modell prompt „R2-D2".
-_BILD_FRAGE = ("Welche Farben hat diese LEGO-Minifigur? Nenne hoechstens "
-               "drei, die auffaelligste zuerst, auf Deutsch, als einzelne "
-               "Woerter.")
+                "required": ["art", "farben"]}
+# Art **und** Farbe – aber das hing am Modell.
+#
+# Zunächst stand hier nur die Farbfrage, weil `minicpm-v` die Art in zwei
+# von drei Proben verfehlte (Darth Vader → „Droide", AT-AT-Fahrer →
+# „Roboter"). Mit `qwen3-vl` sieht es anders aus: an zehn echten Figuren
+# aus dem Abzug **zehn Treffer** – Stormtrooper → Soldat, Wookiee → Alien,
+# R2-D2 → Droide, Yoda → Alien, Leia → Mensch. Deshalb wieder beides.
+#
+# Wer ein schwächeres Modell einstellt, bekommt schwächere Antworten; die
+# Art landet dann als Rauschen im Suchtext. Das ist der Preis der freien
+# Wahl und steht so im Handbuch.
+#
+# Den **Namen** der Figur mitzugeben bringt nichts (gemessen: dreimal
+# dieselben Farben) und schadet mit schwachen Modellen sogar – auf „das ist
+# R-3PO" antwortete `minicpm-v` prompt „R2-D2".
+_BILD_FRAGE = ("Diese LEGO-Minifigur: Was ist das fuer eine Figur? Nenne die "
+               "Art in ein bis zwei deutschen Woertern (z. B. Soldat, "
+               "Droide, Roboter, Tier, Ritter, Pilot, Alien). Und welche "
+               "Farben hat sie? Hoechstens drei, die auffaelligste zuerst.")
 
 
 def _ollama_inhalt(nachricht: dict) -> str:
@@ -914,14 +925,14 @@ def ollama_bild_modell() -> str:
             or os.environ.get("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD)
 
 
-def bild_farben(bild: bytes) -> list:
-    """Die Farben einer Figur aus ihrem Bild – oder eine leere Liste.
+def bild_merkmale(bild: bytes) -> dict:
+    """Art und Farben einer Figur aus ihrem Bild.
 
-    Leer heißt „nicht erkannt", und das ist kein Fehler: Der Abzug ist auch
-    ohne Farben brauchbar, der Name trägt die Hauptlast.
+    Leere Werte heißen „nicht erkannt", und das ist kein Fehler: Der Abzug
+    ist auch ohne brauchbar, der Name trägt die Hauptlast.
     """
     if not bild or not ollama_enabled():
-        return []
+        return {"art": "", "farben": []}
     basis = ollama_setting("ollama_url").strip().rstrip("/")
     try:
         resp = requests.post(
@@ -933,16 +944,19 @@ def bild_farben(bild: bytes) -> list:
                                 "images": [base64.b64encode(bild).decode()]}]},
             timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
-        roh = json.loads(
-            _ollama_inhalt(resp.json().get("message", {}))).get("farben", [])
+        d = json.loads(_ollama_inhalt(resp.json().get("message", {})))
+        roh, art = d.get("farben", []), d.get("art", "")
     except Exception:
-        return []
+        return {"art": "", "farben": []}
     farben = []
     for f in roh if isinstance(roh, list) else []:
         f = re.sub(r"[^a-zäöüß]", "", str(f).lower())
         if len(f) >= 3 and f not in farben:
             farben.append(f)
-    return farben[:3]
+    # Die Art knapp halten: Ein ganzer Satz im Suchtext trifft irgendwann
+    # alles. Zwei Wörter reichen für „Alien", „Clone Trooper", „Droide".
+    art = " ".join(re.sub(r"[^a-zäöüß ]", " ", str(art).lower()).split()[:2])
+    return {"art": art, "farben": farben[:3]}
 
 
 def ollama_modelle(url: str = "") -> list:

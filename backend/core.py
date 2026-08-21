@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.34.1"
+APP_VERSION = "2.35.0"
 
 
 def hash_password(password: str) -> str:
@@ -316,6 +316,10 @@ def init_db():
                 --
                 -- Leer heißt „noch nicht angesehen", nicht „keine Farbe".
                 farben TEXT NOT NULL DEFAULT '',
+                -- Was für eine Figur: „Soldat", „Droide", „Alien" …
+                -- Getrennt von der Farbe, damit man beides einzeln
+                -- verwerfen kann, wenn ein Modell danebenliegt.
+                art TEXT NOT NULL DEFAULT '',
                 category_id TEXT,
                 jahr INTEGER,
                 updated_at INTEGER NOT NULL,
@@ -473,6 +477,9 @@ def init_db():
         if kat_cols and "farben" not in kat_cols:
             conn.execute("ALTER TABLE katalog_index ADD COLUMN "
                          "farben TEXT NOT NULL DEFAULT ''")
+        if kat_cols and "art" not in kat_cols:
+            conn.execute("ALTER TABLE katalog_index ADD COLUMN "
+                         "art TEXT NOT NULL DEFAULT ''")
         if kat_cols:
             n = conn.execute(
                 "UPDATE katalog_index SET img_url = "

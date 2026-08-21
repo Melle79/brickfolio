@@ -498,6 +498,21 @@ setzt dort fort. Antwortet BrickLink mit einem anderen Fehler als „gibt es
 nicht" – etwa `429`, weil das Kontingent erschöpft ist –, hört der Lauf von
 selbst auf, statt es schlimmer zu machen.
 
+**🎨 Was auf den Bildern zu sehen ist.** Zweiter Durchgang nach dem Abzug:
+Die lokale KI sieht sich jedes Katalogbild an und schreibt **Art und Farben**
+dazu – „Soldat", „Droide", „Alien", „rot, schwarz". Viele Namen sagen davon
+nichts: `R-3PO Protocol Droid` nennt keine Farbe, `Wicket (Ewok)` keine Art.
+Erst damit findet „roter Droide" beides.
+
+**Das steht und fällt mit dem Modell.** An zehn echten Figuren traf
+`qwen3-vl` die Art zehnmal (Stormtrooper → Soldat, R2-D2 → Droide, Yoda →
+Alien, Leia → Mensch); `minicpm-v` lag in zwei von drei Proben daneben und
+hielt Darth Vader für einen Droiden. Ein schwaches Modell schreibt hier
+Unsinn in den Suchtext — wähle es unter *Modell fürs Bilderansehen*.
+
+Rund 5,5 Sekunden je Figur, jederzeit anhaltbar. Ein leeres Ergebnis wird
+festgehalten, sonst versuchte der nächste Lauf dieselbe Figur wieder.
+
 **📖 Gelernte Begriffe.** Unter der KI-Karte steht die Bilanz („1.243
 Begriffe gelernt, davon 12 eigene"); **Ansehen und pflegen** öffnet die Liste
 in einem eigenen Fenster, mit Suchfeld und seitenweise. Sie wächst mit jedem

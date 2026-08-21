@@ -803,17 +803,20 @@
         <button id="btn-katalog-stop" class="mini-btn" hidden>Anhalten</button>
       </div>
 
-      <h4>🎨 Farben aus den Bildern</h4>
+      <h4>🎨 Was auf den Bildern zu sehen ist</h4>
       <p class="search-hint">Zweiter Durchgang: Die lokale KI sieht sich die
-        Katalogbilder an und schreibt die <b>Farben</b> dazu. Viele Namen
-        nennen keine – <code>R-3PO Protocol Droid</code> sagt nirgends
-        „rot". Danach findet „roter Protokolldroide" beides: die Art aus dem
-        Namen, die Farbe aus dem Bild.</p>
-      <p class="search-hint">Nur Farben, mit Absicht. Nach der <b>Art</b> der
-        Figur gefragt, lag dasselbe Modell in zwei von drei Proben daneben
-        (Darth Vader „Droide", AT-AT-Fahrer „Roboter") – und die steht ja
-        schon im Namen. Kostet kein fremdes Kontingent, aber Rechenzeit auf
-        dem Rechner mit der KI; jederzeit anhaltbar, der Fortschritt bleibt.</p>
+        Katalogbilder an und schreibt <b>Art und Farben</b> dazu – „Soldat",
+        „Droide", „Alien", „rot, schwarz". Viele Namen sagen davon nichts:
+        <code>R-3PO Protocol Droid</code> nennt keine Farbe,
+        <code>Wicket (Ewok)</code> keine Art. Danach findet „roter Droide"
+        beides.</p>
+      <p class="search-hint"><b>Das steht und fällt mit dem Modell.</b> An
+        zehn echten Figuren traf <code>qwen3-vl</code> die Art zehnmal
+        (Stormtrooper → Soldat, R2-D2 → Droide, Yoda → Alien);
+        <code>minicpm-v</code> lag in zwei von drei daneben. Ein schwaches
+        Modell schreibt hier Unsinn in den Suchtext. Kostet kein fremdes
+        Kontingent, aber Rechenzeit – rund 5,5 Sekunden je Figur, jederzeit
+        anhaltbar, der Fortschritt bleibt.</p>
       <div class="detail-row">
         <span id="farben-stand" class="search-hint"></span>
       </div>

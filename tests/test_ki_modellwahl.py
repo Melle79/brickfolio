@@ -262,8 +262,9 @@ def test_auch_die_farben_kommen_aus_dem_denkfeld(client, monkeypatch):
             pass
 
         def json(self):
-            return {"message": {"content": "",
-                                "thinking": '{"farben": ["rot", "schwarz"]}'}}
+            return {"message": {"content": "", "thinking":
+                                '{"art": "Droide", "farben": ["rot"]}'}}
     monkeypatch.setattr(integrations.requests, "post",
                         lambda url, **kw: Fake())
-    assert integrations.bild_farben(b"BILD") == ["rot", "schwarz"]
+    m = integrations.bild_merkmale(b"BILD")
+    assert m == {"art": "droide", "farben": ["rot"]}
