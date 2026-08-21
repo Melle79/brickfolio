@@ -538,6 +538,12 @@ setzt dort fort. Antwortet BrickLink mit einem anderen Fehler als „gibt es
 nicht" – etwa `429`, weil das Kontingent erschöpft ist –, hört der Lauf von
 selbst auf, statt es schlimmer zu machen.
 
+> **Der Index gilt nur für Figuren.** Er wird ausschließlich befragt, wenn
+> oben auch „Minifig" eingestellt ist. Bis 2.37.2 fehlte diese Rücksicht:
+> Wer nach einem *Set* suchte, bekam eine Figur zurück – und weil ein
+> Treffer aus dem Index die Suche vorzeitig beendet, fand die eigentliche
+> Set-Suche danach gar nicht mehr statt.
+
 **🎨 Was auf den Bildern zu sehen ist.** Zweiter Durchgang nach dem Abzug:
 Die lokale KI sieht sich jedes Katalogbild an und schreibt **Art und Farben**
 dazu – **englisch wie der Katalog**: „Soldier", „Droid", „Alien", „red,

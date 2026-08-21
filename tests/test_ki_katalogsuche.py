@@ -229,3 +229,56 @@ def test_ohne_katalogzugang_sagt_die_oberflaeche_warum():
     """Vorher tippte man und es passierte sichtbar nichts – ununterscheidbar
     von „findet nichts" und von „ist kaputt"."""
     assert "Katalogsuche ist nicht eingerichtet" in _katalogsuche()
+
+
+# ------------------------------- Wer „Set" einstellt, will kein Minifig
+
+def test_bei_typ_set_kommt_keine_figur_aus_dem_eigenen_index(client,
+                                                             monkeypatch):
+    """Svens Fall vom 21.08.2026: Oben stand „Set", gesucht war die UCS
+    Razor Crest – heraus kam „Clone ARF Trooper Razor", eine Figur.
+
+    Der eigene Katalogindex enthält ausschließlich Figuren, wurde aber ohne
+    Rücksicht auf den eingestellten Typ befragt. Schlimmer noch: Fand er
+    etwas, kehrte die Suche vorzeitig zurück – die eigentliche Set-Suche
+    fand danach gar nicht mehr statt.
+    """
+    _einrichten(client)
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " updated_at) VALUES ('sw0297', 'minifig',"
+            " 'Clone ARF Trooper Razor / Stak, 91st Mobile Recon', "
+            " 'clone arf trooper razor stak 91st mobile recon', 0)")
+    _ollama(monkeypatch, ["Razor"])
+    gefragt = []
+    _katalog(monkeypatch, {"Razor": ["Razor Crest UCS"]}, gefragt)
+
+    d = client.get("/api/search/suggest?q=UCS%20Razor%20crest"
+                   "&item_type=set").json()
+    namen = [i["name"] for i in d["items"]]
+    assert not any("Clone ARF Trooper" in n for n in namen), \
+        "eine Figur, obwohl „Set“ eingestellt war"
+    assert gefragt, "die eigentliche Set-Suche fand gar nicht statt"
+    assert "Razor Crest UCS" in namen
+
+
+def test_bei_typ_minifig_bleibt_der_index_die_erste_wahl(client, monkeypatch):
+    """Die Gegenprobe: Für Figuren soll er weiter zuerst greifen – er kostet
+    nichts und kennt die beschreibenden Namen, die Rebrickable nicht hat."""
+    _einrichten(client)
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " updated_at) VALUES ('sw0297', 'minifig',"
+            " 'Clone ARF Trooper Razor', 'clone arf trooper razor', 0)")
+    _ollama(monkeypatch, ["Razor"])
+    gefragt = []
+    _katalog(monkeypatch, {"Razor": ["Irgendwas von Rebrickable"]}, gefragt)
+
+    # Nicht „Razor" selbst fragen: Ein Begriff, der der Eingabe gleicht,
+    # gilt als keine Übersetzung und fällt vorher heraus.
+    d = client.get("/api/search/suggest?q=Klonsoldat%20Razor"
+                   "&item_type=minifig").json()
+    assert [i["name"] for i in d["items"]] == ["Clone ARF Trooper Razor"]
+    assert gefragt == [], "Rebrickable wurde unnötig gefragt"

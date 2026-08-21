@@ -2897,12 +2897,18 @@ def katalog_farben_stop(user: dict = Depends(admin_user)):
     return {"ok": True}
 
 
-def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
+def _katalog_suchen(begriff: str, hoechstens: int = 20,
+                    item_type: str = "minifig") -> list:
     """Im eigenen Abzug suchen – mit derselben Elle wie die Sammlung.
 
     Nicht per SQL-LIKE: `_passt` wirft Satzzeichen weg und verlangt alle
     Wörter. „c3 po" findet damit `C-3PO`, und „Knight Hunter" zieht nicht
     jeden Ritter herein. Genau daran hing 2.28.1.
+
+    **Der Typ gehört dazu.** Im Index stehen nur Figuren. Wer oben „Set"
+    eingestellt hat und trotzdem eine Figur bekommt, hat nicht gesucht,
+    was er suchen wollte – und weil der Index vorzeitig zurückkehrt, fand
+    die eigentliche Set-Suche gar nicht mehr statt.
     """
     woerter = _such_woerter(begriff)
     if not woerter:
@@ -2914,10 +2920,10 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
         # Farben zählen mit: „R-3PO Protocol Droid" sagt nirgends „rot",
         # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
         rows = conn.execute(
-            "SELECT item_no, name, jahr, img_url, farben, art "
-            "FROM katalog_index WHERE such LIKE ? OR farben LIKE ? "
-            "OR art LIKE ? LIMIT 400",
-            ("%" + laengstes + "%",) * 3).fetchall()
+            "SELECT item_no, item_type, name, jahr, img_url, farben, art "
+            "FROM katalog_index WHERE item_type = ? AND (such LIKE ? "
+            "OR farben LIKE ? OR art LIKE ?) LIMIT 400",
+            (item_type,) + ("%" + laengstes + "%",) * 3).fetchall()
     treffer = []
     for r in rows:
         # Name **und** Farben als ein Text: „roter Protokolldroide" braucht
@@ -2926,7 +2932,7 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
                              r["art"] or ""))
         if not _passt(begriff, volltext):
             continue
-        treffer.append({"item_id": r["item_no"], "item_type": "minifig",
+        treffer.append({"item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,
                         "bricklink_url":
@@ -4623,7 +4629,7 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # BrickLink-Namen und findet damit, was Rebrickable nicht hergibt:
     # `R-3PO` heißt dort nur so, bei BrickLink „R-3PO Protocol Droid".
     for begriff in begriffe:
-        for eintrag in _katalog_suchen(begriff):
+        for eintrag in _katalog_suchen(begriff, item_type=item_type):
             kennung = (eintrag["item_id"], eintrag["item_type"])
             if kennung in gesehen:
                 continue
