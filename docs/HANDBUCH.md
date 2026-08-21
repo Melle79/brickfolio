@@ -474,6 +474,13 @@ die Suche sie über **beschreibende Wörter**: „Protokolldroide" findet
 Rebrickable nennt dieselbe Figur nur `R-3PO`, ohne ein einziges Wort zum
 Suchen.
 
+**Mehrere Themen** trägt man mit Komma ein: `sw, cty, njo`. Sie laufen
+**nacheinander**, nie nebeneinander – alle teilen sich denselben
+BrickLink-Zugang, und zwei gleichzeitig hebelten die Drosselung aus. Das
+Präfix ist die Nummernvorsilbe: `sw` Star Wars, `cty` City, `njo` Ninjago,
+`sh` Super Heroes, `cas` Castle, `hp` Harry Potter, `col` Sammelfiguren.
+Weitere trägt man einfach dazu; der Lauf prüft selbst, ob es sie gibt.
+
 Der Abzug läuft die Nummern der Reihe nach ab (`sw0002`, `sw0003`, …), denn
 eine Auflistung einer Kategorie bietet BrickLink nicht an. **Bewusst
 gedrosselt** auf einen Abruf je Sekunde – rund 25 Minuten für etwa 1.500

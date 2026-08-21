@@ -221,3 +221,61 @@ def test_nur_fuer_admins(client):
     c.headers["Authorization"] = "Bearer " + core.create_token(2, "gast", False)
     assert c.get("/api/katalog/status").status_code in (401, 403)
     assert c.post("/api/katalog/start").status_code in (401, 403)
+
+
+# ---------------------------------------------------- Mehrere Themen
+
+def test_die_themen_laufen_nacheinander(client, monkeypatch):
+    """Nicht nebeneinander: Alle Läufe teilen sich denselben
+    BrickLink-Zugang. Zwei gleichzeitig hieße doppelter Takt – die
+    Drosselung wäre ausgehebelt, für die es hier gute Gründe gibt."""
+    reihenfolge: list = []
+
+    def fake(item_type, item_no):
+        reihenfolge.append(item_no[:3])
+        resp = requests.Response()
+        resp.status_code = 404
+        raise requests.HTTPError("404", response=resp)
+    monkeypatch.setattr(integrations, "bricklink_item", fake)
+
+    main._katalog_reihe(["sw", "cty"])
+    # Erst alle sw, dann alle cty – kein Wechsel mittendrin.
+    assert reihenfolge == sorted(reihenfolge, key=lambda p: p != "sw")
+
+
+def test_ein_kontingentfehler_stoppt_auch_die_folgenden_themen(client,
+                                                               monkeypatch):
+    """Der Zugang ist derselbe. Nach einem 429 beim ersten Thema hätte das
+    zweite keine Chance – es würde das Problem nur verlängern."""
+    gefragt: list = []
+
+    def fake(item_type, item_no):
+        gefragt.append(item_no)
+        resp = requests.Response()
+        resp.status_code = 429
+        raise requests.HTTPError("429", response=resp)
+    monkeypatch.setattr(integrations, "bricklink_item", fake)
+
+    main._katalog_reihe(["sw", "cty", "njo"])
+    assert len(gefragt) == 1, gefragt
+    assert all(not n.startswith("cty") for n in gefragt)
+
+
+def test_nur_buchstaben_als_praefix(client, monkeypatch):
+    """Das Präfix wandert in eine Adresse – „../" hat dort nichts zu suchen."""
+    core.set_setting("bl_consumer_key", "x")
+    core.set_setting("bl_consumer_secret", "x")
+    core.set_setting("bl_token", "x")
+    core.set_setting("bl_token_secret", "x")
+    r = client.post("/api/katalog/start", json={"themen": "../etc, sw0001, ?"})
+    assert r.status_code == 400
+
+
+def test_ohne_angabe_bleibt_es_bei_star_wars(client, monkeypatch):
+    core.set_setting("bl_consumer_key", "x")
+    core.set_setting("bl_consumer_secret", "x")
+    core.set_setting("bl_token", "x")
+    core.set_setting("bl_token_secret", "x")
+    monkeypatch.setattr(main, "_katalog_reihe", lambda p: None)
+    r = client.post("/api/katalog/start", json={})
+    assert r.json()["themen"] == ["sw"]

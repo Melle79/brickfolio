@@ -2671,8 +2671,14 @@ KATALOG_TAKT = 1.0            # Sekunden zwischen zwei Abrufen
 KATALOG_LUECKE = 25
 KATALOG_MAX = 4000            # Notbremse gegen eine endlose Schleife
 
+# Die Themen, die BrickLink über das Nummernpräfix unterscheidet. Keine
+# vollständige Liste – das sind die, die im Haushalt vorkommen. Weitere
+# trägt man im Feld einfach dazu; der Lauf prüft selbst, ob es sie gibt.
+KATALOG_THEMEN = ["sw", "cty", "njo", "sh", "cas", "hp", "col"]
+
 _katalog_lauf = {"aktiv": False, "praefix": "", "nummer": 0, "gefunden": 0,
-                 "neu": 0, "stop": False, "fehler": "", "seit": 0}
+                 "neu": 0, "stop": False, "fehler": "", "seit": 0,
+                 "warteschlange": []}
 
 
 def _katalog_eintragen(item_no: str, daten: dict) -> bool:
@@ -2802,23 +2808,62 @@ def katalog_status(user: dict = Depends(admin_user)):
         laeufe = conn.execute("SELECT * FROM katalog_lauf").fetchall()
     return {"anzahl": anzahl,
             "laeuft": _katalog_lauf["aktiv"],
+            "praefix": _katalog_lauf["praefix"],
             "nummer": _katalog_lauf["nummer"],
             "neu": _katalog_lauf["neu"],
             "fehler": _katalog_lauf["fehler"],
+            "warteschlange": _katalog_lauf["warteschlange"],
+            "themen": KATALOG_THEMEN,
             "takt": KATALOG_TAKT,
             "laeufe": [{"praefix": r["praefix"], "zuletzt": r["zuletzt"],
                         "gefunden": r["gefunden"],
                         "fertig_at": r["fertig_at"]} for r in laeufe]}
 
 
+def _katalog_reihe(praefixe: list):
+    """Ein Thema nach dem anderen – nicht nebeneinander.
+
+    Parallel liefe schneller und wäre genau falsch: Alle Läufe teilen sich
+    denselben BrickLink-Zugang. Zwei gleichzeitig hieße doppelter Takt,
+    also die Drosselung ausgehebelt, für die es hier gute Gründe gibt.
+    """
+    for p in praefixe:
+        if _katalog_lauf["stop"]:
+            break
+        _katalog_lauf["warteschlange"] = [x for x in praefixe
+                                          if x != p and praefixe.index(x)
+                                          > praefixe.index(p)]
+        _katalog_anbau(p)
+        # Ein Abbruch aus dem Lauf heraus (429, falscher Zugang) gilt für
+        # alle folgenden Themen mit – der Zugang ist derselbe.
+        if _katalog_lauf["fehler"]:
+            break
+    _katalog_lauf["warteschlange"] = []
+
+
+class KatalogBody(BaseModel):
+    themen: str = Field(default="sw", max_length=200)
+
+
 @app.post("/api/katalog/start")
-def katalog_start(user: dict = Depends(admin_user)):
+def katalog_start(body: KatalogBody | None = None,
+                  user: dict = Depends(admin_user)):
     if not integrations.bricklink_enabled():
         raise HTTPException(400, "BrickLink ist nicht eingerichtet")
     if _katalog_lauf["aktiv"]:
         return {"ok": True, "info": "läuft bereits"}
-    threading.Thread(target=_katalog_anbau, args=("sw",), daemon=True).start()
-    return {"ok": True}
+    # Nur Buchstaben: Das Präfix wandert in eine Adresse, und „../" oder ein
+    # Fragezeichen hätten dort nichts zu suchen.
+    themen = (body.themen if body else "") or "sw"
+    praefixe = [t.strip().lower() for t in themen.split(",")]
+    praefixe = [t for t in praefixe if t and re.fullmatch(r"[a-z]{2,6}", t)]
+    if not praefixe:
+        raise HTTPException(400, "Kein gültiges Thema angegeben")
+    _katalog_lauf["stop"] = False
+    _katalog_lauf["fehler"] = ""
+    threading.Thread(target=_katalog_reihe, args=(praefixe,),
+                     daemon=True).start()
+    return {"ok": True, "themen": praefixe}
 
 
 @app.post("/api/katalog/stop")

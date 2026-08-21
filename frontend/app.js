@@ -5767,9 +5767,15 @@ async function katalogStand() {
   try { d = await api("/katalog/status"); }
   catch (e) { feld.textContent = ""; return; }
   const start = $("btn-katalog-start"), stop = $("btn-katalog-stop");
+  const feldThemen = $("katalog-themen");
+  if (feldThemen && !feldThemen.value && (d.themen || []).length) {
+    feldThemen.value = d.themen.join(", ");
+  }
   if (d.laeuft) {
-    feld.textContent = tr("Läuft … bei Nummer {n}, {g} Figuren, {neu} neu",
-      { n: d.nummer, g: d.anzahl, neu: d.neu });
+    const rest = (d.warteschlange || []).length;
+    feld.textContent = tr("{p}: Nummer {n} · {g} Figuren · {neu} neu",
+      { p: d.praefix, n: d.nummer, g: d.anzahl, neu: d.neu })
+      + (rest ? " " + tr("(danach noch {r} Themen)", { r: rest }) : "");
     start.hidden = true;
     stop.hidden = false;
     // Nur solange etwas passiert nachfragen. Ein Takt, der ewig weiterläuft,
@@ -5792,7 +5798,8 @@ async function katalogStand() {
 
 async function katalogStarten() {
   try {
-    await api("/katalog/start", { method: "POST" });
+    await api("/katalog/start", { method: "POST",
+      body: { themen: $("katalog-themen").value.trim() || "sw" } });
     katalogStand();
   } catch (e) { toast(e.message); }
 }

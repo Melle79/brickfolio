@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.33.0 – August 2026
+
+### Neu
+- 📚 **Der Katalog-Abzug kann mehrere Themen.** Bisher stand `sw` fest im
+  Knopf. Jetzt trägt man sie mit Komma ein – `sw, cty, njo` – und sie laufen
+  **nacheinander** ab, mit Fortschritt und Warteschlange in der Anzeige.
+
+  Nacheinander, nicht nebeneinander: Alle Läufe teilen sich denselben
+  BrickLink-Zugang. Zwei gleichzeitig hieße doppelter Takt – die Drosselung
+  wäre ausgehebelt, für die es hier gute Gründe gibt.
+
+  Bricht ein Lauf mit einem Kontingentfehler ab (`429`), bleiben auch die
+  folgenden Themen stehen. Der Zugang ist derselbe; weiterzumachen würde das
+  Problem nur verlängern.
+
+  Als Präfix sind nur Buchstaben zugelassen – es wandert in eine Adresse,
+  und `../` hätte dort nichts zu suchen.
+
+  Gemessene Größenordnungen: `cty` über 2.000 Nummern, `njo` und `sh` je
+  1.000–2.000, `cas`, `hp` und `col` je unter 500. Beim gemessenen Takt von
+  0,38 Abrufen je Sekunde sind das für alle zusammen rund fünf Stunden –
+  abbrechbar und fortsetzbar, also gut über mehrere Abende zu verteilen.
+
 ## 2.32.0 – August 2026
 
 ### Neu
