@@ -313,17 +313,31 @@ def test_modell_bleibt_geladen(client, monkeypatch):
     assert gesendet and gesendet[0].get("keep_alive"), "keep_alive fehlt"
 
 
-def test_adresswechsel_leert_den_zwischenspeicher(client, monkeypatch):
-    """Sonst bliebe nach dem Umstellen unerklärlich die alte Antwort stehen."""
+def test_der_wissensstand_ueberlebt_den_modellwechsel(client, monkeypatch):
+    """Ein Wechsel des Modells nimmt das Gelernte mit.
+
+    Vorher hieß dieser Test „Adresswechsel leert den Zwischenspeicher" und
+    verlangte, dass danach erneut gefragt wird. Seit 2.31.0 steht das
+    Gelernte in der Datenbank, und das ist der Sinn der Sache: Die Liste
+    hängt an der App, nicht am Modell – sonst begänne jeder Wechsel des
+    Modells oder des Rechners wieder bei null.
+
+    Der Zwischenspeicher wird weiterhin geleert; er gehörte zum alten
+    Dienst. Nur muss das Modell deshalb nicht noch einmal ran, denn die
+    Antwort steht ja schon in der Liste. Taugt eine Zeile nichts, löscht man
+    sie – sichtbar, statt sie stumm neu raten zu lassen.
+    """
     _einrichten(client)
     gerufen: list = []
     _ollama(monkeypatch, ["Knight"], mitzaehler=gerufen)
     client.get("/api/collection/suggest?q=Ritter")
+    assert len(gerufen) == 1
 
     client.post("/api/settings/ollama",
-                json={"url": "http://127.0.0.1:11500", "model": "test"})
-    client.get("/api/collection/suggest?q=Ritter")
-    assert len(gerufen) == 2
+                json={"url": "http://127.0.0.1:11500", "model": "anderes"})
+    daten = client.get("/api/collection/suggest?q=Ritter").json()
+    assert len(gerufen) == 1, "das neue Modell wurde unnötig befragt"
+    assert daten["begriffe"] == ["Knight"], "der Wissensstand ging verloren"
 
 
 # ------------------------------------------------------------- Einstellungen

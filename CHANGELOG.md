@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.31.0 – August 2026
+
+### Neu
+- 📖 **Die Suche lernt – und du kannst ihr etwas beibringen.** Die Zuordnung
+  „deutscher Begriff → englische Katalogbegriffe" lag bisher nur im
+  Arbeitsspeicher: nach jedem Neustart weg, nur vom Modell beschrieben, für
+  niemanden einsehbar. Wer „roter c3po" tippte, bekam für immer
+  C-3PO-Varianten – obwohl die gesuchte Figur „R-3PO Protocol Droid" heißt.
+
+  Unter **Mehr → 🤖 Lokale KI** steht die Liste jetzt offen da. Jede
+  erfolgreiche Übersetzung wandert automatisch hinein, eigene Zeilen trägst
+  du selbst ein:
+
+      Gesucht wird nach: roter c3po
+      Finden soll er:    R-3PO
+
+  Drei Entscheidungen stecken darin:
+
+  - **Das Gelernte hängt an der App, nicht am Modell.** Ein Wechsel des
+    Modells oder des Rechners nimmt den Wissensstand mit; ein
+    nachtrainiertes Modell täte das nicht. Deshalb gelten eigene Zeilen auch
+    dann, wenn gar keine KI eingerichtet ist.
+  - **Die KI überschreibt eine eigene Zeile nicht.** Sonst wäre das
+    Beigebrachte beim nächsten Suchlauf wieder weg.
+  - **Fehlschläge werden nicht gelernt.** Ein leeres Ergebnis ist kein
+    Wissen; dauerhaft gespeichert stellte es den Begriff für immer tot.
+
+  Nebenbei wird die Suche deutlich schneller: Ein bekannter Begriff kostet
+  **4 Millisekunden statt 1,6 Sekunden**, weil das Modell gar nicht erst
+  gefragt wird.
+
+### Geändert
+- Ein Wechsel der KI-Adresse leert weiterhin den Zwischenspeicher, fragt das
+  Modell aber nicht erneut nach bereits Gelerntem – das steht ja in der
+  Liste. Taugt eine Zeile nichts, löscht man sie sichtbar, statt sie stumm
+  neu raten zu lassen.
+
 ## 2.30.1 – August 2026
 
 ### Behoben

@@ -5547,6 +5547,7 @@ async function loadOllama() {
     $("ollama-model-frei").placeholder = d.default_model || "";
     state.kiSuche = !!d.enabled;
     if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
+    begriffeLaden();      // auch ohne KI: die eigenen Zeilen gelten trotzdem
   } catch (e) { /* kein Admin oder alte Fassung: Karte bleibt leer */ }
 }
 
@@ -5595,6 +5596,62 @@ function modellwahlGeaendert() {
   frei.hidden = false;
   frei.value = "";
   frei.focus();
+}
+
+/* ------------------------------------------------- Gelernte Begriffe */
+
+async function begriffeLaden() {
+  const box = $("begriff-liste");
+  if (!box) return;
+  let d;
+  try { d = await api("/settings/begriffe"); }
+  catch (e) { box.innerHTML = ""; return; }
+  const liste = (d && d.begriffe) || [];
+  if (!liste.length) {
+    box.innerHTML = `<p class="empty">${esc(tr("Noch nichts gelernt."))}</p>`;
+    return;
+  }
+  // Herkunft sichtbar machen: Eine eigene Zeile ist eine Entscheidung, eine
+  // vom Modell nur eine Vermutung – und die will man anders behandeln.
+  box.innerHTML = liste.map((b) => `
+    <div class="row-item">
+      <div class="row-main">
+        <strong>${esc(b.begriff)}</strong>
+        <div class="sub">${esc((b.begriffe || []).join(", "))}</div>
+      </div>
+      <div class="row-actions">
+        <span class="tag">${b.quelle === "hand" ? esc(tr("eigene"))
+                                                : esc(tr("von der KI"))}</span>
+        <button class="mini-btn" data-begriff-weg="${esc(b.begriff)}"
+          >${esc(tr("Löschen"))}</button>
+      </div>
+    </div>`).join("");
+}
+
+async function begriffEintragen() {
+  const out = $("ollama-status");
+  try {
+    await api("/settings/begriffe", { method: "POST", body: {
+      begriff: $("begriff-neu").value.trim(),
+      begriffe: $("begriffe-neu").value.trim(),
+    }});
+    $("begriff-neu").value = "";
+    $("begriffe-neu").value = "";
+    out.textContent = tr("Eingetragen ✔");
+    out.hidden = false;
+    begriffeLaden();
+  } catch (e) {
+    out.textContent = e.message;
+    out.hidden = false;
+  }
+}
+
+async function begriffLoeschen(begriff) {
+  try {
+    await api("/settings/begriffe/" + encodeURIComponent(begriff),
+              { method: "DELETE" });
+    begriffeLaden();
+  } catch (e) { toast(e.message); }
 }
 
 /* Welcher Name gilt – die Liste oder das Textfeld? */
@@ -10317,6 +10374,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-save-ollama").addEventListener("click", saveOllama);
   $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-reload-models").addEventListener("click", modelleLaden);
+  $("btn-add-begriff").addEventListener("click", begriffEintragen);
+  $("begriffe-neu").addEventListener("keydown",
+    (e) => { if (e.key === "Enter") begriffEintragen(); });
+  $("begriff-liste").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-begriff-weg]");
+    if (b) begriffLoeschen(b.dataset.begriffWeg);
+  });
   $("ollama-model").addEventListener("change", modellwahlGeaendert);
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.

@@ -905,21 +905,72 @@ def ollama_modelle(url: str = "") -> list:
     return namen
 
 
+def begriffe_gelernt(begriff: str) -> tuple:
+    """Was zu diesem Begriff in der Liste steht – (Begriffe, Quelle)."""
+    with core.db() as conn:
+        r = conn.execute("SELECT begriffe, quelle FROM suchbegriffe "
+                         "WHERE begriff = ?", (begriff.casefold(),)).fetchone()
+    if not r:
+        return [], ""
+    return [b for b in json.loads(r["begriffe"]) if b], r["quelle"]
+
+
+def begriffe_merken(begriff: str, begriffe: list, quelle: str = "ki"):
+    """Eine Zeile in die Liste schreiben.
+
+    Eine von Hand eingetragene Zeile wird vom Modell **nicht** überschrieben –
+    sonst wäre das Gelernte beim nächsten Suchlauf wieder weg. Umgekehrt darf
+    von Hand jederzeit korrigiert werden.
+    """
+    schluessel = begriff.casefold().strip()
+    if not schluessel:
+        return
+    jetzt = int(time.time())
+    with core.db() as conn:
+        if quelle == "ki":
+            vorher = conn.execute("SELECT quelle FROM suchbegriffe "
+                                  "WHERE begriff = ?", (schluessel,)).fetchone()
+            if vorher and vorher["quelle"] == "hand":
+                return
+        conn.execute(
+            "INSERT INTO suchbegriffe (begriff, begriffe, quelle, created_at,"
+            " used_at) VALUES (?, ?, ?, ?, ?) "
+            "ON CONFLICT(begriff) DO UPDATE SET begriffe = excluded.begriffe,"
+            " quelle = excluded.quelle, used_at = excluded.used_at",
+            (schluessel, json.dumps(begriffe[:8]), quelle, jetzt, jetzt))
+
+
 def suchbegriffe(q: str) -> list:
     """Deutsche Suchanfrage in englische BrickLink-Begriffe uebersetzen.
+
+    Drei Stufen, in dieser Reihenfolge: die gelernte Liste in der Datenbank,
+    der Zwischenspeicher, dann das Modell. Was das Modell liefert, wandert in
+    die Liste – von dort ist es einseh- und korrigierbar, überlebt einen
+    Neustart und bleibt beim Wechsel des Modells erhalten.
 
     Gibt im Zweifel eine leere Liste zurueck – jeder Fehler ist hier
     unkritisch, weil die normale Suche bereits gelaufen ist.
     """
     q = (q or "").strip()
-    if not q or not ollama_enabled():
+    if not q:
         return []
     key = q.casefold()
+    # **Vor** der Frage, ob eine KI eingerichtet ist: Von Hand gepflegte
+    # Begriffe sollen auch ohne Modell gelten. Sonst hinge das Gelernte an
+    # einem Dienst, der damit gar nichts zu tun hat.
+    gelernt, quelle = begriffe_gelernt(key)
+    if gelernt and quelle == "hand":
+        return gelernt
+    if not ollama_enabled():
+        return gelernt
     gemerkt = _begriff_cache.get(key)
     if gemerkt is not None:
         bis, treffer = gemerkt
         if bis is None or time.time() < bis:
             return treffer
+    if gelernt:
+        _begriff_cache[key] = (None, gelernt)
+        return gelernt
     basis = ollama_setting("ollama_url").strip().rstrip("/")
     try:
         resp = requests.post(
@@ -948,4 +999,11 @@ def suchbegriffe(q: str) -> list:
     # einzelner Aussetzer den Suchbegriff bis zum Neustart unbrauchbar.
     _begriff_cache[key] = ((None if begriffe else time.time() + _MISSERFOLG_GILT),
                            begriffe)
+    # Nur Treffer in die Liste: Ein Fehlschlag ist kein Wissen, und dauerhaft
+    # gespeichert würde er den Begriff für immer tot stellen.
+    if begriffe:
+        try:
+            begriffe_merken(key, begriffe, "ki")
+        except Exception:
+            pass          # Merken darf die Suche nie stören
     return begriffe

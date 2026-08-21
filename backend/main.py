@@ -2646,6 +2646,53 @@ def set_ollama(body: OllamaBody, user: dict = Depends(admin_user)):
     return {"ok": True, "enabled": integrations.ollama_enabled()}
 
 
+class BegriffBody(BaseModel):
+    begriff: str = Field(min_length=1, max_length=60)
+    begriffe: str = Field(default="", max_length=300)
+
+
+@app.get("/api/settings/begriffe")
+def get_begriffe(user: dict = Depends(admin_user)):
+    """Was die Suche gelernt hat – von Hand Gepflegtes zuerst.
+
+    Sichtbar zu machen ist der halbe Zweck: Bis 2.31.0 lag diese Zuordnung
+    nur im Arbeitsspeicher, und man konnte nicht nachsehen, warum „roter
+    c3po" ausgerechnet C-3PO-Varianten ergab.
+    """
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT begriff, begriffe, quelle, created_at FROM suchbegriffe "
+            "ORDER BY quelle = 'ki', begriff").fetchall()
+    return {"begriffe": [{"begriff": r["begriff"],
+                          "begriffe": json.loads(r["begriffe"]),
+                          "quelle": r["quelle"],
+                          "created_at": r["created_at"]} for r in rows]}
+
+
+@app.post("/api/settings/begriffe")
+def set_begriff(body: BegriffBody, user: dict = Depends(admin_user)):
+    """Eine Zeile von Hand eintragen oder korrigieren.
+
+    `quelle = 'hand'`, damit das Modell sie nicht wieder überschreibt – und
+    damit sie auch dann gilt, wenn gar keine KI eingerichtet ist.
+    """
+    liste = [t.strip() for t in body.begriffe.split(",") if t.strip()][:8]
+    if not liste:
+        raise HTTPException(400, "Mindestens ein Begriff, mit Komma getrennt")
+    integrations.begriffe_merken(body.begriff, liste, "hand")
+    integrations._begriff_cache.pop(body.begriff.casefold().strip(), None)
+    return {"ok": True}
+
+
+@app.delete("/api/settings/begriffe/{begriff}")
+def del_begriff(begriff: str, user: dict = Depends(admin_user)):
+    with core.db() as conn:
+        conn.execute("DELETE FROM suchbegriffe WHERE begriff = ?",
+                     (begriff.casefold().strip(),))
+    integrations._begriff_cache.pop(begriff.casefold().strip(), None)
+    return {"ok": True}
+
+
 @app.get("/api/settings/ollama/models")
 def ollama_models(url: str = "", user: dict = Depends(admin_user)):
     """Die auf dem Server liegenden Modelle zur Auswahl anbieten.

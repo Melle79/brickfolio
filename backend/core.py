@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.30.1"
+APP_VERSION = "2.31.0"
 
 
 def hash_password(password: str) -> str:
@@ -258,6 +258,29 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_history_item
                 ON price_history(item_id, item_type, ts);
+            -- Was die Suche gelernt hat: deutscher Begriff -> englische
+            -- Katalogbegriffe.
+            --
+            -- Bis 2.31.0 stand das nur im Arbeitsspeicher. Damit war es nach
+            -- jedem Neustart weg, und **nur das Modell** schrieb hinein –
+            -- ansehen oder korrigieren ließ sich nichts. Wer „roter c3po"
+            -- tippte, bekam für immer C-3PO-Varianten, obwohl die Figur
+            -- R-3PO heißt.
+            --
+            -- `quelle` entscheidet den Vorrang: 'hand' schlägt 'ki'. Eine von
+            -- Hand eingetragene Zeile darf das Modell nicht überschreiben,
+            -- sonst wäre das Gelernte beim nächsten Suchlauf wieder weg.
+            --
+            -- Die Liste hängt bewusst an der App, nicht am Modell: Ein
+            -- Wechsel des Modells oder des Rechners nimmt den Wissensstand
+            -- mit, ein nachtrainiertes Modell täte das nicht.
+            CREATE TABLE IF NOT EXISTS suchbegriffe (
+                begriff TEXT PRIMARY KEY,
+                begriffe TEXT NOT NULL,
+                quelle TEXT NOT NULL DEFAULT 'ki',
+                created_at INTEGER NOT NULL,
+                used_at INTEGER
+            );
             -- Gemeldete Fehler. Gleichartige Fehler werden über den
             -- fingerprint zusammengefasst und nur hochgezählt.
             CREATE TABLE IF NOT EXISTS error_log (

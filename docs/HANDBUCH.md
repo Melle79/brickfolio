@@ -467,6 +467,32 @@ Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
+**📖 Gelernte Begriffe.** Unter der KI-Karte steht, was die Suche gelernt
+hat – und dort bringst du ihr etwas bei. Jede erfolgreiche Übersetzung wandert
+automatisch hinein („ritter → Knight, Minifigure, Hero"); eigene Zeilen trägst
+du selbst ein und sie haben **Vorrang**:
+
+| Gesucht wird nach | Finden soll er |
+|---|---|
+| `roter c3po` | `R-3PO` |
+
+Das ist nützlich, wo ihr etwas anders nennt als der Katalog. Der rote
+Protokolldroide heißt bei BrickLink „R-3PO Protocol Droid" – wer ihn „roter
+C-3PO" nennt, fand ihn vorher nie, weil das Modell am Eigennamen C-3PO
+festhält.
+
+Drei Dinge sind dabei absichtlich so:
+
+- **Eigene Zeilen gelten auch ohne KI.** Das Gelernte hängt an der App, nicht
+  am Modell. Ein Wechsel des Modells oder des Rechners nimmt es mit.
+- **Die KI überschreibt deine Zeilen nicht.** Sonst wäre das Beigebrachte beim
+  nächsten Suchlauf wieder weg.
+- **Fehlschläge werden nicht gelernt.** Ein leeres Ergebnis ist kein Wissen –
+  dauerhaft gespeichert stellte es den Begriff für immer tot.
+
+Nebenbei wird die Suche schneller: Ein bekannter Begriff kostet Millisekunden
+statt eineinhalb Sekunden, weil das Modell gar nicht erst gefragt wird.
+
 > **Das Modell aussuchen statt abtippen.** Steht die Adresse, holt die App
 > die Liste der dort installierten Modelle und stellt sie zur Wahl. Das ist
 > mehr als Bequemlichkeit: Der Name muss exakt stimmen, und auf einem Server

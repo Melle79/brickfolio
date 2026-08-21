@@ -761,6 +761,22 @@
         <button id="btn-test-ollama" class="mini-btn">Verbindung testen</button>
       </div>
       <p id="ollama-status" class="search-hint" hidden></p>
+
+      <h4>📖 Gelernte Begriffe</h4>
+      <p class="search-hint">Was die Suche gelernt hat – und was du ihr
+        beibringst. Eigene Zeilen haben Vorrang vor der KI und gelten auch
+        ohne sie. Nützlich, wenn ihr etwas anders nennt als der Katalog:
+        <code>roter c3po → R-3PO</code>.</p>
+      <div class="detail-row">
+        <input id="begriff-neu" placeholder="Gesucht wird nach …"
+               autocapitalize="none" spellcheck="false" maxlength="60">
+        <input id="begriffe-neu" placeholder="Finden soll er … (Komma)"
+               autocapitalize="none" spellcheck="false" maxlength="300">
+      </div>
+      <div class="detail-row">
+        <button id="btn-add-begriff" class="mini-btn add">Eintragen</button>
+      </div>
+      <div id="begriff-liste" class="results"></div>
     </div>
     <div class="settings-card" id="price-region-card" hidden>
       <h3>🌍 Preisgebiet</h3>
