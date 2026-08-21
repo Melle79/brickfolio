@@ -339,11 +339,11 @@ def test_die_farbe_ergaenzt_was_im_namen_fehlt(client, monkeypatch):
     die Art aus dem Namen, die Farbe aus dem Bild."""
     _bricklink(monkeypatch, {"sw0002": "R-3PO Protocol Droid"})
     main._katalog_anbau("sw")
-    assert not main._katalog_suchen("rot Protocol Droid")
+    assert not main._katalog_suchen("red Protocol Droid")
 
-    _bild_und_farbe(monkeypatch, ["rot", "schwarz"])
+    _bild_und_farbe(monkeypatch, ["red", "black"])
     main._katalog_farben()
-    assert main._katalog_suchen("rot Protocol Droid")
+    assert main._katalog_suchen("red Protocol Droid")
 
 
 def test_die_art_der_figur_wird_mitgefragt(client, monkeypatch):
@@ -351,14 +351,16 @@ def test_die_art_der_figur_wird_mitgefragt(client, monkeypatch):
     Proben daneben, mit `qwen3-vl` an zehn echten Figuren zehnmal richtig
     (Stormtrooper → Soldat, Wookiee → Alien, R2-D2 → Droide). Sie ist
     genau das, was „roter Droide" braucht und in vielen Namen fehlt."""
-    assert set(integrations._BILD_SCHEMA["properties"]) == {"art", "farben"}
+    # Englisch gefragt: Der Index ist einsprachig, sonst treffen sich die
+    # deutschen Merkmale und die englischen Suchbegriffe nie.
+    assert set(integrations._BILD_SCHEMA["properties"]) == {"kind", "colors"}
 
     _bricklink(monkeypatch, {"sw0002": "Astromech Droid, R2-D2"})
     main._katalog_anbau("sw")
-    _bild_und_farbe(monkeypatch, ["weiß", "blau"], art="droide")
+    _bild_und_farbe(monkeypatch, ["white", "blue"], art="droid")
     main._katalog_farben()
-    assert main._katalog_suchen("droide")
-    assert main._katalog_suchen("weiß droide")
+    assert main._katalog_suchen("droid")
+    assert main._katalog_suchen("white droid")
 
 
 def test_ein_leeres_ergebnis_wird_auch_festgehalten(client, monkeypatch):
@@ -378,3 +380,20 @@ def test_ein_leeres_ergebnis_wird_auch_festgehalten(client, monkeypatch):
 def test_ohne_ki_kein_farblauf(client):
     r = client.post("/api/katalog/farben")
     assert r.status_code == 400
+
+
+def test_die_merkmale_sind_englisch_wie_der_katalog(client, monkeypatch):
+    """Der erste Anlauf legte sie deutsch ab („rot", „droide") und traf
+    damit nie: Die Suchbegriffe kommen aus der Übersetzung und sind
+    englisch. Selbst die rohe deutsche Frage scheiterte an der Beugung –
+    „roter" ist nicht „rot". Einsprachig gibt es das Problem nicht."""
+    assert "English" in integrations._BILD_FRAGE
+    _bricklink(monkeypatch, {"sw0002": "R-3PO Protocol Droid"})
+    main._katalog_anbau("sw")
+    _bild_und_farbe(monkeypatch, ["red", "black"], art="droid")
+    main._katalog_farben()
+
+    # Genau der Weg aus dem Betrieb: deutsche Frage → englische Begriffe.
+    assert main._katalog_suchen("Red Protocol Droid")
+    # Und ein grauer darf dabei nicht mitkommen.
+    assert not main._katalog_suchen("Gray Protocol Droid")

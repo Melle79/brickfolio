@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.35.1 – August 2026
+
+### Behoben
+- 🌍 **Die Merkmale aus dem Bild waren deutsch – und trafen deshalb nie.**
+  2.35.0 legte „rot" und „droide" ab. Gesucht wird aber mit den Begriffen
+  aus der Übersetzung, und die sind **englisch** („Red Protocol Droid").
+  Die beiden konnten sich nicht begegnen.
+
+  Selbst die rohe deutsche Frage half nicht: „roter Protokolldroide" trifft
+  „rot" nicht, weil die Beugung dazwischensteht. Deutsche Wortformen sauber
+  aufeinander abzubilden wäre ein eigenes Projekt.
+
+  Jetzt fragt die App auf Englisch und legt englisch ab – der Index ist
+  einsprachig, und die Übersetzung greift wie überall sonst. Nebenbei
+  antwortet `qwen3-vl` auf Englisch besser: beim Wookiee „Wookiee" statt
+  nur „Alien".
+
+  Damit greift auch die Genauigkeit wie erwartet: „roter Protokolldroide"
+  findet den roten und **nicht** den grauen, weil alle Wörter des Begriffs
+  vorkommen müssen.
+
 ## 2.35.0 – August 2026
 
 ### Neu

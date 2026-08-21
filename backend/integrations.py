@@ -879,11 +879,11 @@ OLLAMA_BILD_STD = "minicpm-v:latest"
 OLLAMA_BILD_TIMEOUT = 120
 
 _BILD_SCHEMA = {"type": "object",
-                "properties": {"art": {"type": "string"},
-                               "farben": {"type": "array",
+                "properties": {"kind": {"type": "string"},
+                               "colors": {"type": "array",
                                           "items": {"type": "string"},
                                           "maxItems": 3}},
-                "required": ["art", "farben"]}
+                "required": ["kind", "colors"]}
 # Art **und** Farbe – aber das hing am Modell.
 #
 # Zunächst stand hier nur die Farbfrage, weil `minicpm-v` die Art in zwei
@@ -899,10 +899,18 @@ _BILD_SCHEMA = {"type": "object",
 # Den **Namen** der Figur mitzugeben bringt nichts (gemessen: dreimal
 # dieselben Farben) und schadet mit schwachen Modellen sogar – auf „das ist
 # R-3PO" antwortete `minicpm-v` prompt „R2-D2".
-_BILD_FRAGE = ("Diese LEGO-Minifigur: Was ist das fuer eine Figur? Nenne die "
-               "Art in ein bis zwei deutschen Woertern (z. B. Soldat, "
-               "Droide, Roboter, Tier, Ritter, Pilot, Alien). Und welche "
-               "Farben hat sie? Hoechstens drei, die auffaelligste zuerst.")
+#
+# **Englisch, nicht deutsch.** Der erste Anlauf legte die Merkmale deutsch
+# ab („rot", „droide") – und traf damit nie: Die Suchbegriffe kommen aus der
+# Übersetzung und sind englisch, und selbst die rohe deutsche Frage
+# scheiterte an der Beugung („roter" ist nicht „rot"). Mit englischen
+# Merkmalen ist der Index einsprachig, und die Übersetzung greift wie
+# überall sonst. Gemessen liefert `qwen3-vl` auf Englisch sogar bessere
+# Antworten – beim Wookiee „Wookiee" statt nur „Alien".
+_BILD_FRAGE = ("This LEGO minifigure: what kind of figure is it? Answer with "
+               "one or two English words (e.g. Soldier, Droid, Robot, Animal, "
+               "Knight, Pilot, Alien). And which colors does it have? At most "
+               "three, the most prominent first, in English.")
 
 
 def _ollama_inhalt(nachricht: dict) -> str:
@@ -945,17 +953,17 @@ def bild_merkmale(bild: bytes) -> dict:
             timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
         d = json.loads(_ollama_inhalt(resp.json().get("message", {})))
-        roh, art = d.get("farben", []), d.get("art", "")
+        roh, art = d.get("colors", []), d.get("kind", "")
     except Exception:
         return {"art": "", "farben": []}
     farben = []
     for f in roh if isinstance(roh, list) else []:
-        f = re.sub(r"[^a-zäöüß]", "", str(f).lower())
+        f = re.sub(r"[^a-z]", "", str(f).lower())
         if len(f) >= 3 and f not in farben:
             farben.append(f)
     # Die Art knapp halten: Ein ganzer Satz im Suchtext trifft irgendwann
     # alles. Zwei Wörter reichen für „Alien", „Clone Trooper", „Droide".
-    art = " ".join(re.sub(r"[^a-zäöüß ]", " ", str(art).lower()).split()[:2])
+    art = " ".join(re.sub(r"[^a-z ]", " ", str(art).lower()).split()[:2])
     return {"art": art, "farben": farben[:3]}
 
 
