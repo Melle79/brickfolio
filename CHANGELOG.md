@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.36.0 – August 2026
+
+### Behoben
+- 🔢 **Der Katalog-Abzug fand halbe Themen gar nicht.** Er fragte fest nach
+  vier Ziffern (`cas0001`) – die Burgfigur heißt aber `cas001`. Damit gingen
+  `cas`, `pi`, `hp`, `jw`, `sp`, `ww`, `lor` und `iaj` **komplett leer** aus,
+  und das Tückische: Der Lauf meldete nach fünfundzwanzig Fehlgriffen brav
+  „fertig". Von außen sah es aus, als gäbe es diese Themen nicht.
+
+  Die Breite wird jetzt zu Beginn jedes Themas mit ein paar Abrufen
+  ermittelt. Ein `429` beendet dabei auch die Erkennung – sie als „gibt es
+  nicht" zu lesen hieße, bei erschöpftem Kontingent munter weiterzufragen.
+
+### Neu
+- 📚 **Die Themenliste ist jetzt vollständiger.** Statt sieben geratener
+  Präfixe stehen vierzehn gemessene darin: `sw`, `cty`, `njo`, `sh`, `frnd`,
+  `gen`, `iaj`, `cas`, `pi`, `hp`, `jw`, `sp`, `ww`, `lor`.
+
+  Ermittelt über die Bestandteile bekannter Sets – eine Liste der Präfixe
+  gibt BrickLink nicht heraus, und die Katalogseite darf man nicht
+  auslesen. Dabei kam auch heraus: Präfix ist **nicht** Kategorie. `cty`
+  deckt „Town" und „Train" ab.
+
+  Vollständig ist auch das nicht; weitere trägt man einfach dazu.
+
 ## 2.35.2 – August 2026
 
 ### Behoben

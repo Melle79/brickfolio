@@ -66,7 +66,10 @@ def test_der_abzug_laeuft_die_nummern_der_reihe_nach_ab(client, monkeypatch):
                              "sw0002": "R-3PO Protocol Droid"}, gefragt)
     main._katalog_anbau("sw")
 
-    assert gefragt[:3] == ["sw0001", "sw0002", "sw0003"]
+    # Vorn steht die Breitenerkennung – danach läuft er der Reihe nach.
+    lauf = [n for n in gefragt if n.startswith("sw")]
+    assert "sw0001" in lauf and "sw0002" in lauf
+    assert lauf.index("sw0002") < lauf.index("sw0003")
     d = client.get("/api/katalog/status").json()
     assert d["anzahl"] == 2 and d["laeuft"] is False
 
@@ -88,7 +91,8 @@ def test_viele_luecken_am_stueck_beenden_ihn_doch(client, monkeypatch):
     gefragt: list = []
     _bricklink(monkeypatch, {"sw0001": "Darth Vader"}, gefragt)
     main._katalog_anbau("sw")
-    assert len(gefragt) <= 1 + main.KATALOG_LUECKE + 1, len(gefragt)
+    # Plus die Breitenerkennung vorweg (höchstens zehn Abrufe).
+    assert len(gefragt) <= 10 + 1 + main.KATALOG_LUECKE + 1, len(gefragt)
 
 
 def test_ein_abbruch_setzt_beim_naechsten_mal_fort(client, monkeypatch):
@@ -98,21 +102,30 @@ def test_ein_abbruch_setzt_beim_naechsten_mal_fort(client, monkeypatch):
     gefragt: list = []
     _bricklink(monkeypatch, katalog, gefragt)
 
-    def stoppen_nach_drei(item_type, item_no):
-        if len(gefragt) >= 3:
+    def stoppen(item_type, item_no):
+        # An der Nummer des **Laufs** aufhängen, nicht an der Zahl der
+        # Abrufe: Die Breitenerkennung vorweg zählt sonst mit und der
+        # Stopp feuert, bevor der Lauf überhaupt begonnen hat.
+        if main._katalog_lauf["nummer"] >= 3:
             main._katalog_lauf["stop"] = True
         return {"name": katalog.get(item_no, ""), "category_id": 65,
                 "year_released": 0}
     monkeypatch.setattr(integrations, "bricklink_item",
-                        lambda t, n: (gefragt.append(n),
-                                      stoppen_nach_drei(t, n))[1])
+                        lambda t, n: (gefragt.append(n), stoppen(t, n))[1])
     main._katalog_anbau("sw")
-    erste = len(gefragt)
-    assert erste < 10, "der Stopp hat nicht gegriffen"
+    assert main._katalog_lauf["nummer"] < 15, "der Stopp hat nicht gegriffen"
 
+    # Auch die Nummer zurücksetzen – sonst greift die Abbruchbedingung des
+    # Tests sofort wieder, und man misst nur sich selbst.
     main._katalog_lauf["stop"] = False
+    main._katalog_lauf["nummer"] = 0
     main._katalog_anbau("sw")
-    assert gefragt[erste] != "sw0001", "der zweite Lauf begann wieder bei eins"
+    # Der zweite Lauf beginnt mit der Breitenerkennung (niedrige Nummern),
+    # zählt danach aber dort weiter, wo der erste aufhörte.
+    with core.db() as conn:
+        weiter = conn.execute("SELECT zuletzt FROM katalog_lauf WHERE "
+                              "praefix = 'sw'").fetchone()["zuletzt"]
+    assert weiter > 3, "der zweite Lauf begann wieder bei eins"
 
 
 def test_ein_anderer_fehler_beendet_den_lauf_sofort(client, monkeypatch):
@@ -128,7 +141,8 @@ def test_ein_anderer_fehler_beendet_den_lauf_sofort(client, monkeypatch):
     monkeypatch.setattr(integrations, "bricklink_item", fake)
 
     main._katalog_anbau("sw")
-    assert len(gefragt) == 1, "es wurde nach dem 429 weitergefragt"
+    # Einmal für die Breitenerkennung, einmal im Lauf – danach Schluss.
+    assert len(gefragt) <= 2, "es wurde nach dem 429 weitergefragt: %s" % gefragt
     assert "429" in main._katalog_lauf["fehler"]
 
 
@@ -257,7 +271,7 @@ def test_ein_kontingentfehler_stoppt_auch_die_folgenden_themen(client,
     monkeypatch.setattr(integrations, "bricklink_item", fake)
 
     main._katalog_reihe(["sw", "cty", "njo"])
-    assert len(gefragt) == 1, gefragt
+    assert len(gefragt) <= 2, gefragt
     assert all(not n.startswith("cty") for n in gefragt)
 
 
@@ -397,3 +411,42 @@ def test_die_merkmale_sind_englisch_wie_der_katalog(client, monkeypatch):
     assert main._katalog_suchen("Red Protocol Droid")
     # Und ein grauer darf dabei nicht mitkommen.
     assert not main._katalog_suchen("Gray Protocol Droid")
+
+
+def test_die_ziffernbreite_wird_erkannt(client, monkeypatch):
+    """`sw0002` gibt es, `sw002` nicht – und die Burgfigur heißt `cas001`,
+    nicht `cas0001`. Fest verdrahtete vier Ziffern ließen `cas`, `pi`, `hp`,
+    `jw`, `sp`, `ww`, `lor` und `iaj` **komplett leer** ausgehen: Der Lauf
+    meldete „fertig" nach fünfundzwanzig Fehlgriffen. Genau so ist es am
+    21.08.2026 passiert."""
+    _bricklink(monkeypatch, {"cas001": "Castle Knight",
+                             "cas002": "Castle Wizard"})
+    assert main._katalog_breite("cas") == 3
+    main._katalog_anbau("cas")
+
+    with core.db() as conn:
+        namen = sorted(r["name"] for r in
+                       conn.execute("SELECT name FROM katalog_index"))
+    assert namen == ["Castle Knight", "Castle Wizard"]
+
+
+def test_vier_ziffern_bleiben_vier(client, monkeypatch):
+    _bricklink(monkeypatch, {"sw0001": "Darth Vader"})
+    assert main._katalog_breite("sw") == 4
+
+
+def test_ein_kontingentfehler_beendet_auch_die_breitenerkennung(
+        client, monkeypatch):
+    """Ein 429 als „gibt es nicht" zu lesen hieße, munter weiterzufragen –
+    und das Kontingent ist ja gerade das Problem."""
+    gefragt: list = []
+
+    def fake(item_type, item_no):
+        gefragt.append(item_no)
+        resp = requests.Response()
+        resp.status_code = 429
+        raise requests.HTTPError("429", response=resp)
+    monkeypatch.setattr(integrations, "bricklink_item", fake)
+
+    main._katalog_breite("cas")
+    assert len(gefragt) == 1, gefragt

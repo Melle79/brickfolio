@@ -2681,7 +2681,11 @@ KATALOG_MAX = 4000            # Notbremse gegen eine endlose Schleife
 # Die Themen, die BrickLink über das Nummernpräfix unterscheidet. Keine
 # vollständige Liste – das sind die, die im Haushalt vorkommen. Weitere
 # trägt man im Feld einfach dazu; der Lauf prüft selbst, ob es sie gibt.
-KATALOG_THEMEN = ["sw", "cty", "njo", "sh", "cas", "hp", "col"]
+# Gemessen am 21.08.2026 über die Bestandteile bekannter Sets – eine Liste
+# der Präfixe gibt BrickLink nicht heraus. Die Ziffernbreite unterscheidet
+# sich je Thema und wird zur Laufzeit ermittelt (siehe `_katalog_breite`).
+KATALOG_THEMEN = ["sw", "cty", "njo", "sh", "frnd", "cas", "pi", "hp",
+                  "jw", "sp", "ww", "lor", "iaj", "gen"]
 
 _katalog_lauf = {"aktiv": False, "praefix": "", "nummer": 0, "gefunden": 0,
                  "neu": 0, "stop": False, "fehler": "", "seit": 0,
@@ -2719,6 +2723,36 @@ def _katalog_eintragen(item_no: str, daten: dict) -> bool:
     return vorher is None
 
 
+def _katalog_breite(praefix: str) -> int:
+    """Wie viele Ziffern hat die Nummer dieses Themas – drei oder vier?
+
+    Das ist keine Kosmetik: `sw0002` gibt es, `sw002` nicht – und umgekehrt
+    heißt die Burgfigur `cas001`, nicht `cas0001`. Fest verdrahtete vier
+    Ziffern ließen `cas`, `pi`, `hp`, `jw`, `sp`, `ww`, `lor` und `iaj`
+    **komplett leer** ausgehen; der Lauf meldete „fertig" nach fünfundzwanzig
+    Fehlgriffen. Genau so ist es am 21.08.2026 passiert.
+
+    Ein paar Abrufe zu Beginn klären das ein für alle Mal.
+    """
+    for breite in (4, 3):
+        for n in (1, 2, 3, 5, 10):
+            try:
+                integrations.bricklink_item("minifig",
+                                            "%s%0*d" % (praefix, breite, n))
+                return breite
+            except requests.HTTPError as e:
+                code = e.response.status_code if e.response is not None else 0
+                if code != 404:
+                    # 429 heißt Kontingent erschöpft, 401 falscher Zugang.
+                    # Beides als „gibt es nicht" zu lesen hieße, munter
+                    # weiterzufragen – der Hauptlauf bricht gleich ohnehin ab.
+                    return 4
+            except Exception:
+                return 4          # Zugang gestört – hier nicht entscheiden
+            time.sleep(KATALOG_TAKT)
+    return 4
+
+
 def _katalog_anbau(praefix: str = "sw"):
     """Die Nummern eines Themas der Reihe nach abklappern.
 
@@ -2733,11 +2767,12 @@ def _katalog_anbau(praefix: str = "sw"):
             r = conn.execute("SELECT zuletzt FROM katalog_lauf WHERE "
                              "praefix = ?", (praefix,)).fetchone()
         nummer = (r["zuletzt"] if r else 0) + 1
+        breite = _katalog_breite(praefix)
         luecke = 0
         while nummer <= KATALOG_MAX and luecke < KATALOG_LUECKE:
             if _katalog_lauf["stop"]:
                 break
-            item_no = "%s%04d" % (praefix, nummer)
+            item_no = "%s%0*d" % (praefix, breite, nummer)
             _katalog_lauf["nummer"] = nummer
             try:
                 daten = integrations.bricklink_item("minifig", item_no)

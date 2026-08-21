@@ -474,6 +474,28 @@ die Suche sie über **beschreibende Wörter**: „Protokolldroide" findet
 Rebrickable nennt dieselbe Figur nur `R-3PO`, ohne ein einziges Wort zum
 Suchen.
 
+**Die Themen** (Stand 21.08.2026, über die Bestandteile bekannter Sets
+ermittelt – eine Liste gibt BrickLink nicht heraus):
+
+| Präfix | Thema | Präfix | Thema |
+|---|---|---|---|
+| `sw` | Star Wars | `cas` | Burg |
+| `cty` | Stadt und Zug | `pi` | Piraten |
+| `njo` | Ninjago | `hp` | Harry Potter |
+| `sh` | Super Heroes | `jw` | Jurassic World |
+| `frnd` | Friends | `sp` | Weltraum |
+| `gen` | Allgemein | `ww` | Western |
+| `iaj` | Indiana Jones | `lor` | Herr der Ringe |
+
+Das ist **keine vollständige Liste** – weitere trägt man einfach dazu, der
+Lauf prüft selbst, ob es sie gibt. Und Präfix ≠ Kategorie: `cty` deckt
+„Town" *und* „Train" ab.
+
+> **Die Ziffernbreite unterscheidet sich.** `sw0002` hat vier, `cas001` nur
+> drei. Der Lauf ermittelt sie zu Beginn mit ein paar Abrufen selbst. Vorher
+> war sie fest auf vier verdrahtet – dadurch gingen die Themen mit drei
+> Ziffern komplett leer aus, und der Lauf meldete trotzdem „fertig".
+
 **Mehrere Themen** trägt man mit Komma ein: `sw, cty, njo`. Sie laufen
 **nacheinander**, nie nebeneinander – alle teilen sich denselben
 BrickLink-Zugang, und zwei gleichzeitig hebelten die Drosselung aus. Das
