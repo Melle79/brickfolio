@@ -157,3 +157,50 @@ def test_gespeichert_wird_was_wirklich_gewaehlt_ist(monkeypatch):
     block = js[i:i + 400]
     assert 'wahl.hidden || wahl.value === "__frei__"' in block
     assert "saveOllama" in js and "model: ollamaModell()" in js
+
+
+# ------------------------------------------- Nur die sinnvollen zur Wahl
+
+def test_code_modelle_stehen_nicht_zur_wahl(client, monkeypatch):
+    """Sie taugen für keine der beiden Aufgaben und stünden sonst mitten in
+    einer Liste, in der man das Passende suchen soll."""
+    client.post("/api/settings/ollama",
+                json={"url": "http://127.0.0.1:11434", "model": ""})
+    _tags(monkeypatch, ["qwen2.5:14b", "qwen3-coder:30b", "codellama:13b",
+                        "gemma3:12b"])
+    d = client.get("/api/settings/ollama/models").json()
+    assert d["models"] == ["gemma3:12b", "qwen2.5:14b"]
+
+
+def test_bildfaehige_werden_gemeldet_aber_nicht_erzwungen(client, monkeypatch):
+    """`gemma3:12b` meldet kein `vision` und ist trotzdem das beste im Haus
+    (gemessen 21.08.2026). Wer hart nach dem Merkmal filtert, versteckt den
+    Sieger – deshalb wird es nur mitgeliefert, zum Sortieren."""
+    client.post("/api/settings/ollama",
+                json={"url": "http://127.0.0.1:11434", "model": ""})
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"models": [
+                {"name": "gemma3:12b", "capabilities": ["completion"]},
+                {"name": "minicpm-v:latest",
+                 "capabilities": ["completion", "vision"]}]}
+    monkeypatch.setattr(integrations.requests, "get",
+                        lambda url, **kw: Fake())
+
+    d = client.get("/api/settings/ollama/models").json()
+    assert d["models"] == ["gemma3:12b", "minicpm-v:latest"], "es wurde gefiltert"
+    assert d["vision"] == ["minicpm-v:latest"]
+
+
+def test_die_oberflaeche_sortiert_statt_zu_filtern():
+    js = _js()
+    i = js.index("const sieht = new Set(")
+    block = js[i:i + 400]
+    assert "sort(" in block, "die Liste wird nicht sortiert"
+    assert "filter(" not in block, "die Liste wird gefiltert statt sortiert"

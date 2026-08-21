@@ -5545,6 +5545,8 @@ async function loadOllama() {
     $("ollama-url").value = d.url || "";
     $("ollama-model-frei").value = d.model || "";
     $("ollama-model-frei").placeholder = d.default_model || "";
+    $("ollama-bild-frei").value = d.bild_model || "";
+    $("ollama-bild-frei").placeholder = d.bild_default || "";
     state.kiSuche = !!d.enabled;
     if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
     begriffeBilanz();     // auch ohne KI: die eigenen Zeilen gelten trotzdem
@@ -5574,6 +5576,14 @@ async function modelleLaden() {
     return;
   }
   const liste = (d && d.models) || [];
+  // Fürs Bilderansehen die bildfähigen nach oben – **sortiert, nicht
+  // gefiltert**: `gemma3:12b` meldet kein `vision` und ist trotzdem das
+  // beste im Haus. Wer hart filtert, versteckt den Sieger.
+  const sieht = new Set((d && d.vision) || []);
+  const fuerBilder = liste.slice().sort((a, b) =>
+    (sieht.has(b) ? 1 : 0) - (sieht.has(a) ? 1 : 0));
+  fuelleWahl($("ollama-bild-model"), $("ollama-bild-frei"), fuerBilder, d,
+             sieht);
   if (!liste.length) { wahl.hidden = true; frei.hidden = false; return; }
   // Das gespeicherte Modell gehört dazu, auch wenn es dort nicht mehr liegt –
   // sonst überschriebe ein Speichern still eine noch gültige Einstellung.
@@ -5589,6 +5599,40 @@ async function modelleLaden() {
     ? d.default_model : liste[0]);
   wahl.hidden = false;
   frei.hidden = true;
+}
+
+/* Dieselbe Auswahl noch einmal, für das Bildmodell. Getrennt, weil sich
+   die beiden Aufgaben stark unterscheiden: Übersetzen kann ein reines
+   Textmodell, Bilder ansehen nicht – und umgekehrt taugt nicht jedes
+   Bildmodell zum Übersetzen. */
+function fuelleWahl(wahl, frei, liste, d, sieht) {
+  if (!wahl || !frei) return;
+  if (!liste.length) { wahl.hidden = true; frei.hidden = false; return; }
+  const jetzt = frei.value.trim();
+  const fehlt = jetzt && !liste.includes(jetzt);
+  const marke = (m) => (sieht && sieht.has(m)) ? m + " 👁" : m;
+  wahl.innerHTML =
+    liste.map((m) => `<option value="${esc(m)}">${esc(marke(m))}</option>`).join("")
+    + (fehlt ? `<option value="${esc(jetzt)}">`
+        + `${esc(tr("{modell} (nicht auf dem Server)", { modell: jetzt }))}`
+        + "</option>" : "")
+    + `<option value="__frei__">${esc(tr("Anderes Modell eintippen …"))}</option>`;
+  wahl.value = jetzt || (d.bild_default && liste.includes(d.bild_default)
+    ? d.bild_default : liste[0]);
+  wahl.hidden = false;
+  frei.hidden = true;
+  wahl.onchange = () => {
+    if (wahl.value !== "__frei__") { frei.hidden = true; return; }
+    frei.hidden = false; frei.value = ""; frei.focus();
+  };
+}
+
+function bildModell() {
+  const wahl = $("ollama-bild-model");
+  if (!wahl || wahl.hidden || wahl.value === "__frei__") {
+    return $("ollama-bild-frei").value.trim();
+  }
+  return wahl.value;
 }
 
 function modellwahlGeaendert() {
@@ -5767,6 +5811,7 @@ async function katalogStand() {
   try { d = await api("/katalog/status"); }
   catch (e) { feld.textContent = ""; return; }
   const start = $("btn-katalog-start"), stop = $("btn-katalog-stop");
+  farbenStand(d);
   const feldThemen = $("katalog-themen");
   if (feldThemen && !feldThemen.value && (d.themen || []).length) {
     feldThemen.value = d.themen.join(", ");
@@ -5781,6 +5826,10 @@ async function katalogStand() {
     // Nur solange etwas passiert nachfragen. Ein Takt, der ewig weiterläuft,
     // fragt die Instanz auch dann alle drei Sekunden, wenn niemand hinsieht.
     if (!katalogTakt) katalogTakt = setInterval(katalogStand, 3000);
+  } else if (d.farben && d.farben.laeuft) {
+    if (!katalogTakt) katalogTakt = setInterval(katalogStand, 3000);
+    $("btn-katalog-start").hidden = false;
+    $("btn-katalog-stop").hidden = true;
   } else {
     clearInterval(katalogTakt);
     katalogTakt = null;
@@ -5794,6 +5843,33 @@ async function katalogStand() {
             fertig: lauf && lauf.fertig_at ? tr(" – vollständig") : "" })
         : tr("Noch kein Abzug geholt.");
   }
+}
+
+function farbenStand(d) {
+  const feld = $("farben-stand");
+  if (!feld || !d.farben) return;
+  const f = d.farben;
+  const start = $("btn-farben-start"), stop = $("btn-farben-stop");
+  if (f.laeuft) {
+    feld.textContent = tr("Sieht Bilder an … {n} fertig, {g} mit Farbe, "
+      + "{o} offen", { n: f.getan, g: f.gefunden, o: f.offen });
+    start.hidden = true; stop.hidden = false;
+  } else {
+    start.hidden = false; stop.hidden = true;
+    feld.textContent = f.offen
+      ? tr("{o} Figuren ohne Farbe", { o: f.offen })
+      : tr("Alle Bilder angesehen.");
+  }
+}
+
+async function farbenStarten() {
+  try { await api("/katalog/farben", { method: "POST" }); katalogStand(); }
+  catch (e) { toast(e.message); }
+}
+
+async function farbenAnhalten() {
+  try { await api("/katalog/farben/stop", { method: "POST" }); }
+  catch (e) { toast(e.message); }
 }
 
 async function katalogStarten() {
@@ -5826,6 +5902,7 @@ async function saveOllama() {
     const r = await api("/settings/ollama", { method: "POST", body: {
       url: $("ollama-url").value.trim(),
       model: ollamaModell(),
+      bild_model: bildModell(),
     }});
     state.kiSuche = !!r.enabled;
     out.textContent = r.enabled
@@ -10534,6 +10611,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-begriffe").addEventListener("click", begriffeFenster);
   $("btn-katalog-start").addEventListener("click", katalogStarten);
   $("btn-katalog-stop").addEventListener("click", katalogAnhalten);
+  $("btn-farben-start").addEventListener("click", farbenStarten);
+  $("btn-farben-stop").addEventListener("click", farbenAnhalten);
   $("ollama-model").addEventListener("change", modellwahlGeaendert);
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.

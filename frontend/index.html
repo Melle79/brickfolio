@@ -753,6 +753,10 @@
       <select id="ollama-model" hidden></select>
       <input id="ollama-model-frei" autocapitalize="none" autocomplete="off"
              spellcheck="false" placeholder="z. B. qwen2.5:14b">
+      <label for="ollama-bild-model">Modell fürs Bilderansehen</label>
+      <select id="ollama-bild-model" hidden></select>
+      <input id="ollama-bild-frei" autocapitalize="none" autocomplete="off"
+             spellcheck="false" placeholder="z. B. gemma3:12b">
       <div class="detail-row">
         <button id="btn-reload-models" class="mini-btn">Modelle laden</button>
       </div>
@@ -797,6 +801,25 @@
       <div class="detail-row">
         <button id="btn-katalog-start" class="mini-btn add">Abzug starten</button>
         <button id="btn-katalog-stop" class="mini-btn" hidden>Anhalten</button>
+      </div>
+
+      <h4>🎨 Farben aus den Bildern</h4>
+      <p class="search-hint">Zweiter Durchgang: Die lokale KI sieht sich die
+        Katalogbilder an und schreibt die <b>Farben</b> dazu. Viele Namen
+        nennen keine – <code>R-3PO Protocol Droid</code> sagt nirgends
+        „rot". Danach findet „roter Protokolldroide" beides: die Art aus dem
+        Namen, die Farbe aus dem Bild.</p>
+      <p class="search-hint">Nur Farben, mit Absicht. Nach der <b>Art</b> der
+        Figur gefragt, lag dasselbe Modell in zwei von drei Proben daneben
+        (Darth Vader „Droide", AT-AT-Fahrer „Roboter") – und die steht ja
+        schon im Namen. Kostet kein fremdes Kontingent, aber Rechenzeit auf
+        dem Rechner mit der KI; jederzeit anhaltbar, der Fortschritt bleibt.</p>
+      <div class="detail-row">
+        <span id="farben-stand" class="search-hint"></span>
+      </div>
+      <div class="detail-row">
+        <button id="btn-farben-start" class="mini-btn add">Farben holen</button>
+        <button id="btn-farben-stop" class="mini-btn" hidden>Anhalten</button>
       </div>
     </div>
     <div class="settings-card" id="price-region-card" hidden>

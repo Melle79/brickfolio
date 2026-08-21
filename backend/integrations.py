@@ -1,4 +1,5 @@
 """Brickfolio – externe Dienste: Brickognize (Erkennung) & BrickLink (Preise)."""
+import base64
 import html as html_mod
 import io
 import json
@@ -871,6 +872,64 @@ def _ollama_keep_alive() -> str:
     return "30m"
 
 
+OLLAMA_BILD_STD = "minicpm-v:latest"
+# Ein Bild dauert länger als eine Übersetzung, und das Modell muss oft erst
+# geladen werden. 120 s sind großzügig – wer hier zu knapp misst, bekommt
+# leere Ergebnisse und hält das Modell für unfähig.
+OLLAMA_BILD_TIMEOUT = 120
+
+_BILD_SCHEMA = {"type": "object",
+                "properties": {"farben": {"type": "array",
+                                          "items": {"type": "string"},
+                                          "maxItems": 3}},
+                "required": ["farben"]}
+# **Nur nach Farben fragen.** Gemessen am 21.08.2026: Die Farbe trifft das
+# Modell in allen Proben, die Art der Figur in zwei von drei nicht (Darth
+# Vader → „Droide", AT-AT-Fahrer → „Roboter"). Die Art steht schon im
+# BrickLink-Namen; sie hier noch einmal raten zu lassen brächte nur Fehler
+# hinein. Und den Namen mitzugeben macht es schlechter: Mit „das ist R-3PO"
+# antwortete dasselbe Modell prompt „R2-D2".
+_BILD_FRAGE = ("Welche Farben hat diese LEGO-Minifigur? Nenne hoechstens "
+               "drei, die auffaelligste zuerst, auf Deutsch, als einzelne "
+               "Woerter.")
+
+
+def ollama_bild_modell() -> str:
+    return (core.get_setting("ollama_bild_model")
+            or os.environ.get("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD)
+
+
+def bild_farben(bild: bytes) -> list:
+    """Die Farben einer Figur aus ihrem Bild – oder eine leere Liste.
+
+    Leer heißt „nicht erkannt", und das ist kein Fehler: Der Abzug ist auch
+    ohne Farben brauchbar, der Name trägt die Hauptlast.
+    """
+    if not bild or not ollama_enabled():
+        return []
+    basis = ollama_setting("ollama_url").strip().rstrip("/")
+    try:
+        resp = requests.post(
+            basis + "/api/chat",
+            json={"model": ollama_bild_modell(), "stream": False,
+                  "think": False, "format": _BILD_SCHEMA,
+                  "options": {"temperature": 0}, "keep_alive": "30m",
+                  "messages": [{"role": "user", "content": _BILD_FRAGE,
+                                "images": [base64.b64encode(bild).decode()]}]},
+            timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
+        resp.raise_for_status()
+        roh = json.loads(resp.json().get("message", {})
+                         .get("content", "")).get("farben", [])
+    except Exception:
+        return []
+    farben = []
+    for f in roh if isinstance(roh, list) else []:
+        f = re.sub(r"[^a-zäöüß]", "", str(f).lower())
+        if len(f) >= 3 and f not in farben:
+            farben.append(f)
+    return farben[:3]
+
+
 def ollama_modelle(url: str = "") -> list:
     """Welche Modelle liegen auf dem Server?
 
@@ -883,26 +942,34 @@ def ollama_modelle(url: str = "") -> list:
     kein Zugangsweg. Wer den Namen kennt, muss ihn weiterhin von Hand
     eintragen können, auch wenn der Dienst gerade schweigt.
     """
+    leer = {"models": [], "vision": []}
     basis = (url or ollama_setting("ollama_url")).strip().rstrip("/")
     if not basis:
-        return []
+        return leer
     try:
         resp = requests.get(basis + "/api/tags", timeout=OLLAMA_TIMEOUT,
                             headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
         roh = resp.json().get("models", [])
     except Exception:
-        return []
-    namen = []
+        return leer
+    namen, sieht = [], []
     for m in roh:
         name = (m or {}).get("name") or (m or {}).get("model") or ""
         name = str(name).strip()
         # Ollama liefert dieselbe Ablage teils doppelt (`name` und `model`),
         # und bei mehreren Marken desselben Modells wiederholt sich der Name.
-        if name and name not in namen:
-            namen.append(name)
+        if not name or name in namen:
+            continue
+        # Code-Modelle taugen für keine der beiden Aufgaben. Sie stehen sonst
+        # mitten in einer Liste, in der man das Passende suchen soll.
+        if re.search(r"cod(e|er)", name, re.I):
+            continue
+        namen.append(name)
+        if "vision" in (m.get("capabilities") or []):
+            sieht.append(name)
     namen.sort(key=str.casefold)
-    return namen
+    return {"models": namen, "vision": sorted(sieht, key=str.casefold)}
 
 
 def begriffe_gelernt(begriff: str) -> tuple:

@@ -41,7 +41,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.33.1"
+APP_VERSION = "2.34.0"
 
 
 def hash_password(password: str) -> str:
@@ -304,6 +304,18 @@ def init_db():
                 -- Bindestrich. Ohne diese Spalte müsste der ganze Index
                 -- durch Python – bei einem Thema egal, bei allen nicht.
                 such TEXT NOT NULL DEFAULT '',
+                img_url TEXT NOT NULL DEFAULT '',
+                -- Was auf dem Bild zu sehen ist – **nur Farben**.
+                --
+                -- Gemessen am 21.08.2026 auf dem Mac mini: `minicpm-v`
+                -- nennt die richtige Farbe in allen Proben, die **Art der
+                -- Figur** aber in zwei von drei falsch (Darth Vader →
+                -- „Droide", AT-AT-Fahrer → „Roboter"). Die Art steht
+                -- ohnehin schon im BrickLink-Namen; sie hier noch einmal
+                -- raten zu lassen brächte nur Fehler hinein.
+                --
+                -- Leer heißt „noch nicht angesehen", nicht „keine Farbe".
+                farben TEXT NOT NULL DEFAULT '',
                 category_id TEXT,
                 jahr INTEGER,
                 updated_at INTEGER NOT NULL,
@@ -445,6 +457,30 @@ def init_db():
                 conn.execute("PRAGMA foreign_keys = ON")
             print("[brickfolio] Migration: Sammlung erlaubt jetzt "
                   "getrennte Einträge je Zustand", flush=True)
+
+        # Migration: Bildadresse im Katalog-Abzug.
+        #
+        # Bis 2.33.1 wurde sie nicht gespeichert – Treffer aus dem Abzug
+        # kamen ohne Bild, obwohl BrickLink sie in derselben Antwort
+        # mitliefert. Nachfüllen kostet **keinen** einzigen Abruf: Die
+        # Adresse folgt der Nummer, und der Bildserver unterscheidet nicht
+        # zwischen Groß- und Kleinschreibung (geprüft am 21.08.2026).
+        kat_cols = [r["name"] for r in
+                    conn.execute("PRAGMA table_info(katalog_index)")]
+        if kat_cols and "img_url" not in kat_cols:
+            conn.execute("ALTER TABLE katalog_index ADD COLUMN "
+                         "img_url TEXT NOT NULL DEFAULT ''")
+        if kat_cols and "farben" not in kat_cols:
+            conn.execute("ALTER TABLE katalog_index ADD COLUMN "
+                         "farben TEXT NOT NULL DEFAULT ''")
+        if kat_cols:
+            n = conn.execute(
+                "UPDATE katalog_index SET img_url = "
+                "'https://img.bricklink.com/ML/' || item_no || '.jpg' "
+                "WHERE img_url = ''").rowcount
+            if n:
+                print(f"[brickfolio] Migration: {n} Bildadressen im "
+                      f"Katalog-Abzug nachgetragen", flush=True)
 
         # Migration: Quelle je Preisverlaufs-Punkt (auto/manuell)
         ph_cols = [r["name"] for r in

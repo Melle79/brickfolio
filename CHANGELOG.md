@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.34.0 – August 2026
+
+### Neu
+- 🎨 **Farben aus den Katalogbildern.** Zweiter Durchgang nach dem Abzug:
+  Die lokale KI sieht sich die Bilder an und schreibt die Farben dazu. Viele
+  BrickLink-Namen nennen keine – „R-3PO Protocol Droid" sagt nirgends „rot".
+  Danach findet „roter Protokolldroide" beides: die Art aus dem Namen, die
+  Farbe aus dem Bild.
+
+  **Nur Farben, mit Absicht.** Nach der Art der Figur gefragt, lag
+  `minicpm-v` in keiner von drei Proben richtig, `gemma3:12b` in zwei –
+  und die Art steht ohnehin schon im Namen. Sie hier noch einmal raten zu
+  lassen brächte nur Fehler hinein.
+
+  Auch ein leeres Ergebnis wird festgehalten, sonst versuchte der nächste
+  Lauf dieselbe Figur wieder und käme nie ans Ende.
+
+- 🖼 **Das Modell fürs Bilderansehen ist getrennt einstellbar.** Übersetzen
+  und Bilder ansehen sind verschiedene Aufgaben, und die besten Modelle
+  dafür sind verschiedene.
+
+  In beiden Listen stehen nur noch **sinnvolle** Modelle: Code-Modelle
+  fallen raus. Für Bilder stehen die bildfähigen oben und tragen ein 👁.
+  **Sortiert, nicht gefiltert** – `gemma3:12b` meldet Ollama gegenüber gar
+  keine Bildfähigkeit und ist trotzdem das beste im Haus. Wer hart nach dem
+  Merkmal filtert, versteckt den Sieger.
+
+### Behoben
+- 📚 **Der Abzug speicherte keine Bildadresse.** Treffer aus dem eigenen
+  Abzug wären ohne Bild geblieben, obwohl BrickLink sie in derselben
+  Antwort mitliefert. Bestehende Zeilen werden beim Start nachgetragen –
+  ohne einen einzigen zusätzlichen Abruf, denn die Adresse folgt der Nummer
+  (und der Bildserver unterscheidet nicht zwischen Groß- und
+  Kleinschreibung). Fehlt sie in der Antwort, wird sie ebenso gebildet.
+
 ## 2.33.1 – August 2026
 
 ### Behoben

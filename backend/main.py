@@ -2624,12 +2624,18 @@ def get_ollama(user: dict = Depends(admin_user)):
     return {"url": integrations.ollama_setting("ollama_url"),
             "model": integrations.ollama_setting("ollama_model"),
             "default_model": integrations.OLLAMA_STD_MODELL,
+            "bild_model": core.get_setting("ollama_bild_model"),
+            "bild_default": integrations.OLLAMA_BILD_STD,
             "enabled": integrations.ollama_enabled()}
 
 
 class OllamaBody(BaseModel):
     url: str = Field(default="", max_length=200)
     model: str = Field(default="", max_length=100)
+    # Getrennt vom Textmodell: Das eine übersetzt Begriffe, das andere sieht
+    # sich Bilder an. Gemessen taugen dafür ganz verschiedene – `gemma3:12b`
+    # erkennt die Art der Figur in 2 von 3 Proben, `minicpm-v` in keiner.
+    bild_model: str = Field(default="", max_length=100)
 
 
 @app.post("/api/settings/ollama")
@@ -2640,6 +2646,7 @@ def set_ollama(body: OllamaBody, user: dict = Depends(admin_user)):
                                  "beginnen")
     core.set_setting("ollama_url", url)
     core.set_setting("ollama_model", body.model.strip())
+    core.set_setting("ollama_bild_model", body.bild_model.strip())
     # Der Zwischenspeicher hängt am alten Dienst – nach einem Wechsel wäre
     # sonst nicht nachvollziehbar, warum die neue Adresse nichts ändert.
     integrations._begriff_cache.clear()
@@ -2693,12 +2700,20 @@ def _katalog_eintragen(item_no: str, daten: dict) -> bool:
             "item_type = 'minifig'", (item_no,)).fetchone()
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such,"
-            " category_id, jahr, updated_at) VALUES (?, 'minifig', ?, ?, ?, ?, ?) "
+            " img_url, category_id, jahr, updated_at) "
+            "VALUES (?, 'minifig', ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT(item_no, item_type) DO UPDATE SET "
             "name = excluded.name, such = excluded.such, "
+            "img_url = excluded.img_url, "
             "category_id = excluded.category_id, "
             "jahr = excluded.jahr, updated_at = excluded.updated_at",
             (item_no, name, _wortanfaenge(name)[0],
+             # Fehlt sie in der Antwort, aus der Nummer bilden: Die
+             # Adresse folgt ihr, und der Bildserver unterscheidet nicht
+             # zwischen Groß- und Kleinschreibung. Ohne den Rückfall bekäme
+             # so eine Figur nie ein Bild – und damit auch nie eine Farbe.
+             ((daten.get("img_url") or "").strip()
+              or "https://img.bricklink.com/ML/%s.jpg" % item_no),
              str(daten.get("category_id") or ""),
              daten.get("year_released") or 0, jetzt))
     return vorher is None
@@ -2768,6 +2783,79 @@ def _katalog_anbau(praefix: str = "sw"):
         _katalog_lauf["aktiv"] = False
 
 
+# ------------------------------------------------- Farben aus den Bildern
+#
+# Zweiter Durchgang, getrennt vom Abzug: Der holt die Namen von BrickLink,
+# dieser sieht sich die Bilder an. Getrennt, weil er ganz andere Kosten hat –
+# kein fremdes Kontingent, dafür Rechenzeit auf dem Mac mini, und der macht
+# nebenher die Heimautomatisierung.
+#
+# **Nur Farben.** Die Art der Figur steht im BrickLink-Namen; das Modell rät
+# sie in zwei von drei Fällen falsch (gemessen 21.08.2026: Darth Vader →
+# „Droide", AT-AT-Fahrer → „Roboter"). Was es kann, ist die Farbe – und
+# genau die fehlt vielen Namen: „R-3PO Protocol Droid" sagt nirgends „rot".
+KATALOG_FARB_TAKT = 0.3
+
+_farb_lauf = {"aktiv": False, "getan": 0, "gefunden": 0, "offen": 0,
+              "stop": False, "fehler": ""}
+
+
+def _katalog_farben(grenze: int = 0):
+    _farb_lauf.update({"aktiv": True, "getan": 0, "gefunden": 0,
+                       "stop": False, "fehler": ""})
+    try:
+        while not _farb_lauf["stop"]:
+            with core.db() as conn:
+                rows = conn.execute(
+                    "SELECT item_no, img_url FROM katalog_index "
+                    "WHERE farben = '' AND img_url != '' LIMIT 25").fetchall()
+                _farb_lauf["offen"] = conn.execute(
+                    "SELECT COUNT(*) AS n FROM katalog_index WHERE "
+                    "farben = '' AND img_url != ''").fetchone()["n"]
+            if not rows:
+                break
+            for r in rows:
+                if _farb_lauf["stop"]:
+                    break
+                try:
+                    roh = integrations.fetch_catalog_image(
+                        r["img_url"], integrations.BILD_HOSTS)
+                    farben = integrations.bild_farben(
+                        integrations.prepare_image(roh, 512))
+                except Exception:
+                    farben = []
+                # Auch ein leeres Ergebnis festhalten – sonst versucht der
+                # nächste Lauf dieselbe Figur wieder und käme nie ans Ende.
+                with core.db() as conn:
+                    conn.execute("UPDATE katalog_index SET farben = ? WHERE "
+                                 "item_no = ?",
+                                 (", ".join(farben) or "–", r["item_no"]))
+                _farb_lauf["getan"] += 1
+                if farben:
+                    _farb_lauf["gefunden"] += 1
+                if grenze and _farb_lauf["getan"] >= grenze:
+                    return
+                time.sleep(KATALOG_FARB_TAKT)
+    finally:
+        _farb_lauf["aktiv"] = False
+
+
+@app.post("/api/katalog/farben")
+def katalog_farben_start(user: dict = Depends(admin_user)):
+    if not integrations.ollama_enabled():
+        raise HTTPException(400, "Keine lokale KI eingerichtet")
+    if _farb_lauf["aktiv"]:
+        return {"ok": True, "info": "läuft bereits"}
+    threading.Thread(target=_katalog_farben, daemon=True).start()
+    return {"ok": True}
+
+
+@app.post("/api/katalog/farben/stop")
+def katalog_farben_stop(user: dict = Depends(admin_user)):
+    _farb_lauf["stop"] = True
+    return {"ok": True}
+
+
 def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
     """Im eigenen Abzug suchen – mit derselben Elle wie die Sammlung.
 
@@ -2782,15 +2870,21 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20) -> list:
         # Vorauswahl über das längste Wort, damit nicht der ganze Index
         # durch Python muss: Bei 1.400 Figuren egal, bei allen Themen nicht.
         laengstes = max(woerter, key=len)
+        # Farben zählen mit: „R-3PO Protocol Droid" sagt nirgends „rot",
+        # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
         rows = conn.execute(
-            "SELECT item_no, name, jahr FROM katalog_index "
-            "WHERE such LIKE ? LIMIT 400", ("%" + laengstes + "%",)).fetchall()
+            "SELECT item_no, name, jahr, img_url, farben FROM katalog_index "
+            "WHERE such LIKE ? OR farben LIKE ? LIMIT 400",
+            ("%" + laengstes + "%", "%" + laengstes + "%")).fetchall()
     treffer = []
     for r in rows:
-        if not _passt(begriff, r["name"] or ""):
+        # Name **und** Farben als ein Text: „roter Protokolldroide" braucht
+        # beides – die Art aus dem Namen, die Farbe aus dem Bild.
+        volltext = (r["name"] or "") + " " + (r["farben"] or "")
+        if not _passt(begriff, volltext):
             continue
         treffer.append({"item_id": r["item_no"], "item_type": "minifig",
-                        "name": r["name"], "img_url": "",
+                        "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,
                         "bricklink_url":
                             "https://www.bricklink.com/v2/catalog/"
@@ -2813,6 +2907,10 @@ def katalog_status(user: dict = Depends(admin_user)):
             "neu": _katalog_lauf["neu"],
             "fehler": _katalog_lauf["fehler"],
             "warteschlange": _katalog_lauf["warteschlange"],
+            "farben": {"laeuft": _farb_lauf["aktiv"],
+                       "getan": _farb_lauf["getan"],
+                       "gefunden": _farb_lauf["gefunden"],
+                       "offen": _farb_lauf["offen"]},
             "themen": KATALOG_THEMEN,
             "takt": KATALOG_TAKT,
             "laeufe": [{"praefix": r["praefix"], "zuletzt": r["zuletzt"],
@@ -2969,10 +3067,18 @@ def ollama_models(url: str = "", user: dict = Depends(admin_user)):
     if url and not re.match(r"^https?://", url):
         raise HTTPException(400, "Die Adresse muss mit http:// oder https:// "
                                  "beginnen")
-    modelle = integrations.ollama_modelle(url)
-    return {"models": modelle,
+    d = integrations.ollama_modelle(url)
+    return {"models": d["models"],
+            # Welche sich selbst als bildfähig melden. **Nur zum Sortieren**,
+            # nicht zum Ausschließen: `gemma3:12b` meldet es nicht und ist
+            # trotzdem das beste im Haus (gemessen 21.08.2026 – Art der Figur
+            # in 2 von 3 Proben richtig, wo `minicpm-v` in keiner lag). Wer
+            # hart nach dem Merkmal filtert, versteckt den Sieger.
+            "vision": d["vision"],
             "current": integrations.ollama_setting("ollama_model"),
-            "default_model": integrations.OLLAMA_STD_MODELL}
+            "bild_current": core.get_setting("ollama_bild_model"),
+            "default_model": integrations.OLLAMA_STD_MODELL,
+            "bild_default": integrations.OLLAMA_BILD_STD}
 
 
 @app.post("/api/settings/ollama/test")

@@ -266,6 +266,7 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
         "ollama_model",         # nur ein Modellname wie „qwen2.5:14b“;
                                 # die zugehörige Adresse steht dagegen in
                                 # GEHEIME_SETTINGS
+        "ollama_bild_model",    # dasselbe für das Modell, das Bilder ansieht
     }
     unbekannt = aufgeloest - set(integrations.GEHEIME_SETTINGS) - OFFEN
     assert not unbekannt, (
