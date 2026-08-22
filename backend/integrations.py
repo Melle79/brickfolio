@@ -878,18 +878,50 @@ OLLAMA_BILD_STD = "minicpm-v:latest"
 # leere Ergebnisse und hält das Modell für unfähig.
 OLLAMA_BILD_TIMEOUT = 120
 
+# Wie viele Token die Antwort höchstens haben darf. Reine Notbremse, kein
+# Sparziel: Sie muss über dem liegen, was das begrenzte Schema unten im
+# schlimmsten Fall braucht (rund 1.500 Zeichen), sonst zerschneidet sie
+# gültige Antworten – und eine zerschnittene zählt als Fehlschlag, die Figur
+# bliebe liegen. Ein Test rechnet das gegen die Längen im Schema nach.
+#
+# Echte Antworten liegen bei etwa 160 Token. Eine Entgleisung kostet damit
+# gut 20 s statt der vollen 120 s Zeitgrenze.
+OLLAMA_BILD_MAX_TOKEN = 900
+
+# **Die Längen sind kein Schönheitswunsch, sie sind die Abbruchbedingung.**
+#
+# Am 22.08.2026 blieb der Bilderlauf bei `sw0326` stehen – und zwar bei jedem
+# Anlauf, immer nach exakt 120 s. Das Modell hatte weder Ladeprobleme noch zu
+# wenig Speicher: Es lud in 3,8 s, verarbeitete das Bild in 2,8 s und schrieb
+# dann 15.190 Token am Stück, 436 Sekunden lang. Der Inhalt war eine
+# Endlosschleife **innerhalb einer einzigen Zeichenkette**:
+#
+#   "...and a dark blue stripe on the upper part of the legs, and a dark blue
+#    stripe on the lower part of the legs, and a dark blue stripe on the ..."
+#
+# `maxItems` hielt die Teileliste sauber bei sechs – Arrays begrenzt das
+# Schema also. Die Länge einer Zeichenkette begrenzte es nicht, und darin
+# verhakte sich das Modell: `temperature: 0` heißt gierige Dekodierung, und
+# `repeat_penalty` steht bei Ollama auf 1.0. Einmal in der Schleife, immer in
+# der Schleife.
+#
+# Mit den Grenzen unten kann die Schleife nicht entstehen, weil die Grammatik
+# die Zeichenkette schließen **muss**: dieselbe Figur, 4,1 s statt 436, und
+# das Ergebnis ist brauchbar. Ein Ausreißer wird dabei mitten im Wort
+# abgeschnitten – das ist gewollt. Ein angeschnittenes Merkmal ist Suchtext,
+# eine hängende Anfrage kostet den ganzen Lauf.
 _BILD_SCHEMA = {
     "type": "object",
     "properties": {
-        "kind": {"type": "string"},
+        "kind": {"type": "string", "maxLength": 24},
         "parts": {"type": "array", "maxItems": 6, "items": {
             "type": "object",
-            "properties": {"part": {"type": "string"},
-                           "color": {"type": "string"},
-                           "print": {"type": "string"}},
+            "properties": {"part": {"type": "string", "maxLength": 40},
+                           "color": {"type": "string", "maxLength": 40},
+                           "print": {"type": "string", "maxLength": 100}},
             "required": ["part", "color", "print"]}},
         "accessories": {"type": "array", "maxItems": 3,
-                        "items": {"type": "string"}}},
+                        "items": {"type": "string", "maxLength": 40}}},
     "required": ["kind", "parts"]}
 # **Teil für Teil, nicht nur „rot".**
 #
@@ -987,7 +1019,9 @@ def bild_merkmale(bild: bytes) -> dict:
             basis + "/api/chat",
             json={"model": ollama_bild_modell(), "stream": False,
                   "think": False, "format": _BILD_SCHEMA,
-                  "options": {"temperature": 0}, "keep_alive": "30m",
+                  "options": {"temperature": 0,
+                              "num_predict": OLLAMA_BILD_MAX_TOKEN},
+                  "keep_alive": "30m",
                   "messages": [{"role": "user", "content": _BILD_FRAGE,
                                 "images": [base64.b64encode(bild).decode()]}]},
             timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})

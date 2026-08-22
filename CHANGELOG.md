@@ -1,5 +1,44 @@
 # Changelog
 
+## 2.38.1 – August 2026
+
+### Behoben
+- 🔁 **Der Bilderlauf blieb an einer einzelnen Figur hängen – und gab dann
+  ganz auf.** Bei `sw0326` brach die Analyse jedes Mal nach exakt 120 s ab.
+  Nach fünf solchen Figuren beendete sich der komplette Lauf; 9.000 Figuren
+  blieben unbearbeitet liegen.
+
+  Die naheliegende Erklärung – zu wenig Speicher auf dem Mac mini – war
+  falsch, und die exakte Wiederholung von „2m0s" hätte das verraten müssen:
+  Eine Ladeverzögerung streut, eine harte Zeitgrenze auf einer nie endenden
+  Antwort nicht. Das Modell lud in 3,8 s, verarbeitete das Bild in 2,8 s und
+  schrieb dann 15.190 Token am Stück – 436 Sekunden lang eine Endlosschleife
+  **innerhalb einer einzigen Zeichenkette**:
+
+      "...and a dark blue stripe on the upper part of the legs, and a dark
+       blue stripe on the lower part of the legs, and a dark blue stripe ..."
+
+  Die Teileliste hielt ihre sechs Einträge ein – Arrays begrenzte das Schema
+  also. Die Länge einer Zeichenkette begrenzte es nicht, und bei
+  `temperature: 0` mit `repeat_penalty` 1.0 gibt es aus so einer Schleife
+  keinen Ausweg. Die Grammatik muss sie verhindern.
+
+  Jetzt hat jede Zeichenkette im Schema eine Höchstlänge. Dieselbe Figur:
+  **4,1 s statt 436**, mit brauchbarem Ergebnis. Ein Ausreißer wird dabei
+  mitten im Wort abgeschnitten – gewollt: Ein angeschnittenes Merkmal ist
+  Suchtext, eine hängende Anfrage kostet den ganzen Lauf. Dazu kommt eine
+  Notbremse (`num_predict`), die großzügig über einer vollständigen Antwort
+  liegt; ein Test rechnet das gegen die Längen im Schema nach.
+
+### Geändert
+- ⏱️ **Der Bilderlauf hält mehr aus.** Er gab nach fünf Fehlschlägen in Folge
+  auf – passend für einen Lauf über Minuten, zu wenig für den ersten
+  vollständigen über Stunden. Ein Moment, in dem Home Assistant sich das
+  Textmodell in den Speicher holt, genügte. Jetzt sind es zwölf, und
+  entscheidend: mit 20 s Pause dazwischen statt 0,3 s. Vorher brannten fünf
+  Versuche in anderthalb Sekunden durch, während Ollama noch lud. Ein echter
+  Ausfall wird weiterhin erkannt – er dauert nun vier Minuten.
+
 ## 2.36.0 – August 2026
 
 ### Behoben

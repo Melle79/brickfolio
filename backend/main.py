@@ -2840,12 +2840,25 @@ _farb_lauf = {"aktiv": False, "getan": 0, "gefunden": 0, "offen": 0,
               "stop": False, "fehler": ""}
 
 
-# Wie viele Ausfälle hintereinander, bevor der Lauf aufgibt. Fünf, weil ein
-# einzelner Aussetzer (Modell wird gerade geladen) normal ist – fünf in Folge
-# heißt, dass die KI nicht mehr antwortet. Weiterzulaufen wäre das Schlimmste:
-# Der Lauf hakte dann eine Figur nach der anderen als „angesehen" ab, ohne
-# je hingesehen zu haben, und keine davon käme je wieder an die Reihe.
-KATALOG_FARB_PATZER = 5
+# Wie viele Ausfälle hintereinander, bevor der Lauf aufgibt. Weiterzulaufen
+# wäre das Schlimmste: Der Lauf hakte dann eine Figur nach der anderen als
+# „angesehen" ab, ohne je hingesehen zu haben, und keine davon käme je wieder
+# an die Reihe.
+#
+# Von fünf auf zwölf heraufgesetzt, mit Pause dazwischen. Fünf passten zu
+# einem Lauf über Minuten; der erste vollständige geht über **Stunden**
+# (9.000 Figuren zu 4–9 s). Auf dieser Strecke reicht ein Moment, in dem
+# Home Assistant das Textmodell in den Speicher zieht und das Bildmodell
+# verdrängt wird – dann kippen ein paar Anfragen hintereinander, und der
+# ganze Lauf stand still, obwohl nichts kaputt war.
+#
+# Die Pause ist der eigentliche Griff: Ohne sie prasseln die Versuche im
+# Takt von 0,3 s auf ein Ollama ein, das gerade lädt, und brennen die
+# Schwelle in anderthalb Sekunden durch. Mit ihr bekommt es Zeit,
+# fertigzuladen. Ein echter Ausfall („KI ist weg") wird trotzdem erkannt –
+# er dauert dann vier Minuten statt anderthalb Sekunden.
+KATALOG_FARB_PATZER = 12
+KATALOG_FARB_PAUSE = 20        # Sekunden nach einem Fehlschlag
 
 
 def _katalog_farben(grenze: int = 0):
@@ -2891,7 +2904,10 @@ def _katalog_farben(grenze: int = 0):
                             "Die lokale KI antwortet nicht (%d Versuche in "
                             "Folge): %s" % (patzer, m["fehler"]))
                         return
-                    time.sleep(KATALOG_FARB_TAKT)
+                    # Die Figur bleibt offen und kommt beim nächsten Griff in
+                    # die Warteschlange von selbst wieder – ein eigener
+                    # Wiederholungszweig wäre hier nur doppelt.
+                    time.sleep(KATALOG_FARB_PAUSE)
                     continue
                 patzer = 0
                 # Auch ein leeres Ergebnis festhalten – sonst versucht der
