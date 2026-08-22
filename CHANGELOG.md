@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.38.2 – August 2026
+
+### Behoben
+- 🔍 **„Ritter" fand Luke Skywalker.** Die Katalogsuche lieferte auf „Ritter"
+  drei Figuren, die keine sind: Luke Skywalker (Tatooine), einen Imperial
+  Royal Guard und den siebenjährigen Boba Fett. Alle drei trugen
+  `art='knight'` – die vom Bildmodell geratene Art der Figur, die
+  gleichberechtigt neben dem Namen im Suchtext stand.
+
+  Das ist derselbe Fehler wie „Greedo unter den Rittern" in 2.28.1, nur
+  durch eine andere Tür: Dort war es die Sortierung, hier eine Vermutung mit
+  dem Gewicht einer Tatsache. Ein einziges Wort für die ganze Figur, und die
+  Kategorien sind breit genug („Knight", „Alien", „Soldier"), um ständig mit
+  deutschen Suchbegriffen zu kollidieren.
+
+  Naheliegend wäre, dem Bildmodell Name und Thema mitzugeben, damit es
+  besser rät. Gemessen an denselben drei Figuren verschwand „Knight"
+  daraufhin zwar, wurde aber durch „Pilot" bzw. „Soldier" ersetzt – zwei von
+  drei blieben falsch, und nebenbei kippte Boba Fetts Haarfarbe von
+  „schwarz" (richtig) auf „dunkelblau".
+
+  Deshalb steht im Suchtext jetzt nur noch, was entweder Katalogwahrheit ist
+  (der Name) oder beobachtet (Farben und Teilbeschreibung). Geraten wird
+  dort nicht mehr. `art` bleibt in der Datenbank – für die Anzeige taugt es,
+  als Suchbegriff nicht.
+
 ## 2.38.1 – August 2026
 
 ### Behoben

@@ -2966,16 +2966,33 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20,
         # Farben zählen mit: „R-3PO Protocol Droid" sagt nirgends „rot",
         # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
         rows = conn.execute(
-            "SELECT item_no, item_type, name, jahr, img_url, farben, art, "
+            "SELECT item_no, item_type, name, jahr, img_url, farben, "
             "merkmale FROM katalog_index WHERE item_type = ? AND (such LIKE ? "
-            "OR farben LIKE ? OR art LIKE ? OR merkmale LIKE ?) LIMIT 400",
-            (item_type,) + ("%" + laengstes + "%",) * 4).fetchall()
+            "OR farben LIKE ? OR merkmale LIKE ?) LIMIT 400",
+            (item_type,) + ("%" + laengstes + "%",) * 3).fetchall()
     treffer = []
     for r in rows:
         # Name **und** Farben als ein Text: „roter Protokolldroide" braucht
         # beides – die Art aus dem Namen, die Farbe aus dem Bild.
+        #
+        # **`art` steht bewusst nicht darin.** Die vom Bildmodell geratene
+        # Art der Figur ist ein einziges Wort für die ganze Figur, und die
+        # Kategorien sind breit genug, um ständig zu kollidieren: Am
+        # 22.08.2026 lieferte „Ritter" Luke Skywalker, einen Imperial Royal
+        # Guard und den siebenjährigen Boba Fett – alle drei mit
+        # `art='knight'`. Das ist Greedo unter den Rittern aus 2.28.1, nur
+        # durch eine andere Tür.
+        #
+        # Den Namen mitzugeben behebt es nicht: Gemessen an denselben drei
+        # Figuren verschwand „Knight" zwar, wurde aber durch „Pilot" bzw.
+        # „Soldier" ersetzt – eine andere Vermutung, die mit anderen
+        # Begriffen kollidiert. Zwei von drei blieben falsch.
+        #
+        # Was bleibt, ist entweder Katalogwahrheit (Name) oder Beobachtetes
+        # (Farben, Teilbeschreibung). Geraten wird im Index nicht mehr.
+        # `art` bleibt in der Datenbank – für die Anzeige taugt es.
         volltext = " ".join((r["name"] or "", r["farben"] or "",
-                             r["art"] or "", r["merkmale"] or ""))
+                             r["merkmale"] or ""))
         if not _passt(begriff, volltext):
             continue
         treffer.append({"item_id": r["item_no"], "item_type": r["item_type"],
