@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.38.4 – August 2026
+
+### Behoben
+- 🔢 **„Alle Bilder angesehen", obwohl 8.328 offen waren.** Die Statusanzeige
+  meldete null offene Figuren, während erst 1.413 von 9.741 eine Beschreibung
+  hatten.
+
+  `offen` stand im Laufzustand des Bilderlaufs – einem Wörterbuch im
+  Arbeitsspeicher – und wurde nur *während* eines laufenden Durchgangs
+  gefüllt. Nach jedem Neustart des Containers stand dort wieder 0, und an
+  diesem Tag wurde dreimal ausgerollt.
+
+  Eine Null, die „fertig" bedeutet, ist die unangenehmste Sorte Fehler: Sie
+  sieht aus wie ein Erfolg, und niemand sucht nach ihr. Die Zahl beschreibt
+  die Daten, nicht den Lauf – sie wird jetzt bei jeder Abfrage frisch
+  gezählt.
+
 ## 2.38.3 – August 2026
 
 ### Behoben

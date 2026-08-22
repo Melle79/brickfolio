@@ -2836,7 +2836,12 @@ def _katalog_anbau(praefix: str = "sw"):
 # genau die fehlt vielen Namen: „R-3PO Protocol Droid" sagt nirgends „rot".
 KATALOG_FARB_TAKT = 0.3
 
-_farb_lauf = {"aktiv": False, "getan": 0, "gefunden": 0, "offen": 0,
+# `offen` steht hier bewusst **nicht** mehr drin: Es beschreibt die Daten,
+# nicht den Lauf, und wird im Status frisch gezählt. Als Feld im Laufzustand
+# war es nach jedem Neustart des Containers 0 – die Oberfläche meldete dann
+# „alle Bilder angesehen", während in Wahrheit 8.328 Figuren offen waren
+# (gesehen am 22.08.2026 nach drei Ausrollvorgängen an einem Tag).
+_farb_lauf = {"aktiv": False, "getan": 0, "gefunden": 0,
               "stop": False, "fehler": ""}
 
 
@@ -2875,9 +2880,6 @@ def _katalog_farben(grenze: int = 0):
                 rows = conn.execute(
                     "SELECT item_no, img_url FROM katalog_index "
                     "WHERE merkmale = '' AND img_url != '' LIMIT 25").fetchall()
-                _farb_lauf["offen"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM katalog_index WHERE "
-                    "merkmale = '' AND img_url != ''").fetchone()["n"]
             if not rows:
                 break
             for r in rows:
@@ -3011,6 +3013,10 @@ def katalog_status(user: dict = Depends(admin_user)):
     with core.db() as conn:
         anzahl = conn.execute("SELECT COUNT(*) AS n FROM "
                               "katalog_index").fetchone()["n"]
+        # Frisch gezählt statt aus dem Laufzustand gelesen – sonst steht hier
+        # nach einem Neustart 0 und die Oberfläche meldet „alles angesehen".
+        offen = conn.execute("SELECT COUNT(*) AS n FROM katalog_index WHERE "
+                             "merkmale = '' AND img_url != ''").fetchone()["n"]
         laeufe = conn.execute("SELECT * FROM katalog_lauf").fetchall()
     return {"anzahl": anzahl,
             "laeuft": _katalog_lauf["aktiv"],
@@ -3022,7 +3028,7 @@ def katalog_status(user: dict = Depends(admin_user)):
             "farben": {"laeuft": _farb_lauf["aktiv"],
                        "getan": _farb_lauf["getan"],
                        "gefunden": _farb_lauf["gefunden"],
-                       "offen": _farb_lauf["offen"],
+                       "offen": offen,
                        "fehler": _farb_lauf["fehler"]},
             "themen": _katalog_themen_lesen(),
             "takt": KATALOG_TAKT,
