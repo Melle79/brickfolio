@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.38.3 – August 2026
+
+### Behoben
+- 🥇 **Der goldene Droide stand auf Platz 6.** „goldener Droide" ergibt vier
+  übersetzte Begriffe – `Gold Droid`, `C-3PO`, `Droid`, `Gold` –, und die
+  Suche arbeitete sie nacheinander ab. Der erste traf fünf Astromechs mit
+  zufälligen Goldanteilen (ein goldener Helmstreifen bei R5-D4, ein goldener
+  Torso beim ASP Droid), und C-3PO kam erst danach.
+
+  Die Sortierung nach Wortzahl bleibt richtig – ohne sie liefe `Minifigure`
+  vor `Knight`, und in einer echten Sammlung stand daraufhin Greedo unter den
+  Rittern (2.28.1). Sie sagt aber nur, welcher Begriff **anfängt**, nicht,
+  dass er alle Plätze bekommt: Wortreicher heißt eingegrenzter, nicht
+  treffender.
+
+  Die Treffer werden jetzt reihum genommen – je Runde höchstens zwei pro
+  Begriff, dann ist der nächste dran. Kein Begriff verhungert mehr hinter
+  einem anderen, die Reihenfolge bleibt erhalten, und die UND-Logik innerhalb
+  eines Begriffs ist unangetastet. Gilt für Sammlung und Katalog.
+
 ## 2.38.2 – August 2026
 
 ### Behoben

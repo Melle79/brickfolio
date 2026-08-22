@@ -4609,6 +4609,54 @@ def _begriffe_bewaehrt(q: str, treffer: list):
         pass              # Merken darf eine gelungene Suche nie stören
 
 
+def _reihum(je_begriff: list, kennung, gesehen: set,
+            hoechstens: int = SUGGEST_MAX, portion: int = 2) -> tuple:
+    """Treffer reihum aus den Begriffen nehmen, statt einen leerzuräumen.
+
+    Vorher lief Begriff für Begriff: Der erste sammelte alles ein, was er
+    fand, dann der zweite. Bei „goldener Droide" heißt der erste Begriff
+    `Gold Droid` und trifft fünf Astromechs mit zufälligen Goldanteilen –
+    einen goldenen Helmstreifen, einen goldenen Torso. Der goldene Droide,
+    den jeder meint, stand danach: `C-3PO` auf Platz 6.
+
+    Die Sortierung nach Wortzahl ist trotzdem richtig – ohne sie liefe
+    `Minifigure` vor `Knight`. Sie sagt nur, welcher Begriff **anfängt**,
+    nicht, dass er alles bekommt. Wortreicher heißt eingegrenzter, nicht
+    treffender.
+
+    Reihum bedeutet: je Runde höchstens `portion` Treffer pro Begriff, dann
+    ist der nächste dran. Kein Begriff verhungert mehr hinter einem anderen,
+    und die Reihenfolge der Begriffe bleibt erhalten – der genaueste führt
+    weiterhin, er räumt nur nicht mehr ab.
+
+    `gesehen` wird mitgeführt und verändert: Der Katalogzweig befragt danach
+    noch Rebrickable und darf dort nichts doppelt aufnehmen.
+    """
+    items: list = []
+    treffer: list = []
+    reste = [(b, list(e)) for b, e in je_begriff]
+    while reste and len(items) < hoechstens:
+        weiter = []
+        for begriff, eintraege in reste:
+            genommen = 0
+            while eintraege and genommen < portion and len(items) < hoechstens:
+                eintrag = eintraege.pop(0)
+                k = kennung(eintrag)
+                if k in gesehen:
+                    continue          # Dublette zählt nicht gegen die Portion
+                gesehen.add(k)
+                items.append(eintrag)
+                genommen += 1
+                if begriff not in treffer:
+                    treffer.append(begriff)
+            if eintraege:
+                weiter.append((begriff, eintraege))
+        if not weiter:
+            break
+        reste = weiter
+    return items, treffer
+
+
 @app.get("/api/collection/suggest")
 def suggest_collection(q: str = "", item_type: str = "",
                        user: dict = Depends(current_user)):
@@ -4635,8 +4683,6 @@ def suggest_collection(q: str = "", item_type: str = "",
     alle = get_collection(q="", sort="name", item_type=item_type,
                           user=user)["items"]
     gesehen: set = set()
-    items: list = []
-    treffer: list = []
     # Der genaueste Begriff zuerst, nicht der vom Modell zuerst genannte.
     # „roter c3 po" ergibt `C-3PO` und `C-3PO (red)`; in Modellreihenfolge
     # sammelte der breite Begriff alle C-3POs ein, und die Farbvariante kam
@@ -4649,20 +4695,9 @@ def suggest_collection(q: str = "", item_type: str = "",
     # deshalb die Reihenfolge des Modells stehen – es nennt den Eigennamen
     # zuerst und die Oberbegriffe zuletzt.
     begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
-    for begriff in begriffe:
-        neu = 0
-        for eintrag in alle:
-            if eintrag["id"] in gesehen:
-                continue
-            if not _passt(begriff, eintrag["name"] or ""):
-                continue
-            gesehen.add(eintrag["id"])
-            items.append(eintrag)
-            neu += 1
-        if neu:
-            treffer.append(begriff)
-        if len(items) >= SUGGEST_MAX:
-            break
+    items, treffer = _reihum(
+        [(b, [e for e in alle if _passt(b, e["name"] or "")]) for b in begriffe],
+        lambda e: e["id"], gesehen)
     _begriffe_bewaehrt(q, treffer)
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
@@ -4705,22 +4740,12 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # `Minifigure` vor `Knight`.
     begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
     gesehen: set = set()
-    items: list = []
-    treffer: list = []
     # **Zuerst der eigene Index.** Er kostet nichts, kennt die beschreibenden
     # BrickLink-Namen und findet damit, was Rebrickable nicht hergibt:
     # `R-3PO` heißt dort nur so, bei BrickLink „R-3PO Protocol Droid".
-    for begriff in begriffe:
-        for eintrag in _katalog_suchen(begriff, item_type=item_type):
-            kennung = (eintrag["item_id"], eintrag["item_type"])
-            if kennung in gesehen:
-                continue
-            gesehen.add(kennung)
-            items.append(eintrag)
-            if begriff not in treffer:
-                treffer.append(begriff)
-        if len(items) >= SUGGEST_MAX:
-            break
+    items, treffer = _reihum(
+        [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe],
+        lambda e: (e["item_id"], e["item_type"]), gesehen)
     # Hat der eigene Abzug etwas, ist Rebrickable nicht mehr nötig: Die
     # Antwort ist da, kostenlos und mit den beschreibenden Namen. Jede
     # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf
