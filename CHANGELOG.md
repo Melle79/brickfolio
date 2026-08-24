@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.38.5 – August 2026
+
+### Behoben
+- 🔁 **Eine einzige Figur hielt 9.740 fertige auf.** Der Bilderlauf blieb bei
+  9.740 von 9.741 stehen. Die letzte offene war `cty0131` – dort verfiel das
+  Modell im Aufdruck-Feld in „TATATATATA…", die Längengrenze schnitt die
+  Zeichenkette ab, es begann im nächsten Feld von vorn, und `num_predict`
+  kappte schließlich mitten im JSON. Unlesbar.
+
+  Weil ein Fehlschlag bewusst nichts wegschreibt, stand dieselbe Figur beim
+  nächsten Griff wieder vorn – zwölf Anläufe, dann beendete die
+  Ausfallschwelle den ganzen Lauf.
+
+  Zwei Dinge, die gleich aussahen, werden jetzt getrennt: „gar nicht
+  geantwortet" ist ein Ausfall des Dienstes und hakt weiterhin nichts ab –
+  sonst gälte der halbe Katalog als angesehen, ohne dass je jemand
+  hingesehen hat. „Geantwortet, aber unlesbar" ist figurenspezifisch: Nach
+  drei Anläufen wird die Figur ohne Ergebnis abgehakt, und der Lauf kommt
+  ans Ende.
+
+### Geändert
+- ⚡ **Wiederholungsbremse für die Bildanalyse.** Ollama fährt ohne
+  (`repeat_penalty` 1.0), und bei `temperature: 0` gibt es aus einer
+  Schleife dann keinen Ausweg. Mit 1.1 antwortet dieselbe Figur in 3,5 s
+  statt 12,6 mit gültigem JSON.
+
+  Der Nebeneffekt ist größer als die Behebung: An sechs Vergleichsfiguren
+  blieben Art und Farben gleich, die Laufzeit **halbierte sich** (8–9,7 s
+  auf 2,4–4,3 s). Das Modell polstert nicht mehr aus.
+
 ## 2.38.4 – August 2026
 
 ### Behoben

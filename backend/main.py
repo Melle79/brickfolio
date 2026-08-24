@@ -2865,11 +2865,17 @@ _farb_lauf = {"aktiv": False, "getan": 0, "gefunden": 0,
 KATALOG_FARB_PATZER = 12
 KATALOG_FARB_PAUSE = 20        # Sekunden nach einem Fehlschlag
 
+# Wie oft eine einzelne Figur eine unlesbare Antwort liefern darf, bevor sie
+# als angesehen abgehakt wird. Drei, weil die Entgleisung bei
+# `temperature: 0` reproduzierbar ist – ein vierter Anlauf brächte dasselbe.
+KATALOG_FARB_AUFGEBEN = 3
+
 
 def _katalog_farben(grenze: int = 0):
     _farb_lauf.update({"aktiv": True, "getan": 0, "gefunden": 0,
                        "stop": False, "fehler": ""})
     patzer = 0
+    zaeh: dict = {}          # Figuren, deren Antwort unbrauchbar war
     try:
         while not _farb_lauf["stop"]:
             with core.db() as conn:
@@ -2897,7 +2903,28 @@ def _katalog_farben(grenze: int = 0):
                 else:
                     m = integrations.bild_merkmale(bild)
 
-                if m.get("fehler"):
+                if m.get("fehler") and m.get("unbrauchbar"):
+                    # **Geantwortet, nur unlesbar.** Kein Ausfall des
+                    # Dienstes, sondern eine Figur, die das Modell aus dem
+                    # Tritt bringt – deshalb keine Pause und kein Zählen auf
+                    # den Ausfall-Zähler.
+                    #
+                    # Nach ein paar Anläufen wird sie trotzdem abgehakt.
+                    # Sonst blockiert eine einzige Figur den ganzen Lauf: Ein
+                    # Fehlschlag schreibt nichts weg, also steht sie beim
+                    # nächsten Griff wieder vorn. Am 24.08.2026 war `cty0131`
+                    # die letzte offene von 9.741 – zwölf Anläufe an
+                    # derselben Figur, dann war der Lauf beendet.
+                    zaeh[r["item_no"]] = zaeh.get(r["item_no"], 0) + 1
+                    if zaeh[r["item_no"]] < KATALOG_FARB_AUFGEBEN:
+                        continue
+                    print("[brickfolio] %s nach %d unlesbaren Antworten "
+                          "übersprungen: %s" % (r["item_no"],
+                                                zaeh[r["item_no"]],
+                                                m["fehler"][:120]), flush=True)
+                    # Kein `continue`: Sie läuft in das Wegschreiben unten und
+                    # gilt damit als angesehen, ohne Ergebnis.
+                elif m.get("fehler"):
                     # Nichts schreiben: Die Figur wurde nie angesehen. Sie
                     # bleibt offen und kommt beim nächsten Lauf wieder dran.
                     patzer += 1
@@ -2911,7 +2938,8 @@ def _katalog_farben(grenze: int = 0):
                     # Wiederholungszweig wäre hier nur doppelt.
                     time.sleep(KATALOG_FARB_PAUSE)
                     continue
-                patzer = 0
+                else:
+                    patzer = 0
                 # Auch ein leeres Ergebnis festhalten – sonst versucht der
                 # nächste Lauf dieselbe Figur wieder und käme nie ans Ende.
                 with core.db() as conn:

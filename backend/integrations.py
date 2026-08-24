@@ -888,6 +888,14 @@ OLLAMA_BILD_TIMEOUT = 120
 # gut 20 s statt der vollen 120 s Zeitgrenze.
 OLLAMA_BILD_MAX_TOKEN = 900
 
+# Wiederholungsbremse. Ollama fährt ohne (`repeat_penalty` 1.0), und bei
+# `temperature: 0` gibt es aus einer Schleife dann keinen Ausweg – das Modell
+# verfiel bei `cty0131` mitten im Aufdruck in „TATATATATA…". 1.1 ist der
+# übliche Wert und reicht: An sechs Vergleichsfiguren blieben Art und Farben
+# gleich, die Laufzeit halbierte sich (8–9,7 s auf 2,4–4,3 s), weil das
+# Modell nicht mehr auspolstert.
+OLLAMA_BILD_WIEDERHOLUNG = 1.1
+
 # **Die Längen sind kein Schönheitswunsch, sie sind die Abbruchbedingung.**
 #
 # Am 22.08.2026 blieb der Bilderlauf bei `sw0326` stehen – und zwar bei jedem
@@ -1020,18 +1028,37 @@ def bild_merkmale(bild: bytes) -> dict:
             json={"model": ollama_bild_modell(), "stream": False,
                   "think": False, "format": _BILD_SCHEMA,
                   "options": {"temperature": 0,
-                              "num_predict": OLLAMA_BILD_MAX_TOKEN},
+                              "num_predict": OLLAMA_BILD_MAX_TOKEN,
+                              "repeat_penalty": OLLAMA_BILD_WIEDERHOLUNG},
                   "keep_alive": "30m",
                   "messages": [{"role": "user", "content": _BILD_FRAGE,
                                 "images": [base64.b64encode(bild).decode()]}]},
             timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
         resp.raise_for_status()
-        d = json.loads(_ollama_inhalt(resp.json().get("message", {})))
+        roh = resp.json()
+    except Exception as e:
+        # Gar nicht erst gefragt bekommen – das ist ein Ausfall des Dienstes.
+        return {"art": "", "farben": [], "merkmale": "",
+                "fehler": "%s: %s" % (type(e).__name__, e)}
+    try:
+        d = json.loads(_ollama_inhalt(roh.get("message", {})))
         art = d.get("kind", "")
         teile = d.get("parts") or []
         halt = d.get("accessories") or []
     except Exception as e:
-        return {"art": "", "farben": [], "merkmale": "",
+        # **Geantwortet, aber unbrauchbar.** Das ist etwas anderes als ein
+        # Ausfall: Der Dienst läuft, diese eine Figur bringt ihn aus dem
+        # Tritt. Am 24.08.2026 war das `cty0131` – das Modell verfiel im
+        # Aufdruck-Feld in „TATATATATA…", die Längengrenze schnitt die
+        # Zeichenkette ab, es begann im nächsten Feld von vorn, und
+        # `num_predict` kappte schließlich mitten im JSON. Unlesbar, und
+        # weil ein Fehlschlag nichts wegschreibt, kam dieselbe Figur endlos
+        # wieder und beendete nach zwölf Anläufen den ganzen Lauf.
+        #
+        # Der Aufrufer muss das unterscheiden können: Bei einem Ausfall
+        # darf er nichts abhaken, bei einer unbrauchbaren Antwort darf er
+        # die Figur nach ein paar Versuchen ziehen lassen.
+        return {"art": "", "farben": [], "merkmale": "", "unbrauchbar": True,
                 "fehler": "%s: %s" % (type(e).__name__, e)}
     farben, stuecke = [], []
     for teil in teile if isinstance(teile, list) else []:
