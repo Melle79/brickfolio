@@ -2070,26 +2070,62 @@ def bricklink_lookup(item_type: str, item_no: str,
 @app.get("/api/search")
 def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
                    user: dict = Depends(current_user)):
-    if not integrations.rebrickable_enabled():
-        raise HTTPException(501, "Katalogsuche nicht konfiguriert "
-                                 "(REBRICKABLE_KEY in docker-compose setzen)")
+    """Im Katalog suchen – **zuerst im eigenen Abzug**, dann bei Rebrickable.
+
+    Der eigene wurde hier lange gar nicht befragt: Die Funktion stieg mit
+    einem 501 aus, wenn kein Rebrickable-Schlüssel hinterlegt war. Auf
+    Pauls Instanz lagen dabei 19.158 Figuren mit Namen und Beschreibung –
+    und jede Suche im manuellen Erfassen blieb stumm (24.08.2026).
+
+    Die neue Reihenfolge ist auch für alle anderen besser: Der eigene Abzug
+    antwortet ohne Netz, ohne Wartezeit und ohne fremdes Kontingent, und er
+    kennt die **beschreibenden** BrickLink-Namen – `R-3PO Protocol Droid`
+    statt bloß `R-3PO`. Rebrickable ergänzt, was er nicht hat (Sets, Teile,
+    ganz neue Figuren).
+    """
     q = q.strip()
     if len(q) < 3:
         return {"items": [], "count": 0, "page": 1, "has_more": False}
     page = max(1, min(page, 200))
+
+    # Der eigene Abzug kennt kein Blättern – er trägt deshalb nur zur
+    # ersten Seite bei. Auf Seite zwei geht es bei Rebrickable weiter.
+    eigene = _katalog_suchen(q, item_type=item_type) if page == 1 else []
+
+    if not integrations.rebrickable_enabled():
+        if eigene:
+            return {"items": eigene[:SUGGEST_MAX], "count": len(eigene),
+                    "page": 1, "has_more": False}
+        raise HTTPException(501, "Katalogsuche nicht konfiguriert "
+                                 "(REBRICKABLE_KEY in docker-compose setzen)")
     try:
-        return integrations.search_catalog(q, item_type, page=page)
-    except requests.Timeout:
-        raise HTTPException(504, "Rebrickable antwortet nicht")
-    except requests.HTTPError as e:
-        code = e.response.status_code if e.response is not None else "?"
-        msg = ("Rebrickable-Key ungültig oder abgelaufen"
-               if code in (401, 403) else f"Rebrickable-Fehler ({code})")
-        raise HTTPException(502, msg)
-    except requests.RequestException:
+        fremd = integrations.search_catalog(q, item_type, page=page)
+        if not eigene:
+            return fremd
+        # Der eigene zuerst, Rebrickable dahinter – und nichts doppelt.
+        gesehen = {(e["item_id"], e["item_type"]) for e in eigene}
+        zusatz = [i for i in fremd.get("items", [])
+                  if (i.get("item_id"), i.get("item_type")) not in gesehen]
+        return {"items": (eigene + zusatz)[:SUGGEST_MAX],
+                "count": len(eigene) + fremd.get("count", 0),
+                "page": page, "has_more": fremd.get("has_more", False)}
+    except (requests.RequestException, ValueError) as e:
+        # **Ein Ausfall bei Rebrickable wirft den eigenen Abzug nicht weg.**
+        # Vorher endete die Suche hier mit einem Fehler, obwohl die Antwort
+        # längst dalag.
+        if eigene:
+            return {"items": eigene[:SUGGEST_MAX], "count": len(eigene),
+                    "page": 1, "has_more": False}
+        if isinstance(e, ValueError):
+            raise HTTPException(400, str(e))
+        if isinstance(e, requests.Timeout):
+            raise HTTPException(504, "Rebrickable antwortet nicht")
+        if isinstance(e, requests.HTTPError):
+            code = e.response.status_code if e.response is not None else "?"
+            raise HTTPException(502, "Rebrickable-Key ungültig oder abgelaufen"
+                                if code in (401, 403)
+                                else f"Rebrickable-Fehler ({code})")
         raise HTTPException(502, "Rebrickable nicht erreichbar")
-    except ValueError as e:
-        raise HTTPException(400, str(e))
 
 
 # ---------------------------------------------------------------- Benutzer (Admin)

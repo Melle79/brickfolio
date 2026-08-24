@@ -21,6 +21,7 @@ Abzug in `katalog_index` und die Suche darin. Wie er hineinkommt, steht in
 import time
 
 import pytest
+import requests
 
 import core
 import integrations
@@ -216,3 +217,36 @@ def test_der_eigene_abzug_braucht_kein_rebrickable(client, monkeypatch):
 
     d = client.get("/api/search/suggest?q=roter%20Droide").json()
     assert [i["item_id"] for i in d["items"]] == ["sw0344"], d
+
+
+def test_die_hauptsuche_fragt_zuerst_den_eigenen_abzug(client, monkeypatch):
+    """Sie stieg mit einem 501 aus, wenn kein Rebrickable-Schlüssel
+    hinterlegt war – der eigene Abzug wurde **gar nicht** befragt. Auf
+    Pauls Instanz lagen dabei 19.158 Figuren mit Namen und Beschreibung,
+    und jede Suche im manuellen Erfassen blieb stumm (24.08.2026)."""
+    _zeile("sw0344", "R-3PO Protocol Droid", merkmale="torso red")
+    core.set_setting("rebrickable_key", "")
+
+    d = client.get("/api/search?q=Protocol%20Droid").json()
+    assert [i["item_id"] for i in d["items"]] == ["sw0344"]
+
+
+def test_ein_ausfall_bei_rebrickable_wirft_den_eigenen_nicht_weg(client,
+                                                                monkeypatch):
+    """Vorher endete die Suche mit einem Fehler, obwohl die Antwort längst
+    dalag."""
+    _zeile("sw0344", "R-3PO Protocol Droid", merkmale="torso red")
+    core.set_setting("rebrickable_key", "test-key")
+
+    def kaputt(*a, **k):
+        raise requests.RequestException("weg")
+    monkeypatch.setattr(integrations, "search_catalog", kaputt)
+
+    d = client.get("/api/search?q=Protocol%20Droid").json()
+    assert [i["item_id"] for i in d["items"]] == ["sw0344"]
+
+
+def test_ohne_abzug_und_ohne_rebrickable_bleibt_der_hinweis(client):
+    """Sonst sähe „nichts eingerichtet" aus wie „nichts gefunden"."""
+    core.set_setting("rebrickable_key", "")
+    assert client.get("/api/search?q=Droide").status_code == 501
