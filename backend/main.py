@@ -959,6 +959,90 @@ def katalog_aktiv(body: KatalogAnBody, user: dict = Depends(admin_user)):
     return {"ok": True, "aktiv": body.aktiv}
 
 
+# Wie groß die hochgeladene Katalogdatei höchstens sein darf. BrickLinks
+# Minifiguren-Ausfuhr hat rund 5 MB; 40 MB sind ein Vielfaches davon und
+# trotzdem eine Grenze – ohne Deckel legt ein Fehlgriff den Container lahm.
+KATALOG_DATEI_MAX = 40 * 1024 * 1024
+
+
+@app.post("/api/katalog/datei")
+async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
+    """BrickLinks eigene Katalogdatei einlesen – Nummer, Name, Jahr, Kategorie.
+
+    **Warum das der beste Weg ist.** Der veröffentlichte Index enthält
+    bewusst keine Namen: Die sind BrickLinks Inhalt, und dessen Weitergabe
+    an Dritte untersagen deren Nutzungsbedingungen. Jede Installation holt
+    sie deshalb selbst – bisher über die API, gedrosselt, rund 9.700 Abrufe
+    über gut drei Tage.
+
+    Dieselben Namen stehen in einer Datei, die BrickLink jedem Mitglied zum
+    Herunterladen anbietet (*My Account → Downloads → Catalog Items*). Wer
+    Brickfolio betreibt, hat ohnehin ein Konto – ohne das gibt es keine
+    Preise. Ein Import dauert Sekunden statt Tage, kostet kein Kontingent
+    und ist vollständig: alle 19.158 Figuren, nicht nur die im Abzug.
+
+    Und er ist unbedenklich: Jeder lädt seine eigene Datei. Weitergegeben
+    wird nichts.
+
+    `merkmale` wird **nicht** angefasst – was das Sehmodell beschrieben hat,
+    bleibt. Neue Zeilen kommen ohne Beschreibung herein und stehen damit von
+    selbst in der Warteschlange.
+    """
+    roh = await request.body()
+    if not roh:
+        raise HTTPException(400, "Keine Datei empfangen")
+    if len(roh) > KATALOG_DATEI_MAX:
+        raise HTTPException(413, "Die Datei ist zu groß")
+    if roh[:2] == b"\x1f\x8b":                 # gepackt hochgeladen
+        import gzip
+        try:
+            roh = gzip.decompress(roh)
+        except Exception:
+            raise HTTPException(400, "Die gepackte Datei ist unlesbar")
+
+    import xml.etree.ElementTree as ET
+    jetzt = int(time.time())
+    neu = geaendert = 0
+    try:
+        wurzel = ET.fromstring(roh.decode("utf-8", "replace"))
+    except ET.ParseError as e:
+        raise HTTPException(400, "Kein lesbares XML: %s" % str(e)[:120])
+
+    with core.db() as conn:
+        for el in wurzel.iter("ITEM"):
+            nr = (el.findtext("ITEMID") or "").strip()
+            name = (el.findtext("ITEMNAME") or "").strip()
+            if not nr or not name:
+                continue
+            jahr = (el.findtext("ITEMYEAR") or "").strip()
+            vorher = conn.execute(
+                "SELECT name FROM katalog_index WHERE item_no = ? AND "
+                "item_type = 'minifig'", (nr,)).fetchone()
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " img_url, category_id, jahr, updated_at)"
+                " VALUES (?, 'minifig', ?, ?, ?, ?, ?, ?)"
+                " ON CONFLICT(item_no, item_type) DO UPDATE SET"
+                " name = excluded.name, such = excluded.such,"
+                " category_id = excluded.category_id, jahr = excluded.jahr,"
+                " img_url = excluded.img_url,"
+                " updated_at = excluded.updated_at",
+                (nr, name, _wortanfaenge(name)[0],
+                 "https://img.bricklink.com/ML/%s.jpg" % nr,
+                 (el.findtext("CATEGORY") or "").strip(),
+                 int(jahr) if jahr.isdigit() else 0, jetzt))
+            if vorher is None:
+                neu += 1
+            elif vorher["name"] != name:
+                geaendert += 1
+    with core.db() as conn:
+        gesamt = conn.execute(
+            "SELECT COUNT(*) AS n FROM katalog_index").fetchone()["n"]
+    print("[brickfolio] Katalogdatei eingelesen: %d neu, %d berichtigt"
+          % (neu, geaendert), flush=True)
+    return {"ok": True, "neu": neu, "berichtigt": geaendert, "gesamt": gesamt}
+
+
 @app.post("/api/katalog/holen")
 def katalog_holen_jetzt(user: dict = Depends(admin_user)):
     """Von Hand nachziehen, statt bis zum nächsten Zwölfstundenlauf zu warten."""
@@ -1998,7 +2082,7 @@ def _offer_percent() -> int:
 def config(user: dict = Depends(current_user)):
     return {"bricklink_prices": integrations.bricklink_enabled(),
             "bricklink_lookup": integrations.bricklink_enabled(),
-            "catalog_search": integrations.rebrickable_enabled(),
+            "catalog_search": _katalogsuche_moeglich(),
             "offer_percent": _offer_percent(),
             "owner_name": _owner_name(),
             "currency": integrations.currency(),
@@ -2065,6 +2149,24 @@ def bricklink_lookup(item_type: str, item_no: str,
         if treffer:
             return treffer
     raise HTTPException(404, _unbekannt_meldung(nummer, katalog=True))
+
+
+def _katalogsuche_moeglich() -> bool:
+    """Kann diese Instanz überhaupt im Katalog suchen?
+
+    Bis 2.45.0 hing das allein an Rebrickable – und die Oberfläche zeigte
+    „Katalogsuche ist nicht eingerichtet", **bevor** sie den Server fragte.
+    Auf Pauls Instanz lagen dabei 19.158 Figuren im eigenen Abzug, und die
+    Suche blieb trotzdem stumm (24.08.2026).
+
+    Ein eigener Abzug mit Inhalt reicht für Figuren völlig; Rebrickable
+    braucht es erst für Sets, Teile und ganz neue Figuren.
+    """
+    if integrations.rebrickable_enabled():
+        return True
+    with core.db() as conn:
+        return bool(conn.execute(
+            "SELECT 1 FROM katalog_index LIMIT 1").fetchone())
 
 
 @app.get("/api/search")
@@ -2944,7 +3046,7 @@ def _mask(value: str) -> str:
 def _config_flags() -> dict:
     return {"bricklink_prices": integrations.bricklink_enabled(),
             "bricklink_lookup": integrations.bricklink_enabled(),
-            "catalog_search": integrations.rebrickable_enabled()}
+            "catalog_search": _katalogsuche_moeglich()}
 
 
 @app.get("/api/settings")

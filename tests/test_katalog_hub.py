@@ -261,3 +261,71 @@ def test_wieder_eingeschaltet_holt_er_von_selbst(client, monkeypatch):
     r = client.post("/api/katalog/aktiv", json={"aktiv": True}).json()
     assert r["aktiv"] is True
     assert core.get_setting("katalog_aus") == ""
+
+
+# ------------------------------------- Die Katalogdatei selbst einlesen
+
+XML_PROBE = """<?xml version="1.0" encoding="UTF-8"?>
+<CATALOG>
+  <ITEM><ITEMTYPE>M</ITEMTYPE><ITEMID>sw0344</ITEMID>
+    <ITEMNAME>R-3PO Protocol Droid</ITEMNAME><CATEGORY>65</CATEGORY>
+    <ITEMYEAR>2011</ITEMYEAR></ITEM>
+  <ITEM><ITEMTYPE>M</ITEMTYPE><ITEMID>cas001</ITEMID>
+    <ITEMNAME>Dragon Master</ITEMNAME><CATEGORY>53</CATEGORY>
+    <ITEMYEAR>1993</ITEMYEAR></ITEM>
+</CATALOG>"""
+
+
+def test_die_katalogdatei_bringt_die_namen_in_sekunden(client):
+    """Der veröffentlichte Index enthält bewusst keine Namen – die sind
+    BrickLinks Inhalt. Bisher holte jede Installation sie über die API:
+    rund 9.700 Abrufe über gut drei Tage. Dieselben Namen stehen in einer
+    Datei, die BrickLink jedem Mitglied zum Herunterladen anbietet."""
+    d = client.post("/api/katalog/datei", content=XML_PROBE).json()
+    assert d["neu"] == 2 and d["gesamt"] == 2
+    with core.db() as conn:
+        r = conn.execute("SELECT name, such, jahr FROM katalog_index "
+                         "WHERE item_no = 'sw0344'").fetchone()
+    assert r["name"] == "R-3PO Protocol Droid"
+    assert r["such"] == "r3poprotocoldroid"
+    assert r["jahr"] == 2011
+    # Und danach findet die Suche sie über den Namen.
+    assert main._katalog_suchen("Protocol Droid")
+
+
+def test_die_beschreibung_ueberlebt_den_import(client):
+    """Was das Sehmodell einmal beschrieben hat, bleibt – sonst wäre die
+    teuerste Arbeit im ganzen Ablauf mit einem Klick weg."""
+    _datei_import = XML_PROBE
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at) VALUES ('sw0344', 'minifig', '', '',"
+            " 'torso red black chest panel', 1)")
+    client.post("/api/katalog/datei", content=_datei_import)
+    with core.db() as conn:
+        r = conn.execute("SELECT name, merkmale FROM katalog_index "
+                         "WHERE item_no = 'sw0344'").fetchone()
+    assert r["merkmale"] == "torso red black chest panel"
+    assert r["name"] == "R-3PO Protocol Droid"
+
+
+def test_eine_zu_grosse_datei_wird_abgewiesen(client):
+    """Ohne Deckel legt ein Fehlgriff den Container lahm."""
+    r = client.post("/api/katalog/datei",
+                    content=b"x" * (main.KATALOG_DATEI_MAX + 1))
+    assert r.status_code == 413
+
+
+def test_unlesbares_xml_gibt_einen_klaren_fehler(client):
+    r = client.post("/api/katalog/datei", content="kein XML")
+    assert r.status_code == 400 and "XML" in r.json()["detail"]
+
+
+def test_die_suche_gilt_als_eingerichtet_wenn_der_abzug_etwas_hat(client):
+    """Die Oberfläche zeigte „Katalogsuche ist nicht eingerichtet", **bevor**
+    sie den Server fragte – das Kennzeichen hing allein an Rebrickable."""
+    core.set_setting("rebrickable_key", "")
+    assert client.get("/api/config").json()["catalog_search"] is False
+    client.post("/api/katalog/datei", content=XML_PROBE)
+    assert client.get("/api/config").json()["catalog_search"] is True

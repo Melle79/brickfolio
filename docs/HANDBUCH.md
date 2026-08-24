@@ -548,7 +548,15 @@ braucht, schaltet ihn in den Einstellungen ab; der bereits geholte Bestand
 bleibt dabei liegen und wäre sonst beim Wiedereinschalten noch einmal zu
 holen.
 
-> Den **Namen** schlägt deshalb jede Installation über ihren eigenen
+> **Der schnelle Weg zu den Namen:** BrickLink bietet seinen Katalog jedem
+> Mitglied zum Herunterladen an – *My Account → Downloads → Catalog Items*,
+> Item Type *Minifigures*, Format XML. Diese Datei lässt sich in den
+> Einstellungen einlesen, und alle 19.158 Namen stehen **sofort** da statt
+> über drei Tage einzeln abgerufen zu werden. Es kostet kein Kontingent,
+> die Beschreibungen bleiben erhalten, und es ist unbedenklich: Jeder lädt
+> seine eigene Datei, weitergegeben wird nichts.
+>
+> Den **Namen** schlägt sonst jede Installation über ihren eigenen
 > BrickLink-Zugang nach, gedrosselt im Hintergrund. Beim ersten Mal sind das
 > rund 9.700 Abrufe über ein paar Tage – dasselbe Kontingent trägt die
 > Preise, und die braucht man täglich. Bis ein Name da ist, steht in der

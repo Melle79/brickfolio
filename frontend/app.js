@@ -5767,6 +5767,44 @@ async function begriffLoeschen(begriff) {
    2.41.0 erzeugt der Hub den Abzug, diese Instanz holt ihn nur.
    Uebrig bleibt eine Zeile, die sagt, ob das ankommt. */
 
+/* BrickLinks eigene Katalogdatei einlesen. Der veröffentlichte Index
+   enthält bewusst keine Namen – die sind BrickLinks Inhalt, und dessen
+   Weitergabe an Dritte untersagen deren Nutzungsbedingungen. Jeder lädt
+   deshalb seine eigene Datei; weitergegeben wird nichts. */
+async function katalogDateiWaehlen() {
+  $("katalog-datei").click();
+}
+
+async function katalogDateiLesen(ev) {
+  const datei = ev.target.files && ev.target.files[0];
+  if (!datei) return;
+  const out = $("katalog-datei-stand");
+  out.textContent = tr("Wird eingelesen …");
+  try {
+    const antwort = await fetch("/api/katalog/datei", {
+      method: "POST",
+      headers: { authorization: "Bearer " + state.token,
+                 "content-type": "application/octet-stream" },
+      body: datei,
+    });
+    const d = await antwort.json().catch(() => ({}));
+    if (!antwort.ok) throw new Error(d.detail || "Fehler " + antwort.status);
+    out.textContent = tr("{n} neu, {b} berichtigt · {g} Figuren im Abzug",
+      { n: d.neu, b: d.berichtigt, g: d.gesamt });
+    katalogStand();
+    // Die Suche kann jetzt auch ohne Rebrickable etwas – das Kennzeichen
+    // kommt vom Server und muss neu geholt werden.
+    try {
+      const c = await api("/config");
+      state.catalogSearch = c.catalog_search;
+    } catch (e) { /* nicht schlimm */ }
+  } catch (e) {
+    out.textContent = e.message;
+  } finally {
+    ev.target.value = "";        // dieselbe Datei erneut wählbar lassen
+  }
+}
+
 async function katalogStand() {
   const feld = $("katalog-stand");
   if (!feld) return;
@@ -10531,6 +10569,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-reload-models").addEventListener("click", modelleLaden);
   $("btn-begriffe").addEventListener("click", begriffeFenster);
+  $("btn-katalog-datei").addEventListener("click", katalogDateiWaehlen);
+  $("katalog-datei").addEventListener("change", katalogDateiLesen);
   $("katalog-aktiv").addEventListener("change", async (ev) => {
     // Vor dem Warten festhalten: Danach ist `currentTarget` null.
     // (Das Wort a-w-a-i-t steht hier bewusst nicht – der Wächter in
