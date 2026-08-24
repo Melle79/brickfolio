@@ -37,6 +37,14 @@ def scrub(text):
 
 
 KATALOG_TAKT = 1.0            # Sekunden zwischen zwei Abrufen
+
+# Buchstaben, mit denen BrickLink Varianten kennzeichnet. „Die erste
+# Variante bekommt ueblicherweise `a`, die zweite `b`" -- laut offizieller
+# Dokumentation. Abgebrochen wird beim ersten Fehlgriff: Wer kein `b` hat,
+# hat auch kein `c`. Bis `f` reicht weit; mehr Varianten hat kaum eine
+# Figur, und jeder weitere Buchstabe kostet nur dort etwas, wo es die
+# vorherigen wirklich gibt.
+VARIANTEN = ("a", "b", "c", "d", "e", "f")
 # Lücken sind normal: BrickLink vergibt Nummern, die es später nicht mehr
 # gibt. Beim ersten 404 abzubrechen hieße, mitten im Katalog stehen zu
 # bleiben. 25 am Stück heißt dagegen zuverlässig: Hier ist das Ende.
@@ -161,6 +169,28 @@ def _katalog_anbau(praefix: str = "sw"):
                     _katalog_lauf["neu"] += 1
                 _katalog_lauf["gefunden"] += 1
                 luecke = 0
+                # **Varianten sind eigene Eintraege.** Die offizielle
+                # Dokumentation nennt das Format
+                # `{Series}{Sequential}{Variant}` mit Beispiel `sw0073a` --
+                # und `sw0073a` ist tatsaechlich eine andere Figur als
+                # `sw0073` („Dark Bluish Gray Body" statt „Light and Dark
+                # Gray"). Ohne diese Schleife fehlt uns jede davon.
+                #
+                # Kostet einen Abruf je vorhandener Figur: Bei den meisten
+                # gibt es kein `a`, und dann ist nach einem Versuch Schluss.
+                # Das ist der Preis fuer Vollstaendigkeit, und er faellt nur
+                # dort an, wo wirklich eine Figur steht.
+                for zusatz in VARIANTEN:
+                    if _katalog_lauf["stop"]:
+                        break
+                    try:
+                        d2 = bricklink_item("minifig", item_no + zusatz)
+                    except Exception:
+                        break            # keine weitere Variante
+                    if _katalog_eintragen(item_no + zusatz, d2):
+                        _katalog_lauf["neu"] += 1
+                    _katalog_lauf["gefunden"] += 1
+                    time.sleep(KATALOG_TAKT)
             except requests.HTTPError as e:
                 code = e.response.status_code if e.response is not None else 0
                 if code == 404:

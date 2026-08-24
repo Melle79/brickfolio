@@ -359,3 +359,48 @@ def test_ein_einzelnes_zeichen_ist_gueltig(client):
     Katalog gibt und ein Teil davon genau dort hängt."""
     r = client.post("/api/themen", json={"praefix": "s"})
     assert r.status_code == 200 and r.json()["praefix"] == "s"
+
+
+def test_varianten_werden_mitgenommen(client, monkeypatch):
+    """Die offizielle Dokumentation nennt das Format
+    `{Series}{Sequential}{Variant}` mit Beispiel `sw0073a` – und das ist
+    tatsächlich eine andere Figur als `sw0073` („Dark Bluish Gray Body"
+    statt „Light and Dark Gray"). Ohne die Variantenschleife fehlt jede
+    davon."""
+    import katalog
+    import laeufe
+
+    katalog_daten = {
+        "zz001": "Grundfigur",
+        "zz001a": "Variante A",
+        "zz001b": "Variante B",
+        # kein `c` – dort muss die Schleife abbrechen
+    }
+    gefragt = []
+
+    def fake(item_type, item_no):
+        gefragt.append(item_no)
+        if item_no not in katalog_daten:
+            import requests
+            resp = requests.Response()
+            resp.status_code = 404
+            raise requests.HTTPError("404", response=resp)
+        return {"name": katalog_daten[item_no], "category_id": 1,
+                "year_released": 2000}
+
+    monkeypatch.setattr(laeufe, "bricklink_item", fake)
+    monkeypatch.setattr(laeufe, "_katalog_breite", lambda p: 3)
+    monkeypatch.setattr(laeufe, "KATALOG_TAKT", 0)
+    monkeypatch.setattr(laeufe, "KATALOG_LUECKE", 2)
+    with katalog.db() as conn:
+        conn.execute("INSERT INTO katalog_lauf (praefix, breite) "
+                     "VALUES ('zz', 3)")
+
+    laeufe._katalog_anbau("zz")
+
+    with katalog.db() as conn:
+        drin = sorted(r["item_no"] for r in
+                      conn.execute("SELECT item_no FROM katalog_index"))
+    assert drin == ["zz001", "zz001a", "zz001b"]
+    # Nach dem fehlenden `c` darf sie nicht weitersuchen.
+    assert "zz001d" not in gefragt

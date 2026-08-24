@@ -190,6 +190,28 @@ STANDARD_THEMEN = [
     "s",        # Classic Town -- **ein einziger Buchstabe**. Deshalb laesst
                 # die Pruefung ein Zeichen zu; „mindestens zwei" waere hier
                 # gescheitert.
+    # --- beschreibende Praefixe ---
+    #
+    # Die offizielle Dokumentation sagt es deutlich: Die „Series No." steht
+    # fuer „theme, subtheme, **or distinguishing features** of the
+    # minifigure. The distinguishing feature used for this purpose is often
+    # the torso pattern." Beispiele dort: `boat004`, `firec016`, `spp010`.
+    #
+    # Das heisst: Die alten Stadtfiguren haengen nicht an Themen, sondern an
+    # Merkmalen -- und genau dort steckt ein grosser Teil der Figuren, die
+    # uns fehlen. Zu erraten sind sie kaum; diese elf kamen aus den
+    # Doku-Beispielen und naheliegenden Nachbarn.
+    "spp",      # Space Port
+    "boat",     # Boot
+    "firec",    # Feuerwehr (klassisch)
+    "fire",     # Feuerwehr (City Center)
+    "cop",      # Polizei
+    "chef",     # Koch
+    "pln",      # einfarbige Torsos ohne Muster
+    "div",      # Town, gemischt
+    "doc",      # Arzt
+    "hgh",      # Highway
+    "res",      # Kuestenwache
 ]
 
 # Die letzten 22 kamen am 24.08.2026 dazu, und der Weg dorthin ist der
@@ -236,6 +258,10 @@ THEMENNAMEN = {
     "nex": "Nexo Knights", "drm": "Dreamzzz", "toy": "Toy Story",
     "bat": "Batman", "alp": "Alpha Team", "scd": "Scooby-Doo",
     "wtr": "Town: Kellner", "s": "Classic Town",
+    "spp": "Space Port", "boat": "Boot", "firec": "Feuerwehr (klassisch)",
+    "fire": "Feuerwehr (City Center)", "cop": "Polizei", "chef": "Koch",
+    "pln": "Torso ohne Muster", "div": "Town (gemischt)", "doc": "Arzt",
+    "hgh": "Highway", "res": "Küstenwache",
 }
 
 
