@@ -36,6 +36,40 @@ async function hmacSha1(schluessel, text) {
  * - Die Parameter müssen **sortiert** in die Basis, und zwar die aus der
  *   Abfrage **zusammen** mit den `oauth_*`-Feldern.
  */
+/**
+ * Der BrickLink-Zugang – aus der Datenbank, sonst aus den Secrets.
+ *
+ * Die Konsole trägt ihn in `hub_settings` ein; ein Wechsel braucht damit
+ * keinen Rechner mit angemeldetem Wrangler. Wer die Werte lieber
+ * verschlüsselt liegen hat, setzt sie weiter mit `wrangler secret put` –
+ * sie gelten, solange in der Datenbank nichts steht.
+ *
+ * Gemerkt wird das Ergebnis je Isolat: Sonst kostete jeder einzelne
+ * BrickLink-Abruf vier zusätzliche Datenbankzeilen, und bei zwanzig Abrufen
+ * je Takt ist das reine Verschwendung.
+ */
+let _zugang = null;
+
+export async function blZugang(env) {
+  if (_zugang) return _zugang;
+  const rows = (await env.DB.prepare(
+    "SELECT name, value FROM hub_settings WHERE name IN "
+    + "('bl_consumer_key','bl_consumer_secret','bl_token','bl_token_secret')")
+    .all()).results || [];
+  const db = Object.fromEntries(rows.map((r) => [r.name.toUpperCase(), r.value]));
+  _zugang = {
+    BL_CONSUMER_KEY: db.BL_CONSUMER_KEY || env.BL_CONSUMER_KEY || "",
+    BL_CONSUMER_SECRET: db.BL_CONSUMER_SECRET || env.BL_CONSUMER_SECRET || "",
+    BL_TOKEN: db.BL_TOKEN || env.BL_TOKEN || "",
+    BL_TOKEN_SECRET: db.BL_TOKEN_SECRET || env.BL_TOKEN_SECRET || "",
+  };
+  return _zugang;
+}
+
+/** Nach dem Ändern in der Konsole: Der gemerkte Zugang ist überholt. */
+export function zugangVergessen() { _zugang = null; }
+
+
 export async function oauthKopf(env, basis, suche = {}, nonce = "",
                                zeitstempel = "") {
   const oauth = {
@@ -59,7 +93,9 @@ export async function oauthKopf(env, basis, suche = {}, nonce = "",
 
 async function blHolen(env, pfad, suche = {}) {
   const basis = "https://api.bricklink.com/api/store/v1" + pfad;
-  const kopf = await oauthKopf(env, basis, suche);
+  // `oauthKopf` liest die vier Werte aus dem, was hier hereingereicht wird –
+  // deshalb den zusammengeführten Zugang übergeben, nicht `env` selbst.
+  const kopf = await oauthKopf(await blZugang(env), basis, suche);
   const url = basis + (Object.keys(suche).length
     ? "?" + Object.keys(suche).map((k) => rfc3986(k) + "=" + rfc3986(suche[k])).join("&")
     : "");

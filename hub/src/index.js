@@ -7,7 +7,7 @@
  */
 
 import { katalogTakt, abklappern, beschreiben, antwortLesen, merkmaleBauen,
-         praefixPruefen, BILD_MODELL } from "./katalog.js";
+         praefixPruefen, blZugang, BILD_MODELL } from "./katalog.js";
 
 const MAX_OFFERS = 2000;              // Obergrenze je Instanz (Missbrauchsschutz)
 const MAX_THUMB = 30000;              // Vorschaubild einer eigenen Figur
@@ -23,7 +23,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.9.0";
+const HUB_VERSION = "1.10.0";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -1110,9 +1110,60 @@ async function adminKatalogStand(env) {
   const z = await env.DB.prepare(
     "SELECT COUNT(*) AS gesamt, "
     + "SUM(CASE WHEN merkmale = '' THEN 1 ELSE 0 END) AS offen, "
-    + "SUM(CASE WHEN merkmale NOT IN ('', '–') THEN 1 ELSE 0 END) AS beschrieben"
+    + "SUM(CASE WHEN merkmale NOT IN ('', '–') THEN 1 ELSE 0 END) "
+    + "AS beschrieben FROM katalog"
   ).first();
-  return json({ themen, zeilen: z || {}, modell: BILD_MODELL });
+  return json({ themen, zeilen: z || {}, modell: BILD_MODELL,
+                zugang: await zugangStand(env) });
+}
+
+
+/* --------------------------------------------- BrickLink-Zugang (Konsole)
+
+   Die vier Werte gehören eigentlich in `wrangler secret put` – dort liegen
+   sie verschlüsselt und sind nicht zurücklesbar. Sven wollte sie in der
+   Konsole eintragen können, weil ein Wechsel sonst einen Rechner mit
+   angemeldetem Wrangler voraussetzt. Das ist ein fairer Einwand.
+
+   Der Preis: In D1 stehen sie im Klartext. Was sich dagegen tun ließ, ist
+   getan – die Konsole gibt sie **nie** zurück, nur „gesetzt (24 Zeichen)".
+   Das schützt nicht gegen Datenbankzugriff, aber gegen alles davor. */
+
+const ZUGANG_FELDER = ["bl_consumer_key", "bl_consumer_secret",
+                       "bl_token", "bl_token_secret"];
+
+async function zugangStand(env) {
+  const rows = (await env.DB.prepare(
+    "SELECT name, length(value) AS n FROM hub_settings WHERE name IN "
+    + "('bl_consumer_key','bl_consumer_secret','bl_token','bl_token_secret')")
+    .all()).results || [];
+  const da = Object.fromEntries(rows.map((r) => [r.name, r.n]));
+  return Object.fromEntries(ZUGANG_FELDER.map((f) => [f,
+    da[f] ? `gesetzt (${da[f]} Zeichen)` : (env[f.toUpperCase()]
+      ? "als Secret hinterlegt" : "")]));
+}
+
+async function adminKatalogZugang(req, env) {
+  const body = await req.json().catch(() => ({}));
+  const jetzt = now();
+  const stmts = [];
+  for (const f of ZUGANG_FELDER) {
+    if (!(f in body)) continue;               // nicht angefasst = unverändert
+    const wert = String(body[f] || "").trim();
+    if (!wert) {
+      stmts.push(env.DB.prepare("DELETE FROM hub_settings WHERE name = ?")
+        .bind(f));
+      continue;
+    }
+    if (wert.length > 200) return err(400, "Wert zu lang");
+    stmts.push(env.DB.prepare(
+      "INSERT INTO hub_settings (name, value, updated_at) VALUES (?, ?, ?) "
+      + "ON CONFLICT(name) DO UPDATE SET value = excluded.value, "
+      + "updated_at = excluded.updated_at").bind(f, wert, jetzt));
+  }
+  if (!stmts.length) return err(400, "Nichts zu speichern");
+  await env.DB.batch(stmts);
+  return json({ ok: true, zugang: await zugangStand(env) });
 }
 
 async function adminKatalogThema(req, env, method, praefix) {
@@ -1180,11 +1231,16 @@ async function adminRoute(req, member, env, p, method) {
   if (p === "/v1/admin/katalog/lauf" && method === "POST") {
     return await adminKatalogLauf(req, env);
   }
+  if (p === "/v1/admin/katalog/zugang" && method === "POST") {
+    return await adminKatalogZugang(req, env);
+  }
   if (p === "/v1/admin/katalog/pruefen" && method === "GET") {
     const nr = (new URL(req.url).searchParams.get("praefix") || "")
       .trim().toLowerCase();
     if (!/^[a-z]{2,6}$/.test(nr)) return err(400, "Nur zwei bis sechs Buchstaben");
-    if (!env.BL_CONSUMER_KEY) return err(400, "BrickLink ist nicht eingerichtet");
+    if (!(await blZugang(env)).BL_CONSUMER_KEY) {
+      return err(400, "BrickLink ist nicht eingerichtet");
+    }
     try {
       return json(await praefixPruefen(env, nr));
     } catch (e) {
