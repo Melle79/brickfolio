@@ -247,9 +247,20 @@ class ThemaBody(BaseModel):
 
 
 def _praefix(roh):
+    """Ein Präfix prüfen, bevor es in eine Adresse wandert.
+
+    **Ziffern sind erlaubt.** „Nur Buchstaben" war zu eng: BrickLink führt
+    `4j` für die Reihe „4 Juniors" – `4j011` ist Cannonball Jimmy. Am
+    24.08.2026 wies die Konsole das Thema deshalb ab, obwohl es die Figuren
+    gibt.
+
+    Was nicht durchkommt, ist alles andere: Das Präfix wird an eine
+    BrickLink-Adresse angehängt, und „../" oder ein Fragezeichen hätten
+    dort nichts zu suchen.
+    """
     p = (roh or "").strip().lower()
-    if not re.fullmatch(r"[a-z]{2,6}", p):
-        raise HTTPException(400, "Nur zwei bis sechs Buchstaben")
+    if not re.fullmatch(r"[a-z0-9]{2,6}", p):
+        raise HTTPException(400, "Nur zwei bis sechs Buchstaben oder Ziffern")
     return p
 
 

@@ -89,7 +89,7 @@ def test_nur_buchstaben_als_praefix(client):
     """Das Präfix wandert in eine Adresse – „../" hätte dort nichts zu
     suchen. Zu lange Werte weist schon Pydantic ab (422), der Rest der
     Prüfung liegt im Endpunkt (400); beides ist eine Ablehnung."""
-    for unsinn in ("x", "../etc", "sw1", "viel-zu-lang"):
+    for unsinn in ("x", "../etc", "viel-zu-lang", "sw 1", "a/b"):
         code = client.post("/api/themen", json={"praefix": unsinn}).status_code
         assert code >= 400, "%s wurde angenommen" % unsinn
 
@@ -341,3 +341,11 @@ def test_bricklink_namen_werden_entschluesselt(client, monkeypatch):
     monkeypatch.setattr(katalog, "bl_auth", lambda: None)
     d = katalog.bricklink_item("minifig", "cre001")
     assert d["name"] == "Tina (4143766)"
+
+
+def test_ziffern_im_praefix_sind_erlaubt(client):
+    """BrickLink führt `4j` für die Reihe „4 Juniors" – `4j011` ist
+    Cannonball Jimmy. „Nur Buchstaben" wies das Thema ab, obwohl es die
+    Figuren gibt (gesehen am 24.08.2026)."""
+    r = client.post("/api/themen", json={"praefix": "4j"})
+    assert r.status_code == 200 and r.json()["praefix"] == "4j"
