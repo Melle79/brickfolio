@@ -23,3 +23,14 @@ __pycache__/
 # Datei im Klon wurde später mit commitet, und der Wächter zog wochenlang
 # nicht mehr nach.
 .claude/worktrees/
+
+# Katalogdaten gehen nicht auf GitHub.
+#
+# BrickLinks Nutzungsbedingungen (gemessen 21.08.2026): „not to distribute,
+# disclose, upload, or transfer to any third party any content or data you
+# receive from or which is displayed on the Site". Das Werkzeug darf ins
+# Repo, die abgezogenen Daten nicht. Am 24.08.2026 lag ein 4,4-MB-Abzug
+# schon unter hub/seed/, bevor es auffiel.
+hub/seed/
+*.katalog.sql
+abzug*.sql
