@@ -5790,7 +5790,10 @@ async function katalogDateiLesen(ev) {
     const d = await antwort.json().catch(() => ({}));
     if (!antwort.ok) throw new Error(d.detail || "Fehler " + antwort.status);
     out.textContent = tr("{n} neu, {b} berichtigt · {g} Figuren im Abzug",
-      { n: d.neu, b: d.berichtigt, g: d.gesamt });
+      { n: d.neu, b: d.berichtigt, g: d.gesamt })
+      + (d.uebersprungen
+        ? " " + tr("({u} andere Artikel übersprungen)", { u: d.uebersprungen })
+        : "");
     katalogStand();
     // Die Suche kann jetzt auch ohne Rebrickable etwas – das Kennzeichen
     // kommt vom Server und muss neu geholt werden.

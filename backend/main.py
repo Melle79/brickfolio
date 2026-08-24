@@ -964,6 +964,12 @@ def katalog_aktiv(body: KatalogAnBody, user: dict = Depends(admin_user)):
 # trotzdem eine Grenze – ohne Deckel legt ein Fehlgriff den Container lahm.
 KATALOG_DATEI_MAX = 40 * 1024 * 1024
 
+# BrickLinks Kürzel für die Artikelart in der Ausfuhrdatei. Der Abzug führt
+# nur Minifiguren; Teile und Sets haben eigene Wege in der App und gehören
+# nicht in dieselbe Tabelle.
+ITEM_ARTEN = {"M": "minifig", "S": "set", "P": "part", "B": "book",
+              "G": "gear", "C": "catalog", "I": "instruction", "O": "box"}
+
 
 @app.post("/api/katalog/datei")
 async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
@@ -1002,7 +1008,7 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
 
     import xml.etree.ElementTree as ET
     jetzt = int(time.time())
-    neu = geaendert = 0
+    neu = geaendert = uebersprungen = 0
     try:
         wurzel = ET.fromstring(roh.decode("utf-8", "replace"))
     except ET.ParseError as e:
@@ -1013,6 +1019,15 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
             nr = (el.findtext("ITEMID") or "").strip()
             name = (el.findtext("ITEMNAME") or "").strip()
             if not nr or not name:
+                continue
+            # **Die Artikelart steht in der Datei – sie ist zu beachten.**
+            # Ohne diese Zeile landete am 24.08.2026 eine `Parts.xml` als
+            # 118.000 „Minifiguren" im Abzug: 137.156 Zeilen statt 19.158,
+            # und die Suche nach einer Figur lieferte Steine. Wer die
+            # falsche Datei erwischt, soll das erfahren, nicht ausbaden.
+            art = ITEM_ARTEN.get((el.findtext("ITEMTYPE") or "").strip().upper())
+            if art != "minifig":
+                uebersprungen += 1
                 continue
             jahr = (el.findtext("ITEMYEAR") or "").strip()
             vorher = conn.execute(
@@ -1038,9 +1053,18 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
     with core.db() as conn:
         gesamt = conn.execute(
             "SELECT COUNT(*) AS n FROM katalog_index").fetchone()["n"]
-    print("[brickfolio] Katalogdatei eingelesen: %d neu, %d berichtigt"
-          % (neu, geaendert), flush=True)
-    return {"ok": True, "neu": neu, "berichtigt": geaendert, "gesamt": gesamt}
+    print("[brickfolio] Katalogdatei eingelesen: %d neu, %d berichtigt, "
+          "%d übersprungen" % (neu, geaendert, uebersprungen), flush=True)
+    if uebersprungen and not neu and not geaendert:
+        # Die ganze Datei war für uns nichts – das ist fast sicher die
+        # falsche, und ein stilles „0 neu" ließe einen daran zweifeln, ob
+        # der Knopf überhaupt etwas tut.
+        raise HTTPException(
+            400, "Diese Datei enthält keine Minifiguren (%d andere Artikel "
+                 "übersprungen). Gebraucht wird der Download mit Item Type "
+                 "„Minifigures\"." % uebersprungen)
+    return {"ok": True, "neu": neu, "berichtigt": geaendert,
+            "uebersprungen": uebersprungen, "gesamt": gesamt}
 
 
 @app.post("/api/katalog/holen")
@@ -2195,7 +2219,12 @@ def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
     eigene = _katalog_suchen(q, item_type=item_type) if page == 1 else []
 
     if not integrations.rebrickable_enabled():
-        if eigene:
+        if eigene or _katalogsuche_moeglich():
+            # **Kein 501, wenn gesucht werden konnte.** „roter droide" findet
+            # im englischen Abzug nichts – das ist „nichts gefunden", nicht
+            # „nicht eingerichtet". Der Unterschied ist der zwischen einem
+            # Hinweis, der stimmt, und einem, der in die Irre führt
+            # (gemeldet am 24.08.2026).
             return {"items": eigene[:SUGGEST_MAX], "count": len(eigene),
                     "page": 1, "has_more": False}
         raise HTTPException(501, "Katalogsuche nicht konfiguriert "

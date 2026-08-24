@@ -329,3 +329,46 @@ def test_die_suche_gilt_als_eingerichtet_wenn_der_abzug_etwas_hat(client):
     assert client.get("/api/config").json()["catalog_search"] is False
     client.post("/api/katalog/datei", content=XML_PROBE)
     assert client.get("/api/config").json()["catalog_search"] is True
+
+
+XML_TEILE = """<?xml version="1.0" encoding="UTF-8"?>
+<CATALOG>
+  <ITEM><ITEMTYPE>P</ITEMTYPE><ITEMID>3001</ITEMID>
+    <ITEMNAME>Brick 2 x 4</ITEMNAME><CATEGORY>5</CATEGORY></ITEM>
+  <ITEM><ITEMTYPE>S</ITEMTYPE><ITEMID>7140-1</ITEMID>
+    <ITEMNAME>X-wing Fighter</ITEMNAME><CATEGORY>65</CATEGORY></ITEM>
+</CATALOG>"""
+
+
+def test_eine_teiledatei_landet_nicht_im_figurenabzug(client):
+    """Am 24.08.2026 hat Sven `Parts.xml` eingelesen – und 118.000 Steine
+    standen als Minifiguren im Abzug: 137.156 Zeilen statt 19.158. Die
+    Artikelart steht in der Datei; sie zu ignorieren war der Fehler."""
+    r = client.post("/api/katalog/datei", content=XML_TEILE)
+    assert r.status_code == 400
+    assert "Minifiguren" in r.json()["detail"]
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM "
+                            "katalog_index").fetchone()["n"] == 0
+
+
+def test_gemischte_datei_nimmt_nur_die_figuren(client):
+    gemischt = XML_PROBE.replace("</CATALOG>", """
+  <ITEM><ITEMTYPE>P</ITEMTYPE><ITEMID>3001</ITEMID>
+    <ITEMNAME>Brick 2 x 4</ITEMNAME></ITEM>
+</CATALOG>""")
+    d = client.post("/api/katalog/datei", content=gemischt).json()
+    assert d["neu"] == 2 and d["uebersprungen"] == 1
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) AS n FROM katalog_index "
+                            "WHERE item_no = '3001'").fetchone()["n"] == 0
+
+
+def test_kein_501_wenn_der_abzug_gefuellt_ist(client):
+    """„roter droide" findet im englischen Abzug nichts – das ist „nichts
+    gefunden", nicht „nicht eingerichtet". Der Unterschied ist der zwischen
+    einem Hinweis, der stimmt, und einem, der in die Irre führt."""
+    core.set_setting("rebrickable_key", "")
+    client.post("/api/katalog/datei", content=XML_PROBE)
+    r = client.get("/api/search?q=roter%20droide")
+    assert r.status_code == 200 and r.json()["items"] == []
