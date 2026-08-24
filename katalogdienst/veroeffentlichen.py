@@ -23,7 +23,7 @@ import os
 
 import requests
 
-from katalog import db
+from katalog import db, konfig
 
 USER_AGENT = "Brickfolio-Katalogdienst"
 
@@ -33,11 +33,11 @@ OEFFENTLICH = ("item_no", "art", "farben", "merkmale", "modell")
 
 
 def repo():
-    return (os.environ.get("GITHUB_REPO") or "").strip()
+    return (konfig("GITHUB_REPO") or "").strip()
 
 
 def bereit():
-    return bool(repo() and os.environ.get("GITHUB_TOKEN"))
+    return bool(repo() and konfig("GITHUB_TOKEN"))
 
 
 def index_bauen():
@@ -60,10 +60,24 @@ def index_bauen():
     return "\n".join(zeilen) + "\n", len(zeilen)
 
 
+def repo_abfragen():
+    """Gibt es das Repo, und dürfen wir hinein? Für die Verbindungsprüfung.
+
+    Eigene Funktion, weil `_github` einen Pfad anhängt – mit leerem Pfad
+    entstünde `.../repos/x/y/` mit Schrägstrich am Ende, und darauf
+    antwortet GitHub mit 404, auch wenn es das Repo gibt.
+    """
+    return requests.get(
+        "https://api.github.com/repos/%s" % repo(),
+        headers={"Authorization": "Bearer " + konfig("GITHUB_TOKEN"),
+                 "Accept": "application/vnd.github+json",
+                 "User-Agent": USER_AGENT}, timeout=30)
+
+
 def _github(methode, pfad, **kw):
     r = requests.request(
         methode, "https://api.github.com/repos/%s/%s" % (repo(), pfad),
-        headers={"Authorization": "Bearer " + os.environ["GITHUB_TOKEN"],
+        headers={"Authorization": "Bearer " + konfig("GITHUB_TOKEN"),
                  "Accept": "application/vnd.github+json",
                  "User-Agent": USER_AGENT},
         timeout=60, **kw)
@@ -74,8 +88,8 @@ def veroeffentlichen(nachricht=""):
     """Die Datei hochladen. Gibt zurück, was passiert ist."""
     if not bereit():
         raise RuntimeError("GITHUB_REPO oder GITHUB_TOKEN fehlt")
-    pfad = (os.environ.get("GITHUB_PFAD") or "index.ndjson").strip("/")
-    zweig = (os.environ.get("GITHUB_BRANCH") or "main").strip()
+    pfad = (konfig("GITHUB_PFAD") or "index.ndjson").strip("/")
+    zweig = (konfig("GITHUB_BRANCH") or "main").strip()
 
     text, anzahl = index_bauen()
     if not anzahl:

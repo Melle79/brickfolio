@@ -100,6 +100,131 @@ def status(_=Depends(admin)):
     }
 
 
+# ------------------------------------------------------------ Einstellungen
+
+# Was sich in der Konsole eintragen lässt. `geheim` heißt: Der Wert wird
+# **nie** zurückgegeben, angezeigt wird nur „gesetzt (40 Zeichen)". Das
+# schützt nicht gegen Zugriff auf die NAS, aber gegen alles davor – und
+# gegen ein versehentliches Bildschirmfoto.
+FELDER = [
+    ("BL_CONSUMER_KEY", "BrickLink Consumer Key", True),
+    ("BL_CONSUMER_SECRET", "BrickLink Consumer Secret", True),
+    ("BL_TOKEN", "BrickLink Token", True),
+    ("BL_TOKEN_SECRET", "BrickLink Token Secret", True),
+    ("OLLAMA_URL", "Adresse der lokalen KI", False),
+    ("OLLAMA_BILD_MODEL", "Modell fürs Bilderansehen", False),
+    ("GITHUB_REPO", "GitHub-Repo für den Index", False),
+    ("GITHUB_BRANCH", "Zweig", False),
+    ("GITHUB_PFAD", "Pfad im Repo", False),
+    ("GITHUB_TOKEN", "GitHub-Token (Contents: write)", True),
+]
+
+
+def _einstellungen_stand():
+    aus = []
+    for name, label, geheim in FELDER:
+        wert = katalog.konfig(name)
+        aus.append({
+            "name": name, "label": label, "geheim": geheim,
+            # Woher der Wert kommt, gehört dazu: Steht er in der Umgebung
+            # und man trägt in der Konsole etwas ein, gilt ab dann das
+            # Eingetragene – ohne diesen Hinweis sucht man den Unterschied
+            # an der falschen Stelle.
+            "quelle": ("Konsole" if katalog.einstellung(name) else
+                       ("Umgebung" if os.environ.get(name) else "")),
+            "wert": "" if geheim else wert,
+            "gesetzt": ("gesetzt (%d Zeichen)" % len(wert)) if wert else "",
+        })
+    return aus
+
+
+class EinstellungBody(BaseModel):
+    werte: dict = Field(default_factory=dict)
+
+
+@app.get("/api/einstellungen")
+def einstellungen(_=Depends(admin)):
+    return {"felder": _einstellungen_stand(),
+            "bricklink": bl_enabled(),
+            "ollama": bildmodul.ollama_url(),
+            "github": veroeffentlichung.bereit()}
+
+
+@app.post("/api/einstellungen")
+def einstellungen_setzen(body: EinstellungBody, _=Depends(admin)):
+    """Speichern – ein **leeres Feld lässt den bisherigen Wert stehen**.
+
+    Sonst löschte jedes Speichern die neun Felder, die man gerade nicht
+    angefasst hat. Zum Löschen ein Leerzeichen eintragen.
+    """
+    erlaubt = {n for n, _l, _g in FELDER}
+    geschrieben = []
+    for name, wert in (body.werte or {}).items():
+        if name not in erlaubt:
+            raise HTTPException(400, "Unbekanntes Feld: %s" % name[:40])
+        wert = str(wert)
+        if wert == "":
+            continue                      # unverändert lassen
+        if len(wert) > 300:
+            raise HTTPException(400, "Wert zu lang: %s" % name)
+        katalog.setze_einstellung(name, wert.strip())
+        geschrieben.append(name)
+    if not geschrieben:
+        return {"ok": True, "geschrieben": [],
+                "felder": _einstellungen_stand()}
+    return {"ok": True, "geschrieben": geschrieben,
+            "felder": _einstellungen_stand()}
+
+
+@app.post("/api/einstellungen/pruefen")
+def einstellungen_pruefen(_=Depends(admin)):
+    """Einmal wirklich anfragen statt nur nachzusehen, ob etwas eingetragen ist.
+
+    Drei Wege, drei Antworten: BrickLink mit einem echten Abruf, Ollama mit
+    der Modellliste, GitHub mit einem Blick ins Repo. Ohne das merkt man
+    einen Tippfehler erst, wenn ein Lauf stundenlang ins Leere gegriffen hat.
+    """
+    aus = {}
+    try:
+        # `sw0002` statt `sw0001`: Die 0001 gibt es bei BrickLink nicht, und
+        # ein 404 sähe dann wie ein Fehler aus, obwohl er das Gegenteil
+        # beweist – bei falschen Zugangsdaten käme 401.
+        d = katalog.bricklink_item("minifig", "sw0002")
+        aus["bricklink"] = "ok – sw0002: %s" % (d.get("name") or "?")
+    except Exception as e:
+        code = getattr(getattr(e, "response", None), "status_code", 0)
+        if code == 404:
+            aus["bricklink"] = ("ok – angemeldet (die Probefigur gibt es "
+                                "nicht, aber ein 404 setzt eine gültige "
+                                "Anmeldung voraus)")
+        elif code == 401:
+            aus["bricklink"] = "Zugangsdaten stimmen nicht (401)"
+        elif code == 429:
+            aus["bricklink"] = "Tageskontingent erschöpft (429)"
+        else:
+            aus["bricklink"] = "Fehler: %s" % str(e)[:120]
+    try:
+        import requests as rq
+        r = rq.get(bildmodul.ollama_url() + "/api/tags", timeout=15)
+        namen = [m.get("name") for m in (r.json().get("models") or [])]
+        modell = bildmodul.ollama_bild_modell()
+        aus["ollama"] = ("ok – %d Modelle, %s ist %s"
+                         % (len(namen), modell,
+                            "dabei" if modell in namen else "NICHT dabei"))
+    except Exception as e:
+        aus["ollama"] = "Fehler: %s" % str(e)[:120]
+    try:
+        # Ohne den leeren Pfad: `.../repos/x/y/` mit Schrägstrich am Ende
+        # gibt 404, auch wenn es das Repo gibt.
+        r = veroeffentlichung.repo_abfragen()
+        aus["github"] = ("ok – %s erreichbar" % veroeffentlichung.repo()
+                         if r.status_code == 200
+                         else "Fehler: HTTP %s" % r.status_code)
+    except Exception as e:
+        aus["github"] = "Fehler: %s" % str(e)[:120]
+    return aus
+
+
 # ------------------------------------------------------------------ Themen
 
 

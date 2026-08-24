@@ -204,3 +204,64 @@ def test_die_vorschau_zeigt_was_hinausginge(client):
     assert d["zeilen"] == 1
     assert d["felder"] == ["item_no", "art", "farben", "merkmale", "modell"]
     assert "Geheim" not in " ".join(d["probe"])
+
+
+# ------------------------------------------------------- Einstellungen
+
+def test_geheimnisse_kommen_nie_zurueck(client):
+    """Angezeigt wird nur, ob und wie lang etwas hinterlegt ist. Das
+    schützt nicht gegen Zugriff auf die NAS, aber gegen alles davor – und
+    gegen ein versehentliches Bildschirmfoto."""
+    client.post("/api/einstellungen",
+                json={"werte": {"BL_TOKEN": "streng-geheim-123",
+                                "GITHUB_REPO": "Melle79/brickfolio"}})
+    d = client.get("/api/einstellungen").json()
+    felder = {f["name"]: f for f in d["felder"]}
+    assert felder["BL_TOKEN"]["wert"] == ""
+    assert felder["BL_TOKEN"]["gesetzt"] == "gesetzt (17 Zeichen)"
+    # Nicht-Geheimes darf man sehen – sonst könnte man einen Tippfehler im
+    # Repo-Namen nie finden.
+    assert felder["GITHUB_REPO"]["wert"] == "Melle79/brickfolio"
+    assert "streng-geheim" not in client.get("/api/einstellungen").text
+
+
+def test_ein_leeres_feld_laesst_den_wert_stehen(client):
+    """Sonst löschte jedes Speichern die neun Felder, die man gerade nicht
+    angefasst hat."""
+    client.post("/api/einstellungen", json={"werte": {"BL_TOKEN": "abc"}})
+    client.post("/api/einstellungen", json={"werte": {"BL_TOKEN": "",
+                                                      "GITHUB_BRANCH": "main"}})
+    import katalog
+    assert katalog.konfig("BL_TOKEN") == "abc"
+    assert katalog.konfig("GITHUB_BRANCH") == "main"
+
+
+def test_die_konsole_hat_vorrang_vor_der_umgebung(client, monkeypatch):
+    """Wer in der Konsole etwas einträgt, will damit arbeiten – auch wenn
+    in der Umgebung noch der alte Wert steht."""
+    monkeypatch.setenv("GITHUB_BRANCH", "aus-der-umgebung")
+    import katalog
+    katalog.konfig_vergessen()
+    assert katalog.konfig("GITHUB_BRANCH") == "aus-der-umgebung"
+    client.post("/api/einstellungen",
+                json={"werte": {"GITHUB_BRANCH": "aus-der-konsole"}})
+    assert katalog.konfig("GITHUB_BRANCH") == "aus-der-konsole"
+    felder = {f["name"]: f for f in
+              client.get("/api/einstellungen").json()["felder"]}
+    assert felder["GITHUB_BRANCH"]["quelle"] == "Konsole"
+
+
+def test_der_gemerkte_wert_wird_beim_schreiben_verworfen(client, monkeypatch):
+    """Ohne das arbeitete der laufende Prozess mit dem alten Wert weiter,
+    und man sucht den Fehler an der falschen Stelle."""
+    import katalog
+    client.post("/api/einstellungen", json={"werte": {"OLLAMA_URL": "http://a"}})
+    assert katalog.konfig("OLLAMA_URL") == "http://a"
+    client.post("/api/einstellungen", json={"werte": {"OLLAMA_URL": "http://b"}})
+    assert katalog.konfig("OLLAMA_URL") == "http://b"
+
+
+def test_unbekannte_felder_werden_abgewiesen(client):
+    r = client.post("/api/einstellungen",
+                    json={"werte": {"PATH": "/etc/boese"}})
+    assert r.status_code == 400

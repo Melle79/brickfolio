@@ -127,11 +127,45 @@ def einstellung(name, standard=""):
     return r["value"] if r else standard
 
 
+def konfig(name, standard=""):
+    """Ein Wert – aus der Datenbank, sonst aus der Umgebung.
+
+    Die Datenbank hat Vorrang: Was in der Konsole eingetragen wurde, gilt.
+    Die Umgebung bleibt als Weg für alles, was beim Einrichten schon
+    feststeht – so läuft der Dienst auch ohne einen einzigen Klick.
+
+    Ändert sich ein Wert, muss `konfig_vergessen()` gerufen werden; sonst
+    arbeitet der laufende Prozess mit dem alten weiter, und man sucht den
+    Fehler an der falschen Stelle.
+    """
+    if _konfig_cache is None:
+        _konfig_laden()
+    if name in _konfig_cache and _konfig_cache[name]:
+        return _konfig_cache[name]
+    return os.environ.get(name) or standard
+
+
+_konfig_cache = None
+
+
+def _konfig_laden():
+    global _konfig_cache
+    with db() as conn:
+        _konfig_cache = {r["name"]: r["value"] for r in
+                         conn.execute("SELECT name, value FROM einstellungen")}
+
+
+def konfig_vergessen():
+    global _konfig_cache
+    _konfig_cache = None
+
+
 def setze_einstellung(name, wert):
     with db() as conn:
         conn.execute("INSERT INTO einstellungen (name, value) VALUES (?, ?) "
                      "ON CONFLICT(name) DO UPDATE SET value = excluded.value",
                      (name, str(wert)))
+    konfig_vergessen()
 
 
 # -------------------------------------------------------------- BrickLink
@@ -140,21 +174,20 @@ def setze_einstellung(name, wert):
 def bl_auth():
     """Die vier Werte aus der Umgebung – sie bleiben auf der NAS."""
     from requests_oauthlib import OAuth1
-    fehlt = [n for n in ("BL_CONSUMER_KEY", "BL_CONSUMER_SECRET",
-                         "BL_TOKEN", "BL_TOKEN_SECRET")
-             if not os.environ.get(n)]
+    fehlt = [n for n in BL_FELDER if not konfig(n)]
     if fehlt:
         raise RuntimeError("BrickLink ist nicht eingerichtet: "
                            + ", ".join(fehlt))
-    return OAuth1(os.environ["BL_CONSUMER_KEY"],
-                  os.environ["BL_CONSUMER_SECRET"],
-                  os.environ["BL_TOKEN"], os.environ["BL_TOKEN_SECRET"])
+    return OAuth1(konfig("BL_CONSUMER_KEY"), konfig("BL_CONSUMER_SECRET"),
+                  konfig("BL_TOKEN"), konfig("BL_TOKEN_SECRET"))
+
+
+BL_FELDER = ("BL_CONSUMER_KEY", "BL_CONSUMER_SECRET", "BL_TOKEN",
+             "BL_TOKEN_SECRET")
 
 
 def bl_enabled():
-    return all(os.environ.get(n) for n in
-               ("BL_CONSUMER_KEY", "BL_CONSUMER_SECRET", "BL_TOKEN",
-                "BL_TOKEN_SECRET"))
+    return all(konfig(n) for n in BL_FELDER)
 
 
 def bricklink_item(item_type, item_no):

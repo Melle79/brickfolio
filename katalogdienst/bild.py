@@ -25,7 +25,10 @@ USER_AGENT = "Brickfolio-Katalogdienst"
 
 
 def ollama_url():
-    return (os.environ.get("OLLAMA_URL") or "").strip().rstrip("/")
+    # Über `konfig`, damit die Konsole die Adresse ändern kann, ohne dass
+    # jemand auf die NAS muss.
+    from katalog import konfig
+    return (konfig("OLLAMA_URL") or "").strip().rstrip("/")
 
 
 def ollama_enabled():
@@ -33,7 +36,8 @@ def ollama_enabled():
 
 
 def ollama_bild_modell():
-    return os.environ.get("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD
+    from katalog import konfig
+    return konfig("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD
 
 
 OLLAMA_BILD_STD = "minicpm-v:latest"
