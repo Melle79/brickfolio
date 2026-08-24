@@ -91,6 +91,25 @@ export const ABRUFE_JE_LAUF = 20;
 // Lücken in der Nummerierung; 25 sind gemessen großzügig genug.
 const LUECKE = 25;
 
+/**
+ * Gibt es dieses Präfix – und mit wie vielen Ziffern?
+ *
+ * Ohne diese Auskunft trägt man ein Thema ein und merkt erst Stunden später,
+ * wenn der Takt dort ankommt, dass es ein Tippfehler war.
+ */
+export async function praefixPruefen(env, praefix) {
+  const breite = await breiteErmitteln(env, praefix);
+  if (!breite) return { praefix, gibt_es: false };
+  for (const n of [1, 2, 3, 5, 10]) {
+    const nr = praefix + String(n).padStart(breite, "0");
+    const d = await blHolen(env, "/items/minifig/" + nr);
+    if (d) return { praefix, gibt_es: true, breite, beispiel: nr,
+                    name: String(d.name || "") };
+  }
+  return { praefix, gibt_es: true, breite };
+}
+
+
 /** Wie viele Ziffern hat dieses Thema – drei oder vier? */
 async function breiteErmitteln(env, praefix) {
   for (const breite of [4, 3]) {
@@ -113,11 +132,22 @@ async function breiteErmitteln(env, praefix) {
  * `ABRUFE_JE_LAUF` Nummern ab – mehr passt nicht in ein Kontingent, das
  * sich der Abzug mit den Preisen teilt.
  */
+// Wann ein fertiges Thema noch einmal angesehen wird. **Ohne das passiert
+// genau nichts mehr**: Sind alle achtzehn einmal durch, stünde der Takt für
+// immer still – und der Nachschub, für den er da ist, käme nie an. BrickLink
+// legt laufend neue Figuren an. Eine Woche ist reichlich; die Nachschau
+// kostet nur die 25 Fehlgriffe bis zur nächsten Lücke.
+export const NACHSCHAU = 7 * 24 * 3600;
+
 export async function abklappern(env, budget = ABRUFE_JE_LAUF) {
+  const jetzt0 = Math.floor(Date.now() / 1000);
+  // Unfertige zuerst, dann die am längsten nicht nachgesehenen.
   const thema = await env.DB.prepare(
-    "SELECT * FROM katalog_lauf WHERE aktiv = 1 AND fertig_at IS NULL "
-    + "ORDER BY zuletzt ASC LIMIT 1").first();
-  if (!thema) return { abgerufen: 0, grund: "alle Themen durch" };
+    "SELECT * FROM katalog_lauf WHERE aktiv = 1 "
+    + "AND (fertig_at IS NULL OR fertig_at < ?) "
+    + "ORDER BY fertig_at IS NOT NULL, zuletzt ASC LIMIT 1")
+    .bind(jetzt0 - NACHSCHAU).first();
+  if (!thema) return { abgerufen: 0, grund: "alle Themen frisch nachgesehen" };
 
   let breite = thema.breite;
   let abgerufen = 0;
@@ -135,7 +165,10 @@ export async function abklappern(env, budget = ABRUFE_JE_LAUF) {
   }
 
   let nummer = thema.zuletzt;
-  let luecke = thema.luecke;
+  // Bei einer Nachschau von vorn zählen: Die 25 Fehlgriffe von damals sind
+  // abgearbeitet, sonst gälte das Thema sofort wieder als fertig, ohne einen
+  // einzigen Abruf.
+  let luecke = thema.fertig_at ? 0 : thema.luecke;
   let neu = 0;
   const jetzt = Math.floor(Date.now() / 1000);
   while (abgerufen < budget && luecke < LUECKE) {

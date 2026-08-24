@@ -7,7 +7,7 @@
  */
 
 import { katalogTakt, abklappern, beschreiben, antwortLesen, merkmaleBauen,
-         BILD_MODELL } from "./katalog.js";
+         praefixPruefen, BILD_MODELL } from "./katalog.js";
 
 const MAX_OFFERS = 2000;              // Obergrenze je Instanz (Missbrauchsschutz)
 const MAX_THUMB = 30000;              // Vorschaubild einer eigenen Figur
@@ -1179,6 +1179,17 @@ async function adminRoute(req, member, env, p, method) {
   }
   if (p === "/v1/admin/katalog/lauf" && method === "POST") {
     return await adminKatalogLauf(req, env);
+  }
+  if (p === "/v1/admin/katalog/pruefen" && method === "GET") {
+    const nr = (new URL(req.url).searchParams.get("praefix") || "")
+      .trim().toLowerCase();
+    if (!/^[a-z]{2,6}$/.test(nr)) return err(400, "Nur zwei bis sechs Buchstaben");
+    if (!env.BL_CONSUMER_KEY) return err(400, "BrickLink ist nicht eingerichtet");
+    try {
+      return json(await praefixPruefen(env, nr));
+    } catch (e) {
+      return err(502, "BrickLink: " + String((e && e.message) || e));
+    }
   }
   const km2 = p.match(/^\/v1\/admin\/katalog\/themen(?:\/([^/]+))?$/);
   if (km2 && (method === "POST" || method === "DELETE")) {
