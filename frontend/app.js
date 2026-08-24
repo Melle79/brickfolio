@@ -5545,8 +5545,6 @@ async function loadOllama() {
     $("ollama-url").value = d.url || "";
     $("ollama-model-frei").value = d.model || "";
     $("ollama-model-frei").placeholder = d.default_model || "";
-    $("ollama-bild-frei").value = d.bild_model || "";
-    $("ollama-bild-frei").placeholder = d.bild_default || "";
     state.kiSuche = !!d.enabled;
     if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
     begriffeBilanz();     // auch ohne KI: die eigenen Zeilen gelten trotzdem
@@ -5576,14 +5574,9 @@ async function modelleLaden() {
     return;
   }
   const liste = (d && d.models) || [];
-  // Fürs Bilderansehen die bildfähigen nach oben – **sortiert, nicht
-  // gefiltert**: `gemma3:12b` meldet kein `vision` und ist trotzdem das
-  // beste im Haus. Wer hart filtert, versteckt den Sieger.
-  const sieht = new Set((d && d.vision) || []);
-  const fuerBilder = liste.slice().sort((a, b) =>
-    (sieht.has(b) ? 1 : 0) - (sieht.has(a) ? 1 : 0));
-  fuelleWahl($("ollama-bild-model"), $("ollama-bild-frei"), fuerBilder, d,
-             sieht);
+  // Die zweite Auswahl fürs Bilderansehen ist seit 2.41.0 weg: Bilder sieht
+  // sich der Hub an, nicht mehr jede Instanz. Was hier bleibt, übersetzt
+  // Suchbegriffe.
   if (!liste.length) { wahl.hidden = true; frei.hidden = false; return; }
   // Das gespeicherte Modell gehört dazu, auch wenn es dort nicht mehr liegt –
   // sonst überschriebe ein Speichern still eine noch gültige Einstellung.
@@ -5599,40 +5592,6 @@ async function modelleLaden() {
     ? d.default_model : liste[0]);
   wahl.hidden = false;
   frei.hidden = true;
-}
-
-/* Dieselbe Auswahl noch einmal, für das Bildmodell. Getrennt, weil sich
-   die beiden Aufgaben stark unterscheiden: Übersetzen kann ein reines
-   Textmodell, Bilder ansehen nicht – und umgekehrt taugt nicht jedes
-   Bildmodell zum Übersetzen. */
-function fuelleWahl(wahl, frei, liste, d, sieht) {
-  if (!wahl || !frei) return;
-  if (!liste.length) { wahl.hidden = true; frei.hidden = false; return; }
-  const jetzt = frei.value.trim();
-  const fehlt = jetzt && !liste.includes(jetzt);
-  const marke = (m) => (sieht && sieht.has(m)) ? m + " 👁" : m;
-  wahl.innerHTML =
-    liste.map((m) => `<option value="${esc(m)}">${esc(marke(m))}</option>`).join("")
-    + (fehlt ? `<option value="${esc(jetzt)}">`
-        + `${esc(tr("{modell} (nicht auf dem Server)", { modell: jetzt }))}`
-        + "</option>" : "")
-    + `<option value="__frei__">${esc(tr("Anderes Modell eintippen …"))}</option>`;
-  wahl.value = jetzt || (d.bild_default && liste.includes(d.bild_default)
-    ? d.bild_default : liste[0]);
-  wahl.hidden = false;
-  frei.hidden = true;
-  wahl.onchange = () => {
-    if (wahl.value !== "__frei__") { frei.hidden = true; return; }
-    frei.hidden = false; frei.value = ""; frei.focus();
-  };
-}
-
-function bildModell() {
-  const wahl = $("ollama-bild-model");
-  if (!wahl || wahl.hidden || wahl.value === "__frei__") {
-    return $("ollama-bild-frei").value.trim();
-  }
-  return wahl.value;
 }
 
 function modellwahlGeaendert() {
@@ -5800,142 +5759,29 @@ async function begriffLoeschen(begriff) {
   } catch (e) { toast(e.message); }
 }
 
-/* ------------------------------------------------- Katalog-Abzug */
+/* ------------------------------------------------- Katalog-Abzug
 
-let katalogTakt = null;
+   Gesteuert wird hier nichts mehr. Bis 2.40.0 klapperte jede Instanz
+   BrickLink selbst ab und liess ein eigenes Sehmodell die Bilder
+   beschreiben – viermal dieselbe Arbeit fuer dasselbe Ergebnis. Seit
+   2.41.0 erzeugt der Hub den Abzug, diese Instanz holt ihn nur.
+   Uebrig bleibt eine Zeile, die sagt, ob das ankommt. */
 
 async function katalogStand() {
   const feld = $("katalog-stand");
   if (!feld) return;
   let d;
-  try { d = await api("/katalog/status"); }
+  try { d = await api("/katalog/hub"); }
   catch (e) { feld.textContent = ""; return; }
-  const start = $("btn-katalog-start"), stop = $("btn-katalog-stop");
-  farbenStand(d);
-  const feldThemen = $("katalog-themen");
-  // Nicht dazwischenfunken: Der Stand wird alle drei Sekunden geholt, und
-  // wer das Feld gerade leert, um neu zu tippen, bekäme es sonst mitten im
-  // Tippen wieder vollgeschrieben.
-  if (feldThemen && !feldThemen.value && (d.themen || []).length
-      && document.activeElement !== feldThemen) {
-    feldThemen.value = d.themen.join(", ");
-  }
-  if (d.laeuft) {
-    const rest = (d.warteschlange || []).length;
-    feld.textContent = tr("{p}: Nummer {n} · {g} Figuren · {neu} neu",
-      { p: d.praefix, n: d.nummer, g: d.anzahl, neu: d.neu })
-      + (rest ? " " + tr("(danach noch {r} Themen)", { r: rest }) : "");
-    start.hidden = true;
-    stop.hidden = false;
-    // Nur solange etwas passiert nachfragen. Ein Takt, der ewig weiterläuft,
-    // fragt die Instanz auch dann alle drei Sekunden, wenn niemand hinsieht.
-    if (!katalogTakt) katalogTakt = setInterval(katalogStand, 3000);
-  } else if (d.farben && d.farben.laeuft) {
-    if (!katalogTakt) katalogTakt = setInterval(katalogStand, 3000);
-    $("btn-katalog-start").hidden = false;
-    $("btn-katalog-stop").hidden = true;
-  } else {
-    clearInterval(katalogTakt);
-    katalogTakt = null;
-    start.hidden = false;
-    stop.hidden = true;
-    const lauf = (d.laeufe || []).find((l) => l.praefix === "sw");
-    feld.textContent = d.fehler
-      ? tr("Abgebrochen: {grund}", { grund: d.fehler })
-      : d.anzahl
-        ? tr("{n} Figuren im Abzug{fertig}", { n: d.anzahl,
-            fertig: lauf && lauf.fertig_at ? tr(" – vollständig") : "" })
-        : tr("Noch kein Abzug geholt.");
-  }
-}
-
-function farbenStand(d) {
-  const feld = $("farben-stand");
-  if (!feld || !d.farben) return;
-  const f = d.farben;
-  const start = $("btn-farben-start"), stop = $("btn-farben-stop");
-  if (f.laeuft) {
-    feld.textContent = tr("Sieht Bilder an … {n} fertig, {g} mit Farbe, "
-      + "{o} offen", { n: f.getan, g: f.gefunden, o: f.offen });
-    start.hidden = true; stop.hidden = false;
-  } else {
-    start.hidden = false; stop.hidden = true;
-    // Ein Lauf, der wegen der KI aufgegeben hat, sieht sonst genauso aus
-    // wie einer, den jemand von Hand angehalten hat.
-    feld.textContent = f.fehler
-      ? tr("Abgebrochen: {f}", { f: f.fehler })
-      : (f.offen
-        ? tr("{o} Figuren noch nicht angesehen", { o: f.offen })
-        : tr("Alle Bilder angesehen."));
-  }
-}
-
-async function farbenStarten() {
-  try { await api("/katalog/farben", { method: "POST" }); katalogStand(); }
-  catch (e) { toast(e.message); }
-}
-
-async function farbenAnhalten() {
-  try { await api("/katalog/farben/stop", { method: "POST" }); }
-  catch (e) { toast(e.message); }
-}
-
-/* Gibt es dieses Präfix? Ohne die Auskunft trägt man ein Thema ein und
-   wartet, bis der Lauf dort ankommt – bei vierzehn in der Warteschlange
-   können das Stunden sein. Ein Treffer wandert gleich in die Themenliste. */
-async function katalogPruefen() {
-  const feld = $("katalog-neu"), out = $("katalog-pruefung");
-  const p = feld.value.trim().toLowerCase();
-  if (!p) return;
-  out.textContent = tr("Wird geprüft …");
-  out.hidden = false;
-  let d;
-  try { d = await api("/katalog/pruefen?praefix=" + encodeURIComponent(p)); }
-  catch (e) { out.textContent = e.message; return; }
-  if (!d.gibt_es) {
-    out.textContent = tr("„{p}“ gibt es bei BrickLink nicht.", { p });
+  if (!d.kann_holen) {
+    feld.textContent = tr("Kein Hub-Token – der Abzug kommt nicht an.");
     return;
   }
-  out.textContent = tr("„{p}“ gibt es – {n} Ziffern, z. B. {b}: {name}",
-    { p, n: d.breite, b: d.beispiel, name: d.name });
-  if (d.bekannt) return;
-  // Noch nicht in der Liste? Dann gleich dazu – dafür hat man ja geprüft.
-  const liste = $("katalog-themen");
-  liste.value = (liste.value.trim() ? liste.value.trim() + ", " : "") + p;
-  feld.value = "";
-  katalogThemenMerken();
-}
-
-/* Die Liste sichern, ohne einen Lauf zu starten – sonst ist alles selbst
-   Eingetragene beim nächsten Öffnen wieder weg. */
-async function katalogThemenMerken() {
-  const v = $("katalog-themen").value.trim();
-  if (!v) return;
-  try { await api("/katalog/themen", { method: "POST", body: { themen: v } }); }
-  catch (e) { toast(e.message); }
-}
-
-async function katalogStarten() {
-  try {
-    const d = await api("/katalog/start", { method: "POST",
-      body: { themen: $("katalog-themen").value.trim() || "sw" } });
-    // Läuft schon einer, wandern die neuen Themen hinten an die Schlange.
-    // Das gehört gesagt – sonst sieht es aus, als sei nichts passiert.
-    if (d && d.ergaenzt && d.ergaenzt.length) {
-      toast(tr("{n} Themen an die Warteschlange angehängt",
-        { n: d.ergaenzt.length }));
-    } else if (d && d.info) {
-      toast(tr("Der Abzug läuft bereits"));
-    }
-    katalogStand();
-  } catch (e) { toast(e.message); }
-}
-
-async function katalogAnhalten() {
-  try {
-    await api("/katalog/stop", { method: "POST" });
-    $("katalog-stand").textContent = tr("Wird angehalten …");
-  } catch (e) { toast(e.message); }
+  feld.textContent = d.geholt_bis
+    ? tr("{n} Figuren, {b} beschrieben · zuletzt geholt am {d}",
+        { n: d.figuren, b: d.beschrieben,
+          d: new Date(d.geholt_bis * 1000).toLocaleDateString() })
+    : tr("{n} Figuren · noch nichts vom Hub geholt", { n: d.figuren });
 }
 
 /* Welcher Name gilt – die Liste oder das Textfeld? */
@@ -5953,7 +5799,6 @@ async function saveOllama() {
     const r = await api("/settings/ollama", { method: "POST", body: {
       url: $("ollama-url").value.trim(),
       model: ollamaModell(),
-      bild_model: bildModell(),
     }});
     state.kiSuche = !!r.enabled;
     out.textContent = r.enabled
@@ -10667,14 +10512,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-reload-models").addEventListener("click", modelleLaden);
   $("btn-begriffe").addEventListener("click", begriffeFenster);
-  $("btn-katalog-start").addEventListener("click", katalogStarten);
-  $("btn-katalog-stop").addEventListener("click", katalogAnhalten);
-  $("btn-katalog-pruefen").addEventListener("click", katalogPruefen);
-  $("katalog-themen").addEventListener("change", katalogThemenMerken);
-  $("katalog-neu").addEventListener("keydown",
-    (e) => { if (e.key === "Enter") katalogPruefen(); });
-  $("btn-farben-start").addEventListener("click", farbenStarten);
-  $("btn-farben-stop").addEventListener("click", farbenAnhalten);
   $("ollama-model").addEventListener("change", modellwahlGeaendert);
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.

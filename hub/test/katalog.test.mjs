@@ -42,8 +42,9 @@ test("Abfrageparameter gehen in die Signatur ein", async () => {
 test("der Suchtext benutzt dieselbe Elle wie die Instanz", () => {
   // `LIKE '%c3%'` auf dem rohen Namen scheitert am Bindestrich – deshalb
   // liegt der Name ein zweites Mal ohne Satzzeichen daneben.
-  assert.equal(suchtext("R-3PO Protocol Droid"), "r 3po protocol droid");
-  assert.equal(suchtext("C-3PO"), "c 3po");
+  // Zusammengezogen: Die Instanz filtert mit `such LIKE '%c3%'` vor.
+  assert.equal(suchtext("R-3PO Protocol Droid"), "r3poprotocoldroid");
+  assert.equal(suchtext("C-3PO"), "c3po");
 });
 
 test("die Antwort wird auch aus Fliesstext geschaelt", () => {

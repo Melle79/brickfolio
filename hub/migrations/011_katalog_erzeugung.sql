@@ -27,3 +27,11 @@ INSERT OR IGNORE INTO katalog_lauf (praefix) VALUES
   ('sw'), ('cty'), ('njo'), ('sh'), ('frnd'), ('cas'), ('pi'), ('hp'),
   ('jw'), ('sp'), ('ww'), ('lor'), ('iaj'), ('gen'), ('col'), ('adv'),
   ('trn'), ('idea');
+
+-- Wie oft eine einzelne Figur eine unbrauchbare Antwort liefern darf.
+--
+-- Am 24.08.2026 blieb der Bilderlauf in der App bei 9.740 von 9.741 stehen:
+-- `cty0131` brachte das Modell aus dem Tritt, ein Fehlschlag schreibt nichts
+-- weg, also stand sie beim naechsten Griff wieder vorn -- zwoelf Anlaeufe an
+-- derselben Figur. Ohne Zaehler haelt eine einzige Zeile den ganzen Abzug auf.
+ALTER TABLE katalog ADD COLUMN versuche INTEGER NOT NULL DEFAULT 0;

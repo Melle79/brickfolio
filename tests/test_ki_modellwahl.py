@@ -173,9 +173,11 @@ def test_code_modelle_stehen_nicht_zur_wahl(client, monkeypatch):
 
 
 def test_bildfaehige_werden_gemeldet_aber_nicht_erzwungen(client, monkeypatch):
-    """`gemma3:12b` meldet kein `vision` und ist trotzdem das beste im Haus
-    (gemessen 21.08.2026). Wer hart nach dem Merkmal filtert, versteckt den
-    Sieger – deshalb wird es nur mitgeliefert, zum Sortieren."""
+    """Seit 2.41.0 sieht sich der **Hub** die Bilder an, nicht mehr die
+    Instanz – eine zweite Modellauswahl gibt es hier nicht mehr. Das Merkmal
+    wird trotzdem weitergereicht: Es kostet nichts, und wer hart danach
+    filterte, versteckte ohnehin den Sieger (`gemma3:12b` meldet kein
+    `vision` und war das beste im Haus, gemessen 21.08.2026)."""
     client.post("/api/settings/ollama",
                 json={"url": "http://127.0.0.1:11434", "model": ""})
 
@@ -196,14 +198,6 @@ def test_bildfaehige_werden_gemeldet_aber_nicht_erzwungen(client, monkeypatch):
     d = client.get("/api/settings/ollama/models").json()
     assert d["models"] == ["gemma3:12b", "minicpm-v:latest"], "es wurde gefiltert"
     assert d["vision"] == ["minicpm-v:latest"]
-
-
-def test_die_oberflaeche_sortiert_statt_zu_filtern():
-    js = _js()
-    i = js.index("const sieht = new Set(")
-    block = js[i:i + 400]
-    assert "sort(" in block, "die Liste wird nicht sortiert"
-    assert "filter(" not in block, "die Liste wird gefiltert statt sortiert"
 
 
 # ------------------------------------------------- Denkmodelle antworten anders
@@ -249,27 +243,3 @@ def test_content_hat_vorrang_vor_dem_denkfeld(client, monkeypatch):
     monkeypatch.setattr(integrations.requests, "post",
                         lambda url, **kw: Fake())
     assert integrations.suchbegriffe("Ritter") == ["Knight"]
-
-
-def test_auch_die_farben_kommen_aus_dem_denkfeld(client, monkeypatch):
-    client.post("/api/settings/ollama",
-                json={"url": "http://127.0.0.1:11434", "model": "denker"})
-
-    class Fake:
-        status_code = 200
-
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return {"message": {"content": "", "thinking":
-                                '{"kind": "Droid", "parts": [{"part":'
-                                ' "torso", "color": "red", "print":'
-                                ' "black chest panel"}]}'}}
-    monkeypatch.setattr(integrations.requests, "post",
-                        lambda url, **kw: Fake())
-    m = integrations.bild_merkmale(b"BILD")
-    # `fehler` trennt „angesehen, nichts erkannt" von „gar nicht erst
-    # gefragt bekommen" – hier hat das Modell geantwortet.
-    assert m == {"art": "droid", "farben": ["red"], "fehler": "",
-                 "merkmale": "torso red black chest panel"}

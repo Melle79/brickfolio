@@ -309,43 +309,16 @@ def report_enabled() -> bool:
     return bool(core.get_setting("crash_token"))
 
 
-# Wie viele Zeilen je Anfrage. Muss zum Hub passen, der bei 500 abriegelt.
-KATALOG_STAPEL = 500
-
-
-def katalog_hochladen(zeilen: list) -> dict:
-    """Katalogzeilen an den Hub geben, in Stapeln zu 500.
-
-    Eigener Token (`katalog_token`) wie beim Berichts-Kanal, nicht der
-    Mitglieds-Token: Wer den Katalog pflegt, hat damit nichts im
-    Tausch-Netzwerk zu tun – und umgekehrt.
-
-    Gibt zurück, wie viele Zeilen angekommen sind. Ein Stapel, der scheitert,
-    beendet den Vorgang: Der Rest kommt beim nächsten Lauf, und ein halb
-    hochgeladener Stand ist kein Problem – der Hub führt jede Zeile für sich.
-    """
-    token = core.get_setting("katalog_token")
-    if not token:
-        raise HubError(400, "Für diese Instanz ist kein Katalog-Token "
-                            "hinterlegt")
-    geschrieben = 0
-    for i in range(0, len(zeilen), KATALOG_STAPEL):
-        antwort = _request("POST", HUB_URL, "/v1/katalog", token=token,
-                           body={"zeilen": zeilen[i:i + KATALOG_STAPEL]},
-                           timeout=60)
-        geschrieben += int(antwort.get("geschrieben") or 0)
-    return {"geschrieben": geschrieben}
-
-
 def katalog_holen(seit: int = 0) -> dict:
     """Katalogänderungen seit `seit` abholen – eine Seite.
 
     Lesen darf jeder gültige Token; der Abzug ist Nachschlagewerk, kein
-    Geheimnis. Der zurückgegebene `stand` ist der Zeitstempel der letzten
+    Geheimnis. Schreiben kann von hier aus niemand mehr – seit 2.41.0
+    erzeugt der Hub ihn selbst, und keine Instanz schiebt mehr hoch. Der zurückgegebene `stand` ist der Zeitstempel der letzten
     gelieferten Zeile, nicht die Uhrzeit: Sonst übersähe der nächste Abruf
     alles, was zwischen Abfrage und Antwort geschrieben wurde.
     """
-    token = core.get_setting("katalog_token") or core.get_setting("crash_token")
+    token = core.get_setting("crash_token")
     if not token:
         raise HubError(400, "Kein Token für den Katalog hinterlegt")
     return _request("GET", HUB_URL, "/v1/katalog?seit=%d" % max(seit, 0),

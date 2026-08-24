@@ -185,8 +185,13 @@ export async function abklappern(env, budget = ABRUFE_JE_LAUF) {
  * Namen scheitert am Bindestrich.
  */
 export function suchtext(name) {
+  // **Zusammengezogen, nicht mit Leerzeichen.** Die Instanz filtert mit
+  // `such LIKE '%c3%'` vor; „C-3PO" muss dafuer zu `c3po` werden. Mit
+  // Leerzeichen (`c 3po`) findet dieser Vorfilter nichts, und die Suche,
+  // fuer die der ganze Abzug da ist, geht ins Leere. Dieselbe Elle wie
+  // `_wortanfaenge` in der App.
   return String(name || "").toLowerCase()
-    .replace(/[^a-z0-9äöüß]+/g, " ").trim();
+    .split(/[^a-z0-9]+/).filter(Boolean).join("");
 }
 
 /* ------------------------------------------------------- Bilder ansehen */
@@ -268,10 +273,13 @@ export function merkmaleBauen(d) {
  * `qwen3-vl` und werden nicht angetastet – wer sie überschreibt, macht den
  * Abzug uneinheitlich, ohne dass jemand es merkt.
  */
+export const AUFGEBEN_NACH = 3;
+
 export async function beschreiben(env, budget = BILDER_JE_LAUF) {
   const rows = (await env.DB.prepare(
-    "SELECT item_no, img_url FROM katalog WHERE merkmale = '' "
-    + "AND img_url <> '' LIMIT ?").bind(budget).all()).results || [];
+    "SELECT item_no, img_url, versuche FROM katalog WHERE merkmale = '' "
+    + "AND img_url <> '' ORDER BY versuche ASC LIMIT ?")
+    .bind(budget).all()).results || [];
   let getan = 0;
   let erkannt = 0;
   for (const r of rows) {
@@ -291,12 +299,30 @@ export async function beschreiben(env, budget = BILDER_JE_LAUF) {
       fehler = String((e && e.message) || e);
     }
     if (fehler) {
-      // Nichts schreiben: Die Figur wurde nie angesehen. Sie bleibt offen und
-      // kommt beim nächsten Lauf wieder dran. Ein Ausfall des Dienstes darf
-      // nicht aussehen wie „angesehen, nichts erkannt" – sonst hakt der Lauf
-      // den ganzen Bestand ab, ohne je hingesehen zu haben.
-      console.error("Katalog-Bild", r.item_no, fehler);
-      break;
+      // **Zwei Fälle, die gleich aussehen und es nicht sind.**
+      //
+      // Der Dienst ist weg: Dann nichts schreiben und aufhören. Ein Ausfall
+      // darf nicht aussehen wie „angesehen, nichts erkannt" – sonst hakt der
+      // Lauf den ganzen Bestand ab, ohne je hingesehen zu haben. Am
+      // 21.08.2026 waren so 45 Figuren verbrannt, bevor es auffiel.
+      //
+      // Diese eine Figur bringt das Modell aus dem Tritt: Dann hält sie den
+      // ganzen Abzug auf, denn ein Fehlschlag schreibt nichts weg und sie
+      // steht beim nächsten Griff wieder vorn. Am 24.08.2026 blieb der Lauf
+      // deshalb bei 9.740 von 9.741 stehen – `cty0131`, zwölf Anläufe an
+      // derselben Figur.
+      //
+      // Unterschieden wird am Zähler: Die ersten Male gilt „Dienst weg",
+      // danach gilt die Figur als hoffnungslos und wird abgehakt.
+      const n = (r.versuche || 0) + 1;
+      await env.DB.prepare(
+        "UPDATE katalog SET versuche = ? WHERE item_no = ?")
+        .bind(n, r.item_no).run();
+      console.error("Katalog-Bild", r.item_no, "Versuch", n, fehler);
+      if (n < AUFGEBEN_NACH) break;
+      // Kein `break`: Sie läuft in das Wegschreiben unten und gilt damit als
+      // angesehen, ohne Ergebnis – sonst kommt der Abzug nie ans Ende.
+      d = null;
     }
     getan += 1;
     if (d && (d.merkmale || d.art)) erkannt += 1;

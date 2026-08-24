@@ -467,153 +467,38 @@ Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
-**🤝 Einmal erarbeiten, alle haben ihn.** Der Abzug beschreibt BrickLinks
-Fotos, nicht die Sammlung von irgendwem – ihn viermal zu bauen wäre viermal
-dieselbe Arbeit für dasselbe Ergebnis. Deshalb geht er über den Hub:
+**📚 Der Katalog-Abzug.** Ein Abzug des BrickLink-Katalogs, der die Suche
+nach dem **Aussehen** möglich macht: „roter Protokolldroide mit schwarzem
+Aufdruck" findet `R-3PO Protocol Droid`. Über den gewöhnlichen Katalog geht
+das nicht – Rebrickable nennt dieselbe Figur nur `R-3PO`, ohne ein einziges
+Wort zum Suchen. Zu jeder Figur steht darin, was auf dem Bild zu sehen ist,
+Teil für Teil: „torso red black chest panel; cape yellow green dragon with
+red wings".
 
-- **Eine Instanz ist die Quelle.** Sie klappert BrickLink ab und lässt das
-  Sehmodell die Bilder beschreiben. Nur sie hat einen `katalog_token`; ihn
-  hinterlegt man über `POST /api/settings/katalog_token`, und ohne ihn bleibt
-  der Schieber still. Der Hub weist Schreibversuche ohne `can_katalog` ohnehin
-  ab.
-- **Alle anderen holen nur ab.** Dafür genügt ihr Berichts-Token: Der Abzug
-  ist Nachschlagewerk, kein Geheimnis. Nerdfan, Paul und Kello hatten null
-  Zeilen; Tage Abrufe und rund ein Tag Grafikeinheit entfallen damit.
-- Beides läuft im **Zwölfstundentakt** mit, hoch in Stapeln zu 500, herunter
-  in Seiten zu 1.000. `GET /api/katalog/hub` zeigt den Stand.
+**Erzeugt wird er im Hub, nicht in der App.** Er klappert BrickLink ab und
+lässt die Bilder beschreiben; jede Instanz holt den fertigen Stand alle zwölf
+Stunden ab. Bis 2.40.0 tat das jede Instanz selbst, und das war dreifach
+verkehrt:
 
-> **Wer hochlädt, holt nicht.** Der Hub stempelt jede Zeile mit seiner
-> eigenen Uhrzeit. Holte die Quelle ihre eigenen Zeilen zurück, überholte
-> dieser Stempel ihren Wasserstand – und sie schöbe dieselbe Zeile beim
-> nächsten Lauf wieder hoch. Ein Ping-Pong ohne Ende, das nur Kontingent
-> verbrennt.
+- **Viermal dieselbe Arbeit für dasselbe Ergebnis.** Der Abzug beschreibt
+  BrickLinks Fotos, nicht die Sammlung von irgendwem – er ist für alle
+  identisch. Tage an Abrufen und rund ein Tag Grafikeinheit, je Instanz.
+- **Jede brauchte eigene BrickLink-Zugangsdaten.** Wer keine hatte, bekam
+  keinen Abzug. Nerdfan, Paul und Kello hatten null Zeilen.
+- **Und ein Sehmodell.** Seit dem 23.08.2026 hatten drei von vier keines
+  mehr.
 
-**📚 Katalog-Abzug.** Holt die Figuren eines Themas einmal von BrickLink
-und legt Namen und Jahr in der eigenen Datenbank ab. Danach findet
-die Suche sie über **beschreibende Wörter**: „Protokolldroide" findet
-`R-3PO Protocol Droid`. Über den gewöhnlichen Katalog geht das nicht –
-Rebrickable nennt dieselbe Figur nur `R-3PO`, ohne ein einziges Wort zum
-Suchen.
+In den Einstellungen steht deshalb nur noch eine Zeile: wie viele Figuren
+angekommen sind, wie viele davon beschrieben, und wann zuletzt geholt wurde.
+Gesteuert wird nichts mehr – Themen, Prüfknopf, Abzug starten, Bilderlauf,
+das Modell fürs Bilderansehen: alles im Hub.
 
-**Die Themen** (Stand 21.08.2026, über die Bestandteile bekannter Sets
-ermittelt – eine Liste gibt BrickLink nicht heraus):
+> **Was die App trotzdem noch braucht.** Der Abzug liegt lokal in
+> `katalog_index`, nicht nur im Hub: Gesucht wird darin ohne Netz und ohne
+> Wartezeit. Der Hub ist die Quelle, nicht die Suchmaschine.
 
-| Präfix | Thema | Präfix | Thema |
-|---|---|---|---|
-| `sw` | Star Wars | `cas` | Burg |
-| `cty` | Stadt und Zug | `pi` | Piraten |
-| `njo` | Ninjago | `hp` | Harry Potter |
-| `sh` | Super Heroes | `jw` | Jurassic World |
-| `frnd` | Friends | `sp` | Weltraum |
-| `gen` | Allgemein | `ww` | Western |
-| `iaj` | Indiana Jones | `lor` | Herr der Ringe |
-| `col` | Sammelfiguren | `adv` | Adventurers |
-| `trn` | Eisenbahn | | |
-
-Das ist **keine vollständige Liste** – weitere trägt man einfach dazu, der
-Lauf prüft selbst, ob es sie gibt. Und Präfix ≠ Kategorie: Die Figuren unter
-`cty` sind bei BrickLink teils als „Town", teils als „Train" einsortiert –
-**eigene** Eisenbahnfiguren gibt es daneben trotzdem, unter `trn` (geprüft
-21.08.2026: `trn001` existiert).
-
-**Der Prüfknopf** nimmt einem das Raten ab: Präfix eintippen, *Prüfen*, und
-es steht da, ob es das Thema gibt, wie viele Ziffern es hat und welche Figur
-sich hinter der ersten Nummer verbirgt. Ein Treffer wandert gleich in die
-Themenliste. Ohne ihn trägt man ein Thema ein und merkt erst Stunden später
-– wenn der Lauf dort ankommt –, dass es ein Tippfehler war.
-
-> **Die Ziffernbreite unterscheidet sich.** `sw0002` hat vier, `cas001` nur
-> drei. Der Lauf ermittelt sie zu Beginn mit ein paar Abrufen selbst. Vorher
-> war sie fest auf vier verdrahtet – dadurch gingen die Themen mit drei
-> Ziffern komplett leer aus, und der Lauf meldete trotzdem „fertig".
-
-**Mehrere Themen** trägt man mit Komma ein: `sw, cty, njo`. Sie laufen
-**nacheinander**, nie nebeneinander – alle teilen sich denselben
-BrickLink-Zugang, und zwei gleichzeitig hebelten die Drosselung aus. Das
-Präfix ist die Nummernvorsilbe: `sw` Star Wars, `cty` City, `njo` Ninjago,
-`sh` Super Heroes, `cas` Castle, `hp` Harry Potter, `col` Sammelfiguren.
-Weitere trägt man einfach dazu; der Lauf prüft selbst, ob es sie gibt.
-
-Der Abzug läuft die Nummern der Reihe nach ab (`sw0002`, `sw0003`, …), denn
-eine Auflistung einer Kategorie bietet BrickLink nicht an. **Bewusst
-gedrosselt** um eine Sekunde je Abruf. Zusammen mit BrickLinks eigener
-Antwortzeit ergibt das **gemessen 0,38 Abrufe je Sekunde** – also rund eine
-Stunde je 1.500 Nummern. So viel hat etwa Star Wars; `cty` mehr, `cas`,
-`hp` und `col` deutlich weniger. Für alle sieben Themen zusammen sind es
-rund fünf Stunden.
-
-Die Drosselung ist keine Höflichkeit: Es ist derselbe Zugang, über den die
-Preise laufen, und ein Durchlauf mit Vollgas könnte das Tageskontingent
-aufbrauchen. Dann stünde der Scanner ohne Preise da.
-
-**Themen nachreichen**, während schon einer läuft, geht: Sie hängen sich
-hinten an die Warteschlange. Bis 2.37.0 kam stattdessen ein freundliches
-„läuft bereits" zurück – und die neu eingetragenen Themen waren weg, ohne
-Fehler und ohne Hinweis. Auch die Liste selbst war nie gespeichert: Beim
-Öffnen wurde das Feld aus der eingebauten Liste gefüllt, alles Eigene war
-beim nächsten Aufruf verschwunden. Beides ist behoben; die Liste wird
-gesichert, sobald man das Feld verlässt.
-
-**Anhalten** geht jederzeit, der Fortschritt bleibt stehen; der nächste Lauf
-setzt dort fort. Antwortet BrickLink mit einem anderen Fehler als „gibt es
-nicht" – etwa `429`, weil das Kontingent erschöpft ist –, hört der Lauf von
-selbst auf, statt es schlimmer zu machen.
-
-> **Der Index gilt nur für Figuren.** Er wird ausschließlich befragt, wenn
-> oben auch „Minifig" eingestellt ist. Bis 2.37.2 fehlte diese Rücksicht:
-> Wer nach einem *Set* suchte, bekam eine Figur zurück – und weil ein
-> Treffer aus dem Index die Suche vorzeitig beendet, fand die eigentliche
-> Set-Suche danach gar nicht mehr statt.
-
-**🎨 Was auf den Bildern zu sehen ist.** Zweiter Durchgang nach dem Abzug:
-Die lokale KI sieht sich jedes Katalogbild an und beschreibt die Figur
-**Teil für Teil** – Kopf, Haare, Helm, Torso, Arme, Beine, Umhang, jeweils
-mit Farbe *und* Aufdruck – **englisch wie der Katalog**: „Soldier", „Droid", „Alien", „red,
-black". Deutsch abgelegt träfen sie nie, denn die Suchbegriffe kommen aus
-der Übersetzung und sind englisch. Viele Namen sagen davon nichts: `R-3PO Protocol Droid` nennt keine Farbe, `Wicket (Ewok)` keine Art.
-Erst damit findet „roter Droide" beides.
-
-Beim Dragon Master (`cas001`) kommt so heraus: „torso red black and yellow
-dragon design; helmet black yellow horns; cape yellow green dragon with red
-wings" – und damit findet **„roter Ritter mit grünem Drachen"** genau diese
-Figur. Farbe allein reichte dafür nicht: Bis 2.38.0 standen im Index nur Art
-und bis zu drei Farben, der Aufdruck kam im Suchtext gar nicht vor.
-
-> **„Nur auffällige Teile"** steht aus einem gemessenen Grund in der Frage:
-> Ohne den Zusatz schrieb das Modell zu jedem Arm „no visible printing" und
-> brauchte 9,3 s je Figur. Mit ihm sind es **5,4 s** – so schnell wie das
-> alte, dünne Schema, bei einem Vielfachen an Inhalt.
->
-> Und die Frage nach der **Art** steht bewusst zuerst und mit Beispielen. Im
-> ersten Anlauf hing sie hinten dran und wurde prompt unbrauchbar („LEGO
-> minifigure", „Ninjago"); davor traf sie zehn von zehn.
-
-**Beim Umstieg läuft alles noch einmal durch.** Die Warteschlange hängt an
-der neuen Spalte, nicht an der Farbe – sonst bliebe die Hälfte des Index auf
-dem alten, dünnen Stand stehen. Bei 7.500 Figuren sind das rund elf Stunden.
-
-**Das steht und fällt mit dem Modell.** An zehn echten Figuren traf
-`qwen3-vl` die Art zehnmal (Stormtrooper → Soldat, R2-D2 → Droide, Yoda →
-Alien, Leia → Mensch); `minicpm-v` lag in zwei von drei Proben daneben und
-hielt Darth Vader für einen Droiden. Ein schwaches Modell schreibt hier
-Unsinn in den Suchtext — wähle es unter *Modell fürs Bilderansehen*.
-
-> **Antwortet die KI nicht, hört der Lauf auf.** Das klingt selbstverständlich,
-> war es aber nicht: Bis 2.37.3 galt „gar keine Antwort" als dasselbe wie
-> „nichts erkannt". Als Ollama am 21.08.2026 nicht mehr antwortete, hakte der
-> Lauf trotzdem eine Figur nach der anderen als angesehen ab – 45 waren so
-> verbrannt, bevor es auffiel. Die sieht sich sonst nie wieder jemand an.
->
-> Jetzt gilt: Ein Ausfall schreibt **nichts**, die Figur bleibt offen. Nach
-> fünf Ausfällen in Folge endet der Lauf mit dem Grund in der Anzeige. Ein
-> einzelner Aussetzer – das Modell wird gerade geladen – ändert nichts.
->
-> Ein **fehlendes Bild** ist dagegen ein Ergebnis: BrickLink hat nicht zu
-> jeder Figur eins (`sw0307`, Embo, liefert 404). Die Figur gilt als
-> abgearbeitet, sonst versuchte es jeder Lauf wieder.
-
-Rund 5,5 Sekunden je Figur, jederzeit anhaltbar. Ein leeres Ergebnis wird
-festgehalten, sonst versuchte der nächste Lauf dieselbe Figur wieder.
+Die lokale KI übersetzt weiterhin **Suchbegriffe** – „Ritter" zu „Knight".
+Das ist eine ganz andere Aufgabe als Bilder ansehen und bleibt deshalb hier.
 
 **📖 Gelernte Begriffe.** Unter der KI-Karte steht die Bilanz („1.243
 Begriffe gelernt, davon 12 eigene"); **Ansehen und pflegen** öffnet die Liste

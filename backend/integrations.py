@@ -51,9 +51,6 @@ GEHEIME_SETTINGS = (
                               # vom Tausch-Token: Wer berichtet, gibt damit
                               # nichts über sein Tauschen preis, und der
                               # Kanal lässt sich einzeln zurückziehen
-    "katalog_token",          # schreibt den gemeinsamen Katalogabzug. Genau
-                              # eine Instanz hat ihn; mit ihm liesse sich der
-                              # Abzug aller anderen verschlechtern
     "vapid_private",          # signiert die Push-Meldungen dieser Instanz
     "ollama_url",             # Adresse der lokalen KI. Kein Schlüssel, aber
                               # sie kann Zugangsdaten enthalten
@@ -931,121 +928,6 @@ def _ollama_keep_alive() -> str:
     return "30m"
 
 
-OLLAMA_BILD_STD = "minicpm-v:latest"
-# Ein Bild dauert länger als eine Übersetzung, und das Modell muss oft erst
-# geladen werden. 120 s sind großzügig – wer hier zu knapp misst, bekommt
-# leere Ergebnisse und hält das Modell für unfähig.
-OLLAMA_BILD_TIMEOUT = 120
-
-# Wie viele Token die Antwort höchstens haben darf. Reine Notbremse, kein
-# Sparziel: Sie muss über dem liegen, was das begrenzte Schema unten im
-# schlimmsten Fall braucht (rund 1.500 Zeichen), sonst zerschneidet sie
-# gültige Antworten – und eine zerschnittene zählt als Fehlschlag, die Figur
-# bliebe liegen. Ein Test rechnet das gegen die Längen im Schema nach.
-#
-# Echte Antworten liegen bei etwa 160 Token. Eine Entgleisung kostet damit
-# gut 20 s statt der vollen 120 s Zeitgrenze.
-OLLAMA_BILD_MAX_TOKEN = 900
-
-# Wiederholungsbremse. Ollama fährt ohne (`repeat_penalty` 1.0), und bei
-# `temperature: 0` gibt es aus einer Schleife dann keinen Ausweg – das Modell
-# verfiel bei `cty0131` mitten im Aufdruck in „TATATATATA…". 1.1 ist der
-# übliche Wert und reicht: An sechs Vergleichsfiguren blieben Art und Farben
-# gleich, die Laufzeit halbierte sich (8–9,7 s auf 2,4–4,3 s), weil das
-# Modell nicht mehr auspolstert.
-OLLAMA_BILD_WIEDERHOLUNG = 1.1
-
-# **Die Längen sind kein Schönheitswunsch, sie sind die Abbruchbedingung.**
-#
-# Am 22.08.2026 blieb der Bilderlauf bei `sw0326` stehen – und zwar bei jedem
-# Anlauf, immer nach exakt 120 s. Das Modell hatte weder Ladeprobleme noch zu
-# wenig Speicher: Es lud in 3,8 s, verarbeitete das Bild in 2,8 s und schrieb
-# dann 15.190 Token am Stück, 436 Sekunden lang. Der Inhalt war eine
-# Endlosschleife **innerhalb einer einzigen Zeichenkette**:
-#
-#   "...and a dark blue stripe on the upper part of the legs, and a dark blue
-#    stripe on the lower part of the legs, and a dark blue stripe on the ..."
-#
-# `maxItems` hielt die Teileliste sauber bei sechs – Arrays begrenzt das
-# Schema also. Die Länge einer Zeichenkette begrenzte es nicht, und darin
-# verhakte sich das Modell: `temperature: 0` heißt gierige Dekodierung, und
-# `repeat_penalty` steht bei Ollama auf 1.0. Einmal in der Schleife, immer in
-# der Schleife.
-#
-# Mit den Grenzen unten kann die Schleife nicht entstehen, weil die Grammatik
-# die Zeichenkette schließen **muss**: dieselbe Figur, 4,1 s statt 436, und
-# das Ergebnis ist brauchbar. Ein Ausreißer wird dabei mitten im Wort
-# abgeschnitten – das ist gewollt. Ein angeschnittenes Merkmal ist Suchtext,
-# eine hängende Anfrage kostet den ganzen Lauf.
-_BILD_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "kind": {"type": "string", "maxLength": 24},
-        "parts": {"type": "array", "maxItems": 6, "items": {
-            "type": "object",
-            "properties": {"part": {"type": "string", "maxLength": 40},
-                           "color": {"type": "string", "maxLength": 40},
-                           "print": {"type": "string", "maxLength": 100}},
-            "required": ["part", "color", "print"]}},
-        "accessories": {"type": "array", "maxItems": 3,
-                        "items": {"type": "string", "maxLength": 40}}},
-    "required": ["kind", "parts"]}
-# **Teil für Teil, nicht nur „rot".**
-#
-# Vorher standen hier Art und bis zu drei Farben. Damit fand „roter Droide"
-# zwar den roten Droiden – aber „roter Protokolldroide mit schwarzem
-# Aufdruck" hatte nichts, woran es sich festhalten konnte: Der Aufdruck kam
-# im Suchtext gar nicht vor.
-#
-# Gemessen am 21.08.2026 an sechs echten Figuren: Der Dragon Master
-# (`cas001`) kam als „Umhang gelb, grüner Drache mit roten Flügeln, Torso
-# rot, Helm schwarz mit gelben Hörnern" heraus – das deckt sich mit dem
-# BrickLink-Namen bis ins Detail.
-#
-# „Nur auffällige Teile" steht aus einem gemessenen Grund in der Frage: Ohne
-# das schrieb das Modell zu jedem Arm „no visible printing" und brauchte
-# 9,3 s je Figur. Mit dem Zusatz sind es 5,4 s – so schnell wie das alte,
-# dünne Schema, bei einem Vielfachen an Inhalt.
-#
-# Die Frage nach der **Art** steht bewusst zuerst und mit Beispielen. Im
-# ersten Anlauf hing sie hinten dran und wurde prompt unbrauchbar
-# („LEGO minifigure", „Ninjago"); davor traf sie zehn von zehn.
-# Art **und** Farbe – aber das hing am Modell.
-#
-# Zunächst stand hier nur die Farbfrage, weil `minicpm-v` die Art in zwei
-# von drei Proben verfehlte (Darth Vader → „Droide", AT-AT-Fahrer →
-# „Roboter"). Mit `qwen3-vl` sieht es anders aus: an zehn echten Figuren
-# aus dem Abzug **zehn Treffer** – Stormtrooper → Soldat, Wookiee → Alien,
-# R2-D2 → Droide, Yoda → Alien, Leia → Mensch. Deshalb wieder beides.
-#
-# Wer ein schwächeres Modell einstellt, bekommt schwächere Antworten; die
-# Art landet dann als Rauschen im Suchtext. Das ist der Preis der freien
-# Wahl und steht so im Handbuch.
-#
-# Den **Namen** der Figur mitzugeben bringt nichts (gemessen: dreimal
-# dieselben Farben) und schadet mit schwachen Modellen sogar – auf „das ist
-# R-3PO" antwortete `minicpm-v` prompt „R2-D2".
-#
-# **Englisch, nicht deutsch.** Der erste Anlauf legte die Merkmale deutsch
-# ab („rot", „droide") – und traf damit nie: Die Suchbegriffe kommen aus der
-# Übersetzung und sind englisch, und selbst die rohe deutsche Frage
-# scheiterte an der Beugung („roter" ist nicht „rot"). Mit englischen
-# Merkmalen ist der Index einsprachig, und die Übersetzung greift wie
-# überall sonst. Gemessen liefert `qwen3-vl` auf Englisch sogar bessere
-# Antworten – beim Wookiee „Wookiee" statt nur „Alien".
-_BILD_FRAGE = (
-    "This LEGO minifigure. First: what kind of figure is it? Answer with one "
-    "or two English words (e.g. Soldier, Droid, Robot, Animal, Knight, Pilot, "
-    "Alien, Police, Wizard). "
-    "Then describe it part by part for a catalogue search: head, hair, "
-    "helmet or headgear, torso, arms, legs, cape. For each, give its main "
-    "colour in plain English (red, dark blue, light gray, tan) and a short "
-    "description of what is printed on it - pattern, markings, face, insignia, "
-    "and the colours of that printing. "
-    "Only list parts that stand out by colour or printing; skip plain parts "
-    "and anything you cannot see. Finally list what the figure holds.")
-
-
 def _ollama_inhalt(nachricht: dict) -> str:
     """Die Antwort – auch wenn das Modell sie ins Denken geschrieben hat.
 
@@ -1054,110 +936,15 @@ def _ollama_inhalt(nachricht: dict) -> str:
     am 21.08.2026). Ohne diesen Griff sah ausgerechnet das neueste Modell
     aus, als könne es gar nichts – dabei stand die richtige Antwort da, nur
     im falschen Feld.
+
+    Bleibt auch nach dem Umzug der Bilderkennung in den Hub gebraucht: Das
+    Übersetzen der Suchbegriffe läuft weiter über ein lokales Modell, und
+    Denkmodelle antworten dort genauso.
     """
     inhalt = (nachricht or {}).get("content") or ""
     if inhalt.strip():
         return inhalt
     return (nachricht or {}).get("thinking") or ""
-
-
-def ollama_bild_modell() -> str:
-    return (core.get_setting("ollama_bild_model")
-            or os.environ.get("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD)
-
-
-def bild_merkmale(bild: bytes) -> dict:
-    """Art und Farben einer Figur aus ihrem Bild.
-
-    Leere Werte heißen „nicht erkannt", und das ist kein Fehler: Der Abzug
-    ist auch ohne brauchbar, der Name trägt die Hauptlast.
-
-    **`fehler` trennt zwei Dinge, die gleich aussehen.** „Angesehen und
-    nichts erkannt" ist ein Ergebnis; „gar nicht erst gefragt bekommen"
-    ist ein Ausfall. Bis 2.37.3 war beides dasselbe – als Ollama nicht mehr
-    antwortete, hakte der Farbenlauf trotzdem eine Figur nach der anderen
-    als erledigt ab. Die sieht sich nie wieder jemand an.
-    """
-    if not bild or not ollama_enabled():
-        return {"art": "", "farben": [], "fehler": ""}
-    basis = ollama_setting("ollama_url").strip().rstrip("/")
-    try:
-        resp = requests.post(
-            basis + "/api/chat",
-            json={"model": ollama_bild_modell(), "stream": False,
-                  "think": False, "format": _BILD_SCHEMA,
-                  "options": {"temperature": 0,
-                              "num_predict": OLLAMA_BILD_MAX_TOKEN,
-                              "repeat_penalty": OLLAMA_BILD_WIEDERHOLUNG},
-                  "keep_alive": "30m",
-                  "messages": [{"role": "user", "content": _BILD_FRAGE,
-                                "images": [base64.b64encode(bild).decode()]}]},
-            timeout=OLLAMA_BILD_TIMEOUT, headers={"User-Agent": USER_AGENT})
-        resp.raise_for_status()
-        roh = resp.json()
-    except Exception as e:
-        # Gar nicht erst gefragt bekommen – das ist ein Ausfall des Dienstes.
-        return {"art": "", "farben": [], "merkmale": "",
-                "fehler": "%s: %s" % (type(e).__name__, e)}
-    try:
-        d = json.loads(_ollama_inhalt(roh.get("message", {})))
-        art = d.get("kind", "")
-        teile = d.get("parts") or []
-        halt = d.get("accessories") or []
-    except Exception as e:
-        # **Geantwortet, aber unbrauchbar.** Das ist etwas anderes als ein
-        # Ausfall: Der Dienst läuft, diese eine Figur bringt ihn aus dem
-        # Tritt. Am 24.08.2026 war das `cty0131` – das Modell verfiel im
-        # Aufdruck-Feld in „TATATATATA…", die Längengrenze schnitt die
-        # Zeichenkette ab, es begann im nächsten Feld von vorn, und
-        # `num_predict` kappte schließlich mitten im JSON. Unlesbar, und
-        # weil ein Fehlschlag nichts wegschreibt, kam dieselbe Figur endlos
-        # wieder und beendete nach zwölf Anläufen den ganzen Lauf.
-        #
-        # Der Aufrufer muss das unterscheiden können: Bei einem Ausfall
-        # darf er nichts abhaken, bei einer unbrauchbaren Antwort darf er
-        # die Figur nach ein paar Versuchen ziehen lassen.
-        return {"art": "", "farben": [], "merkmale": "", "unbrauchbar": True,
-                "fehler": "%s: %s" % (type(e).__name__, e)}
-    farben, stuecke = [], []
-    for teil in teile if isinstance(teile, list) else []:
-        if not isinstance(teil, dict):
-            continue
-        name = _bild_wort(teil.get("part"), 3)
-        farbe = _bild_wort(teil.get("color"), 3)
-        druck = _bild_wort(teil.get("print"), 12)
-        # „none" ist die Art, wie das Modell „hat es nicht" sagt – als Wort
-        # im Suchtext träfe es jede Suche nach Nichtvorhandenem.
-        if farbe in ("none", "nonoe", ""):
-            farbe = ""
-        if druck in ("none", "plain", "n a", ""):
-            druck = ""
-        if not name or (not farbe and not druck):
-            continue
-        stuecke.append(" ".join(x for x in (name, farbe, druck) if x))
-        for wort in farbe.split():
-            if len(wort) >= 3 and wort not in farben:
-                farben.append(wort)
-    for ding in halt if isinstance(halt, list) else []:
-        d2 = _bild_wort(ding, 4)
-        if d2 and d2 != "none":
-            stuecke.append("holding " + d2)
-    # Die Art knapp halten: Ein ganzer Satz im Suchtext trifft irgendwann
-    # alles. Zwei Wörter reichen für „Alien", „Clone Trooper", „Droide".
-    art = " ".join(re.sub(r"[^a-z ]", " ", str(art).lower()).split()[:2])
-    return {"art": art, "farben": farben[:5], "merkmale": "; ".join(stuecke),
-            "fehler": ""}
-
-
-def _bild_wort(roh, hoechstens: int) -> str:
-    """Ein Stück Modellantwort auf durchsuchbaren Text eintrocknen.
-
-    Kleinschreibung und nur Buchstaben, damit `_passt` dieselbe Elle anlegt
-    wie beim Namen. Die Wortgrenze hält die Beschreibung knapp: Ein ganzer
-    Satz im Suchtext trifft irgendwann alles.
-    """
-    return " ".join(re.sub(r"[^a-z ]", " ", str(roh or "").lower())
-                    .split()[:hoechstens])
 
 
 def ollama_modelle(url: str = "") -> list:

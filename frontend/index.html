@@ -753,10 +753,6 @@
       <select id="ollama-model" hidden></select>
       <input id="ollama-model-frei" autocapitalize="none" autocomplete="off"
              spellcheck="false" placeholder="z. B. qwen2.5:14b">
-      <label for="ollama-bild-model">Modell fürs Bilderansehen</label>
-      <select id="ollama-bild-model" hidden></select>
-      <input id="ollama-bild-frei" autocapitalize="none" autocomplete="off"
-             spellcheck="false" placeholder="z. B. gemma3:12b">
       <div class="detail-row">
         <button id="btn-reload-models" class="mini-btn">Modelle laden</button>
       </div>
@@ -780,57 +776,17 @@
       </div>
 
       <h4>📚 Katalog-Abzug</h4>
-      <p class="search-hint">Holt die Figuren eines Themas einmal von
-        BrickLink und legt Namen und Jahr hier ab. Danach findet die Suche
-        sie über beschreibende Wörter – „Protokolldroide" findet
+      <p class="search-hint">Der Abzug macht die Suche nach dem Aussehen
+        möglich – „roter Protokolldroide mit schwarzem Aufdruck" findet
         <code>R-3PO Protocol Droid</code>, wofür sonst kein Weg führt: Der
         Katalog von Rebrickable nennt sie nur <code>R-3PO</code>.</p>
-      <p class="search-hint"><b>Bewusst gedrosselt</b> – der
-        BrickLink-Zugang ist derselbe, über den die Preise laufen. Gemessen
-        sind das rund <b>eine Stunde je 1.500 Nummern</b>: etwa so viel hat
-        Star Wars, <code>cty</code> mehr, <code>cas</code>, <code>hp</code>
-        und <code>col</code> deutlich weniger. Mehrere Themen laufen
-        nacheinander ab, nie gleichzeitig. Jederzeit anhaltbar, der
-        Fortschritt bleibt je Thema stehen.</p>
-      <label for="katalog-themen">Themen (Nummernpräfix, mit Komma)</label>
-      <input id="katalog-themen" autocapitalize="none" spellcheck="false"
-             placeholder="sw, cty, njo">
-      <div class="detail-row">
-        <input id="katalog-neu" autocapitalize="none" spellcheck="false"
-               maxlength="6" placeholder="Präfix prüfen, z. B. pi">
-        <button id="btn-katalog-pruefen" class="mini-btn">Prüfen</button>
-      </div>
-      <p id="katalog-pruefung" class="search-hint" hidden></p>
+      <p class="search-hint"><b>Erzeugt wird er im Hub</b>, nicht hier. Er
+        klappert BrickLink ab und lässt die Bilder beschreiben; diese Instanz
+        holt den fertigen Stand alle zwölf Stunden ab. Vorher tat das jede
+        Instanz selbst – viermal dieselbe Arbeit für dasselbe Ergebnis, und
+        jede brauchte eigene BrickLink-Zugangsdaten und ein Sehmodell.</p>
       <div class="detail-row">
         <span id="katalog-stand" class="search-hint"></span>
-      </div>
-      <div class="detail-row">
-        <button id="btn-katalog-start" class="mini-btn add">Abzug starten</button>
-        <button id="btn-katalog-stop" class="mini-btn" hidden>Anhalten</button>
-      </div>
-
-      <h4>🎨 Was auf den Bildern zu sehen ist</h4>
-      <p class="search-hint">Zweiter Durchgang: Die lokale KI sieht sich die
-        Katalogbilder an und schreibt <b>Art und Farben</b> dazu – „Soldier",
-        „Droid", „Alien", „red, black". Englisch wie der Katalog, damit die
-        übersetzten Suchbegriffe sie auch treffen. Viele Namen sagen davon
-        nichts:
-        <code>R-3PO Protocol Droid</code> nennt keine Farbe,
-        <code>Wicket (Ewok)</code> keine Art. Danach findet „roter Droide"
-        beides.</p>
-      <p class="search-hint"><b>Das steht und fällt mit dem Modell.</b> An
-        zehn echten Figuren traf <code>qwen3-vl</code> die Art zehnmal
-        (Stormtrooper → Soldat, R2-D2 → Droide, Yoda → Alien);
-        <code>minicpm-v</code> lag in zwei von drei daneben. Ein schwaches
-        Modell schreibt hier Unsinn in den Suchtext. Kostet kein fremdes
-        Kontingent, aber Rechenzeit – rund 5,5 Sekunden je Figur, jederzeit
-        anhaltbar, der Fortschritt bleibt.</p>
-      <div class="detail-row">
-        <span id="farben-stand" class="search-hint"></span>
-      </div>
-      <div class="detail-row">
-        <button id="btn-farben-start" class="mini-btn add">Farben holen</button>
-        <button id="btn-farben-stop" class="mini-btn" hidden>Anhalten</button>
       </div>
     </div>
     <div class="settings-card" id="price-region-card" hidden>
