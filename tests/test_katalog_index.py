@@ -175,9 +175,11 @@ def test_der_stand_sagt_was_angekommen_ist(client):
     später am Protokoll, ob überhaupt etwas ankommt."""
     _zeile("sw0002", "R-3PO Protocol Droid", merkmale="torso red")
     _zeile("sw0003", "R2-D2")
-    core.set_setting("crash_token", "x")
-    core.set_setting("katalog_hub_geholt", "1000")
+    core.set_setting("katalog_geholt_at", "1000")
 
-    d = client.get("/api/katalog/hub").json()
-    assert d == {"kann_holen": True, "figuren": 2, "beschrieben": 1,
-                 "geholt_bis": 1000}
+    d = client.get("/api/katalog/stand").json()
+    assert d["figuren"] == 2 and d["beschrieben"] == 1
+    assert d["geholt_at"] == 1000
+    # Beide Zeilen haben hier einen Namen – im echten Betrieb fehlt er am
+    # Anfang allen, weil die veröffentlichte Datei ihn nicht enthält.
+    assert d["ohne_namen"] == 0

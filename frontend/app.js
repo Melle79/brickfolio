@@ -5771,18 +5771,28 @@ async function katalogStand() {
   const feld = $("katalog-stand");
   if (!feld) return;
   let d;
-  try { d = await api("/katalog/hub"); }
+  try { d = await api("/katalog/stand"); }
   catch (e) { feld.textContent = ""; return; }
-  if (!d.kann_holen) {
-    feld.textContent = tr("Kein Hub-Token – der Abzug kommt nicht an.");
-    return;
-  }
-  feld.textContent = d.geholt_bis
+  const teile = [];
+  teile.push(d.geholt_at
     ? tr("{n} Figuren, {b} beschrieben · zuletzt geholt am {d}",
         { n: d.figuren, b: d.beschrieben,
-          d: new Date(d.geholt_bis * 1000).toLocaleDateString() })
-    : tr("{n} Figuren · noch nichts vom Hub geholt", { n: d.figuren });
+          d: new Date(d.geholt_at * 1000).toLocaleDateString() })
+    : tr("{n} Figuren · noch nichts geholt", { n: d.figuren }));
+  // Die Namen fehlen am Anfang allen: Der veröffentlichte Abzug enthält sie
+  // nicht, jede Installation schlägt sie über ihren eigenen Zugang nach.
+  // Das gehört gesagt, sonst hält man es für einen Fehler.
+  if (d.ohne_namen) {
+    teile.push(d.hat_bricklink
+      ? tr("{n} Namen werden nach und nach nachgeschlagen – gefunden werden "
+           + "die Figuren trotzdem.", { n: d.ohne_namen })
+      : tr("{n} Namen fehlen – dafür wird ein BrickLink-Zugang gebraucht.",
+           { n: d.ohne_namen }));
+  }
+  if (d.namen_fehler) teile.push(tr("Abgebrochen: {f}", { f: d.namen_fehler }));
+  feld.textContent = teile.join(" ");
 }
+
 
 /* Welcher Name gilt – die Liste oder das Textfeld? */
 function ollamaModell() {

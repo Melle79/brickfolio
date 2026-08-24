@@ -199,9 +199,14 @@ def _price_refresher():
             print(f"[brickfolio] Katalog-Abgleich übersprungen: {e}",
                   flush=True)
         try:
-            _katalog_vom_hub()
+            _katalog_ziehen()
         except Exception as e:
-            print(f"[brickfolio] Katalog vom Hub übersprungen: {e}",
+            print(f"[brickfolio] Katalog holen übersprungen: {e}", flush=True)
+        try:
+            # Nach dem Ziehen: Die neuen Zeilen haben noch keinen Namen.
+            _katalog_namen()
+        except Exception as e:
+            print(f"[brickfolio] Namen nachschlagen übersprungen: {e}",
                   flush=True)
         time.sleep(12 * 3600)
 
@@ -902,24 +907,45 @@ def set_crash_token(body: CrashTokenBody, user: dict = Depends(admin_user)):
     return {"ok": True, "can_send": hub.report_enabled()}
 
 
-@app.get("/api/katalog/hub")
-def katalog_hub_stand(user: dict = Depends(admin_user)):
-    """Wie steht es um den gemeinsamen Abzug?
+@app.get("/api/katalog/stand")
+def katalog_stand(user: dict = Depends(admin_user)):
+    """Wie steht es um den Abzug?
 
     Das Einzige, was von der Katalogsteuerung in den Einstellungen übrig
-    ist – und mehr braucht es hier auch nicht: Erzeugt wird er im Hub, diese
-    Instanz holt ihn nur. Ohne die Anzeige sähe man erst zwölf Stunden
-    später am Protokoll, ob das überhaupt läuft.
+    ist – und mehr braucht es hier auch nicht: Erzeugt wird er anderswo,
+    diese Instanz holt ihn nur. Ohne die Anzeige sähe man erst zwölf Stunden
+    später am Protokoll, ob das überhaupt ankommt.
     """
     with core.db() as conn:
         r = conn.execute(
             "SELECT COUNT(*) AS n,"
             " SUM(CASE WHEN merkmale NOT IN ('', '–') THEN 1 ELSE 0 END)"
-            " AS beschrieben FROM katalog_index").fetchone()
-    return {"kann_holen": bool(core.get_setting("crash_token")),
-            "figuren": r["n"] or 0,
+            " AS beschrieben,"
+            " SUM(CASE WHEN name = '' THEN 1 ELSE 0 END) AS ohne_namen"
+            " FROM katalog_index").fetchone()
+    return {"figuren": r["n"] or 0,
             "beschrieben": r["beschrieben"] or 0,
-            "geholt_bis": int(core.get_setting("katalog_hub_geholt") or 0)}
+            # Namen fehlen am Anfang **allen**: Der veröffentlichte Abzug
+            # enthält sie nicht, jede Installation schlägt sie über ihren
+            # eigenen Zugang nach. Gefunden wird die Figur trotzdem – dafür
+            # sorgt die Beschreibung.
+            "ohne_namen": r["ohne_namen"] or 0,
+            "namen_laufen": _namen_lauf["aktiv"],
+            "namen_fehler": _namen_lauf["fehler"],
+            "hat_bricklink": integrations.bricklink_enabled(),
+            "geholt_at": int(core.get_setting("katalog_geholt_at") or 0),
+            "quelle": core.get_setting("katalog_quelle") or KATALOG_QUELLE}
+
+
+@app.post("/api/katalog/holen")
+def katalog_holen_jetzt(user: dict = Depends(admin_user)):
+    """Von Hand nachziehen, statt bis zum nächsten Zwölfstundenlauf zu warten."""
+    try:
+        erg = _katalog_ziehen()
+    except Exception as e:
+        raise HTTPException(502, scrub(str(e))[:200])
+    threading.Thread(target=_katalog_namen, daemon=True).start()
+    return erg
 
 
 @app.get("/api/errors")
@@ -1311,68 +1337,156 @@ def _katalog_changelog() -> dict:
     return {"umbenannt": umbenannt, "neunummeriert": neunummeriert}
 
 
-# Der Hub liefert 1.000 Zeilen je Seite. Vierzig Seiten sind 40.000 Zeilen –
-# ein Vielfaches des heutigen Abzugs und trotzdem eine Grenze: Ein Hub, der
-# fälschlich immer `mehr` meldete, drehte sonst ewig.
-KATALOG_HUB_SEITEN = 40
+# Wo der veröffentlichte Abzug liegt. Eine Datei, kein Dienst: Sie ist über
+# GitHub für jede Installation erreichbar, ohne dass jemand einen Zugang von
+# irgendwem braucht und ohne dass bei irgendwem etwas laufen muss.
+KATALOG_QUELLE = ("https://raw.githubusercontent.com/Melle79/brickfolio/"
+                  "main/katalog/index.ndjson")
+
+# Wie viel die Datei höchstens haben darf. Bei 9.741 Figuren sind es 3,3 MB;
+# 32 MB sind ein Vielfaches davon und trotzdem eine Grenze – die Adresse
+# lässt sich verstellen, und ohne Deckel zöge die Instanz sich alles.
+KATALOG_MAX_BYTES = 32 * 1024 * 1024
+
+# Wie viele Namen je Durchgang nachgeschlagen werden, und wie schnell. Der
+# BrickLink-Zugang ist derselbe, über den die Preise laufen – deshalb
+# gedrosselt und in Häppchen, statt 9.700 am Stück.
+KATALOG_NAMEN_JE_LAUF = 300
+KATALOG_NAMEN_TAKT = 1.0
+
+_namen_lauf = {"aktiv": False, "getan": 0, "stop": False, "fehler": ""}
 
 
-def _katalog_vom_hub() -> dict:
-    """Den gemeinsamen Abzug vom Hub nachziehen.
+def _katalog_ziehen() -> dict:
+    """Den veröffentlichten Abzug holen – Nummer und Beschreibung.
 
-    Das ist seit 2.41.0 der **einzige** Weg, wie ein Abzug in eine Instanz
-    kommt. Erzeugt wird er im Hub: Er klappert BrickLink ab und lässt die
-    Bilder beschreiben. Vorher tat das jede Instanz selbst – viermal
-    dieselbe Arbeit für dasselbe Ergebnis, denn der Abzug beschreibt
-    BrickLinks Fotos, nicht die Sammlung von irgendwem. Und jede brauchte
-    dafür eigene BrickLink-Zugangsdaten und ein Sehmodell; drei von vier
-    hatten seit dem 23.08.2026 keines mehr und deshalb null Zeilen.
+    Was in der Datei steht, gehört **uns**: die BrickLink-Nummer als Kennung
+    und der Text, den ein Sehmodell über das Katalogfoto geschrieben hat.
+    Name, Jahr, Kategorie und Bildadresse stehen **nicht** darin – das ist
+    BrickLinks Inhalt, und dessen Weitergabe an Dritte untersagen deren
+    Nutzungsbedingungen. Den Namen schlägt jede Installation über ihren
+    eigenen Zugang nach (`_katalog_namen`).
+
+    Die Datei ist ein vollständiger Stand, kein Zuwachs. Über `ETag` merkt
+    sich die Instanz, welchen sie schon hat – ist er unverändert, kostet der
+    Abruf ein paar hundert Byte statt 3,3 MB.
     """
-    if not core.get_setting("crash_token"):
-        return {"geholt": 0, "grund": "kein Hub-Token"}
-    stand = int(core.get_setting("katalog_hub_geholt") or 0)
-    geholt = 0
-    for _ in range(KATALOG_HUB_SEITEN):
-        antwort = hub.katalog_holen(stand)
-        zeilen = antwort.get("zeilen") or []
-        if not zeilen:
-            break
+    quelle = core.get_setting("katalog_quelle") or KATALOG_QUELLE
+    kopf = {"User-Agent": integrations.USER_AGENT}
+    etag = core.get_setting("katalog_etag")
+    if etag:
+        kopf["If-None-Match"] = etag
+    r = requests.get(quelle, headers=kopf, timeout=120)
+    if r.status_code == 304:
+        return {"geholt": 0, "grund": "unverändert"}
+    r.raise_for_status()
+    if len(r.content) > KATALOG_MAX_BYTES:
+        raise ValueError("Die Katalogdatei ist zu groß")
+
+    neu = geaendert = 0
+    jetzt = int(time.time())
+    with core.db() as conn:
+        for zeile in r.text.splitlines():
+            zeile = zeile.strip()
+            if not zeile:
+                continue
+            try:
+                d = json.loads(zeile)
+            except ValueError:
+                continue          # eine kaputte Zeile wirft nicht alles weg
+            nr = str(d.get("item_no") or "").strip()
+            if not nr:
+                continue
+            # **Nur unsere Felder anfassen.** `name`, `such`, `jahr` und
+            # `category_id` füllt die Instanz selbst; sie hier zu
+            # überschreiben hieße, die Arbeit von `_katalog_namen` bei jedem
+            # Abruf wegzuwerfen.
+            vorher = conn.execute(
+                "SELECT merkmale FROM katalog_index WHERE item_no = ? AND "
+                "item_type = 'minifig'", (nr,)).fetchone()
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " img_url, farben, art, merkmale, updated_at)"
+                " VALUES (?, 'minifig', '', '', ?, ?, ?, ?, ?)"
+                " ON CONFLICT(item_no, item_type) DO UPDATE SET"
+                " farben = excluded.farben, art = excluded.art,"
+                " merkmale = excluded.merkmale,"
+                " updated_at = excluded.updated_at",
+                (nr, "https://img.bricklink.com/ML/%s.jpg" % nr,
+                 str(d.get("farben") or ""), str(d.get("art") or ""),
+                 str(d.get("merkmale") or ""), jetzt))
+            if vorher is None:
+                neu += 1
+            elif vorher["merkmale"] != (d.get("merkmale") or ""):
+                geaendert += 1
+    if r.headers.get("ETag"):
+        core.set_setting("katalog_etag", r.headers["ETag"])
+    core.set_setting("katalog_geholt_at", str(jetzt))
+    print("[brickfolio] Katalog geholt: %d neu, %d geändert"
+          % (neu, geaendert), flush=True)
+    return {"geholt": neu + geaendert, "neu": neu, "geaendert": geaendert}
+
+
+def _katalog_namen(grenze: int = KATALOG_NAMEN_JE_LAUF) -> dict:
+    """Die Namen nachschlagen – über den **eigenen** BrickLink-Zugang.
+
+    Der veröffentlichte Abzug enthält sie nicht, und das ist der Punkt: So
+    geht nichts von BrickLink an Dritte. Jede Installation holt sie selbst –
+    und ohne BrickLink-Zugang tut eine Installation ohnehin nichts.
+
+    Gedrosselt und in Häppchen. Beim ersten Mal sind es rund 9.700 Abrufe,
+    verteilt über ein paar Tage: Dasselbe Kontingent trägt die Preise, und
+    die braucht man täglich. Bis ein Name da ist, steht in der Suche die
+    Nummer – **gefunden** wird die Figur trotzdem, denn dafür sorgt die
+    Beschreibung, und die ist längst da.
+    """
+    if not integrations.bricklink_enabled():
+        return {"getan": 0, "grund": "kein BrickLink-Zugang"}
+    if _namen_lauf["aktiv"]:
+        return {"getan": 0, "grund": "läuft bereits"}
+    _namen_lauf.update({"aktiv": True, "getan": 0, "stop": False,
+                        "fehler": ""})
+    try:
         with core.db() as conn:
-            for z in zeilen:
-                nr = str(z.get("item_no") or "").strip()
-                if not nr:
+            rows = conn.execute(
+                "SELECT item_no FROM katalog_index WHERE name = '' "
+                "AND merkmale NOT IN ('', '–') LIMIT ?",
+                (max(1, int(grenze)),)).fetchall()
+        for r in rows:
+            if _namen_lauf["stop"]:
+                break
+            try:
+                d = integrations.bricklink_item("minifig", r["item_no"])
+            except requests.HTTPError as e:
+                code = e.response.status_code if e.response is not None else 0
+                if code == 404:
+                    # Die Nummer gibt es nicht mehr. Einen Strich setzen,
+                    # sonst greift jeder Lauf wieder nach derselben Zeile.
+                    with core.db() as conn:
+                        conn.execute("UPDATE katalog_index SET name = '–' "
+                                     "WHERE item_no = ?", (r["item_no"],))
                     continue
-                conn.execute(
-                    "INSERT INTO katalog_index (item_no, item_type, name,"
-                    " such, category_id, jahr, img_url, farben, art,"
-                    " merkmale, updated_at)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                    " ON CONFLICT(item_no, item_type) DO UPDATE SET"
-                    " name = excluded.name, such = excluded.such,"
-                    " category_id = excluded.category_id,"
-                    " jahr = excluded.jahr, img_url = excluded.img_url,"
-                    " farben = excluded.farben, art = excluded.art,"
-                    " merkmale = excluded.merkmale,"
-                    " updated_at = excluded.updated_at",
-                    (nr, str(z.get("item_type") or "minifig"),
-                     str(z.get("name") or ""), str(z.get("such") or ""),
-                     str(z.get("category_id") or "") or None,
-                     int(z.get("jahr") or 0),
-                     str(z.get("img_url") or ""),
-                     str(z.get("farben") or ""), str(z.get("art") or ""),
-                     str(z.get("merkmale") or ""),
-                     int(z.get("updated_at") or 0)))
-        geholt += len(zeilen)
-        # Erst nach dem Schreiben weiterrücken: Bricht es mittendrin ab,
-        # kommt dieselbe Seite noch einmal – doppelt schreiben ist hier
-        # harmlos, eine übersprungene Seite wäre es nicht.
-        stand = int(antwort.get("stand") or stand)
-        core.set_setting("katalog_hub_geholt", str(stand))
-        if not antwort.get("mehr"):
-            break
-    if geholt:
-        print("[brickfolio] Katalog vom Hub: %d Zeilen" % geholt, flush=True)
-    return {"geholt": geholt}
+                # 401 oder 429 gelten für alle folgenden mit – der Zugang
+                # ist derselbe. Weiterzulaufen machte beides schlimmer.
+                _namen_lauf["fehler"] = "BrickLink antwortet mit %d" % code
+                break
+            except Exception as e:
+                _namen_lauf["fehler"] = scrub(str(e))
+                break
+            name = ((d or {}).get("name") or "").strip()
+            if name:
+                with core.db() as conn:
+                    conn.execute(
+                        "UPDATE katalog_index SET name = ?, such = ?, "
+                        "jahr = ?, category_id = ? WHERE item_no = ?",
+                        (name, _wortanfaenge(name)[0],
+                         (d.get("year_released") or 0),
+                         str(d.get("category_id") or ""), r["item_no"]))
+                _namen_lauf["getan"] += 1
+            time.sleep(KATALOG_NAMEN_TAKT)
+    finally:
+        _namen_lauf["aktiv"] = False
+    return {"getan": _namen_lauf["getan"], "fehler": _namen_lauf["fehler"]}
 
 
 def _apply_new_number(old_id: str, new_id: str) -> int:
@@ -2838,7 +2952,7 @@ BEGRIFFE_SEITE = 25
 #
 # Seit 2.41.0 erzeugt ihn der Hub einmal zentral. Was hier bleibt, ist das
 # Nuetzliche: der lokale Abzug in `katalog_index` und die Suche darin. Geholt
-# wird er von `_katalog_vom_hub`.
+# wird er von `_katalog_ziehen`, die Namen von `_katalog_namen`.
 
 def _katalog_suchen(begriff: str, hoechstens: int = 20,
                     item_type: str = "minifig") -> list:

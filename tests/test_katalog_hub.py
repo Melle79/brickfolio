@@ -1,103 +1,227 @@
-"""Warum der Abzug einmal zentral liegt statt viermal lokal.
+"""Wie der Abzug in eine Installation kommt.
 
-Jede Instanz baute ihn bisher selbst: Nummern der Reihe nach bei BrickLink
-abklappern (Tage, eigenes Kontingent) und danach jedes Bild von einem
-Sehmodell beschreiben lassen (rund 24 Stunden Grafikeinheit für 9.741
-Figuren). Dieselbe Arbeit für dasselbe Ergebnis – der Katalog beschreibt
-BrickLinks Fotos, nicht die Sammlung von irgendwem. Nerdfan, Paul und Kello
-hatten deshalb null Zeilen im Abzug, und seit dem 23.08. auch kein Sehmodell
-mehr, mit dem sie ihn erarbeiten könnten.
+Erzeugt wird er auf Svens NAS: Ein Dienst klappert BrickLink ab und lässt
+ein Sehmodell die Katalogfotos beschreiben. Veröffentlicht wird davon
+**nur die Nummer und die eigene Beschreibung** – Name, Jahr, Kategorie und
+Bildadresse bleiben dort, denn das ist BrickLinks Inhalt, und dessen
+Weitergabe an Dritte untersagen deren Nutzungsbedingungen.
 
-Seit 2.41.0 erzeugt ihn der **Hub**: Er klappert BrickLink ab und lässt die
-Bilder beschreiben. Keine Instanz schiebt mehr hoch – sie holen nur noch.
-Deshalb steht hier ausschließlich die Abholrichtung.
+Jede Installation zieht sich die Datei und schlägt die Namen über ihren
+**eigenen** BrickLink-Zugang nach. Ohne den tut eine Installation ohnehin
+nichts – deshalb kostet das niemanden etwas, was er nicht ohnehin hat.
 """
+import json
+import time
+
 import pytest
+import requests
 
 import core
-import hub
 import integrations
 import main
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
-def abzug(tmp_path, monkeypatch):
-    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "hub.db"))
+def client(tmp_path, monkeypatch):
+    monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "kz.db"))
     core.init_db()
+    now = int(time.time())
     with core.db() as conn:
-        for nr, merkmale, stand in (("sw0010", "head tan smooth", 100),
-                                    ("sw0021", "torso white tunic", 200),
-                                    ("sw0099", "", 150)):
-            conn.execute(
-                "INSERT INTO katalog_index (item_no, item_type, name, such, "
-                "img_url, farben, art, merkmale, updated_at) VALUES "
-                "(?, 'minifig', ?, ?, '', 'tan', 'droid', ?, ?)",
-                (nr, nr, nr, merkmale, stand))
-    return True
+        conn.execute("INSERT INTO users (username, password_hash, is_admin,"
+                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     (now,))
+    main._namen_lauf.update({"aktiv": False, "getan": 0, "stop": False,
+                             "fehler": ""})
+    monkeypatch.setattr(main, "KATALOG_NAMEN_TAKT", 0)
+    c = TestClient(main.app)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    return c
 
 
-# ------------------------------------- Die Gegenrichtung: abholen
+def _datei(monkeypatch, zeilen, etag='"abc"', status=200, kopf=None):
+    inhalt = "\n".join(json.dumps(z) for z in zeilen) + "\n"
 
-def _hub_antwort(monkeypatch, seiten):
-    """Den Hub vortäuschen – eine Liste von Antworten, Seite für Seite."""
-    gefragt: list = []
+    # `text` als schlichtes Klassenmerkmal, nicht als Eigenschaft: Eine
+    # Methode namens `text`, die `text` zurückgeben will, findet sich selbst.
+    class Fake:
+        status_code = status
+        headers = kopf if kopf is not None else ({"ETag": etag} if etag else {})
+        content = inhalt.encode()
+        text = inhalt
 
-    def fake(seit=0):
-        gefragt.append(seit)
-        return seiten[min(len(gefragt) - 1, len(seiten) - 1)]
-    monkeypatch.setattr(hub, "katalog_holen", fake)
-    return gefragt
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise requests.HTTPError(str(self.status_code))
+
+    monkeypatch.setattr(main.requests, "get", lambda url, **kw: Fake())
 
 
-def test_wer_nicht_selbst_abklappert_holt_den_abzug(abzug, monkeypatch):
-    """Nerdfan, Paul und Kello haben weder BrickLink-Kontingent noch
-    Sehmodell. Dieselbe Arbeit noch einmal zu leisten hieße Tage Abrufe und
-    rund einen Tag Grafikeinheit – für dasselbe Ergebnis."""
-    core.set_setting("crash_token", "berichts-token")
-    _hub_antwort(monkeypatch, [
-        {"zeilen": [{"item_no": "cas001", "item_type": "minifig",
-                     "name": "Dragon Master", "such": "dragon master",
-                     "merkmale": "cape yellow green dragon",
-                     "farben": "red, blue", "art": "knight",
-                     "img_url": "u", "jahr": 1993, "updated_at": 500}],
-         "stand": 500, "mehr": False}])
+def test_der_abzug_kommt_als_datei_an(client, monkeypatch):
+    _datei(monkeypatch, [
+        {"item_no": "cas001", "art": "knight", "farben": "red, blue",
+         "merkmale": "cape yellow green dragon", "modell": "qwen3-vl:latest"}])
 
-    erg = main._katalog_vom_hub()
-    assert erg["geholt"] == 1
+    erg = main._katalog_ziehen()
+    assert erg["neu"] == 1
     with core.db() as conn:
-        r = conn.execute("SELECT name, merkmale, updated_at FROM "
-                         "katalog_index WHERE item_no='cas001'").fetchone()
-    assert r["name"] == "Dragon Master"
+        r = conn.execute("SELECT * FROM katalog_index").fetchone()
     assert r["merkmale"] == "cape yellow green dragon"
-    assert int(core.get_setting("katalog_hub_geholt")) == 500
+    assert r["art"] == "knight"
+    # Der Name steht **nicht** in der Datei – den holt die Installation selbst.
+    assert r["name"] == ""
 
 
-def test_ohne_hub_token_passiert_nichts(abzug, monkeypatch):
-    gefragt = _hub_antwort(monkeypatch, [{"zeilen": [], "stand": 0,
-                                          "mehr": False}])
-    assert main._katalog_vom_hub()["geholt"] == 0
-    assert gefragt == []
+def test_ein_unveraenderter_stand_kostet_fast_nichts(client, monkeypatch):
+    """3,3 MB alle zwölf Stunden zu ziehen, obwohl sich nichts geändert hat,
+    wäre Verschwendung – auf beiden Seiten."""
+    core.set_setting("katalog_etag", '"abc"')
+    gefragt = {}
+
+    class Fake:
+        status_code = 304
+        headers = {}
+
+        def raise_for_status(self):
+            pass
+
+    def fake_get(url, **kw):
+        gefragt.update(kw.get("headers") or {})
+        return Fake()
+    monkeypatch.setattr(main.requests, "get", fake_get)
+
+    assert main._katalog_ziehen()["grund"] == "unverändert"
+    assert gefragt.get("If-None-Match") == '"abc"'
 
 
-def test_mehrere_seiten_werden_durchgeblaettert(abzug, monkeypatch):
-    core.set_setting("crash_token", "berichts-token")
-    _hub_antwort(monkeypatch, [
-        {"zeilen": [{"item_no": "a001", "updated_at": 10}],
-         "stand": 10, "mehr": True},
-        {"zeilen": [{"item_no": "a002", "updated_at": 20}],
-         "stand": 20, "mehr": True},
-        {"zeilen": [], "stand": 20, "mehr": False}])
+def test_eine_kaputte_zeile_wirft_nicht_alles_weg(client, monkeypatch):
+    class Fake:
+        status_code = 200
+        headers = {}
+        content = b"x"
+        text = ('{"item_no": "a001", "merkmale": "torso red"}\n'
+                'das ist kein JSON\n'
+                '{"item_no": "a002", "merkmale": "torso blue"}\n')
 
-    assert main._katalog_vom_hub()["geholt"] == 2
-    assert int(core.get_setting("katalog_hub_geholt")) == 20
+        def raise_for_status(self):
+            pass
+    monkeypatch.setattr(main.requests, "get", lambda url, **kw: Fake())
+
+    assert main._katalog_ziehen()["neu"] == 2
 
 
-def test_ein_hub_der_immer_mehr_meldet_dreht_nicht_ewig(abzug, monkeypatch):
-    """Sonst hinge der Zwölfstundenlauf für immer in dieser Schleife."""
-    core.set_setting("crash_token", "berichts-token")
-    gefragt = _hub_antwort(monkeypatch, [
-        {"zeilen": [{"item_no": "a001", "updated_at": 10}],
-         "stand": 10, "mehr": True}])
+def test_der_name_wird_beim_ziehen_nicht_ueberschrieben(client, monkeypatch):
+    """Sonst wäre die Arbeit des Namenslaufs bei jedem Abruf wieder weg."""
+    _datei(monkeypatch, [{"item_no": "cas001", "merkmale": "torso red"}])
+    main._katalog_ziehen()
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET name = 'Dragon Master', "
+                     "such = 'dragonmaster' WHERE item_no = 'cas001'")
 
-    main._katalog_vom_hub()
-    assert len(gefragt) == main.KATALOG_HUB_SEITEN
+    _datei(monkeypatch, [{"item_no": "cas001", "merkmale": "torso red blue"}],
+           etag=None)
+    main._katalog_ziehen()
+    with core.db() as conn:
+        r = conn.execute("SELECT name, such, merkmale FROM katalog_index"
+                         " WHERE item_no = 'cas001'").fetchone()
+    assert r["name"] == "Dragon Master" and r["such"] == "dragonmaster"
+    assert r["merkmale"] == "torso red blue", "die Beschreibung kam nicht an"
+
+
+def test_eine_zu_grosse_datei_wird_abgewiesen(client, monkeypatch):
+    """Die Adresse lässt sich verstellen – ohne Deckel zöge die Instanz
+    sich alles, was dort liegt."""
+    class Fake:
+        status_code = 200
+        headers = {}
+        content = b"x" * (main.KATALOG_MAX_BYTES + 1)
+        text = ""
+
+        def raise_for_status(self):
+            pass
+    monkeypatch.setattr(main.requests, "get", lambda url, **kw: Fake())
+
+    with pytest.raises(ValueError):
+        main._katalog_ziehen()
+
+
+# ------------------------------------------- Namen über den eigenen Zugang
+
+def _bricklink(monkeypatch, katalog):
+    def fake(item_type, item_no):
+        if item_no not in katalog:
+            resp = requests.Response()
+            resp.status_code = 404
+            raise requests.HTTPError("404", response=resp)
+        return {"name": katalog[item_no], "year_released": 1993,
+                "category_id": 53}
+    monkeypatch.setattr(integrations, "bricklink_item", fake)
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+
+
+def test_die_namen_kommen_ueber_den_eigenen_zugang(client, monkeypatch):
+    _datei(monkeypatch, [{"item_no": "cas001", "merkmale": "torso red"}])
+    main._katalog_ziehen()
+    _bricklink(monkeypatch, {"cas001": "Dragon Master - Yellow Plumes"})
+
+    assert main._katalog_namen()["getan"] == 1
+    with core.db() as conn:
+        r = conn.execute("SELECT name, such, jahr FROM katalog_index").fetchone()
+    assert r["name"] == "Dragon Master - Yellow Plumes"
+    # Der Suchtext muss dieselbe Elle haben wie die Suche: zusammengezogen,
+    # ohne Satzzeichen. Sonst findet der Vorfilter nichts.
+    assert r["such"] == "dragonmasteryellowplumes"
+    assert r["jahr"] == 1993
+
+
+def test_eine_verschwundene_nummer_haelt_den_lauf_nicht_auf(client, monkeypatch):
+    """Ohne Strich griffe jeder Lauf wieder nach derselben Zeile und käme
+    nie über sie hinaus."""
+    _datei(monkeypatch, [{"item_no": "weg001", "merkmale": "torso red"}])
+    main._katalog_ziehen()
+    _bricklink(monkeypatch, {})
+
+    main._katalog_namen()
+    with core.db() as conn:
+        r = conn.execute("SELECT name FROM katalog_index").fetchone()
+    assert r["name"] == "–"
+    assert main._katalog_namen()["getan"] == 0
+
+
+def test_ein_kontingentfehler_beendet_den_namenslauf(client, monkeypatch):
+    """401 und 429 gelten für alle folgenden mit – der Zugang ist derselbe.
+    Weiterzulaufen machte beides schlimmer."""
+    _datei(monkeypatch, [{"item_no": "a%03d" % i, "merkmale": "torso red"}
+                         for i in range(5)])
+    main._katalog_ziehen()
+
+    versuche = []
+
+    def kontingent(item_type, item_no):
+        versuche.append(item_no)
+        resp = requests.Response()
+        resp.status_code = 429
+        raise requests.HTTPError("429", response=resp)
+    monkeypatch.setattr(integrations, "bricklink_item", kontingent)
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: True)
+
+    erg = main._katalog_namen()
+    assert len(versuche) == 1, "er lief weiter, obwohl das Kontingent leer war"
+    assert "429" in erg["fehler"]
+
+
+def test_ohne_bricklink_passiert_nichts(client, monkeypatch):
+    monkeypatch.setattr(integrations, "bricklink_enabled", lambda: False)
+    assert main._katalog_namen()["getan"] == 0
+
+
+def test_der_stand_nennt_die_fehlenden_namen(client, monkeypatch):
+    """Sie fehlen am Anfang **allen** – das gehört gesagt, sonst hält man es
+    für einen Fehler."""
+    _datei(monkeypatch, [{"item_no": "a001", "merkmale": "torso red"},
+                         {"item_no": "a002", "merkmale": "torso blue"}])
+    main._katalog_ziehen()
+
+    d = client.get("/api/katalog/stand").json()
+    assert d["figuren"] == 2 and d["beschrieben"] == 2
+    assert d["ohne_namen"] == 2

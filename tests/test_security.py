@@ -275,6 +275,13 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # ein Zeitstempel, kein Zugang
         "katalog_hub_geholt",   # dasselbe für die Gegenrichtung: bis wohin
                                 # vom Hub nachgezogen wurde
+        "katalog_etag",         # welchen Stand der veröffentlichten Datei
+                                # diese Instanz schon hat – spart 3,3 MB,
+                                # wenn sich nichts geändert hat
+        "katalog_geholt_at",    # wann zuletzt geholt wurde
+        "katalog_quelle",       # Adresse der veröffentlichten Datei. Kein
+                                # Zugang: Sie ist öffentlich, und genau
+                                # deshalb steht kein BrickLink-Inhalt darin
     }
     unbekannt = aufgeloest - set(integrations.GEHEIME_SETTINGS) - OFFEN
     assert not unbekannt, (

@@ -475,18 +475,39 @@ Wort zum Suchen. Zu jeder Figur steht darin, was auf dem Bild zu sehen ist,
 Teil für Teil: „torso red black chest panel; cape yellow green dragon with
 red wings".
 
-**Erzeugt wird er im Hub, nicht in der App.** Er klappert BrickLink ab und
-lässt die Bilder beschreiben; jede Instanz holt den fertigen Stand alle zwölf
-Stunden ab. Bis 2.40.0 tat das jede Instanz selbst, und das war dreifach
+**Erzeugt wird er nicht hier.** Auf Svens NAS läuft ein Dienst, der
+BrickLink abklappert und ein lokales Sehmodell die Katalogfotos beschreiben
+lässt. Das Ergebnis veröffentlicht er als Datei:
+
+```
+https://raw.githubusercontent.com/Melle79/brickfolio/main/katalog/index.ndjson
+```
+
+Jede Installation zieht sie sich alle zwölf Stunden – **ohne Zugang zu
+irgendwem und ohne dass irgendwo etwas laufen muss**.
+
+> **Darin steht nur, was uns gehört:** die BrickLink-Nummer als Kennung und
+> der Text, den das Sehmodell über das Foto geschrieben hat. Name, Jahr,
+> Kategorie und Bildadresse stehen **nicht** darin – das ist BrickLinks
+> Inhalt, und dessen Weitergabe an Dritte untersagen deren
+> Nutzungsbedingungen.
+>
+> Den **Namen** schlägt deshalb jede Installation über ihren eigenen
+> BrickLink-Zugang nach, gedrosselt im Hintergrund. Beim ersten Mal sind das
+> rund 9.700 Abrufe über ein paar Tage – dasselbe Kontingent trägt die
+> Preise, und die braucht man täglich. Bis ein Name da ist, steht in der
+> Suche die Nummer; **gefunden** wird die Figur trotzdem, denn dafür sorgt
+> die Beschreibung, und die ist sofort da. Bis 2.40.0 tat das jede Instanz selbst, und das war dreifach
 verkehrt:
 
 - **Viermal dieselbe Arbeit für dasselbe Ergebnis.** Der Abzug beschreibt
   BrickLinks Fotos, nicht die Sammlung von irgendwem – er ist für alle
   identisch. Tage an Abrufen und rund ein Tag Grafikeinheit, je Instanz.
-- **Jede brauchte eigene BrickLink-Zugangsdaten.** Wer keine hatte, bekam
-  keinen Abzug. Nerdfan, Paul und Kello hatten null Zeilen.
-- **Und ein Sehmodell.** Seit dem 23.08.2026 hatten drei von vier keines
-  mehr.
+- **Jede brauchte ein Sehmodell.** Seit dem 23.08.2026 hatten drei von vier
+  keines mehr.
+
+Der BrickLink-Zugang bleibt gebraucht – aber nur noch für die Namen und die
+Preise, nicht mehr für den Abzug selbst.
 
 In den Einstellungen steht deshalb nur noch eine Zeile: wie viele Figuren
 angekommen sind, wie viele davon beschrieben, und wann zuletzt geholt wurde.
