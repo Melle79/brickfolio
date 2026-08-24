@@ -94,6 +94,10 @@ def status(_=Depends(admin)):
                 " praefix"):
             d = dict(r)
             d["im_index"] = bestand.get(r["praefix"], 0)
+            # Fällt der Klarname aus (neues Kürzel, noch kein Eintrag in
+            # `THEMENNAMEN`), steht das Kürzel selbst da – besser als eine
+            # leere Spalte, die wie ein Fehler aussieht.
+            d["thema"] = d.get("thema") or ""
             themen.append(d)
     return {
         "zeilen": {"gesamt": z["gesamt"] or 0, "offen": z["offen"] or 0,
@@ -249,18 +253,19 @@ class ThemaBody(BaseModel):
 def _praefix(roh):
     """Ein Präfix prüfen, bevor es in eine Adresse wandert.
 
-    **Ziffern sind erlaubt.** „Nur Buchstaben" war zu eng: BrickLink führt
-    `4j` für die Reihe „4 Juniors" – `4j011` ist Cannonball Jimmy. Am
-    24.08.2026 wies die Konsole das Thema deshalb ab, obwohl es die Figuren
-    gibt.
+    **Ziffern sind erlaubt, und ein Zeichen reicht.** „Zwei bis sechs
+    Buchstaben" war zweimal zu eng: BrickLink führt `4j` für „4 Juniors"
+    (`4j011` ist Cannonball Jimmy) und `s` für Classic Town (`s001` ist eine
+    Feuerwehrfigur). Beide wies die Konsole am 24.08.2026 ab, obwohl es die
+    Figuren gibt.
 
     Was nicht durchkommt, ist alles andere: Das Präfix wird an eine
     BrickLink-Adresse angehängt, und „../" oder ein Fragezeichen hätten
     dort nichts zu suchen.
     """
     p = (roh or "").strip().lower()
-    if not re.fullmatch(r"[a-z0-9]{2,6}", p):
-        raise HTTPException(400, "Nur zwei bis sechs Buchstaben oder Ziffern")
+    if not re.fullmatch(r"[a-z0-9]{1,6}", p):
+        raise HTTPException(400, "Ein bis sechs Buchstaben oder Ziffern")
     return p
 
 

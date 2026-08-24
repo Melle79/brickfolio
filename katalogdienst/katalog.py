@@ -95,7 +95,12 @@ CREATE TABLE IF NOT EXISTS katalog_lauf (
     luecke INTEGER NOT NULL DEFAULT 0,
     gefunden INTEGER NOT NULL DEFAULT 0,
     fertig_at INTEGER,
-    aktiv INTEGER NOT NULL DEFAULT 1
+    aktiv INTEGER NOT NULL DEFAULT 1,
+    -- Der Klarname. „iaj" sagt niemandem etwas, „Indiana Jones" schon –
+    -- und beim Suchen nach einer fehlenden Reihe ist der Name das, wonach
+    -- man sucht. Er kommt aus `THEMENNAMEN`; was dort nicht steht, bleibt
+    -- leer und wird nur als Kürzel angezeigt.
+    thema TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS einstellungen (
@@ -154,6 +159,37 @@ STANDARD_THEMEN = [
     "soc",      # Fussball
     "nba",      # Basketball
     "hky",      # Eishockey
+    # Am 24.08.2026 aus zwei KI-Listen herausgemessen -- von 68 Kuerzeln
+    # gab es 55 gar nicht, und bei vieren war die Bedeutung falsch.
+    "tech",     # Technic-Figuren
+    "sc",       # Speed Champions
+    "mk",       # Monkie Kid
+    "avt",      # Avatar
+    "bio",      # Bionicle
+    "pm",       # Power Miners
+    "vik",      # Wikinger
+    "rac",      # Racers
+    "st",       # Stranger Things
+    "ac",       # Alien Conquest (**nicht** Animal Crossing)
+    "loz",      # Legend of Zelda
+    "hf",       # Hero Factory
+    "dp",       # Disney Princess (**nicht** Duplo)
+    # Aus Svens Katalogbildern vom 24.08.2026 -- er hat sie im Browser
+    # angesehen und die Nummern durchgegeben, gemessen wurde ueber die API.
+    "ani",      # Animal Crossing (**nicht** `ac` -- das ist Alien Conquest)
+    "mar",      # Super Mario -- **vier** Ziffern
+    "son",      # Sonic the Hedgehog
+    "nex",      # Nexo Knights
+    "drm",      # Dreamzzz
+    "toy",      # Toy Story
+    "bat",      # Batman
+    "alp",      # Alpha Team
+    "scd",      # Scooby-Doo
+    "wtr",      # Town: Kellner -- BrickLink teilt die alten Stadtfiguren
+                # sehr fein auf, das hier ist eine solche Unterreihe
+    "s",        # Classic Town -- **ein einziger Buchstabe**. Deshalb laesst
+                # die Pruefung ein Zeichen zu; „mindestens zwei" waere hier
+                # gescheitert.
 ]
 
 # Die letzten 22 kamen am 24.08.2026 dazu, und der Weg dorthin ist der
@@ -168,13 +204,62 @@ STANDARD_THEMEN = [
 # nachpruefen muss. 22 von 31 Versuchen sassen.
 
 
+# Klarnamen zu den Kürzeln. Alle über die API nachgeprüft – die Bedeutung
+# stimmt hier mit der ersten Figur der Reihe überein, nicht mit dem, was
+# eine Liste behauptet. Am 24.08.2026 gaben zwei KI-Listen zusammen 68
+# Kürzel aus; 55 davon gab es gar nicht, und bei zweien war die Bedeutung
+# falsch (`adv` ist Adventurers, nicht Advent Calendar; `arc` ist Arktis,
+# nicht Architecture; `ac` ist Alien Conquest, nicht Animal Crossing; `dp`
+# ist Disney Princess, nicht Duplo).
+THEMENNAMEN = {
+    "sw": "Star Wars", "cty": "City", "njo": "Ninjago",
+    "sh": "Super Heroes", "frnd": "Friends", "cas": "Burg",
+    "pi": "Piraten", "hp": "Harry Potter", "jw": "Jurassic World",
+    "sp": "Weltraum", "ww": "Western", "lor": "Herr der Ringe",
+    "iaj": "Indiana Jones", "gen": "Allgemein", "col": "Sammelfiguren",
+    "adv": "Adventurers", "trn": "Eisenbahn", "twn": "Town (älter)",
+    "idea": "LEGO Ideas", "cre": "Creator", "js": "Jack Stone",
+    "4j": "4 Juniors", "poc": "Fluch der Karibik", "atl": "Atlantis",
+    "mof": "Monster Fighters", "exf": "Exo-Force", "arc": "Arktis",
+    "aqu": "Aquazone", "uagt": "Agents", "hs": "Hidden Side",
+    "dim": "Dimensions", "vid": "Vidiyo", "sim": "Simpsons",
+    "tnt": "Turtles", "min": "Minecraft", "dis": "Disney",
+    "tlm": "The LEGO Movie", "hol": "Feiertage", "edu": "Lernen & Dacta",
+    "stu": "Studios", "soc": "Fußball", "nba": "Basketball",
+    "hky": "Eishockey", "tech": "Technic-Figuren",
+    "sc": "Speed Champions", "mk": "Monkie Kid", "avt": "Avatar",
+    "bio": "Bionicle", "pm": "Power Miners", "vik": "Wikinger",
+    "rac": "Racers", "st": "Stranger Things", "ac": "Alien Conquest",
+    "loz": "Legend of Zelda", "hf": "Hero Factory",
+    "dp": "Disney Princess", "ani": "Animal Crossing",
+    "mar": "Super Mario", "son": "Sonic the Hedgehog",
+    "nex": "Nexo Knights", "drm": "Dreamzzz", "toy": "Toy Story",
+    "bat": "Batman", "alp": "Alpha Team", "scd": "Scooby-Doo",
+    "wtr": "Town: Kellner", "s": "Classic Town",
+}
+
+
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with db() as conn:
         conn.executescript(SCHEMA)
+        # Nachgereicht: Eine Datenbank aus der Zeit vor den Klarnamen hat
+        # die Spalte nicht. `executescript` legt bestehende Tabellen nicht
+        # neu an, deshalb hier von Hand.
+        spalten = [r["name"] for r in
+                   conn.execute("PRAGMA table_info(katalog_lauf)")]
+        if "thema" not in spalten:
+            conn.execute("ALTER TABLE katalog_lauf ADD COLUMN thema TEXT "
+                         "NOT NULL DEFAULT ''")
         for p in STANDARD_THEMEN:
             conn.execute("INSERT OR IGNORE INTO katalog_lauf (praefix) "
                          "VALUES (?)", (p,))
+        # Namen jedes Mal nachziehen: Kommt ein Klarname dazu oder wird
+        # einer berichtigt, soll er auch bei einer bestehenden Datenbank
+        # ankommen – ohne dass jemand von Hand nachhilft.
+        for p, name in THEMENNAMEN.items():
+            conn.execute("UPDATE katalog_lauf SET thema = ? WHERE praefix = ? "
+                         "AND thema != ?", (name, p, name))
 
 
 def einstellung(name, standard=""):

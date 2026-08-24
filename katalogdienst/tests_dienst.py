@@ -89,7 +89,9 @@ def test_nur_buchstaben_als_praefix(client):
     """Das Präfix wandert in eine Adresse – „../" hätte dort nichts zu
     suchen. Zu lange Werte weist schon Pydantic ab (422), der Rest der
     Prüfung liegt im Endpunkt (400); beides ist eine Ablehnung."""
-    for unsinn in ("x", "../etc", "viel-zu-lang", "sw 1", "a/b"):
+    # „x" fehlt hier bewusst: Ein einzelnes Zeichen ist gültig, seit
+    # BrickLinks `s` (Classic Town) aufgetaucht ist.
+    for unsinn in ("", "../etc", "viel-zu-lang", "sw 1", "a/b"):
         code = client.post("/api/themen", json={"praefix": unsinn}).status_code
         assert code >= 400, "%s wurde angenommen" % unsinn
 
@@ -349,3 +351,11 @@ def test_ziffern_im_praefix_sind_erlaubt(client):
     Figuren gibt (gesehen am 24.08.2026)."""
     r = client.post("/api/themen", json={"praefix": "4j"})
     assert r.status_code == 200 and r.json()["praefix"] == "4j"
+
+
+def test_ein_einzelnes_zeichen_ist_gueltig(client):
+    """BrickLink führt `s` für Classic Town – `s001` ist eine Feuerwehrfigur.
+    „Mindestens zwei Zeichen" wies das Thema ab, obwohl es 19.158 Figuren im
+    Katalog gibt und ein Teil davon genau dort hängt."""
+    r = client.post("/api/themen", json={"praefix": "s"})
+    assert r.status_code == 200 and r.json()["praefix"] == "s"
