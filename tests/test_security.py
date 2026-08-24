@@ -279,6 +279,8 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # diese Instanz schon hat – spart 3,3 MB,
                                 # wenn sich nichts geändert hat
         "katalog_geholt_at",    # wann zuletzt geholt wurde
+        "katalog_aus",          # „1" heißt: Diese Instanz holt den Abzug
+                                # nicht. Eine Entscheidung, kein Zugang
         "katalog_quelle",       # Adresse der veröffentlichten Datei. Kein
                                 # Zugang: Sie ist öffentlich, und genau
                                 # deshalb steht kein BrickLink-Inhalt darin

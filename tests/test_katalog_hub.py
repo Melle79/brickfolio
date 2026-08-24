@@ -225,3 +225,39 @@ def test_der_stand_nennt_die_fehlenden_namen(client, monkeypatch):
     d = client.get("/api/katalog/stand").json()
     assert d["figuren"] == 2 and d["beschrieben"] == 2
     assert d["ohne_namen"] == 2
+
+
+# --------------------------------------------------- Der Abzug ist optional
+
+def test_abgeschaltet_wird_nichts_geholt(client, monkeypatch):
+    """Er kostet etwas: 3,3 MB alle zwölf Stunden und beim ersten Mal rund
+    9.700 BrickLink-Abrufe für die Namen. Wer die Suche nach dem Aussehen
+    nicht braucht, soll das nicht zahlen müssen."""
+    gefragt = []
+    monkeypatch.setattr(main.requests, "get",
+                        lambda url, **kw: gefragt.append(url))
+    core.set_setting("katalog_aus", "1")
+
+    assert main._katalog_ziehen()["grund"] == "abgeschaltet"
+    assert main._katalog_namen()["grund"] == "abgeschaltet"
+    assert gefragt == [], "es wurde trotzdem geholt"
+
+
+def test_der_schalter_laesst_den_bestand_liegen(client, monkeypatch):
+    """Abgeschaltet bleibt das Geholte liegen – es stört nicht und wäre
+    beim Wiedereinschalten sonst noch einmal zu holen."""
+    _datei(monkeypatch, [{"item_no": "a001", "merkmale": "torso red"}])
+    main._katalog_ziehen()
+
+    client.post("/api/katalog/aktiv", json={"aktiv": False})
+    d = client.get("/api/katalog/stand").json()
+    assert d["aktiv"] is False and d["figuren"] == 1
+
+
+def test_wieder_eingeschaltet_holt_er_von_selbst(client, monkeypatch):
+    _datei(monkeypatch, [{"item_no": "a001", "merkmale": "torso red"}])
+    core.set_setting("katalog_aus", "1")
+
+    r = client.post("/api/katalog/aktiv", json={"aktiv": True}).json()
+    assert r["aktiv"] is True
+    assert core.get_setting("katalog_aus") == ""

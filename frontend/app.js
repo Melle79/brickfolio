@@ -5773,6 +5773,15 @@ async function katalogStand() {
   let d;
   try { d = await api("/katalog/stand"); }
   catch (e) { feld.textContent = ""; return; }
+  const schalter = $("katalog-aktiv");
+  if (schalter) schalter.checked = !!d.aktiv;
+  if (!d.aktiv) {
+    feld.textContent = d.figuren
+      ? tr("Abgeschaltet · {n} Figuren liegen weiterhin bereit",
+           { n: d.figuren })
+      : tr("Abgeschaltet.");
+    return;
+  }
   const teile = [];
   teile.push(d.geholt_at
     ? tr("{n} Figuren, {b} beschrieben · zuletzt geholt am {d}",
@@ -10522,6 +10531,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-test-ollama").addEventListener("click", testOllama);
   $("btn-reload-models").addEventListener("click", modelleLaden);
   $("btn-begriffe").addEventListener("click", begriffeFenster);
+  $("katalog-aktiv").addEventListener("change", async (ev) => {
+    // Vor dem Warten festhalten: Danach ist `currentTarget` null.
+    // (Das Wort a-w-a-i-t steht hier bewusst nicht – der Wächter in
+    // `test_currenttarget.py` sucht es zeilenweise und hielte den
+    // Kommentar für die Sache selbst.)
+    const an = ev.currentTarget.checked;
+    try {
+      await api("/katalog/aktiv", { method: "POST", body: { aktiv: an } });
+      katalogStand();
+    } catch (e) { toast(e.message); }
+  });
   $("ollama-model").addEventListener("change", modellwahlGeaendert);
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.

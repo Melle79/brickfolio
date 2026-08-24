@@ -492,6 +492,12 @@ irgendwem und ohne dass irgendwo etwas laufen muss**.
 > Inhalt, und dessen Weitergabe an Dritte untersagen deren
 > Nutzungsbedingungen.
 >
+**Er ist optional.** 3,3 MB alle zwölf Stunden, und beim ersten Mal rund
+9.700 BrickLink-Abrufe für die Namen. Wer die Suche nach dem Aussehen nicht
+braucht, schaltet ihn in den Einstellungen ab; der bereits geholte Bestand
+bleibt dabei liegen und wäre sonst beim Wiedereinschalten noch einmal zu
+holen.
+
 > Den **Namen** schlägt deshalb jede Installation über ihren eigenen
 > BrickLink-Zugang nach, gedrosselt im Hintergrund. Beim ersten Mal sind das
 > rund 9.700 Abrufe über ein paar Tage – dasselbe Kontingent trägt die

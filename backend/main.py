@@ -923,7 +923,8 @@ def katalog_stand(user: dict = Depends(admin_user)):
             " AS beschrieben,"
             " SUM(CASE WHEN name = '' THEN 1 ELSE 0 END) AS ohne_namen"
             " FROM katalog_index").fetchone()
-    return {"figuren": r["n"] or 0,
+    return {"aktiv": core.get_setting("katalog_aus") != "1",
+            "figuren": r["n"] or 0,
             "beschrieben": r["beschrieben"] or 0,
             # Namen fehlen am Anfang **allen**: Der veröffentlichte Abzug
             # enthält sie nicht, jede Installation schlägt sie über ihren
@@ -935,6 +936,27 @@ def katalog_stand(user: dict = Depends(admin_user)):
             "hat_bricklink": integrations.bricklink_enabled(),
             "geholt_at": int(core.get_setting("katalog_geholt_at") or 0),
             "quelle": core.get_setting("katalog_quelle") or KATALOG_QUELLE}
+
+
+class KatalogAnBody(BaseModel):
+    aktiv: bool = True
+
+
+@app.post("/api/katalog/aktiv")
+def katalog_aktiv(body: KatalogAnBody, user: dict = Depends(admin_user)):
+    """Den Abzug an- oder abschalten.
+
+    Er kostet etwas: 3,3 MB alle zwölf Stunden und beim ersten Mal rund
+    9.700 BrickLink-Abrufe für die Namen. Wer die Suche nach dem Aussehen
+    nicht braucht, soll das nicht zahlen müssen.
+
+    Abgeschaltet bleibt der bereits geholte Bestand liegen – er stört nicht
+    und wäre beim Wiedereinschalten sonst noch einmal zu holen.
+    """
+    core.set_setting("katalog_aus", "" if body.aktiv else "1")
+    if body.aktiv:
+        threading.Thread(target=_katalog_ziehen, daemon=True).start()
+    return {"ok": True, "aktiv": body.aktiv}
 
 
 @app.post("/api/katalog/holen")
@@ -1379,6 +1401,8 @@ def _katalog_ziehen() -> dict:
     sich die Instanz, welchen sie schon hat – ist er unverändert, kostet der
     Abruf ein paar hundert Byte statt 3,3 MB.
     """
+    if core.get_setting("katalog_aus") == "1":
+        return {"geholt": 0, "grund": "abgeschaltet"}
     quelle = core.get_setting("katalog_quelle") or KATALOG_QUELLE
     kopf = {"User-Agent": integrations.USER_AGENT}
     etag = core.get_setting("katalog_etag")
@@ -1448,6 +1472,8 @@ def _katalog_namen(grenze: int = KATALOG_NAMEN_JE_LAUF) -> dict:
     Nummer – **gefunden** wird die Figur trotzdem, denn dafür sorgt die
     Beschreibung, und die ist längst da.
     """
+    if core.get_setting("katalog_aus") == "1":
+        return {"getan": 0, "grund": "abgeschaltet"}
     if not integrations.bricklink_enabled():
         return {"getan": 0, "grund": "kein BrickLink-Zugang"}
     if _namen_lauf["aktiv"]:
