@@ -3,6 +3,13 @@ name: Tests
 on:
   push:
     branches: [main]
+    # Der Katalog-Index ist **Daten**, kein Code. Er wird nach jedem
+    # Kataloglauf neu geschrieben – ohne diesen Filter liefe bei jeder
+    # Veröffentlichung die ganze Testsuite und, schlimmer, ein neuer
+    # Image-Bau. Die Instanzen sähen dann eine „neue Version" für eine
+    # Änderung, die sie über den Index ohnehin bekommen.
+    paths-ignore:
+      - "katalog/**"
   pull_request:
 
 jobs:

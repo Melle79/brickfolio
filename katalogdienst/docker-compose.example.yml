@@ -49,9 +49,14 @@ services:
       # BrickLinks Inhalt, und dessen Weitergabe untersagen deren
       # Nutzungsbedingungen. Den Namen holt sich jede Installation über
       # ihren eigenen BrickLink-Token – ohne den tut sie ohnehin nichts.
-      GITHUB_REPO: "Melle79/brickfolio-katalog"
+      # Ein Unterordner im App-Repo, kein eigenes. Dafür tragen `tests.yml`
+      # und `image.yml` ein `paths-ignore: katalog/**` – sonst liefe bei
+      # jeder Veröffentlichung die Testsuite und ein neuer Image-Bau, und
+      # die Instanzen sähen eine „neue Version" für eine reine
+      # Datenänderung.
+      GITHUB_REPO: "Melle79/brickfolio"
       GITHUB_BRANCH: "main"
-      GITHUB_PFAD: "index.ndjson"
+      GITHUB_PFAD: "katalog/index.ndjson"
       # Feingranularer Token mit Schreibrecht **nur auf dieses eine Repo**
       # (Contents: Read and write). Nicht der Token, mit dem die App ihre
       # Fehlerberichte anlegt – der darf Issues, dieser darf Dateien.
