@@ -309,22 +309,6 @@ def report_enabled() -> bool:
     return bool(core.get_setting("crash_token"))
 
 
-def katalog_holen(seit: int = 0) -> dict:
-    """Katalogänderungen seit `seit` abholen – eine Seite.
-
-    Lesen darf jeder gültige Token; der Abzug ist Nachschlagewerk, kein
-    Geheimnis. Schreiben kann von hier aus niemand mehr – seit 2.41.0
-    erzeugt der Hub ihn selbst, und keine Instanz schiebt mehr hoch. Der zurückgegebene `stand` ist der Zeitstempel der letzten
-    gelieferten Zeile, nicht die Uhrzeit: Sonst übersähe der nächste Abruf
-    alles, was zwischen Abfrage und Antwort geschrieben wurde.
-    """
-    token = core.get_setting("crash_token")
-    if not token:
-        raise HubError(400, "Kein Token für den Katalog hinterlegt")
-    return _request("GET", HUB_URL, "/v1/katalog?seit=%d" % max(seit, 0),
-                    token=token, timeout=60)
-
-
 def send_crash_report(payload: str, app_version: str = "",
                       crashes: int = 0, views: str = "") -> dict:
     """Bericht abliefern. Wirft HubError, wenn es nicht klappt – die App
