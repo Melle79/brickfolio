@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 import bild as bildmodul
 import katalog
 import laeufe
+import veroeffentlichen as veroeffentlichung
 from katalog import bl_enabled, db, init_db
 
 VERSION = "1.0.0"
@@ -231,6 +232,40 @@ def probe(item_no: str = "", _=Depends(admin)):
     return {"item_no": r["item_no"], "name": r["name"],
             "modell": bildmodul.ollama_bild_modell(),
             "bytes": len(klein), "ergebnis": m}
+
+
+# ---------------------------------------------------------- Veröffentlichen
+
+
+@app.post("/api/veroeffentlichen")
+def veroeffentlichen_jetzt(_=Depends(admin)):
+    """Den Index nach GitHub schieben – **nur Nummer und unsere Beschreibung**.
+
+    Name, Jahr, Kategorie und Bildadresse bleiben hier. Das ist BrickLinks
+    Inhalt; was hinausgeht, ist eine Kennung und ein Text, den unser
+    Sehmodell über ein Foto geschrieben hat.
+    """
+    if not veroeffentlichung.bereit():
+        raise HTTPException(400, "GITHUB_REPO oder GITHUB_TOKEN fehlt")
+    try:
+        return veroeffentlichung.veroeffentlichen()
+    except Exception as e:
+        raise HTTPException(502, str(e)[:300])
+
+
+@app.get("/api/veroeffentlichen/vorschau")
+def veroeffentlichen_vorschau(_=Depends(admin)):
+    """Was hinausginge – die ersten Zeilen und die Größe.
+
+    Vor dem ersten Mal will man sehen, was da wirklich veröffentlicht wird.
+    Ein Blick auf drei Zeilen beantwortet das besser als jede Zusicherung.
+    """
+    text, anzahl = veroeffentlichung.index_bauen()
+    return {"zeilen": anzahl, "bytes": len(text.encode("utf-8")),
+            "felder": list(veroeffentlichung.OEFFENTLICH),
+            "repo": veroeffentlichung.repo(),
+            "bereit": veroeffentlichung.bereit(),
+            "probe": text.split("\n")[:3]}
 
 
 # ------------------------------------------------- Ausliefern an Instanzen

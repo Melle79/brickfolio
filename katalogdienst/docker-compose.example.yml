@@ -38,9 +38,24 @@ services:
       # Steuern (Konsole). Ohne diesen Token verweigert der Dienst alles –
       # ein offener Katalogdienst könnte fremdes Kontingent verbrennen.
       ADMIN_TOKEN: "hier-etwas-langes-zufälliges"
-      # Nur lesen (Instanzen holen den Abzug). Getrennt, damit eine Instanz
-      # den Abzug beziehen kann, ohne ihn steuern zu können.
+      # Nur lesen (Instanzen holen den Abzug direkt von hier, falls sie
+      # nicht über GitHub gehen). Getrennt, damit eine Instanz den Abzug
+      # beziehen kann, ohne ihn steuern zu können.
       LESE_TOKEN: "hier-etwas-anderes-langes"
+
+      # --- Veröffentlichen -----------------------------------------------
+      # Hinaus gehen **nur** Nummer und unsere eigene Bildbeschreibung.
+      # Name, Jahr, Kategorie und Bildadresse bleiben hier: Das ist
+      # BrickLinks Inhalt, und dessen Weitergabe untersagen deren
+      # Nutzungsbedingungen. Den Namen holt sich jede Installation über
+      # ihren eigenen BrickLink-Token – ohne den tut sie ohnehin nichts.
+      GITHUB_REPO: "Melle79/brickfolio-katalog"
+      GITHUB_BRANCH: "main"
+      GITHUB_PFAD: "index.ndjson"
+      # Feingranularer Token mit Schreibrecht **nur auf dieses eine Repo**
+      # (Contents: Read and write). Nicht der Token, mit dem die App ihre
+      # Fehlerberichte anlegt – der darf Issues, dieser darf Dateien.
+      GITHUB_TOKEN: "..."
 
 volumes:
   katalog-daten:

@@ -117,3 +117,90 @@ def test_eine_leere_seite_haelt_den_stand(client):
     beim nächsten Mal den ganzen Abzug erneut."""
     d = client.get("/api/index?token=lesen&seit=500").json()
     assert d["zeilen"] == [] and d["stand"] == 500 and d["mehr"] is False
+
+
+# ----------------------------------------- Was hinaus darf und was nicht
+
+def test_nur_nummer_und_eigene_beschreibung_gehen_hinaus(client):
+    """Der Kern der Sache. Name, Jahr, Kategorie und Bildadresse sind
+    BrickLinks Inhalt – deren Nutzungsbedingungen untersagen die Weitergabe
+    an Dritte ausdrücklich. Was hinausgeht, ist eine Kennung und ein Text,
+    den unser Sehmodell über ein Foto geschrieben hat."""
+    import json as j
+    import katalog
+    with katalog.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " img_url, category_id, jahr, farben, art, merkmale, modell,"
+            " updated_at) VALUES ('cas001', 'minifig', 'Dragon Master',"
+            " 'dragonmaster', 'https://img.bricklink.com/ML/cas001.jpg',"
+            " '53', 1993, 'red, yellow', 'knight',"
+            " 'cape yellow green dragon', 'qwen3-vl:latest', 100)")
+
+    import veroeffentlichen
+    text, anzahl = veroeffentlichen.index_bauen()
+    assert anzahl == 1
+    d = j.loads(text.strip())
+    assert d == {"item_no": "cas001", "art": "knight", "farben": "red, yellow",
+                 "merkmale": "cape yellow green dragon",
+                 "modell": "qwen3-vl:latest"}
+    for verboten in ("Dragon Master", "dragonmaster", "img.bricklink.com",
+                     "1993", "53"):
+        assert verboten not in text, "%s ist mit hinausgegangen" % verboten
+
+
+def test_unbeschriebene_figuren_bleiben_draussen(client):
+    """Eine Zeile, die nur aus einer Nummer besteht, hilft niemandem beim
+    Suchen und bläht die Datei auf."""
+    import katalog
+    with katalog.db() as conn:
+        for nr, merk in (("a001", ""), ("a002", "–"), ("a003", "torso red")):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " merkmale, updated_at) VALUES (?, 'minifig', 'x', 'x', ?, 1)",
+                (nr, merk))
+    import veroeffentlichen
+    text, anzahl = veroeffentlichen.index_bauen()
+    assert anzahl == 1 and "a003" in text
+    assert "a001" not in text and "a002" not in text
+
+
+def test_die_datei_ist_nach_nummer_sortiert(client):
+    """Damit ein Commit die geänderten Zeilen zeigt und nicht die ganze
+    Datei – bei 9.741 Einträgen ist das der Unterschied zwischen einem
+    lesbaren Verlauf und keinem."""
+    import katalog
+    with katalog.db() as conn:
+        for nr in ("sw0100", "cas001", "njo0050"):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " merkmale, updated_at) VALUES (?, 'minifig', 'x', 'x',"
+                " 'torso red', 1)", (nr,))
+    import veroeffentlichen
+    text, _ = veroeffentlichen.index_bauen()
+    nummern = [__import__("json").loads(z)["item_no"]
+               for z in text.strip().split("\n")]
+    assert nummern == sorted(nummern)
+
+
+def test_ohne_github_kein_veroeffentlichen(client, monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_REPO", raising=False)
+    r = client.post("/api/veroeffentlichen")
+    assert r.status_code == 400 and "GITHUB" in r.json()["detail"]
+
+
+def test_die_vorschau_zeigt_was_hinausginge(client):
+    """Vor dem ersten Mal will man sehen, was da wirklich veröffentlicht
+    wird. Ein Blick auf drei Zeilen beantwortet das besser als jede
+    Zusicherung."""
+    import katalog
+    with katalog.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at) VALUES ('cas001', 'minifig', 'Geheim',"
+            " 'geheim', 'torso red', 1)")
+    d = client.get("/api/veroeffentlichen/vorschau").json()
+    assert d["zeilen"] == 1
+    assert d["felder"] == ["item_no", "art", "farben", "merkmale", "modell"]
+    assert "Geheim" not in " ".join(d["probe"])
