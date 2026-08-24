@@ -6,16 +6,6 @@
  * bleibt auf der Instanz (nie im Browser). Deshalb kein CORS nötig.
  */
 
-import { katalogTakt, abklappern, beschreiben, antwortLesen, merkmaleBauen,
-         praefixPruefen, blZugang, bildFragen, BILD_MODELL } from "./katalog.js";
-
-// Die Frage für die Sichtprobe. Bewusst kürzer als die des Laufs: Hier will
-// man sehen, ob das Modell überhaupt antwortet und in welcher Form – nicht
-// die vollständige Beschreibung.
-const BILD_PROBE_FRAGE =
-  "Describe this LEGO minifigure part by part as JSON: "
-  + '{"kind": "...", "parts": [{"part": "...", "color": "...", "print": "..."}]}';
-
 const MAX_OFFERS = 2000;              // Obergrenze je Instanz (Missbrauchsschutz)
 const MAX_THUMB = 30000;              // Vorschaubild einer eigenen Figur
 
@@ -30,7 +20,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.10.1";
+const HUB_VERSION = "1.11.0";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -706,89 +696,6 @@ async function putFinding(req, env) {
   return json({ ok: true, prio }, 201);
 }
 
-/* ------------------------------------------------------------- Katalog
-
-   Der Abzug der BrickLink-Figuren, einmal statt viermal.
-
-   Bisher baute ihn jede Instanz selbst: Nummern der Reihe nach abklappern
-   (Tage, eigenes Kontingent) und danach jedes Bild von einem Sehmodell
-   beschreiben lassen (rund 24 Stunden Grafikeinheit fuer 9.741 Figuren).
-   Dieselbe Arbeit fuer dasselbe Ergebnis, denn der Katalog beschreibt
-   BrickLinks Fotos, nicht die Sammlung von irgendwem.
-
-   Geschrieben werden darf nur mit `can_katalog`. Das Recht muss hier
-   haengen und nicht in der App: Die Instanzen sind selbst gehostet, wer
-   seinen Container betreibt kann dessen Code aendern, und eine Absprache
-   waere damit keine Regel, sondern eine Bitte. Der Schaden waere auch nicht
-   Unordnung, sondern Verschlechterung -- eine schwaechere Bildanalyse
-   ueberschreibt eine bessere, und man sieht es der Beschreibung nicht an. */
-
-const KATALOG_STAPEL = 500;      // Zeilen je Hochladen
-const KATALOG_SEITE = 1000;      // Zeilen je Abholen
-
-async function putKatalog(req, env) {
-  const tok = await reportToken(req, env);
-  if (!tok || !tok.can_katalog) return err(401, "Kein Katalog-Token");
-  const body = await req.json().catch(() => ({}));
-  const zeilen = Array.isArray(body.zeilen) ? body.zeilen : [];
-  if (!zeilen.length) return err(400, "zeilen fehlt");
-  if (zeilen.length > KATALOG_STAPEL)
-    return err(413, `zu viele Zeilen (max. ${KATALOG_STAPEL})`);
-  const jetzt = now();
-  const anweisungen = [];
-  for (const z of zeilen) {
-    const nr = String(z.item_no || "").trim().slice(0, 40);
-    if (!nr) continue;
-    anweisungen.push(env.DB.prepare(
-      "INSERT INTO katalog (item_no, item_type, name, such, category_id, "
-      + "jahr, img_url, farben, art, merkmale, modell, updated_at) "
-      + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-      + "ON CONFLICT(item_no, item_type) DO UPDATE SET "
-      + "name = excluded.name, such = excluded.such, "
-      + "category_id = excluded.category_id, jahr = excluded.jahr, "
-      + "img_url = excluded.img_url, farben = excluded.farben, "
-      + "art = excluded.art, merkmale = excluded.merkmale, "
-      + "modell = excluded.modell, updated_at = excluded.updated_at")
-      .bind(nr, String(z.item_type || "minifig").slice(0, 20),
-        String(z.name || "").slice(0, 400),
-        String(z.such || "").slice(0, 400),
-        String(z.category_id || "").slice(0, 20),
-        Number(z.jahr) || 0,
-        String(z.img_url || "").slice(0, 400),
-        String(z.farben || "").slice(0, 200),
-        String(z.art || "").slice(0, 40),
-        String(z.merkmale || "").slice(0, 2000),
-        String(z.modell || "").slice(0, 60), jetzt));
-  }
-  if (!anweisungen.length) return err(400, "keine gueltige Zeile dabei");
-  await env.DB.batch(anweisungen);
-  return json({ ok: true, geschrieben: anweisungen.length, stand: jetzt });
-}
-
-/* Abholen: nur, was sich seit dem eigenen Stand geaendert hat.
-
-   Ein Vollabzug waere 9.741 Zeilen bei jedem Lauf. Mit `seit` sind es im
-   Normalbetrieb null -- der Katalog aendert sich in der Groessenordnung von
-   einem Dutzend Namen im Monat. */
-
-async function getKatalog(req, env) {
-  const url = new URL(req.url);
-  const seit = Number(url.searchParams.get("seit")) || 0;
-  const rows = (await env.DB.prepare(
-    "SELECT item_no, item_type, name, such, category_id, jahr, img_url, "
-    + "farben, art, merkmale, modell, updated_at FROM katalog "
-    + "WHERE updated_at > ? ORDER BY updated_at, item_no LIMIT ?")
-    .bind(seit, KATALOG_SEITE).all()).results || [];
-  const gesamt = (await env.DB.prepare(
-    "SELECT COUNT(*) AS n FROM katalog").first()) || { n: 0 };
-  // `stand` ist der Zeitstempel der letzten gelieferten Zeile, nicht die
-  // aktuelle Uhrzeit: Sonst uebersaehe der naechste Abruf alles, was
-  // zwischen Abfrage und Antwort geschrieben wurde.
-  const stand = rows.length ? rows[rows.length - 1].updated_at : seit;
-  return json({ zeilen: rows, stand, gesamt: gesamt.n,
-                mehr: rows.length === KATALOG_SEITE });
-}
-
 /* ------------------------------------------------------- Admin (Konsole) */
 
 async function adminCrashFindings(req, env, method, id) {
@@ -1108,161 +1015,8 @@ async function adminDecideInviteRequest(req, member, env, id, approve) {
   return json({ ok: true });
 }
 
-/* ------------------------------------------------- Abzug (Admin-Konsole) */
-
-async function adminKatalogStand(env) {
-  const themen = (await env.DB.prepare(
-    "SELECT * FROM katalog_lauf ORDER BY fertig_at IS NOT NULL, praefix")
-    .all()).results || [];
-  const z = await env.DB.prepare(
-    "SELECT COUNT(*) AS gesamt, "
-    + "SUM(CASE WHEN merkmale = '' THEN 1 ELSE 0 END) AS offen, "
-    + "SUM(CASE WHEN merkmale NOT IN ('', '–') THEN 1 ELSE 0 END) "
-    + "AS beschrieben FROM katalog"
-  ).first();
-  return json({ themen, zeilen: z || {}, modell: BILD_MODELL,
-                zugang: await zugangStand(env) });
-}
-
-
-/* --------------------------------------------- BrickLink-Zugang (Konsole)
-
-   Die vier Werte gehören eigentlich in `wrangler secret put` – dort liegen
-   sie verschlüsselt und sind nicht zurücklesbar. Sven wollte sie in der
-   Konsole eintragen können, weil ein Wechsel sonst einen Rechner mit
-   angemeldetem Wrangler voraussetzt. Das ist ein fairer Einwand.
-
-   Der Preis: In D1 stehen sie im Klartext. Was sich dagegen tun ließ, ist
-   getan – die Konsole gibt sie **nie** zurück, nur „gesetzt (24 Zeichen)".
-   Das schützt nicht gegen Datenbankzugriff, aber gegen alles davor. */
-
-const ZUGANG_FELDER = ["bl_consumer_key", "bl_consumer_secret",
-                       "bl_token", "bl_token_secret"];
-
-async function zugangStand(env) {
-  const rows = (await env.DB.prepare(
-    "SELECT name, length(value) AS n FROM hub_settings WHERE name IN "
-    + "('bl_consumer_key','bl_consumer_secret','bl_token','bl_token_secret')")
-    .all()).results || [];
-  const da = Object.fromEntries(rows.map((r) => [r.name, r.n]));
-  return Object.fromEntries(ZUGANG_FELDER.map((f) => [f,
-    da[f] ? `gesetzt (${da[f]} Zeichen)` : (env[f.toUpperCase()]
-      ? "als Secret hinterlegt" : "")]));
-}
-
-async function adminKatalogZugang(req, env) {
-  const body = await req.json().catch(() => ({}));
-  const jetzt = now();
-  const stmts = [];
-  for (const f of ZUGANG_FELDER) {
-    if (!(f in body)) continue;               // nicht angefasst = unverändert
-    const wert = String(body[f] || "").trim();
-    if (!wert) {
-      stmts.push(env.DB.prepare("DELETE FROM hub_settings WHERE name = ?")
-        .bind(f));
-      continue;
-    }
-    if (wert.length > 200) return err(400, "Wert zu lang");
-    stmts.push(env.DB.prepare(
-      "INSERT INTO hub_settings (name, value, updated_at) VALUES (?, ?, ?) "
-      + "ON CONFLICT(name) DO UPDATE SET value = excluded.value, "
-      + "updated_at = excluded.updated_at").bind(f, wert, jetzt));
-  }
-  if (!stmts.length) return err(400, "Nichts zu speichern");
-  await env.DB.batch(stmts);
-  return json({ ok: true, zugang: await zugangStand(env) });
-}
-
-async function adminKatalogThema(req, env, method, praefix) {
-  if (method === "DELETE") {
-    await env.DB.prepare("UPDATE katalog_lauf SET aktiv = 0 WHERE praefix = ?")
-      .bind(praefix).run();
-    return json({ ok: true });
-  }
-  const body = await req.json().catch(() => ({}));
-  const nr = String(body.praefix || praefix || "").trim().toLowerCase();
-  if (!/^[a-z]{2,6}$/.test(nr)) return err(400, "Nur zwei bis sechs Buchstaben");
-  // `breite = 0` heisst „noch nicht ermittelt" – der Lauf misst selbst nach.
-  // Ein neu eingetragenes Thema faengt damit von vorn an, ohne dass jemand
-  // wissen muss, ob es drei oder vier Ziffern hat.
-  await env.DB.prepare(
-    "INSERT INTO katalog_lauf (praefix) VALUES (?) "
-    + "ON CONFLICT(praefix) DO UPDATE SET aktiv = 1, fertig_at = NULL, "
-    + "luecke = 0").bind(nr).run();
-  return json({ ok: true, praefix: nr });
-}
-
-/**
- * Einen Lauf von Hand auslösen – oder ein einzelnes Bild zur Sichtprüfung.
- *
- * Der Cron läuft alle 15 Minuten; beim Einrichten und nach einem Wechsel des
- * Bildmodells will man nicht so lange warten, und vor allem will man die
- * **rohe** Modellantwort sehen. `?item=cas001` gibt genau die zurück, statt
- * sie still in die Datenbank zu schreiben.
- */
-async function adminKatalogLauf(req, env) {
-  const url = new URL(req.url);
-  const item = (url.searchParams.get("item") || "").trim();
-  if (item) {
-    // **Hier keinen Fehler verschlucken.** Das ist ein Diagnosewerkzeug: Der
-    // Catch-all gibt nach außen nur „interner Fehler", und genau der Grund
-    // ist das, wonach man hier sucht. Der Endpunkt ist admin-only, es geht
-    // also nichts an Unbefugte.
-    try {
-      const r = await env.DB.prepare(
-        "SELECT item_no, img_url FROM katalog WHERE item_no = ?")
-        .bind(item).first();
-      if (!r) return err(404, "Figur nicht im Abzug");
-      const bild = await fetch(r.img_url, {
-        headers: { "User-Agent": "Brickfolio-Hub" },
-      });
-      if (!bild.ok) return err(502, "Bild nicht ladbar: " + bild.status);
-      const bytes = new Uint8Array(await bild.arrayBuffer());
-      const { roh, form } = await bildFragen(env, bytes, BILD_PROBE_FRAGE);
-      return json({ item_no: r.item_no, modell: BILD_MODELL, form,
-                    bytes: bytes.length, roh,
-                    gelesen: antwortLesen(roh),
-                    daraus: merkmaleBauen(antwortLesen(roh)) });
-    } catch (e) {
-      return json({ item_no: item, modell: BILD_MODELL,
-                    fehler: String((e && e.stack) || e).slice(0, 1200) }, 502);
-    }
-  }
-  const nur = url.searchParams.get("nur");
-  if (nur === "abzug") return json(await abklappern(env));
-  if (nur === "bilder") return json(await beschreiben(env));
-  return json(await katalogTakt(env));
-}
-
 async function adminRoute(req, member, env, p, method) {
   if (!member.is_admin) return err(403, "nur für Hub-Admins");
-
-  if (p === "/v1/admin/katalog" && method === "GET") {
-    return await adminKatalogStand(env);
-  }
-  if (p === "/v1/admin/katalog/lauf" && method === "POST") {
-    return await adminKatalogLauf(req, env);
-  }
-  if (p === "/v1/admin/katalog/zugang" && method === "POST") {
-    return await adminKatalogZugang(req, env);
-  }
-  if (p === "/v1/admin/katalog/pruefen" && method === "GET") {
-    const nr = (new URL(req.url).searchParams.get("praefix") || "")
-      .trim().toLowerCase();
-    if (!/^[a-z]{2,6}$/.test(nr)) return err(400, "Nur zwei bis sechs Buchstaben");
-    if (!(await blZugang(env)).BL_CONSUMER_KEY) {
-      return err(400, "BrickLink ist nicht eingerichtet");
-    }
-    try {
-      return json(await praefixPruefen(env, nr));
-    } catch (e) {
-      return err(502, "BrickLink: " + String((e && e.message) || e));
-    }
-  }
-  const km2 = p.match(/^\/v1\/admin\/katalog\/themen(?:\/([^/]+))?$/);
-  if (km2 && (method === "POST" || method === "DELETE")) {
-    return await adminKatalogThema(req, env, method, km2[1] || "");
-  }
 
   if (p === "/v1/admin/invite_requests" && method === "GET") {
     return await adminInviteRequests(env);
@@ -1326,21 +1080,6 @@ async function adminRoute(req, member, env, p, method) {
 /* ------------------------------------------------------------------ Router */
 
 export default {
-  /**
-   * Der Takt, der den Abzug am Leben hält.
-   *
-   * Cloudflare ruft ihn alle 15 Minuten. Er darf nie werfen: Eine Ausnahme
-   * hier steht nur im Worker-Protokoll, und der nächste Lauf käme trotzdem –
-   * aber ein halb geschriebener Stand wäre schwer zu deuten. `katalogTakt`
-   * fängt deshalb selbst und gibt den Grund zurück.
-   */
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil((async () => {
-      const e = await katalogTakt(env);
-      console.log("Katalog-Takt:", JSON.stringify(e));
-    })());
-  },
-
   async fetch(req, env) {
     const url = new URL(req.url);
     const p = url.pathname;
@@ -1368,16 +1107,6 @@ export default {
       }
       if (p === "/v1/collect/ack" && method === "POST") {
         return await ackCrashReports(req, env);
-      }
-      // Katalog: Schreiben braucht `can_katalog`, Lesen genuegt der
-      // Berichts-Token -- der Abzug ist Nachschlagewerk, kein Geheimnis.
-      if (p === "/v1/katalog" && method === "POST") {
-        return await putKatalog(req, env);
-      }
-      if (p === "/v1/katalog" && method === "GET") {
-        const tok = await reportToken(req, env);
-        if (!tok) return err(401, "Kein gueltiger Token");
-        return await getKatalog(req, env);
       }
       if (p === "/v1/collect/finding" && method === "POST") {
         return await putFinding(req, env);

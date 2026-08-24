@@ -12,26 +12,6 @@ compatibility_date = "2025-07-01"
 [observability]
 enabled = true
 
-# Der Katalogabzug laeuft jetzt hier statt in jeder Instanz. Alle 15 Minuten,
-# nicht oefter: Die BrickLink-Abrufe teilen sich das Tageskontingent (5.000)
-# mit den Preisabfragen der Instanzen. 20 Abrufe je Lauf sind rund 1.900 am
-# Tag – genug Luft, und der Abzug ist ohnehin fertig; hier geht es um
-# Nachschub, nicht um den Erstaufbau.
-[triggers]
-crons = ["*/15 * * * *"]
-
-# Workers AI beschreibt die Bilder neuer Figuren. Die 9.741 vorhandenen
-# stammen von `qwen3-vl` und werden nicht angetastet – welches Modell eine
-# Zeile beschrieben hat, steht in `katalog.modell`.
-[ai]
-binding = "AI"
-
-# BrickLink-Zugang als Secrets (nicht hier im Klartext):
-#   wrangler secret put BL_CONSUMER_KEY
-#   wrangler secret put BL_CONSUMER_SECRET
-#   wrangler secret put BL_TOKEN
-#   wrangler secret put BL_TOKEN_SECRET
-
 # D1-Datenbank. Die database_id kommt aus `wrangler d1 create brickfolio-hub`
 # und wird hier eingetragen.
 [[d1_databases]]
