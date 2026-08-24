@@ -78,9 +78,23 @@ def status(_=Depends(admin)):
             " SUM(CASE WHEN merkmale = '' THEN 1 ELSE 0 END) AS offen,"
             " SUM(CASE WHEN merkmale NOT IN ('', '–') THEN 1 ELSE 0 END)"
             " AS beschrieben FROM katalog_index").fetchone()
-        themen = [dict(r) for r in conn.execute(
-            "SELECT * FROM katalog_lauf ORDER BY fertig_at IS NOT NULL,"
-            " praefix")]
+        # `gefunden` in der Tabelle zählt nur den **letzten** Lauf – der
+        # findet nach dem ersten Durchgang nichts Neues mehr und stünde
+        # dann auf 0, während Hunderte Figuren im Index liegen. Gezählt
+        # wird deshalb der Bestand, nicht der Lauf.
+        bestand = {r["p"]: r["n"] for r in conn.execute(
+            "SELECT l.praefix AS p, COUNT(k.item_no) AS n"
+            " FROM katalog_lauf l LEFT JOIN katalog_index k"
+            " ON k.item_no LIKE l.praefix || '%'"
+            " AND k.item_no GLOB l.praefix || '[0-9]*'"
+            " GROUP BY l.praefix")}
+        themen = []
+        for r in conn.execute(
+                "SELECT * FROM katalog_lauf ORDER BY fertig_at IS NOT NULL,"
+                " praefix"):
+            d = dict(r)
+            d["im_index"] = bestand.get(r["praefix"], 0)
+            themen.append(d)
     return {
         "zeilen": {"gesamt": z["gesamt"] or 0, "offen": z["offen"] or 0,
                    "beschrieben": z["beschrieben"] or 0},

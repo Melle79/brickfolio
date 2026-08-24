@@ -137,7 +137,18 @@ def _katalog_anbau(praefix: str = "sw"):
             r = conn.execute("SELECT zuletzt FROM katalog_lauf WHERE "
                              "praefix = ?", (praefix,)).fetchone()
         nummer = (r["zuletzt"] if r else 0) + 1
-        breite = _katalog_breite(praefix)
+        # Die einmal gemessene Breite steht in der Tabelle. Sie jedes Mal
+        # neu zu ermitteln kostet bis zu zehn Abrufe je Thema – bei
+        # achtzehn Themen 180 für eine Antwort, die sich nie ändert.
+        with db() as conn:
+            r = conn.execute("SELECT breite FROM katalog_lauf WHERE "
+                             "praefix = ?", (praefix,)).fetchone()
+        breite = (r["breite"] if r else 0) or 0
+        if not breite:
+            breite = _katalog_breite(praefix)
+            with db() as conn:
+                conn.execute("UPDATE katalog_lauf SET breite = ? WHERE "
+                             "praefix = ?", (breite, praefix))
         luecke = 0
         while nummer <= KATALOG_MAX and luecke < KATALOG_LUECKE:
             if _katalog_lauf["stop"]:

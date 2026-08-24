@@ -22,6 +22,7 @@ Flügeln" heraus, deckungsgleich mit dem BrickLink-Namen.
 Die Zugangsdaten bleiben damit zu Hause, und geplante Arbeit läuft auf einem
 Rechner, der sie nachweislich ausführt.
 """
+import html as html_mod
 import io
 import json
 import os
@@ -211,7 +212,14 @@ def bricklink_item(item_type, item_no):
         meta = d.get("meta") or {}
         code = meta.get("code", 200)
         if code < 400:
-            return d.get("data")
+            daten = d.get("data") or {}
+            # BrickLink liefert die Namen **HTML-kodiert**: „Tina, Orange
+            # Torso &#40;4143766&#41;". Ungefiltert stünde das so in der
+            # Suche und in jeder Anzeige. Die App entschlüsselt seit jeher
+            # an derselben Stelle – hier fehlte es.
+            if isinstance(daten, dict) and daten.get("name"):
+                daten["name"] = html_mod.unescape(daten["name"])
+            return daten
         r.status_code = code
     r.raise_for_status()
     raise requests.HTTPError("BrickLink %s" % r.status_code, response=r)

@@ -265,3 +265,79 @@ def test_unbekannte_felder_werden_abgewiesen(client):
     r = client.post("/api/einstellungen",
                     json={"werte": {"PATH": "/etc/boese"}})
     assert r.status_code == 400
+
+
+# --------------------------------------------- Was die Themenliste anzeigt
+
+def test_die_themenliste_zeigt_den_bestand_nicht_den_letzten_lauf(client):
+    """Am 24.08.2026 stand bei jedem der achtzehn Themen „0 Figuren
+    gefunden", obwohl 9.741 im Index lagen. `gefunden` zählt nur den
+    **letzten** Lauf – und der findet nach dem ersten Durchgang nichts
+    Neues mehr."""
+    import katalog
+    with katalog.db() as conn:
+        # `cas` steht schon in der Standardliste – nur den Zähler setzen.
+        conn.execute("UPDATE katalog_lauf SET gefunden = 0 "
+                     "WHERE praefix = 'cas'")
+        for i in (1, 2, 3):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " merkmale, updated_at) VALUES (?, 'minifig', 'x', 'x',"
+                " 'torso red', 1)", ("cas%03d" % i,))
+        # Ein Thema, dessen Präfix ein Anfang eines anderen ist: `cas` darf
+        # `castle001` nicht mitzählen, sonst stimmt keine Zahl mehr.
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at) VALUES ('castle001', 'minifig', 'x',"
+            " 'x', 'torso red', 1)")
+
+    themen = {t["praefix"]: t for t in client.get("/api/status").json()["themen"]}
+    assert themen["cas"]["im_index"] == 3, themen["cas"]
+
+
+def test_die_gemessene_ziffernbreite_bleibt_stehen(client, monkeypatch):
+    """Sie jedes Mal neu zu ermitteln kostet bis zu zehn Abrufe je Thema –
+    bei achtzehn Themen 180 für eine Antwort, die sich nie ändert."""
+    import katalog
+    import laeufe
+    with katalog.db() as conn:
+        conn.execute("INSERT INTO katalog_lauf (praefix) VALUES ('zz')")
+
+    gemessen = []
+    monkeypatch.setattr(laeufe, "_katalog_breite",
+                        lambda p: (gemessen.append(p), 3)[1])
+    monkeypatch.setattr(laeufe, "bricklink_item",
+                        lambda t, n: (_ for _ in ()).throw(
+                            __import__("requests").HTTPError("404")))
+    monkeypatch.setattr(laeufe, "KATALOG_TAKT", 0)
+    monkeypatch.setattr(laeufe, "KATALOG_LUECKE", 2)
+
+    laeufe._katalog_anbau("zz")
+    assert gemessen == ["zz"]
+    with katalog.db() as conn:
+        assert conn.execute("SELECT breite FROM katalog_lauf WHERE "
+                            "praefix='zz'").fetchone()["breite"] == 3
+
+    laeufe._katalog_anbau("zz")
+    assert gemessen == ["zz"], "die Breite wurde ein zweites Mal gemessen"
+
+
+def test_bricklink_namen_werden_entschluesselt(client, monkeypatch):
+    """BrickLink liefert sie HTML-kodiert: „Tina, Orange Torso &#40;4143766&#41;".
+    Ungefiltert stünde das so in der Suche und in jeder Anzeige."""
+    import katalog
+
+    class Fake:
+        status_code = 200
+
+        def json(self):
+            return {"meta": {"code": 200},
+                    "data": {"name": "Tina &#40;4143766&#41;"}}
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr(katalog.requests, "get", lambda *a, **k: Fake())
+    monkeypatch.setattr(katalog, "bl_auth", lambda: None)
+    d = katalog.bricklink_item("minifig", "cre001")
+    assert d["name"] == "Tina (4143766)"
