@@ -290,6 +290,44 @@ const BILD_FRAGE =
   + 'Answer as JSON: {"kind": "...", "parts": [{"part": "...", '
   + '"color": "...", "print": "..."}], "accessories": ["..."]}';
 
+/**
+ * Das Bildmodell fragen – und dabei nicht raten, welche Eingabeform es will.
+ *
+ * Workers AI kennt für Bildmodelle zwei Formen: das schlichte
+ * `{image, prompt}` und die Nachrichtenform mit `image_url` als data-URI.
+ * Welche ein Modell nimmt, steht nirgends verlässlich, und die falsche
+ * endet in einem nackten Fehler. Also der Reihe nach – und die Form, die
+ * getragen hat, wird mitgemeldet, damit man es beim nächsten Modell weiß.
+ */
+export async function bildFragen(env, bytes, frage, modell = BILD_MODELL) {
+  const fehler = [];
+  try {
+    const r = await env.AI.run(modell, {
+      image: [...bytes], prompt: frage, max_tokens: 512,
+    });
+    return { roh: r, form: "image+prompt" };
+  } catch (e) { fehler.push("image+prompt: " + String((e && e.message) || e)); }
+
+  try {
+    let b64 = "";
+    const teil = 8192;                 // in Häppchen, sonst sprengt es den Stack
+    for (let i = 0; i < bytes.length; i += teil) {
+      b64 += String.fromCharCode(...bytes.subarray(i, i + teil));
+    }
+    const uri = "data:image/jpeg;base64," + btoa(b64);
+    const r = await env.AI.run(modell, {
+      max_tokens: 512,
+      messages: [{ role: "user", content: [
+        { type: "text", text: frage },
+        { type: "image_url", image_url: { url: uri } }] }],
+    });
+    return { roh: r, form: "messages+image_url" };
+  } catch (e) { fehler.push("messages: " + String((e && e.message) || e)); }
+
+  throw new Error(fehler.join(" | "));
+}
+
+
 /** Aus der Modellantwort das JSON herausschälen – notfalls aus Fließtext. */
 export function antwortLesen(roh) {
   const text = typeof roh === "string" ? roh
@@ -360,10 +398,8 @@ export async function beschreiben(env, budget = BILDER_JE_LAUF) {
       });
       if (!bild.ok) throw new Error("Bild " + bild.status);
       const bytes = new Uint8Array(await bild.arrayBuffer());
-      const antwort = await env.AI.run(BILD_MODELL, {
-        image: [...bytes], prompt: BILD_FRAGE, max_tokens: 512,
-      });
-      d = merkmaleBauen(antwortLesen(antwort));
+      const { roh } = await bildFragen(env, bytes, BILD_FRAGE);
+      d = merkmaleBauen(antwortLesen(roh));
     } catch (e) {
       fehler = String((e && e.message) || e);
     }

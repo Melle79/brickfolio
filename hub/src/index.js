@@ -7,7 +7,14 @@
  */
 
 import { katalogTakt, abklappern, beschreiben, antwortLesen, merkmaleBauen,
-         praefixPruefen, blZugang, BILD_MODELL } from "./katalog.js";
+         praefixPruefen, blZugang, bildFragen, BILD_MODELL } from "./katalog.js";
+
+// Die Frage für die Sichtprobe. Bewusst kürzer als die des Laufs: Hier will
+// man sehen, ob das Modell überhaupt antwortet und in welcher Form – nicht
+// die vollständige Beschreibung.
+const BILD_PROBE_FRAGE =
+  "Describe this LEGO minifigure part by part as JSON: "
+  + '{"kind": "...", "parts": [{"part": "...", "color": "...", "print": "..."}]}';
 
 const MAX_OFFERS = 2000;              // Obergrenze je Instanz (Missbrauchsschutz)
 const MAX_THUMB = 30000;              // Vorschaubild einer eigenen Figur
@@ -23,7 +30,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.10.0";
+const HUB_VERSION = "1.10.1";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -1197,24 +1204,29 @@ async function adminKatalogLauf(req, env) {
   const url = new URL(req.url);
   const item = (url.searchParams.get("item") || "").trim();
   if (item) {
-    const r = await env.DB.prepare(
-      "SELECT item_no, img_url FROM katalog WHERE item_no = ?")
-      .bind(item).first();
-    if (!r) return err(404, "Figur nicht im Abzug");
-    const bild = await fetch(r.img_url, {
-      headers: { "User-Agent": "Brickfolio-Hub" },
-    });
-    if (!bild.ok) return err(502, "Bild nicht ladbar: " + bild.status);
-    const bytes = new Uint8Array(await bild.arrayBuffer());
-    const roh = await env.AI.run(BILD_MODELL, {
-      image: [...bytes], prompt: "Describe this LEGO minifigure part by part "
-        + "as JSON: {\"kind\": \"...\", \"parts\": [{\"part\": \"...\", "
-        + "\"color\": \"...\", \"print\": \"...\"}]}",
-      max_tokens: 512,
-    });
-    return json({ item_no: r.item_no, modell: BILD_MODELL, roh,
-                  gelesen: antwortLesen(roh),
-                  daraus: merkmaleBauen(antwortLesen(roh)) });
+    // **Hier keinen Fehler verschlucken.** Das ist ein Diagnosewerkzeug: Der
+    // Catch-all gibt nach außen nur „interner Fehler", und genau der Grund
+    // ist das, wonach man hier sucht. Der Endpunkt ist admin-only, es geht
+    // also nichts an Unbefugte.
+    try {
+      const r = await env.DB.prepare(
+        "SELECT item_no, img_url FROM katalog WHERE item_no = ?")
+        .bind(item).first();
+      if (!r) return err(404, "Figur nicht im Abzug");
+      const bild = await fetch(r.img_url, {
+        headers: { "User-Agent": "Brickfolio-Hub" },
+      });
+      if (!bild.ok) return err(502, "Bild nicht ladbar: " + bild.status);
+      const bytes = new Uint8Array(await bild.arrayBuffer());
+      const { roh, form } = await bildFragen(env, bytes, BILD_PROBE_FRAGE);
+      return json({ item_no: r.item_no, modell: BILD_MODELL, form,
+                    bytes: bytes.length, roh,
+                    gelesen: antwortLesen(roh),
+                    daraus: merkmaleBauen(antwortLesen(roh)) });
+    } catch (e) {
+      return json({ item_no: item, modell: BILD_MODELL,
+                    fehler: String((e && e.stack) || e).slice(0, 1200) }, 502);
+    }
   }
   const nur = url.searchParams.get("nur");
   if (nur === "abzug") return json(await abklappern(env));
