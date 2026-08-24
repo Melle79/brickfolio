@@ -1,0 +1,46 @@
+# Der Katalogdienst – neben der Hub-Konsole auf der NAS.
+#
+# Die echte `docker-compose.yml` steht **nicht** im Repo: Sie enthält die
+# BrickLink-Zugangsdaten und die beiden Token. Diese Vorlage kopieren,
+# ausfüllen, `docker compose up -d`.
+services:
+  katalog:
+    build: .
+    container_name: brickfolio-katalog
+    restart: unless-stopped
+    ports:
+      # Nur im Heimnetz. 8320, damit es sich mit den Instanzen (8300–8303)
+      # und der Hub-Konsole (8310) nicht beißt.
+      - "8320:8320"
+    volumes:
+      # Hier liegt der Abzug. Ein benanntes Volume, damit ein Neubau des
+      # Abbilds ihn nicht mitnimmt – darin stecken Tage an BrickLink-Abrufen
+      # und rund ein Tag Grafikeinheit.
+      - katalog-daten:/data
+    environment:
+      # --- BrickLink -----------------------------------------------------
+      # Dieselben vier Werte wie bei den Instanzen. Sie bleiben damit auf der
+      # NAS; kein fremder Dienst bekommt sie zu sehen.
+      BL_CONSUMER_KEY: "..."
+      BL_CONSUMER_SECRET: "..."
+      BL_TOKEN: "..."
+      BL_TOKEN_SECRET: "..."
+
+      # --- Bilderkennung -------------------------------------------------
+      # Ollama auf dem Mac mini. `qwen3-vl` ist gemessen das beste im Haus:
+      # An sechs echten Figuren traf es Art und Teile durchweg – beim Dragon
+      # Master „Umhang gelb, grüner Drache mit roten Flügeln", deckungsgleich
+      # mit dem BrickLink-Namen. Rund 5,4 s je Figur.
+      OLLAMA_URL: "http://192.168.0.220:11434"
+      OLLAMA_BILD_MODEL: "qwen3-vl:latest"
+
+      # --- Zugang --------------------------------------------------------
+      # Steuern (Konsole). Ohne diesen Token verweigert der Dienst alles –
+      # ein offener Katalogdienst könnte fremdes Kontingent verbrennen.
+      ADMIN_TOKEN: "hier-etwas-langes-zufälliges"
+      # Nur lesen (Instanzen holen den Abzug). Getrennt, damit eine Instanz
+      # den Abzug beziehen kann, ohne ihn steuern zu können.
+      LESE_TOKEN: "hier-etwas-anderes-langes"
+
+volumes:
+  katalog-daten:

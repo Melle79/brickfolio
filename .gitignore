@@ -34,3 +34,9 @@ __pycache__/
 hub/seed/
 *.katalog.sql
 abzug*.sql
+
+# Die echte Compose-Datei des Katalogdienstes: Sie enthaelt die
+# BrickLink-Zugangsdaten und die beiden Token. Vorlage ist
+# katalogdienst/docker-compose.example.yml.
+katalogdienst/docker-compose.yml
+katalogdienst/data/
