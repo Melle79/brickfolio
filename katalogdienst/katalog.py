@@ -107,9 +107,65 @@ CREATE TABLE IF NOT EXISTS einstellungen (
 # Die am 21./24.08.2026 gemessenen Themen. Keine vollständige Liste – die
 # gibt BrickLink nicht heraus –, aber alle, die der Abzug bisher gefunden
 # hat. Weitere trägt man in der Konsole dazu; die Breite misst der Lauf.
-STANDARD_THEMEN = ["sw", "cty", "njo", "sh", "frnd", "cas", "pi", "hp",
-                   "jw", "sp", "ww", "lor", "iaj", "gen", "col", "adv",
-                   "trn", "idea"]
+STANDARD_THEMEN = [
+    # --- vierstellige Nummern ---
+    "sw",       # Star Wars
+    "cty",      # City (deckt „Town" und „Train" ab -- beide gibt es
+                # daneben trotzdem eigenstaendig, siehe `twn` und `trn`)
+    "njo",      # Ninjago
+    "sh",       # Super Heroes
+    "frnd",     # Friends
+    # --- dreistellige ---
+    "cas",      # Burg
+    "pi",       # Piraten
+    "hp",       # Harry Potter
+    "jw",       # Jurassic World
+    "sp",       # Weltraum
+    "ww",       # Western
+    "lor",      # Herr der Ringe
+    "iaj",      # Indiana Jones
+    "gen",      # Allgemein -- der Sammeltopf
+    "col",      # Sammelfiguren
+    "adv",      # Adventurers
+    "trn",      # Eisenbahn
+    "twn",      # Town (die aelteren Stadtfiguren)
+    "idea",     # LEGO Ideas
+    "cre",      # Creator
+    "js",       # Jack Stone
+    "4j",       # 4 Juniors -- **mit Ziffer**
+    "poc",      # Pirates of the Caribbean
+    "atl",      # Atlantis
+    "mof",      # Monster Fighters
+    "exf",      # Exo-Force
+    "arc",      # Arktis
+    "aqu",      # Aquazone
+    "uagt",     # Agents
+    "hs",       # Hidden Side
+    "dim",      # Dimensions
+    "vid",      # Vidiyo
+    "sim",      # Simpsons
+    "tnt",      # Turtles
+    "min",      # Minecraft
+    "dis",      # Disney
+    "tlm",      # The LEGO Movie
+    "hol",      # Feiertage und Anlaesse
+    "edu",      # Lernen und Dacta
+    "stu",      # Studios
+    "soc",      # Fussball
+    "nba",      # Basketball
+    "hky",      # Eishockey
+]
+
+# Die letzten 22 kamen am 24.08.2026 dazu, und der Weg dorthin ist der
+# eigentliche Gewinn: **ueber die offizielle Kategorien-API**, nicht ueber
+# den Katalogbaum auf der Webseite (den darf man laut Nutzungsbedingungen
+# nicht automatisch abrufen).
+#
+# `/categories` liefert alle Kategorien in einem Aufruf. Jede abgeklapperte
+# Figur bringt ihre `category_id` mit -- damit sieht man, welche Kategorien
+# nur ueber den Sammeltopf `gen` abgedeckt sind. Genau die haben in aller
+# Regel ein eigenes Praefix, das man nur noch raten und ueber die API
+# nachpruefen muss. 22 von 31 Versuchen sassen.
 
 
 def init_db():

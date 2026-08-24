@@ -492,6 +492,56 @@ irgendwem und ohne dass irgendwo etwas laufen muss**.
 > Inhalt, und dessen Weitergabe an Dritte untersagen deren
 > Nutzungsbedingungen.
 >
+**Die Themen** sind Nummernvorsilben, keine Kategorien – und die Zuordnung
+gibt BrickLink nicht heraus.
+
+| Präfix | Thema | | Präfix | Thema | | Präfix | Thema |
+|---|---|---|---|---|---|---|---|
+| `sw` | Star Wars | | `adv` | Adventurers | | `hs` | Hidden Side |
+| `cty` | City | | `trn` | Eisenbahn | | `dim` | Dimensions |
+| `njo` | Ninjago | | `twn` | Town (älter) | | `vid` | Vidiyo |
+| `sh` | Super Heroes | | `idea` | LEGO Ideas | | `sim` | Simpsons |
+| `frnd` | Friends | | `cre` | Creator | | `tnt` | Turtles |
+| `cas` | Burg | | `js` | Jack Stone | | `min` | Minecraft |
+| `pi` | Piraten | | `4j` | 4 Juniors | | `dis` | Disney |
+| `hp` | Harry Potter | | `poc` | Fluch der Karibik | | `tlm` | The LEGO Movie |
+| `jw` | Jurassic World | | `atl` | Atlantis | | `hol` | Feiertage |
+| `sp` | Weltraum | | `mof` | Monster Fighters | | `edu` | Lernen & Dacta |
+| `ww` | Western | | `exf` | Exo-Force | | `stu` | Studios |
+| `lor` | Herr der Ringe | | `arc` | Arktis | | `soc` | Fußball |
+| `iaj` | Indiana Jones | | `aqu` | Aquazone | | `nba` | Basketball |
+| `gen` | Allgemein | | `uagt` | Agents | | `hky` | Eishockey |
+| `col` | Sammelfiguren | | | | | | |
+
+Vier Ziffern haben `sw`, `cty`, `njo`, `sh` und `frnd`; alle übrigen drei.
+
+> **Wie diese Liste entstanden ist** – der Weg ist wichtiger als die Liste,
+> denn sie ist bis heute nicht vollständig.
+>
+> BrickLink zeigt einen Katalogbaum auf der Webseite, aber deren
+> Nutzungsbedingungen untersagen automatische Abrufe („any robot, spider,
+> other automatic device"). Der Umweg geht über die **offizielle API**:
+> `/categories` liefert in *einem* Aufruf alle Kategorien, und jede
+> abgeklapperte Figur bringt ihre `category_id` mit. Damit sieht man, welche
+> Kategorien nur über den Sammeltopf `gen` abgedeckt sind – und genau die
+> haben fast immer ein eigenes Präfix. Raten, über die API nachprüfen,
+> fertig: Am 24.08.2026 saßen so 22 von 31 Versuchen.
+
+Drei Fallen stecken darin:
+
+- **Präfix ≠ Kategorie.** `cty` deckt „Town" *und* „Train" ab – und trotzdem
+  gibt es beide daneben eigenständig als `twn` und `trn`. Umgekehrt teilen
+  sich `js`, `4j` und `cre` die Kategorie „4 Juniors".
+- **Die Ziffernbreite unterscheidet sich.** `sw0002` hat vier, `cas001` nur
+  drei. Fest verdrahtete vier ließen am 21.08.2026 acht Themen **komplett
+  leer** ausgehen – und der Lauf meldete trotzdem „fertig".
+- **Ein Präfix kann mit einer Ziffer beginnen.** `4j` ist „4 Juniors". Eine
+  Prüfung auf „nur Buchstaben" wies das Thema am 24.08.2026 ab, obwohl es
+  die Figuren gibt.
+
+Weitere trägt man in der Hub-Konsole einfach dazu; der Prüfknopf sagt
+vorher, ob es sie gibt und mit wie vielen Ziffern.
+
 **Er ist optional.** 3,3 MB alle zwölf Stunden, und beim ersten Mal rund
 9.700 BrickLink-Abrufe für die Namen. Wer die Suche nach dem Aussehen nicht
 braucht, schaltet ihn in den Einstellungen ab; der bereits geholte Bestand
