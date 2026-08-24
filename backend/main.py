@@ -198,6 +198,16 @@ def _price_refresher():
         except Exception as e:
             print(f"[brickfolio] Katalog-Abgleich übersprungen: {e}",
                   flush=True)
+        try:
+            _katalog_zum_hub()
+        except Exception as e:
+            print(f"[brickfolio] Katalog zum Hub übersprungen: {e}",
+                  flush=True)
+        try:
+            _katalog_vom_hub()
+        except Exception as e:
+            print(f"[brickfolio] Katalog vom Hub übersprungen: {e}",
+                  flush=True)
         time.sleep(12 * 3600)
 
 
@@ -897,6 +907,36 @@ def set_crash_token(body: CrashTokenBody, user: dict = Depends(admin_user)):
     return {"ok": True, "can_send": hub.report_enabled()}
 
 
+@app.post("/api/settings/katalog_token")
+def set_katalog_token(body: CrashTokenBody, user: dict = Depends(admin_user)):
+    """Katalog-Token hinterlegen. Leer bedeutet: nicht mehr hochladen.
+
+    Genau **eine** Instanz im Netz hat ihn – die, die BrickLink abklappert
+    und die Bilder ansieht. Alle anderen holen den Abzug nur ab; dafür
+    genügt ihr Berichts-Token.
+    """
+    core.set_setting("katalog_token", body.token.strip())
+    return {"ok": True, "quelle": bool(core.get_setting("katalog_token"))}
+
+
+@app.get("/api/katalog/hub")
+def katalog_hub_stand(user: dict = Depends(admin_user)):
+    """Wie steht es um den gemeinsamen Abzug?
+
+    Ohne das sähe man erst zwölf Stunden später am Protokoll, ob der
+    Austausch überhaupt läuft.
+    """
+    with core.db() as conn:
+        eigene = conn.execute(
+            "SELECT COUNT(*) AS n FROM katalog_index").fetchone()["n"]
+    return {"quelle": bool(core.get_setting("katalog_token")),
+            "kann_holen": bool(core.get_setting("crash_token")),
+            "eigene": eigene,
+            "hochgeschoben_bis": int(core.get_setting("katalog_hub_stand")
+                                     or 0),
+            "geholt_bis": int(core.get_setting("katalog_hub_geholt") or 0)}
+
+
 @app.get("/api/errors")
 def list_errors(user: dict = Depends(admin_user)):
     with core.db() as conn:
@@ -1284,6 +1324,115 @@ def _katalog_changelog() -> dict:
         print("[brickfolio] Change Log: %d umbenannt, %d neu nummeriert"
               % (umbenannt, neunummeriert), flush=True)
     return {"umbenannt": umbenannt, "neunummeriert": neunummeriert}
+
+
+def _katalog_zum_hub() -> dict:
+    """Den eigenen Abzug an den Hub geben – nur die Änderungen.
+
+    Diese Instanz ist die Quelle: Sie hat das BrickLink-Kontingent und das
+    Sehmodell, die anderen haben beides nicht. Was hier entsteht, gehört
+    deshalb einmal zentral abgelegt statt dreimal nacherarbeitet.
+
+    Der Wasserstand steht in `katalog_hub_stand`. Beim ersten Lauf ist er 0,
+    dann gehen alle 9.741 Zeilen hoch – rund zwanzig Stapel. Danach sind es
+    im Normalbetrieb null bis eine Handvoll.
+
+    Fehlt der Token, passiert nichts und es ist kein Fehler: Nur eine
+    Instanz im Netz hat ihn, alle anderen sollen hier still bleiben.
+    """
+    if not core.get_setting("katalog_token"):
+        return {"geschrieben": 0, "grund": "kein Katalog-Token"}
+    stand = int(core.get_setting("katalog_hub_stand") or 0)
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT item_no, item_type, name, such, category_id, jahr, "
+            "img_url, farben, art, merkmale, updated_at FROM katalog_index "
+            "WHERE updated_at > ? ORDER BY updated_at, item_no LIMIT 5000",
+            (stand,)).fetchall()
+    if not rows:
+        return {"geschrieben": 0}
+    modell = integrations.ollama_bild_modell() if integrations.ollama_enabled() else ""
+    zeilen = [{**{k: r[k] for k in r.keys() if k != "updated_at"},
+               "modell": modell if (r["merkmale"] or "").strip() not in ("", "–")
+                         else ""} for r in rows]
+    erg = hub.katalog_hochladen(zeilen)
+    # Erst nach dem Hochladen weiterrücken. Bricht es mittendrin ab, geht der
+    # Rest beim nächsten Lauf noch einmal hoch – doppelt schreiben ist hier
+    # harmlos, verlorene Zeilen wären es nicht.
+    core.set_setting("katalog_hub_stand", str(rows[-1]["updated_at"]))
+    print("[brickfolio] Katalog zum Hub: %d Zeilen" % erg["geschrieben"],
+          flush=True)
+    return erg
+
+
+# Der Hub liefert 1.000 Zeilen je Seite. Vierzig Seiten sind 40.000 Zeilen –
+# ein Vielfaches des heutigen Abzugs und trotzdem eine Grenze: Ein Hub, der
+# fälschlich immer `mehr` meldete, drehte sonst ewig.
+KATALOG_HUB_SEITEN = 40
+
+
+def _katalog_vom_hub() -> dict:
+    """Den gemeinsamen Abzug vom Hub nachziehen.
+
+    Für alle Instanzen außer der Quelle. Sie haben weder BrickLink-Kontingent
+    noch Sehmodell: Nerdfan, Paul und Kello hatten null Zeilen im Abzug, und
+    die Arbeit noch einmal zu leisten hieße Tage Abrufe und rund einen Tag
+    Grafikeinheit für dasselbe Ergebnis – der Abzug beschreibt BrickLinks
+    Fotos, nicht die Sammlung von irgendwem.
+
+    **Wer selbst hochlädt, holt nicht.** Der Hub stempelt jede Zeile mit
+    seiner eigenen Uhrzeit. Holte die Quelle ihre eigenen Zeilen zurück,
+    überholte dieser Stempel ihren Wasserstand `katalog_hub_stand` – und sie
+    schöbe dieselbe Zeile beim nächsten Lauf wieder hoch. Ein Ping-Pong ohne
+    Ende, das nur Kontingent verbrennt.
+    """
+    if core.get_setting("katalog_token"):
+        return {"geholt": 0, "grund": "diese Instanz ist die Quelle"}
+    if not core.get_setting("crash_token"):
+        return {"geholt": 0, "grund": "kein Hub-Token"}
+    stand = int(core.get_setting("katalog_hub_geholt") or 0)
+    geholt = 0
+    for _ in range(KATALOG_HUB_SEITEN):
+        antwort = hub.katalog_holen(stand)
+        zeilen = antwort.get("zeilen") or []
+        if not zeilen:
+            break
+        with core.db() as conn:
+            for z in zeilen:
+                nr = str(z.get("item_no") or "").strip()
+                if not nr:
+                    continue
+                conn.execute(
+                    "INSERT INTO katalog_index (item_no, item_type, name,"
+                    " such, category_id, jahr, img_url, farben, art,"
+                    " merkmale, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    " ON CONFLICT(item_no, item_type) DO UPDATE SET"
+                    " name = excluded.name, such = excluded.such,"
+                    " category_id = excluded.category_id,"
+                    " jahr = excluded.jahr, img_url = excluded.img_url,"
+                    " farben = excluded.farben, art = excluded.art,"
+                    " merkmale = excluded.merkmale,"
+                    " updated_at = excluded.updated_at",
+                    (nr, str(z.get("item_type") or "minifig"),
+                     str(z.get("name") or ""), str(z.get("such") or ""),
+                     str(z.get("category_id") or "") or None,
+                     int(z.get("jahr") or 0),
+                     str(z.get("img_url") or ""),
+                     str(z.get("farben") or ""), str(z.get("art") or ""),
+                     str(z.get("merkmale") or ""),
+                     int(z.get("updated_at") or 0)))
+        geholt += len(zeilen)
+        # Erst nach dem Schreiben weiterrücken: Bricht es mittendrin ab,
+        # kommt dieselbe Seite noch einmal – doppelt schreiben ist hier
+        # harmlos, eine übersprungene Seite wäre es nicht.
+        stand = int(antwort.get("stand") or stand)
+        core.set_setting("katalog_hub_geholt", str(stand))
+        if not antwort.get("mehr"):
+            break
+    if geholt:
+        print("[brickfolio] Katalog vom Hub: %d Zeilen" % geholt, flush=True)
+    return {"geholt": geholt}
 
 
 def _apply_new_number(old_id: str, new_id: str) -> int:
@@ -3028,10 +3177,16 @@ def _katalog_farben(grenze: int = 0):
                 # Auch ein leeres Ergebnis festhalten – sonst versucht der
                 # nächste Lauf dieselbe Figur wieder und käme nie ans Ende.
                 with core.db() as conn:
+                    # `updated_at` zieht mit: Die Zeile hat sich geändert,
+                    # und der Schieber zum Hub erkennt Änderungen genau
+                    # daran. Ohne das bliebe jede frisch analysierte Figur
+                    # für ihn unsichtbar.
                     conn.execute("UPDATE katalog_index SET farben = ?, "
-                                 "art = ?, merkmale = ? WHERE item_no = ?",
+                                 "art = ?, merkmale = ?, updated_at = ? "
+                                 "WHERE item_no = ?",
                                  (", ".join(m["farben"]) or "–", m["art"],
-                                  m.get("merkmale") or "–", r["item_no"]))
+                                  m.get("merkmale") or "–", int(time.time()),
+                                  r["item_no"]))
                 _farb_lauf["getan"] += 1
                 if m["farben"] or m["art"] or m.get("merkmale"):
                     _farb_lauf["gefunden"] += 1

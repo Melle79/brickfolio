@@ -467,6 +467,27 @@ Erfassen (siehe 4.2 und 4.4).
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 
+**🤝 Einmal erarbeiten, alle haben ihn.** Der Abzug beschreibt BrickLinks
+Fotos, nicht die Sammlung von irgendwem – ihn viermal zu bauen wäre viermal
+dieselbe Arbeit für dasselbe Ergebnis. Deshalb geht er über den Hub:
+
+- **Eine Instanz ist die Quelle.** Sie klappert BrickLink ab und lässt das
+  Sehmodell die Bilder beschreiben. Nur sie hat einen `katalog_token`; ihn
+  hinterlegt man über `POST /api/settings/katalog_token`, und ohne ihn bleibt
+  der Schieber still. Der Hub weist Schreibversuche ohne `can_katalog` ohnehin
+  ab.
+- **Alle anderen holen nur ab.** Dafür genügt ihr Berichts-Token: Der Abzug
+  ist Nachschlagewerk, kein Geheimnis. Nerdfan, Paul und Kello hatten null
+  Zeilen; Tage Abrufe und rund ein Tag Grafikeinheit entfallen damit.
+- Beides läuft im **Zwölfstundentakt** mit, hoch in Stapeln zu 500, herunter
+  in Seiten zu 1.000. `GET /api/katalog/hub` zeigt den Stand.
+
+> **Wer hochlädt, holt nicht.** Der Hub stempelt jede Zeile mit seiner
+> eigenen Uhrzeit. Holte die Quelle ihre eigenen Zeilen zurück, überholte
+> dieser Stempel ihren Wasserstand – und sie schöbe dieselbe Zeile beim
+> nächsten Lauf wieder hoch. Ein Ping-Pong ohne Ende, das nur Kontingent
+> verbrennt.
+
 **📚 Katalog-Abzug.** Holt die Figuren eines Themas einmal von BrickLink
 und legt Namen und Jahr in der eigenen Datenbank ab. Danach findet
 die Suche sie über **beschreibende Wörter**: „Protokolldroide" findet

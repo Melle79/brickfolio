@@ -271,6 +271,10 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # über BrickLinks Nummernschema, kein Zugang
         "katalog_log_stand",    # bis wann der Change Log abgeglichen ist,
                                 # z. B. „2026-8“ – ein Datum, kein Zugang
+        "katalog_hub_stand",    # bis wohin der Abzug zum Hub geschoben ist –
+                                # ein Zeitstempel, kein Zugang
+        "katalog_hub_geholt",   # dasselbe für die Gegenrichtung: bis wohin
+                                # vom Hub nachgezogen wurde
     }
     unbekannt = aufgeloest - set(integrations.GEHEIME_SETTINGS) - OFFEN
     assert not unbekannt, (

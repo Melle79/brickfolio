@@ -51,6 +51,9 @@ GEHEIME_SETTINGS = (
                               # vom Tausch-Token: Wer berichtet, gibt damit
                               # nichts über sein Tauschen preis, und der
                               # Kanal lässt sich einzeln zurückziehen
+    "katalog_token",          # schreibt den gemeinsamen Katalogabzug. Genau
+                              # eine Instanz hat ihn; mit ihm liesse sich der
+                              # Abzug aller anderen verschlechtern
     "vapid_private",          # signiert die Push-Meldungen dieser Instanz
     "ollama_url",             # Adresse der lokalen KI. Kein Schlüssel, aber
                               # sie kann Zugangsdaten enthalten
