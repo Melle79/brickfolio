@@ -183,3 +183,36 @@ def test_der_stand_sagt_was_angekommen_ist(client):
     # Beide Zeilen haben hier einen Namen – im echten Betrieb fehlt er am
     # Anfang allen, weil die veröffentlichte Datei ihn nicht enthält.
     assert d["ohne_namen"] == 0
+
+
+def test_der_eigene_abzug_braucht_kein_rebrickable(client, monkeypatch):
+    """Pauls Instanz am 24.08.2026: BrickLink eingerichtet, 19.158 Figuren
+    mit Beschreibung im Abzug – und die Suche gab eine leere Liste zurück,
+    weil der **Rebrickable**-Schlüssel fehlte. Der Abzug liegt lokal; er
+    braucht davon nichts.
+
+    Rebrickable ist erst der zweite Versuch, wenn der eigene nichts hergibt.
+    """
+    _zeile("sw0344", "R-3PO Protocol Droid", farben="red, black",
+           merkmale="torso red black chest panel")
+    client.post("/api/settings/ollama",
+                json={"url": "http://127.0.0.1:11434", "model": "test"})
+    # Ausdrücklich **kein** Rebrickable-Schlüssel.
+    core.set_setting("rebrickable_key", "")
+
+    import json as json_mod
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content":
+                                json_mod.dumps({"begriffe": ["red droid"]})}}
+    monkeypatch.setattr(integrations.requests, "post",
+                        lambda url, **kw: Fake())
+
+    d = client.get("/api/search/suggest?q=roter%20Droide").json()
+    assert [i["item_id"] for i in d["items"]] == ["sw0344"], d

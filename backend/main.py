@@ -4600,8 +4600,14 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     """
     if not q.strip() or not integrations.ollama_enabled():
         return {"begriffe": [], "items": []}
-    if not integrations.rebrickable_enabled():
-        return {"begriffe": [], "items": []}
+    # **Rebrickable wird hier nicht mehr vorausgesetzt.** Es stand ein
+    # `return` an dieser Stelle, und das war falsch: Der eigene Abzug
+    # braucht Rebrickable nicht – er liegt lokal. Wer keinen Schlüssel
+    # hinterlegt hat, bekam trotzdem eine leere Liste, obwohl 19.158
+    # Figuren mit Beschreibung danebenlagen (Pauls Instanz, 24.08.2026).
+    #
+    # Gebraucht wird Rebrickable erst weiter unten, wenn der eigene Abzug
+    # nichts hergibt. Dort steht die Prüfung jetzt auch.
     begriffe = integrations.suchbegriffe(q)
     if not begriffe:
         return {"begriffe": [], "items": []}
@@ -4621,6 +4627,11 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf
     # einem fremden Kontingent.
     if items:
+        _begriffe_bewaehrt(q, treffer)
+        return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
+    if not integrations.rebrickable_enabled():
+        # Ohne Schlüssel gibt es keinen zweiten Versuch – aber das ist kein
+        # Grund, den ersten wegzuwerfen.
         _begriffe_bewaehrt(q, treffer)
         return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
     for begriff in begriffe[:KATALOG_KI_VERSUCHE]:
