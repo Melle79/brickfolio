@@ -1348,10 +1348,18 @@ KATALOG_QUELLE = ("https://raw.githubusercontent.com/Melle79/brickfolio/"
 # lässt sich verstellen, und ohne Deckel zöge die Instanz sich alles.
 KATALOG_MAX_BYTES = 32 * 1024 * 1024
 
-# Wie viele Namen je Durchgang nachgeschlagen werden, und wie schnell. Der
-# BrickLink-Zugang ist derselbe, über den die Preise laufen – deshalb
-# gedrosselt und in Häppchen, statt 9.700 am Stück.
-KATALOG_NAMEN_JE_LAUF = 300
+# Wie viele Namen je Durchgang nachgeschlagen werden, und wie schnell.
+#
+# Die Rechnung dahinter: BrickLink lässt 5.000 Abrufe am Tag zu, und
+# dasselbe Kontingent trägt die Preise – die braucht man täglich, den
+# vollständigen Namensbestand einmal. 1.500 je Durchgang und zwei Durchgänge
+# am Tag sind 3.000; die restlichen 2.000 bleiben den Preisen. Bei rund
+# 9.700 Namen ist der Bestand damit in gut drei Tagen beisammen.
+#
+# 300 waren es zuerst – das wären **sechzehn Tage** gewesen, und so lange
+# fehlt der Suche der halbe Text. Ein Durchgang dauert bei einem Abruf je
+# Sekunde rund 25 Minuten und läuft im Hintergrund.
+KATALOG_NAMEN_JE_LAUF = 1500
 KATALOG_NAMEN_TAKT = 1.0
 
 _namen_lauf = {"aktiv": False, "getan": 0, "stop": False, "fehler": ""}
