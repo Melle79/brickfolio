@@ -571,6 +571,10 @@ def test_ein_ausfall_hakt_die_figur_nicht_als_angesehen_ab(client, monkeypatch):
                         lambda b: {"art": "", "farben": [],
                                    "fehler": "ReadTimeout: 120s"})
     monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+    # Auch die Pause nach einem Fehlschlag: Zwölf Fehlschläge à zwanzig
+    # Sekunden sind vier Minuten – je Test. Der Lauf blieb dadurch
+    # scheinbar hängen, und CI wurde nur langsam statt rot.
+    monkeypatch.setattr(main, "KATALOG_FARB_PAUSE", 0)
 
     main._katalog_farben()
 
@@ -596,6 +600,10 @@ def test_nach_fuenf_ausfaellen_ist_schluss(client, monkeypatch):
         return {"art": "", "farben": [], "fehler": "ReadTimeout"}
     monkeypatch.setattr(main.integrations, "bild_merkmale", kaputt)
     monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+    # Auch die Pause nach einem Fehlschlag: Zwölf Fehlschläge à zwanzig
+    # Sekunden sind vier Minuten – je Test. Der Lauf blieb dadurch
+    # scheinbar hängen, und CI wurde nur langsam statt rot.
+    monkeypatch.setattr(main, "KATALOG_FARB_PAUSE", 0)
 
     main._katalog_farben()
     assert len(versuche) == main.KATALOG_FARB_PATZER
@@ -611,6 +619,10 @@ def test_ein_fehlendes_bild_gilt_als_erledigt(client, monkeypatch):
         raise ValueError("404")
     monkeypatch.setattr(main.integrations, "fetch_catalog_image", kein_bild)
     monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+    # Auch die Pause nach einem Fehlschlag: Zwölf Fehlschläge à zwanzig
+    # Sekunden sind vier Minuten – je Test. Der Lauf blieb dadurch
+    # scheinbar hängen, und CI wurde nur langsam statt rot.
+    monkeypatch.setattr(main, "KATALOG_FARB_PAUSE", 0)
 
     main._katalog_farben()
 
@@ -638,6 +650,10 @@ def test_ein_einzelner_aussetzer_beendet_den_lauf_nicht(client, monkeypatch):
         return {"art": "droid", "farben": ["red"], "fehler": ""}
     monkeypatch.setattr(main.integrations, "bild_merkmale", mal_so_mal_so)
     monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+    # Auch die Pause nach einem Fehlschlag: Zwölf Fehlschläge à zwanzig
+    # Sekunden sind vier Minuten – je Test. Der Lauf blieb dadurch
+    # scheinbar hängen, und CI wurde nur langsam statt rot.
+    monkeypatch.setattr(main, "KATALOG_FARB_PAUSE", 0)
 
     main._katalog_farben()
     assert main._farb_lauf["fehler"] == ""
@@ -702,6 +718,10 @@ def test_der_bilderlauf_holt_alles_noch_einmal(client, monkeypatch):
     _bild_und_farbe(monkeypatch, ["gold"], gefragt=gefragt, art="droid",
                     merkmale="torso gold panel lines")
     monkeypatch.setattr(main, "KATALOG_FARB_TAKT", 0)
+    # Auch die Pause nach einem Fehlschlag: Zwölf Fehlschläge à zwanzig
+    # Sekunden sind vier Minuten – je Test. Der Lauf blieb dadurch
+    # scheinbar hängen, und CI wurde nur langsam statt rot.
+    monkeypatch.setattr(main, "KATALOG_FARB_PAUSE", 0)
     main._katalog_farben()
 
     assert gefragt, "die schon angesehene Figur blieb auf dem alten Stand"
