@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir \
       "fastapi==0.115.*" "uvicorn[standard]==0.32.*" \
       "requests==2.32.*" "requests-oauthlib==2.0.*" "pillow==11.*"
 
-COPY katalog.py bild.py laeufe.py dienst.py ./
+COPY katalog.py bild.py laeufe.py veroeffentlichen.py dienst.py ./
 
 # Der Abzug liegt hier – als Docker-Volume, damit er einen Neubau überlebt.
 # Tage an BrickLink-Abrufen und ein Tag Grafikeinheit stecken darin.
