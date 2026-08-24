@@ -20,7 +20,7 @@ const now = () => Math.floor(Date.now() / 1000);
 // Code eigentlich läuft – die Versionsnummer in der Admin-Konsole ist deren
 // eigene und steht nur zufällig neben „Hub-Admin". Beim Ändern hier mit
 // hochzählen, sonst ist die Anzeige schlimmer als keine.
-const HUB_VERSION = "1.7.0";
+const HUB_VERSION = "1.8.0";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -696,6 +696,89 @@ async function putFinding(req, env) {
   return json({ ok: true, prio }, 201);
 }
 
+/* ------------------------------------------------------------- Katalog
+
+   Der Abzug der BrickLink-Figuren, einmal statt viermal.
+
+   Bisher baute ihn jede Instanz selbst: Nummern der Reihe nach abklappern
+   (Tage, eigenes Kontingent) und danach jedes Bild von einem Sehmodell
+   beschreiben lassen (rund 24 Stunden Grafikeinheit fuer 9.741 Figuren).
+   Dieselbe Arbeit fuer dasselbe Ergebnis, denn der Katalog beschreibt
+   BrickLinks Fotos, nicht die Sammlung von irgendwem.
+
+   Geschrieben werden darf nur mit `can_katalog`. Das Recht muss hier
+   haengen und nicht in der App: Die Instanzen sind selbst gehostet, wer
+   seinen Container betreibt kann dessen Code aendern, und eine Absprache
+   waere damit keine Regel, sondern eine Bitte. Der Schaden waere auch nicht
+   Unordnung, sondern Verschlechterung -- eine schwaechere Bildanalyse
+   ueberschreibt eine bessere, und man sieht es der Beschreibung nicht an. */
+
+const KATALOG_STAPEL = 500;      // Zeilen je Hochladen
+const KATALOG_SEITE = 1000;      // Zeilen je Abholen
+
+async function putKatalog(req, env) {
+  const tok = await reportToken(req, env);
+  if (!tok || !tok.can_katalog) return err(401, "Kein Katalog-Token");
+  const body = await req.json().catch(() => ({}));
+  const zeilen = Array.isArray(body.zeilen) ? body.zeilen : [];
+  if (!zeilen.length) return err(400, "zeilen fehlt");
+  if (zeilen.length > KATALOG_STAPEL)
+    return err(413, `zu viele Zeilen (max. ${KATALOG_STAPEL})`);
+  const jetzt = now();
+  const anweisungen = [];
+  for (const z of zeilen) {
+    const nr = String(z.item_no || "").trim().slice(0, 40);
+    if (!nr) continue;
+    anweisungen.push(env.DB.prepare(
+      "INSERT INTO katalog (item_no, item_type, name, such, category_id, "
+      + "jahr, img_url, farben, art, merkmale, modell, updated_at) "
+      + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+      + "ON CONFLICT(item_no, item_type) DO UPDATE SET "
+      + "name = excluded.name, such = excluded.such, "
+      + "category_id = excluded.category_id, jahr = excluded.jahr, "
+      + "img_url = excluded.img_url, farben = excluded.farben, "
+      + "art = excluded.art, merkmale = excluded.merkmale, "
+      + "modell = excluded.modell, updated_at = excluded.updated_at")
+      .bind(nr, String(z.item_type || "minifig").slice(0, 20),
+        String(z.name || "").slice(0, 400),
+        String(z.such || "").slice(0, 400),
+        String(z.category_id || "").slice(0, 20),
+        Number(z.jahr) || 0,
+        String(z.img_url || "").slice(0, 400),
+        String(z.farben || "").slice(0, 200),
+        String(z.art || "").slice(0, 40),
+        String(z.merkmale || "").slice(0, 2000),
+        String(z.modell || "").slice(0, 60), jetzt));
+  }
+  if (!anweisungen.length) return err(400, "keine gueltige Zeile dabei");
+  await env.DB.batch(anweisungen);
+  return json({ ok: true, geschrieben: anweisungen.length, stand: jetzt });
+}
+
+/* Abholen: nur, was sich seit dem eigenen Stand geaendert hat.
+
+   Ein Vollabzug waere 9.741 Zeilen bei jedem Lauf. Mit `seit` sind es im
+   Normalbetrieb null -- der Katalog aendert sich in der Groessenordnung von
+   einem Dutzend Namen im Monat. */
+
+async function getKatalog(req, env) {
+  const url = new URL(req.url);
+  const seit = Number(url.searchParams.get("seit")) || 0;
+  const rows = (await env.DB.prepare(
+    "SELECT item_no, item_type, name, such, category_id, jahr, img_url, "
+    + "farben, art, merkmale, modell, updated_at FROM katalog "
+    + "WHERE updated_at > ? ORDER BY updated_at, item_no LIMIT ?")
+    .bind(seit, KATALOG_SEITE).all()).results || [];
+  const gesamt = (await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM katalog").first()) || { n: 0 };
+  // `stand` ist der Zeitstempel der letzten gelieferten Zeile, nicht die
+  // aktuelle Uhrzeit: Sonst uebersaehe der naechste Abruf alles, was
+  // zwischen Abfrage und Antwort geschrieben wurde.
+  const stand = rows.length ? rows[rows.length - 1].updated_at : seit;
+  return json({ zeilen: rows, stand, gesamt: gesamt.n,
+                mehr: rows.length === KATALOG_SEITE });
+}
+
 /* ------------------------------------------------------- Admin (Konsole) */
 
 async function adminCrashFindings(req, env, method, id) {
@@ -1107,6 +1190,16 @@ export default {
       }
       if (p === "/v1/collect/ack" && method === "POST") {
         return await ackCrashReports(req, env);
+      }
+      // Katalog: Schreiben braucht `can_katalog`, Lesen genuegt der
+      // Berichts-Token -- der Abzug ist Nachschlagewerk, kein Geheimnis.
+      if (p === "/v1/katalog" && method === "POST") {
+        return await putKatalog(req, env);
+      }
+      if (p === "/v1/katalog" && method === "GET") {
+        const tok = await reportToken(req, env);
+        if (!tok) return err(401, "Kein gueltiger Token");
+        return await getKatalog(req, env);
       }
       if (p === "/v1/collect/finding" && method === "POST") {
         return await putFinding(req, env);

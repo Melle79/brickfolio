@@ -1,5 +1,32 @@
 # Changelog
 
+## Hub 1.8.0 – August 2026
+
+### Neu
+- 📚 **Der Katalogabzug liegt jetzt im Hub.** Bisher baute ihn jede Instanz
+  selbst: Nummern der Reihe nach bei BrickLink abklappern (Tage, eigenes
+  Kontingent) und danach jedes Bild von einem Sehmodell beschreiben lassen
+  (rund 24 Stunden Grafikeinheit für 9.741 Figuren). Dieselbe Arbeit für
+  dasselbe Ergebnis — der Katalog beschreibt BrickLinks Fotos, nicht die
+  Sammlung von irgendwem.
+
+  `POST /v1/katalog` nimmt Stapel zu 500 Zeilen entgegen, `GET /v1/katalog?seit=…`
+  liefert nur, was sich seit dem eigenen Stand geändert hat. Im Normalbetrieb
+  sind das null Zeilen — der Katalog ändert sich in der Größenordnung eines
+  Dutzend Namen im Monat.
+
+  **Schreiben braucht ein eigenes Recht (`can_katalog`), lesen nicht.** Das
+  Recht hängt am Hub und nicht in der App, denn die Instanzen sind selbst
+  gehostet: Wer seinen Container betreibt, kann dessen Code ändern, und eine
+  Absprache wäre damit keine Regel, sondern eine Bitte. Der Schaden wäre auch
+  nicht Unordnung, sondern Verschlechterung — eine schwächere Bildanalyse
+  überschreibt eine bessere, und man sieht es der Beschreibung nicht an.
+
+  Jede Zeile vermerkt, welches **Modell** die Beschreibung erzeugt hat. Ohne
+  das wäre ein Modellwechsel ein stilles Umschreiben aller Zeilen, und
+  niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
+  vergleichbar sind.
+
 ## 2.39.0 – August 2026
 
 ### Neu
