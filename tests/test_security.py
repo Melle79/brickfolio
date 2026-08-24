@@ -269,6 +269,8 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
         "ollama_bild_model",    # dasselbe für das Modell, das Bilder ansieht
         "katalog_themen",       # Nummernpräfixe wie „sw,cty“ – Wissen
                                 # über BrickLinks Nummernschema, kein Zugang
+        "katalog_log_stand",    # bis wann der Change Log abgeglichen ist,
+                                # z. B. „2026-8“ – ein Datum, kein Zugang
     }
     unbekannt = aufgeloest - set(integrations.GEHEIME_SETTINGS) - OFFEN
     assert not unbekannt, (

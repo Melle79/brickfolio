@@ -734,6 +734,62 @@ def _parse_log(html: str, kind: str) -> dict[str, dict]:
     return found
 
 
+# Namensänderung: dieselbe Bauart wie oben, nur ein anderes Stichwort – und
+# ein anderer Schlüssel. Beim Nummernwechsel ist die **alte Nummer** der
+# Anker, hier ist es die Nummer aus dem Artikel-Link darüber: Der Name ändert
+# sich, die Nummer bleibt.
+# Anders als beim Nummernwechsel steht der **neue** Name nicht im
+# Änderungstext – der sagt nur, wie die Figur vorher hieß. Der aktuelle Name
+# steht im Artikel-Link selbst:
+#
+#   catalogitem.page?M=dp109">dp109&nbsp;Prince Eric - Uniform with Gold …</A>
+#
+# Das ist genau der Wert, den wir wollen, und er ist verlässlicher als der
+# Änderungstext: Wurde derselbe Artikel im Monat zweimal umbenannt, steht im
+# Link der Endstand.
+_RE_NAME = re.compile(
+    r'catalogitem\.page\?[A-Z]=(?P<no>[^"&]+)">(?P<text>[^<]+)</A>', re.I)
+
+
+def _parse_names(html_text: str) -> dict[str, str]:
+    """Namensänderungen einer Log-Seite als `{nummer: aktueller Name}`."""
+    import html as _html
+    found: dict[str, str] = {}
+    for m in _RE_NAME.finditer(html_text):
+        nummer = m.group("no")
+        # Linktext ist „<Nummer>\xa0<Name>" – die Entitäten müssen weg, sonst
+        # stünde `&#40;` statt einer Klammer im Suchtext.
+        text = _html.unescape(m.group("text"))
+        teile = text.split("\xa0", 1)
+        if len(teile) != 2 or teile[0].strip().lower() != nummer.lower():
+            continue
+        name = teile[1].strip()
+        if name:
+            found[nummer] = name
+    return found
+
+
+def catalog_name_changes(year: int, month: int, item_type: str = "M",
+                         max_pages: int = 20) -> dict[str, str]:
+    """Namensänderungen eines Monats – `{nummer: neuer Name}`.
+
+    `itemType` filtert auf eine Artikelart; für den Figurenabzug reicht `M`.
+    Ohne den Filter kämen Teile, Sets und Bücher mit, die uns nichts angehen
+    – im August 2026 waren es 12 Minifiguren gegenüber 50 Einträgen je Seite.
+    """
+    namen: dict[str, str] = {}
+    url = (f"{CATALOG_LOG_URL}?viewYear={year}&viewMonth={month}"
+           f"&viewAction=N&itemType={item_type}")
+    for _ in range(max_pages):
+        seite = _log_page(url)
+        namen.update(_parse_names(seite))
+        nxt = _RE_NEXT.search(seite)
+        if not nxt:
+            break
+        url = "https://www.bricklink.com/" + nxt.group(1)
+    return namen
+
+
 def catalog_number_changes(year: int, month: int,
                            max_pages: int = 20) -> dict[str, dict]:
     """Nummernwechsel und Zusammenlegungen eines Monats aus dem Change Log.

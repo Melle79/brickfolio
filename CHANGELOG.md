@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.39.0 – August 2026
+
+### Neu
+- 🔄 **Der Katalogabzug zieht Änderungen von BrickLink nach.** Er entsteht,
+  indem Nummern der Reihe nach abgeklappert werden – sw0001, sw0002, … –, und
+  danach steht der Zeiger hinter der höchsten gefundenen Nummer. Neue Figuren
+  werden so gefunden, eine **Umbenennung nie**: Eine bekannte Nummer wurde
+  kein zweites Mal abgefragt.
+
+  Naheliegend wäre, den Abzug reihum neu abzufragen. Das wären 9.741 Abrufe,
+  gut zweieinhalb Stunden, und das BrickLink-Kontingent teilt sich der Lauf
+  mit den Preisen. Der Change Log leistet dasselbe für eine Handvoll
+  HTML-Seiten und **ohne Kontingent** – im August 2026 waren es 12 umbenannte
+  Minifiguren im ganzen Monat.
+
+  Der Leser dafür war schon da, zeigte aber in die andere Richtung: Er wurde
+  nur befragt, wenn ein Artikel aus der *Sammlung* verschwunden war. Jetzt
+  liest er zusätzlich Namensänderungen (`viewAction=N`) und schreibt Name,
+  Suchtext und Nummer im Katalogindex fort. Läuft alle zwölf Stunden mit.
+
+  Die Sammlung bleibt bewusst unangetastet: Für Figuren, die jemand besitzt,
+  gibt es weiterhin die Benachrichtigung mit „Nummer übernehmen" – dort
+  bestätigt ein Mensch die Änderung, statt dass sie still geschieht.
+
+  **Gelöschte Figuren sind kein Fall.** Die Log-Seite kennt zwar „Item Marked
+  for Deletion", aber von Juni bis August 2026 stand dort kein einziger
+  Eintrag. BrickLink löscht nicht, es legt zusammen oder nummeriert um –
+  beides steht im Log und wird übernommen.
+
 ## 2.38.5 – August 2026
 
 ### Behoben

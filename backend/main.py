@@ -193,6 +193,11 @@ def _price_refresher():
         except Exception as e:
             print(f"[brickfolio] Change-Log-Abgleich übersprungen: {e}",
                   flush=True)
+        try:
+            _katalog_changelog()
+        except Exception as e:
+            print(f"[brickfolio] Katalog-Abgleich übersprungen: {e}",
+                  flush=True)
         time.sleep(12 * 3600)
 
 
@@ -1199,6 +1204,86 @@ def _resolve_gone_items() -> None:
                  "Wunschliste und Einkaufslisten – und der Preisabruf "
                  "funktioniert wieder.",
                  row["id"]))
+
+
+# Wie weit der erste Abgleich zurückgeht, wenn noch kein Stand vermerkt ist.
+# Zwei Monate, weil der Abzug frisch ist – alles Ältere steckt ohnehin schon
+# in den Namen, mit denen er aufgebaut wurde.
+KATALOG_LOG_RUECKBLICK = 2
+
+
+def _katalog_changelog() -> dict:
+    """Namens- und Nummernänderungen aus dem BrickLink Change Log übernehmen.
+
+    **Warum nicht die bekannten Nummern neu abfragen.** Naheliegend wäre, den
+    Abzug reihum gegen die API zu prüfen – 9.741 Abrufe, gut zweieinhalb
+    Stunden, und das Kontingent teilt sich der Lauf mit den Preisen. Der
+    Change Log leistet dasselbe für eine Handvoll HTML-Seiten und ohne
+    Kontingent: Im August 2026 waren es 12 umbenannte Minifiguren im ganzen
+    Monat.
+
+    **Gelöschte Figuren sind kein Fall.** Die Log-Seite kennt zwar eine
+    Aktion „Item Marked for Deletion", aber in den Monaten Juni bis August
+    2026 stand dort kein einziger Eintrag. BrickLink löscht nicht, es legt
+    zusammen (`M`) oder nummeriert um (`I`) – beides steht im Log und wird
+    hier übernommen.
+
+    Die Sammlung bleibt ausdrücklich unangetastet. Für Figuren, die jemand
+    besitzt, gibt es den Weg über die Benachrichtigung mit „Nummer
+    übernehmen" – dort bestätigt ein Mensch die Änderung, statt dass sie
+    still geschieht. Hier geht es nur um den Suchindex.
+    """
+    import datetime
+    heute = datetime.date.today()
+    stand = core.get_setting("katalog_log_stand") or ""
+    try:
+        jahr, monat = (int(x) for x in stand.split("-"))
+    except ValueError:
+        zurueck = heute.month - KATALOG_LOG_RUECKBLICK
+        jahr, monat = heute.year, zurueck
+        while monat < 1:
+            jahr, monat = jahr - 1, monat + 12
+    umbenannt = neunummeriert = 0
+    while (jahr, monat) <= (heute.year, heute.month):
+        namen = integrations.catalog_name_changes(jahr, monat)
+        nummern = integrations.catalog_number_changes(jahr, monat)
+        with core.db() as conn:
+            for nr, name in namen.items():
+                cur = conn.execute(
+                    "UPDATE katalog_index SET name = ?, such = ?, "
+                    "updated_at = ? WHERE lower(item_no) = ? AND name != ?",
+                    (name, _wortanfaenge(name)[0], int(time.time()),
+                     nr.lower(), name))
+                umbenannt += cur.rowcount
+            for alt, hin in nummern.items():
+                neu_nr = hin.get("new_id") or ""
+                if not neu_nr:
+                    continue
+                da = conn.execute(
+                    "SELECT 1 FROM katalog_index WHERE lower(item_no) = ?",
+                    (neu_nr.lower(),)).fetchone()
+                if da:
+                    # Ziel gibt es schon – die alte Zeile ist die Dublette.
+                    # Ein UPDATE liefe in den Primärschlüssel.
+                    cur = conn.execute(
+                        "DELETE FROM katalog_index WHERE lower(item_no) = ?",
+                        (alt.lower(),))
+                else:
+                    cur = conn.execute(
+                        "UPDATE katalog_index SET item_no = ?, updated_at = ? "
+                        "WHERE lower(item_no) = ?",
+                        (neu_nr, int(time.time()), alt.lower()))
+                neunummeriert += cur.rowcount
+        monat += 1
+        if monat > 12:
+            jahr, monat = jahr + 1, 1
+    # Der laufende Monat wird beim nächsten Mal erneut gelesen: Er ist noch
+    # nicht zu Ende, und eine Änderung von morgen fehlte sonst für immer.
+    core.set_setting("katalog_log_stand", "%d-%d" % (heute.year, heute.month))
+    if umbenannt or neunummeriert:
+        print("[brickfolio] Change Log: %d umbenannt, %d neu nummeriert"
+              % (umbenannt, neunummeriert), flush=True)
+    return {"umbenannt": umbenannt, "neunummeriert": neunummeriert}
 
 
 def _apply_new_number(old_id: str, new_id: str) -> int:
