@@ -7,9 +7,12 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 execute brickfolio-hub --local --file=schema.sql",
-    "db:remote": "wrangler d1 execute brickfolio-hub --remote --file=schema.sql"
+    "db:remote": "wrangler d1 execute brickfolio-hub --remote --file=schema.sql",
+    "test": "node --test \"test/*.test.mjs\"",
+    "db:migrate": "wrangler d1 execute brickfolio-hub --remote --file=migrations/011_katalog_erzeugung.sql"
   },
   "devDependencies": {
     "wrangler": "^4"
-  }
+  },
+  "type": "module"
 }
