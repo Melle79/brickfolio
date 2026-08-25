@@ -1017,7 +1017,12 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
     with core.db() as conn:
         for el in wurzel.iter("ITEM"):
             nr = (el.findtext("ITEMID") or "").strip()
-            name = (el.findtext("ITEMNAME") or "").strip()
+            # **Doppelt kodiert.** In der Datei steht `&amp;#40;`; das XML
+            # macht daraus `&#40;`, und erst `unescape` macht daraus `(`.
+            # Ohne diese Zeile standen 3.558 Namen als `Knights&#39; Kingdom`
+            # im Abzug – und wer nach „Knights' Kingdom" suchte, fand sie
+            # nicht (25.08.2026). Der API-Weg entschlüsselt seit jeher.
+            name = html.unescape((el.findtext("ITEMNAME") or "").strip())
             if not nr or not name:
                 continue
             # **Die Artikelart steht in der Datei – sie ist zu beachten.**
@@ -4649,21 +4654,11 @@ def _such_woerter(text: str) -> list:
     return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if len(t) >= 2]
 
 
-def _wortanfaenge(name: str) -> tuple:
-    """Der Name ohne Satzzeichen – und die Stellen, an denen ein Wort beginnt.
-
-    Die Satzzeichen müssen weg, damit „c3 po" den Artikel „C-3PO" findet.
-    Ohne die Wortanfänge wäre der Vergleich aber zu großzügig: „Mage" steckt
-    in „Damaged", und „Zauberer" lieferte damit einen kampfbeschädigten
-    Anakin Skywalker aus einer echten Sammlung.
-    """
-    ganz, anfaenge = "", []
-    for wort in re.split(r"[^a-z0-9]+", name.lower()):
-        if not wort:
-            continue
-        anfaenge.append(len(ganz))
-        ganz += wort
-    return ganz, tuple(anfaenge)
+# Liegt in `core`, weil die Migration dort denselben Suchtext bilden muss.
+# Nachgebaut war er einmal fast richtig – `isalnum()` statt `[^a-z0-9]`
+# behandelt Umlaute anders, und ein halb geheilter Name ist schlimmer als
+# ein kaputter: Er sieht richtig aus.
+_wortanfaenge = core.wortanfaenge
 
 
 def _passt(begriff: str, name: str) -> bool:

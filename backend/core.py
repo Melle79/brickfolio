@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import sqlite3
 import time
@@ -41,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.47.0"
+APP_VERSION = "2.47.1"
 
 
 def hash_password(password: str) -> str:
@@ -124,6 +125,23 @@ def db():
         conn.commit()
     finally:
         conn.close()
+
+
+def wortanfaenge(name: str) -> tuple:
+    """Der Name ohne Satzzeichen – und die Stellen, an denen ein Wort beginnt.
+
+    Die Satzzeichen müssen weg, damit „c3 po" den Artikel „C-3PO" findet.
+    Ohne die Wortanfänge wäre der Vergleich aber zu großzügig: „Mage" steckt
+    in „Damaged", und „Zauberer" lieferte damit einen kampfbeschädigten
+    Anakin Skywalker aus einer echten Sammlung.
+    """
+    ganz, anfaenge = "", []
+    for wort in re.split(r"[^a-z0-9]+", name.lower()):
+        if not wort:
+            continue
+        anfaenge.append(len(ganz))
+        ganz += wort
+    return ganz, tuple(anfaenge)
 
 
 def init_db():
@@ -491,6 +509,32 @@ def init_db():
         if kat_cols and "art" not in kat_cols:
             conn.execute("ALTER TABLE katalog_index ADD COLUMN "
                          "art TEXT NOT NULL DEFAULT ''")
+        # Migration: HTML-Zeichen in Namen auflösen. Der Dateiimport aus
+        # 2.46.0 gab sie unverändert weiter – in BrickLinks Ausfuhr steht
+        # `&amp;#39;`, das XML macht daraus `&#39;`, und erst `unescape`
+        # macht daraus ein Hochkomma. Auf einer Instanz standen dadurch
+        # 3.558 Namen als `Knights&#39; Kingdom` da, und wer nach
+        # „Knights' Kingdom" suchte, fand sie nicht (25.08.2026).
+        #
+        # `such` muss mit: Der Suchtext wird aus dem Namen abgeleitet, ein
+        # berichtigter Name mit altem Suchtext wäre nur halb geheilt.
+        if kat_cols:
+            import html as _html
+            kaputt = conn.execute(
+                "SELECT item_no, item_type, name FROM katalog_index"
+                " WHERE name LIKE '%&#%' OR name LIKE '%&amp;%'").fetchall()
+            for r in kaputt:
+                klar = _html.unescape(r["name"])
+                if klar == r["name"]:
+                    continue
+                conn.execute(
+                    "UPDATE katalog_index SET name = ?, such = ?"
+                    " WHERE item_no = ? AND item_type = ?",
+                    (klar, wortanfaenge(klar)[0],
+                     r["item_no"], r["item_type"]))
+            if kaputt:
+                print("[brickfolio] %d Namen entschlüsselt" % len(kaputt),
+                      flush=True)
         # Migration: Die Figur Teil für Teil – Torso, Kopf, Haare, Helm, samt
         # Aufdruck und dessen Farben. Vorher standen hier Art und bis zu drei
         # Farben; damit fand „roter Droide" zwar etwas, „roter Droide mit

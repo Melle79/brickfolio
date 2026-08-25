@@ -372,3 +372,40 @@ def test_kein_501_wenn_der_abzug_gefuellt_ist(client):
     client.post("/api/katalog/datei", content=XML_PROBE)
     r = client.get("/api/search?q=roter%20droide")
     assert r.status_code == 200 and r.json()["items"] == []
+
+
+XML_ENTITY = """<?xml version="1.0" encoding="UTF-8"?>
+<CATALOG>
+  <ITEM><ITEMTYPE>M</ITEMTYPE><ITEMID>cas200</ITEMID>
+    <ITEMNAME>Knights&#38;#39; Kingdom - King Leo</ITEMNAME></ITEM>
+</CATALOG>"""
+
+
+def test_html_zeichen_im_namen_werden_aufgeloest(client):
+    """In BrickLinks Ausfuhr steht `&amp;#39;`; das XML macht daraus `&#39;`,
+    und erst `unescape` macht ein Hochkomma daraus. Ohne das standen 3.558
+    Namen als `Knights&#39; Kingdom` im Abzug – und wer nach „Knights'
+    Kingdom" suchte, fand sie nicht (25.08.2026)."""
+    client.post("/api/katalog/datei", content=XML_ENTITY)
+    with core.db() as conn:
+        r = conn.execute("SELECT name, such FROM katalog_index "
+                         "WHERE item_no = 'cas200'").fetchone()
+    assert r["name"] == "Knights' Kingdom - King Leo"
+    assert "39" not in r["such"]
+    assert main._katalog_suchen("Knights Kingdom")
+
+
+def test_die_migration_heilt_schon_eingelesene_namen(client):
+    """Wer die Datei unter 2.46.0 eingelesen hat, soll das nicht von Hand
+    nachziehen müssen."""
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " updated_at) VALUES ('cas201', 'minifig',"
+            " 'Knights&#39; Kingdom', 'knights39kingdom', 1)")
+    core.init_db()
+    with core.db() as conn:
+        r = conn.execute("SELECT name, such FROM katalog_index "
+                         "WHERE item_no = 'cas201'").fetchone()
+    assert r["name"] == "Knights' Kingdom"
+    assert r["such"] == "knightskingdom"
