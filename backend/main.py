@@ -3155,9 +3155,75 @@ BEGRIFFE_SEITE = 25
 # Nuetzliche: der lokale Abzug in `katalog_index` und die Suche darin. Geholt
 # wird er von `_katalog_ziehen`, die Namen von `_katalog_namen`.
 
+# Welche gröbere Farbe das Sehmodell benutzt, wenn es die feine nicht
+# benennt. **Gemessen, nicht geraten** (25.08.2026, an 17.286 beschriebenen
+# Figuren mit echtem BrickLink-Namen): Von den Figuren, die laut Namen
+# „Tan" sind, nennt es 714 „yellow"; bei „Gold" sagt es 152-mal „yellow",
+# bei „Silver" 134-mal „gray".
+#
+# Das ist kein Fehler, sondern eine gröbere Antwort: Gold *ist* gelblich,
+# Silber *ist* grau. Bei der Bildgröße, mit der das Modell arbeitet, ist
+# das die ehrliche Auskunft. Nur waren dadurch rund 1.900 Figuren über
+# ihre tatsächliche Farbe nicht auffindbar.
+#
+# **Einseitig, und mit Absicht.** „gold" darf auf gelbe Figuren ausweichen;
+# „yellow" nicht auf goldene – „yellow" trifft ohnehin 9.231 Figuren, und
+# eine Verwandtschaft, die *dorthin* führt, macht die Suche nur breiter.
+FARBVERWANDT = {
+    "gold": ("yellow",),
+    "silver": ("gray", "grey"),
+    "tan": ("yellow", "beige"),
+    "beige": ("tan", "yellow"),
+    "orange": ("yellow", "brown"),
+    "bronze": ("brown", "gold"),
+    "grey": ("gray",),
+}
+
+
+def _farbvarianten(begriff: str) -> list:
+    """Denselben Begriff mit gröberen Farbwörtern – für den zweiten Versuch.
+
+    Gibt nur die Abwandlungen zurück, nicht den Begriff selbst. Enthält er
+    keine Farbe mit Verwandtschaft, ist die Liste leer und es bleibt beim
+    einen Versuch.
+    """
+    woerter = _such_woerter(begriff)
+    aus = []
+    for i, w in enumerate(woerter):
+        for ersatz in FARBVERWANDT.get(w, ()):
+            aus.append(" ".join(woerter[:i] + [ersatz] + woerter[i + 1:]))
+    return aus
+
+
 def _katalog_suchen(begriff: str, hoechstens: int = 20,
                     item_type: str = "minifig") -> list:
-    """Im eigenen Abzug suchen – mit derselben Elle wie die Sammlung.
+    """Im eigenen Abzug suchen – erst genau, dann mit gröberen Farben.
+
+    **Der zweite Versuch ist ein Rückfall, keine Verbreiterung.** Er läuft
+    nur, wenn der erste nicht genug hergab. Würde „gold" von vornherein
+    auch „yellow" bedeuten, zöge eine Farbsuche 9.231 Figuren herein – das
+    ist derselbe Fehler wie „Minifigure" in der Begriffsliste, nur an
+    anderer Stelle. So greift die Verwandtschaft genau dort, wo sie
+    gebraucht wird: „goldener Ritter" findet strikt nichts, mit „yellow
+    knight" aber die Figur, die das Modell eben so gesehen hat.
+    """
+    treffer = _katalog_lauf_suchen(begriff, hoechstens, item_type)
+    if len(treffer) >= hoechstens:
+        return treffer
+    gesehen = {t["item_id"] for t in treffer}
+    for variante in _farbvarianten(begriff):
+        for t in _katalog_lauf_suchen(variante, hoechstens, item_type):
+            if t["item_id"] not in gesehen:
+                gesehen.add(t["item_id"])
+                treffer.append(t)
+                if len(treffer) >= hoechstens:
+                    return treffer
+    return treffer
+
+
+def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
+                         item_type: str = "minifig") -> list:
+    """Ein einzelner Suchlauf – mit derselben Elle wie die Sammlung.
 
     Nicht per SQL-LIKE: `_passt` wirft Satzzeichen weg und verlangt alle
     Wörter. „c3 po" findet damit `C-3PO`, und „Knight Hunter" zieht nicht
@@ -3202,7 +3268,7 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20,
         #
         # Was bleibt, ist entweder Katalogwahrheit (Name) oder Beobachtetes
         # (Farben, Teilbeschreibung). Geraten wird im Index nicht mehr.
-        # `art` bleibt in der Datenbank – für die Anzeige taugt es.
+        # `art` bleibt in der Datenbank, wird aber nirgends gelesen.
         volltext = " ".join((r["name"] or "", r["farben"] or "",
                              r["merkmale"] or ""))
         if not _passt(begriff, volltext):

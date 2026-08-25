@@ -250,3 +250,41 @@ def test_ohne_abzug_und_ohne_rebrickable_bleibt_der_hinweis(client):
     """Sonst sähe „nichts eingerichtet" aus wie „nichts gefunden"."""
     core.set_setting("rebrickable_key", "")
     assert client.get("/api/search?q=Droide").status_code == 501
+
+
+# ------------------------------------------------- Gröbere Farben als Rückfall
+
+def test_goldener_ritter_findet_die_gelb_gesehene_figur(client):
+    """Das Sehmodell nennt Gold „yellow" – gemessen an 17.286 Figuren sagt
+    es bei „Gold" im Namen 152-mal „yellow", bei „Tan" 714-mal. Dadurch
+    waren rund 1.900 Figuren über ihre tatsächliche Farbe nicht auffindbar
+    (25.08.2026)."""
+    _zeile("cas100", "Royal Knight", farben="yellow, red",
+           merkmale="helmet yellow crown; torso red lion")
+    assert [t["item_id"] for t in main._katalog_suchen("gold knight")] \
+        == ["cas100"]
+
+
+def test_der_genaue_treffer_kommt_zuerst(client):
+    """Der zweite Versuch hängt an, er drängt sich nicht vor."""
+    _zeile("cas101", "Gold Knight", farben="gold, red")
+    _zeile("cas102", "Yellow Knight", farben="yellow, red")
+    assert [t["item_id"] for t in main._katalog_suchen("gold knight")] \
+        == ["cas101", "cas102"]
+
+
+def test_gelb_weicht_nicht_auf_gold_aus(client):
+    """Einseitig mit Absicht: `yellow` trifft ohnehin tausende Figuren.
+    Eine Verwandtschaft dorthin machte die Suche nur breiter."""
+    _zeile("cas103", "Gold Knight", farben="gold, red")
+    assert main._katalog_suchen("yellow knight") == []
+
+
+def test_ohne_farbe_im_begriff_gibt_es_keinen_zweiten_versuch(client, monkeypatch):
+    """Sonst liefe jede erfolglose Suche zweimal."""
+    laeufe = []
+    echt = main._katalog_lauf_suchen
+    monkeypatch.setattr(main, "_katalog_lauf_suchen",
+                        lambda b, *a, **k: laeufe.append(b) or echt(b, *a, **k))
+    main._katalog_suchen("Protocol Droid")
+    assert laeufe == ["Protocol Droid"]
