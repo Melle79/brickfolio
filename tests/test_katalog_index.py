@@ -288,3 +288,36 @@ def test_ohne_farbe_im_begriff_gibt_es_keinen_zweiten_versuch(client, monkeypatc
                         lambda b, *a, **k: laeufe.append(b) or echt(b, *a, **k))
     main._katalog_suchen("Protocol Droid")
     assert laeufe == ["Protocol Droid"]
+
+
+# --------------------------------- Schonender Bildmodus, benutzereigen
+
+def test_der_schonende_modus_folgt_dem_benutzer(client):
+    """Er lag allein im `localStorage` – und der gehört zur Adresse, nicht
+    zum Gerät. Sven hatte ihn eingeschaltet, und der Renderer stürzte
+    trotzdem ab: Die abgestürzte Sitzung lief über `http://…:8300`, die
+    eingeschaltete über HTTPS. Zwei Adressen, zwei Speicher (25.08.2026)."""
+    assert client.get("/api/config").json()["schonend"] is None
+    assert client.post("/api/settings/schonend",
+                       json={"schonend": True}).status_code == 200
+    assert client.get("/api/config").json()["schonend"] is True
+    client.post("/api/settings/schonend", json={"schonend": False})
+    assert client.get("/api/config").json()["schonend"] is False
+
+
+def test_nie_gesetzt_ist_nicht_dasselbe_wie_aus(client):
+    """Sonst schaltete das erste Laden nach dem Update jedem den Modus ab,
+    der ihn lokal längst anhatte – und der Schutz wäre weg, ohne dass
+    jemand etwas angefasst hätte."""
+    assert client.get("/api/config").json()["schonend"] is None
+
+
+def test_jeder_benutzer_hat_seinen_eigenen(client):
+    """Es ist eine Eigenschaft des Geräts, nicht der Instanz."""
+    client.post("/api/settings/schonend", json={"schonend": True})
+    with core.db() as conn:
+        conn.execute("INSERT INTO users (username, password_hash, is_admin,"
+                     " is_dealer, created_at) VALUES ('zweiter', 'x', 0, 0, 1)")
+    d = client.get("/api/config", headers={
+        "Authorization": "Bearer " + core.create_token(2, "zweiter", False)}).json()
+    assert d["schonend"] is None

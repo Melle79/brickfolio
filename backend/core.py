@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.47.1"
+APP_VERSION = "2.48.0"
 
 
 def hash_password(password: str) -> str:
@@ -144,6 +144,25 @@ def wortanfaenge(name: str) -> tuple:
     return ganz, tuple(anfaenge)
 
 
+def get_user_setting(user_id: int, schluessel: str, standard=None):
+    """Eine Einstellung dieses Benutzers – oder `standard`, wenn keine da ist."""
+    with db() as conn:
+        r = conn.execute(
+            "SELECT wert FROM benutzer_einstellungen"
+            " WHERE user_id = ? AND schluessel = ?",
+            (user_id, schluessel)).fetchone()
+    return r["wert"] if r else standard
+
+
+def set_user_setting(user_id: int, schluessel: str, wert: str) -> None:
+    with db() as conn:
+        conn.execute(
+            "INSERT INTO benutzer_einstellungen (user_id, schluessel, wert)"
+            " VALUES (?, ?, ?) ON CONFLICT(user_id, schluessel)"
+            " DO UPDATE SET wert = excluded.wert",
+            (user_id, schluessel, wert))
+
+
 def init_db():
     with db() as conn:
         conn.executescript(
@@ -154,6 +173,21 @@ def init_db():
                 password_hash TEXT NOT NULL,
                 is_admin INTEGER NOT NULL DEFAULT 0,
                 created_at INTEGER NOT NULL
+            );
+            -- Einstellungen, die zum **Benutzer** gehören, nicht zur
+            -- Instanz. Bis 2.47.1 lag der schonende Bildmodus allein im
+            -- `localStorage` – und der gehört zur Adresse, nicht zum
+            -- Gerät. Wer dieselbe App im Heimnetz über `http://…:8300`
+            -- und von außen über HTTPS benutzt, hat zwei getrennte
+            -- Speicher: Der Schalter war gesetzt und wirkte trotzdem
+            -- nicht, weil er auf der anderen Adresse nie gesetzt worden
+            -- war. Bei einer Einstellung, die Abstürze verhindern soll,
+            -- ist das der schlechteste denkbare Ort (25.08.2026).
+            CREATE TABLE IF NOT EXISTS benutzer_einstellungen (
+                user_id INTEGER NOT NULL,
+                schluessel TEXT NOT NULL,
+                wert TEXT NOT NULL,
+                PRIMARY KEY (user_id, schluessel)
             );
             CREATE TABLE IF NOT EXISTS collection (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -2311,6 +2311,7 @@ function showApp() {
     state.offerPercent = c.offer_percent || 60;
     state.bricklinkPrices = c.bricklink_prices;
     state.catalogSearch = c.catalog_search;
+    schonendUebernehmen(c.schonend);
     state.bricklinkLookup = c.bricklink_lookup;
     state.ownerName = c.owner_name || "Finn";
     applyOwnerName(state.ownerName);
@@ -2581,6 +2582,35 @@ async function bildMasse(file) {
    im Verdacht steht. */
 const SCHONEND_KEY = "bf_schonend";
 let schonendAn = localStorage.getItem(SCHONEND_KEY) === "1";
+
+/* Was der Server über den schonenden Modus weiß, gilt.
+
+   Er lag bis 2.47.1 allein im `localStorage` – und der gehört zur Adresse,
+   nicht zum Gerät. Dieselbe App im Heimnetz über `http://…:8300` und von
+   außen über HTTPS sind zwei getrennte Speicher: Der Schalter war gesetzt
+   und wirkte trotzdem nicht, weil er auf der anderen Adresse nie gesetzt
+   worden war. Für eine Einstellung, die Abstürze verhindern soll, ist das
+   der schlechteste denkbare Ort.
+
+   `null` heißt „der Server weiß nichts" – dann bleibt es beim lokalen
+   Wert, statt eine Wahl zu überschreiben, die nur noch nicht dort steht.
+   Und wer lokal schon eingeschaltet hatte, trägt es gleich nach; sonst
+   ginge die Einstellung beim ersten Laden nach dem Update verloren. */
+function schonendUebernehmen(vomServer) {
+  if (vomServer === null || vomServer === undefined) {
+    if (schonendAn) {
+      api("/settings/schonend", { method: "POST", body: { schonend: true } })
+        .catch(() => {});
+    }
+    return;
+  }
+  if (vomServer === schonendAn) return;
+  schonendAn = vomServer;
+  localStorage.setItem(SCHONEND_KEY, schonendAn ? "1" : "0");
+  const feld = $("diag-schonend");
+  if (feld) feld.checked = schonendAn;
+  spur("Schonender Bildmodus vom Server: " + (schonendAn ? "an" : "aus"));
+}
 
 function flaeche2d(c, lesen = false) {
   return c.getContext("2d", { willReadFrequently: schonendAn || lesen });
@@ -10392,7 +10422,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     schonend.checked = schonendAn;
     schonend.addEventListener("change", () => {
       schonendAn = schonend.checked;
+      // Beides: Der Server, damit die Wahl beiden Adressen folgt – und der
+      // lokale Speicher, damit sie schon beim nächsten Bildaufbau gilt,
+      // bevor die Einstellungen geladen sind.
       localStorage.setItem(SCHONEND_KEY, schonendAn ? "1" : "0");
+      api("/settings/schonend", { method: "POST",
+        body: { schonend: schonendAn } }).catch(() => {
+        // Nicht schlimm: Lokal gilt er ohnehin, und beim nächsten Umlegen
+        // versucht er es wieder.
+      });
       // Was schon entpackt ist, wurde auf dem alten Weg gemacht.
       arbeitBildFreigeben();
       spur("Schonender Bildmodus: " + (schonendAn ? "an" : "aus"));

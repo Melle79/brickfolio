@@ -2107,11 +2107,45 @@ def _offer_percent() -> int:
         return 60
 
 
+class SchonendBody(BaseModel):
+    schonend: bool
+
+
+@app.post("/api/settings/schonend")
+def set_schonend(body: SchonendBody, user: dict = Depends(current_user)):
+    """Den schonenden Bildmodus für **diesen Benutzer** merken.
+
+    Er lag bis 2.47.1 allein im `localStorage` – und der gehört zur
+    Adresse, nicht zum Gerät. Sven hatte ihn eingeschaltet, und trotzdem
+    stürzte der Renderer ab: Die abgestürzte Sitzung lief über
+    `http://192.168.0.199:8300`, die eingeschaltete über HTTPS. Zwei
+    Adressen, zwei Speicher, und niemand sieht es (25.08.2026).
+
+    Für eine Einstellung, die Abstürze verhindern soll, ist das der
+    schlechteste denkbare Ort. Serverseitig folgt sie dem Benutzer über
+    beide Wege.
+    """
+    core.set_user_setting(user["id"], "schonend", "1" if body.schonend else "0")
+    return {"ok": True, "schonend": body.schonend}
+
+
+def _schonend(user: dict):
+    """Was der Server über den schonenden Modus dieses Benutzers weiß.
+
+    `None` heißt „nie gesetzt" – dann behält die Oberfläche, was in ihrem
+    `localStorage` steht, statt eine Wahl zu überschreiben, die nur noch
+    nicht hier angekommen ist.
+    """
+    w = core.get_user_setting(user["id"], "schonend")
+    return None if w is None else w == "1"
+
+
 @app.get("/api/config")
 def config(user: dict = Depends(current_user)):
     return {"bricklink_prices": integrations.bricklink_enabled(),
             "bricklink_lookup": integrations.bricklink_enabled(),
             "catalog_search": _katalogsuche_moeglich(),
+            "schonend": _schonend(user),
             "offer_percent": _offer_percent(),
             "owner_name": _owner_name(),
             "currency": integrations.currency(),
