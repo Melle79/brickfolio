@@ -90,7 +90,12 @@ _BILD_SCHEMA = {
     "type": "object",
     "properties": {
         "kind": {"type": "string", "maxLength": 24},
-        "parts": {"type": "array", "maxItems": 6, "items": {
+        # **Acht, nicht sechs.** Kopf, Haar, Helm, Torso, Arme, Beine sind
+        # bereits sechs – ein Umhang oder ein Rock verdrängte dann etwas.
+        # Gemessen am 26.08.2026: 4.623 von 19.201 Figuren saßen genau auf
+        # der Grenze, und die Verteilung endete dort hart. Das ist keine
+        # natürliche Häufung, das ist eine Wand.
+        "parts": {"type": "array", "maxItems": 8, "items": {
             "type": "object",
             "properties": {"part": {"type": "string", "maxLength": 40},
                            "color": {"type": "string", "maxLength": 40},
@@ -253,15 +258,33 @@ def bild_merkmale(bild: bytes) -> dict:
             "fehler": ""}
 
 
+# Wörter, die nicht am Ende stehen dürfen. Nach der Wortgrenze blieb sonst
+# ein Bindewort in der Luft hängen: „holding orange tool pouch **with**"
+# (genau 4 Wörter) oder „a small black dot on **the**" (genau 12). Gemessen
+# am 26.08.2026 an 19.201 Figuren: 352 Beschreibungen endeten so.
+#
+# Die Grenze selbst ist richtig – ein ganzer Satz im Suchtext trifft
+# irgendwann alles. Nur das Abschneiden war unhöflich.
+_SCHWEBEND = frozenset("""
+with and on the a an of in or to at for from by over under into onto
+his her its their that which having between across along
+""".split())
+
+
 def _bild_wort(roh, hoechstens: int) -> str:
     """Ein Stück Modellantwort auf durchsuchbaren Text eintrocknen.
 
     Kleinschreibung und nur Buchstaben, damit `_passt` dieselbe Elle anlegt
     wie beim Namen. Die Wortgrenze hält die Beschreibung knapp: Ein ganzer
     Satz im Suchtext trifft irgendwann alles.
+
+    Bindewörter am Ende fallen weg – sie tragen nichts zur Suche bei und
+    lassen die Beschreibung aussehen, als wäre sie kaputt.
     """
-    return " ".join(re.sub(r"[^a-z ]", " ", str(roh or "").lower())
-                    .split()[:hoechstens])
+    woerter = re.sub(r"[^a-z ]", " ", str(roh or "").lower()).split()[:hoechstens]
+    while woerter and woerter[-1] in _SCHWEBEND:
+        woerter.pop()
+    return " ".join(woerter)
 
 
 

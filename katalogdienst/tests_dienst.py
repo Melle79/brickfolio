@@ -404,3 +404,38 @@ def test_varianten_werden_mitgenommen(client, monkeypatch):
     assert drin == ["zz001", "zz001a", "zz001b"]
     # Nach dem fehlenden `c` darf sie nicht weitersuchen.
     assert "zz001d" not in gefragt
+
+
+# --------------------------------- Bindewörter am Ende der Wortgrenze
+
+def test_ein_bindewort_bleibt_nicht_am_ende_stehen():
+    """„holding orange tool pouch with" sind genau vier Wörter, „a small
+    black dot on the" genau zwölf. Die Grenze schnitt richtig ab und ließ
+    das Bindewort stehen – 352 von 19.201 Beschreibungen sahen dadurch
+    kaputt aus (26.08.2026)."""
+    from bild import _bild_wort
+    assert _bild_wort("orange tool pouch with", 4) == "orange tool pouch"
+    assert _bild_wort("smiling face with black eyes and a small black dot "
+                      "on the wall", 12) == \
+        "smiling face with black eyes and a small black dot"
+
+
+def test_die_grenze_selbst_bleibt():
+    """Ein ganzer Satz im Suchtext trifft irgendwann alles."""
+    from bild import _bild_wort
+    assert _bild_wort("red blue green yellow black white", 3) == \
+        "red blue green"
+
+
+def test_ein_bindewort_in_der_mitte_bleibt_stehen():
+    """Nur am Ende trägt es nichts – „face with black eyes" braucht es."""
+    from bild import _bild_wort
+    assert _bild_wort("face with black eyes", 12) == "face with black eyes"
+
+
+def test_acht_teile_passen_hinein():
+    """Kopf, Haar, Helm, Torso, Arme, Beine sind schon sechs – ein Umhang
+    verdrängte bei der alten Grenze etwas. 4.623 Figuren saßen genau
+    darauf, und die Verteilung endete dort hart."""
+    from bild import _BILD_SCHEMA
+    assert _BILD_SCHEMA["properties"]["parts"]["maxItems"] == 8
