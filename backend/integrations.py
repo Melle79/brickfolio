@@ -91,6 +91,22 @@ def rebrickable_enabled() -> bool:
 _RB_PATH = {"minifig": "minifigs", "part": "parts", "set": "sets"}
 
 
+def minifig_bild(item_no: str) -> str:
+    """Die Bildadresse zu einer Minifiguren-Nummer.
+
+    **Nicht `/ML/{nr}.jpg`.** Das ältere Muster gibt es nicht zu jeder
+    Figur: Von 19.201 lieferte es bei 102 einen 404 – Embo, Tee Vee, die
+    Fabuland-Tiere, sämtliche Duplo-Figuren. Der Bilderlauf hat sie
+    daraufhin als „angesehen, nichts erkannt" abgelegt, obwohl das Bild
+    unter `ItemImage` bereitlag (26.08.2026).
+
+    Zusammengebaut wird sie nur, wo die API keine mitliefert – die ist
+    immer vorzuziehen.
+    """
+    return ("https://img.bricklink.com/ItemImage/MN/0/"
+            + requests.utils.quote(item_no) + ".png")
+
+
 def search_catalog(query: str, item_type: str = "minifig",
                    page: int = 1, page_size: int = 10) -> dict:
     """Textsuche im Rebrickable-Katalog, seitenweise, mit Bild.

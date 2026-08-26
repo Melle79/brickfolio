@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.48.0"
+APP_VERSION = "2.48.1"
 
 
 def hash_password(password: str) -> str:
@@ -543,6 +543,19 @@ def init_db():
         if kat_cols and "art" not in kat_cols:
             conn.execute("ALTER TABLE katalog_index ADD COLUMN "
                          "art TEXT NOT NULL DEFAULT ''")
+        # Migration: Bildadressen vom älteren `/ML/`-Muster auf `ItemImage`.
+        # Das ältere gibt es nicht zu jeder Figur -- von 19.201 lieferte es
+        # bei 102 einen 404 (Embo, Tee Vee, die Fabuland-Tiere, sämtliche
+        # Duplo-Figuren), und in der App blieb dort der Platzhalter stehen.
+        # `ItemImage` liefert auch alles, was `/ML/` liefert (26.08.2026).
+        if kat_cols:
+            n = conn.execute(
+                "UPDATE katalog_index SET img_url ="
+                " 'https://img.bricklink.com/ItemImage/MN/0/' || item_no"
+                " || '.png' WHERE item_type = 'minifig'"
+                " AND img_url LIKE 'https://img.bricklink.com/ML/%'").rowcount
+            if n:
+                print("[brickfolio] %d Bildadressen umgestellt" % n, flush=True)
         # Migration: HTML-Zeichen in Namen auflösen. Der Dateiimport aus
         # 2.46.0 gab sie unverändert weiter – in BrickLinks Ausfuhr steht
         # `&amp;#39;`, das XML macht daraus `&#39;`, und erst `unescape`

@@ -95,7 +95,11 @@ def _katalog_eintragen(item_no: str, daten: dict) -> bool:
              # zwischen Groß- und Kleinschreibung. Ohne den Rückfall bekäme
              # so eine Figur nie ein Bild – und damit auch nie eine Farbe.
              ((daten.get("img_url") or "").strip()
-              or "https://img.bricklink.com/ML/%s.jpg" % item_no),
+              # Nicht `/ML/{nr}.jpg`: Das ältere Muster gibt es nicht zu
+              # jeder Figur -- 102 von 19.201 gaben dort einen 404, und
+              # der Bilderlauf legte sie als „nichts erkannt" ab, obwohl
+              # das Bild unter `ItemImage` bereitlag (26.08.2026).
+              or "https://img.bricklink.com/ItemImage/MN/0/%s.png" % item_no),
              str(daten.get("category_id") or ""),
              daten.get("year_released") or 0, jetzt))
     return vorher is None

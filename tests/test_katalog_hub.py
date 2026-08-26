@@ -409,3 +409,30 @@ def test_die_migration_heilt_schon_eingelesene_namen(client):
                          "WHERE item_no = 'cas201'").fetchone()
     assert r["name"] == "Knights' Kingdom"
     assert r["such"] == "knightskingdom"
+
+
+def test_bildadressen_nutzen_das_muster_das_es_immer_gibt(client):
+    """`/ML/{nr}.jpg` gibt es nicht zu jeder Figur: Von 19.201 lieferten
+    102 dort einen 404 – Embo, Tee Vee, die Fabuland-Tiere, sämtliche
+    Duplo-Figuren. Der Bilderlauf legte sie als „angesehen, nichts
+    erkannt" ab, obwohl das Bild unter `ItemImage` bereitlag."""
+    client.post("/api/katalog/datei", content=XML_PROBE)
+    with core.db() as conn:
+        r = conn.execute("SELECT img_url FROM katalog_index "
+                         "WHERE item_no = 'sw0344'").fetchone()
+    assert r["img_url"] == \
+        "https://img.bricklink.com/ItemImage/MN/0/sw0344.png"
+
+
+def test_die_migration_stellt_alte_bildadressen_um(client):
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " img_url, updated_at) VALUES ('sw0307', 'minifig', 'Embo',"
+            " 'embo', 'https://img.bricklink.com/ML/sw0307.jpg', 1)")
+    core.init_db()
+    with core.db() as conn:
+        r = conn.execute("SELECT img_url FROM katalog_index "
+                         "WHERE item_no = 'sw0307'").fetchone()
+    assert r["img_url"] == \
+        "https://img.bricklink.com/ItemImage/MN/0/sw0307.png"

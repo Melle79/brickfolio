@@ -1048,7 +1048,7 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
                 " img_url = excluded.img_url,"
                 " updated_at = excluded.updated_at",
                 (nr, name, _wortanfaenge(name)[0],
-                 "https://img.bricklink.com/ML/%s.jpg" % nr,
+                 integrations.minifig_bild(nr),
                  (el.findtext("CATEGORY") or "").strip(),
                  int(jahr) if jahr.isdigit() else 0, jetzt))
             if vorher is None:
@@ -1557,7 +1557,7 @@ def _katalog_ziehen() -> dict:
                 " farben = excluded.farben, art = excluded.art,"
                 " merkmale = excluded.merkmale,"
                 " updated_at = excluded.updated_at",
-                (nr, "https://img.bricklink.com/ML/%s.jpg" % nr,
+                (nr, integrations.minifig_bild(nr),
                  str(d.get("farben") or ""), str(d.get("art") or ""),
                  str(d.get("merkmale") or ""), jetzt))
             if vorher is None:
