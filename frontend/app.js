@@ -394,6 +394,18 @@ const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
    Eine Sammlungsansicht mit 130 Karten hielt so rund 80 MB entpackte
    Bilder, ohne dass die Kurve etwas anzeigte. Mit 160 px sind es 13. */
 const DAUMEN_KANTE = 160;
+/* **Der Kartenhintergrund nimmt denselben Daumennagel.** Er lag bis
+   2.56.1 in voller Größe vor – obwohl er mit `blur(20px)` hinter der Karte
+   liegt und niemand ein Bildpunkt davon erkennt.
+   
+   Damit lud jede Karte dasselbe Motiv **zweimal**: den Daumennagel als
+   `<img>` und die volle Fassung als CSS-Hintergrund. Bei Sven standen
+   724 Bilder im Dokument – und die Messung sah nur die Hälfte, denn sie
+   zählt `<img>`-Elemente; CSS-Hintergründe sind darin unsichtbar
+   (29.08.2026, von Sven bemerkt).
+   
+   Gleiche Adresse heißt jetzt: **eine** entpackte Bitmap für beides. Der
+   Browser hält sie einmal und benutzt sie zweimal. */
 
 function imgSrc(url, klein = false) {
   if (!url) return IMG_PLACEHOLDER;
@@ -3639,7 +3651,7 @@ function collCardDetails(it) {
 function collCardHtml(it) {
   return `
     <div class="card${it.img_url ? " has-bg" : ""}" data-id="${it.id}"${
-      it.img_url ? ` data-bg="${imgSrc(it.img_url)}"` : ""}>
+      it.img_url ? ` data-bg="${imgSrc(it.img_url, true)}"` : ""}>
       <div class="card-head">
         <img class="card-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type || "minifig")}" alt="" loading="lazy">
         <span class="qty-badge" data-qty-val>${it.quantity}</span>

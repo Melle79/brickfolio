@@ -423,3 +423,19 @@ def test_die_weitergereichte_bildadresse_ist_dasselbe_bild():
     block = quelle[i:i + 900]
     assert "decodeURIComponent" in block
     assert "/catalog\\?" in block or "/catalog\\\\?" in block
+
+
+def test_der_kartenhintergrund_nimmt_denselben_daumennagel():
+    """Jede Karte lud dasselbe Motiv **zweimal**: den Daumennagel als
+    `<img>` und die **volle** Fassung als CSS-Hintergrund – obwohl der mit
+    `blur(20px)` hinter der Karte liegt.
+
+    Die Messung sah davon nichts: Sie zählt `<img>`-Elemente, CSS-
+    Hintergründe sind darin unsichtbar. Bei 724 gezählten Bildern lagen
+    also bis zu 724 weitere daneben, und zwar die größeren
+    (29.08.2026, von Sven bemerkt).
+
+    Gleiche Adresse heißt: eine entpackte Bitmap für beides."""
+    quelle = _app_js()
+    assert 'data-bg="${imgSrc(it.img_url, true)}"' in quelle
+    assert 'data-bg="${imgSrc(it.img_url)}"' not in quelle
