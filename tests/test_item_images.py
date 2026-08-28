@@ -34,14 +34,25 @@ def test_img_key_collapses_bricklink_endpoints():
     assert main._img_key("https://cdn.rebrickable.com/x/sw0001.jpg") != a
 
 
-def test_same_figure_collapses_to_one_prefers_api(client, monkeypatch):
-    # API liefert das ML-Bild (andere Auflösung) – dasselbe Motiv wie das
-    # konstruierte ItemImage → nur eins, und zwar das API-Bild.
+def test_nur_das_verlustfreie_bild_statt_zweier_fassungen(client, monkeypatch):
+    """Die API liefert `/ML/*.jpg`, die gebaute Adresse `ItemImage/*.png`.
+
+    An vier Figuren nachgemessen (29.08.2026): **dieselben Maße**, aber
+    44–82 KB JPEG gegen 85–129 KB verlustfreies PNG. Zwei Fassungen
+    desselben Motivs in der Galerie sind kein Gewinn, sondern ein Abruf und
+    ein Wisch zu viel – und der API-Aufruf kostete Tageskontingent.
+
+    Der alte Test hieß `…prefers_api` und stützte sich auf den Kommentar
+    „meist bessere Auflösung". Gemessen war das nie.
+    """
+    gefragt = []
     monkeypatch.setattr(
         integrations, "bricklink_item",
-        lambda t, n: {"img_url": "https://img.bricklink.com/ML/sw0001.jpg"})
+        lambda t, n: gefragt.append(n) or {
+            "img_url": "https://img.bricklink.com/ML/sw0001.jpg"})
     imgs = client.get("/api/images/minifig/sw0001").json()["images"]
-    assert imgs == ["https://img.bricklink.com/ML/sw0001.jpg"]
+    assert imgs == ["https://img.bricklink.com/ItemImage/MN/0/sw0001.png"]
+    assert gefragt == [], "die API wird dafür gar nicht mehr gefragt"
 
 
 def test_falls_back_to_itemimage_without_api(client, monkeypatch):

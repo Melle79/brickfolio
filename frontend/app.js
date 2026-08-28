@@ -10843,12 +10843,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (state.token) { refreshMe(); showApp(); } else showLogin();
 
-  // Galerie: Tipp auf ein Kartenbild öffnet alle Katalogbilder der Figur
+  // Galerie: Tipp auf ein Kartenbild öffnet alle Katalogbilder der Figur.
+  //
+  // **Nicht in der kompakten Ansicht.** Dort ist die Kachel das Bild, und
+  // ein Tipp soll den Steckbrief öffnen. Beides zusammen ergab zwei
+  // Fenster übereinander: erst der Steckbrief, darüber die Großansicht
+  // (29.08.2026). Größer machen kann man das Bild weiterhin – durch einen
+  // Tipp auf das Bild **im** Steckbrief.
   document.addEventListener("click", (ev) => {
     const img = ev.target.closest(".card-img");
-    if (img && img.src && !img.src.startsWith("data:")) {
-      openGallery(imgGross(img.src), img.dataset.gid, img.dataset.gtype);
-    }
+    if (!img || !img.src || img.src.startsWith("data:")) return;
+    if (collAnsicht() === "kompakt"
+        && img.closest("#collection-list")) return;
+    openGallery(imgGross(img.src), img.dataset.gid, img.dataset.gtype);
   });
   $("lightbox").addEventListener("click", (ev) => {
     if (ev.target.closest(".lb-nav, .lb-del")) return;

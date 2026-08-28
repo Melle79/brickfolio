@@ -373,8 +373,9 @@ def test_die_kompakte_ansicht_blendet_aus_statt_zu_entfernen():
            / "frontend" / "style.css").read_text(encoding="utf-8")
     block = css[css.index("Kompakte Ansicht"):]
     assert ".card-actions" in block and "display: none" in block
-    # Die Menge bleibt: „2×" ist Information, keine Verzierung.
-    assert ".qty-badge" in block and "display: inline-block" in block
+    # Preis, Zustand und Menge fallen weg – sie stehen im Steckbrief, einen
+    # Tipp entfernt, und kosten in der Kachel nur Platz (29.08.2026).
+    assert ".qty-badge" in block and "[data-sub]" in block
 
 
 def test_der_verlauf_zaehlt_geladene_bilder_nicht_nur_elemente():
@@ -387,3 +388,12 @@ def test_der_verlauf_zaehlt_geladene_bilder_nicht_nur_elemente():
     assert '!i.src.startsWith("data:")' in quelle
     # Und im Verlauf muss es auch zu sehen sein.
     assert '" Bilder geladen"' in quelle
+
+
+def test_in_der_kompakten_ansicht_geht_nur_ein_fenster_auf():
+    """Ein Tipp öffnete zwei Fenster übereinander: erst den Steckbrief,
+    darüber die Großansicht. Größer machen kann man das Bild weiterhin –
+    durch einen Tipp auf das Bild **im** Steckbrief (29.08.2026)."""
+    quelle = _app_js()
+    assert 'collAnsicht() === "kompakt"' in quelle
+    assert 'img.closest("#collection-list")' in quelle

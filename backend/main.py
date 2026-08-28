@@ -4680,14 +4680,17 @@ def item_images(item_type: str, item_no: str,
             except Exception:
                 pass
     elif not item_no.startswith(("manuell-", "custom-")):
-        # Bevorzugt das Bild aus der BrickLink-API (meist bessere Auflösung),
-        # das konstruierte ItemImage als Rückfall – gleiche Nummer, gleiches
-        # Motiv, wird zusammengefasst.
-        if integrations.bricklink_enabled():
-            try:
-                add(integrations.bricklink_item(item_type, item_no).get("img_url"))
-            except Exception:
-                pass
+        # **Nur das konstruierte ItemImage.** Der Kommentar hier sagte, die
+        # API habe „meist bessere Auflösung" – gemessen war das nie, und es
+        # stimmt nicht: An vier Figuren nachgeprüft (29.08.2026) liefern
+        # beide **dieselben Maße**, aber die API gibt `/ML/*.jpg` (JPEG,
+        # 44–82 KB) und die gebaute Adresse `ItemImage/*.png` (verlustfrei,
+        # 85–129 KB). Dasselbe Motiv, einmal verlustbehaftet.
+        #
+        # Zwei Fassungen desselben Bildes in der Galerie sind kein Gewinn,
+        # sondern ein Abruf und ein Wisch zu viel. Der Aufruf an die
+        # BrickLink-API entfällt damit ebenfalls – er kostete ein Stück vom
+        # Tageskontingent für nichts.
         code = _BL_IMG_CODE.get(item_type.lower())
         if code:
             safe = requests.utils.quote(item_no)

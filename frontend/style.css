@@ -1883,13 +1883,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: 11px; margin: 0; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
+/* Preis, Zustand und Menge fallen weg. Sie stehen im Steckbrief, einen
+   Tipp entfernt – in der Kachel kosten sie nur Platz und machen die
+   Ansicht unruhig, die gerade wegen ihrer Ruhe gewählt wurde. */
 #collection-list.kompakt-mode .card-head > .qty,
 #collection-list.kompakt-mode .card-actions,
 #collection-list.kompakt-mode .card-body,
+#collection-list.kompakt-mode .qty-badge,
+#collection-list.kompakt-mode .card-title [data-sub],
+#collection-list.kompakt-mode .sub-figs,
 #collection-list.kompakt-mode .img-reload-btn { display: none; }
-/* Die Menge bleibt sichtbar – „2×" ist in einer Sammlung eine Information,
-   keine Verzierung. */
-#collection-list.kompakt-mode .qty-badge {
-  display: inline-block; font-size: 11px;
-}
 #collection-list.kompakt-mode .nachschub-marke { grid-column: 1 / -1; }
