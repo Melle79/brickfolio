@@ -316,3 +316,14 @@ def test_die_karte_selbst_bleibt_stehen():
     block = block[:block.index("\n}\n")]
     assert "remove()" not in block and "innerHTML" not in block
     assert "img.dataset.src" in block
+
+
+def test_der_nachschub_meldet_jede_karte_an():
+    """`hintergrundBeobachten` läuft, **bevor** die Karten im Dokument
+    stehen – dort findet `querySelectorAll` nichts. Angemeldet werden sie
+    im Nachschub, und der nahm nur Karten mit `data-bg`. Ergebnis: 27 von
+    63 Karten waren weit aus dem Blick und keine einzige freigegeben
+    (28.08.2026, live gemessen)."""
+    quelle = _app_js()
+    assert "if (bgBeobachter) bgBeobachter.observe(c);" in quelle
+    assert "if (bgBeobachter && c.dataset.bg)" not in quelle

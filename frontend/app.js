@@ -3724,7 +3724,9 @@ function gruppeFuellen(body) {
   [...huelle.children].forEach((c) => {
     body.appendChild(c);
     karteVerdrahten(c, state.collection);
-    if (bgBeobachter && c.dataset.bg) bgBeobachter.observe(c);
+    // Auch hier jede Karte: Der Beobachter gibt das `<img>` frei, und
+    // das hat jede.
+    if (bgBeobachter) bgBeobachter.observe(c);
   });
 }
 
@@ -3840,7 +3842,11 @@ function kartenNachschub(list, items) {
     gezeigt += teil.length;
     neue.forEach((c) => {
       karteVerdrahten(c, items);
-      if (bgBeobachter && c.dataset.bg) bgBeobachter.observe(c);
+      // **Jede Karte anmelden, nicht nur die mit Hintergrund.** Der
+      // Beobachter gibt auch das `<img>` frei, und das hat jede Karte.
+      // Die Anmeldung in `hintergrundBeobachten` greift hier nicht: Sie
+      // läuft, bevor die Karten überhaupt im Dokument stehen.
+      if (bgBeobachter) bgBeobachter.observe(c);
     });
     if (gezeigt >= items.length) fertig();
   };
