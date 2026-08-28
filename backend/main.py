@@ -3260,7 +3260,7 @@ def _farbe_passt(begriff: str, name: str, farben: str) -> bool:
     return all(any(ganz.startswith(f, a) for a in anfaenge) for f in gesucht)
 
 
-def _wortrang(begriff: str, name: str) -> int:
+def _wortrang(begriff: str, name: str) -> tuple:
     """Wie viele Wörter treffen nur als **Anfang** statt ganz? Kleiner ist
     besser.
 
@@ -3275,17 +3275,23 @@ def _wortrang(begriff: str, name: str) -> int:
     """
     ganz, anfaenge = core.wortanfaenge(name or "")
     if not ganz:
-        return 99
+        return (99, 999)
     laenge = {a: (anfaenge[i + 1] - a if i + 1 < len(anfaenge) else len(ganz) - a)
               for i, a in enumerate(anfaenge)}
-    nur_anfang = 0
+    nur_anfang, frueheste = 0, 999
     for w in _such_woerter(begriff):
         stellen = [a for a in anfaenge if ganz.startswith(w, a)]
         if not stellen:
             continue
         if not any(laenge[a] == len(w) for a in stellen):
             nur_anfang += 1
-    return nur_anfang
+        frueheste = min(frueheste, anfaenge.index(min(stellen)))
+    # **Wo im Namen das Wort steht, sagt etwas über die Figur.** „ritter"
+    # übersetzt zu `Knight`, und das trifft `Jedi Knight (Jedi Bob)` genauso
+    # wie `Knight - Blue`. Beim ersten ist „Knight" das zweite Wort und
+    # beschreibt einen Jedi; beim zweiten ist es das erste und beschreibt
+    # einen Ritter. Wer „Ritter" tippt, meint den zweiten (28.08.2026).
+    return (nur_anfang, frueheste)
 
 
 def _farbrang(begriff: str, name: str, farben: str):
@@ -3419,7 +3425,14 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         rang = _farbrang(begriff, r["name"], r["farben"])
         if rang is None:
             continue
-        treffer.append({"_rang": (_wortrang(begriff, r["name"]), rang),
+        # **Die Reihenfolge der Kriterien ist entscheidend.** Erst das
+        # ganze Wort gegen den blossen Wortanfang (`Gru` vor `Grumpy`),
+        # dann die Farbe (`R-3PO` mit `farben=red` vor dem Droideka mit
+        # `red, gray`), erst zuletzt die Stellung im Namen. Andersherum
+        # überstimmte die Stellung die Farbe, und der Droideka stand wieder
+        # vor R-3PO.
+        ganz_wort, stelle = _wortrang(begriff, r["name"])
+        treffer.append({"_rang": (ganz_wort, rang, stelle),
                         "item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,

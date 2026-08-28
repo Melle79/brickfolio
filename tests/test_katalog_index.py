@@ -463,3 +463,25 @@ def test_ein_eigener_treffer_braucht_keine_uebersetzung(client, monkeypatch):
     _zeile("cas001", "Dragon Master Knight", farben="red")
     d = client.get("/api/search?q=Knight").json()
     assert d["items"] and d["eigene_leer"] is False
+
+
+def test_das_wort_am_anfang_des_namens_zaehlt_mehr(client):
+    """„ritter" übersetzt zu `Knight`, und das trifft `Jedi Knight (Jedi
+    Bob)` genauso wie `Knight - Blue`. Beim ersten ist „Knight" das zweite
+    Wort und beschreibt einen Jedi; beim zweiten das erste und beschreibt
+    einen Ritter. Wer „Ritter" tippt, meint den zweiten (28.08.2026)."""
+    _zeile("sw0057", "Jedi Knight (Jedi Bob) - Dark Gray Tunic", farben="tan")
+    _zeile("cas100", "Knight - Blue Plumes", farben="blue")
+    assert [t["item_id"] for t in main._katalog_suchen("Knight")] \
+        == ["cas100", "sw0057"]
+
+
+def test_die_farbe_schlaegt_die_wortstellung(client):
+    """Andersherum stand der Droideka („Droideka" beginnt mit „Droid")
+    wieder vor `R-3PO Protocol Droid`, obwohl dessen Farbliste nur `red`
+    sagt und die des Droideka `red, gray`."""
+    _zeile("sw0164", "Droideka (Destroyer Droid) - Copper Top",
+           farben="red, gray")
+    _zeile("sw0344", "R-3PO Protocol Droid", farben="red")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] \
+        == ["sw0344", "sw0164"]
