@@ -3251,6 +3251,34 @@ def _farbe_passt(begriff: str, name: str, farben: str) -> bool:
     return all(any(ganz.startswith(f, a) for a in anfaenge) for f in gesucht)
 
 
+def _wortrang(begriff: str, name: str) -> int:
+    """Wie viele Wörter treffen nur als **Anfang** statt ganz? Kleiner ist
+    besser.
+
+    `_passt` erlaubt Wortanfänge, damit „c3 po" den Artikel `C-3PO` findet
+    und halb Getipptes schon etwas zeigt. Das trifft aber auch daneben:
+    „Gru" passt auf **Gru**mpy, **Gru**mlo und **Gru**nt. Wer „grugo" sucht,
+    bekam zehn Grumpys, bevor `Gru - Dark Blue Jacket` an die Reihe kam
+    (28.08.2026).
+
+    Der ganze Treffer ist der bessere. Ausgeschlossen wird der Anfang
+    trotzdem nicht – sonst fände „ritt" keinen Ritter mehr.
+    """
+    ganz, anfaenge = core.wortanfaenge(name or "")
+    if not ganz:
+        return 99
+    laenge = {a: (anfaenge[i + 1] - a if i + 1 < len(anfaenge) else len(ganz) - a)
+              for i, a in enumerate(anfaenge)}
+    nur_anfang = 0
+    for w in _such_woerter(begriff):
+        stellen = [a for a in anfaenge if ganz.startswith(w, a)]
+        if not stellen:
+            continue
+        if not any(laenge[a] == len(w) for a in stellen):
+            nur_anfang += 1
+    return nur_anfang
+
+
 def _farbrang(begriff: str, name: str, farben: str):
     """Wie sehr **ist** die Figur in dieser Farbe? Kleiner ist besser.
 
@@ -3382,7 +3410,7 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         rang = _farbrang(begriff, r["name"], r["farben"])
         if rang is None:
             continue
-        treffer.append({"_rang": rang,
+        treffer.append({"_rang": (_wortrang(begriff, r["name"]), rang),
                         "item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,

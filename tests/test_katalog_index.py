@@ -429,3 +429,18 @@ def test_ohne_farbe_bleibt_die_reihenfolge_wie_gefunden(client):
     _zeile("cas001", "Dragon Master", farben="yellow", merkmale="knight crest")
     _zeile("cas002", "Knight", farben="blue")
     assert len(main._katalog_suchen("Knight")) == 2
+
+
+def test_der_ganze_treffer_steht_vor_dem_wortanfang(client):
+    """`_passt` erlaubt Wortanfänge, damit „c3 po" den Artikel `C-3PO`
+    findet. Das trifft aber auch daneben: „Gru" passt auf Grumpy, Grumlo
+    und Grunt, und `Gru - Dark Blue Jacket` kam gar nicht erst vor
+    (28.08.2026)."""
+    _zeile("dis156", "Grumpy", farben="white")
+    _zeile("loc028", "Grumlo - Dark Brown Heavy Armor", farben="brown")
+    _zeile("mnn004", "Gru - Dark Blue Jacket", farben="blue")
+    namen = [t["item_id"] for t in main._katalog_suchen("Gru")]
+    assert namen[0] == "mnn004", namen
+    # Ausgeschlossen wird der Wortanfang nicht – sonst fände „ritt"
+    # keinen Ritter mehr.
+    assert set(namen) == {"mnn004", "dis156", "loc028"}
