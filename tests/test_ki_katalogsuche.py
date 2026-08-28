@@ -397,3 +397,29 @@ def test_in_der_kompakten_ansicht_geht_nur_ein_fenster_auf():
     quelle = _app_js()
     assert 'collAnsicht() === "kompakt"' in quelle
     assert 'img.closest("#collection-list")' in quelle
+
+
+def test_der_nachschub_fasst_nach_solange_die_marke_sichtbar_ist():
+    """Der Beobachter meldet nur den *Übergang* ins Bild. In der Liste
+    schieben 60 Karten die Marke aus dem Blick; in der kompakten Ansicht
+    sind 60 Karten fünf Reihen, die Marke blieb stehen, und es kam nie ein
+    zweites Ereignis. Der Bildschirm blieb halb leer (29.08.2026)."""
+    quelle = _app_js()
+    i = quelle.index("nachschubBeobachter.unobserve(marke)")
+    block = quelle[i - 400:i + 120]
+    assert "nachschubBeobachter.observe(marke)" in block
+    # Es muss zuerst geprüft werden, ob überhaupt noch etwas fehlt –
+    # sonst liefe es nach dem letzten Block weiter.
+    assert "fertig(); return;" in quelle
+
+
+def test_die_weitergereichte_bildadresse_ist_dasselbe_bild():
+    """Kartenbilder laufen über `/catalog?u=…&s=…`, die Liste aus dem
+    Backend nennt die Quelle direkt. Ungeprüft galten sie als zwei Quellen,
+    und die Galerie zeigte dasselbe Motiv zweimal – „1/2" mit identischem
+    Bild (29.08.2026)."""
+    quelle = _app_js()
+    i = quelle.index("function imgKey(")
+    block = quelle[i:i + 900]
+    assert "decodeURIComponent" in block
+    assert "/catalog\\?" in block or "/catalog\\\\?" in block

@@ -901,7 +901,16 @@ let gallery = { urls: [], idx: 0 };
 /* Vergleichsschlüssel: dieselbe BrickLink-Figur (egal welcher Endpunkt/
    Auflösung) gilt als gleiches Bild; sonst nur Protokoll unabhängig. */
 function imgKey(u) {
-  const k = (u || "").trim().toLowerCase()
+  let roh = (u || "").trim();
+  // **Die weitergereichte Adresse ist dasselbe Bild.** Kartenbilder laufen
+  // über `/catalog?u=…&s=…`, die Liste aus dem Backend nennt die Quelle
+  // direkt. Ungeprüft galten sie als zwei Quellen, und die Galerie zeigte
+  // dasselbe Motiv zweimal – „1/2" mit identischem Bild (29.08.2026).
+  const durchgereicht = roh.match(/[?&]u=([^&]+)/);
+  if (durchgereicht && /\/catalog\?/.test(roh)) {
+    try { roh = decodeURIComponent(durchgereicht[1]); } catch (_) { /* egal */ }
+  }
+  const k = roh.toLowerCase()
     .replace(/^https?:\/\//, "").replace(/^\/\//, "");
   const m = k.match(/^img\.bricklink\.com\/.*\/([^/]+?)(?:\.t\d+)?\.(?:png|jpe?g|gif)$/);
   return m ? "bl:" + m[1] : k;
@@ -3891,7 +3900,21 @@ function kartenNachschub(list, items) {
       // läuft, bevor die Karten überhaupt im Dokument stehen.
       if (bgBeobachter) bgBeobachter.observe(c);
     });
-    if (gezeigt >= items.length) fertig();
+    if (gezeigt >= items.length) { fertig(); return; }
+    // **Nachfassen, solange die Marke sichtbar bleibt.** Der Beobachter
+    // meldet nur den *Übergang* ins Bild. In der Liste schieben 60 Karten
+    // die Marke aus dem Blick, und beim Scrollen kommt sie neu – in der
+    // kompakten Ansicht sind 60 Karten fünf Reihen, die Marke bleibt
+    // stehen, und es kam nie ein zweites Ereignis. Der Bildschirm blieb
+    // halb leer und nichts lud nach (29.08.2026).
+    //
+    // Neu anmelden erzwingt eine frische Meldung; liegt die Marke immer
+    // noch im Blick, folgt der nächste Block. Das endet von selbst, sobald
+    // sie verdrängt ist oder die Liste zu Ende geht.
+    if (nachschubBeobachter) {
+      nachschubBeobachter.unobserve(marke);
+      nachschubBeobachter.observe(marke);
+    }
   };
 
   const fertig = () => { nachschubBeenden(); marke.remove(); };
