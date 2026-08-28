@@ -3973,6 +3973,36 @@ function cssUrl(url) {
   return `url("${String(url).replace(/["\\]/g, "\\$&")}")`;
 }
 
+/* Das Bild einer Karte loslassen, die weit aus dem Blick ist.
+
+   **Warum das nötig ist.** Die Sammlung lädt beim Scrollen blockweise nach
+   und räumte nie auf: Jede Karte blieb mit ihrem Bild im Dokument. Der
+   Fehlerbericht vom 28.08.2026 zeigt den Endstand vor dem Absturz –
+   **15.033 Elemente und 844 Bilder**, dann war der Renderer tot.
+
+   Der Speicherwert stand dabei bei 11 MB. Entpackte Bilder zählen nicht zu
+   `usedJSHeapSize`; bei 844 Stück sind das dreistellig MB, die keine
+   Messung in der App je gesehen hat.
+
+   Entfernt wird die Karte **nicht** – das verschöbe die Scrollposition und
+   verlöre den aufgeklappten Zustand. Nur die Bildquelle wird getauscht;
+   Maße und Platzhalter bleiben, das Bild kommt beim Zurückscrollen aus dem
+   Zwischenspeicher des Browsers sofort wieder. */
+function bildFreigeben(karte, sichtbar) {
+  const img = karte.querySelector("img.card-img");
+  if (!img) return;
+  if (sichtbar) {
+    if (img.dataset.src) {
+      img.src = img.dataset.src;
+      delete img.dataset.src;
+    }
+  } else if (!img.dataset.src && img.src && img.src !== IMG_PLACEHOLDER) {
+    img.dataset.src = img.src;
+    img.src = IMG_PLACEHOLDER;
+  }
+}
+
+
 function hintergrundBeobachten(root) {
   if (bgBeobachter) bgBeobachter.disconnect();
   if (!("IntersectionObserver" in window)) {
@@ -3981,13 +4011,16 @@ function hintergrundBeobachten(root) {
   }
   bgBeobachter = new IntersectionObserver((eintraege) => {
     eintraege.forEach((e) => {
+      bildFreigeben(e.target, e.isIntersecting);
       const url = e.target.dataset.bg;
       if (!url) return;
       if (e.isIntersecting) e.target.style.setProperty("--bg-img", cssUrl(url));
       else e.target.style.removeProperty("--bg-img");
     });
   }, { rootMargin: "800px 0px" });
-  root.querySelectorAll(".card[data-bg]").forEach((c) => bgBeobachter.observe(c));
+  // **Jede Karte, nicht nur die mit Hintergrund.** Das Bild einer Karte
+  // muss auch dann losgelassen werden, wenn sie kein `data-bg` hat.
+  root.querySelectorAll(".card").forEach((c) => bgBeobachter.observe(c));
 }
 
 /* Detailansicht als Popup. Enthält Kopf UND Details, damit die bestehende

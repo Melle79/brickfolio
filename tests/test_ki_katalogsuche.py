@@ -286,3 +286,33 @@ def test_bei_typ_minifig_bleibt_der_index_die_erste_wahl(client, monkeypatch):
                    "&item_type=minifig").json()
     assert [i["name"] for i in d["items"]] == ["Clone ARF Trooper Razor"]
     assert gefragt == [], "Rebrickable wurde unnötig gefragt"
+
+
+# ------------------------- Die Sammlung lässt Bilder los, die keiner sieht
+
+def _app_js():
+    import pathlib
+    return (pathlib.Path(__file__).resolve().parent.parent
+            / "frontend" / "app.js").read_text(encoding="utf-8")
+
+
+def test_die_sammlung_laesst_bilder_ausserhalb_des_blicks_los():
+    """Die Sammlung lädt beim Scrollen nach und räumte nie auf. Der
+    Fehlerbericht vom 28.08.2026 zeigt den Endstand vor dem Absturz:
+    15.033 Elemente und **844 Bilder**, dann war der Renderer tot – bei
+    11 MB gemeldetem Speicher, weil entpackte Bilder nicht dazuzählen."""
+    quelle = _app_js()
+    assert "function bildFreigeben(" in quelle
+    # Der Beobachter muss **jede** Karte sehen, nicht nur die mit Hintergrund.
+    assert 'root.querySelectorAll(".card").forEach' in quelle
+    assert "bildFreigeben(e.target, e.isIntersecting)" in quelle
+
+
+def test_die_karte_selbst_bleibt_stehen():
+    """Entfernen verschöbe die Scrollposition und verlöre den aufgeklappten
+    Zustand – getauscht wird nur die Bildquelle."""
+    quelle = _app_js()
+    block = quelle[quelle.index("function bildFreigeben("):]
+    block = block[:block.index("\n}\n")]
+    assert "remove()" not in block and "innerHTML" not in block
+    assert "img.dataset.src" in block
