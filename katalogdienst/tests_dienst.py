@@ -9,6 +9,7 @@ import os
 import sys
 import time
 
+import json
 import pytest
 from fastapi.testclient import TestClient
 
@@ -439,3 +440,50 @@ def test_acht_teile_passen_hinein():
     darauf, und die Verteilung endete dort hart."""
     from bild import _BILD_SCHEMA
     assert _BILD_SCHEMA["properties"]["parts"]["maxItems"] == 8
+
+
+# ------------------------------------- Fehlende Grundteile nachfragen
+
+def test_ergaenzen_fragt_nur_nach_dem_was_fehlt(monkeypatch):
+    """Beim Triceratops-Kostüm beschrieb das Modell den Kopf und war
+    fertig – Torso, Arme und Beine fehlten. Ein voller zweiter Lauf ist
+    gemessen schädlich (15 % besser, 25 % schlechter), eine Nachfrage nur
+    nach dem Fehlenden kann nichts verlieren (26.08.2026)."""
+    import bild
+    gefragt = {}
+
+    class Antwort:
+        status_code = 200
+        def raise_for_status(self): pass
+        def json(self):
+            return {"message": {"content": json.dumps({"parts": [
+                {"part": "torso", "color": "light green", "print": "white lines"},
+                {"part": "arms", "color": "light green", "print": "brown spots"},
+                {"part": "arms", "color": "light green", "print": "brown spots"},
+                {"part": "head", "color": "olive", "print": "horns"}]})}}
+
+    def gefaelscht(url, json=None, **k):
+        gefragt["frage"] = json["messages"][0]["content"]
+        return Antwort()
+
+    monkeypatch.setattr(bild, "ollama_enabled", lambda: True)
+    monkeypatch.setattr(bild, "ollama_url", lambda: "http://x")
+    monkeypatch.setattr(bild, "ollama_bild_modell", lambda: "m")
+    monkeypatch.setattr(bild.requests, "post", gefaelscht)
+
+    aus = bild.merkmale_ergaenzen(b"bild", "head olive green triceratops head")
+    # Nur die fehlenden drei stehen in der Frage, `head` nicht.
+    assert "torso, arms, legs" in gefragt["frage"]
+    # `head` war schon da und wird nicht angehängt; die Arme nur einmal.
+    assert aus == ("torso light green white lines; "
+                   "arms light green brown spots")
+
+
+def test_ergaenzen_haelt_still_wenn_nichts_fehlt(monkeypatch):
+    """Sonst liefe für jede vollständige Figur ein zweiter Modellaufruf."""
+    import bild
+    monkeypatch.setattr(bild, "ollama_enabled", lambda: True)
+    monkeypatch.setattr(bild.requests, "post",
+                        lambda *a, **k: pytest.fail("nicht fragen"))
+    assert bild.merkmale_ergaenzen(
+        b"x", "head yellow; torso red; arms yellow; legs blue") == ""

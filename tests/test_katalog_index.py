@@ -321,3 +321,30 @@ def test_jeder_benutzer_hat_seinen_eigenen(client):
     d = client.get("/api/config", headers={
         "Authorization": "Bearer " + core.create_token(2, "zweiter", False)}).json()
     assert d["schonend"] is None
+
+
+# ------------------------------------- Breitere Begriffe verdrängen nicht
+
+def test_droid_kommt_hinter_red_droid(client):
+    """„roter droide" ergibt `Red Droid` **und** `Droid`. Der zweite ist eine
+    Teilmenge: Alles, was er zusätzlich findet, erfüllt die Farbe nicht. In
+    einer echten Suche standen dadurch R2-D2 und ein Pit Droid mit braunen
+    Armen auf Platz 3 und 4 (28.08.2026)."""
+    paare = [("Red Droid", ["a"]), ("Droid", ["a", "b", "c"])]
+    eng, weit = main._teilmengen_teilen(paare)
+    assert eng == [("Red Droid", ["a"])]
+    assert weit == [("Droid", ["a", "b", "c"])]
+
+
+def test_der_weitere_bleibt_wenn_der_engere_nichts_findet(client):
+    """Sonst gäbe es gar kein Ergebnis."""
+    paare = [("Red Droid", []), ("Droid", ["a", "b"])]
+    eng, weit = main._teilmengen_teilen(paare)
+    assert eng == paare and weit == []
+
+
+def test_unabhaengige_begriffe_bleiben_zusammen(client):
+    """`Knight` und `Squire` sind keine Teilmengen voneinander."""
+    paare = [("Knight", ["a"]), ("Squire", ["b"])]
+    eng, weit = main._teilmengen_teilen(paare)
+    assert eng == paare and weit == []

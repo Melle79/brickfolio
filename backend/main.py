@@ -4741,6 +4741,34 @@ def _begriffe_bewaehrt(q: str, treffer: list):
         pass              # Merken darf eine gelungene Suche nie stören
 
 
+def _teilmengen_teilen(je_begriff: list) -> tuple:
+    """Eingegrenzte Begriffe von den weiteren trennen.
+
+    „roter droide" ergibt `Red Droid` **und** `Droid`. Der zweite ist eine
+    Teilmenge des ersten: Alles, was er zusätzlich findet, erfüllt die
+    Farbe *nicht*. In einer echten Suche standen dadurch R2-D2 und ein Pit
+    Droid mit braunen Armen auf Platz 3 und 4 (28.08.2026).
+
+    **Weggeworfen wird der weitere trotzdem nicht.** Bei „roter c3 po" ist
+    `C-3PO` genauso eine Teilmenge von `C-3PO (red)` – dort sind die
+    übrigen C-3POs aber willkommen. Der Unterschied ist nicht die
+    Teilmenge, sondern wie viel sie hereinzieht: eine Handvoll C-3POs
+    gegen 295 Droiden.
+
+    Deshalb wird nicht entschieden, sondern geordnet: Die eingegrenzten
+    kommen zuerst und reihum, die weiteren erst danach und nur, solange
+    noch Platz ist. Wer „roter droide" sucht, sieht die roten oben; wer
+    „roter c3 po" sucht, findet den roten zuerst und die anderen darunter.
+    """
+    eng, weit = [], []
+    for begriff, treffer in je_begriff:
+        woerter = set(_such_woerter(begriff))
+        enger_da = any(b != begriff and tr and woerter < set(_such_woerter(b))
+                       for b, tr in je_begriff)
+        (weit if enger_da else eng).append((begriff, treffer))
+    return (eng, weit) if eng else (je_begriff, [])
+
+
 def _reihum(je_begriff: list, kennung, gesehen: set,
             hoechstens: int = SUGGEST_MAX, portion: int = 2) -> tuple:
     """Treffer reihum aus den Begriffen nehmen, statt einen leerzuräumen.
@@ -4827,9 +4855,15 @@ def suggest_collection(q: str = "", item_type: str = "",
     # deshalb die Reihenfolge des Modells stehen – es nennt den Eigennamen
     # zuerst und die Oberbegriffe zuletzt.
     begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
-    items, treffer = _reihum(
-        [(b, [e for e in alle if _passt(b, e["name"] or "")]) for b in begriffe],
-        lambda e: e["id"], gesehen)
+    eng, weit = _teilmengen_teilen(
+        [(b, [e for e in alle if _passt(b, e["name"] or "")])
+         for b in begriffe])
+    items, treffer = _reihum(eng, lambda e: e["id"], gesehen)
+    if len(items) < SUGGEST_MAX and weit:
+        mehr, treffer2 = _reihum(weit, lambda e: e["id"], gesehen,
+                                 hoechstens=SUGGEST_MAX - len(items))
+        items += mehr
+        treffer += [b for b in treffer2 if b not in treffer]
     _begriffe_bewaehrt(q, treffer)
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
@@ -4881,9 +4915,15 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # **Zuerst der eigene Index.** Er kostet nichts, kennt die beschreibenden
     # BrickLink-Namen und findet damit, was Rebrickable nicht hergibt:
     # `R-3PO` heißt dort nur so, bei BrickLink „R-3PO Protocol Droid".
-    items, treffer = _reihum(
-        [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe],
-        lambda e: (e["item_id"], e["item_type"]), gesehen)
+    eng, weit = _teilmengen_teilen(
+        [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe])
+    kennung = lambda e: (e["item_id"], e["item_type"])          # noqa: E731
+    items, treffer = _reihum(eng, kennung, gesehen)
+    if len(items) < SUGGEST_MAX and weit:
+        mehr, treffer2 = _reihum(weit, kennung, gesehen,
+                                 hoechstens=SUGGEST_MAX - len(items))
+        items += mehr
+        treffer += [b for b in treffer2 if b not in treffer]
     # Hat der eigene Abzug etwas, ist Rebrickable nicht mehr nötig: Die
     # Antwort ist da, kostenlos und mit den beschreibenden Namen. Jede
     # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf
