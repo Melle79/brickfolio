@@ -44,19 +44,19 @@ def client(tmp_path, monkeypatch):
     return c
 
 
-def _zeile(item_no, name, merkmale="", farben="", art="", item_type="minifig"):
+def _zeile(item_no, name, merkmale="", farben="", art="", item_type="minifig", kategorie=""):
     """Eine Zeile so ablegen, wie der Hub sie liefert."""
     with core.db() as conn:
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such,"
-            " img_url, farben, art, merkmale, jahr, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2011, 1)",
+            " img_url, farben, art, merkmale, category_id, jahr,"
+            " updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2011, 1)",
             # Dieselbe Elle wie beim Eintragen: Der Name zusammengezogen,
             # ohne Satzzeichen. Der Vorfilter sucht mit `LIKE '%c3%'`, und
             # mit Leerzeichen („c 3po") fände er nichts.
             (item_no, item_type, name, main._wortanfaenge(name)[0],
              "https://img.bricklink.com/ML/%s.jpg" % item_no,
-             farben, art, merkmale))
+             farben, art, merkmale, kategorie))
 
 
 # ------------------------------------------------------------- die Suche
@@ -485,3 +485,19 @@ def test_die_farbe_schlaegt_die_wortstellung(client):
     _zeile("sw0344", "R-3PO Protocol Droid", farben="red")
     assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] \
         == ["sw0344", "sw0164"]
+
+
+def test_wo_ein_begriff_zu_hause_ist_verraet_die_haeufigkeit(client):
+    """„Knight" trifft 274 Figuren in der Castle-Kategorie und 10 bei Star
+    Wars. Wer „Ritter" tippt, meint die 274 – nicht `Knight of Ren`. Meine
+    Stellungsregel bevorzugte den, weil „Knight" dort das erste Wort ist
+    (28.08.2026).
+
+    Das braucht kein Wissen über Themen: Die Menge im Ergebnis sagt es."""
+    _zeile("sw1063", "Knight of Ren (Ap'lek)", farben="black", kategorie="65")
+    for i in range(4):
+        _zeile("cas%03d" % i, "Kingdoms - Lion Knight %d" % i,
+               farben="blue", kategorie="9")
+    namen = [t["item_id"] for t in main._katalog_suchen("Knight")]
+    assert namen[0].startswith("cas"), namen
+    assert "sw1063" in namen, "der Star-Wars-Ritter bleibt, nur hinten"

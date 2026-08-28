@@ -1,6 +1,7 @@
 """Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
 import base64
 import hashlib
+import collections
 import html
 import io
 import json
@@ -3393,7 +3394,8 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
         rows = conn.execute(
             "SELECT item_no, item_type, name, jahr, img_url, farben, "
-            "merkmale FROM katalog_index WHERE item_type = ? AND (such LIKE ? "
+            "category_id, merkmale FROM katalog_index"
+            " WHERE item_type = ? AND (such LIKE ? "
             "OR farben LIKE ? OR merkmale LIKE ?) LIMIT 400",
             (item_type,) + ("%" + laengstes + "%",) * 3).fetchall()
     treffer = []
@@ -3433,6 +3435,7 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         # vor R-3PO.
         ganz_wort, stelle = _wortrang(begriff, r["name"])
         treffer.append({"_rang": (ganz_wort, rang, stelle),
+                        "_kat": str(r["category_id"] or ""),
                         "item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,
@@ -3446,9 +3449,18 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
     # Kuppel) und R7-A7 (rote Markierungen). Beide führen `red` in `farben`,
     # und das ist nicht falsch. Nur stand es gleichauf mit den Figuren, die
     # „Red" im **Namen** tragen (28.08.2026).
-    treffer.sort(key=lambda x: x["_rang"])
+    # **Wo ein Begriff zu Hause ist, verrät die Häufigkeit.** „Knight"
+    # trifft 274 Figuren in der Kategorie 9 (Castle) und 10 bei Star Wars.
+    # Wer „Ritter" tippt, meint die 274 – nicht `Knight of Ren`. Das
+    # braucht kein Wissen über Themen: Die Menge sagt es selbst
+    # (28.08.2026).
+    haeufig = collections.Counter(x["_kat"] for x in treffer if x["_kat"])
+    treffer.sort(key=lambda x: (x["_rang"][0],
+                                -haeufig.get(x["_kat"], 0),
+                                x["_rang"][1], x["_rang"][2]))
     for x in treffer:
         del x["_rang"]
+        del x["_kat"]
     return treffer[:hoechstens]
 
 
