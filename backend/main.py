@@ -3219,6 +3219,63 @@ FARBVERWANDT = {
 }
 
 
+# Farbwörter, die in einer Suche eine **Eigenschaft der Figur** meinen und
+# nicht ein Detail im Fließtext.
+FARBWOERTER = frozenset("""
+red blue green yellow black white tan orange brown gray grey silver gold
+pink purple azure lime olive magenta lavender turquoise bronze copper beige
+maroon teal
+""".split())
+
+
+def _farbe_passt(begriff: str, name: str, farben: str) -> bool:
+    """Steht jede gesuchte Farbe im Namen oder in der Farbliste?
+
+    `merkmale` reicht dafür **nicht**. Der Droideka (`sw0063`) ist braun und
+    grau, aber seine Beschreibung sagt „head light gray cylindrical with red
+    and white sections" – ein rotes Detail am Kopf. Damit stand er unter den
+    roten Droiden (28.08.2026).
+
+    Die Farbliste allein reicht ebenso wenig: `Battle Droid - Sand Red` hat
+    `farben=tan`, und `R5-D4 - Dome Head with Short Red Stripes` hat
+    `farben=white, tan`. Bei beiden trägt der **Name** die Farbe, und beide
+    sind richtige Treffer.
+
+    Also beides zusammen – Katalogwahrheit oder Zusammenfassung, aber nicht
+    jede Erwähnung im Fließtext.
+    """
+    gesucht = [w for w in _such_woerter(begriff) if w in FARBWOERTER]
+    if not gesucht:
+        return True
+    ganz, anfaenge = core.wortanfaenge(" ".join((name or "", farben or "")))
+    return all(any(ganz.startswith(f, a) for a in anfaenge) for f in gesucht)
+
+
+def _farbrang(begriff: str, name: str, farben: str):
+    """Wie gut belegt die Figur die gesuchte Farbe? Kleiner ist besser.
+
+    0 – die Farbe steht im **Namen**: Katalogwahrheit.
+    1 – sie steht nur in der Farbliste des Sehmodells.
+    `None` – sie steht nirgends von beidem; der Treffer fällt weg.
+
+    Ohne Farbe im Begriff ist alles gleichrangig (0).
+    """
+    gesucht = [w for w in _such_woerter(begriff) if w in FARBWOERTER]
+    if not gesucht:
+        return 0
+
+    def steckt_in(text):
+        ganz, anfaenge = core.wortanfaenge(text or "")
+        return all(any(ganz.startswith(f, a) for a in anfaenge)
+                   for f in gesucht)
+
+    if steckt_in(name):
+        return 0
+    if steckt_in(" ".join((name or "", farben or ""))):
+        return 1
+    return None
+
+
 def _farbvarianten(begriff: str) -> list:
     """Denselben Begriff mit gröberen Farbwörtern – für den zweiten Versuch.
 
@@ -3312,15 +3369,28 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
                              r["merkmale"] or ""))
         if not _passt(begriff, volltext):
             continue
-        treffer.append({"item_id": r["item_no"], "item_type": r["item_type"],
+        # Eine gesuchte Farbe muss die Figur beschreiben, nicht ein Detail.
+        rang = _farbrang(begriff, r["name"], r["farben"])
+        if rang is None:
+            continue
+        treffer.append({"_rang": rang,
+                        "item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,
                         "bricklink_url":
                             "https://www.bricklink.com/v2/catalog/"
                             "catalogitem.page?M=" + r["item_no"]})
-        if len(treffer) >= hoechstens:
+        if len(treffer) >= hoechstens * 3:
             break
-    return treffer
+    # **Katalogwahrheit vor Modellzusammenfassung.** „roter droide" fand 30
+    # Droiden mit Rot – darunter den Droideka „Copper Top" (kupferrote
+    # Kuppel) und R7-A7 (rote Markierungen). Beide führen `red` in `farben`,
+    # und das ist nicht falsch. Nur stand es gleichauf mit den Figuren, die
+    # „Red" im **Namen** tragen (28.08.2026).
+    treffer.sort(key=lambda x: x["_rang"])
+    for x in treffer:
+        del x["_rang"]
+    return treffer[:hoechstens]
 
 
 @app.get("/api/settings/begriffe")
@@ -4741,6 +4811,48 @@ def _begriffe_bewaehrt(q: str, treffer: list):
         pass              # Merken darf eine gelungene Suche nie stören
 
 
+# Ab wie vielen Treffern der eingegrenzten Begriffe der weitere Begriff
+# **nicht mehr** drankommt.
+#
+# Vorher stand hier `SUGGEST_MAX` (200), und damit lief der Rückfall
+# praktisch immer: „roter droide" fand sechs rote und hängte danach jeden
+# weiteren Droiden an – Droideka „Copper Top", R7-A7, Sentry Droid. Wer
+# eine Farbe eingibt, will nicht die Liste ohne Farbe hinterher
+# (28.08.2026).
+#
+# Fünf, weil ein Rückfall dann helfen soll, wenn die enge Suche fast nichts
+# hergab – nicht, wenn sie funktioniert hat.
+BREITER_AB = 5
+
+
+def _teilmengen_teilen(je_begriff: list) -> tuple:
+    """Eingegrenzte Begriffe von den weiteren trennen.
+
+    „roter droide" ergibt `Red Droid` **und** `Droid`. Der zweite ist eine
+    Teilmenge des ersten: Alles, was er zusätzlich findet, erfüllt die
+    Farbe *nicht*. In einer echten Suche standen dadurch R2-D2 und ein Pit
+    Droid mit braunen Armen auf Platz 3 und 4 (28.08.2026).
+
+    **Weggeworfen wird der weitere trotzdem nicht.** Bei „roter c3 po" ist
+    `C-3PO` genauso eine Teilmenge von `C-3PO (red)` – dort sind die
+    übrigen C-3POs aber willkommen. Der Unterschied ist nicht die
+    Teilmenge, sondern wie viel sie hereinzieht: eine Handvoll C-3POs
+    gegen 295 Droiden.
+
+    Deshalb wird nicht entschieden, sondern geordnet: Die eingegrenzten
+    kommen zuerst und reihum, die weiteren erst danach und nur, solange
+    noch Platz ist. Wer „roter droide" sucht, sieht die roten oben; wer
+    „roter c3 po" sucht, findet den roten zuerst und die anderen darunter.
+    """
+    eng, weit = [], []
+    for begriff, treffer in je_begriff:
+        woerter = set(_such_woerter(begriff))
+        enger_da = any(b != begriff and tr and woerter < set(_such_woerter(b))
+                       for b, tr in je_begriff)
+        (weit if enger_da else eng).append((begriff, treffer))
+    return (eng, weit) if eng else (je_begriff, [])
+
+
 def _reihum(je_begriff: list, kennung, gesehen: set,
             hoechstens: int = SUGGEST_MAX, portion: int = 2) -> tuple:
     """Treffer reihum aus den Begriffen nehmen, statt einen leerzuräumen.
@@ -4827,9 +4939,15 @@ def suggest_collection(q: str = "", item_type: str = "",
     # deshalb die Reihenfolge des Modells stehen – es nennt den Eigennamen
     # zuerst und die Oberbegriffe zuletzt.
     begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
-    items, treffer = _reihum(
-        [(b, [e for e in alle if _passt(b, e["name"] or "")]) for b in begriffe],
-        lambda e: e["id"], gesehen)
+    eng, weit = _teilmengen_teilen(
+        [(b, [e for e in alle if _passt(b, e["name"] or "")])
+         for b in begriffe])
+    items, treffer = _reihum(eng, lambda e: e["id"], gesehen)
+    if len(items) < BREITER_AB and weit:
+        mehr, treffer2 = _reihum(weit, lambda e: e["id"], gesehen,
+                                 hoechstens=SUGGEST_MAX - len(items))
+        items += mehr
+        treffer += [b for b in treffer2 if b not in treffer]
     _begriffe_bewaehrt(q, treffer)
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
@@ -4881,9 +4999,15 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # **Zuerst der eigene Index.** Er kostet nichts, kennt die beschreibenden
     # BrickLink-Namen und findet damit, was Rebrickable nicht hergibt:
     # `R-3PO` heißt dort nur so, bei BrickLink „R-3PO Protocol Droid".
-    items, treffer = _reihum(
-        [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe],
-        lambda e: (e["item_id"], e["item_type"]), gesehen)
+    eng, weit = _teilmengen_teilen(
+        [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe])
+    kennung = lambda e: (e["item_id"], e["item_type"])          # noqa: E731
+    items, treffer = _reihum(eng, kennung, gesehen)
+    if len(items) < BREITER_AB and weit:
+        mehr, treffer2 = _reihum(weit, kennung, gesehen,
+                                 hoechstens=SUGGEST_MAX - len(items))
+        items += mehr
+        treffer += [b for b in treffer2 if b not in treffer]
     # Hat der eigene Abzug etwas, ist Rebrickable nicht mehr nötig: Die
     # Antwort ist da, kostenlos und mit den beschreibenden Namen. Jede
     # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf

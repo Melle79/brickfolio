@@ -321,3 +321,107 @@ def test_jeder_benutzer_hat_seinen_eigenen(client):
     d = client.get("/api/config", headers={
         "Authorization": "Bearer " + core.create_token(2, "zweiter", False)}).json()
     assert d["schonend"] is None
+
+
+# ------------------------------------- Breitere Begriffe verdrängen nicht
+
+def test_droid_kommt_hinter_red_droid(client):
+    """„roter droide" ergibt `Red Droid` **und** `Droid`. Der zweite ist eine
+    Teilmenge: Alles, was er zusätzlich findet, erfüllt die Farbe nicht. In
+    einer echten Suche standen dadurch R2-D2 und ein Pit Droid mit braunen
+    Armen auf Platz 3 und 4 (28.08.2026)."""
+    paare = [("Red Droid", ["a"]), ("Droid", ["a", "b", "c"])]
+    eng, weit = main._teilmengen_teilen(paare)
+    assert eng == [("Red Droid", ["a"])]
+    assert weit == [("Droid", ["a", "b", "c"])]
+
+
+def test_der_weitere_bleibt_wenn_der_engere_nichts_findet(client):
+    """Sonst gäbe es gar kein Ergebnis."""
+    paare = [("Red Droid", []), ("Droid", ["a", "b"])]
+    eng, weit = main._teilmengen_teilen(paare)
+    assert eng == paare and weit == []
+
+
+def test_unabhaengige_begriffe_bleiben_zusammen(client):
+    """`Knight` und `Squire` sind keine Teilmengen voneinander."""
+    paare = [("Knight", ["a"]), ("Squire", ["b"])]
+    eng, weit = main._teilmengen_teilen(paare)
+    assert eng == paare and weit == []
+
+
+# --------------------- Farben müssen die Figur beschreiben, nicht ein Detail
+
+def test_ein_rotes_detail_macht_keinen_roten_droiden(client):
+    """Der Droideka (`sw0063`) ist braun und grau. Seine Beschreibung sagt
+    „head light gray cylindrical with red and white sections" – ein rotes
+    Detail am Kopf. Damit stand er unter den roten Droiden (28.08.2026)."""
+    _zeile("sw0063", "Droideka (Destroyer Droid) - Brown, Light Gray",
+           farben="light, gray, brown",
+           merkmale="head light gray cylindrical with red and white sections")
+    assert main._katalog_suchen("Red Droid") == []
+
+
+def test_die_farbe_im_namen_zaehlt(client):
+    """`Battle Droid - Sand Red` hat `farben=tan`. Die Farbliste allein
+    wäre zu streng – der Name ist Katalogwahrheit."""
+    _zeile("sw0061", "Battle Droid - Sand Red (Geonosian)", farben="tan",
+           merkmale="head tan; torso tan")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] == ["sw0061"]
+
+
+def test_die_farbliste_zaehlt_auch(client):
+    """`Pit Droid (Sebulba's)` trägt die Farbe nicht im Namen, wohl aber in
+    der Zusammenfassung des Sehmodells."""
+    _zeile("sw0064", "Pit Droid (Sebulba's)", farben="dark, red, white",
+           merkmale="head white; torso dark red")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] == ["sw0064"]
+
+
+def test_ohne_farbe_im_begriff_aendert_sich_nichts(client):
+    """`Knight` ist kein Farbwort – die Prüfung darf nicht zuschlagen."""
+    _zeile("cas001", "Dragon Master", farben="yellow",
+           merkmale="helmet black knight crest")
+    assert main._katalog_suchen("Knight")
+
+
+def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client, monkeypatch):
+    """„roter droide" fand sechs rote und hängte danach jeden weiteren
+    Droiden an – Droideka „Copper Top", R7-A7, Sentry Droid. Der Rückfall
+    stand auf `SUGGEST_MAX` (200) und lief damit praktisch immer. Wer eine
+    Farbe eingibt, will nicht die Liste ohne Farbe hinterher (28.08.2026)."""
+    for i in range(6):
+        _zeile("sw%03d" % i, "Red Droid %d" % i, farben="red")
+    _zeile("sw900", "Sentry Droid", farben="white")
+    # Ohne Ollama liefert `suchbegriffe` nichts, und der Test prüfte eine
+    # leere Liste – er lief auch ohne die Änderung durch. Die Übersetzung
+    # wird deshalb vorgegeben.
+    monkeypatch.setattr(integrations, "suchbegriffe",
+                        lambda q: ["Red Droid", "Droid"])
+    core.set_setting("ollama_url", "http://x")
+    assert len(main._katalog_suchen("Red Droid")) == 6
+    d = main.suggest_catalog(q="roter droide", item_type="minifig",
+                             user={"id": 1})
+    namen = [x["item_id"] for x in d["items"]]
+    assert len(namen) == 6, namen
+    assert "sw900" not in namen, "der weitere Begriff darf nicht anhängen"
+
+
+def test_farbe_im_namen_steht_vor_farbe_aus_der_beschreibung(client):
+    """„roter droide" fand 30 Droiden mit Rot – darunter den Droideka
+    „Copper Top" (kupferrote Kuppel) und R7-A7 (rote Markierungen). Beide
+    führen `red` in `farben`, und das ist nicht falsch. Nur stand es
+    gleichauf mit den Figuren, die „Red" im Namen tragen (28.08.2026)."""
+    _zeile("sw0164", "Droideka (Destroyer Droid) - Copper Top",
+           farben="red, gray")
+    _zeile("sw0029", "Astromech Droid, R5-D4 - Dome Head with Short Red "
+           "Stripes", farben="white")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] \
+        == ["sw0029", "sw0164"]
+
+
+def test_ohne_farbe_bleibt_die_reihenfolge_wie_gefunden(client):
+    """Die Rangfolge darf nur greifen, wenn eine Farbe gesucht wurde."""
+    _zeile("cas001", "Dragon Master", farben="yellow", merkmale="knight crest")
+    _zeile("cas002", "Knight", farben="blue")
+    assert len(main._katalog_suchen("Knight")) == 2

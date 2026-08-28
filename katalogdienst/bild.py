@@ -198,6 +198,84 @@ def _ollama_inhalt(nachricht: dict) -> str:
     return (nachricht or {}).get("thinking") or ""
 
 
+GRUNDTEILE = ("head", "torso", "arms", "legs")
+
+_ERGAENZ_SCHEMA = {
+    "type": "object",
+    "properties": {"parts": {"type": "array", "maxItems": 4, "items": {
+        "type": "object",
+        "properties": {"part": {"type": "string", "maxLength": 20},
+                       "color": {"type": "string", "maxLength": 40},
+                       "print": {"type": "string", "maxLength": 100}},
+        "required": ["part", "color", "print"]}}},
+    "required": ["parts"]}
+
+
+def merkmale_ergaenzen(bild: bytes, vorhanden: str) -> str:
+    """Fehlende Grundteile gezielt nachfragen – und **nur** die.
+
+    Das Modell hört bei aufwendigen Figuren früh auf: Beim Triceratops-
+    Kostüm (`col431`) beschrieb es den Kopf und war fertig, Torso, Arme und
+    Beine fehlten. Bei 19.201 Figuren fehlten 3.183-mal die Arme, 173-mal
+    die Beine, 49-mal der Torso (26.08.2026).
+
+    **Nicht neu beschreiben lassen.** Ein voller zweiter Lauf ist gemessen
+    schädlich: Er brachte 15 % mehr Teile und 25 % weniger. Eine Nachfrage
+    nur nach dem Fehlenden kann dagegen nichts verlieren – sie fügt hinzu
+    oder gibt nichts zurück.
+
+    Gibt die Zeichenkette zurück, die anzuhängen ist; leer, wenn nichts
+    fehlt oder nichts zu holen war.
+    """
+    if not bild or not ollama_enabled():
+        return ""
+    fehlend = [x for x in GRUNDTEILE
+               if not re.search(r"(^|; )" + x + r" ", (vorhanden or "").lower())]
+    if not fehlend:
+        return ""
+    frage = ("This is a LEGO minifigure. Describe ONLY these parts: "
+             + ", ".join(fehlend) + ". For each give the part name, its "
+             "color, and any printing. If a part is not visible, omit it. "
+             "Do not describe anything else.")
+    try:
+        resp = requests.post(
+            ollama_url() + "/api/chat",
+            json={"model": ollama_bild_modell(), "stream": False,
+                  "think": False, "format": _ERGAENZ_SCHEMA,
+                  "options": {"temperature": 0, "num_predict": 300},
+                  "keep_alive": "30m",
+                  "messages": [{"role": "user", "content": frage,
+                                "images": [base64.b64encode(bild).decode()]}]},
+            timeout=OLLAMA_BILD_TIMEOUT,
+            headers={"User-Agent": USER_AGENT})
+        resp.raise_for_status()
+        d = json.loads(_ollama_inhalt(resp.json().get("message", {})))
+    except Exception:
+        # Eine misslungene Ergänzung ist kein Fehler: Was schon dasteht,
+        # bleibt brauchbar.
+        return ""
+    stuecke, gesehen = [], set()
+    for teil in d.get("parts") or []:
+        if not isinstance(teil, dict):
+            continue
+        name = _bild_wort(teil.get("part"), 2)
+        # **Jedes Teil nur einmal.** Das Modell nennt die Arme gern zweimal,
+        # links und rechts – im Suchtext wäre das nur Wiederholung.
+        if name not in fehlend or name in gesehen:
+            continue
+        farbe = _bild_wort(teil.get("color"), 3)
+        druck = _bild_wort(teil.get("print"), 12)
+        if farbe in ("none", ""):
+            farbe = ""
+        if druck in ("none", "plain", ""):
+            druck = ""
+        if not (farbe or druck):
+            continue
+        gesehen.add(name)
+        stuecke.append(" ".join(x for x in (name, farbe, druck) if x))
+    return "; ".join(stuecke)
+
+
 def bild_merkmale(bild: bytes, modell: str = "") -> dict:
     """Art und Farben einer Figur aus ihrem Bild.
 
