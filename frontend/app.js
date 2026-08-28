@@ -5038,6 +5038,10 @@ async function runCatalogSearch() {
     if (seq !== searchSeq) return;   // Ergebnis einer überholten Suche verwerfen
     suggestState = { q, type, page: 1, items: data.items || [],
                      count: data.count || (data.items || []).length,
+                     // Hat **unser** Abzug etwas gefunden, oder kommt alles
+                     // von Rebrickable? Danach entscheidet sich, ob die
+                     // KI-Übersetzung noch drankommt.
+                     eigeneLeer: !!data.eigene_leer,
                      hasMore: !!data.has_more };
     renderSuggestions(suggestState.items,
       { count: suggestState.count, hasMore: suggestState.hasMore });
@@ -5050,7 +5054,14 @@ async function runCatalogSearch() {
     // Genau hier hilft es am meisten: In der Sammlung kann man notfalls
     // blättern, im Katalog sucht man Unbekanntes – ohne Treffer hat man
     // gar nichts. „Roter c3po" war der Anlass.
-    if (!suggestState.items.length) await katalogKiVersuch(q, type, seq, hint);
+    // **Auch wenn Rebrickable etwas fand.** Es rät unscharf: „ritter"
+    // lieferte von dort `Miss Fritter`, und weil das ein Ergebnis ist,
+    // wurde `Knight` nie gesucht. Entscheidend ist, ob **unser** Abzug
+    // etwas hatte – der kennt die deutschen Begriffe nicht, aber wenn er
+    // trifft, ist der Treffer gut (28.08.2026).
+    if (!suggestState.items.length || suggestState.eigeneLeer) {
+      await katalogKiVersuch(q, type, seq, hint);
+    }
   } catch (e) {
     if (seq !== searchSeq) return;
     hint.textContent = e.message;

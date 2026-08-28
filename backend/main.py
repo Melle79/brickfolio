@@ -2265,18 +2265,26 @@ def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
             # Hinweis, der stimmt, und einem, der in die Irre führt
             # (gemeldet am 24.08.2026).
             return {"items": eigene[:SUGGEST_MAX], "count": len(eigene),
-                    "page": 1, "has_more": False}
+                    "page": 1, "has_more": False,
+                    "eigene_leer": not eigene}
         raise HTTPException(501, "Katalogsuche nicht konfiguriert "
                                  "(REBRICKABLE_KEY in docker-compose setzen)")
     try:
         fremd = integrations.search_catalog(q, item_type, page=page)
         if not eigene:
+            # **Der eigene Abzug war leer.** Das ist für die Oberfläche
+            # wichtig: Sie startet die KI-Übersetzung nur, wenn *gar nichts*
+            # gefunden wurde – und Rebrickable rät unscharf. „ritter"
+            # lieferte von dort `Miss Fritter`, und weil das ein Ergebnis
+            # ist, wurde `Knight` nie gesucht (28.08.2026).
+            fremd["eigene_leer"] = True
             return fremd
         # Der eigene zuerst, Rebrickable dahinter – und nichts doppelt.
         gesehen = {(e["item_id"], e["item_type"]) for e in eigene}
         zusatz = [i for i in fremd.get("items", [])
                   if (i.get("item_id"), i.get("item_type")) not in gesehen]
-        return {"items": (eigene + zusatz)[:SUGGEST_MAX],
+        return {"eigene_leer": False,
+                "items": (eigene + zusatz)[:SUGGEST_MAX],
                 "count": len(eigene) + fremd.get("count", 0),
                 "page": page, "has_more": fremd.get("has_more", False)}
     except (requests.RequestException, ValueError) as e:
@@ -2285,7 +2293,8 @@ def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
         # längst dalag.
         if eigene:
             return {"items": eigene[:SUGGEST_MAX], "count": len(eigene),
-                    "page": 1, "has_more": False}
+                    "page": 1, "has_more": False,
+                    "eigene_leer": not eigene}
         if isinstance(e, ValueError):
             raise HTTPException(400, str(e))
         if isinstance(e, requests.Timeout):

@@ -444,3 +444,22 @@ def test_der_ganze_treffer_steht_vor_dem_wortanfang(client):
     # Ausgeschlossen wird der Wortanfang nicht – sonst fände „ritt"
     # keinen Ritter mehr.
     assert set(namen) == {"mnn004", "dis156", "loc028"}
+
+
+def test_die_suche_meldet_wenn_nur_rebrickable_traf(client, monkeypatch):
+    """Rebrickable rät unscharf: „ritter" lieferte von dort `Miss Fritter`.
+    Weil das ein Ergebnis ist, startete die Oberfläche die KI-Übersetzung
+    nicht, und `Knight` wurde nie gesucht (28.08.2026)."""
+    core.set_setting("rebrickable_key", "test-key")
+    monkeypatch.setattr(integrations, "search_catalog", lambda *a, **k: {
+        "items": [{"item_id": "dis999", "item_type": "minifig",
+                   "name": "Miss Fritter"}], "count": 1, "has_more": False})
+    d = client.get("/api/search?q=ritter").json()
+    assert d["items"] and d["eigene_leer"] is True
+
+
+def test_ein_eigener_treffer_braucht_keine_uebersetzung(client, monkeypatch):
+    core.set_setting("rebrickable_key", "")
+    _zeile("cas001", "Dragon Master Knight", farben="red")
+    d = client.get("/api/search?q=Knight").json()
+    assert d["items"] and d["eigene_leer"] is False

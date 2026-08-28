@@ -184,7 +184,11 @@ def test_die_oberflaeche_fragt_erst_nach_einer_leeren_suche(client):
           / "frontend" / "app.js").read_text(encoding="utf-8")
     i = js.index("async function runCatalogSearch(")
     block = js[i:js.index("async function katalogKiVersuch(")]
-    assert "if (!suggestState.items.length) await katalogKiVersuch(" in block
+    # Seit 2.52.0 auch dann, wenn nur Rebrickable etwas fand: Es rät
+    # unscharf, und „ritter" lieferte von dort `Miss Fritter` – ein
+    # Ergebnis, das `Knight` verhinderte.
+    assert "suggestState.items.length || suggestState.eigeneLeer" in block
+    assert "katalogKiVersuch(q, type, seq, hint)" in block
 
 
 # ------------------------------------------------- Eine Suche endet nie stumm
