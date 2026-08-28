@@ -3489,6 +3489,14 @@ const ICON_LIST = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"'
   + '<circle cx="3.5" cy="6" r="1.3" fill="currentColor" stroke="none"/>'
   + '<circle cx="3.5" cy="12" r="1.3" fill="currentColor" stroke="none"/>'
   + '<circle cx="3.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>';
+/* Vier Kacheln – dichter als das Raster mit seinen zweien. */
+const ICON_KOMPAKT = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"'
+  + ' stroke="currentColor" stroke-width="2" stroke-linecap="round">'
+  + '<rect x="3" y="3" width="7" height="7" rx="1.5"/>'
+  + '<rect x="14" y="3" width="7" height="7" rx="1.5"/>'
+  + '<rect x="3" y="14" width="7" height="7" rx="1.5"/>'
+  + '<rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
+
 const ICON_GRID = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"'
   + ' stroke="currentColor" stroke-width="2" aria-hidden="true">'
   + '<rect x="3" y="3" width="8" height="8" rx="1.5"/>'
@@ -3496,17 +3504,40 @@ const ICON_GRID = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"'
   + '<rect x="3" y="13" width="8" height="8" rx="1.5"/>'
   + '<rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>';
 
+/* Die drei Ansichten der Sammlung, im Kreis geschaltet.
+
+   `kompakt` ist die dichteste: nur Bild und Nummer, vier je Reihe, und ein
+   Tipp öffnet den Steckbrief. Wer 600 Figuren hat, sieht damit fünfzig auf
+   einmal statt acht – zum Durchblättern und Wiederfinden. Liste und Raster
+   bleiben, wie sie waren; die Vorgabe ist unverändert `list`. */
+const COLL_ANSICHTEN = ["list", "grid", "kompakt"];
+const COLL_NAMEN = { list: "Liste", grid: "Raster", kompakt: "Kompakt" };
+
+
+function collAnsicht() {
+  const w = localStorage.getItem("bf_collview") || "list";
+  return COLL_ANSICHTEN.includes(w) ? w : "list";
+}
+
+
 function applyCollView() {
   const list = $("collection-list");
   const btn = $("btn-collview");
-  const grid = localStorage.getItem("bf_collview") === "grid";
-  if (list) list.classList.toggle("grid-mode", grid);
+  const jetzt = collAnsicht();
+  if (list) {
+    list.classList.toggle("grid-mode", jetzt === "grid");
+    list.classList.toggle("kompakt-mode", jetzt === "kompakt");
+  }
   if (btn) {
     // Zeigt Symbol und Namen der Ansicht, in die man wechselt
-    btn.innerHTML = (grid ? ICON_LIST : ICON_GRID)
-      + `<span class="vt-label">${grid ? "Liste" : "Raster"}</span>`;
-    btn.title = grid ? "Zur Listenansicht wechseln"
-                     : "Zur Rasteransicht wechseln";
+    const naechste = COLL_ANSICHTEN[
+      (COLL_ANSICHTEN.indexOf(jetzt) + 1) % COLL_ANSICHTEN.length];
+    const symbol = { list: ICON_LIST, grid: ICON_GRID,
+                     kompakt: ICON_KOMPAKT }[naechste];
+    btn.innerHTML = symbol
+      + `<span class="vt-label">${esc(tr(COLL_NAMEN[naechste]))}</span>`;
+    btn.title = tr("Zur Ansicht {name} wechseln",
+                   { name: tr(COLL_NAMEN[naechste]) });
     btn.setAttribute("aria-label", btn.title);
   }
 }
@@ -3968,8 +3999,12 @@ function karteVerdrahten(card, items) {
     wireQty(card.querySelector(".card-head"));
 
     card.querySelector(".card-head").addEventListener("click", (ev) => {
-      if (ev.target.closest(".qty") || ev.target.closest(".card-img")
-          || ev.target.closest(".set-link")) return;
+      if (ev.target.closest(".qty") || ev.target.closest(".set-link")) return;
+      // **In der kompakten Ansicht ist das Bild die Kachel.** Dort muss ein
+      // Tipp darauf den Steckbrief öffnen; sonst bliebe die Ansicht stumm,
+      // weil es außer Bild und Nummer nichts zum Antippen gibt. In Liste
+      // und Raster führt das Bild weiterhin in die Großansicht.
+      if (ev.target.closest(".card-img") && collAnsicht() !== "kompakt") return;
       openCardModal(item, id, card, deleteEntry, wireQty, canPrice);
     });
   }
@@ -10768,8 +10803,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const collViewBtn = $("btn-collview");
   if (collViewBtn) {
     collViewBtn.addEventListener("click", () => {
-      const grid = localStorage.getItem("bf_collview") === "grid";
-      localStorage.setItem("bf_collview", grid ? "list" : "grid");
+      const i = COLL_ANSICHTEN.indexOf(collAnsicht());
+      localStorage.setItem("bf_collview",
+        COLL_ANSICHTEN[(i + 1) % COLL_ANSICHTEN.length]);
       applyCollView();
     });
   }

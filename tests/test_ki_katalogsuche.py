@@ -1,3 +1,4 @@
+import pathlib
 """„Roter c3po" fand im Katalog nichts, obwohl die KI eingerichtet war.
 
 2.28.0 hat die Übersetzung an die **Sammlungssuche** gehängt. Sven hat sie
@@ -342,3 +343,35 @@ def test_ein_zwischenserver_meldet_sich_verstaendlich():
     # Der Rohtext gehört weiterhin in den Fehlerbericht, nur nicht auf den
     # Bildschirm: `serverfehlerMelden` bekommt ihn nach wie vor.
     assert "serverfehlerMelden(path, options, resp.status, text, roh)" in quelle
+
+
+# ------------------------------------ Die dritte Ansicht der Sammlung
+
+def test_die_sammlung_hat_drei_ansichten():
+    """Liste, Raster, Kompakt – im Kreis geschaltet. Die kompakte zeigt nur
+    Bild und Nummer, vier je Reihe: Wer 600 Figuren hat, sieht fünfzig auf
+    einmal statt acht."""
+    quelle = _app_js()
+    assert 'COLL_ANSICHTEN = ["list", "grid", "kompakt"]' in quelle
+    # Die Vorgabe bleibt die gewohnte Liste.
+    assert 'localStorage.getItem("bf_collview") || "list"' in quelle
+
+
+def test_in_der_kompakten_ansicht_oeffnet_das_bild_den_steckbrief():
+    """Sonst bliebe sie stumm – außer Bild und Nummer gibt es dort nichts
+    zum Antippen. In Liste und Raster führt das Bild weiter in die
+    Großansicht."""
+    quelle = _app_js()
+    assert 'ev.target.closest(".card-img") && collAnsicht() !== "kompakt"' \
+        in quelle
+
+
+def test_die_kompakte_ansicht_blendet_aus_statt_zu_entfernen():
+    """Beim Aufklappen im Popup muss alles unverändert zur Verfügung
+    stehen."""
+    css = (pathlib.Path(__file__).resolve().parent.parent
+           / "frontend" / "style.css").read_text(encoding="utf-8")
+    block = css[css.index("Kompakte Ansicht"):]
+    assert ".card-actions" in block and "display: none" in block
+    # Die Menge bleibt: „2×" ist Information, keine Verzierung.
+    assert ".qty-badge" in block and "display: inline-block" in block

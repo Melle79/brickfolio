@@ -1851,3 +1851,45 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   display: flex; align-items: center; justify-content: center; gap: 8px;
   flex-wrap: wrap; margin-top: 10px; font-weight: 800;
 }
+
+/* ---------------------------------------------------- Kompakte Ansicht
+
+   Die dichteste der drei: nur Bild und Nummer, vier je Reihe. Wer 600
+   Figuren hat, sieht damit fünfzig auf einmal statt acht – zum
+   Durchblättern und Wiederfinden. Angetippt wird die Kachel selbst, sie
+   öffnet den Steckbrief.
+
+   Alles, was in Liste und Raster Platz bekommt – Name, Preise, Zustand,
+   Knöpfe – ist hier ausgeblendet, nicht entfernt: Beim Aufklappen im
+   Popup steht es unverändert zur Verfügung. */
+#collection-list.kompakt-mode {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px; align-items: start;
+}
+#collection-list.kompakt-mode .card {
+  padding: 6px; contain-intrinsic-size: auto 132px;
+}
+#collection-list.kompakt-mode .card-head {
+  flex-direction: column; align-items: stretch; gap: 4px; text-align: center;
+}
+#collection-list.kompakt-mode .card-img {
+  width: 100%; height: 84px; cursor: pointer;
+}
+/* Der Name weicht der Nummer: In der Kachel ist er zu lang, und die Nummer
+   ist das, wonach man in einer nach Nummern sortierten Sammlung sucht. */
+#collection-list.kompakt-mode .card-title strong { display: none; }
+#collection-list.kompakt-mode .card-title .sub {
+  font-size: 11px; margin: 0; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+#collection-list.kompakt-mode .card-head > .qty,
+#collection-list.kompakt-mode .card-actions,
+#collection-list.kompakt-mode .card-body,
+#collection-list.kompakt-mode .img-reload-btn { display: none; }
+/* Die Menge bleibt sichtbar – „2×" ist in einer Sammlung eine Information,
+   keine Verzierung. */
+#collection-list.kompakt-mode .qty-badge {
+  display: inline-block; font-size: 11px;
+}
+#collection-list.kompakt-mode .nachschub-marke { grid-column: 1 / -1; }
