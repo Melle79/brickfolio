@@ -348,3 +348,38 @@ def test_unabhaengige_begriffe_bleiben_zusammen(client):
     paare = [("Knight", ["a"]), ("Squire", ["b"])]
     eng, weit = main._teilmengen_teilen(paare)
     assert eng == paare and weit == []
+
+
+# --------------------- Farben müssen die Figur beschreiben, nicht ein Detail
+
+def test_ein_rotes_detail_macht_keinen_roten_droiden(client):
+    """Der Droideka (`sw0063`) ist braun und grau. Seine Beschreibung sagt
+    „head light gray cylindrical with red and white sections" – ein rotes
+    Detail am Kopf. Damit stand er unter den roten Droiden (28.08.2026)."""
+    _zeile("sw0063", "Droideka (Destroyer Droid) - Brown, Light Gray",
+           farben="light, gray, brown",
+           merkmale="head light gray cylindrical with red and white sections")
+    assert main._katalog_suchen("Red Droid") == []
+
+
+def test_die_farbe_im_namen_zaehlt(client):
+    """`Battle Droid - Sand Red` hat `farben=tan`. Die Farbliste allein
+    wäre zu streng – der Name ist Katalogwahrheit."""
+    _zeile("sw0061", "Battle Droid - Sand Red (Geonosian)", farben="tan",
+           merkmale="head tan; torso tan")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] == ["sw0061"]
+
+
+def test_die_farbliste_zaehlt_auch(client):
+    """`Pit Droid (Sebulba's)` trägt die Farbe nicht im Namen, wohl aber in
+    der Zusammenfassung des Sehmodells."""
+    _zeile("sw0064", "Pit Droid (Sebulba's)", farben="dark, red, white",
+           merkmale="head white; torso dark red")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] == ["sw0064"]
+
+
+def test_ohne_farbe_im_begriff_aendert_sich_nichts(client):
+    """`Knight` ist kein Farbwort – die Prüfung darf nicht zuschlagen."""
+    _zeile("cas001", "Dragon Master", farben="yellow",
+           merkmale="helmet black knight crest")
+    assert main._katalog_suchen("Knight")

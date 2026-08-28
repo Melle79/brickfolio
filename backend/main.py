@@ -3219,6 +3219,38 @@ FARBVERWANDT = {
 }
 
 
+# Farbwörter, die in einer Suche eine **Eigenschaft der Figur** meinen und
+# nicht ein Detail im Fließtext.
+FARBWOERTER = frozenset("""
+red blue green yellow black white tan orange brown gray grey silver gold
+pink purple azure lime olive magenta lavender turquoise bronze copper beige
+maroon teal
+""".split())
+
+
+def _farbe_passt(begriff: str, name: str, farben: str) -> bool:
+    """Steht jede gesuchte Farbe im Namen oder in der Farbliste?
+
+    `merkmale` reicht dafür **nicht**. Der Droideka (`sw0063`) ist braun und
+    grau, aber seine Beschreibung sagt „head light gray cylindrical with red
+    and white sections" – ein rotes Detail am Kopf. Damit stand er unter den
+    roten Droiden (28.08.2026).
+
+    Die Farbliste allein reicht ebenso wenig: `Battle Droid - Sand Red` hat
+    `farben=tan`, und `R5-D4 - Dome Head with Short Red Stripes` hat
+    `farben=white, tan`. Bei beiden trägt der **Name** die Farbe, und beide
+    sind richtige Treffer.
+
+    Also beides zusammen – Katalogwahrheit oder Zusammenfassung, aber nicht
+    jede Erwähnung im Fließtext.
+    """
+    gesucht = [w for w in _such_woerter(begriff) if w in FARBWOERTER]
+    if not gesucht:
+        return True
+    ganz, anfaenge = core.wortanfaenge(" ".join((name or "", farben or "")))
+    return all(any(ganz.startswith(f, a) for a in anfaenge) for f in gesucht)
+
+
 def _farbvarianten(begriff: str) -> list:
     """Denselben Begriff mit gröberen Farbwörtern – für den zweiten Versuch.
 
@@ -3311,6 +3343,9 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         volltext = " ".join((r["name"] or "", r["farben"] or "",
                              r["merkmale"] or ""))
         if not _passt(begriff, volltext):
+            continue
+        # Eine gesuchte Farbe muss die Figur beschreiben, nicht ein Detail.
+        if not _farbe_passt(begriff, r["name"], r["farben"]):
             continue
         treffer.append({"item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
