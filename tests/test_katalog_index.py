@@ -383,3 +383,18 @@ def test_ohne_farbe_im_begriff_aendert_sich_nichts(client):
     _zeile("cas001", "Dragon Master", farben="yellow",
            merkmale="helmet black knight crest")
     assert main._katalog_suchen("Knight")
+
+
+def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client):
+    """„roter droide" fand sechs rote und hängte danach jeden weiteren
+    Droiden an – Droideka „Copper Top", R7-A7, Sentry Droid. Der Rückfall
+    stand auf `SUGGEST_MAX` (200) und lief damit praktisch immer. Wer eine
+    Farbe eingibt, will nicht die Liste ohne Farbe hinterher (28.08.2026)."""
+    for i in range(6):
+        _zeile("sw%03d" % i, "Red Droid %d" % i, farben="red")
+    _zeile("sw900", "Sentry Droid", farben="white")
+    treffer = main._katalog_suchen("Red Droid")
+    d = main.suggest_catalog(q="roter droide", item_type="minifig",
+                             user={"id": 1})
+    assert len(treffer) == 6
+    assert "sw900" not in [x["item_id"] for x in d["items"]]

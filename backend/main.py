@@ -4776,6 +4776,20 @@ def _begriffe_bewaehrt(q: str, treffer: list):
         pass              # Merken darf eine gelungene Suche nie stören
 
 
+# Ab wie vielen Treffern der eingegrenzten Begriffe der weitere Begriff
+# **nicht mehr** drankommt.
+#
+# Vorher stand hier `SUGGEST_MAX` (200), und damit lief der Rückfall
+# praktisch immer: „roter droide" fand sechs rote und hängte danach jeden
+# weiteren Droiden an – Droideka „Copper Top", R7-A7, Sentry Droid. Wer
+# eine Farbe eingibt, will nicht die Liste ohne Farbe hinterher
+# (28.08.2026).
+#
+# Fünf, weil ein Rückfall dann helfen soll, wenn die enge Suche fast nichts
+# hergab – nicht, wenn sie funktioniert hat.
+BREITER_AB = 5
+
+
 def _teilmengen_teilen(je_begriff: list) -> tuple:
     """Eingegrenzte Begriffe von den weiteren trennen.
 
@@ -4894,7 +4908,7 @@ def suggest_collection(q: str = "", item_type: str = "",
         [(b, [e for e in alle if _passt(b, e["name"] or "")])
          for b in begriffe])
     items, treffer = _reihum(eng, lambda e: e["id"], gesehen)
-    if len(items) < SUGGEST_MAX and weit:
+    if len(items) < BREITER_AB and weit:
         mehr, treffer2 = _reihum(weit, lambda e: e["id"], gesehen,
                                  hoechstens=SUGGEST_MAX - len(items))
         items += mehr
@@ -4954,7 +4968,7 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
         [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe])
     kennung = lambda e: (e["item_id"], e["item_type"])          # noqa: E731
     items, treffer = _reihum(eng, kennung, gesehen)
-    if len(items) < SUGGEST_MAX and weit:
+    if len(items) < BREITER_AB and weit:
         mehr, treffer2 = _reihum(weit, kennung, gesehen,
                                  hoechstens=SUGGEST_MAX - len(items))
         items += mehr
