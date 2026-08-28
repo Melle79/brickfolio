@@ -442,6 +442,184 @@ def test_acht_teile_passen_hinein():
     assert _BILD_SCHEMA["properties"]["parts"]["maxItems"] == 8
 
 
+# --------------------------------- Die Wahl des Sehmodells
+
+def test_die_vorgabe_ist_das_gemessene_modell():
+    """Die Vorgabe stand auf dem Schlusslicht der eigenen Messung.
+
+    `minicpm-v:latest` stammte aus der Zeit, als es das einzige Sehmodell
+    auf dem Mac mini war. Am 21.08.2026 wurde gemessen: `qwen3-vl` erkannte
+    R-3PO, den AT-AT-Fahrer und Darth Vader richtig, `minicpm-v` verfehlte
+    die Art in zwei von drei Proben. Die Messung stand im Changelog, die
+    Vorgabe blieb trotzdem stehen – wer frisch aufsetzt und
+    `OLLAMA_BILD_MODEL` nicht kennt, bekam das schwächste Modell.
+
+    Der Test hängt an einer Konstante, und das ist hier Absicht: Die
+    Konstante **ist** die Entscheidung, und `konfig()` fällt bei jeder
+    frischen Aufsetzung still auf sie zurück.
+    """
+    import bild
+    assert bild.OLLAMA_BILD_STD == "qwen3-vl:latest"
+
+
+def test_ohne_einstellung_greift_die_vorgabe(monkeypatch):
+    """Die Vorgabe ist kein totes Stück Text – sie ist der Normalfall.
+
+    Sie greift überall dort, wo `OLLAMA_BILD_MODEL` nicht gesetzt ist, also
+    bei jeder frischen Aufsetzung.
+    """
+    import bild
+    import katalog
+    monkeypatch.setattr(katalog, "konfig", lambda name: "")
+    assert bild.ollama_bild_modell() == "qwen3-vl:latest"
+
+
+def test_der_vergleich_fragt_wirklich_das_genannte_modell(monkeypatch):
+    """Ein ignorierter Modellparameter wäre der schlimmste Fehler hier.
+
+    Der Modellvergleich schickt dieselben Figuren an mehrere Modelle. Käme
+    der Name nicht bis in die Anfrage durch, verglichen sich zwei Läufe
+    desselben Modells miteinander – und das Ergebnis sähe völlig plausibel
+    aus: zwei Spalten, leicht unterschiedliche Zeiten, ähnliche Antworten.
+    Genau daraus würde dann eine Modellentscheidung abgeleitet.
+    """
+    import bild
+    gesehen = {}
+
+    class Fake:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": '{"kind": "droid", "parts": []}'}}
+
+    def fake_post(url, **kw):
+        gesehen["modell"] = kw["json"]["model"]
+        return Fake()
+
+    monkeypatch.setattr(bild, "ollama_url", lambda: "http://127.0.0.1:11434")
+    monkeypatch.setattr(bild.requests, "post", fake_post)
+
+    bild.bild_merkmale(b"nicht-leer", modell="gemma3:12b")
+    assert gesehen["modell"] == "gemma3:12b"
+
+    # Ohne Angabe bleibt es bei der Einstellung – der Lauf selbst darf sich
+    # durch den Parameter nicht ändern.
+    monkeypatch.setattr(bild, "ollama_bild_modell", lambda: "eingestellt:1")
+    bild.bild_merkmale(b"nicht-leer")
+    assert gesehen["modell"] == "eingestellt:1"
+
+
+# --------------------------------- Das Vergleichswerkzeug
+
+def _vergleich_laden():
+    """`tools/bildmodelle-vergleich.py` hat einen Bindestrich im Namen und
+    ist damit nicht importierbar – über den Pfad geht es trotzdem."""
+    import importlib.util
+    pfad = os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "tools", "bildmodelle-vergleich.py")
+    spec = importlib.util.spec_from_file_location("bildvergleich", pfad)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_jedes_bild_wird_nur_einmal_geholt(monkeypatch):
+    """Sonst misst der Vergleich BrickLinks CDN mit.
+
+    Die Bilder liegen bei BrickLink, nicht im Haus. Würde je Modell neu
+    geholt, steckte in jeder Zeitmessung eine Netzlaufzeit, die mit dem
+    Modell nichts zu tun hat – und bei drei Modellen über 30 Figuren wären
+    es 90 Abrufe statt 30 an einem fremden Server.
+
+    Der Test hält die Reihenfolge fest, aus der das folgt: erst alle Bilder
+    holen, dann Modell außen, Figur innen.
+    """
+    mod = _vergleich_laden()
+    geholt = []
+
+    monkeypatch.setattr(mod.bildmodul, "bild_holen",
+                        lambda url, hosts=None: geholt.append(url) or b"roh")
+    monkeypatch.setattr(mod.bildmodul, "bild_vorbereiten",
+                        lambda roh, kante=512: b"bild-" + roh)
+    monkeypatch.setattr(mod.bildmodul, "ollama_enabled", lambda: True)
+    monkeypatch.setattr(mod.bildmodul, "bild_merkmale",
+                        lambda bild, modell="": {"art": "droid", "farben": [],
+                                                 "merkmale": "torso red",
+                                                 "fehler": ""})
+    monkeypatch.setattr(sys, "argv",
+                        ["x", "--modelle", "a:1,b:2,c:3",
+                         "--figuren", "cas001,sw0326", "--url",
+                         "http://127.0.0.1:11434", "--db", "/gibt-es-nicht"])
+    mod.main()
+
+    assert len(geholt) == 2, "je Figur ein Abruf, nicht je Figur und Modell"
+    assert sorted(geholt) == sorted(set(geholt))
+
+
+def test_die_erste_figur_faellt_aus_dem_median(monkeypatch):
+    """Die erste Figur trägt die Ladezeit des Modells.
+
+    Ollama lädt das Modell beim ersten Aufruf – `minicpm-v` brauchte dafür
+    3,8 s gegenüber 2,8 s für die eigentliche Analyse. Zählte dieser Wert
+    mit, sähe bei kleinen Stichproben jedes Modell langsam aus, und zwar
+    genau um seine Dateigröße.
+    """
+    mod = _vergleich_laden()
+    monkeypatch.setattr(mod.bildmodul, "bild_merkmale",
+                        lambda bild, modell="": {"art": "", "farben": [],
+                                                 "merkmale": "", "fehler": ""})
+    gemessen = mod.messen(["a:1"], ["f1", "f2"], {"f1": b"x", "f2": b"y"})
+    assert gemessen["a:1"]["f1"]["erste"] is True
+    assert gemessen["a:1"]["f2"]["erste"] is False
+
+    # Fehlt zur ersten Figur das Bild (BrickLink liefert nicht zu jeder
+    # eines), rutscht die Ladezeit in die zweite – markiert werden muss
+    # deshalb die erste **gemessene**, nicht die erste der Liste.
+    gemessen = mod.messen(["a:1"], ["ohne", "f2"], {"f2": b"y"})
+    assert "ohne" not in gemessen["a:1"]
+    assert gemessen["a:1"]["f2"]["erste"] is True
+
+
+def test_ein_nicht_befragbares_modell_haelt_den_vergleich_nicht_auf(
+        monkeypatch):
+    """Ein Tippfehler im Modellnamen kostete sonst eine Stunde.
+
+    `qwen2.5:14b` gegen `qwen2.5-14b`: Die Verbindung steht, nur das Modell
+    gibt es nicht – der Fehler sieht aus wie ein kaputter Dienst und ist der
+    Grund, warum die Verwaltung die Modelle überhaupt zur Auswahl anbietet.
+
+    Im Vergleich wiegt er schwerer als in der App: Jeder Fehlversuch läuft
+    in die Zeitgrenze von 120 s, und bei 30 Figuren wäre das eine Stunde für
+    eine am Ende leere Spalte.
+
+    **Die unbrauchbare Antwort zählt dabei nicht mit.** Ein Modell, das
+    antwortet und dabei entgleist, ist ein Ergebnis des Vergleichs – wer es
+    hier abbräche, verlöre genau die Beobachtung, für die er misst.
+    """
+    mod = _vergleich_laden()
+    gefragt = []
+
+    def fake_merkmale(bild, modell=""):
+        gefragt.append(modell)
+        if modell == "gibtsnicht:1":
+            return {"art": "", "farben": [], "merkmale": "",
+                    "fehler": "ConnectionError: model not found"}
+        return {"art": "droid", "farben": [], "merkmale": "torso red",
+                "unbrauchbar": True, "fehler": "JSONDecodeError: x"}
+
+    monkeypatch.setattr(mod.bildmodul, "bild_merkmale", fake_merkmale)
+    figuren = ["f%d" % i for i in range(10)]
+    bilder = {f: b"x" for f in figuren}
+
+    mod.messen(["gibtsnicht:1", "entgleist:1"], figuren, bilder)
+
+    assert gefragt.count("gibtsnicht:1") == mod.AUFGEBEN_NACH, \
+        "nach drei Ausfällen in Folge ist Schluss"
+    assert gefragt.count("entgleist:1") == 10, \
+        "unbrauchbare Antworten sind ein Ergebnis, kein Abbruchgrund"
 # ------------------------------------- Fehlende Grundteile nachfragen
 
 def test_ergaenzen_fragt_nur_nach_dem_was_fehlt(monkeypatch):

@@ -40,7 +40,30 @@ def ollama_bild_modell():
     return konfig("OLLAMA_BILD_MODEL") or OLLAMA_BILD_STD
 
 
-OLLAMA_BILD_STD = "minicpm-v:latest"
+# **Das Schlusslicht der eigenen Messung stand hier als Vorgabe.**
+#
+# Bis 1.0.0 war das `minicpm-v:latest` – und zwar aus der Zeit, als es das
+# einzige Sehmodell auf dem Mac mini war. Die Messungen danach haben es
+# überholt, die Vorgabe blieb stehen:
+#
+#   21.08.2026, dieselben drei Figuren: `qwen3-vl` erkennt R-3PO als
+#   Droiden, den AT-AT-Fahrer als Soldaten und Darth Vader **namentlich**,
+#   bei richtigen Farben in allen drei Fällen. `gemma3:12b` liegt knapp
+#   dahinter, `qwen2.5vl:7b` und `minicpm-v` deutlicher.
+#
+#   Bei der Art traf `minicpm-v` zwei von drei Proben nicht (Darth Vader →
+#   „Droide", AT-AT-Fahrer → „Roboter"), `qwen3-vl` an zehn echten Figuren
+#   zehnmal. Auf „das ist R-3PO" antwortete `minicpm-v` prompt „R2-D2".
+#
+# **Kein Argument ist die Entgleisungsfrage.** `sw0326` und `cty0131` sind
+# nirgends einem Modell zugeordnet, und beide liegen nach dem 21.08. – also
+# vermutlich bei `qwen3-vl` selbst. Die Längengrenzen im Schema schützen
+# gegen das, was jedes Modell tun kann; sie sprechen für keines.
+#
+# Wer `OLLAMA_BILD_MODEL` gesetzt hat, merkt von dieser Zeile nichts – sie
+# trifft die frische Aufsetzung, und die soll nicht mit dem schwächsten
+# Modell anfangen, das je gemessen wurde.
+OLLAMA_BILD_STD = "qwen3-vl:latest"
 # Ein Bild dauert länger als eine Übersetzung, und das Modell muss oft erst
 # geladen werden. 120 s sind großzügig – wer hier zu knapp misst, bekommt
 # leere Ergebnisse und hält das Modell für unfähig.
@@ -253,11 +276,17 @@ def merkmale_ergaenzen(bild: bytes, vorhanden: str) -> str:
     return "; ".join(stuecke)
 
 
-def bild_merkmale(bild: bytes) -> dict:
+def bild_merkmale(bild: bytes, modell: str = "") -> dict:
     """Art und Farben einer Figur aus ihrem Bild.
 
     Leere Werte heißen „nicht erkannt", und das ist kein Fehler: Der Abzug
     ist auch ohne brauchbar, der Name trägt die Hauptlast.
+
+    `modell` übergeht die Einstellung – **nur** für den Modellvergleich
+    (`tools/bildmodelle-vergleich.py`). Der Lauf selbst lässt es leer und
+    nimmt, was eingestellt ist. Ohne diesen Parameter müsste der Vergleich
+    `OLLAMA_BILD_MODEL` zwischen den Modellen umschreiben, also am
+    laufenden Dienst drehen, um ihn zu vermessen.
 
     **`fehler` trennt zwei Dinge, die gleich aussehen.** „Angesehen und
     nichts erkannt" ist ein Ergebnis; „gar nicht erst gefragt bekommen"
@@ -271,7 +300,7 @@ def bild_merkmale(bild: bytes) -> dict:
     try:
         resp = requests.post(
             basis + "/api/chat",
-            json={"model": ollama_bild_modell(), "stream": False,
+            json={"model": modell or ollama_bild_modell(), "stream": False,
                   "think": False, "format": _BILD_SCHEMA,
                   "options": {"temperature": 0,
                               "num_predict": OLLAMA_BILD_MAX_TOKEN,
