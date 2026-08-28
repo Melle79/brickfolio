@@ -362,12 +362,14 @@ def test_ein_rotes_detail_macht_keinen_roten_droiden(client):
     assert main._katalog_suchen("Red Droid") == []
 
 
-def test_die_farbe_im_namen_zaehlt(client):
-    """`Battle Droid - Sand Red` hat `farben=tan`. Die Farbliste allein
-    wäre zu streng – der Name ist Katalogwahrheit."""
+def test_die_farbe_im_namen_zaehlt_nicht(client):
+    """`Battle Droid - Sand Red` hat `farben=tan` – und ist kein roter
+    Droide. Bei Droiden nennt der Name fast immer ein Detail: `Short Red
+    Stripes`, `Small Red Dots`. Diese Prüfung stand am 28.08.2026 zwei
+    Stunden lang genau andersherum hier, und die Suche war unbrauchbar."""
     _zeile("sw0061", "Battle Droid - Sand Red (Geonosian)", farben="tan",
            merkmale="head tan; torso tan")
-    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] == ["sw0061"]
+    assert main._katalog_suchen("Red Droid") == []
 
 
 def test_die_farbliste_zaehlt_auch(client):
@@ -407,17 +409,19 @@ def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client, monkeypat
     assert "sw900" not in namen, "der weitere Begriff darf nicht anhängen"
 
 
-def test_farbe_im_namen_steht_vor_farbe_aus_der_beschreibung(client):
-    """„roter droide" fand 30 Droiden mit Rot – darunter den Droideka
-    „Copper Top" (kupferrote Kuppel) und R7-A7 (rote Markierungen). Beide
-    führen `red` in `farben`, und das ist nicht falsch. Nur stand es
-    gleichauf mit den Figuren, die „Red" im Namen tragen (28.08.2026)."""
-    _zeile("sw0164", "Droideka (Destroyer Droid) - Copper Top",
-           farben="red, gray")
-    _zeile("sw0029", "Astromech Droid, R5-D4 - Dome Head with Short Red "
-           "Stripes", farben="white")
+def test_wer_die_farbe_ausmacht_steht_vorn(client):
+    """`R-3PO Protocol Droid` hat `farben=red` und im Namen kein „Red" – er
+    ist der rote Droide, den jeder meint. `R5-D4` heißt „Short Red Stripes"
+    und hat `farben=white`; er ist keiner (28.08.2026).
+
+    Der Rang bevorzugt, was die Figur ausmacht: früh in der Liste zählt
+    mehr als spät, kurze Liste mehr als lange."""
+    _zeile("sw0344", "R-3PO Protocol Droid", farben="red")
+    _zeile("sw0047", "Security Battle Droid - Dark Red Torso", farben="tan, red")
+    _zeile("sw0164", "Droideka (Destroyer Droid) - Copper Top", farben="red, gray")
+    _zeile("sw0029", "Astromech Droid, R5-D4 - Short Red Stripes", farben="white")
     assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] \
-        == ["sw0029", "sw0164"]
+        == ["sw0344", "sw0164", "sw0047"]
 
 
 def test_ohne_farbe_bleibt_die_reihenfolge_wie_gefunden(client):

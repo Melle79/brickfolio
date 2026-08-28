@@ -3252,28 +3252,37 @@ def _farbe_passt(begriff: str, name: str, farben: str) -> bool:
 
 
 def _farbrang(begriff: str, name: str, farben: str):
-    """Wie gut belegt die Figur die gesuchte Farbe? Kleiner ist besser.
+    """Wie sehr **ist** die Figur in dieser Farbe? Kleiner ist besser.
 
-    0 – die Farbe steht im **Namen**: Katalogwahrheit.
-    1 – sie steht nur in der Farbliste des Sehmodells.
-    `None` – sie steht nirgends von beidem; der Treffer fällt weg.
+    Maßgeblich ist die **Farbliste**, nicht der Name. Bei Droiden nennt der
+    Name fast immer ein Detail: `Short Red Stripes`, `Small Red Dots`,
+    `Red and White Wires Pattern`. Wer „roter droide" sucht, meint keinen
+    weißen R5-D4 mit roten Streifen (28.08.2026).
 
-    Ohne Farbe im Begriff ist alles gleichrangig (0).
+    Die Farbliste ist die Zusammenfassung des Sehmodells über die **ganze**
+    Figur, und sie weiß es besser: `R5-D4` hat `farben=white`, `Battle
+    Droid - Sand Red` hat `farben=tan`. Der rote Droide, den jeder meint,
+    ist `R-3PO Protocol Droid` – `farben=red`, und im Namen steht kein
+    einziges „Red".
+
+    Der Rang bevorzugt, was die Figur ausmacht: früh in der Liste zählt
+    mehr als spät, und eine kurze Liste mehr als eine lange. `red` allein
+    schlägt `tan, red`, und das schlägt `black, white, clear, red`.
+
+    `None` heißt: Die Farbe steht nicht in der Liste – kein Treffer.
     """
     gesucht = [w for w in _such_woerter(begriff) if w in FARBWOERTER]
     if not gesucht:
         return 0
-
-    def steckt_in(text):
-        ganz, anfaenge = core.wortanfaenge(text or "")
-        return all(any(ganz.startswith(f, a) for a in anfaenge)
-                   for f in gesucht)
-
-    if steckt_in(name):
-        return 0
-    if steckt_in(" ".join((name or "", farben or ""))):
-        return 1
-    return None
+    liste = [x for x in re.split(r"[^a-z0-9]+", (farben or "").lower()) if x]
+    if not liste:
+        return None
+    rang = 0
+    for f in gesucht:
+        if f not in liste:
+            return None
+        rang += liste.index(f) * 10 + len(liste)
+    return rang
 
 
 def _farbvarianten(begriff: str) -> list:
