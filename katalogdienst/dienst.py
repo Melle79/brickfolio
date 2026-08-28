@@ -25,7 +25,7 @@ import laeufe
 import veroeffentlichen as veroeffentlichung
 from katalog import bl_enabled, db, init_db
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 app = FastAPI(title="Brickfolio-Katalogdienst", version=VERSION)
 

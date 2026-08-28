@@ -1,5 +1,57 @@
 # Changelog
 
+## Katalogdienst 1.1.0 – August 2026
+
+### Geändert
+- 🧠 **Die Vorgabe für das Sehmodell stand auf dem Schlusslicht der eigenen
+  Messung.** `OLLAMA_BILD_STD` war `minicpm-v:latest` – aus der Zeit, als es
+  das einzige Sehmodell auf dem Mac mini war. Am 21.08.2026 wurde gemessen,
+  dass `qwen3-vl` an denselben drei Figuren R-3PO als Droiden, den
+  AT-AT-Fahrer als Soldaten und Darth Vader **namentlich** erkennt, während
+  `minicpm-v` die Art in zwei von drei Proben verfehlte. Die Messung stand im
+  Changelog, die Vorgabe blieb stehen.
+
+  Aufgefallen ist es nicht im Betrieb: Die Beispielkonfiguration setzt
+  `OLLAMA_BILD_MODEL: "qwen3-vl:latest"`, und wo die Variable gesetzt ist,
+  wird die Vorgabe nie gelesen. Getroffen hätte es die frische Aufsetzung –
+  die hätte 19.201 Figuren mit dem schwächsten je gemessenen Modell
+  beschrieben, und man sieht es einer Beschreibung nicht an.
+
+  **Kein Argument für den Wechsel sind die beiden Entgleisungen.** `sw0326`
+  (15.190 Token am Stück) und `cty0131` („TATATATATA…") sind nirgends einem
+  Modell zugeordnet und liegen beide nach dem 21.08. – also vermutlich bei
+  `qwen3-vl` selbst. Die Längengrenzen im Schema schützen gegen das, was
+  jedes Modell tun kann.
+
+### Neu
+- 📊 **`tools/bildmodelle-vergleich.py` misst Sehmodelle gegeneinander.**
+  Die Modellwahl hing bisher an Stichproben von Hand: „in zwei von drei
+  Proben richtig", „an zehn echten Figuren zehn Treffer". Bei drei Proben
+  ist der Abstand zwischen Platz eins und zwei nicht vom Zufall zu trennen –
+  `gemma3:12b` lag „knapp dahinter", und knapp dahinter bei n=3 heißt: gar
+  nichts. An dieser Zahl hing, welches Modell 19.201 Figuren beschreibt.
+
+  Das Werkzeug schickt dieselbe Stichprobe durch mehrere Modelle und stellt
+  die Antworten Figur für Figur nebeneinander, dazu Laufzeit, gefundene
+  Teile, unbrauchbare Antworten und Ausfälle. Es urteilt nicht: Ob
+  „dark bluish gray" besser trifft als „gray", entscheidet ein Mensch – der
+  vorhandene Katalogtext stammt selbst von einem Modell und taugt nicht als
+  Maßstab.
+
+  Vier Entscheidungen stecken darin, die alle aus früheren Vorfällen kommen:
+  Die Bilder werden **einmal vorab** geholt, sonst steckt BrickLinks CDN in
+  jeder Zeitmessung. Gemessen wird **Modell außen, Figur innen**, sonst
+  tauscht Ollama vor jeder Figur das Modell und man misst das Nachladen. Die
+  **erste Figur je Modell** fließt nicht in den Median, weil sie die Ladezeit
+  trägt. Und nach drei **Ausfällen in Folge** wird ein Modell übersprungen –
+  ein Tippfehler im Namen (`qwen2.5-14b` statt `qwen2.5:14b`) liefe sonst in
+  30 Zeitgrenzen zu je 120 s, also eine Stunde für eine leere Spalte.
+  Unbrauchbare Antworten brechen nicht ab: Die will man ja gerade sehen.
+
+  `bild_merkmale()` nimmt dafür ein optionales `modell` entgegen. Ohne den
+  Parameter müsste der Vergleich `OLLAMA_BILD_MODEL` zwischen den Modellen
+  umschreiben – am laufenden Dienst drehen, um ihn zu vermessen.
+
 ## Hub 1.8.0 – August 2026
 
 ### Neu
