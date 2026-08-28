@@ -385,7 +385,7 @@ def test_ohne_farbe_im_begriff_aendert_sich_nichts(client):
     assert main._katalog_suchen("Knight")
 
 
-def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client):
+def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client, monkeypatch):
     """„roter droide" fand sechs rote und hängte danach jeden weiteren
     Droiden an – Droideka „Copper Top", R7-A7, Sentry Droid. Der Rückfall
     stand auf `SUGGEST_MAX` (200) und lief damit praktisch immer. Wer eine
@@ -393,8 +393,15 @@ def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client):
     for i in range(6):
         _zeile("sw%03d" % i, "Red Droid %d" % i, farben="red")
     _zeile("sw900", "Sentry Droid", farben="white")
-    treffer = main._katalog_suchen("Red Droid")
+    # Ohne Ollama liefert `suchbegriffe` nichts, und der Test prüfte eine
+    # leere Liste – er lief auch ohne die Änderung durch. Die Übersetzung
+    # wird deshalb vorgegeben.
+    monkeypatch.setattr(integrations, "suchbegriffe",
+                        lambda q: ["Red Droid", "Droid"])
+    core.set_setting("ollama_url", "http://x")
+    assert len(main._katalog_suchen("Red Droid")) == 6
     d = main.suggest_catalog(q="roter droide", item_type="minifig",
                              user={"id": 1})
-    assert len(treffer) == 6
-    assert "sw900" not in [x["item_id"] for x in d["items"]]
+    namen = [x["item_id"] for x in d["items"]]
+    assert len(namen) == 6, namen
+    assert "sw900" not in namen, "der weitere Begriff darf nicht anhängen"
