@@ -263,6 +263,7 @@
  "Der Browser nennt weder Datei noch Zeile – das tut er nur bei Skripten fremder Herkunft (Erweiterung, Inhaltsblocker, Einspritzung des Browsers). Keins davon gehört zur App. Was zuletzt lief:": "The browser names neither file nor line – it only does that for scripts of foreign origin (an extension, a content blocker, something the browser injects). None of those belong to the app. What was going on just before:",
  "Der Name im Logo und Fenstertitel, z. B. „Finn's Brickfolio\". Leer lassen setzt auf den Standard „Finn\" zurück.": "The name in the logo and window title, e.g. \"Finn's Brickfolio\". Leave it empty to fall back to \"Finn\".",
  "Der Name steht im Logo und im Fenstertitel – „<span id=\"wiz-name-preview\">Finn</span>'s Brickfolio\". Später änderbar unter <b>Mehr → Anzeigename</b>.": "The name appears in the logo and the window title – \"<span id=\"wiz-name-preview\">Finn</span>'s Brickfolio\". Changeable later under <b>More → Display name</b>.",
+ "Der Server ist gerade nicht erreichbar – vermutlich startet er neu. Gleich noch einmal versuchen.": "The server is unreachable right now – it is probably restarting. Try again in a moment.",
  "Der Tausch ist noch nicht angenommen.": "This trade has not been accepted yet.",
  "Der Text ist zu kurz": "The text is too short",
  "Der Text ist zu lang": "The text is too long",

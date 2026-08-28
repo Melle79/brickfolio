@@ -306,6 +306,18 @@ async function api(path, options = {}) {
       const grund = d.map((f) => pruefText(f && f.msg)).filter(Boolean).join("; ");
       text = grund ? tr("Eingabe nicht gültig: {grund}", { grund })
         : tr("Eingabe nicht gültig");
+    } else if (resp.status === 502 || resp.status === 503
+               || resp.status === 504) {
+      // **Ein Zwischenserver, der die Instanz nicht erreicht.** Beim
+      // Ausrollen ist das der Normalfall: Cloudflared hält eine offene
+      // Verbindung zu einem Behälter, der darunter neu startet, und
+      // antwortet mit seiner eigenen Fehlerseite. Ungeprüft stand da
+      // „Fehler 504" und darunter der halbe HTML-Quelltext (28.08.2026).
+      //
+      // Die App erkennt „Server nicht erreichbar" längst und meldet es
+      // freundlich – nur griff das bei einer Antwort *mit* Körper nicht.
+      text = tr("Der Server ist gerade nicht erreichbar – "
+        + "vermutlich startet er neu. Gleich noch einmal versuchen.");
     } else text = tr("Fehler {code}", { code: resp.status });
     serverfehlerMelden(path, options, resp.status, text, roh);
     throw new Error(text);

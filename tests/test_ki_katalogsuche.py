@@ -327,3 +327,18 @@ def test_der_nachschub_meldet_jede_karte_an():
     quelle = _app_js()
     assert "if (bgBeobachter) bgBeobachter.observe(c);" in quelle
     assert "if (bgBeobachter && c.dataset.bg)" not in quelle
+
+
+def test_ein_zwischenserver_meldet_sich_verstaendlich():
+    """Beim Ausrollen hält Cloudflared eine offene Verbindung zu einem
+    Behälter, der darunter neu startet, und antwortet mit seiner eigenen
+    Fehlerseite. Auf dem Bildschirm stand „Fehler 504" und darunter der
+    halbe HTML-Quelltext (28.08.2026)."""
+    quelle = _app_js()
+    i = quelle.index("resp.status === 502")
+    block = quelle[i:i + 900]
+    assert "503" in block and "504" in block
+    assert "vermutlich startet er neu" in block
+    # Der Rohtext gehört weiterhin in den Fehlerbericht, nur nicht auf den
+    # Bildschirm: `serverfehlerMelden` bekommt ihn nach wie vor.
+    assert "serverfehlerMelden(path, options, resp.status, text, roh)" in quelle
