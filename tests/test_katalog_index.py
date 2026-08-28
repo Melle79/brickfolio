@@ -405,3 +405,23 @@ def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client, monkeypat
     namen = [x["item_id"] for x in d["items"]]
     assert len(namen) == 6, namen
     assert "sw900" not in namen, "der weitere Begriff darf nicht anhängen"
+
+
+def test_farbe_im_namen_steht_vor_farbe_aus_der_beschreibung(client):
+    """„roter droide" fand 30 Droiden mit Rot – darunter den Droideka
+    „Copper Top" (kupferrote Kuppel) und R7-A7 (rote Markierungen). Beide
+    führen `red` in `farben`, und das ist nicht falsch. Nur stand es
+    gleichauf mit den Figuren, die „Red" im Namen tragen (28.08.2026)."""
+    _zeile("sw0164", "Droideka (Destroyer Droid) - Copper Top",
+           farben="red, gray")
+    _zeile("sw0029", "Astromech Droid, R5-D4 - Dome Head with Short Red "
+           "Stripes", farben="white")
+    assert [t["item_id"] for t in main._katalog_suchen("Red Droid")] \
+        == ["sw0029", "sw0164"]
+
+
+def test_ohne_farbe_bleibt_die_reihenfolge_wie_gefunden(client):
+    """Die Rangfolge darf nur greifen, wenn eine Farbe gesucht wurde."""
+    _zeile("cas001", "Dragon Master", farben="yellow", merkmale="knight crest")
+    _zeile("cas002", "Knight", farben="blue")
+    assert len(main._katalog_suchen("Knight")) == 2

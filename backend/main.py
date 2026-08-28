@@ -3251,6 +3251,31 @@ def _farbe_passt(begriff: str, name: str, farben: str) -> bool:
     return all(any(ganz.startswith(f, a) for a in anfaenge) for f in gesucht)
 
 
+def _farbrang(begriff: str, name: str, farben: str):
+    """Wie gut belegt die Figur die gesuchte Farbe? Kleiner ist besser.
+
+    0 – die Farbe steht im **Namen**: Katalogwahrheit.
+    1 – sie steht nur in der Farbliste des Sehmodells.
+    `None` – sie steht nirgends von beidem; der Treffer fällt weg.
+
+    Ohne Farbe im Begriff ist alles gleichrangig (0).
+    """
+    gesucht = [w for w in _such_woerter(begriff) if w in FARBWOERTER]
+    if not gesucht:
+        return 0
+
+    def steckt_in(text):
+        ganz, anfaenge = core.wortanfaenge(text or "")
+        return all(any(ganz.startswith(f, a) for a in anfaenge)
+                   for f in gesucht)
+
+    if steckt_in(name):
+        return 0
+    if steckt_in(" ".join((name or "", farben or ""))):
+        return 1
+    return None
+
+
 def _farbvarianten(begriff: str) -> list:
     """Denselben Begriff mit gröberen Farbwörtern – für den zweiten Versuch.
 
@@ -3345,17 +3370,27 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         if not _passt(begriff, volltext):
             continue
         # Eine gesuchte Farbe muss die Figur beschreiben, nicht ein Detail.
-        if not _farbe_passt(begriff, r["name"], r["farben"]):
+        rang = _farbrang(begriff, r["name"], r["farben"])
+        if rang is None:
             continue
-        treffer.append({"item_id": r["item_no"], "item_type": r["item_type"],
+        treffer.append({"_rang": rang,
+                        "item_id": r["item_no"], "item_type": r["item_type"],
                         "name": r["name"], "img_url": r["img_url"] or "",
                         "sub": str(r["jahr"] or ""), "year": r["jahr"] or 0,
                         "bricklink_url":
                             "https://www.bricklink.com/v2/catalog/"
                             "catalogitem.page?M=" + r["item_no"]})
-        if len(treffer) >= hoechstens:
+        if len(treffer) >= hoechstens * 3:
             break
-    return treffer
+    # **Katalogwahrheit vor Modellzusammenfassung.** „roter droide" fand 30
+    # Droiden mit Rot – darunter den Droideka „Copper Top" (kupferrote
+    # Kuppel) und R7-A7 (rote Markierungen). Beide führen `red` in `farben`,
+    # und das ist nicht falsch. Nur stand es gleichauf mit den Figuren, die
+    # „Red" im **Namen** tragen (28.08.2026).
+    treffer.sort(key=lambda x: x["_rang"])
+    for x in treffer:
+        del x["_rang"]
+    return treffer[:hoechstens]
 
 
 @app.get("/api/settings/begriffe")
