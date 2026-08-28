@@ -375,3 +375,15 @@ def test_die_kompakte_ansicht_blendet_aus_statt_zu_entfernen():
     assert ".card-actions" in block and "display: none" in block
     # Die Menge bleibt: „2×" ist Information, keine Verzierung.
     assert ".qty-badge" in block and "display: inline-block" in block
+
+
+def test_der_verlauf_zaehlt_geladene_bilder_nicht_nur_elemente():
+    """Im Bericht vom 29.08.2026 standen „304 Bilder" – ob davon 36 oder
+    304 wirklich geladen waren, ging daraus nicht hervor. Eine freigegebene
+    Kachel behält ihr `<img>` mit dem Platzhalter. Genau davon hängt ab, ob
+    die Freigabe reicht."""
+    quelle = _app_js()
+    assert "geladen: [...document.getElementsByTagName(\"img\")]" in quelle
+    assert '!i.src.startsWith("data:")' in quelle
+    # Und im Verlauf muss es auch zu sehen sein.
+    assert '" Bilder geladen"' in quelle

@@ -9032,6 +9032,13 @@ function diagMessen(grund = "", geplant = null) {
     limit: m ? Math.round(m.jsHeapSizeLimit / 1048576) : null,
     knoten: document.getElementsByTagName("*").length,
     bilder: document.getElementsByTagName("img").length,
+    // **Wie viele davon halten wirklich ein Bild?** Die reine Elementzahl
+    // sagt es nicht: Eine freigegebene Kachel behält ihr `<img>` mit dem
+    // Platzhalter. Im Bericht vom 29.08.2026 standen 304 Elemente – ob
+    // davon 36 oder 304 geladen waren, war daraus nicht zu erkennen, und
+    // genau davon hängt ab, ob die Freigabe reicht.
+    geladen: [...document.getElementsByTagName("img")]
+      .filter((i) => i.src && !i.src.startsWith("data:")).length,
     v: (state.appVersion || "").slice(0, 12),
     // Welches Design lief? Nova zeichnet Flächen mit Echtzeit-Weichzeichner
     // („Glas"), und das kostet Grafikspeicher, den keine Messung hier sieht.
@@ -9217,7 +9224,11 @@ function diagText() {
     return [
       new Date(p.t).toLocaleString(dateLocale()),
       p.heap != null ? p.heap + " MB" : "–",
-      p.knoten + " Elemente", p.bilder + " Bilder",
+      p.knoten + " Elemente",
+      // Geladene und Elemente zusammen: „304 Bilder" allein verriet nicht,
+      // ob davon 36 oder alle im Speicher lagen.
+      (p.geladen != null ? p.geladen + "/" + p.bilder + " Bilder geladen"
+        : p.bilder + " Bilder"),
       p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
       p.sch ? "🐢 schonend" : "",
       p.g || "",
