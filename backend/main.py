@@ -3442,8 +3442,13 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
                         "bricklink_url":
                             "https://www.bricklink.com/v2/catalog/"
                             "catalogitem.page?M=" + r["item_no"]})
-        if len(treffer) >= hoechstens * 3:
-            break
+        # **Nicht früh abbrechen.** Die Rangfolge kann nur ordnen, was
+        # eingesammelt wurde: Bei „Knight" standen nach zwölf Zeilen nur
+        # Knights of Ren da – die Castle-Ritter kamen in der
+        # Datenbankreihenfolge später und waren nie im Rennen (28.08.2026).
+        #
+        # Der Vorfilter begrenzt ohnehin auf 400 Zeilen; die alle durch
+        # Python zu schicken kostet nichts Messbares.
     # **Katalogwahrheit vor Modellzusammenfassung.** „roter droide" fand 30
     # Droiden mit Rot – darunter den Droideka „Copper Top" (kupferrote
     # Kuppel) und R7-A7 (rote Markierungen). Beide führen `red` in `farben`,

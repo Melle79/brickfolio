@@ -501,3 +501,18 @@ def test_wo_ein_begriff_zu_hause_ist_verraet_die_haeufigkeit(client):
     namen = [t["item_id"] for t in main._katalog_suchen("Knight")]
     assert namen[0].startswith("cas"), namen
     assert "sw1063" in namen, "der Star-Wars-Ritter bleibt, nur hinten"
+
+
+def test_die_rangfolge_sieht_alle_treffer_nicht_nur_die_ersten(client):
+    """Die Suche brach nach `hoechstens * 3` Zeilen ab und sortierte dann.
+    Bei „Knight" standen nach zwölf Zeilen nur Knights of Ren da – die
+    Castle-Ritter kamen in der Datenbankreihenfolge später und waren nie im
+    Rennen (28.08.2026)."""
+    for i in range(15):
+        _zeile("sw%04d" % i, "Knight of Ren %d" % i, farben="black",
+               kategorie="65")
+    for i in range(20):
+        _zeile("cas%03d" % i, "Kingdoms - Lion Knight %d" % i,
+               farben="blue", kategorie="9")
+    namen = [t["item_id"] for t in main._katalog_suchen("Knight", hoechstens=4)]
+    assert all(n.startswith("cas") for n in namen), namen
