@@ -1256,6 +1256,7 @@ den Tab **Listen** – drei Reiter über der Ansicht:
 | ⭐ **Wünsche** | alles Gemerkte | immer |
 | 🛒 **Einkaufen** | aktive Einkaufslisten, Verkaufsliste, fehlende Set-Figuren | wenn es Listen gibt oder ihr Profi seid |
 | 📦 **Archiv** | abgearbeitete Listen | ebenso |
+| 📚 **Katalog** | alle Figuren eines Themas zum Durchblättern | immer |
 
 Vorher waren das zwei Einträge in der Leiste für dieselbe Frage – *was will
 ich noch, was nehme ich mit?* –, und das Archiv war ein Knopf, der dieselben
@@ -1317,6 +1318,55 @@ schließt dann erst das Bild und beim zweiten Druck den Steckbrief.
 > lösen diese weiterhin ihre eigene Aufgabe aus, nicht den Steckbrief.
 
 ---
+
+### 6.2 📚 Katalog durchblättern (ab 2.59.0)
+
+Die Suche beantwortet *„wo ist X?"*. Dieser Reiter beantwortet die andere
+Frage: **„was gibt es überhaupt, und was davon fehlt mir?"**
+
+Oben wählt ihr ein **Thema** – Star Wars, City, Ninjago … – und ob ihr
+Figuren oder Sets sehen wollt. Daneben steht, wie viele davon ihr schon
+habt: *Star Wars · 225/1663*. Darunter läuft die vollständige Liste des
+Themas in **Nummernfolge**, nicht alphabetisch. Das ist Absicht: So stehen
+Varianten beieinander (sw0001a bis sw0001d), und das Jahr wächst von oben
+nach unten.
+
+**Rechts am Rand liegt ein Sprungbalken** mit den Hunderterblöcken (00, 01,
+02 …). Ein Tipp darauf springt dorthin – bei 1.663 Star-Wars-Figuren ist das
+der Unterschied zwischen Suchen und Finden.
+
+**Antippen:**
+
+| Ihr tippt auf … | … dann passiert |
+|---|---|
+| **✔** | die Figur wandert in eure Sammlung (Stück 1, gebraucht) |
+| **♥** | die Figur kommt auf die Wunschliste |
+| **den Namen** | ein Steckbrief mit großem Bild und denselben zwei Knöpfen |
+
+Der Haken lässt sich auch wieder ausschalten – aber **nur, wenn nichts
+daran hängt.** Habt ihr die Figur mehrfach, oder steht eine Notiz oder ein
+Kaufpreis daran, sagt die App das und rührt den Eintrag nicht an: Ein
+Fehltipper auf einem daumengroßen Knopf darf keine Daten wegräumen. Löschen
+geht dann in der Sammlung selbst.
+
+**Die vier Filter** darüber grenzen ein: *Alle*, *Fehlt mir* (was noch
+aussteht), *Hab ich*, *Gemerkt*. „Fehlt mir" ist die Einkaufsliste für ein
+ganzes Thema.
+
+**Wenn statt des Namens die Nummer steht** („sw0023a · Name folgt"), ist die
+Figur im Katalog, ihr Name aber noch nicht nachgeschlagen. Der veröffentlichte
+Abzug enthält **keine Namen** – die sind BrickLinks Katalogtext, und den
+verteilen wir nicht weiter. Jede Instanz schlägt sie über ihren eigenen
+BrickLink-Zugang nach. Das Bild und die Bildbeschreibung sind trotzdem da,
+gefunden wird die Figur also auch ohne Namen.
+
+**Zur Technik, für die Neugierigen:** In der Liste stehen alle Zeilen eines
+Themas, aber **geladen sind nur die Bilder in Sichtweite** – bei 1.663
+Zeilen sind das rund 26. Entpackte Bilder liegen außerhalb des
+JavaScript-Speichers, und zu viele davon haben in der Sammlung wiederholt den
+Browser-Tab umgebracht. Hier lädt ein Beobachter das Bild erst, wenn die
+Zeile in die Nähe kommt.
+
 
 ## 7. Einkaufslisten – der Flohmarkt-Modus
 

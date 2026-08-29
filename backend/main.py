@@ -939,6 +939,205 @@ def katalog_stand(user: dict = Depends(admin_user)):
             "quelle": core.get_setting("katalog_quelle") or KATALOG_QUELLE}
 
 
+
+# ---------------------------------------------------------------------------
+# Katalog durchblättern
+#
+# Die Suche beantwortet „wo ist X?". Diese Liste beantwortet die andere
+# Frage: „was gibt es überhaupt, und was davon fehlt mir?" Dafür muss man
+# alle 1.579 Star-Wars-Figuren der Reihe nach sehen können, mit dem eigenen
+# Besitzstand daneben – und zwar in der Nummernfolge des Katalogs, nicht
+# alphabetisch. Nach Nummer sortiert stehen Varianten beieinander
+# (sw0001a bis sw0001d) und das Jahr wächst von oben nach unten.
+# ---------------------------------------------------------------------------
+
+
+def _bricklink_link(item_no: str, item_type: str) -> str:
+    """Katalogseite bei BrickLink – `M` für Figuren, `S` für Sets."""
+    kuerzel = {"minifig": "M", "set": "S", "part": "P"}.get(item_type, "M")
+    return ("https://www.bricklink.com/v2/catalog/catalogitem.page?"
+            + kuerzel + "=" + item_no)
+
+def _nummer_teile(item_no: str):
+    """Kürzel und Zifferngruppe, z. B. `sw0001a` → `("sw", "0001")`."""
+    m = re.match(r"^([a-z]+)(\d+)", (item_no or "").strip().lower())
+    return (m.group(1), m.group(2)) if m else ("", "")
+
+
+# Unter `/liste/…`, nicht unter `/katalog/themen`: Diesen Namen trug einmal
+# die Steuerung, die BrickLink nach Themen abklapperte. Sie ist weg, und ein
+# Test wacht darüber, dass sie weg bleibt – der Name soll nicht wiederkommen
+# und dabei etwas ganz anderes bedeuten.
+@app.get("/api/katalog/liste/themen")
+def katalog_themen(art: str = "minifig", user: dict = Depends(current_user)):
+    """Welche Themen liegen im Index, und wie viele hat man schon?
+
+    Die Zählung läuft über dasselbe `substr`, das auch die Liste benutzt –
+    sonst zeigt der Kopf eine andere Zahl als die Liste darunter, und das
+    fällt sofort auf.
+    """
+    art = "set" if art == "set" else "minifig"
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT item_no FROM katalog_index WHERE item_type = ?",
+            (art,)).fetchall()
+        besitz = {r["item_id"].lower() for r in conn.execute(
+            "SELECT item_id FROM collection WHERE item_type = ?", (art,))}
+
+    zaehler: dict[str, list[int]] = {}
+    for r in rows:
+        kuerzel, _ = _nummer_teile(r["item_no"])
+        if not kuerzel:
+            continue
+        eintrag = zaehler.setdefault(kuerzel, [0, 0])
+        eintrag[0] += 1
+        if r["item_no"].lower() in besitz:
+            eintrag[1] += 1
+
+    aus = []
+    for kuerzel, (gesamt, hat) in zaehler.items():
+        aus.append({"praefix": kuerzel,
+                    # Ohne Namen im Verzeichnis bleibt das Kürzel stehen –
+                    # „sw" ist immer noch besser als gar nichts.
+                    "thema": themes.MINIFIG_PREFIXES.get(kuerzel,
+                                                         kuerzel.upper()),
+                    "anzahl": gesamt, "besitz": hat})
+    aus.sort(key=lambda x: (-x["anzahl"], x["thema"]))
+    return {"themen": aus}
+
+
+@app.get("/api/katalog/liste")
+def katalog_liste(praefix: str = "", art: str = "minifig", q: str = "",
+                  nur: str = "", offset: int = 0, limit: int = 60,
+                  user: dict = Depends(current_user)):
+    """Ein Stück des Katalogs, mit dem eigenen Besitzstand daneben.
+
+    `nur` grenzt ein: `fehlt` zeigt, was noch aussteht, `habe` das
+    Gegenteil, `wunsch` die gemerkten. Gefiltert wird **nach** dem
+    Verbinden mit der Sammlung, sonst wäre der Besitzstand nicht bekannt.
+    """
+    art = "set" if art == "set" else "minifig"
+    praefix = re.sub(r"[^a-z]", "", (praefix or "").lower())
+    limit = max(1, min(200, limit))
+
+    with core.db() as conn:
+        bedingung = ["item_type = ?"]
+        werte: list = [art]
+        if praefix:
+            # `substr` statt `LIKE 'sw%'`: `LIKE` fängt bei „sw" auch
+            # „swtv" mit, und das ist ein anderes Thema.
+            bedingung.append(
+                "lower(substr(item_no, 1, ?)) = ?"
+                " AND substr(item_no, ?, 1) BETWEEN '0' AND '9'")
+            werte += [len(praefix), praefix, len(praefix) + 1]
+        if q.strip():
+            bedingung.append("(such LIKE ? OR lower(item_no) LIKE ?)")
+            n = "%" + _such_norm(q.strip()) + "%"
+            werte += [n, "%" + q.strip().lower() + "%"]
+        rows = conn.execute(
+            "SELECT item_no, name, img_url, jahr FROM katalog_index"
+            " WHERE " + " AND ".join(bedingung) + " ORDER BY item_no",
+            werte).fetchall()
+
+        besitz: dict[str, int] = {}
+        for r in conn.execute(
+                "SELECT item_id, SUM(quantity) AS n FROM collection"
+                " WHERE item_type = ? GROUP BY item_id", (art,)):
+            besitz[r["item_id"].lower()] = r["n"] or 0
+        wunsch = {r["item_id"].lower() for r in conn.execute(
+            "SELECT item_id FROM wanted WHERE item_type = ?", (art,))}
+
+    eintraege = []
+    for r in rows:
+        nr = r["item_no"].lower()
+        n = besitz.get(nr, 0)
+        w = nr in wunsch
+        if nur == "fehlt" and n:
+            continue
+        if nur == "habe" and not n:
+            continue
+        if nur == "wunsch" and not w:
+            continue
+        _, ziffern = _nummer_teile(r["item_no"])
+        eintraege.append({
+            "item_no": r["item_no"], "name": r["name"],
+            "img_url": r["img_url"], "jahr": r["jahr"],
+            # Der Sprungbalken am Rand: die ersten beiden Ziffern der
+            # Nummer. Bei vierstelligen Nummern sind das Hunderterblöcke,
+            # und die verteilen sich in der Praxis gleichmäßig genug.
+            "block": ziffern[:2] if len(ziffern) >= 3 else ziffern,
+            "besitz": n, "wunsch": w})
+
+    return {"gesamt": len(eintraege),
+            "eintraege": eintraege[offset:offset + limit],
+            "hat_katalog": bool(rows) or _katalogsuche_moeglich()}
+
+
+class KatalogMarkeBody(BaseModel):
+    item_no: str = Field(min_length=1, max_length=60)
+    item_type: str = Field(default="minifig", pattern=ITEM_TYPE_RE)
+    marke: str = Field(pattern="^(habe|wunsch)$")
+    an: bool = True
+
+
+@app.post("/api/katalog/marke")
+def katalog_marke(body: KatalogMarkeBody, user: dict = Depends(current_user)):
+    """Haken oder Herz in der Katalogliste umlegen.
+
+    Beim Durchblättern eines Themas will man im Gehen abhaken, nicht für
+    jede Figur ein Formular ausfüllen. Name und Bild holt der Server aus
+    dem Index – die Liste müsste sie sonst mitschicken, und dann stünde in
+    der Sammlung, was das Handy gerade zufällig im Speicher hatte.
+
+    **Ausgehakt wird nur, was nichts wert ist.** Ein Tippfehler auf einem
+    44-Pixel-Knopf darf keine Kaufpreise, Notizen oder Stückzahlen
+    wegräumen; in dem Fall verweist die Antwort auf den Eintrag selbst.
+    """
+    with core.db() as conn:
+        k = conn.execute(
+            "SELECT name, img_url, jahr FROM katalog_index"
+            " WHERE lower(item_no) = ? AND item_type = ?",
+            (body.item_no.lower(), body.item_type)).fetchone()
+        if not k:
+            raise HTTPException(404, "Nicht im Katalog")
+        nr, name = body.item_no, k["name"] or body.item_no
+        tabelle = "collection" if body.marke == "habe" else "wanted"
+
+        if not body.an:
+            zeilen = conn.execute(
+                f"SELECT * FROM {tabelle} WHERE item_id = ? AND item_type = ?",
+                (nr, body.item_type)).fetchall()
+            if body.marke == "habe":
+                schwer = [z for z in zeilen
+                          if (z["quantity"] or 1) > 1 or (z["notes"] or "").strip()]
+                if len(zeilen) > 1 or schwer:
+                    return {"ok": False, "grund": "mehr_dahinter",
+                            "eintraege": len(zeilen)}
+            conn.execute(
+                f"DELETE FROM {tabelle} WHERE item_id = ? AND item_type = ?",
+                (nr, body.item_type))
+            return {"ok": True, "an": False}
+
+        now = int(time.time())
+        if body.marke == "habe":
+            conn.execute(
+                "INSERT INTO collection (item_id, item_type, name, img_url,"
+                " bricklink_url, quantity, condition, added_by, added_at)"
+                " VALUES (?, ?, ?, ?, ?, 1, 'used', ?, ?)"
+                " ON CONFLICT (item_id, item_type, condition) DO UPDATE"
+                " SET quantity = quantity + 1",
+                (nr, body.item_type, name, k["img_url"] or "",
+                 _bricklink_link(nr, body.item_type), user["id"], now))
+        else:
+            conn.execute(
+                "INSERT OR IGNORE INTO wanted (item_id, item_type, name,"
+                " img_url, bricklink_url, year, added_by, added_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (nr, body.item_type, name, k["img_url"] or "",
+                 _bricklink_link(nr, body.item_type), k["jahr"] or 0,
+                 user["id"], now))
+    return {"ok": True, "an": True}
+
 class KatalogAnBody(BaseModel):
     aktiv: bool = True
 

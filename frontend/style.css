@@ -1894,3 +1894,113 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 #collection-list.kompakt-mode .sub-figs,
 #collection-list.kompakt-mode .img-reload-btn { display: none; }
 #collection-list.kompakt-mode .nachschub-marke { grid-column: 1 / -1; }
+
+/* ── Katalog durchblättern ────────────────────────────────────────────
+   Eine Zeile je Eintrag, keine Karten: Bei 1.579 Star-Wars-Figuren zählt
+   jede eingesparte Zeilenhöhe. Der Sprungbalken rechts liegt *neben* der
+   Liste statt darüber, damit der Daumen ihn erreicht, ohne die Namen zu
+   verdecken. */
+.kat-kopf {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
+}
+.kat-kopf select, .kat-kopf input { flex: 1; min-width: 0; }
+/* Figuren/Sets nebeneinander. Ohne `flex: none` drückt das Auswahlfeld
+   daneben die beiden Knöpfe untereinander – auf 375 px sofort sichtbar. */
+.kat-kopf .seg { display: flex; gap: 6px; flex: none; }
+.kat-kopf .seg .mini-btn { white-space: nowrap; }
+.kat-zahl {
+  font-variant-numeric: tabular-nums; color: var(--muted);
+  font-size: .85rem; white-space: nowrap;
+}
+.kat-rahmen { display: flex; gap: 4px; align-items: flex-start; }
+.kat-liste { flex: 1; min-width: 0; }
+
+.kat-block {
+  position: sticky; z-index: 2;
+  top: calc(env(safe-area-inset-top) + 55px);
+  background: var(--plate); color: var(--muted);
+  font-size: .75rem; letter-spacing: .12em; font-weight: 600;
+  padding: 6px 4px; border-bottom: 1px solid var(--line);
+}
+.kat-zeile {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 4px; border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.kat-zeile .kat-bild {
+  width: 44px; height: 44px; flex: none; border-radius: 6px;
+  background: #fff; object-fit: contain;
+}
+.kat-text { flex: 1; min-width: 0; }
+.kat-name {
+  font-size: .92rem; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.kat-nr {
+  font-size: .78rem; color: var(--muted);
+  /* Eine Zeile, sonst wird aus 44 px Zeilenhöhe schnell das Doppelte –
+     und bei 1.663 Einträgen ist das ein halber Kilometer Scrollweg. */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.kat-marken { display: flex; gap: 2px; flex: none; }
+/* Große Flächen: Die Marken sind die eigentlichen Knöpfe dieser Ansicht,
+   und sie werden im Gehen getippt. */
+.kat-marke {
+  background: none; border: 0; padding: 8px 10px; cursor: pointer;
+  font-size: 1.15rem; line-height: 1; opacity: .22;
+  color: var(--muted);
+}
+.kat-marke.an { opacity: 1; }
+.kat-marke[data-marke="habe"].an { color: #2ecc9b; }
+.kat-marke[data-marke="wunsch"].an { color: #e8576f; }
+.kat-anzahl {
+  font-size: .7rem; font-weight: 700; color: #2ecc9b;
+  align-self: flex-start; margin-left: -4px;
+}
+
+.kat-balken {
+  /* Die Kopfleiste klebt selbst oben – bei `top: 8px` verschwanden die
+     ersten Blocknummern dahinter. Ihre Höhe ist 55 px **plus** der obere
+     Sicherheitsabstand; auf einem iPhone mit Aussparung wäre eine feste
+     Zahl daneben. */
+  position: sticky; flex: none;
+  top: calc(env(safe-area-inset-top) + 63px);
+  display: flex; flex-direction: column; align-items: stretch;
+  max-height: 70vh; overflow: hidden;
+}
+.kat-balken button {
+  background: none; border: 0; cursor: pointer; padding: 1px 6px;
+  font-size: .72rem; font-variant-numeric: tabular-nums;
+  color: var(--muted); line-height: 1.35;
+}
+.kat-balken button.sel { color: var(--red); font-weight: 700; }
+
+/* `.card-modal` ist ein Flex-Behälter für **eine** Karte darin – Bild,
+   Name und Knöpfe legten sich darin nebeneinander statt untereinander.
+   Der Steckbrief hier ist selbst der Inhalt, also bekommt er seine eigene
+   Richtung und einen Kasten drumherum. */
+.kat-modal {
+  flex-direction: column; align-items: stretch; text-align: center;
+  max-width: 320px; overflow-y: auto;
+  background: var(--surface); color: var(--ink);
+  border: 2px solid var(--line); border-radius: var(--radius);
+  padding: 18px 16px 14px;
+}
+.kat-modal .card-modal-close {
+  position: absolute; top: 6px; right: 8px;
+}
+.kat-modal-bild {
+  width: 180px; height: 180px; object-fit: contain;
+  background: #fff; border-radius: 10px; margin: 4px auto 10px; display: block;
+}
+.kat-modal-name { display: block; font-size: 1.05rem; line-height: 1.25; }
+.kat-modal .sub { color: var(--muted); font-size: .82rem; margin-top: 2px; }
+.kat-modal-tasten {
+  display: flex; gap: 8px; justify-content: center; margin: 14px 0 10px;
+}
+.kat-modal-tasten .mini-btn { flex: 1; padding: 10px 6px; }
+.kat-modal-link { font-size: .82rem; color: var(--muted); }
+/* Einträge, deren Name noch nicht nachgeschlagen ist: Die Nummer steht
+   dann oben, und die Zeile darunter sagt warum – statt die Nummer stumm
+   zweimal zu zeigen. */
+.kat-name.kat-namenlos { font-family: ui-monospace, SFMono-Regular, monospace; }

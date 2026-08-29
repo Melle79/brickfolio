@@ -387,6 +387,7 @@
       <button class="mini-btn sel" data-listtab="wanted">⭐ Wünsche</button>
       <button class="mini-btn" data-listtab="shop" id="listtab-shop">🛒 Einkaufen</button>
       <button class="mini-btn" data-listtab="archive" id="listtab-archive">📦 Archiv</button>
+      <button class="mini-btn" data-listtab="katalog" id="listtab-katalog">📚 Katalog</button>
     </div>
 
     <!-- Wünsche -->
@@ -427,6 +428,33 @@
         findet es hier.</p>
       <div id="archive-container" class="results"></div>
       <p id="archive-empty" class="empty" hidden>Das Archiv ist leer.</p>
+    </section>
+
+    <!-- Katalog durchblättern -->
+    <section id="listpane-katalog" hidden>
+      <div class="kat-kopf">
+        <select id="kat-thema" aria-label="Thema"></select>
+        <div class="seg" role="group" aria-label="Art">
+          <button class="mini-btn sel" data-katart="minifig">Figuren</button>
+          <button class="mini-btn" data-katart="set">Sets</button>
+        </div>
+      </div>
+      <div class="kat-kopf">
+        <input id="kat-suche" type="search" placeholder="Im Thema suchen …"
+               autocomplete="off" enterkeyhint="search">
+        <span id="kat-zahl" class="kat-zahl">–</span>
+      </div>
+      <div class="tab-row" id="kat-filter">
+        <button class="mini-btn sel" data-katfilter="">Alle</button>
+        <button class="mini-btn" data-katfilter="fehlt">Fehlt mir</button>
+        <button class="mini-btn" data-katfilter="habe">Hab ich</button>
+        <button class="mini-btn" data-katfilter="wunsch">Gemerkt</button>
+      </div>
+      <div class="kat-rahmen">
+        <div id="kat-liste" class="kat-liste"></div>
+        <div id="kat-balken" class="kat-balken" aria-hidden="true"></div>
+      </div>
+      <p id="kat-leer" class="empty" hidden>Hier ist nichts.</p>
     </section>
   </main>
 

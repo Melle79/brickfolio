@@ -27,6 +27,43 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.59.0 – August 2026
+
+### Neu
+- 📚 **Den Katalog durchblättern.** Vierter Reiter unter *Listen*: alle
+  Figuren eines Themas in Nummernfolge, mit dem eigenen Besitzstand daneben.
+  Bisher konnte die App nur „wo ist X?" beantworten; die andere Frage –
+  *was gibt es überhaupt, und was davon fehlt mir?* – ging nur über die
+  Suche, und die zeigt nur, wonach man gefragt hat.
+
+  Sortiert wird nach **Nummer, nicht alphabetisch**. So stehen Varianten
+  beieinander (sw0001a bis sw0001d) und das Jahr wächst von oben nach unten.
+  Am rechten Rand liegt ein Sprungbalken mit den Hunderterblöcken – bei
+  1.663 Star-Wars-Figuren der Unterschied zwischen Suchen und Finden.
+
+  **✔** legt die Figur in die Sammlung, **♥** auf die Wunschliste, ein Tipp
+  auf den Namen öffnet einen Steckbrief. Vier Filter grenzen ein: *Alle*,
+  *Fehlt mir*, *Hab ich*, *Gemerkt*.
+
+  **Ausgehakt wird nur, was nichts wert ist.** Hängt an der Figur eine
+  Stückzahl über eins oder eine Notiz, sagt die App das und rührt den
+  Eintrag nicht an. Ein Fehltipper auf einem daumengroßen Knopf darf keine
+  Kaufpreise wegräumen; Löschen geht in der Sammlung.
+
+  Die Liste hält **alle** Zeilen eines Themas im Dokument, lädt aber nur die
+  Bilder in Sichtweite: bei 1.663 Zeilen sind das rund 26. Umgekehrt zur
+  Sammlung, wo die Adresse im HTML steht und ein Beobachter hinterher
+  aufräumt – hier lädt der Beobachter, statt freizugeben. Bei 80 Zeilen je
+  Nachschub-Schritt wären es sonst 80 Bilder auf einen Schlag, von denen 60
+  sofort wieder wegkämen. Entpackte Bilder liegen außerhalb des
+  JavaScript-Speichers und haben in der Sammlung wiederholt den Tab
+  umgebracht.
+
+### Geändert
+- Das Popup einer Katalogzeile nimmt **denselben Daumennagel** wie die Zeile
+  darüber. Bei 180 px Anzeige sieht man keinen Unterschied, aber der Browser
+  hat das Bild schon und lädt kein zweites.
+
 ## 2.39.0 – August 2026
 
 ### Neu

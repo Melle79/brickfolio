@@ -1800,16 +1800,20 @@ function listenFreigeben(neuerTab) {
 let listsTab = "wanted";
 
 function showListsTab(name) {
-  // Sind Einkaufslisten ausgeblendet, gibt es dort nichts zu sehen.
-  if (name !== "wanted" && $("listtab-shop").hidden) name = "wanted";
+  // Sind Einkaufslisten ausgeblendet, gibt es dort nichts zu sehen. Der
+  // Katalog hängt nicht daran – er ist auch ohne Einkaufslisten da.
+  if (name !== "wanted" && name !== "katalog" && $("listtab-shop").hidden) {
+    name = "wanted";
+  }
   listsTab = name;
   state.showArchive = name === "archive";
-  ["wanted", "shop", "archive"].forEach((t) => {
+  ["wanted", "shop", "archive", "katalog"].forEach((t) => {
     $("listpane-" + t).hidden = t !== name;
   });
   document.querySelectorAll("[data-listtab]").forEach((b) =>
     b.classList.toggle("sel", b.dataset.listtab === name));
-  if (name === "wanted") loadWanted();
+  if (name === "katalog") katalogReiterOeffnen();
+  else if (name === "wanted") loadWanted();
   else loadLists();
 }
 
@@ -4119,6 +4123,368 @@ function hintergrundBeobachten(root) {
   // **Jede Karte, nicht nur die mit Hintergrund.** Das Bild einer Karte
   // muss auch dann losgelassen werden, wenn sie kein `data-bg` hat.
   root.querySelectorAll(".card").forEach((c) => bgBeobachter.observe(c));
+}
+
+
+/* ── Katalog durchblättern ──────────────────────────────────────────────
+   Die Suche beantwortet „wo ist X?". Diese Liste beantwortet die andere
+   Frage: „was gibt es überhaupt, und was davon fehlt mir?"
+
+   Sie hat einen eigenen Bildbeobachter. Der gemeinsame `bgBeobachter`
+   kennt nur eine Wurzel – wer ihn hier übernähme, würde die Sammlung im
+   Rücken abmelden, und deren Bilder blieben unbeaufsichtigt hängen.
+   Genau das steckt hinter den Abstürzen (29.08.2026). */
+
+const KAT_BLOCK = 80;          // Zeilen je Nachschub-Schritt
+let katBeobachter = null;
+let katBildBeobachter = null;
+const katStand = {
+  praefix: "", art: "minifig", q: "", filter: "",
+  eintraege: [], gesamt: 0, gezeigt: 0, laeuft: false, letzterBlock: "",
+};
+
+function katBildFreigeben(zeile, sichtbar) {
+  const img = zeile.querySelector("img.kat-bild");
+  if (!img) return;
+  if (sichtbar) {
+    if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+  } else if (!img.dataset.src && img.src && img.src !== IMG_PLACEHOLDER) {
+    img.dataset.src = img.src;
+    img.src = IMG_PLACEHOLDER;
+  }
+}
+
+function katBilderBeobachten() {
+  if (katBildBeobachter) katBildBeobachter.disconnect();
+  if (!("IntersectionObserver" in window)) {
+    katBildBeobachter = null;
+    return;
+  }
+  // Derselbe Rand wie in der Sammlung: 300 px halten die Zahl der
+  // entpackten Bilder zweistellig, und die zählen nicht zum JS-Speicher.
+  katBildBeobachter = new IntersectionObserver((eintraege) => {
+    eintraege.forEach((e) => katBildFreigeben(e.target, e.isIntersecting));
+  }, { rootMargin: "300px 0px" });
+}
+
+function katZeile(e) {
+  const bild = imgSrc(e.img_url, true);
+  const jahr = e.jahr ? String(e.jahr) : "";
+  // **Umgekehrt zur Sammlung: erst der Platzhalter, dann das Bild.** Dort
+  // steht die Adresse im HTML und der Beobachter räumt hinterher auf – bei
+  // 80 Zeilen je Nachschub-Schritt hieße das 80 Bilder auf einen Schlag,
+  // von denen 60 sofort wieder wegkämen. Hier lädt der Beobachter, statt
+  // freizugeben; geladen wird nur, was wirklich in die Nähe kommt.
+  const ohneNamen = !e.name || e.name === e.item_no;
+  return `<div class="kat-zeile" data-nr="${esc(e.item_no)}">
+    <img class="kat-bild" src="${IMG_PLACEHOLDER}" data-src="${bild}"
+         alt="" decoding="async">
+    <div class="kat-text">
+      <div class="kat-name${ohneNamen ? " kat-namenlos" : ""}">${
+        esc(ohneNamen ? e.item_no : e.name)}</div>
+      <div class="kat-nr">${esc(ohneNamen
+        ? (jahr || tr("Name folgt"))
+        : e.item_no + (jahr ? " · " + jahr : ""))}</div>
+    </div>
+    ${e.besitz > 1 ? `<span class="kat-anzahl">${e.besitz}×</span>` : ""}
+    <div class="kat-marken">
+      <button class="kat-marke${e.besitz ? " an" : ""}" data-marke="habe"
+        aria-label="${esc(tr(e.besitz ? "Hab ich" : "Als vorhanden merken"))}"
+        aria-pressed="${e.besitz ? "true" : "false"}">✔</button>
+      <button class="kat-marke${e.wunsch ? " an" : ""}" data-marke="wunsch"
+        aria-label="${esc(tr(e.wunsch ? "Steht auf der Wunschliste" : "Auf die Wunschliste"))}"
+        aria-pressed="${e.wunsch ? "true" : "false"}">♥</button>
+    </div>
+  </div>`;
+}
+
+/* Nachschub: Die Liste liegt vollständig im Speicher, im Dokument steht
+   aber immer nur, was gebraucht wird. Bei 1.579 Figuren ist der
+   Unterschied zwischen 80 und 1.579 Zeilen der zwischen flüssig und
+   sekundenlang blockiert. */
+function katNachschub() {
+  const liste = $("kat-liste");
+  const marke = liste.querySelector(".kat-mehr");
+  if (marke) marke.remove();
+  const bis = Math.min(katStand.gezeigt + KAT_BLOCK, katStand.eintraege.length);
+  let html = "";
+  for (let i = katStand.gezeigt; i < bis; i++) {
+    const e = katStand.eintraege[i];
+    if (e.block && e.block !== katStand.letzterBlock) {
+      katStand.letzterBlock = e.block;
+      html += `<div class="kat-block" data-block="${esc(e.block)}">`
+        + esc(katStand.praefix.toUpperCase() + e.block) + `</div>`;
+    }
+    html += katZeile(e);
+  }
+  katStand.gezeigt = bis;
+  liste.insertAdjacentHTML("beforeend", html);
+  if (bis < katStand.eintraege.length) {
+    liste.insertAdjacentHTML("beforeend", '<div class="kat-mehr"></div>');
+  }
+  liste.querySelectorAll(".kat-zeile").forEach((z) => {
+    if (z.dataset.beob) return;
+    z.dataset.beob = "1";
+    // Ohne Beobachter (sehr alte Browser) lieber alles zeigen als nichts:
+    // Eine Liste voller Platzhalter wäre unbrauchbar.
+    if (katBildBeobachter) katBildBeobachter.observe(z);
+    else katBildFreigeben(z, true);
+  });
+  const mehr = liste.querySelector(".kat-mehr");
+  if (mehr && katBeobachter) katBeobachter.observe(mehr);
+}
+
+function katNachschubBeobachten() {
+  if (katBeobachter) katBeobachter.disconnect();
+  if (!("IntersectionObserver" in window)) return;
+  katBeobachter = new IntersectionObserver((eintraege) => {
+    if (eintraege.some((e) => e.isIntersecting)) katNachschub();
+  }, { rootMargin: "1200px 0px" });
+}
+
+/* Der Sprungbalken rechts. Er zeigt die Hunderterblöcke, die es wirklich
+   gibt – bei „Fehlt mir" sind das weniger als bei „Alle". */
+function katBalkenZeichnen() {
+  const balken = $("kat-balken");
+  const bloecke = [];
+  katStand.eintraege.forEach((e) => {
+    if (e.block && bloecke[bloecke.length - 1] !== e.block) bloecke.push(e.block);
+  });
+  balken.innerHTML = bloecke.map((b) =>
+    `<button data-sprung="${esc(b)}">${esc(b)}</button>`).join("");
+  balken.hidden = bloecke.length < 3;
+}
+
+/* Zu einem Block springen. Steht er noch nicht im Dokument, wird so lange
+   nachgeschoben, bis er da ist – sonst führt der Balken bei Block 15 ins
+   Leere, weil erst 80 Zeilen geladen sind. */
+function katSpringen(block) {
+  let schutz = 0;
+  while (!$("kat-liste").querySelector(`[data-block="${CSS.escape(block)}"]`)
+         && katStand.gezeigt < katStand.eintraege.length && schutz++ < 100) {
+    katNachschub();
+  }
+  const ziel = $("kat-liste").querySelector(`[data-block="${CSS.escape(block)}"]`);
+  // **Hart springen, nicht sanft.** Über einen Block liegen schnell
+  // 40.000 Pixel; sanftes Scrollen darüber dauert Sekunden und lädt
+  // unterwegs jedes Bild, an dem es vorbeikommt.
+  if (ziel) ziel.scrollIntoView({ block: "start", behavior: "auto" });
+  document.querySelectorAll("#kat-balken button").forEach((b) =>
+    b.classList.toggle("sel", b.dataset.sprung === block));
+}
+
+async function katThemenLaden() {
+  const wahl = $("kat-thema");
+  try {
+    const d = await api(`/katalog/liste/themen?art=${katStand.art}`);
+    if (!d.themen.length) {
+      wahl.innerHTML = "";
+      return false;
+    }
+    // Das zuletzt gewählte Thema überlebt den Wechsel Figuren↔Sets, wenn
+    // es das dort auch gibt.
+    const gemerkt = katStand.praefix
+      || localStorage.getItem("kat-praefix") || "";
+    wahl.innerHTML = d.themen.map((t) =>
+      `<option value="${esc(t.praefix)}">${esc(t.thema)} · `
+      + `${t.besitz}/${t.anzahl}</option>`).join("");
+    const gibts = d.themen.some((t) => t.praefix === gemerkt);
+    wahl.value = gibts ? gemerkt : d.themen[0].praefix;
+    katStand.praefix = wahl.value;
+    return true;
+  } catch (err) {
+    wahl.innerHTML = "";
+    return false;
+  }
+}
+
+async function katListeLaden() {
+  if (katStand.laeuft) return;
+  katStand.laeuft = true;
+  const liste = $("kat-liste");
+  liste.innerHTML = brickSpinner("Katalog");
+  try {
+    const p = new URLSearchParams({
+      praefix: katStand.praefix, art: katStand.art,
+      q: katStand.q, nur: katStand.filter,
+      // Der Nachschub schneidet im Browser zu; der Server schickt das
+      // Thema einmal ganz. 1.579 Zeilen JSON sind rund 200 kB – einmal
+      // holen ist billiger als zwanzigmal fragen.
+      offset: "0", limit: "200",
+    });
+    const d = await api("/katalog/liste?" + p.toString());
+    // `limit` deckelt nur die Antwort; für den Balken brauchen wir alles.
+    let alle = d.eintraege;
+    while (alle.length < d.gesamt) {
+      p.set("offset", String(alle.length));
+      const w = await api("/katalog/liste?" + p.toString());
+      if (!w.eintraege.length) break;
+      alle = alle.concat(w.eintraege);
+    }
+    katStand.eintraege = alle;
+    katStand.gesamt = d.gesamt;
+    katStand.gezeigt = 0;
+    katStand.letzterBlock = "";
+    liste.innerHTML = "";
+    $("kat-zahl").textContent = d.gesamt
+      ? d.gesamt.toLocaleString("de-DE") : "0";
+    $("kat-leer").hidden = d.gesamt > 0;
+    if (!d.gesamt) {
+      $("kat-leer").textContent = tr(d.hat_katalog
+        ? "Hier ist nichts." : "Der Katalog ist noch nicht geladen.");
+      $("kat-balken").hidden = true;
+    } else {
+      katBilderBeobachten();
+      katNachschubBeobachten();
+      katNachschub();
+      katBalkenZeichnen();
+    }
+  } catch (err) {
+    liste.innerHTML = "";
+    $("kat-leer").hidden = false;
+    $("kat-leer").textContent = tr("Katalog nicht erreichbar.");
+  } finally {
+    katStand.laeuft = false;
+  }
+}
+
+/* Eine Marke umlegen. Die Zeile wird sofort umgestellt und bei einem
+   Fehlschlag zurückgedreht – wer im Gehen zwanzig Figuren abhakt, wartet
+   nicht zwanzigmal auf den Server. */
+async function katMarkeUmlegen(zeile, knopf) {
+  const nr = zeile.dataset.nr;
+  const marke = knopf.dataset.marke;
+  const eintrag = katStand.eintraege.find((e) => e.item_no === nr);
+  if (!eintrag) return;
+  const an = !knopf.classList.contains("an");
+  knopf.classList.toggle("an", an);
+  knopf.setAttribute("aria-pressed", an ? "true" : "false");
+  try {
+    // `api` hängt `/api` selbst davor und macht aus dem Rumpf JSON –
+    // beides hier noch einmal zu tun ergibt `/api/api/…` und doppelt
+    // kodierte Daten.
+    const d = await api("/katalog/marke", {
+      method: "POST",
+      body: { item_no: nr, item_type: katStand.art, marke, an },
+    });
+    if (d.ok === false) {
+      knopf.classList.toggle("an", !an);
+      knopf.setAttribute("aria-pressed", !an ? "true" : "false");
+      toast(tr(d.grund === "mehr_dahinter"
+        ? "Da hängt mehr dran – bitte in der Sammlung entfernen."
+        : "Ging nicht."));
+      return;
+    }
+    if (marke === "habe") eintrag.besitz = an ? (eintrag.besitz || 0) + 1 : 0;
+    else eintrag.wunsch = an;
+    const zahl = zeile.querySelector(".kat-anzahl");
+    if (zahl && eintrag.besitz < 2) zahl.remove();
+    else if (zahl) zahl.textContent = eintrag.besitz + "×";
+  } catch (err) {
+    knopf.classList.toggle("an", !an);
+    knopf.setAttribute("aria-pressed", !an ? "true" : "false");
+    toast(tr("Ging nicht."));
+  }
+}
+
+function katVerdrahten() {
+  $("kat-thema").addEventListener("change", (ev) => {
+    katStand.praefix = ev.target.value;
+    try { localStorage.setItem("kat-praefix", katStand.praefix); } catch (e) {}
+    katListeLaden();
+  });
+  document.querySelectorAll("[data-katart]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      if (katStand.art === b.dataset.katart) return;
+      katStand.art = b.dataset.katart;
+      document.querySelectorAll("[data-katart]").forEach((x) =>
+        x.classList.toggle("sel", x === b));
+      await katThemenLaden();
+      katListeLaden();
+    });
+  });
+  document.querySelectorAll("[data-katfilter]").forEach((b) => {
+    b.addEventListener("click", () => {
+      katStand.filter = b.dataset.katfilter;
+      document.querySelectorAll("[data-katfilter]").forEach((x) =>
+        x.classList.toggle("sel", x === b));
+      katListeLaden();
+    });
+  });
+  let tippTakt = null;
+  $("kat-suche").addEventListener("input", (ev) => {
+    clearTimeout(tippTakt);
+    const wert = ev.target.value;
+    tippTakt = setTimeout(() => {
+      katStand.q = wert;
+      katListeLaden();
+    }, 300);
+  });
+  $("kat-balken").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-sprung]");
+    if (b) katSpringen(b.dataset.sprung);
+  });
+  $("kat-liste").addEventListener("click", (ev) => {
+    const knopf = ev.target.closest(".kat-marke");
+    const zeile = ev.target.closest(".kat-zeile");
+    if (!zeile) return;
+    if (knopf) { katMarkeUmlegen(zeile, knopf); return; }
+    const e = katStand.eintraege.find((x) => x.item_no === zeile.dataset.nr);
+    if (e) katDetail(e);
+  });
+}
+
+/* Antippen der Zeile: großes Bild, Name, Nummer – und dieselben zwei
+   Marken noch einmal als beschriftete Knöpfe. `openCardModal` passt hier
+   nicht: Die Karte dort ist an einen Sammlungseintrag gebunden (Stückzahl,
+   Löschen, Preise) und eine Katalogfigur hat den in der Regel nicht. */
+function katDetail(e) {
+  const alt = document.getElementById("kat-modal");
+  if (alt) alt.remove();
+  const bl = "https://www.bricklink.com/v2/catalog/catalogitem.page?"
+    + (katStand.art === "set" ? "S=" : "M=") + encodeURIComponent(e.item_no);
+  const overlay = document.createElement("div");
+  overlay.className = "card-modal-overlay";
+  overlay.id = "kat-modal";
+  overlay.innerHTML = `
+    <div class="card-modal kat-modal">
+      <button class="card-modal-close" aria-label="Schließen">✕</button>
+      <!-- Derselbe Daumennagel wie in der Zeile, nicht die volle
+           Fassung: Bei 180 px Anzeige sieht man keinen Unterschied, aber
+           der Browser hat das Bild schon und lädt kein zweites. -->
+      <img class="kat-modal-bild" src="${imgSrc(e.img_url, true)}" alt="">
+      <strong class="kat-modal-name">${esc(e.name || e.item_no)}</strong>
+      <div class="sub">${esc(e.item_no)}${e.jahr ? " · " + e.jahr : ""}</div>
+      <div class="kat-modal-tasten">
+        <button class="mini-btn${e.besitz ? " sel" : ""}" data-mmarke="habe">
+          ${esc(e.besitz ? "✔ " + tr("Hab ich") : tr("Hab ich"))}</button>
+        <button class="mini-btn${e.wunsch ? " sel" : ""}" data-mmarke="wunsch">
+          ${esc(e.wunsch ? "♥ " + tr("Gemerkt") : tr("Merken"))}</button>
+      </div>
+      <a class="kat-modal-link" href="${bl}" target="_blank" rel="noopener">
+        ${esc(tr("Bei BrickLink ansehen"))}</a>
+    </div>`;
+  const zu = () => { overlay.remove(); document.removeEventListener("keydown", taste); };
+  const taste = (ev) => { if (ev.key === "Escape") zu(); };
+  overlay.addEventListener("click", (ev) => {
+    if (ev.target === overlay || ev.target.closest(".card-modal-close")) zu();
+  });
+  document.addEventListener("keydown", taste);
+  overlay.querySelectorAll("[data-mmarke]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      // Über die Zeile in der Liste gehen, damit beide Anzeigen dieselbe
+      // Wahrheit zeigen – und nicht die Liste eine andere als das Popup.
+      const zeile = $("kat-liste").querySelector(
+        `.kat-zeile[data-nr="${CSS.escape(e.item_no)}"]`);
+      const knopf = zeile && zeile.querySelector(
+        `.kat-marke[data-marke="${b.dataset.mmarke}"]`);
+      if (knopf) await katMarkeUmlegen(zeile, knopf);
+      zu();
+    });
+  });
+  // Ohne diese Kennzeichnung stünde das Popup in jedem Fehlerbericht als
+  // „fremdes Element" – als hätte eine Browser-Erweiterung es eingehängt.
+  document.body.appendChild(alsEigenMerken(overlay));
 }
 
 /* Detailansicht als Popup. Enthält Kopf UND Details, damit die bestehende
@@ -10710,6 +11076,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll("[data-listtab]").forEach((b) => {
     b.addEventListener("click", () => showListsTab(b.dataset.listtab));
   });
+  katVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
     const name = $("backup-select").value;
@@ -11107,4 +11474,26 @@ function wireInstallCard() {
     localStorage.setItem("bf_install_hidden", "1");
     updateInstallCard();
   });
+}
+
+/* Erster Aufschlag des Katalogreiters. Die Themenliste ändert sich nur,
+   wenn ein neuer Abzug kommt – sie einmal je Sitzung zu holen reicht,
+   die Liste darunter wird bei jedem Öffnen frisch gelesen (der
+   Besitzstand kann sich anderswo geändert haben). */
+let katThemenGeholt = false;
+
+async function katalogReiterOeffnen() {
+  if (!katThemenGeholt) {
+    katThemenGeholt = await katThemenLaden();
+    if (!katThemenGeholt) {
+      $("kat-liste").innerHTML = "";
+      $("kat-leer").hidden = false;
+      $("kat-leer").textContent =
+        tr("Der Katalog ist auf dieser Instanz noch nicht geladen.");
+      $("kat-balken").hidden = true;
+      $("kat-zahl").textContent = "0";
+      return;
+    }
+  }
+  katListeLaden();
 }
