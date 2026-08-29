@@ -2032,3 +2032,30 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 @media (prefers-reduced-motion: no-preference) {
   .nach-oben { transition: opacity .15s ease; }
 }
+
+/* Die Themenverwaltung in den Einstellungen. 199 Zeilen wollen schmal
+   sein – eine Zeile je Thema, die beiden Schalter rechts. */
+.kat-themen-liste {
+  max-height: 46vh; overflow-y: auto; margin-top: 8px;
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.kat-themen-zeile {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; border-bottom: 1px solid var(--line);
+}
+.kat-themen-liste .kat-themen-zeile:last-child { border-bottom: 0; }
+.kat-themen-name {
+  flex: 1; min-width: 0; font-size: .9rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.kat-themen-zeile.ist-aus .kat-themen-name { opacity: .45; }
+.kat-themen-zahl {
+  font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.kat-themen-schalter {
+  background: none; border: 0; cursor: pointer; padding: 6px 8px;
+  font-size: 1.15rem; line-height: 1; color: var(--muted);
+}
+.kat-themen-schalter.an { color: var(--ink); }
+.kat-themen-schalter[data-schalter="fav"].an { color: #E8A317; }
+.kat-themen-schalter[data-schalter="sicht"].an { color: var(--green); }

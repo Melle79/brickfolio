@@ -719,6 +719,21 @@
       <div id="pricelog-list" class="pricelog"></div>
       <button class="mini-btn" id="btn-pricelog-more" hidden>Mehr anzeigen</button>
     </div>
+    <div class="settings-card" id="kat-themen-card" hidden>
+      <h3>📚 Katalog-Themen</h3>
+      <p class="search-hint">Welche Themen im Katalog-Reiter zur Auswahl
+        stehen – und welche zuerst. Gilt nur für dich.</p>
+      <div class="detail-row btn-grid">
+        <button class="mini-btn" data-themenalle="nur_favoriten">★ Nur Favoriten</button>
+        <button class="mini-btn" data-themenalle="alle_ein">Alle einblenden</button>
+      </div>
+      <div class="detail-row">
+        <input id="kat-themen-suche" type="search" placeholder="Thema suchen …"
+               autocomplete="off">
+        <span id="kat-themen-stand" class="kat-zahl">–</span>
+      </div>
+      <div id="kat-themen-liste" class="kat-themen-liste"></div>
+    </div>
     </section>
 
     <section class="settings-group" id="grp-instanz">

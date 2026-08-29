@@ -1364,6 +1364,22 @@ Kaufpreis daran, sagt die App das und rührt den Eintrag nicht an: Ein
 Fehltipper auf einem daumengroßen Knopf darf keine Daten wegräumen. Löschen
 geht dann in der Sammlung selbst.
 
+**Die Themenauswahl aufräumen:** Bei 199 Themen ist die Liste lang, und
+die meisten braucht ihr nie. Unter **Mehr → 📚 Katalog-Themen** bekommt
+jedes Thema zwei Schalter:
+
+| | |
+|---|---|
+| **★** | Favorit – steht in der Auswahl ganz oben, egal wie klein |
+| **☑ / ☐** | ob es überhaupt in der Auswahl erscheint |
+
+Der bequemste Weg: ein paar Sterne setzen, dann **★ Nur Favoriten** – das
+blendet alles andere aus. **Alle einblenden** holt sie zurück. Beides gilt
+nur für euch; Paul kann eine ganz andere Auswahl haben als Sven.
+
+Der Stern überlebt das Ausblenden: Wer ein Thema wieder einschaltet, findet
+seine Markierung, wo er sie gelassen hat.
+
 **Die vier Filter** darüber grenzen ein: *Alle*, *Fehlt mir* (was noch
 aussteht), *Hab ich*, *Gemerkt*. „Fehlt mir" ist die Einkaufsliste für ein
 ganzes Thema.

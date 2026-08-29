@@ -1754,7 +1754,7 @@ function showTab(name) {
   if (name === "stats") loadStats();
   if (name === "hub") loadHubView();
   else updatePolling();          // außerhalb des Tausch-Tabs ruhiger takten
-  if (name === "settings") loadSettings();
+  if (name === "settings") { loadSettings(); katThemenLadenAlle(); }
 }
 
 /* Die Sammlung ist mit Abstand die größte Ansicht: bei 815 Einträgen rund
@@ -4355,9 +4355,12 @@ async function katThemenLaden() {
     // es das dort auch gibt.
     const gemerkt = katStand.thema
       || localStorage.getItem("kat-thema") || "";
+    // Der Server schickt Favoriten schon oben; der Stern sagt, warum
+    // ein kleines Thema über einem großen steht.
     wahl.innerHTML = d.themen.map((t) =>
       `<option value="${esc(t.thema)}" data-kopf="${esc(t.kopf)}">`
-      + `${esc(t.thema)} · ${t.besitz}/${t.anzahl}</option>`).join("");
+      + `${t.fav ? "★ " : ""}${esc(t.thema)} · ${t.besitz}/${t.anzahl}`
+      + `</option>`).join("");
     const treffer = d.themen.find((t) => t.thema === gemerkt) || d.themen[0];
     wahl.value = treffer.thema;
     katStand.thema = treffer.thema;
@@ -11180,6 +11183,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     b.addEventListener("click", () => showListsTab(b.dataset.listtab));
   });
   katVerdrahten();
+  katThemenVerdrahten();
   nachObenVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
@@ -11592,8 +11596,13 @@ async function katalogReiterOeffnen() {
     if (!katThemenGeholt) {
       $("kat-liste").innerHTML = "";
       $("kat-leer").hidden = false;
-      $("kat-leer").textContent =
-        tr("Der Katalog ist auf dieser Instanz noch nicht geladen.");
+      // Zwei sehr verschiedene Gründe für dieselbe leere Seite: Entweder
+      // liegt kein Katalog vor, oder man hat sich alle Themen selbst
+      // ausgeblendet. Ohne den Unterschied sucht man am falschen Ende.
+      $("kat-leer").textContent = katThemenAlle.length
+        ? tr("Alle Themen sind ausgeblendet. Unter Mehr → Katalog-Themen "
+             + "wieder einschalten.")
+        : tr("Der Katalog ist auf dieser Instanz noch nicht geladen.");
       $("kat-balken").hidden = true;
       $("kat-zahl").textContent = "0";
       return;
@@ -11636,4 +11645,136 @@ function nachObenVerdrahten() {
     if (takt) return;
     takt = requestAnimationFrame(() => { takt = null; nachObenPruefen(); });
   }, { passive: true });
+}
+
+/* ── Katalog-Themen verwalten ───────────────────────────────────────────
+   Bei 199 Themen ist die Auswahl im Katalog-Reiter ohne Vorsortierung
+   unbrauchbar. Hier bekommt jedes einen Stern (steht dann oben) und ein
+   Auge (steht sonst gar nicht mehr da).
+
+   Beides getrennt: Wer ein Thema wieder einblendet, will seinen Stern
+   wiederfinden. */
+let katThemenAlle = [];
+
+function katThemenZeile(t) {
+  return `<div class="kat-themen-zeile${t.aus ? " ist-aus" : ""}"
+       data-thema="${esc(t.thema)}">
+    <span class="kat-themen-name">${esc(t.thema)}</span>
+    <span class="kat-themen-zahl">${t.besitz}/${t.anzahl}</span>
+    <!-- Gefülltes und leeres Zeichen statt bloßer Deckkraft: Ein
+         farbiges Emoji sieht ausgegraut fast aus wie eingeschaltet, und
+         wer die Liste durchgeht, muss den Zustand auf einen Blick sehen. -->
+    <button class="kat-themen-schalter${t.fav ? " an" : ""}" data-schalter="fav"
+      aria-pressed="${t.fav ? "true" : "false"}"
+      aria-label="${esc(tr("Als Favorit oben zeigen"))}"
+      >${t.fav ? "★" : "☆"}</button>
+    <button class="kat-themen-schalter${t.aus ? "" : " an"}" data-schalter="sicht"
+      aria-pressed="${t.aus ? "false" : "true"}"
+      aria-label="${esc(tr("In der Auswahl zeigen"))}"
+      >${t.aus ? "☐" : "☑"}</button>
+  </div>`;
+}
+
+function katThemenStand() {
+  const an = katThemenAlle.filter((t) => !t.aus).length;
+  const fav = katThemenAlle.filter((t) => t.fav).length;
+  $("kat-themen-stand").textContent =
+    `${an}/${katThemenAlle.length}` + (fav ? ` · ★ ${fav}` : "");
+}
+
+function katThemenZeichnen() {
+  const suche = _such_klein($("kat-themen-suche").value);
+  const sichtbar = katThemenAlle.filter((t) =>
+    !suche || _such_klein(t.thema).includes(suche));
+  $("kat-themen-liste").innerHTML = sichtbar.length
+    ? sichtbar.map(katThemenZeile).join("")
+    : `<p class="empty">${esc(tr("Kein Thema gefunden."))}</p>`;
+  katThemenStand();
+}
+
+/* Nur die eine Zeile umstellen, nicht die ganze Liste.
+
+   Neu zu zeichnen wäre einfacher, hängt aber die angeklickte Zeile ab –
+   der nächste Tipper auf dieselbe oder eine benachbarte Zeile geht dann
+   ins Leere, weil der Knoten nicht mehr im Dokument steht. Beim
+   Durchgehen von 199 Themen tippt man schnell, und jeder zweite Tipper
+   wäre verloren gewesen (29.08.2026). */
+function katThemenZeileAuffrischen(zeile, t) {
+  zeile.classList.toggle("ist-aus", !!t.aus);
+  const stern = zeile.querySelector('[data-schalter="fav"]');
+  stern.textContent = t.fav ? "★" : "☆";
+  stern.classList.toggle("an", !!t.fav);
+  stern.setAttribute("aria-pressed", t.fav ? "true" : "false");
+  const auge = zeile.querySelector('[data-schalter="sicht"]');
+  auge.textContent = t.aus ? "☐" : "☑";
+  auge.classList.toggle("an", !t.aus);
+  auge.setAttribute("aria-pressed", t.aus ? "false" : "true");
+  katThemenStand();
+}
+
+/* Kleinschreibung ohne Sonderzeichen – „Herr der Ringe" soll auch auf
+   „herr" anspringen, und „Coca-Cola" auf „cocacola". */
+function _such_klein(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9äöüß]/g, "");
+}
+
+async function katThemenLadenAlle() {
+  try {
+    const d = await api(`/katalog/liste/themen?alle=1&art=${katStand.art}`);
+    katThemenAlle = d.themen;
+    $("kat-themen-card").hidden = !d.themen.length;
+    katThemenZeichnen();
+  } catch (err) {
+    $("kat-themen-card").hidden = true;
+  }
+}
+
+async function katThemenSchalten(zeile, knopf) {
+  const thema = zeile.dataset.thema;
+  const eintrag = katThemenAlle.find((t) => t.thema === thema);
+  if (!eintrag) return;
+  const feld = knopf.dataset.schalter === "fav" ? "fav" : "sicht";
+  const an = !knopf.classList.contains("an");
+  const rumpf = { thema };
+  if (feld === "fav") rumpf.fav = an;
+  else rumpf.sichtbar = an;
+  // Sofort umstellen, bei Fehlschlag zurückdrehen – wer zwanzig Themen
+  // durchgeht, wartet nicht zwanzigmal auf den Server.
+  if (feld === "fav") eintrag.fav = an;
+  else eintrag.aus = !an;
+  katThemenZeileAuffrischen(zeile, eintrag);
+  try {
+    await api("/katalog/themen/wahl", { method: "POST", body: rumpf });
+    katThemenGeholt = false;      // die Auswahl im Katalog neu holen
+  } catch (err) {
+    if (feld === "fav") eintrag.fav = !an;
+    else eintrag.aus = an;
+    katThemenZeileAuffrischen(zeile, eintrag);
+    toast(tr("Ging nicht."));
+  }
+}
+
+function katThemenVerdrahten() {
+  const liste = $("kat-themen-liste");
+  if (!liste) return;
+  liste.addEventListener("click", (ev) => {
+    const knopf = ev.target.closest(".kat-themen-schalter");
+    const zeile = ev.target.closest(".kat-themen-zeile");
+    if (knopf && zeile) katThemenSchalten(zeile, knopf);
+  });
+  let takt = null;
+  $("kat-themen-suche").addEventListener("input", () => {
+    clearTimeout(takt);
+    takt = setTimeout(katThemenZeichnen, 150);
+  });
+  document.querySelectorAll("[data-themenalle]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      try {
+        await api(`/katalog/themen/wahl/alle?art=${katStand.art}`,
+          { method: "POST", body: { was: b.dataset.themenalle } });
+        katThemenGeholt = false;
+        await katThemenLadenAlle();
+      } catch (err) { toast(tr("Ging nicht.")); }
+    });
+  });
 }

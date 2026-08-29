@@ -994,8 +994,52 @@ def _praefixe_zum_thema(thema: str) -> list:
     return sorted(treffer)
 
 
+KATALOG_THEMEN_WAHL = "katalog_themen"
+
+
+def _themen_wahl(user_id: int) -> dict:
+    """Favoriten und ausgeblendete Themen dieses Benutzers.
+
+    Gespeichert wird unter dem **Themennamen**, nicht unter dem Kürzel:
+    Ein Thema kann unter mehreren Kürzeln laufen (Belville unter vier), und
+    das Kürzel ist auch nicht das, was in der Auswahl steht. Wird ein Thema
+    später umbenannt, verliert es still seine Markierung – das ist der
+    Preis, und er ist kleiner als eine Zuordnung, die niemand nachvollzieht.
+    """
+    roh = core.get_user_setting(user_id, KATALOG_THEMEN_WAHL)
+    if not roh:
+        return {"fav": [], "aus": []}
+    try:
+        d = json.loads(roh)
+        return {"fav": [str(x) for x in d.get("fav", [])][:400],
+                "aus": [str(x) for x in d.get("aus", [])][:400]}
+    except (ValueError, TypeError, AttributeError):
+        return {"fav": [], "aus": []}
+
+
+def _themen_wahl_setzen(user_id: int, wahl: dict) -> None:
+    core.set_user_setting(user_id, KATALOG_THEMEN_WAHL,
+                          json.dumps({"fav": sorted(set(wahl["fav"])),
+                                      "aus": sorted(set(wahl["aus"]))}))
+
+
+# **Lesen, ändern, schreiben muss am Stück laufen.**
+#
+# Die ganze Wahl steht als eine JSON-Zeile in den Benutzereinstellungen.
+# Wer in der Liste zügig fünf Themen antippt, schickt fünf Anfragen, die
+# sich überholen: Jede liest denselben alten Stand, ändert ihr eigenes
+# Thema und schreibt zurück – vier Änderungen sind danach weg. Gemessen am
+# 29.08.2026: von fünf Tippern kam einer an.
+#
+# Eine Sperre reicht, weil alles in einem Prozess läuft. Die Alternative
+# wäre eine Zeile je Thema in der Datenbank; das wären bei 199 Themen 199
+# Zeilen je Benutzer für eine Handvoll Markierungen.
+_themen_sperre = threading.Lock()
+
+
 @app.get("/api/katalog/liste/themen")
-def katalog_themen(art: str = "minifig", user: dict = Depends(current_user)):
+def katalog_themen(art: str = "minifig", alle: int = 0,
+                   user: dict = Depends(current_user)):
     """Welche Themen liegen im Index, und wie viele hat man schon?
 
     **Gruppiert wird nach Thema, nicht nach Kürzel.** Belville steht unter
@@ -1025,18 +1069,90 @@ def katalog_themen(art: str = "minifig", user: dict = Depends(current_user)):
         kuerzel_je_thema.setdefault(thema, set()).add(
             _nummer_teile(r["item_no"])[0])
 
-    aus = []
+    wahl = _themen_wahl(user["id"])
+    fav, versteckt = set(wahl["fav"]), set(wahl["aus"])
+
+    liste = []
     for thema, (gesamt, hat) in zaehler.items():
+        if not alle and thema in versteckt:
+            continue
         kuerzel = sorted(kuerzel_je_thema[thema])
-        aus.append({"thema": thema, "anzahl": gesamt, "besitz": hat,
-                    # Was über dem Sprungbalken steht. Bei einem einzelnen
-                    # Kürzel dessen Großschreibung, sonst das Thema selbst –
-                    # „BELVFEMALE" hülfe niemandem.
-                    "kopf": kuerzel[0].upper() if len(kuerzel) == 1
-                            else thema[:9],
-                    "mehrteilig": len(kuerzel) > 1})
-    aus.sort(key=lambda x: (-x["anzahl"], x["thema"]))
-    return {"themen": aus}
+        liste.append({"thema": thema, "anzahl": gesamt, "besitz": hat,
+                      # Was über dem Sprungbalken steht. Bei einem einzelnen
+                      # Kürzel dessen Großschreibung, sonst das Thema selbst –
+                      # „BELVFEMALE" hülfe niemandem.
+                      "kopf": kuerzel[0].upper() if len(kuerzel) == 1
+                              else thema[:9],
+                      "mehrteilig": len(kuerzel) > 1,
+                      "fav": thema in fav,
+                      "aus": thema in versteckt})
+    # Favoriten nach oben, darunter nach Größe. In der Einstellungsliste
+    # (`alle=1`) dagegen alphabetisch: Dort sucht man einen bestimmten
+    # Namen, und der springt aus einer Größenfolge nicht ins Auge.
+    if alle:
+        liste.sort(key=lambda x: x["thema"].lower())
+    else:
+        liste.sort(key=lambda x: (not x["fav"], -x["anzahl"], x["thema"]))
+    return {"themen": liste,
+            "versteckt": sum(1 for t in zaehler if t in versteckt)}
+
+
+class ThemenWahlBody(BaseModel):
+    thema: str = Field(min_length=1, max_length=120)
+    fav: bool | None = None
+    sichtbar: bool | None = None
+
+
+@app.post("/api/katalog/themen/wahl")
+def katalog_themen_wahl(body: ThemenWahlBody,
+                        user: dict = Depends(current_user)):
+    """Ein Thema als Favorit markieren oder aus der Auswahl nehmen.
+
+    Beides einzeln schaltbar: Ein ausgeblendetes Thema bleibt Favorit, wenn
+    es einer war – wer es wieder einblendet, findet es dort, wo er es
+    hinterlassen hat.
+    """
+    with _themen_sperre:
+        wahl = _themen_wahl(user["id"])
+        fav, aus = set(wahl["fav"]), set(wahl["aus"])
+        if body.fav is not None:
+            (fav.add if body.fav else fav.discard)(body.thema)
+        if body.sichtbar is not None:
+            (aus.discard if body.sichtbar else aus.add)(body.thema)
+        _themen_wahl_setzen(user["id"], {"fav": fav, "aus": aus})
+    return {"ok": True, "fav": body.thema in fav, "aus": body.thema in aus}
+
+
+class ThemenWahlAllesBody(BaseModel):
+    was: str = Field(pattern="^(alle_ein|alle_aus|nur_favoriten)$")
+
+
+@app.post("/api/katalog/themen/wahl/alle")
+def katalog_themen_wahl_alle(body: ThemenWahlAllesBody, art: str = "minifig",
+                             user: dict = Depends(current_user)):
+    """Alle auf einmal – bei 199 Themen sonst 199 Tipper.
+
+    `nur_favoriten` blendet alles aus, was kein Favorit ist. Das ist der
+    Weg, den man wirklich will: erst ein paar Sterne setzen, dann den Rest
+    wegräumen.
+    """
+    art = "set" if art == "set" else "minifig"
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT item_no FROM katalog_index WHERE item_type = ?",
+            (art,)).fetchall()
+    alle_themen = {t for t in (_thema_von(r["item_no"]) for r in rows) if t}
+    with _themen_sperre:
+        wahl = _themen_wahl(user["id"])
+        fav = set(wahl["fav"])
+        if body.was == "alle_ein":
+            aus: set = set()
+        elif body.was == "alle_aus":
+            aus = set(alle_themen)
+        else:
+            aus = {t for t in alle_themen if t not in fav}
+        _themen_wahl_setzen(user["id"], {"fav": fav, "aus": aus})
+    return {"ok": True, "versteckt": len(aus), "gesamt": len(alle_themen)}
 
 
 @app.get("/api/katalog/liste")

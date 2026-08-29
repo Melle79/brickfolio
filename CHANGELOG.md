@@ -27,6 +27,41 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.63.0 – August 2026
+
+### Neu
+- ⭐ **Katalog-Themen auswählen und mit Sternen versehen.** Unter
+  *Mehr → 📚 Katalog-Themen* bekommt jedes Thema zwei Schalter: **★** hebt
+  es in der Auswahl ganz nach oben, **☑/☐** bestimmt, ob es dort überhaupt
+  erscheint.
+
+  Bei 199 Themen war die Auswahl im Katalog-Reiter sonst ein Fass ohne
+  Boden. Der bequemste Weg: ein paar Sterne setzen, dann **★ Nur
+  Favoriten** – das blendet alles andere aus.
+
+  Die Wahl gehört dem Benutzer, nicht der Instanz: Paul kann eine ganz
+  andere haben als Sven. Und der Stern überlebt das Ausblenden – wer ein
+  Thema wieder einschaltet, findet seine Markierung, wo er sie gelassen
+  hat.
+
+  Ist alles ausgeblendet, sagt der Katalog-Reiter das auch. Vorher wäre er
+  aus demselben Grund leer gewesen wie ohne geladenen Katalog, und man
+  hätte am falschen Ende gesucht.
+
+### Behoben
+- 🖱️ **Schnelle Tipper gingen verloren.** Die ganze Themenwahl steht als
+  *eine* Zeile in den Benutzereinstellungen. Wer zügig fünf Themen
+  antippte, schickte fünf Anfragen, die sich überholten: Jede las denselben
+  alten Stand und schrieb ihr eigenes Thema zurück – vier Änderungen waren
+  danach weg. Gemessen kam von fünf Tippern einer an.
+
+  Lesen, Ändern und Schreiben laufen jetzt am Stück.
+
+- Und ein zweiter Fall derselben Ungeduld: Nach jedem Umschalten wurde die
+  ganze Liste neu gezeichnet, wodurch die eben angetippte Zeile aus dem
+  Dokument fiel. Der nächste Tipper ging ins Leere. Jetzt wird nur die eine
+  Zeile umgestellt.
+
 ## 2.62.0 – August 2026
 
 ### Behoben
