@@ -3645,10 +3645,34 @@ function applyCollView() {
   }
 }
 
+/* Der Steckbrief einer Sammlungs-Karte.
+
+   **In Abschnitte geteilt (29.08.2026).** Er ist über Monate gewachsen und
+   war zuletzt eine flache Liste aus zehn Blöcken – Anzahl, Zustand,
+   Bezahlt, Tauschbörse, Thema, Notizen, BrickLink-Nummer, Verweise,
+   enthaltene Teile, Marktpreise – ohne erkennbaren Zusammenhang.
+
+   Vier Überschriften, und **alles bleibt sichtbar**: Zuklappen spart
+   Scrollweg, kostet aber bei jedem Öffnen einen Tipper, und die Preise
+   sieht man beim Bewerten fast immer an. Die Reihenfolge innerhalb der
+   Abschnitte ist unverändert.
+
+   Ein Abschnitt, der leer bliebe – „Nachschlagen" ohne BrickLink-Zugang –,
+   wird gar nicht erst gezeichnet. Eine Überschrift über nichts ist
+   schlechter als keine. */
+function steckbriefTeil(titel, inhalt, extra = "") {
+  const roh = inhalt.trim();
+  if (!roh) return "";
+  return `<section class="sb-teil">
+          <h4 class="sb-titel">${esc(tr(titel))}${extra}</h4>
+          ${roh}
+        </section>`;
+}
+
 function collCardDetails(it) {
   const needsBlNo = /^(fig-|manuell-|custom-)/.test(it.item_id);
-  return `
-      <div class="card-details" hidden>
+
+  const meins = `
         <div class="qty-edit">
           <span class="qty-edit-label">Anzahl</span>
           <div class="qty">
@@ -3679,7 +3703,9 @@ function collCardDetails(it) {
         <label class="share-toggle">
           <input type="checkbox" data-share ${it.shared ? "checked" : ""}>
           🤝 In der Tauschbörse anbieten
-        </label>` : ""}
+        </label>` : ""}`;
+
+  const einordnung = `
         <label>Thema</label>
         <div class="detail-row thema-fest" data-thema-fest${it.theme ? "" : " hidden"}>
           <span class="thema-wert" data-thema-wert>${esc(it.theme || "")}</span>
@@ -3701,7 +3727,9 @@ function collCardDetails(it) {
           <input data-fix-no placeholder="z. B. sw0815" autocapitalize="none" class="fix-input">
           <button class="mini-btn add" data-fix-btn>Übernehmen</button>
           ${it.img_url ? `<button class="mini-btn" data-fix-auto>🔍 Automatisch</button>` : ""}
-        </div>` : ""}
+        </div>` : ""}`;
+
+  const nachschlagen = `
         ${priceGuideUrl(it) || it.bricklink_url ? `
         <div class="detail-row btn-grid">
           ${priceGuideUrl(it) ? `<a class="mini-btn link" href="${esc(priceGuideUrl(it))}" target="_blank" rel="noopener">Preisverlauf ↗</a>` : ""}
@@ -3716,14 +3744,29 @@ function collCardDetails(it) {
         <div class="detail-row">
           <button class="mini-btn" data-parts>🧩 Enthaltene Teile anzeigen</button>
         </div>
-        <div class="set-figs" data-parts-out></div>` : ""}
-        ${state.bricklinkPrices && !needsBlNo ? `
-        <div class="price-head">
-          <span>Marktpreise</span>
-          <button class="icon-btn" data-price title="Preise jetzt aktualisieren" aria-label="Preise jetzt aktualisieren">↻</button>
-        </div>` : ""}
+        <div class="set-figs" data-parts-out></div>` : ""}`;
+
+  // **Die Zielfelder stehen immer im Dokument, die Überschrift nicht.**
+  // Die Verdrahtung schreibt in `[data-price-out]` und `[data-history]`;
+  // ein fehlendes Ziel wäre ein stiller Fehler. Ohne BrickLink-Zugang
+  // bleiben sie aber leer, und dann stünde „MARKTPREISE" über nichts.
+  const preisfelder = `
         <div class="price-result" data-price-out></div>
-        <div class="price-history" data-history></div>
+        <div class="price-history" data-history></div>`;
+  const hatPreise = state.bricklinkPrices && !needsBlNo;
+  const preise = hatPreise
+    ? steckbriefTeil("Marktpreise", preisfelder,
+        `<button class="icon-btn" data-price
+           title="${esc(tr("Preise jetzt aktualisieren"))}"
+           aria-label="${esc(tr("Preise jetzt aktualisieren"))}">↻</button>`)
+    : preisfelder;
+
+  return `
+      <div class="card-details" hidden>
+        ${steckbriefTeil("Mein Exemplar", meins)}
+        ${steckbriefTeil("Einordnung", einordnung)}
+        ${steckbriefTeil("Nachschlagen", nachschlagen)}
+        ${preise}
         <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString(dateLocale())}</div>
       </div>`;
 }
@@ -4692,8 +4735,8 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
           </div>
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
           <div class="card-title">
-            <strong>${esc(item.name)}</strong>${
-              jedipediaLink(item.item_id, item.name)}
+            <strong>${esc(item.name)}${
+              jedipediaLink(item.item_id, item.name)}</strong>
             <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
             <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
             ${setFigsText(item) ? `<div class="sub sub-figs">${esc(setFigsText(item))}</div>` : ""}

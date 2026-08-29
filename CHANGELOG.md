@@ -27,6 +27,31 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.69.0 – August 2026
+
+### Geändert
+- 🗂️ **Der Steckbrief ist in Abschnitte geteilt.** Er war über Monate
+  gewachsen und zuletzt eine flache Liste aus zehn Blöcken – Anzahl,
+  Zustand, Bezahlt, Tauschbörse, Thema, Notizen, BrickLink-Nummer,
+  Verweise, enthaltene Teile, Marktpreise – ohne erkennbaren Zusammenhang.
+
+  Vier Überschriften: **Mein Exemplar**, **Einordnung**, **Nachschlagen**,
+  **Marktpreise**. Die Reihenfolge innerhalb der Abschnitte ist
+  unverändert; Anzahl und Zustand stehen weiter zuerst, das braucht man
+  beim Erfassen als Erstes.
+
+  **Zugeklappt wird nichts.** Das spart zwar Scrollweg, kostet aber bei
+  jedem Öffnen einen Tipper – und die Preise sieht man beim Bewerten fast
+  immer an.
+
+  Ein Abschnitt, der leer bliebe, wird gar nicht gezeichnet: Ohne
+  BrickLink-Zugang gibt es keine Überschrift „Marktpreise" über einer
+  leeren Fläche. Die Felder darunter bleiben trotzdem im Dokument – sonst
+  schriebe die Verdrahtung ins Leere.
+
+- Das **ⓘ** des Jedipedia-Verweises steht jetzt neben dem Namen statt
+  darunter.
+
 ## 2.68.0 – August 2026
 
 ### Neu

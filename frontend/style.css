@@ -2087,3 +2087,24 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   color: var(--muted); vertical-align: baseline;
 }
 .jedi-link:hover, .jedi-link:focus { color: var(--blue, #0b6ec9); }
+
+/* ── Abschnitte im Steckbrief ───────────────────────────────────────────
+   Er trug zuletzt zehn Blöcke hintereinander weg, ohne erkennbaren
+   Zusammenhang. Vier Überschriften mit einer Linie darunter genügen –
+   zugeklappt wird nichts, weil das bei jedem Öffnen einen Tipper kostet
+   und die Preise beim Bewerten fast immer gebraucht werden. */
+.sb-teil { margin-top: 14px; }
+.sb-teil:first-of-type { margin-top: 4px; }
+.sb-titel {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin: 0 0 8px;
+  font-size: .72rem; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+  padding-bottom: 5px; border-bottom: 1px solid var(--line);
+}
+/* Der Auffrischen-Knopf sitzt in der Überschrift „Marktpreise" – dort, wo
+   vorher `price-head` stand. */
+.sb-titel .icon-btn { margin: -4px 0; }
+/* Die erste Beschriftung eines Abschnitts braucht keinen Abstand nach
+   oben mehr, den hat schon die Überschrift. */
+.sb-teil > label:first-child { margin-top: 0; }
