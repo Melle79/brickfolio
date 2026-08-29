@@ -27,6 +27,23 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.65.0 – August 2026
+
+### Behoben
+- ⏸️ **Ein Serverneustart wirft keine laufende Arbeit mehr weg.** Startet
+  die Instanz neu – nach einem Update etwa –, laden alle offenen Seiten
+  neu. Das ist richtig: Sonst liefe alter Programmcode gegen einen neuen
+  Server. Der Zeitpunkt war es nicht.
+
+  Am 29.08.2026 im LEGO-Museum: Beim Scannen lud sich die App mehrmals von
+  selbst neu. Foto, erkannte Figuren und gezogene Rahmen sind danach weg,
+  und die Arbeit fängt von vorn an – vor einer Vitrine besonders ärgerlich.
+
+  Das Neuladen wartet jetzt, solange etwas offen ist: eine laufende
+  Reihum-Suche, ein Foto mit Treffern, ein Steckbrief oder die Großansicht.
+  Eine Leiste sagt, dass eine neue Fassung bereitliegt; geladen wird, sobald
+  der Weg frei ist. Ein Update kann warten.
+
 ## 2.64.1 – August 2026
 
 ### Geändert

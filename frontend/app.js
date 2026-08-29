@@ -1028,6 +1028,7 @@ function stepGallery(delta) {
 
 function closeGallery() {
   $("lightbox").hidden = true;
+  neuladenNachholen();
   $("lightbox-img").src = "";
   gallery = { urls: [], idx: 0, eigene: {} };
   const weg = $("lb-del");
@@ -1776,6 +1777,7 @@ function showTab(name) {
   //
   // Nicht anfassen, solange die Suche läuft: Die Schleife zeichnet aus
   // genau dieser Fläche, und eine Fläche der Größe null liefert nichts.
+  neuladenNachholen();
   if (name !== "scan") {
     arbeitBildFreigeben();
     // Die Reihum-Fläche ist mit rund 4 MB kein Riese, blieb aber liegen,
@@ -3234,6 +3236,7 @@ async function alleFigurenErkennen(weiter = false) {
     toast(e.message);
   } finally {
     reihumLaeuft = false;
+    neuladenNachholen();
     // Die Zahl vorher merken: Endet die Suche endgültig, ist der Suchstand an
     // dieser Stelle schon freigegeben – im Protokoll stand dann „(–)" statt
     // der Zahl der gefundenen Figuren.
@@ -4651,7 +4654,7 @@ function closeCardModal() {
     document.removeEventListener("keydown", cardModalKeyHandler);
     cardModalKeyHandler = null;
   }
-  if (m) auffrischenNachholen();
+  if (m) { auffrischenNachholen(); neuladenNachholen(); }
 }
 
 function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
@@ -9728,9 +9731,56 @@ let diagTimer = null;
    Deshalb hinterlässt jedes gewollte Neuladen hier seinen Grund. */
 const DIAG_GRUND_KEY = "bf_reload_grund";
 
+/* Steckt der Anwender gerade in einer Arbeit, die ein Neuladen zerstört?
+
+   Am 29.08.2026 im LEGO-Museum: Sven scannte, und die App lud sich mehrmals
+   von selbst neu. Ursache waren elf Update-Läufe an diesem Tag – jeder
+   Neustart des Servers lässt jede offene Seite neu laden, und das ist auch
+   richtig so. Falsch war der Zeitpunkt: Ein Foto, die erkannten Figuren und
+   die gezogenen Rahmen sind danach weg, und die Arbeit fängt von vorn an.
+
+   Ein Update kann warten. Die Arbeit von jemandem, der vor einer Vitrine
+   steht, kann es nicht. */
+function arbeitLaeuft() {
+  // Eine Reihum-Suche mitten im Lauf – die abzubrechen kostet auch Anfragen
+  // an einen kostenlos bereitgestellten Dienst.
+  if (reihumLaeuft) return true;
+  // Ein Foto liegt mit Ergebnissen auf dem Tisch.
+  const vorschau = document.getElementById("scan-preview");
+  const treffer = document.getElementById("scan-results");
+  if (vorschau && !vorschau.hidden && treffer && treffer.children.length) {
+    return true;
+  }
+  // Ein Fenster ist offen: Steckbrief, Katalogeintrag, Großansicht.
+  if (document.getElementById("card-modal")
+      || document.getElementById("kat-modal")) return true;
+  const lb = document.getElementById("lightbox");
+  if (lb && !lb.hidden) return true;
+  return false;
+}
+
+let neuladenAusstehend = null;
+
 function neuLadenMit(grund) {
+  if (arbeitLaeuft()) {
+    if (!neuladenAusstehend) {
+      neuladenAusstehend = grund;
+      spur("Neuladen verschoben: " + grund);
+      showUpdateBar(true, tr("Neue Fassung bereit – wird geladen, sobald du "
+        + "hier fertig bist."));
+    }
+    return;
+  }
   try { sessionStorage.setItem(DIAG_GRUND_KEY, grund); } catch (_) { /* egal */ }
   location.reload();
+}
+
+/* Nach jedem Schritt nachsehen, ob der Weg jetzt frei ist. */
+function neuladenNachholen() {
+  if (!neuladenAusstehend || arbeitLaeuft()) return;
+  const grund = neuladenAusstehend;
+  neuladenAusstehend = null;
+  neuLadenMit(grund);
 }
 
 function diagStarten() {
