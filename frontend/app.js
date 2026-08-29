@@ -4105,7 +4105,17 @@ function hintergrundBeobachten(root) {
       if (e.isIntersecting) e.target.style.setProperty("--bg-img", cssUrl(url));
       else e.target.style.removeProperty("--bg-img");
     });
-  }, { rootMargin: "800px 0px" });
+    // **300 statt 800 Pixel.** Drei Absturzberichte mit dem neuen Messwert
+    // zeigen 76 %, 64 % und 89 % der Bilder geladen – bei einer Messung im
+    // Browser waren es 15 %. Der Unterschied ist der Rand: Bei 800 px
+    // bleibt ein Band von rund 2.500 px Höhe geladen, und in der Sammlung
+    // sind das dreistellig viele Kacheln (29.08.2026).
+    //
+    // 300 px reichen zum Vorausladen beim Scrollen – so weit kommt niemand
+    // zwischen zwei Bildaufbauten. Wer zurückscrollt, sieht das Bild
+    // ohnehin sofort: Der Browser hält es im eigenen Zwischenspeicher, nur
+    // die Karte hielt keine Verbindung mehr dorthin.
+  }, { rootMargin: "300px 0px" });
   // **Jede Karte, nicht nur die mit Hintergrund.** Das Bild einer Karte
   // muss auch dann losgelassen werden, wenn sie kein `data-bg` hat.
   root.querySelectorAll(".card").forEach((c) => bgBeobachter.observe(c));

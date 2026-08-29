@@ -439,3 +439,16 @@ def test_der_kartenhintergrund_nimmt_denselben_daumennagel():
     quelle = _app_js()
     assert 'data-bg="${imgSrc(it.img_url, true)}"' in quelle
     assert 'data-bg="${imgSrc(it.img_url)}"' not in quelle
+
+
+def test_der_rand_der_freigabe_ist_eng_genug():
+    """Drei Absturzberichte mit dem neuen Messwert zeigen 76 %, 64 % und
+    89 % der Bilder geladen – bei einer Messung im Browser waren es 15 %.
+    Der Unterschied ist der Rand: Bei 800 px bleibt ein Band von rund
+    2.500 px geladen, in der Sammlung dreistellig viele Kacheln
+    (29.08.2026).
+
+    Der Nachschub-Rand bleibt großzügig – der lädt nach, er hält nichts."""
+    quelle = _app_js()
+    assert 'rootMargin: "300px 0px"' in quelle
+    assert 'rootMargin: "1200px 0px"' in quelle, "Nachschub bleibt bei 1200"
