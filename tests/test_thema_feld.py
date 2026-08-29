@@ -23,10 +23,17 @@ def css() -> str:
     return (FRONTEND / "style.css").read_text(encoding="utf-8")
 
 
-def test_mit_thema_steht_nur_das_thema_da():
+def test_das_thema_steht_im_kopf_das_feld_bleibt_zu():
+    """Seit 2.72.0 steht das Thema oben im Kopf des Steckbriefs.
+
+    Das Eingabefeld startet geschlossen – auch ohne Thema. Dort steht dann
+    „Thema setzen" als Einladung, und der Stift holt das Feld. Vorher stand
+    bei jedem Eintrag ohne Thema ein offenes Feld im Weg.
+    """
     quelle = js()
-    assert 'data-thema-fest${it.theme ? "" : " hidden"}' in quelle
-    assert 'data-thema-feld${it.theme ? " hidden" : ""}' in quelle
+    assert 'data-thema-feld hidden' in quelle
+    assert "themaKopfzeile(item)" in quelle
+    assert 'tr("Thema setzen")' in quelle
 
 
 def test_der_stift_holt_das_feld_zurueck():
@@ -47,14 +54,17 @@ def test_nach_dem_setzen_geht_es_wieder_zu():
     assert "zeigen(false)" in umfeld
 
 
-def test_ohne_thema_bleibt_das_feld_offen():
-    """`zeigen` hängt an `item.theme`, nicht am Knopfdruck: Wer das Thema
-    leert, steht ohne – dann gehört das Feld sichtbar."""
+def test_ohne_thema_steht_die_einladung_da():
+    """Wer das Thema leert, steht ohne – dann gehört dort nicht nichts,
+    sondern der Weg zurück. `zeigen` weicht seit 2.72.0 nur noch beim
+    Bearbeiten, und der Text fällt auf die Einladung zurück."""
     quelle = js()
     stelle = quelle.index("const zeigen = (bearbeiten)")
     umfeld = quelle[stelle:stelle + 260]
-    assert "!item.theme" in umfeld
-    assert "!!item.theme" in umfeld
+    assert "festRow.hidden = bearbeiten;" in umfeld
+    assert "feldRow.hidden = !bearbeiten;" in umfeld
+    stelle2 = quelle.index("const setzen = async ()")
+    assert 'wert || tr("Thema setzen")' in quelle[stelle2:stelle2 + 1200]
 
 
 def test_ausgeblendet_heisst_ausgeblendet():

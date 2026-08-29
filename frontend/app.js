@@ -1628,6 +1628,26 @@ const TRASH_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" `
 
 /* Die Unterzeile der Karte steht auf zwei Zeilen: oben Nummer und Jahr,
    unten Zustand, Ø-Preis (mit Herkunfts-Flagge) und ggf. Set-Figuren. */
+/* Das Thema im Kopf des Steckbriefs.
+
+   **Ohne Stift, wo es aus der Nummer folgt.** `sw1213` ist Star Wars, da
+   gibt es nichts zu entscheiden – an 910 Einträgen nachgesehen hat auch
+   nie jemand etwas anderes gesetzt (29.08.2026). Bei eigenen Figuren,
+   Teilen und unbekannten Kürzeln – 159 der 910 – weiß die App es nicht;
+   dort bleibt der Stift die einzige Möglichkeit, und ohne Thema steht dort
+   eine Einladung statt einer leeren Zeile. */
+function themaKopfzeile(it) {
+  const fest = !!it.theme_auto;
+  if (fest && !it.theme) return "";
+  const wert = esc(it.theme || tr("Thema setzen"));
+  const stift = fest ? "" : `<button class="thema-stift" data-thema-aendern
+      title="${esc(tr("Thema ändern"))}"
+      aria-label="${esc(tr("Thema ändern"))}">✏️</button>`;
+  return `<div class="sub sub-thema${it.theme ? "" : " ohne"}" data-thema-fest>
+      <span class="thema-wert" data-thema-wert>${wert}</span>${stift}
+    </div>`;
+}
+
 function collSubId(it) {
   return `${it.item_id}${it.year > 0 ? " · " + it.year : ""}`;
 }
@@ -3727,17 +3747,12 @@ function collCardDetails(it) {
           🤝 In der Tauschbörse anbieten
         </label>` : ""}`;
 
+  // **Das Thema steht oben im Kopf, nicht hier.** Es gehört zur Figur,
+  // nicht zu dem, was man mit ihr macht – und seit der Katalogliste folgt
+  // es bei den allermeisten aus der Nummer. Das Eingabefeld bleibt hier
+  // unten, es taucht ja nur auf, wenn wirklich etwas zu setzen ist.
   const einordnung = `
-        <div class="sb-zeile thema-fest" data-thema-fest${it.theme ? "" : " hidden"}>
-          <span class="sb-label">${esc(tr("Thema"))}</span>
-          <div class="detail-row">
-            <span class="thema-wert" data-thema-wert>${esc(it.theme || "")}</span>
-            <button class="thema-stift" data-thema-aendern
-              title="${esc(tr("Thema ändern"))}"
-              aria-label="${esc(tr("Thema ändern"))}">✏️</button>
-          </div>
-        </div>
-        <div class="detail-row" data-thema-feld${it.theme ? " hidden" : ""}>
+        <div class="detail-row" data-thema-feld hidden>
           <input data-theme list="themen-liste" class="fix-input"
             placeholder="${esc(tr("z. B. Star Wars – leer = Ohne Thema"))}"
             value="${esc(it.theme || "")}" maxlength="60">
@@ -4763,6 +4778,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
               jedipediaLink(item.item_id, item.name)}</strong>
             <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
             <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
+            ${themaKopfzeile(item)}
             ${setFigsText(item) ? `<div class="sub sub-figs">${esc(setFigsText(item))}</div>` : ""}
             ${(item.in_sets || item.item_type === "minifig") ? `<div class="sub in-sets" data-fig-sets hidden></div>` : ""}
           </div>
@@ -5290,9 +5306,12 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     const festRow = card.querySelector("[data-thema-fest]");
     const feldRow = card.querySelector("[data-thema-feld]");
     const wertEl = card.querySelector("[data-thema-wert]");
+    // Die feste Zeile steht seit 2.72.0 oben im Kopf und zeigt auch ohne
+    // Thema etwas an („Thema setzen"). Sie weicht deshalb nur beim
+    // Bearbeiten – vorher verschwand sie, sobald kein Thema gesetzt war.
     const zeigen = (bearbeiten) => {
-      if (festRow) festRow.hidden = bearbeiten || !item.theme;
-      if (feldRow) feldRow.hidden = !bearbeiten && !!item.theme;
+      if (festRow) festRow.hidden = bearbeiten;
+      if (feldRow) feldRow.hidden = !bearbeiten;
     };
     const aendern = card.querySelector("[data-thema-aendern]");
     if (aendern) {
@@ -5312,7 +5331,8 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         item.theme = wert;
         const inState = (state.collection || []).find((x) => x.id === id);
         if (inState) inState.theme = wert;
-        if (wertEl) wertEl.textContent = wert;
+        if (wertEl) wertEl.textContent = wert || tr("Thema setzen");
+        if (festRow) festRow.classList.toggle("ohne", !wert);
         zeigen(false);
         toast(wert ? tr("Thema gesetzt: {t}", { t: wert })
           : tr("Thema entfernt – der Eintrag steht jetzt ohne Thema."));

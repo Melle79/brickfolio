@@ -2133,3 +2133,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    Verdrahtung das Feld später nachträgt: Die Regel greift dann von
    selbst, ohne dass jemand daran denken muss. */
 .sb-zeile:has(> .profit-line:empty) { display: none; }
+
+/* Das Thema im Kopf des Steckbriefs – eine Unterzeile wie Nummer und
+   Zustand, nur mit dem Stift daneben, wo es einen gibt. */
+.sub-thema { display: flex; align-items: center; gap: 4px; }
+.sub-thema .thema-wert { font-weight: 700; }
+/* Ohne Thema ist es eine Einladung, kein Wert. */
+.sub-thema.ohne .thema-wert { font-weight: 400; font-style: italic; }
+.sub-thema .thema-stift {
+  background: none; border: 0; padding: 0 2px; cursor: pointer;
+  font-size: .9em; line-height: 1;
+}

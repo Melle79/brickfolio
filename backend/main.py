@@ -5357,6 +5357,14 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
             d["net_value"] = (round((unit or 0)
                                     * max(0, d["quantity"] - in_sets), 2)
                               if unit else None)
+            # **Folgt das Thema aus der Nummer?** `sw1213` ist Star Wars,
+            # da gibt es nichts zu bearbeiten – und an 910 Einträgen
+            # nachgesehen (29.08.2026) hat auch nie jemand etwas anderes
+            # gesetzt. Bei eigenen Figuren, Teilen und unbekannten Kürzeln
+            # (159 der 910) weiß die App es dagegen nicht; dort bleibt der
+            # Stift die einzige Möglichkeit.
+            d["theme_auto"] = bool(themes.for_item(d["item_id"],
+                                                   d["item_type"]))
             items.append(d)
     return {"items": items, "stats": stats}
 

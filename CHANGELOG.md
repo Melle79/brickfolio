@@ -27,6 +27,25 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.72.0 – August 2026
+
+### Geändert
+- 🏷️ **Das Thema steht jetzt oben im Steckbrief**, direkt unter Nummer und
+  Zustand – es gehört zur Figur, nicht zu dem, was man mit ihr macht. Aus
+  dem Abschnitt „Einordnung" ist es verschwunden.
+
+- ✏️ **Kein Stift mehr, wo das Thema aus der Nummer folgt.** `sw1213` ist
+  Star Wars; da gibt es nichts zu entscheiden. An 910 Einträgen
+  nachgesehen hatte auch **nie jemand** etwas anderes gesetzt als das
+  Ableitbare.
+
+  Bei eigenen Figuren, Teilen und unbekannten Kürzeln – 159 der 910 –
+  weiß die App es dagegen nicht. Dort bleibt der Stift, und statt einer
+  leeren Zeile steht dort „Thema setzen" als Einladung.
+
+  Das Eingabefeld startet damit immer geschlossen. Vorher stand bei jedem
+  Eintrag ohne Thema ein offenes Feld im Weg.
+
 ## 2.71.1 – August 2026
 
 ### Behoben
