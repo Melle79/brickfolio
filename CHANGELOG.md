@@ -27,6 +27,26 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.70.0 – August 2026
+
+### Geändert
+- 📐 **Beschriftung links, Inhalt rechts.** „Zustand", „Thema" und „Wert"
+  standen jedes für sich allein auf einer Zeile, mit der ganzen Breite
+  daneben frei. Sie stehen jetzt nebeneinander – das spart bei jedem
+  Steckbrief vier bis fünf Zeilen Höhe.
+
+  Nur die Notizen bleiben gestapelt: Ein Textfeld braucht die Breite.
+
+  Die Beschriftungsspalte ist so breit wie das längste Wort, nicht breiter.
+  Eine feste Breite säße bei „Anzahl" zu weit und bei „Bezahlt" zu eng.
+
+- Eine Zeile ohne Inhalt verschwindet mitsamt Beschriftung: „Wert" steht
+  nur da, wenn es einen Marktpreis gibt. Über CSS statt über Code, weil
+  die Verdrahtung den Preis später nachträgt – so greift es von selbst.
+
+- Aus dem Wertfeld ist das Wort „Wert" verschwunden; es steht jetzt als
+  Beschriftung daneben und stand sonst doppelt da.
+
 ## 2.69.0 – August 2026
 
 ### Geändert

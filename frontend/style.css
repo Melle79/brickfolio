@@ -2108,3 +2108,34 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 /* Die erste Beschriftung eines Abschnitts braucht keinen Abstand nach
    oben mehr, den hat schon die Überschrift. */
 .sb-teil > label:first-child { margin-top: 0; }
+
+/* Beschriftung links, Inhalt rechts.
+
+   Vorher stand jedes Wort – „Zustand", „Thema", „Wert" – allein auf einer
+   Zeile, mit der ganzen Breite daneben frei. Das kostete bei jedem
+   Steckbrief vier bis fünf Zeilen Höhe.
+
+   `max-content` für die Spalte: Sie ist so breit wie die längste
+   Beschriftung, nicht breiter. Eine feste Breite säße bei „Anzahl" zu
+   weit und bei „Bezahlt" zu eng. */
+.sb-zeile {
+  display: grid; grid-template-columns: max-content 1fr;
+  align-items: center; gap: 10px; margin: 7px 0;
+}
+.sb-label {
+  font-size: .82rem; color: var(--muted); white-space: nowrap;
+}
+/* Der Inhalt steht rechts an – der freie Platz gehört der Beschriftung. */
+.sb-zeile > .detail-row, .sb-zeile > .qty {
+  margin: 0; justify-content: flex-end;
+}
+.sb-zeile > .sub { margin: 0; text-align: right; }
+/* Die Zustandsknöpfe füllen die Spalte, nicht mehr die ganze Zeile. */
+.sb-zeile .mini-btn.cond { flex: 1; max-width: 160px; }
+/* Eine Zeile, deren Inhalt leer ist, verschwindet mitsamt Beschriftung.
+
+   „Wert" steht nur da, wenn es einen Marktpreis gibt – sonst stünde das
+   Wort über nichts. Über `:has()` statt über JavaScript, weil die
+   Verdrahtung das Feld später nachträgt: Die Regel greift dann von
+   selbst, ohne dass jemand daran denken muss. */
+.sb-zeile:has(> .profit-line:empty) { display: none; }

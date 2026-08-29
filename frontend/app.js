@@ -1605,7 +1605,9 @@ function profitLine(it) {
   if (value == null) return "";
   const diff = value - it.paid_price;
   const cls = diff >= 0 ? "profit-pos" : "profit-neg";
-  return esc(tr("Wert {wert}", { wert: fmtEur(value) })) + " · "
+  // **Ohne das Wort „Wert".** Es steht seit 2.70.0 als Beschriftung links
+  // daneben; hier noch einmal hieße „Wert  Wert 11,31 €".
+  return esc(fmtEur(value)) + " · "
     + `<span class="${cls}">`
     + `${diff >= 0 ? "+" : "−"}${fmtEur(Math.abs(diff))}</span>`;
 }
@@ -3672,32 +3674,45 @@ function steckbriefTeil(titel, inhalt, extra = "") {
 function collCardDetails(it) {
   const needsBlNo = /^(fig-|manuell-|custom-)/.test(it.item_id);
 
+  // **Beschriftung links, Inhalt rechts.** Vorher stand jedes Wort –
+  // „Zustand", „Thema", „Notizen" – allein auf einer Zeile, mit der
+  // ganzen Breite daneben frei. Das kostete bei jedem Steckbrief vier bis
+  // fünf Zeilen Höhe (29.08.2026).
+  //
+  // Nur die Notizen bleiben gestapelt: Ein Textfeld braucht die Breite.
   const meins = `
-        <div class="qty-edit">
-          <span class="qty-edit-label">Anzahl</span>
+        <div class="sb-zeile">
+          <span class="sb-label">${esc(tr("Anzahl"))}</span>
           <div class="qty">
             <button data-qty="-1" class="${it.quantity <= 1 ? "qty-del" : ""}" aria-label="${esc(it.quantity <= 1 ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"))}">${it.quantity <= 1 ? TRASH_SVG : "−"}</button>
             <span data-qty-val>${it.quantity}</span>
             <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
           </div>
         </div>
-        <label>Zustand</label>
-        <div class="detail-row">
-          <button class="mini-btn cond ${it.condition === "used" ? "sel" : ""}" data-cond="used">Gebraucht</button>
-          <button class="mini-btn cond ${it.condition === "new" ? "sel" : ""}" data-cond="new">Neu</button>
+        <div class="sb-zeile">
+          <span class="sb-label">${esc(tr("Zustand"))}</span>
+          <div class="detail-row">
+            <button class="mini-btn cond ${it.condition === "used" ? "sel" : ""}" data-cond="used">Gebraucht</button>
+            <button class="mini-btn cond ${it.condition === "new" ? "sel" : ""}" data-cond="new">Neu</button>
+          </div>
         </div>
         ${state.user && state.user.is_dealer ? `
         <div class="paid-block">
-          <div class="detail-row paid-row">
-            <span class="paid-label">Bezahlt</span>
-            <input data-paid class="paid-input" inputmode="decimal"
-              placeholder="0,00" value="${fmtPaidInput(it.paid_price)}">
-            <span class="paid-suffix" data-cur>${esc(curSymbol())} <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
-            <button class="kauf-plus" data-kauf-neu
-              title="Weiterer Kauf">＋</button>
+          <div class="sb-zeile paid-row">
+            <span class="sb-label">${esc(tr("Bezahlt"))}</span>
+            <div class="detail-row">
+              <input data-paid class="paid-input" inputmode="decimal"
+                placeholder="0,00" value="${fmtPaidInput(it.paid_price)}">
+              <span class="paid-suffix" data-cur>${esc(curSymbol())} <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
+              <button class="kauf-plus" data-kauf-neu
+                title="Weiterer Kauf">＋</button>
+            </div>
           </div>
           <div class="kaufbuch" data-kaufbuch hidden></div>
-          <div class="sub profit-line" data-profit>${profitLine(it)}</div>
+          <div class="sb-zeile">
+            <span class="sb-label">${esc(tr("Wert"))}</span>
+            <div class="sub profit-line" data-profit>${profitLine(it)}</div>
+          </div>
         </div>` : ""}
         ${state.hubConnected ? `
         <label class="share-toggle">
@@ -3706,12 +3721,14 @@ function collCardDetails(it) {
         </label>` : ""}`;
 
   const einordnung = `
-        <label>Thema</label>
-        <div class="detail-row thema-fest" data-thema-fest${it.theme ? "" : " hidden"}>
-          <span class="thema-wert" data-thema-wert>${esc(it.theme || "")}</span>
-          <button class="thema-stift" data-thema-aendern
-            title="${esc(tr("Thema ändern"))}"
-            aria-label="${esc(tr("Thema ändern"))}">✏️</button>
+        <div class="sb-zeile thema-fest" data-thema-fest${it.theme ? "" : " hidden"}>
+          <span class="sb-label">${esc(tr("Thema"))}</span>
+          <div class="detail-row">
+            <span class="thema-wert" data-thema-wert>${esc(it.theme || "")}</span>
+            <button class="thema-stift" data-thema-aendern
+              title="${esc(tr("Thema ändern"))}"
+              aria-label="${esc(tr("Thema ändern"))}">✏️</button>
+          </div>
         </div>
         <div class="detail-row" data-thema-feld${it.theme ? " hidden" : ""}>
           <input data-theme list="themen-liste" class="fix-input"
