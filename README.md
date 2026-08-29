@@ -49,6 +49,21 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🗂️ **Themenkarten**: Sortiert nach Thema zeigt die Sammlung aufklappbare
   Karten (Star Wars, City, Custom …) mit Anzahl und Wert je Thema. Die zuletzt
   gewählte Sortierung merkt sich das Profil
+- 📚 **Den Katalog durchblättern** (Listen → Katalog): alle Figuren eines
+  Themas in Nummernfolge, mit dem eigenen Besitzstand daneben. **✔** legt sie
+  in die Sammlung, **♥** auf die Wunschliste; Filter für *Alle · Fehlt mir ·
+  Hab ich · Gemerkt*. Am Rand ein Sprungbalken mit den Hunderterblöcken – bei
+  1.663 Star-Wars-Figuren der Unterschied zwischen Suchen und Finden.
+  Ausgehakt wird nur, was nichts wert ist: Hängt eine Stückzahl über eins oder
+  eine Notiz daran, rührt die App den Eintrag nicht an
+- ⭐ **Themen aussuchen** (Mehr → Katalog-Themen): Der Index kennt über 200
+  Themen. Ein **★** hebt eines nach oben, ein **☑** bestimmt, ob es überhaupt
+  in der Auswahl erscheint – „Nur Favoriten" räumt den Rest in einem Zug weg.
+  Gilt je Benutzer, nicht für die ganze Instanz
+- 📖 **Jedipedia-Verweis** (Mehr, ausgeschaltet voreingestellt): ein kleines
+  **ⓘ** neben Star-Wars-Figuren, das sie im deutschen Star-Wars-Wiki
+  nachschlägt. Gesucht statt direkt verlinkt – der Katalog ist englisch, das
+  Wiki deutsch
 
 **Preise & Wert**
 - 💶 BrickLink-Ø-Preise (neu/gebraucht) automatisch im Hintergrund, mit

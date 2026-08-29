@@ -1115,7 +1115,30 @@ dezenter Hintergrund in die Karte. Zwei Karten einer Reihe sind immer
 Ein Tipp auf eine Karte öffnet die Details als **Popup** – ein mittiges
 Fenster über der Liste, auf dem Handy fast bildschirmfüllend. Schließen
 per **✕**, Klick daneben oder **Esc**; Änderungen sind sofort gespeichert
-und stehen nach dem Schließen auch in der Liste. Im Popup zeigt sich:
+und stehen nach dem Schließen auch in der Liste.
+
+**Der Steckbrief ist in vier Abschnitte geteilt** (ab 2.69.0), weil er über
+die Zeit auf zehn Blöcke angewachsen war:
+
+| Abschnitt | Inhalt |
+|---|---|
+| **Mein Exemplar** | Anzahl, Zustand, Kaufpreis, Tauschbörse |
+| **Einordnung** | Notizen (und das Themenfeld, falls nötig) |
+| **Nachschlagen** | Preisverlauf, BrickLink, enthaltene Teile/Figuren |
+| **Marktpreise** | die Ø-Preise samt ↻ |
+
+Beschriftung steht links, Inhalt rechts – nur die Notizen bekommen die
+volle Breite. Ein Abschnitt ohne Inhalt wird gar nicht gezeichnet: Ohne
+BrickLink-Zugang steht keine Überschrift „Marktpreise" über einer leeren
+Fläche.
+
+**Das Thema steht oben im Kopf**, gleich unter Nummer und Zustand – es
+gehört zur Figur, nicht zu dem, was ihr mit ihr macht. Einen **✏️** gibt es
+dort nur, wo die App das Thema nicht aus der Nummer ableiten kann: bei
+eigenen Figuren, Teilen und unbekannten Kürzeln. `sw1213` ist Star Wars, da
+gibt es nichts zu entscheiden.
+
+Im Popup zeigt sich:
 
 - **Menge** (± Stepper) und **Zustand** (Gebraucht/Neu) – Änderungen
   greifen sofort, ohne die Karte zu schließen. **Neu und Gebraucht sind
@@ -1131,7 +1154,13 @@ und stehen nach dem Schließen auch in der Liste. Im Popup zeigt sich:
 - **Preise**: aktuelle Ø-Werte (neu/gebraucht); das **↻** am Preisblock
   „Marktpreise" holt sie sofort neu, der **Preisverlauf** zeigt sie als
   Chart (blau = neu, grün = gebraucht) mit Link zur BrickLink-Preisseite.
-- **Bild antippen** öffnet die Großansicht.
+- **Bild antippen** öffnet die Großansicht. Der Hinweis „Wischen zum
+  Blättern" erscheint nur, wenn es wirklich mehr als ein Bild gibt – in
+  aller Regel also erst, wenn ihr ein eigenes Foto dazugehängt habt.
+- **ⓘ neben dem Namen** (nur Star Wars, und nur wenn eingeschaltet unter
+  *Mehr → 📖 Jedipedia-Verweis*) schlägt die Figur im deutschen
+  Star-Wars-Wiki nach. Gesucht wird, nicht direkt verlinkt: Der Katalog ist
+  englisch, das Wiki deutsch – „Battle Droid" heißt dort „Kampfdroide".
 - **Löschen** über den **Papierkorb bei der Anzahl** (erscheint, sobald
   nur noch eines übrig ist) – mit Sicherheitsabfrage.
 
@@ -1383,6 +1412,17 @@ seine Markierung, wo er sie gelassen hat.
 **Die vier Filter** darüber grenzen ein: *Alle*, *Fehlt mir* (was noch
 aussteht), *Hab ich*, *Gemerkt*. „Fehlt mir" ist die Einkaufsliste für ein
 ganzes Thema.
+
+**Auch Sets** stehen im Katalog, sobald jemand BrickLinks `Sets.xml`
+eingelesen hat (*Mehr → Katalog → Katalogdatei einlesen*). Dafür braucht es
+einen zweiten Schritt: **Kategorien holen** auf derselben Seite.
+
+Der Grund: Figuren tragen ihr Thema in der Nummer – `sw1213` ist Star Wars.
+Sets nicht: `75192-1` sagt nichts. Deren Thema steht allein in der
+BrickLink-Kategorie, und die kommt als **Nummer**. Ein einziger Abruf holt
+den Kategoriebaum; danach stehen Sets unter „Star Wars" statt unter einer
+Ziffer. Ohne ihn bleibt das Thema leer – lieber gar keines als ein
+geratenes.
 
 **Wenn statt des Namens die Nummer steht** („sw0023a · Name folgt"), ist die
 Figur im Katalog, ihr Name aber noch nicht nachgeschlagen. Der veröffentlichte
@@ -2332,6 +2372,29 @@ weil er dort zuletzt etwas nachgesehen hat.
 >    Bleibt es dort ruhig, ist der Fall klar
 > 4. Einen Eintrag über **„Feedback senden"** melden. Berichte mit einer
 >    **Cab-ID** tragen einen echten Speicherabzug – die sind die nützlichsten
+
+**🔬 Bausteine einzeln abschalten** (ab 2.73.0). Vier Kästchen in derselben
+Karte, alle standardmäßig an:
+
+| Baustein | was aus ist | was ihr merkt |
+|---|---|---|
+| Sichtbarkeitsoptimierung | `content-visibility` auf den Sammlungskarten | große Sammlungen öffnen etwas langsamer |
+| Klebende Leisten | `position: sticky` | Kopfleiste und Blocküberschriften scrollen mit |
+| Milchglas | `backdrop-filter` (nur „Nova") | Flächen werden schlicht deckend |
+| Offline-Helfer | der Service Worker | die App braucht beim Start eine Verbindung |
+
+**Wozu.** Wenn alle Absturz-Dumps ausschließlich diese Seite betreffen,
+steckt der Abbruch zwar im Browser – aber irgendetwas hier löst ihn aus.
+Welches Stück, sagt niemand: Der Aufrufstapel im Speicherabzug trägt keine
+Namen. Raten hilft dann nicht, halbieren schon.
+
+Der Weg: **eines** abschalten, ein paar Stunden normal arbeiten. Was
+abgeschaltet war, steht in jedem Fehlerbericht mit (`OHNE: cv,blur`) – erst
+dadurch lässt sich hinterher zuordnen, welche Sitzung womit lief. Bleibt es
+ruhig, habt ihr den Auslöser. Stürzt es weiter ab, das nächste Kästchen.
+
+Nichts davon rührt eure Daten an, und die Wahl übersteht einen Absturz
+samt Neuladen.
 
 **🐢 Schonender Bildmodus.** Ein Kästchen in derselben Karte, standardmäßig
 aus. „Aber andere Seiten stürzen doch nicht ab" – stimmt, und der Grund

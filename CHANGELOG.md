@@ -27,6 +27,24 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.74.0 – August 2026
+
+### Geändert
+- 📖 **Handbuch und README auf den Stand gebracht.** Der Tag hat viel
+  gebracht, und die Doku hinkte hinterher. Neu beschrieben:
+
+  - **Katalog durchblättern** samt Sprungbalken, Filtern und der Bremse
+    beim Aushaken (Handbuch 6.2)
+  - **Sets im Katalog** und warum es dafür den Kategoriebaum braucht –
+    Figuren tragen ihr Thema in der Nummer, Sets nicht
+  - **Katalog-Themen** mit Favoriten und Sichtbarkeit
+  - **Der Steckbrief in vier Abschnitten**, Beschriftung links, Thema oben
+    im Kopf – und der ✏️ nur dort, wo die App das Thema nicht ableiten kann
+  - **Jedipedia-Verweis**, ausgeschaltet voreingestellt
+  - **Bausteine einzeln abschalten** in der Absturzdiagnose, samt der
+    Begründung: Wenn alle Dumps nur diese Seite betreffen, hilft halbieren
+    statt raten
+
 ## 2.73.0 – August 2026
 
 ### Neu
