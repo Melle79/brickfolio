@@ -27,6 +27,37 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.66.0 – August 2026
+
+### Neu
+- 📦 **Sets im Katalog.** Der Dateiimport nimmt jetzt auch BrickLinks
+  `Sets.xml` – bisher warf er alles weg, was keine Minifigur war, und
+  meldete „Gebraucht wird der Download mit Item Type Minifigures".
+
+  Das war 2.46.1 richtig: Damals hatte eine `Parts.xml` 118.000 Steine als
+  Minifiguren in den Abzug gespült, und es gab keinen Ort, an den Sets
+  gehört hätten. Seit der Katalogliste gibt es einen. Teile und Zubehör
+  bleiben weiter draußen.
+
+- 🗂️ **Themen für Sets über den Kategoriebaum.** Figuren tragen ihr Thema
+  in der Nummer – `sw1213` ist Star Wars. Sets nicht: `75192-1` sagt
+  nichts. Deren Thema steht allein in der BrickLink-Kategorie, und die
+  kommt als Nummer (129 verschiedene allein bei den Figuren).
+
+  Ein einziger Abruf der offiziellen API holt den Baum; danach steht er in
+  der Datenbank. Unterkategorien landen unter ihrem Dach: „Star Wars ▸
+  Episode I" gehört zu Star Wars, sonst stünden in der Auswahl hunderte
+  Zweige mit je einer Handvoll Sets. Der Knopf sitzt unter
+  *Mehr → Katalog*.
+
+  Ohne den Baum bleibt das Thema **leer** statt geraten.
+
+### Behoben
+- 🏷️ Eine neue Hilfsfunktion hieß `_katalog_bild` – so wie eine ganz andere,
+  die weiter unten schon stand. Python nimmt die spätere Definition, und
+  der Import legte daraufhin lautlos `None` in eine NOT-NULL-Spalte. Ein
+  Test wacht jetzt darüber, dass kein Name zweimal vergeben ist.
+
 ## 2.65.1 – August 2026
 
 ### Behoben

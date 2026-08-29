@@ -964,16 +964,54 @@ def _nummer_teile(item_no: str):
     return (m.group(1), m.group(2)) if m else ("", "")
 
 
-def _thema_von(item_no: str) -> str:
+# Kategoriebaum, im Prozess gehalten – er ändert sich im Jahrestakt.
+_kategorien_cache: dict = {}
+
+
+def _kategorien_lesen() -> dict:
+    """`{id: (name, eltern_id)}` aus der Datenbank, einmal je Prozess."""
+    if _kategorien_cache:
+        return _kategorien_cache
+    with core.db() as conn:
+        for r in conn.execute(
+                "SELECT id, name, parent_id FROM katalog_kategorien"):
+            _kategorien_cache[r["id"]] = (r["name"], r["parent_id"])
+    return _kategorien_cache
+
+
+def _kategorie_oberthema(cid: str) -> str:
+    """Der oberste Vorfahr einer Kategorie – das ist das Thema.
+
+    BrickLink schachtelt: „Star Wars ▸ Episode I" hängt unter „Star Wars".
+    Für die Auswahl will man das Dach, nicht jeden Zweig – sonst stünden
+    dort hunderte Einträge mit je einer Handvoll Sets.
+    """
+    baum = _kategorien_lesen()
+    gesehen = set()
+    aktuell = str(cid or "")
+    while aktuell in baum and aktuell not in gesehen:
+        gesehen.add(aktuell)
+        name, eltern = baum[aktuell]
+        if not eltern or eltern not in baum:
+            return name
+        aktuell = eltern
+    return ""
+
+
+def _thema_von(item_no: str, kategorie: str = "") -> str:
     """Thema einer Katalognummer – oder das Kürzel, wenn keines bekannt ist.
 
     Geht über `themes.from_minifig_number`, nicht über die Kürzeltabelle:
     Nur so greifen die Bereichsregeln. `cc4063` ist Studios, `cc4443`
     Coca-Cola – dieselben zwei Buchstaben, zwei Themen.
+
+    **Sets tragen kein Kürzel.** `75192-1` sagt nichts über sein Thema; das
+    steht nur in der BrickLink-Kategorie. Deshalb der zweite Weg über den
+    Kategoriebaum, sobald die Nummer nicht mit Buchstaben beginnt.
     """
     kuerzel, _ = _nummer_teile(item_no)
     if not kuerzel:
-        return ""
+        return _kategorie_oberthema(kategorie)
     return themes.from_minifig_number(item_no) or kuerzel.upper()
 
 
@@ -1051,15 +1089,15 @@ def katalog_themen(art: str = "minifig", alle: int = 0,
     art = "set" if art == "set" else "minifig"
     with core.db() as conn:
         rows = conn.execute(
-            "SELECT item_no FROM katalog_index WHERE item_type = ?",
-            (art,)).fetchall()
+            "SELECT item_no, category_id FROM katalog_index"
+            " WHERE item_type = ?", (art,)).fetchall()
         besitz = {r["item_id"].lower() for r in conn.execute(
             "SELECT item_id FROM collection WHERE item_type = ?", (art,))}
 
     zaehler: dict = {}
     kuerzel_je_thema: dict = {}
     for r in rows:
-        thema = _thema_von(r["item_no"])
+        thema = _thema_von(r["item_no"], r["category_id"])
         if not thema:
             continue
         eintrag = zaehler.setdefault(thema, [0, 0])
@@ -1150,9 +1188,10 @@ def katalog_themen_wahl_alle(body: ThemenWahlAllesBody, art: str = "minifig",
     art = "set" if art == "set" else "minifig"
     with core.db() as conn:
         rows = conn.execute(
-            "SELECT item_no FROM katalog_index WHERE item_type = ?",
-            (art,)).fetchall()
-    alle_themen = {t for t in (_thema_von(r["item_no"]) for r in rows) if t}
+            "SELECT item_no, category_id FROM katalog_index"
+            " WHERE item_type = ?", (art,)).fetchall()
+    alle_themen = {t for t in (_thema_von(r["item_no"], r["category_id"])
+                               for r in rows) if t}
     with _themen_sperre:
         wahl = _themen_wahl(user["id"])
         fav = set(wahl["fav"])
@@ -1183,7 +1222,9 @@ def katalog_liste(thema: str = "", art: str = "minifig", q: str = "",
     with core.db() as conn:
         bedingung = ["item_type = ?"]
         werte: list = [art]
-        if thema:
+        if thema and art != "set":
+            # Bei Sets gibt es kein Kürzel, über das sich vorfiltern ließe –
+            # dort entscheidet allein `_thema_von` über die Kategorie.
             if not praefixe:
                 return {"gesamt": 0, "eintraege": [], "hat_katalog": True}
             # Vorfilter in SQL über die Kürzel; die genaue Zuordnung macht
@@ -1200,7 +1241,8 @@ def katalog_liste(thema: str = "", art: str = "minifig", q: str = "",
             n = "%" + _such_norm(q.strip()) + "%"
             werte += [n, "%" + q.strip().lower() + "%"]
         rows = conn.execute(
-            "SELECT item_no, name, img_url, jahr FROM katalog_index"
+            "SELECT item_no, name, img_url, jahr, category_id"
+            " FROM katalog_index"
             " WHERE " + " AND ".join(bedingung) + " ORDER BY item_no",
             werte).fetchall()
 
@@ -1217,7 +1259,7 @@ def katalog_liste(thema: str = "", art: str = "minifig", q: str = "",
     for r in rows:
         # Der Vorfilter kann zu viel geliefert haben: `cc` trägt Studios
         # **und** Coca-Cola.
-        if thema and _thema_von(r["item_no"]) != thema:
+        if thema and _thema_von(r["item_no"], r["category_id"]) != thema:
             continue
         nr = r["item_no"].lower()
         n = besitz.get(nr, 0)
@@ -1363,6 +1405,30 @@ ITEM_ARTEN = {"M": "minifig", "S": "set", "P": "part", "B": "book",
               "G": "gear", "C": "catalog", "I": "instruction", "O": "box"}
 
 
+_BL_IMG_CODE_KATALOG = {"minifig": "MN", "set": "SN", "part": "PN"}
+
+
+def _katalog_bildadresse(art: str, nr: str) -> str:
+    """Die Katalogbild-Adresse zu einer Nummer.
+
+    Für Figuren gab es dafür `integrations.minifig_bild`; Sets brauchen
+    denselben Weg mit `SN` statt `MN`.
+
+    **Nicht `_katalog_bild` nennen** – den Namen trägt weiter unten schon
+    eine ganz andere Funktion (die das Bild in den Zwischenspeicher holt).
+    Python nimmt die spätere Definition, und der Import legte daraufhin
+    lautlos `None` in eine NOT-NULL-Spalte.
+    """
+    if art == "minifig":
+        # `minifig_bild` kann leer zurückkommen; die Spalte ist NOT NULL.
+        return integrations.minifig_bild(nr) or ""
+    code = _BL_IMG_CODE_KATALOG.get(art)
+    if not code:
+        return ""
+    return ("https://img.bricklink.com/ItemImage/%s/0/%s.png"
+            % (code, requests.utils.quote(nr)))
+
+
 @app.post("/api/katalog/datei")
 async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
     """BrickLinks eigene Katalogdatei einlesen – Nummer, Name, Jahr, Kategorie.
@@ -1423,24 +1489,28 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
             # und die Suche nach einer Figur lieferte Steine. Wer die
             # falsche Datei erwischt, soll das erfahren, nicht ausbaden.
             art = ITEM_ARTEN.get((el.findtext("ITEMTYPE") or "").strip().upper())
-            if art != "minifig":
+            # **Figuren und Sets.** Bis 2.65.1 flog alles außer Minifiguren
+            # heraus – damals richtig, denn es gab keinen Ort für Sets. Seit
+            # der Katalogliste gibt es einen, und Svens Sets.xml wurde
+            # bisher vollständig verworfen.
+            if art not in ("minifig", "set"):
                 uebersprungen += 1
                 continue
             jahr = (el.findtext("ITEMYEAR") or "").strip()
             vorher = conn.execute(
                 "SELECT name FROM katalog_index WHERE item_no = ? AND "
-                "item_type = 'minifig'", (nr,)).fetchone()
+                "item_type = ?", (nr, art)).fetchone()
             conn.execute(
                 "INSERT INTO katalog_index (item_no, item_type, name, such,"
                 " img_url, category_id, jahr, updated_at)"
-                " VALUES (?, 'minifig', ?, ?, ?, ?, ?, ?)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 " ON CONFLICT(item_no, item_type) DO UPDATE SET"
                 " name = excluded.name, such = excluded.such,"
                 " category_id = excluded.category_id, jahr = excluded.jahr,"
                 " img_url = excluded.img_url,"
                 " updated_at = excluded.updated_at",
-                (nr, name, _wortanfaenge(name)[0],
-                 integrations.minifig_bild(nr),
+                (nr, art, name, _wortanfaenge(name)[0],
+                 _katalog_bildadresse(art, nr),
                  (el.findtext("CATEGORY") or "").strip(),
                  int(jahr) if jahr.isdigit() else 0, jetzt))
             if vorher is None:
@@ -1457,11 +1527,43 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
         # falsche, und ein stilles „0 neu" ließe einen daran zweifeln, ob
         # der Knopf überhaupt etwas tut.
         raise HTTPException(
-            400, "Diese Datei enthält keine Minifiguren (%d andere Artikel "
-                 "übersprungen). Gebraucht wird der Download mit Item Type "
-                 "„Minifigures\"." % uebersprungen)
+            400, "Diese Datei enthält weder Figuren noch Sets (%d andere "
+                 "Artikel übersprungen). Gebraucht wird der Download mit "
+                 "Item Type „Minifigures\" oder „Sets\"." % uebersprungen)
     return {"ok": True, "neu": neu, "berichtigt": geaendert,
             "uebersprungen": uebersprungen, "gesamt": gesamt}
+
+
+@app.post("/api/katalog/kategorien")
+def katalog_kategorien_holen(user: dict = Depends(admin_user)):
+    """BrickLinks Kategoriebaum einmal holen und aufheben.
+
+    Ein einziger Aufruf der offiziellen API. Ohne ihn stehen Sets in der
+    Katalogliste unter Nummern statt unter „Star Wars" – Figuren tragen ihr
+    Thema im Kürzel, Sets nur in der Kategorie.
+
+    Der Baum ändert sich im Jahrestakt; deshalb von Hand angestoßen und
+    nicht bei jedem Start.
+    """
+    if not integrations.bricklink_enabled():
+        raise HTTPException(400, "Dafür wird ein BrickLink-Zugang gebraucht.")
+    try:
+        baum = integrations.bricklink_categories()
+    except Exception as e:
+        raise HTTPException(502, "BrickLink-Kategorien nicht abrufbar: %s"
+                            % str(e)[:120])
+    jetzt = int(time.time())
+    with core.db() as conn:
+        for cid, (name, eltern) in baum.items():
+            conn.execute(
+                "INSERT INTO katalog_kategorien (id, name, parent_id,"
+                " geholt_at) VALUES (?, ?, ?, ?)"
+                " ON CONFLICT(id) DO UPDATE SET name = excluded.name,"
+                " parent_id = excluded.parent_id,"
+                " geholt_at = excluded.geholt_at",
+                (cid, name, eltern, jetzt))
+    _kategorien_cache.clear()
+    return {"ok": True, "kategorien": len(baum)}
 
 
 @app.post("/api/katalog/holen")

@@ -335,6 +335,14 @@ XML_TEILE = """<?xml version="1.0" encoding="UTF-8"?>
 <CATALOG>
   <ITEM><ITEMTYPE>P</ITEMTYPE><ITEMID>3001</ITEMID>
     <ITEMNAME>Brick 2 x 4</ITEMNAME><CATEGORY>5</CATEGORY></ITEM>
+  <ITEM><ITEMTYPE>G</ITEMTYPE><ITEMID>851400</ITEMID>
+    <ITEMNAME>Magnet Set</ITEMNAME><CATEGORY>5</CATEGORY></ITEM>
+</CATALOG>"""
+
+XML_TEIL_UND_SET = """<?xml version="1.0" encoding="UTF-8"?>
+<CATALOG>
+  <ITEM><ITEMTYPE>P</ITEMTYPE><ITEMID>3001</ITEMID>
+    <ITEMNAME>Brick 2 x 4</ITEMNAME><CATEGORY>5</CATEGORY></ITEM>
   <ITEM><ITEMTYPE>S</ITEMTYPE><ITEMID>7140-1</ITEMID>
     <ITEMNAME>X-wing Fighter</ITEMNAME><CATEGORY>65</CATEGORY></ITEM>
 </CATALOG>"""
@@ -343,13 +351,31 @@ XML_TEILE = """<?xml version="1.0" encoding="UTF-8"?>
 def test_eine_teiledatei_landet_nicht_im_figurenabzug(client):
     """Am 24.08.2026 hat Sven `Parts.xml` eingelesen – und 118.000 Steine
     standen als Minifiguren im Abzug: 137.156 Zeilen statt 19.158. Die
-    Artikelart steht in der Datei; sie zu ignorieren war der Fehler."""
+    Artikelart steht in der Datei; sie zu ignorieren war der Fehler.
+
+    Seit 2.66.0 sind Sets willkommen – Teile und Zubehör weiter nicht.
+    """
     r = client.post("/api/katalog/datei", content=XML_TEILE)
-    assert r.status_code == 400
-    assert "Minifiguren" in r.json()["detail"]
+    assert r.status_code == 400, r.text
+    # Der Satz muss beide Downloads nennen, sonst lädt man wieder den
+    # falschen herunter.
+    assert "Minifigures" in r.json()["detail"]
+    assert "Sets" in r.json()["detail"]
     with core.db() as conn:
         assert conn.execute("SELECT COUNT(*) AS n FROM "
                             "katalog_index").fetchone()["n"] == 0
+
+
+def test_ein_teil_wird_auch_neben_einem_set_nicht_uebernommen(client):
+    """Die Datei ist brauchbar, das Teil darin trotzdem nicht."""
+    r = client.post("/api/katalog/datei", content=XML_TEIL_UND_SET)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["neu"] == 1 and d["uebersprungen"] == 1
+    with core.db() as conn:
+        arten = {x[0] for x in conn.execute(
+            "SELECT DISTINCT item_type FROM katalog_index")}
+    assert arten == {"set"}
 
 
 def test_gemischte_datei_nimmt_nur_die_figuren(client):

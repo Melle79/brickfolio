@@ -11329,6 +11329,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   katVerdrahten();
   katThemenVerdrahten();
+  katKategorienVerdrahten();
   nachObenVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
@@ -11927,5 +11928,28 @@ function katThemenVerdrahten() {
         await katThemenLadenAlle();
       } catch (err) { toast(tr("Ging nicht.")); }
     });
+  });
+}
+
+/* BrickLinks Kategoriebaum holen – für die Themen der Sets.
+
+   Ein einziger Abruf der offiziellen API. Figuren tragen ihr Thema im
+   Kürzel, Sets nur in der Kategorie, und die kommt als Nummer. */
+function katKategorienVerdrahten() {
+  const knopf = $("btn-katalog-kategorien");
+  if (!knopf) return;
+  knopf.addEventListener("click", async () => {
+    const stand = $("katalog-kategorien-stand");
+    knopf.disabled = true;
+    stand.textContent = tr("Wird geholt …");
+    try {
+      const d = await api("/katalog/kategorien", { method: "POST" });
+      stand.textContent = tr("{n} Kategorien geholt.", { n: d.kategorien });
+      katThemenGeholt = false;
+    } catch (e) {
+      stand.textContent = e.message;
+    } finally {
+      knopf.disabled = false;
+    }
   });
 }

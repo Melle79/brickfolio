@@ -847,16 +847,26 @@
       <p class="search-hint"><b>Namen in Sekunden statt in Tagen.</b>
         BrickLink bietet seinen Katalog jedem Mitglied zum Herunterladen an
         (<i>My Account → Downloads → Catalog Items</i>). Wähle dort
-        <b>Item Type: Minifigures</b> und Format XML – der Abzug führt nur
-        Figuren, und eine Datei mit Teilen oder Sets wird hier abgewiesen.
-        Nach dem Einlesen stehen alle Namen sofort da, statt über drei Tage
-        einzeln abgerufen zu werden. Kostet kein Kontingent, und die
-        Beschreibungen bleiben erhalten.</p>
+        <b>Item Type: Minifigures</b> oder <b>Sets</b> und Format XML –
+        beide werden eingelesen, Teile und Zubehör nicht. Nach dem Einlesen
+        stehen alle Namen sofort da, statt über drei Tage einzeln abgerufen
+        zu werden. Kostet kein Kontingent, und die Beschreibungen bleiben
+        erhalten.</p>
       <div class="detail-row">
         <input type="file" id="katalog-datei" accept=".xml,.gz"
                style="display:none">
         <button id="btn-katalog-datei" class="mini-btn">Katalogdatei einlesen</button>
         <span id="katalog-datei-stand" class="search-hint"></span>
+      </div>
+      <p class="search-hint"><b>Für Sets zusätzlich die Kategorien.</b>
+        Figuren tragen ihr Thema in der Nummer – <i>sw</i> ist Star Wars.
+        Sets nicht: <i>75192-1</i> sagt nichts. Deren Thema steht nur in der
+        BrickLink-Kategorie, und die kommt als Nummer. Ein einziger Abruf
+        holt den Kategoriebaum; ohne ihn stehen Sets in der Katalogliste
+        ohne Thema da.</p>
+      <div class="detail-row">
+        <button id="btn-katalog-kategorien" class="mini-btn">Kategorien holen</button>
+        <span id="katalog-kategorien-stand" class="search-hint"></span>
       </div>
     </div>
     <div class="settings-card" id="price-region-card" hidden>

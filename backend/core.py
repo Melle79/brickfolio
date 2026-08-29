@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.65.1"
+APP_VERSION = "2.66.0"
 
 
 def hash_password(password: str) -> str:
@@ -393,6 +393,19 @@ def init_db():
             -- Wie weit der Anbau gekommen ist, je Präfix. Ohne das begänne
             -- ein abgebrochener Lauf wieder bei eins – bei 1.400 Nummern im
             -- Sekundentakt wäre das eine halbe Stunde für nichts.
+            -- BrickLinks Kategoriebaum, einmal geholt und aufgehoben.
+            --
+            -- Figuren tragen ihr Thema im Kürzel (`sw`, `cty`); Sets nicht:
+            -- `75192-1` sagt nichts. Deren Thema steht nur in der Kategorie,
+            -- und die kommt als **Nummer** – 129 verschiedene allein bei den
+            -- Figuren. Die Namen holt ein einziger Aufruf der offiziellen
+            -- BrickLink-API; danach steht der Baum hier.
+            CREATE TABLE IF NOT EXISTS katalog_kategorien (
+                id        TEXT PRIMARY KEY,
+                name      TEXT NOT NULL,
+                parent_id TEXT NOT NULL DEFAULT '',
+                geholt_at INTEGER NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS katalog_lauf (
                 praefix TEXT PRIMARY KEY,
                 zuletzt INTEGER NOT NULL DEFAULT 0,
