@@ -266,7 +266,21 @@ def test_ausschnitt_immer_mit_freigabe():
 
 
 def test_ansichtswechsel_raeumt_auf():
+    """Wer den Scan-Tab verlässt, lässt nichts Entpacktes zurück.
+
+    Geprüft wird die Absicht, nicht der Wortlaut: Beides liegt außerhalb
+    des JS-Speichers und taucht in keiner Messung auf, also muss es an
+    dieser Grenze weg. Die Reihum-Zeichenfläche kam am 29.08.2026 dazu –
+    sie blieb liegen, sobald „Weitersuchen" angeboten wurde, und wanderte
+    dann durch alle Ansichten mit.
+    """
     quelle = js()
     anfang = quelle.index("function showTab(")
-    koerper = quelle[anfang:anfang + 900]
-    assert 'if (name !== "scan") arbeitBildFreigeben();' in koerper
+    koerper = quelle[anfang:anfang + 1600]
+    bedingung = koerper.index('name !== "scan"')
+    danach = koerper[bedingung:bedingung + 500]
+    assert "arbeitBildFreigeben()" in danach
+    assert "reihumAufraeumen()" in danach
+    # Nicht mitten in einer laufenden Suche: Die Schleife zeichnet aus
+    # genau dieser Fläche.
+    assert "reihumLaeuft" in danach

@@ -938,16 +938,29 @@ function openGallery(startUrl, gid, gtype) {
         // Welches Bild ist ein eigenes? Danach richtet sich der Löschknopf.
         gallery.eigene = {};
         (d.own || []).forEach((f) => { gallery.eigene[f.url] = f.id; });
-        // Backend-Bilder bevorzugen (kanonisch, meist bessere Auflösung),
-        // gleiches Motiv zusammenfassen; das Startbild nur behalten, wenn es
-        // eine wirklich andere Quelle ist.
+        // **Die Liste vom Server ist vollständig – das Startbild fliegt
+        // raus, sobald sie etwas enthält.**
+        //
+        // Sie prüft das Katalogbild auf Existenz und hängt eigene Fotos
+        // selbst an; mehr gibt es nicht. Das Startbild ist die gespeicherte
+        // Adresse der Karte, und die stammt bei gescannten Figuren vom
+        // Erkenner: ein kleines Vorschaubild von einer ganz anderen
+        // Adresse. Über den Schlüssel fiel es deshalb nicht mit dem
+        // Katalogbild zusammen, und die Galerie zeigte zweimal dieselbe
+        // Figur – das zweite Bild besser als das erste.
+        //
+        // Gemessen an Svens Sammlung (29.08.2026): 379 von 910 Einträgen
+        // betroffen, 368 davon Vorschaubilder von Brickognize.
+        //
+        // Bleibt die Liste leer – eigene Figuren, oder BrickLink hat kein
+        // Bild –, bleibt das Startbild das einzige, was es gibt.
         const seen = new Set();
         const urls = [];
         (d.images || []).forEach((u) => {
           const k = imgKey(u);
           if (u && !seen.has(k)) { seen.add(k); urls.push(u); }
         });
-        if (startUrl && !seen.has(imgKey(startUrl))) urls.unshift(startUrl);
+        if (startUrl && !urls.length) urls.push(startUrl);
         if (urls.length) {
           gallery.urls = urls;
           gallery.idx = Math.min(gallery.idx, urls.length - 1);
@@ -1745,7 +1758,21 @@ function showTab(name) {
   // Wer den Scan-Tab verlässt, braucht das entpackte Foto nicht mehr. Es
   // liegt außerhalb des JS-Speichers und taucht in keiner Messung auf –
   // umso wichtiger, es an einer klaren Grenze loszuwerden.
-  if (name !== "scan") arbeitBildFreigeben();
+  //
+  // **Dasselbe gilt für die Reihum-Fläche.** Sie trägt das Foto in voller
+  // Auflösung – bei 12 Megapixeln rund 49 MB – und blieb bisher liegen,
+  // sobald „Weitersuchen" angeboten wurde. Wer dann durch die Ansichten
+  // ging und den Tab in den Hintergrund schob, trug sie die ganze Zeit mit.
+  //
+  // Nicht anfassen, solange die Suche läuft: Die Schleife zeichnet aus
+  // genau dieser Fläche, und eine Fläche der Größe null liefert nichts.
+  if (name !== "scan") {
+    arbeitBildFreigeben();
+    // Die Reihum-Fläche ist mit rund 4 MB kein Riese, blieb aber liegen,
+    // sobald „Weitersuchen" angeboten wurde – und dann durch alle
+    // Ansichten und in den Hintergrund mit. Weg an derselben Grenze.
+    if (!reihumLaeuft) reihumAufraeumen();
+  }
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
   letzterStand = null;           // frisch geladen ist per Definition aktuell
@@ -3047,6 +3074,40 @@ function hintergrundFarbe(ctx, w, h) {
    Die Zeichenfläche kostet rund vier Megabyte. Sie wird deshalb beim nächsten
    Foto und beim Verlassen des Ergebnisses wieder freigegeben. */
 let reihumZustand = null;
+let reihumLaeuft = false;
+
+/* Megapixel, die außerhalb jeder anderen Zahl im Bericht liegen.
+
+   Zwei blinde Flecken auf einmal:
+
+   - Die Reihum-Zeichenfläche ist kein `<img>` (zählt also nicht bei
+     „Bilder geladen"), hängt nicht im Dokument (`getElementsByTagName`
+     findet sie nicht) und ihr Puffer liegt außerhalb von
+     `usedJSHeapSize`. Sie ist mit rund 1,4 Megapixeln (das Foto wird auf
+     1200 px verkleinert) kein Riese – aber sie war schlicht unsichtbar.
+
+   - **Wichtiger: die Größe der geladenen Bilder.** „12 von 95 geladen"
+     sagt nichts darüber, ob das 12 Daumennägel sind oder 12 Plakate.
+     Entpackt kostet ein Bild Breite × Höhe × 4 Byte, und das steht in
+     keiner Zahl, die dieser Bericht bisher führte. Beim Absturz vom
+     29.08.2026 um 17:31 stand dort „7 MB · 12/95" – harmlos, solange man
+     die Maße nicht kennt. */
+function reihumMegapixel() {
+  const c = reihumZustand && reihumZustand.c;
+  return c ? c.width * c.height : 0;
+}
+
+function bildMegapixel() {
+  let px = 0;
+  const bilder = document.getElementsByTagName("img");
+  for (let i = 0; i < bilder.length; i++) {
+    const b = bilder[i];
+    if (b.src && !b.src.startsWith("data:")) {
+      px += (b.naturalWidth || 0) * (b.naturalHeight || 0);
+    }
+  }
+  return px;
+}
 
 function reihumAufraeumen() {
   if (reihumZustand) {
@@ -3088,6 +3149,7 @@ async function alleFigurenErkennen(weiter = false) {
     }
   }
   const z = reihumZustand;
+  reihumLaeuft = true;
   const flaeche = z.c.width * z.c.height;
   const vorher = z.gefunden.length;
   let anschlag = false;
@@ -3161,6 +3223,7 @@ async function alleFigurenErkennen(weiter = false) {
     spur("Reihum abgebrochen: " + String(e.message).slice(0, 30));
     toast(e.message);
   } finally {
+    reihumLaeuft = false;
     // Die Zahl vorher merken: Endet die Suche endgültig, ist der Suchstand an
     // dieser Stelle schon freigegeben – im Protokoll stand dann „(–)" statt
     // der Zahl der gefundenen Figuren.
@@ -9529,6 +9592,9 @@ function diagMessen(grund = "", geplant = null) {
     // genau davon hängt ab, ob die Freigabe reicht.
     geladen: [...document.getElementsByTagName("img")]
       .filter((i) => i.src && !i.src.startsWith("data:")).length,
+    // Entpackte Bildfläche in Megapixeln – die Zahl, die „12 von 95
+    // geladen" erst deutbar macht. Ein Megapixel sind rund 4 MB entpackt.
+    mpx: Math.round((bildMegapixel() + reihumMegapixel()) / 100000) / 10,
     v: (state.appVersion || "").slice(0, 12),
     // Welches Design lief? Nova zeichnet Flächen mit Echtzeit-Weichzeichner
     // („Glas"), und das kostet Grafikspeicher, den keine Messung hier sieht.
@@ -9719,6 +9785,9 @@ function diagText() {
       // ob davon 36 oder alle im Speicher lagen.
       (p.geladen != null ? p.geladen + "/" + p.bilder + " Bilder geladen"
         : p.bilder + " Bilder"),
+      // Erst die Fläche macht die Zahl deutbar: 12 Daumennägel oder 12
+      // Plakate sind derselbe Zähler und ein Faktor 100 im Speicher.
+      p.mpx ? p.mpx + " MPx entpackt" : "",
       p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
       p.sch ? "🐢 schonend" : "",
       p.g || "",

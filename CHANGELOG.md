@@ -27,6 +27,43 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.64.0 – August 2026
+
+### Behoben
+- 🖼️ **Das überflüssige zweite Bild in der Galerie.** Beim Scannen speichert
+  die App die Adresse, die der Erkenner liefert – bei Brickognize ein
+  kleines Vorschaubild von einer ganz anderen Adresse. Die Galerie legte
+  BrickLinks Katalogbild daneben und zeigte damit „1/2" mit demselben
+  Motiv, das zweite Bild besser als das erste.
+
+  Gemessen an einer echten Sammlung: **379 von 910 Einträgen betroffen,
+  368 davon Vorschaubilder von Brickognize.** Zusammenfassen half nicht –
+  es sind wirklich zwei verschiedene Quellen.
+
+  Die Liste vom Server ist ohnehin vollständig: Sie prüft das Katalogbild
+  auf Existenz und hängt eigene Fotos selbst an. Das Startbild der Karte
+  kommt jetzt nur noch dazu, wenn diese Liste leer bleibt – bei eigenen
+  Figuren, oder wenn BrickLink kein Bild hat.
+
+- 🧹 **Die Reihum-Zeichenfläche blieb liegen.** Wird beim Scannen
+  „Weitersuchen" angeboten, bleibt die abgesuchte Fläche absichtlich
+  stehen. Sie wanderte damit aber durch alle Ansichten und in den
+  Hintergrund mit. Jetzt wird sie beim Verlassen des Scan-Tabs freigegeben –
+  an derselben Grenze wie das Arbeitsbild, und nicht während eine Suche
+  läuft.
+
+### Geändert
+- 📏 **Der Fehlerbericht misst jetzt Fläche, nicht nur Anzahl.** „12 von 95
+  Bildern geladen" sagt nichts darüber, ob das zwölf Daumennägel sind oder
+  zwölf Plakate – entpackt kostet ein Bild Breite × Höhe × 4 Byte, und das
+  stand in keiner Zahl. Neu daneben: **MPx entpackt**, einschließlich der
+  Reihum-Zeichenfläche, die als Zeichenfläche in keiner der bisherigen
+  Zahlen auftauchte.
+
+  Anlass ist der Absturz vom 29.08.2026 um 17:31: Der Bericht meldete
+  7 MB JavaScript-Speicher und 12 von 95 geladenen Bildern – nach allem,
+  was gemessen wurde, harmlos. Genau deshalb fehlt hier eine Zahl.
+
 ## 2.63.0 – August 2026
 
 ### Neu
