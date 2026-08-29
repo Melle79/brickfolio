@@ -1034,7 +1034,9 @@ function stepGallery(delta) {
 function closeGallery() {
   $("lightbox").hidden = true;
   neuladenNachholen();
-  $("lightbox-img").src = "";
+  // **Attribut entfernen, nicht auf "" setzen.** Eine leere Quelle lässt
+  // den Browser die Seite selbst laden – und meldet dann einen Fehler.
+  $("lightbox-img").removeAttribute("src");
   gallery = { urls: [], idx: 0, eigene: {}, ersatz: "" };
   const weg = $("lb-del");
   if (weg) weg.hidden = true;
@@ -11616,6 +11618,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (Math.abs(dx) > 40) stepGallery(dx < 0 ? 1 : -1);
   }, { passive: true });
   $("lightbox-img").addEventListener("error", () => {
+    // **Erst prüfen, ob überhaupt etwas geladen werden sollte.**
+    //
+    // `closeGallery` leert die Bildquelle – und eine geleerte Quelle löst
+    // selbst ein `error`-Ereignis aus. Ohne diese Zeile meldete die App
+    // bei **jedem** Schließen „Zu diesem Artikel gibt es kein Bild"
+    // (29.08.2026, sofort nach dem Einbau der Meldung).
+    if ($("lightbox").hidden || !gallery.urls.length) return;
     // Nicht existierende Bildvarianten still aussortieren.
     const kaputt = gallery.urls[gallery.idx];
     if (gallery.urls.length > 1) {

@@ -27,6 +27,28 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.71.1 – August 2026
+
+### Behoben
+- 🔇 **„Zu diesem Artikel gibt es kein Bild" bei jedem Schließen.** Die
+  Meldung war erst in 2.71.0 dazugekommen – und ging sofort daneben:
+  `closeGallery` leert die Bildquelle, und **eine geleerte Quelle löst
+  selbst ein `error`-Ereignis aus**. Der neue Behandler hielt das für ein
+  totes Bild.
+
+  Er prüft jetzt zuerst, ob überhaupt etwas geladen werden sollte, und die
+  Quelle wird entfernt statt auf leer gesetzt.
+
+### Geändert
+- 🔙 **`content-visibility: auto` steht wieder auf den Sammlungskarten.**
+  Der Versuch aus 2.67.0 ist gelaufen, das Ergebnis war negativ: Der
+  Bericht zu 2.70.0 führt **drei** weitere Abstürze, alle nach dem Ausbau.
+
+  Die Zeile spart dem Browser echte Arbeit – gemessen: statt 815
+  Hintergrundbildern beim Öffnen nur noch 16 – und der Fehler ist woanders.
+  Im Quelltext steht jetzt dabei, dass der Versuch gelaufen ist, damit ihn
+  niemand ein zweites Mal macht.
+
 ## 2.71.0 – August 2026
 
 ### Behoben

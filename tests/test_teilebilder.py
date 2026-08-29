@@ -57,3 +57,26 @@ def test_der_rueckfall_wird_beim_oeffnen_gemerkt():
                   js, re.S)
     assert m
     assert "ersatz: startUrl" in m.group(0)
+
+
+def test_beim_schliessen_kommt_keine_meldung():
+    """Eine geleerte Bildquelle löst selbst ein `error`-Ereignis aus.
+
+    Ohne Schutz meldete die App bei **jedem** Schließen der Großansicht
+    „Zu diesem Artikel gibt es kein Bild" – eingebaut und sofort wieder
+    bemerkt am 29.08.2026.
+    """
+    js = APP_JS.read_text()
+    m = re.search(r'\$\("lightbox-img"\)\.addEventListener\("error".*?\n  \}\);',
+                  js, re.S)
+    assert m
+    f = m.group(0)
+    # Der Schutz muss ganz am Anfang stehen, vor jeder anderen Arbeit.
+    assert 'if ($("lightbox").hidden || !gallery.urls.length) return;' in f
+    assert f.index('hidden || !gallery.urls.length') < f.index("toast(")
+
+    # Und geschlossen wird über `removeAttribute`, nicht über src = "".
+    z = re.search(r"function closeGallery\(\) \{.*?\n\}\n", js, re.S)
+    assert z
+    assert 'removeAttribute("src")' in z.group(0)
+    assert '"lightbox-img").src = ""' not in z.group(0)

@@ -272,29 +272,26 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 }
 .card.has-bg > * { position: relative; z-index: 1; }
 
-/* **`content-visibility: auto` ist hier ausgebaut – als Versuch.**
-   (29.08.2026)
+/* Karten der Sammlung: Was weit außerhalb des Fensters liegt, muss der
+   Browser weder setzen noch zeichnen – und darf das Ergebnis wieder
+   wegwerfen. Gemessen mit 815 Karten: statt 815 Hintergrundbildern beim
+   Öffnen nur noch 16. `auto` merkt sich die zuletzt gemessene Höhe, damit
+   die Bildlaufleiste beim Scrollen nicht springt.
 
-   Es stand auf den Sammlungskarten, weil der Browser damit nicht setzen
-   und zeichnen muss, was weit außerhalb liegt: Gemessen mit 815 Karten
-   statt 815 Hintergrundbildern nur noch 16.
+   **Am 29.08.2026 versuchsweise ausgebaut – und wieder eingebaut.**
 
-   Diese Arbeit macht seit 2.54.1 unser eigener Beobachter, und er macht
-   sie nachweislich: In den Absturzberichten stehen 110 von 245 und 158
-   von 915 geladenen Bildern.
+   Der Verdacht war: Von 40 Absturz-Dumps auf Svens Rechner sind alle 40
+   auf Brickfolio, und `content-visibility` ist das Ungewöhnlichste, was
+   diese Seite tut. Ausgebaut in 2.67.0.
 
-   Der Verdacht: Von 40 Absturz-Dumps auf diesem Rechner sind **alle 40**
-   auf Brickfolio – keine andere Seite. Es ist ein Chromium-Fehler (ein
-   absichtlicher Abbruch, `EXC_BREAKPOINT`, in Edge 151 wie in Chrome 152),
-   aber irgendetwas an dieser Seite löst ihn aus. `content-visibility` ist
-   das Ungewöhnlichste, was wir tun – kaum eine andere Seite benutzt es –,
-   es sitzt genau in der Sammlung, und es greift ineinander mit
-   `position: sticky`, dem Beobachter und dem Bildladen auf denselben
-   Elementen.
+   Die Antwort kam in zweieinhalb Stunden: Der Bericht zu 2.70.0 führt
+   **drei** weitere Abstürze, alle nach dem Ausbau. Es lag nicht daran.
 
-   **Bleiben die Abstürze aus, war es das.** Kommen sie weiter, gehört die
-   Zeile zurück – dann kostet ihr Fehlen nur etwas Rechenzeit beim Scrollen
-   langer Sammlungen. */
+   Also steht die Zeile wieder da, wo sie hingehört – sie spart dem
+   Browser echte Arbeit, und der Fehler ist woanders. Wer sie das nächste
+   Mal verdächtigt: Der Versuch ist gelaufen, das Ergebnis war negativ. */
+#collection-list .card { content-visibility: auto; contain-intrinsic-size: auto 104px; }
+#collection-list.grid-mode .card { contain-intrinsic-size: auto 236px; }
 /* Die Marke, an der der nächste Block hängt. Muss sichtbar sein, damit der
    Beobachter sie überhaupt bemerkt. */
 .nachschub-marke { height: 1px; grid-column: 1 / -1; }
@@ -1884,10 +1881,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   gap: 8px; align-items: start;
 }
 #collection-list.kompakt-mode .card {
-  /* `contain-intrinsic-size` ohne `content-visibility` tut nichts – die
-     Zeile bleibt hier trotzdem nicht stehen, damit niemand später rätselt,
-     wozu sie da ist. */
-  padding: 6px;
+  padding: 6px; contain-intrinsic-size: auto 132px;
 }
 #collection-list.kompakt-mode .card-head {
   flex-direction: column; align-items: stretch; gap: 4px; text-align: center;
