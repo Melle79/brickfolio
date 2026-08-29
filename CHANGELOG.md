@@ -27,6 +27,28 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.68.0 – August 2026
+
+### Neu
+- 📖 **Jedipedia-Verweis bei Star-Wars-Figuren.** Ein kleines **ⓘ** neben
+  dem Namen schlägt die Figur im deutschen Star-Wars-Wiki nach.
+  Einzuschalten unter *Mehr → Jedipedia-Verweis*.
+
+  **Ausgeschaltet voreingestellt.** Es ist ein Weg nach draußen aus einer
+  App, die sonst vollständig im eigenen Netz läuft; solche gehören nicht
+  ungefragt hinein. Übertragen wird nichts, solange niemand das Zeichen
+  antippt.
+
+  **Gesucht wird, nicht direkt verlinkt.** Der Katalog ist englisch, die
+  Jedipedia deutsch: „Battle Droid" heißt dort „Kampfdroide", und
+  `/wiki/Battle_Droid` wäre eine tote Adresse. Die Suche landet auf einer
+  Trefferliste mit dem richtigen Artikel obenan.
+
+  Und nur bei Star Wars – das Wiki kennt nichts anderes. Bei einer
+  City-Figur wäre der Verweis eine leere Trefferliste. Die Variante fällt
+  weg: „Boba Fett - Classic Grays" sucht nach der Figur, nicht nach ihrer
+  Bemalung.
+
 ## 2.67.0 – August 2026
 
 ### Geändert

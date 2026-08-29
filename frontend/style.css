@@ -2078,3 +2078,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kat-themen-schalter.an { color: var(--ink); }
 .kat-themen-schalter[data-schalter="fav"].an { color: #E8A317; }
 .kat-themen-schalter[data-schalter="sicht"].an { color: var(--green); }
+
+/* Der Jedipedia-Verweis: klein, gedämpft, neben dem Namen. Ein Zeichen,
+   kein Knopf – er soll da sein, wenn man ihn sucht, und sonst nicht
+   auffallen. */
+.jedi-link {
+  margin-left: 6px; font-size: .85em; text-decoration: none;
+  color: var(--muted); vertical-align: baseline;
+}
+.jedi-link:hover, .jedi-link:focus { color: var(--blue, #0b6ec9); }

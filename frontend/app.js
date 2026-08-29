@@ -2394,6 +2394,8 @@ function showApp() {
     setCurrency(c.currency);
     state.hubConnected = !!c.hub_connected;
     state.kiSuche = !!c.ki_suche;
+    state.jedipedia = !!c.jedipedia;
+    if ($("opt-jedipedia")) $("opt-jedipedia").checked = state.jedipedia;
     updateHubTab();
     updatePolling();
     standTaktStarten();
@@ -4624,7 +4626,8 @@ function katDetail(e) {
            Fassung: Bei 180 px Anzeige sieht man keinen Unterschied, aber
            der Browser hat das Bild schon und lädt kein zweites. -->
       <img class="kat-modal-bild" src="${imgSrc(e.img_url, true)}" alt="">
-      <strong class="kat-modal-name">${esc(e.name || e.item_no)}</strong>
+      <strong class="kat-modal-name">${esc(e.name || e.item_no)}${
+        jedipediaLink(e.item_no, e.name)}</strong>
       <div class="sub">${esc(e.item_no)}${e.jahr ? " · " + e.jahr : ""}</div>
       <div class="kat-modal-tasten">
         <button class="mini-btn${e.besitz ? " sel" : ""}" data-mmarke="habe">
@@ -4689,7 +4692,8 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
           </div>
           <span class="qty-badge" data-qty-val>${item.quantity}</span>
           <div class="card-title">
-            <strong>${esc(item.name)}</strong>
+            <strong>${esc(item.name)}</strong>${
+              jedipediaLink(item.item_id, item.name)}
             <div class="sub" data-sub-id>${esc(collSubId(item))}</div>
             <div class="sub" data-sub>${esc(collSubMeta(item))}</div>
             ${setFigsText(item) ? `<div class="sub sub-figs">${esc(setFigsText(item))}</div>` : ""}
@@ -11330,6 +11334,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   katVerdrahten();
   katThemenVerdrahten();
   katKategorienVerdrahten();
+  jedipediaVerdrahten();
   nachObenVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
@@ -11950,6 +11955,57 @@ function katKategorienVerdrahten() {
       stand.textContent = e.message;
     } finally {
       knopf.disabled = false;
+    }
+  });
+}
+
+/* ── Jedipedia-Verweis ──────────────────────────────────────────────────
+   Ein kleines ⓘ bei Star-Wars-Figuren, das die Figur im deutschen
+   Star-Wars-Wiki nachschlägt.
+
+   **Gesucht wird, nicht direkt verlinkt.** Der Katalog ist englisch, die
+   Jedipedia deutsch: „Battle Droid" heißt dort „Kampfdroide", und
+   `/wiki/Battle_Droid` wäre eine tote Adresse. Die Suche landet auf einer
+   Trefferliste mit dem richtigen Artikel obenan – geprüft am 29.08.2026.
+
+   Und **nur bei Star Wars**: Das Wiki kennt nichts anderes. Bei einer
+   City-Figur wäre der Verweis eine leere Trefferliste. */
+const JEDIPEDIA_SUCHE = "https://jedipedia.net/wiki/Spezial:Suche?search=";
+
+function istStarWars(itemId) {
+  return /^sw(tv)?\d/i.test(String(itemId || ""));
+}
+
+/* Der Katalogname trägt die Variante mit: „Boba Fett - Classic Grays".
+   Gesucht wird nach der Figur, nicht nach ihrer Bemalung. */
+function jedipediaBegriff(name) {
+  let n = String(name || "").split(" - ")[0];
+  n = n.replace(/\([^)]*\)/g, " ");
+  return n.replace(/\s+/g, " ").trim();
+}
+
+function jedipediaLink(itemId, name) {
+  if (!state.jedipedia || !istStarWars(itemId)) return "";
+  const begriff = jedipediaBegriff(name);
+  if (!begriff) return "";
+  return `<a class="jedi-link" target="_blank" rel="noopener noreferrer"
+     href="${esc(JEDIPEDIA_SUCHE + encodeURIComponent(begriff))}"
+     title="${esc(tr("In der Jedipedia nachschlagen"))}"
+     aria-label="${esc(tr("In der Jedipedia nachschlagen"))}">ⓘ</a>`;
+}
+
+function jedipediaVerdrahten() {
+  const schalter = $("opt-jedipedia");
+  if (!schalter) return;
+  schalter.addEventListener("change", async () => {
+    const an = schalter.checked;
+    state.jedipedia = an;
+    try {
+      await api("/settings/jedipedia", { method: "POST", body: { an } });
+    } catch (e) {
+      schalter.checked = !an;
+      state.jedipedia = !an;
+      toast(tr("Ging nicht."));
     }
   });
 }

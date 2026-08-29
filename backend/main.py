@@ -2619,6 +2619,22 @@ def _offer_percent() -> int:
         return 60
 
 
+class JedipediaBody(BaseModel):
+    an: bool
+
+
+@app.post("/api/settings/jedipedia")
+def set_jedipedia(body: JedipediaBody, user: dict = Depends(current_user)):
+    """Verweis auf die Jedipedia bei Star-Wars-Figuren – je Benutzer.
+
+    Ausgeschaltet voreingestellt: Es ist ein Verweis nach draußen, und
+    solche gehören nicht ungefragt in eine Anwendung, die sonst
+    vollständig im eigenen Netz läuft.
+    """
+    core.set_user_setting(user["id"], "jedipedia", "1" if body.an else "0")
+    return {"ok": True, "an": body.an}
+
+
 class SchonendBody(BaseModel):
     schonend: bool
 
@@ -2658,6 +2674,8 @@ def config(user: dict = Depends(current_user)):
             "bricklink_lookup": integrations.bricklink_enabled(),
             "catalog_search": _katalogsuche_moeglich(),
             "schonend": _schonend(user),
+            "jedipedia": core.get_user_setting(user["id"],
+                                              "jedipedia") == "1",
             "offer_percent": _offer_percent(),
             "owner_name": _owner_name(),
             "currency": integrations.currency(),
