@@ -313,7 +313,10 @@ Benutzer, die noch keine eigene Wahl getroffen haben (die eigene Auswahl
 **ℹ️ Quellen & Rechtliches** nennt, woher Daten und Bilder stammen
 (Rebrickable, BrickLink, Brickognize), weist darauf hin, dass beim
 Abfotografieren das Foto zur Erkennung übertragen wird, und führt Marken-,
-Schrift- und Programmlizenz auf. Dort steht auch der optionale
+Schrift- und Programmlizenz auf – dazu einen Abschnitt zur **Haftung**:
+Preise sind Anhaltspunkte und keine Bewertung, die Erkennung kann sich
+irren, und die Sicherung eurer Daten liegt bei euch. Dort steht auch der
+optionale
 **Jedipedia-Verweis**: Er öffnet nur eine Suche in einem unabhängigen
 deutschsprachigen Fan-Wiki – keine Inhalte werden abgerufen, übernommen
 oder gespeichert, und solange niemand das ⓘ antippt, geht nichts dorthin.

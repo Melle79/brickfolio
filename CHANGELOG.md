@@ -27,6 +27,27 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.74.2 – August 2026
+
+### Geändert
+- ⚖️ **Ein Abschnitt zur Haftung** – in der App unter *Mehr → Quellen &
+  Rechtliches*, im README und im Handbuch. Die MIT-Lizenz sagt das zwar
+  auch, aber auf Englisch und in einer Datei, die niemand öffnet.
+
+  Im Klartext: Brickfolio wird „wie besehen" bereitgestellt. Drei Dinge
+  stehen ausdrücklich dabei –
+
+  - **Preise sind Anhaltspunkte, keine Bewertung.** Nicht als Grundlage für
+    Versicherungssummen oder Angaben gegenüber Behörden.
+  - **Die Erkennung kann sich irren** – was Kamera und Suche vorschlagen,
+    ist ein Vorschlag.
+  - **Eure Daten liegen bei euch.** Ein Backup, das nie zurückgespielt
+    wurde, ist keines.
+
+  Die zwingende Haftung (Vorsatz, grobe Fahrlässigkeit, Personenschäden,
+  Produkthaftung) bleibt unberührt – ein Ausschluss davon wäre ohnehin
+  unwirksam.
+
 ## 2.74.1 – August 2026
 
 ### Geändert

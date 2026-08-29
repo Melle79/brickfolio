@@ -442,6 +442,27 @@ das ⓘ antippt, geht nichts dorthin. Die Artikel stehen unter der GNU-FDL 1.3
 und gehören ihren Autoren; die Jedipedia steht in keiner Verbindung zu
 diesem Projekt.
 
+### Haftung
+
+Brickfolio ist ein privates Hobby-Projekt und wird **„wie besehen"**
+bereitgestellt – ohne Gewähr für Fehlerfreiheit, Verfügbarkeit oder Eignung
+für einen bestimmten Zweck. Soweit gesetzlich zulässig, wird keine Haftung
+für Schäden aus der Nutzung übernommen. Das betrifft vor allem drei Dinge:
+
+- **Preise sind Anhaltspunkte, keine Bewertung.** Die Ø-Werte kommen von
+  BrickLink und schwanken. Sie taugen nicht als Grundlage für
+  Versicherungssummen, Verkaufsentscheidungen oder Angaben gegenüber
+  Behörden.
+- **Die Erkennung kann sich irren.** Was Kamera und Suche vorschlagen, ist
+  ein Vorschlag – die Zuordnung prüft ihr.
+- **Eure Daten liegen bei euch.** Die App hilft beim Sichern, aber Server,
+  Platte und Sicherung gehören euch. Ein Backup, das nie zurückgespielt
+  wurde, ist keines.
+
+Die zwingende Haftung – Vorsatz, grobe Fahrlässigkeit, Personenschäden und
+Produkthaftung – bleibt davon unberührt. Dieselben Angaben stehen in der App
+unter **Mehr → Quellen & Rechtliches**.
+
 Die Schrift **Nunito** (SIL Open Font License 1.1, Lizenztext unter
 `frontend/fonts/OFL.txt`) wird lokal ausgeliefert – es werden also keine
 Besucherdaten an Schrift-CDNs übertragen, und die Oberfläche sieht auch dann
