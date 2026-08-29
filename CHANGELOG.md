@@ -27,6 +27,36 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.73.0 – August 2026
+
+### Neu
+- 🔬 **Bausteine einzeln abschalten – halbieren statt raten.** Unter
+  *Mehr → Absturzdiagnose* lassen sich vier Dinge abschalten, die diese
+  App tut und die meisten anderen Seiten nicht:
+
+  | Baustein | was aus ist |
+  |---|---|
+  | Sichtbarkeitsoptimierung | `content-visibility` auf den Sammlungskarten |
+  | Klebende Leisten | `position: sticky` bei Kopfleiste, Blocküberschriften, Sprungbalken |
+  | Milchglas | `backdrop-filter` im Design „Nova" |
+  | Offline-Helfer | der Service Worker |
+
+  **Warum:** Alle bisherigen Absturz-Dumps betreffen ausschließlich diese
+  Seite. Der Abbruch selbst steckt in Chromium – ein absichtlicher
+  `EXC_BREAKPOINT` im Renderer, in Edge 151 genauso wie in Chrome 152, bei
+  2 bis 9 MB Speicher. Aber irgendetwas hier löst ihn aus, und welches
+  Stück, sagt niemand: Der Aufrufstapel im Dump trägt keine Namen.
+
+  Fünf Vermutungen, fünf Fehlschläge. Deshalb der systematische Weg: eines
+  abschalten, ein paar Stunden laufen lassen. **Was aus war, steht in jedem
+  Fehlerbericht mit** (`OHNE: cv,blur`) – ohne diese Zuordnung wäre die
+  ganze Halbiererei wertlos.
+
+  Die Wahl liegt im `localStorage`, nicht im Profil: Sie muss einen Absturz
+  und das Neuladen danach überleben, ohne dass vorher ein Server antworten
+  muss. Sonst liefe die Sitzung, die es zu messen gilt, kurz mit
+  angeschaltetem Baustein an.
+
 ## 2.72.0 – August 2026
 
 ### Geändert

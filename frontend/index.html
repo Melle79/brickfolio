@@ -1076,6 +1076,46 @@ sudo bash update.sh</pre>
             probier diesen Modus: Er geht denselben Weg zu Fuß, im
             Hauptspeicher. Etwas langsamer, sonst gleich.</span>
         </label>
+        <details class="help" id="diag-halbieren">
+          <summary>🔬 Fehlersuche: Bausteine einzeln abschalten</summary>
+          <p class="search-hint">Alle bisherigen Absturz-Dumps auf diesem
+            Rechner betreffen <b>nur diese Seite</b> – der Abbruch selbst
+            steckt im Browser, aber irgendetwas hier löst ihn aus. Welches
+            Stück, weiß niemand: Der Aufrufstapel im Dump trägt keine
+            Namen.</p>
+          <p class="search-hint">Statt zu raten, halbieren: Schalte
+            <b>eines</b> ab und lass es ein paar Stunden laufen. Was aus
+            ist, steht in jedem Fehlerbericht mit – so lässt sich später
+            zuordnen, welche Sitzung womit lief. Alles hier kostet nur
+            Bequemlichkeit, nichts an deinen Daten.</p>
+          <label class="wahl-kasten">
+            <input type="checkbox" data-aus="cv">
+            <span><b>Sichtbarkeitsoptimierung</b> (<code>content-visibility</code>).
+              Lässt den Browser Karten außerhalb des Fensters gar nicht erst
+              setzen. Das Seltenste, was diese App tut – kaum eine andere
+              Seite benutzt es. Aus: Das Öffnen großer Sammlungen dauert
+              etwas länger.</span>
+          </label>
+          <label class="wahl-kasten">
+            <input type="checkbox" data-aus="sticky">
+            <span><b>Klebende Leisten</b> (<code>position: sticky</code>).
+              Kopfleiste, Blocküberschriften und der Sprungbalken bleiben
+              beim Scrollen stehen. Aus: Sie scrollen mit.</span>
+          </label>
+          <label class="wahl-kasten">
+            <input type="checkbox" data-aus="blur">
+            <span><b>Milchglas</b> (<code>backdrop-filter</code>). Nur im
+              Design „Nova“. Kostet Grafikspeicher, den keine Messung hier
+              sieht. Aus: Die Flächen werden schlicht deckend.</span>
+          </label>
+          <label class="wahl-kasten">
+            <input type="checkbox" data-aus="sw">
+            <span><b>Offline-Helfer</b> (Service Worker). Hält die App auch
+              ohne Netz startklar. Aus: Sie braucht beim Start eine
+              Verbindung – sonst ändert sich nichts.</span>
+          </label>
+          <p class="search-hint" id="diag-aus-stand"></p>
+        </details>
         <p class="search-hint" id="diag-summary"></p>
         <div id="diag-chart"></div>
         <div class="detail-row btn-grid" style="margin-top:8px">

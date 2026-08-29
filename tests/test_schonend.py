@@ -76,7 +76,11 @@ def test_verlauf_haelt_den_modus_fest():
     """Ohne diese Angabe ließe sich hinterher nicht sagen, welcher Weg in
     einer Sitzung lief – und der ganze Vergleich wäre wertlos."""
     quelle = js()
-    anfang = quelle.index("function diagMessen(")
-    assert "if (schonendAn) punkt.sch = 1;" in quelle[anfang:anfang + 2000]
+    # Nicht mit festem Fenster suchen: `diagMessen` wächst, und die Stelle
+    # rutschte schon einmal darüber hinaus. Die ganze Funktion nehmen.
+    import re
+    m = re.search(r"function diagMessen\(.*?\n\}\n", quelle, re.S)
+    assert m, "diagMessen nicht gefunden"
+    assert "if (schonendAn) punkt.sch = 1;" in m.group(0)
     # …und im lesbaren Verlauf taucht er auch auf.
     assert 'p.sch ? "🐢 schonend" : ""' in quelle

@@ -9715,6 +9715,10 @@ function diagMessen(grund = "", geplant = null) {
     // Entpackte Bildfläche in Megapixeln – die Zahl, die „12 von 95
     // geladen" erst deutbar macht. Ein Megapixel sind rund 4 MB entpackt.
     mpx: Math.round((bildMegapixel() + reihumMegapixel()) / 100000) / 10,
+    // Welche Bausteine diese Sitzung abgeschaltet hatte. Ohne das ließe
+    // sich hinterher nicht sagen, womit sie gelaufen ist – und die ganze
+    // Halbiererei wäre wertlos.
+    aus: ausLesen().join(",") || null,
     v: (state.appVersion || "").slice(0, 12),
     // Welches Design lief? Nova zeichnet Flächen mit Echtzeit-Weichzeichner
     // („Glas"), und das kostet Grafikspeicher, den keine Messung hier sieht.
@@ -9955,6 +9959,9 @@ function diagText() {
       // Erst die Fläche macht die Zahl deutbar: 12 Daumennägel oder 12
       // Plakate sind derselbe Zähler und ein Faktor 100 im Speicher.
       p.mpx ? p.mpx + " MPx entpackt" : "",
+      // Was in dieser Sitzung abgeschaltet war – der Schlüssel zur
+      // Halbiererei.
+      p.aus ? "OHNE: " + p.aus : "",
       p.v ? "v" + p.v : "", p.d && p.d !== "klassisch" ? p.d : "",
       p.sch ? "🐢 schonend" : "",
       p.g || "",
@@ -11422,6 +11429,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   katThemenVerdrahten();
   katKategorienVerdrahten();
   jedipediaVerdrahten();
+  ausVerdrahten();
   nachObenVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
@@ -11671,7 +11679,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     toast(tr("Zu diesem Artikel gibt es kein Bild."));
   });
 
-  if ("serviceWorker" in navigator) {
+  if ("serviceWorker" in navigator && !ausLesen().includes("sw")) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
   wireInstallCard();
@@ -12121,4 +12129,77 @@ function jedipediaVerdrahten() {
       toast(tr("Ging nicht."));
     }
   });
+}
+
+/* ── Fehlersuche: Bausteine einzeln abschalten ──────────────────────────
+   Alle Absturz-Dumps auf Svens Rechner betreffen nur diese Seite. Der
+   Abbruch selbst steckt in Chromium – ein absichtlicher `EXC_BREAKPOINT`,
+   in Edge 151 wie in Chrome 152 –, aber etwas hier löst ihn aus. Welches
+   Stück, sagt niemand: Der Aufrufstapel im Dump trägt keine Namen.
+
+   Fünfmal geraten, fünfmal daneben. Also halbieren statt raten: Was aus
+   ist, steht in jedem Fehlerbericht mit, und bei mehreren Abstürzen pro
+   Stunde ist die Antwort in einem Abend da.
+
+   **Im `localStorage`, nicht im Profil.** Die Wahl muss einen Absturz und
+   das Neuladen danach überleben, ohne dass vorher ein Server antworten
+   muss – sonst liefe die Sitzung, die es zu messen gilt, kurz mit
+   angeschaltetem Baustein an. */
+const AUS_KEY = "bf_aus";
+const AUS_BAUSTEINE = ["cv", "sticky", "blur", "sw"];
+
+function ausLesen() {
+  try {
+    const roh = localStorage.getItem(AUS_KEY);
+    if (!roh) return [];
+    return roh.split(",").filter((x) => AUS_BAUSTEINE.includes(x));
+  } catch (_) { return []; }
+}
+
+function ausAnwenden() {
+  const aus = ausLesen();
+  const w = document.documentElement;
+  AUS_BAUSTEINE.forEach((b) => w.classList.toggle("ohne-" + b, aus.includes(b)));
+  const stand = $("diag-aus-stand");
+  if (stand) {
+    stand.textContent = aus.length
+      ? tr("Abgeschaltet: {liste}", { liste: aus.join(", ") })
+      : tr("Nichts abgeschaltet – alles läuft wie gewohnt.");
+  }
+}
+
+function ausVerdrahten() {
+  const kasten = $("diag-halbieren");
+  if (!kasten) return;
+  const aus = ausLesen();
+  kasten.querySelectorAll("[data-aus]").forEach((el) => {
+    el.checked = aus.includes(el.dataset.aus);
+    el.addEventListener("change", () => {
+      const jetzt = new Set(ausLesen());
+      if (el.checked) jetzt.add(el.dataset.aus);
+      else jetzt.delete(el.dataset.aus);
+      try { localStorage.setItem(AUS_KEY, [...jetzt].join(",")); }
+      catch (_) { /* dann eben nur für diese Sitzung */ }
+      ausAnwenden();
+      // Der Offline-Helfer lässt sich nur beim Laden umgehen – und ein
+      // abgemeldeter muss auch wirklich weg sein, nicht nur nicht neu
+      // angemeldet.
+      if (el.dataset.aus === "sw") swAbmelden(el.checked);
+      spur("Baustein " + (el.checked ? "aus" : "an") + ": " + el.dataset.aus);
+      toast(tr("Wirkt nach dem nächsten Neuladen vollständig."));
+    });
+  });
+  ausAnwenden();
+}
+
+async function swAbmelden(abmelden) {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    if (abmelden) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    } else {
+      await navigator.serviceWorker.register("/sw.js");
+    }
+  } catch (_) { /* dann bleibt es beim nächsten Start */ }
 }
