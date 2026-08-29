@@ -27,6 +27,16 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.64.1 – August 2026
+
+### Geändert
+- 👆 **Der Hinweis unter der Großansicht verspricht kein Wischen mehr,
+  wenn es nichts zu blättern gibt.** Seit dem Aufräumen der Galerie ist
+  meist nur ein Bild da – „Wischen zum Blättern" versprach dann eine
+  Geste, die nichts tut. Mehrere Bilder gibt es in aller Regel erst, wenn
+  jemand ein eigenes Foto dazugehängt hat. Der Hinweis hängt jetzt an
+  derselben Bedingung wie die Pfeile.
+
 ## 2.64.0 – August 2026
 
 ### Behoben

@@ -981,6 +981,16 @@ function renderGallery() {
     + (eigen ? (many ? " · " : "") + tr("mein Foto") : "");
   $("lb-prev").hidden = !many;
   $("lb-next").hidden = !many;
+  // **Nur vom Wischen reden, wenn es etwas zu blättern gibt.** Bei einer
+  // einzigen Figur ohne eigene Fotos ist die Galerie ein Bild – und der
+  // Hinweis versprach eine Geste, die nichts tut. Mehrere Bilder gibt es
+  // in aller Regel erst, wenn man selbst eines dazugehängt hat.
+  const hinweis = $("lb-hint");
+  if (hinweis) {
+    hinweis.textContent = many
+      ? tr("Wischen zum Blättern · Tippen zum Schließen")
+      : tr("Tippen zum Schließen");
+  }
   const weg = $("lb-del");
   if (weg) weg.hidden = !eigen;
 }

@@ -43,3 +43,30 @@ def test_leere_serverliste_laesst_das_startbild_stehen():
     # Erst füllen, dann als letzte Rettung anhängen: Die Reihenfolge im
     # Code ist der ganze Beweis.
     assert f.index("(d.images || []).forEach") < f.index("!urls.length")
+
+
+# ── Der Hinweis unter der Großansicht ───────────────────────────────────
+
+def test_der_hinweis_verspricht_kein_wischen_bei_einem_bild():
+    """Seit 2.64.0 zeigt die Galerie meist nur noch ein Bild.
+
+    „Wischen zum Blättern" versprach dann eine Geste, die nichts tut.
+    Mehrere Bilder gibt es in aller Regel erst, wenn jemand ein eigenes
+    Foto dazugehängt hat.
+    """
+    js = APP_JS.read_text()
+    m = re.search(r"function renderGallery\(\) \{.*?\n\}\n", js, re.S)
+    assert m, "renderGallery nicht gefunden"
+    f = m.group(0)
+    assert 'tr("Wischen zum Blättern · Tippen zum Schließen")' in f
+    assert 'tr("Tippen zum Schließen")' in f
+    # Am selben `many` wie die Pfeile – zwei Wahrheiten wären eine zu viel.
+    assert f.index("many") < f.index("lb-hint")
+
+
+def test_der_hinweis_steht_nicht_mehr_fest_im_dokument():
+    html = (Path(__file__).resolve().parents[1]
+            / "frontend" / "index.html").read_text()
+    assert "Wischen zum Blättern" not in html, \
+        "Der Hinweis wird zur Laufzeit gesetzt, nicht im Dokument"
+    assert 'id="lb-hint"' in html
