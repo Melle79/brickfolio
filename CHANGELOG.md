@@ -27,6 +27,31 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.67.0 – August 2026
+
+### Geändert
+- 🧪 **`content-visibility: auto` ist ausgebaut – als Versuch.**
+
+  Von 40 Absturz-Dumps auf dem betroffenen Rechner sind **alle 40 auf
+  Brickfolio**; keine andere Seite. Der Abbruch selbst ist ein
+  Chromium-Fehler – ein absichtlicher `EXC_BREAKPOINT` im Renderer, in
+  Edge 151 genauso wie in Chrome 152, bei 2 bis 9 MB Speicherverbrauch.
+  Aber irgendetwas an dieser Seite löst ihn aus, und nur an dieser.
+
+  `content-visibility` war das Ungewöhnlichste, was die App tut – kaum
+  eine andere Seite benutzt es. Es saß auf den Sammlungskarten, also genau
+  dort, wo in den Berichten immer wieder der Schaden entstand, und es griff
+  ineinander mit `position: sticky`, dem Bildbeobachter und dem Bildladen
+  auf denselben Elementen.
+
+  Gebraucht wird es ohnehin kaum noch: Seine Aufgabe – nicht alles auf
+  einmal zeichnen – macht seit 2.54.1 der eigene Beobachter, nachweislich
+  (110 von 245 und 158 von 915 geladenen Bildern in den Berichten).
+
+  **Bleiben die Abstürze aus, war es das.** Kommen sie weiter, gehört die
+  Zeile zurück; ihr Fehlen kostet dann nur etwas Rechenzeit beim Scrollen
+  sehr langer Sammlungen.
+
 ## 2.66.0 – August 2026
 
 ### Neu
