@@ -27,6 +27,27 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.71.0 – August 2026
+
+### Behoben
+- 🧩 **Bei Teilen ging die Großansicht sofort wieder zu.** Antippen,
+  kurz aufblitzen, weg – bei Figuren und Sets funktionierte alles.
+
+  Der Server baute für Teile die Adresse `ItemImage/PN/0/<nr>.png`. Bei
+  Figuren und Sets stimmt die Null: Die haben keine Farbe. Ein Teil schon –
+  dort gehört die **Farbnummer** hin, und die kennt der Server an dieser
+  Stelle nicht. An sieben Teilen geprüft war die Adresse **jedes Mal** ein
+  404, und weil sie die einzige in der Galerie war, klappte die Ansicht
+  beim Ladefehler sofort wieder zu.
+
+  Teile bekommen jetzt `PL/<nr>.jpg` – farbunabhängig, und bei vier der
+  sieben vorhanden.
+
+- 🔁 **Und einen Rückfall für den Rest.** Trägt auch das Katalogbild nicht,
+  nimmt die Galerie die Adresse, die an der Karte steht – die lag die ganze
+  Zeit daneben. Ist auch die tot, klappt sie zu und sagt warum, statt
+  wortlos zu verschwinden.
+
 ## 2.70.0 – August 2026
 
 ### Geändert

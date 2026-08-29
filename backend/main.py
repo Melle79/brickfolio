@@ -5220,10 +5220,25 @@ def item_images(item_type: str, item_no: str,
         # sondern ein Abruf und ein Wisch zu viel. Der Aufruf an die
         # BrickLink-API entfällt damit ebenfalls – er kostete ein Stück vom
         # Tageskontingent für nichts.
-        code = _BL_IMG_CODE.get(item_type.lower())
-        if code:
-            safe = requests.utils.quote(item_no)
+        # **Teile brauchen eine andere Adresse.** `ItemImage/<code>/0/`
+        # trägt bei Figuren und Sets, weil die keine Farbe haben. Ein Teil
+        # schon – dort steht statt der Null die Farbnummer, und die kennen
+        # wir hier nicht. `ItemImage/PN/0/…` war bei allen sieben geprüften
+        # Teilen ein 404 (29.08.2026), und weil es die einzige Adresse in
+        # der Galerie war, ging die Großansicht sofort wieder zu.
+        #
+        # `PL/<nr>.jpg` ist farbunabhängig und trägt bei vier von sieben.
+        # Für den Rest bleibt die Galerie leer – dann nimmt die Oberfläche
+        # die Adresse, die an der Karte steht.
+        art = item_type.lower()
+        safe = requests.utils.quote(item_no)
+        code = _BL_IMG_CODE.get(art)
+        geraten = ""
+        if art == "part":
+            geraten = f"https://img.bricklink.com/PL/{safe}.jpg"
+        elif code:
             geraten = f"https://img.bricklink.com/ItemImage/{code}/0/{safe}.png"
+        if geraten:
             # Die Adresse ist geraten – raus fliegt sie nur, wenn der Server
             # ausdrücklich sagt, dass es das Bild nicht gibt. Steht ohnehin
             # schon eine aus der API in der Liste, fasst `add` beide zusammen

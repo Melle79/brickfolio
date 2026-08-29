@@ -929,7 +929,12 @@ function imgKey(u) {
 }
 
 function openGallery(startUrl, gid, gtype) {
-  gallery = { urls: startUrl ? [startUrl] : [], idx: 0, eigene: {} };
+  // `ersatz` ist die Adresse, die an der Karte steht. Sie fliegt aus der
+  // Galerie, sobald der Server etwas liefert – sonst stünde dasselbe Motiv
+  // zweimal drin. Aufgehoben wird sie trotzdem: Lädt das Katalogbild
+  // nicht, ist sie das Einzige, was noch bleibt.
+  gallery = { urls: startUrl ? [startUrl] : [], idx: 0, eigene: {},
+              ersatz: startUrl || "" };
   renderGallery();
   $("lightbox").hidden = false;
   if (gid && !gid.startsWith("manuell-")) {
@@ -1030,7 +1035,7 @@ function closeGallery() {
   $("lightbox").hidden = true;
   neuladenNachholen();
   $("lightbox-img").src = "";
-  gallery = { urls: [], idx: 0, eigene: {} };
+  gallery = { urls: [], idx: 0, eigene: {}, ersatz: "" };
   const weg = $("lb-del");
   if (weg) weg.hidden = true;
 }
@@ -11611,11 +11616,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (Math.abs(dx) > 40) stepGallery(dx < 0 ? 1 : -1);
   }, { passive: true });
   $("lightbox-img").addEventListener("error", () => {
-    // Nicht existierende Bildvarianten still aussortieren
-    if (gallery.urls.length <= 1) { closeGallery(); return; }
-    gallery.urls.splice(gallery.idx, 1);
-    gallery.idx = gallery.idx % gallery.urls.length;
-    renderGallery();
+    // Nicht existierende Bildvarianten still aussortieren.
+    const kaputt = gallery.urls[gallery.idx];
+    if (gallery.urls.length > 1) {
+      gallery.urls.splice(gallery.idx, 1);
+      gallery.idx = gallery.idx % gallery.urls.length;
+      renderGallery();
+      return;
+    }
+    // **Das letzte Bild ist tot – erst den Rückfall versuchen.**
+    //
+    // Bei Teilen baute der Server bis 2.71.0 eine Adresse, die es nie gab
+    // (`ItemImage/PN/0/…` – dort gehört die Farbnummer hin). Die Galerie
+    // ging daraufhin sofort wieder zu: „öffnet kurz und schließt sich
+    // wieder". Die Adresse von der Karte lag die ganze Zeit daneben.
+    if (gallery.ersatz && kaputt !== gallery.ersatz) {
+      gallery.urls = [gallery.ersatz];
+      gallery.idx = 0;
+      renderGallery();
+      return;
+    }
+    // Auch der Rückfall trägt nicht. Zuklappen – aber nicht wortlos, sonst
+    // sieht es aus wie ein Fehler der App.
+    closeGallery();
+    toast(tr("Zu diesem Artikel gibt es kein Bild."));
   });
 
   if ("serviceWorker" in navigator) {
