@@ -27,6 +27,18 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.74.1 – August 2026
+
+### Geändert
+- ⚖️ **Die Jedipedia steht jetzt bei den Quellen** – in der App unter
+  *Mehr → Quellen & Rechtliches*, im README und im Handbuch.
+
+  Festgehalten ist, was tatsächlich passiert: Der Verweis **verlinkt nur**.
+  Es werden keine Inhalte abgerufen, übernommen oder gespeichert, und
+  solange niemand das ⓘ antippt, geht nichts dorthin. Die Artikel stehen
+  unter der **GNU-FDL 1.3** und gehören ihren Autoren; das Wiki steht in
+  keiner Verbindung zu diesem Projekt.
+
 ## 2.74.0 – August 2026
 
 ### Geändert

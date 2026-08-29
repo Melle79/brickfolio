@@ -313,7 +313,10 @@ Benutzer, die noch keine eigene Wahl getroffen haben (die eigene Auswahl
 **ℹ️ Quellen & Rechtliches** nennt, woher Daten und Bilder stammen
 (Rebrickable, BrickLink, Brickognize), weist darauf hin, dass beim
 Abfotografieren das Foto zur Erkennung übertragen wird, und führt Marken-,
-Schrift- und Programmlizenz auf.
+Schrift- und Programmlizenz auf. Dort steht auch der optionale
+**Jedipedia-Verweis**: Er öffnet nur eine Suche in einem unabhängigen
+deutschsprachigen Fan-Wiki – keine Inhalte werden abgerufen, übernommen
+oder gespeichert, und solange niemand das ⓘ antippt, geht nichts dorthin.
 
 ### 2.7 Von unterwegs erreichbar machen (Cloudflare Tunnel)
 

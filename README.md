@@ -434,6 +434,14 @@ Set-Inhalte, Bilder) und Brickognize (Bilderkennung – beim Abfotografieren
 wird das Foto dorthin übertragen). Dieselben Angaben stehen in der App unter
 **Mehr → Quellen & Rechtliches**.
 
+Der optionale **Jedipedia-Verweis** (ausgeschaltet voreingestellt) öffnet
+lediglich eine Suche in der [Jedipedia](https://jedipedia.net/), einem
+unabhängigen deutschsprachigen Star-Wars-Fanwiki: Es wird nur verlinkt –
+keine Inhalte abgerufen, übernommen oder gespeichert, und solange niemand
+das ⓘ antippt, geht nichts dorthin. Die Artikel stehen unter der GNU-FDL 1.3
+und gehören ihren Autoren; die Jedipedia steht in keiner Verbindung zu
+diesem Projekt.
+
 Die Schrift **Nunito** (SIL Open Font License 1.1, Lizenztext unter
 `frontend/fonts/OFL.txt`) wird lokal ausgeliefert – es werden also keine
 Besucherdaten an Schrift-CDNs übertragen, und die Oberfläche sieht auch dann
