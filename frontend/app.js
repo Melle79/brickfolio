@@ -4245,32 +4245,82 @@ function katNachschubBeobachten() {
 /* Der Sprungbalken rechts. Er zeigt die Hunderterblöcke, die es wirklich
    gibt – bei „Fehlt mir" sind das weniger als bei „Alle". */
 function katBalkenZeichnen() {
-  const balken = $("kat-balken");
   const bloecke = [];
   katStand.eintraege.forEach((e) => {
     if (e.block && bloecke[bloecke.length - 1] !== e.block) bloecke.push(e.block);
   });
-  balken.innerHTML = bloecke.map((b) =>
+  // Das Kürzel über den Zahlen: „SW" über „12" ist sw12xx. Ohne den Kopf
+  // stehen dort nur Zahlen, und die erklären sich nicht von selbst.
+  $("kat-balken-kopf").textContent = katStand.praefix.toUpperCase();
+  $("kat-balken-zahlen").innerHTML = bloecke.map((b) =>
     `<button data-sprung="${esc(b)}">${esc(b)}</button>`).join("");
-  balken.hidden = bloecke.length < 3;
+  $("kat-balken").hidden = bloecke.length < 3;
+  katBalkenMitziehen();
+}
+
+/* Der Balken zeigt mit, wo man gerade ist.
+
+   Vorher war nur markiert, was man zuletzt angetippt hatte – wer scrollte,
+   sah eine Markierung, die nicht mehr stimmte. */
+let katBalkenTakt = null;
+
+function katBalkenMitziehen() {
+  if (katBalkenTakt) return;
+  katBalkenTakt = requestAnimationFrame(() => {
+    katBalkenTakt = null;
+    const koepfe = $("kat-liste").querySelectorAll(".kat-block");
+    if (!koepfe.length) return;
+    // Der oberste Blockkopf, der schon durchgelaufen ist – also der Block,
+    // in dem die erste sichtbare Zeile steht.
+    const grenze = koepfe[0].getBoundingClientRect().height + 70;
+    let aktuell = koepfe[0].dataset.block;
+    koepfe.forEach((k) => {
+      if (k.getBoundingClientRect().top <= grenze) aktuell = k.dataset.block;
+    });
+    document.querySelectorAll("#kat-balken-zahlen button").forEach((b) =>
+      b.classList.toggle("sel", b.dataset.sprung === aktuell));
+  });
 }
 
 /* Zu einem Block springen. Steht er noch nicht im Dokument, wird so lange
    nachgeschoben, bis er da ist – sonst führt der Balken bei Block 15 ins
    Leere, weil erst 80 Zeilen geladen sind. */
 function katSpringen(block) {
+  const finden = () =>
+    $("kat-liste").querySelector(`[data-block="${CSS.escape(block)}"]`);
   let schutz = 0;
-  while (!$("kat-liste").querySelector(`[data-block="${CSS.escape(block)}"]`)
-         && katStand.gezeigt < katStand.eintraege.length && schutz++ < 100) {
+  while (!finden() && katStand.gezeigt < katStand.eintraege.length
+         && schutz++ < 100) {
     katNachschub();
   }
-  const ziel = $("kat-liste").querySelector(`[data-block="${CSS.escape(block)}"]`);
-  // **Hart springen, nicht sanft.** Über einen Block liegen schnell
-  // 40.000 Pixel; sanftes Scrollen darüber dauert Sekunden und lädt
-  // unterwegs jedes Bild, an dem es vorbeikommt.
-  if (ziel) ziel.scrollIntoView({ block: "start", behavior: "auto" });
-  document.querySelectorAll("#kat-balken button").forEach((b) =>
-    b.classList.toggle("sel", b.dataset.sprung === block));
+  // **Noch etwas darunter nachschieben.** Sonst steht der angesprungene
+  // Block ganz am Ende des Geladenen, und der Browser kann nicht weiter
+  // scrollen als bis zum Dokumentende: Der Sprung wird abgeschnitten und
+  // man landet eine halbe Seite zu früh (gemessen: Ziel 414 px statt 57 px
+  // unter der Kopfleiste, 29.08.2026).
+  while (finden() && katStand.gezeigt < katStand.eintraege.length
+         && schutz++ < 200
+         && document.body.scrollHeight
+            - (finden().getBoundingClientRect().top + window.scrollY)
+            < window.innerHeight * 1.5) {
+    katNachschub();
+  }
+  const ziel = finden();
+  if (ziel) {
+    // **Hart springen, nicht sanft.** Über einen Block liegen schnell
+    // 40.000 Pixel; sanftes Scrollen darüber dauert Sekunden und lädt
+    // unterwegs jedes Bild, an dem es vorbeikommt.
+    //
+    // Und **mit Abstand nach oben**: `scrollIntoView` richtet am oberen
+    // Fensterrand aus, dort klebt aber die Kopfleiste. Der angesprungene
+    // Blockkopf lag darunter, und sichtbar blieb der Kopf des Blocks
+    // davor – man landete gefühlt eine Seite zu früh.
+    const kopf = document.querySelector(".topbar");
+    const abstand = (kopf ? kopf.getBoundingClientRect().height : 55) + 2;
+    const oben = ziel.getBoundingClientRect().top + window.scrollY - abstand;
+    window.scrollTo({ top: Math.max(0, oben), behavior: "auto" });
+  }
+  katBalkenMitziehen();
 }
 
 async function katThemenLaden() {
@@ -4424,6 +4474,9 @@ function katVerdrahten() {
     const b = ev.target.closest("button[data-sprung]");
     if (b) katSpringen(b.dataset.sprung);
   });
+  addEventListener("scroll", () => {
+    if (!$("listpane-katalog").hidden) katBalkenMitziehen();
+  }, { passive: true });
   $("kat-liste").addEventListener("click", (ev) => {
     const knopf = ev.target.closest(".kat-marke");
     const zeile = ev.target.closest(".kat-zeile");
@@ -10416,7 +10469,7 @@ async function loadPriceLog(limit) {
    laden neu, sobald der Server wieder da ist. */
 const UPDATE_POLL_MS = 20000;     // normale Nachfrage
 const UPDATE_WAIT_MS = 5000;      // während der Sperre häufiger
-const UPDATE_GIVEUP_MS = 8 * 60 * 1000;
+const UPDATE_GIVEUP_MS = 3 * 60 * 1000;   // ein Update dauert 1–3 min
 let updateTimer = null;
 let updateLockedSince = 0;
 let serverStartedKnown = null;   // Startzeit des Servers, von dem diese Seite stammt
@@ -10455,6 +10508,27 @@ function showUpdateLock(on) {
   document.body.style.overflow = on ? "hidden" : "";
 }
 
+/* Hat der Server seit dem Laden dieser Seite neu gestartet?
+
+   Läuft über den **öffentlichen** Endpunkt, nicht über `/update/status`:
+   Ging während des Updates die Anmeldung verloren, erfuhr die Seite sonst
+   nie, dass der Server zurück ist – die Sperre blieb stehen, bis jemand von
+   Hand neu lud. Nachgebaut am 29.08.2026: Token weggenommen, Server
+   getauscht, Sperre stand auch nach Minuten noch. */
+function neustartPruefen(startedAt) {
+  if (!startedAt) return false;
+  if (serverStartedKnown === null) {
+    serverStartedKnown = startedAt;
+    return false;
+  }
+  if (startedAt !== serverStartedKnown) {
+    spur("Server neu gestartet – App lädt neu");
+    neuLadenMit("Server neu gestartet");
+    return true;
+  }
+  return false;
+}
+
 async function pollUpdateStatus() {
   const bar = $("update-bar");
   const lock = $("update-lock");
@@ -10466,19 +10540,10 @@ async function pollUpdateStatus() {
     state.appVersion = s.version;
     state.serverStartedAt = s.started_at;
 
-    // Hat der Server seit dem Laden dieser Seite neu gestartet? Dann ist der
-    // Programmcode im Browser veraltet – unabhängig davon, ob die Sperre
+    // Veralteter Programmcode im Browser – unabhängig davon, ob die Sperre
     // sichtbar war. Wichtig für Tabs, die während des Updates im Hintergrund
     // lagen: dort stehen die Timer still, die Sperre erscheint gar nicht.
-    if (s.started_at) {
-      if (serverStartedKnown === null) {
-        serverStartedKnown = s.started_at;
-      } else if (s.started_at !== serverStartedKnown) {
-        spur("Server neu gestartet – App lädt neu");
-        neuLadenMit("Server neu gestartet");
-        return;
-      }
-    }
+    if (neustartPruefen(s.started_at)) return;
 
     const helperBefore = state.helperActive;
     state.helperActive = !!s.helper_active;
@@ -10509,14 +10574,29 @@ async function pollUpdateStatus() {
     // Server nicht erreichbar: läuft das Update gerade, ist das erwartet.
     if (!serverWeg) { serverWeg = true; spur("Server nicht erreichbar"); }
     if (!lock.hidden) next = UPDATE_WAIT_MS;
+    // **Zweiter Anlauf ohne Anmeldung.** Genau hier landete die Seite, wenn
+    // die Sitzung während des Updates ablief: Der angemeldete Aufruf schlug
+    // fortan immer fehl, und der Neustart wurde nie bemerkt.
+    try {
+      const roh = await fetch("/api/laufzeit", { cache: "no-store" });
+      if (roh.ok) {
+        const l = await roh.json();
+        if (neustartPruefen(l.started_at)) return;
+      }
+    } catch (__) { /* dann eben beim nächsten Takt */ }
   }
   if (!lock.hidden) {
     const waited = Date.now() - updateLockedSince;
     if (waited > UPDATE_GIVEUP_MS) {
-      $("update-lock-text").textContent =
+      $("update-lock-text").textContent = tr(
         "Das dauert länger als erwartet. Läuft der Update-Helfer auf dem "
-        + "Server? Du kannst es auch von Hand prüfen.";
+        + "Server? Du kannst es auch von Hand prüfen.");
       $("btn-update-reload").hidden = false;
+    } else if (waited > 20000) {
+      // Ein Kasten, in dem sich nichts rührt, sieht nach zwei Minuten aus
+      // wie abgestürzt – auch wenn die Wache im Hintergrund arbeitet.
+      $("update-lock-text").textContent = tr("Die App startet gleich neu – "
+        + "bitte kurz warten.") + " (" + Math.round(waited / 1000) + " s)";
     }
     next = UPDATE_WAIT_MS;
   }
@@ -11077,6 +11157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     b.addEventListener("click", () => showListsTab(b.dataset.listtab));
   });
   katVerdrahten();
+  nachObenVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
     const name = $("backup-select").value;
@@ -11496,4 +11577,40 @@ async function katalogReiterOeffnen() {
     }
   }
   katListeLaden();
+}
+
+/* ── Zurück zum Anfang ──────────────────────────────────────────────────
+   Gilt für jede lange Liste, nicht nur den Katalog: Sammlung, Wünsche,
+   Katalog – überall scrollt das Fenster, überall ist der Weg zurück nach
+   oben sonst ein langes Wischen.
+
+   Der Knopf erscheint erst nach zwei Bildschirmhöhen. Früher wäre er im
+   Weg, ohne je gebraucht zu werden. */
+const NACH_OBEN_AB = 2;          // Bildschirmhöhen
+
+function nachObenPruefen() {
+  const knopf = $("btn-nach-oben");
+  if (!knopf) return;
+  // In Popups und während der Update-Sperre hat er nichts zu suchen.
+  const gestoert = !$("update-lock").hidden
+    || document.getElementById("card-modal")
+    || document.getElementById("kat-modal");
+  knopf.hidden = gestoert
+    || window.scrollY < window.innerHeight * NACH_OBEN_AB;
+}
+
+function nachObenVerdrahten() {
+  const knopf = $("btn-nach-oben");
+  if (!knopf) return;
+  knopf.addEventListener("click", () => {
+    // Hart, nicht sanft: Aus 90.000 Pixeln sanft heraufzufahren dauert
+    // Sekunden und lädt unterwegs jedes Bild, an dem es vorbeikommt.
+    window.scrollTo({ top: 0, behavior: "auto" });
+    knopf.hidden = true;
+  });
+  let takt = null;
+  addEventListener("scroll", () => {
+    if (takt) return;
+    takt = requestAnimationFrame(() => { takt = null; nachObenPruefen(); });
+  }, { passive: true });
 }

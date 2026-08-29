@@ -27,6 +27,58 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.60.0 – August 2026
+
+### Behoben
+- 🔓 **Die Sperre „Update wird installiert" blieb manchmal für immer
+  stehen** – nur ein Neuladen von Hand brachte die App zurück.
+
+  Die Wache erkennt einen Neustart daran, dass sich der Startzeitpunkt des
+  Servers ändert. Sie fragte ihn über einen Endpunkt ab, der eine Anmeldung
+  verlangt. Ging die Sitzung während des Updates verloren, schlug dieser
+  Aufruf fortan **immer** fehl: Die Seite erfuhr nie, dass der Server zurück
+  war. Nachgebaut am 29.08.2026 – Token weggenommen, Server getauscht, und
+  die Sperre stand auch nach Minuten noch.
+
+  Version und Startzeitpunkt liegen jetzt zusätzlich unter `/api/laufzeit`,
+  **ohne Anmeldung**. Geheim ist daran nichts: Die Version steht ohnehin in
+  jeder ausgelieferten Seite. Alles Weitere – Countdown, Helferzustand, wer
+  das Update angefordert hat – bleibt geschützt.
+
+  Dazu zwei Kleinigkeiten: Die Sperre zeigt nach 20 Sekunden mit, wie lange
+  sie schon wartet (ein Kasten, in dem sich nichts rührt, sieht nach zwei
+  Minuten aus wie abgestürzt), und der Knopf „Jetzt neu laden" erscheint
+  nach drei statt nach acht Minuten.
+
+- 🏷️ **`mar` ist Super Mario, nicht Marvel.** `mar001` ff. sind Boo, Bowser
+  und Bowser Jr.; Marvel-Figuren laufen bei BrickLink unter `sh` (Super
+  Heroes). Der falsche Name fiel nie auf, weil die Figur unter dem falschen
+  Thema genauso aussieht wie überall sonst – erst die Themenauswahl der
+  neuen Katalogliste stellte die Namen nebeneinander.
+
+  Bei der Gelegenheit **44 weitere Kürzel benannt**: Der Index kennt 212,
+  benannt waren 57. Aus „SOC" wurde Fußball, aus „CRS" Cars, aus „DRM"
+  DREAMZzz. Aufgenommen wurde nur, was die Katalognamen selbst belegen; wo
+  sie es nicht taten (etwa `bdp`), bleibt das Kürzel stehen. Ein falscher
+  Name ist schlechter als gar keiner – er sieht aus, als wüsste man es.
+
+- ↕️ **Der Sprungbalken schnitt den Sprung ab.** Der angesprungene Block
+  stand ganz am Ende des Geladenen, und weiter als bis zum Dokumentende
+  kann kein Browser scrollen: Man landete eine halbe Seite zu früh (Ziel
+  414 px statt 57 px unter der Kopfleiste). Jetzt wird erst genug
+  darunter nachgeschoben, dann gesprungen – und mit Abstand zur
+  Kopfleiste, die sonst den Blockkopf verdeckte.
+
+### Neu
+- 🔢 **Der Sprungbalken trägt sein Thema im Kopf.** „SW" über „00, 01, 02 …"
+  liest sich als `sw00xx`; ohne den Kopf waren es nur Zahlen, und danach
+  wurde prompt gefragt. Der gerade sichtbare Block ist markiert und zieht
+  beim Scrollen mit – vorher blieb markiert, was man zuletzt angetippt
+  hatte, und das stimmte nach drei Wischern nicht mehr.
+- ⬆️ **Zurück zum Anfang.** Ein runder Pfeil unten rechts, sobald man zwei
+  Bildschirmhöhen weit unten ist – in jeder langen Liste, nicht nur im
+  Katalog. In Popups und während der Update-Sperre bleibt er weg.
+
 ## 2.59.0 – August 2026
 
 ### Neu

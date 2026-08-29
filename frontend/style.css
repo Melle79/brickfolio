@@ -1968,12 +1968,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   display: flex; flex-direction: column; align-items: stretch;
   max-height: 70vh; overflow: hidden;
 }
+/* Die Zahlen stehen untereinander. Ohne das erbt der neue Behälter die
+   Blockrichtung und legt sie quer über die Liste. */
+#kat-balken-zahlen { display: flex; flex-direction: column; }
 .kat-balken button {
   background: none; border: 0; cursor: pointer; padding: 1px 6px;
   font-size: .72rem; font-variant-numeric: tabular-nums;
   color: var(--muted); line-height: 1.35;
 }
-.kat-balken button.sel { color: var(--red); font-weight: 700; }
+#kat-balken-zahlen button.sel { color: var(--red); font-weight: 700; }
 
 /* `.card-modal` ist ein Flex-Behälter für **eine** Karte darin – Bild,
    Name und Knöpfe legten sich darin nebeneinander statt untereinander.
@@ -2004,3 +2007,28 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    dann oben, und die Zeile darunter sagt warum – statt die Nummer stumm
    zweimal zu zeigen. */
 .kat-name.kat-namenlos { font-family: ui-monospace, SFMono-Regular, monospace; }
+
+/* Der Sprungbalken trägt sein Thema im Kopf: „SW" über „00, 01, 02 …"
+   liest sich als sw00xx – ohne den Kopf sind es nur Zahlen, und danach
+   wurde prompt gefragt (29.08.2026). */
+.kat-balken-kopf {
+  display: block; text-align: center; font-size: .62rem; font-weight: 800;
+  letter-spacing: .1em; color: var(--muted); padding-bottom: 3px;
+  border-bottom: 1px solid var(--line); margin-bottom: 3px;
+}
+
+/* Zurück zum Anfang. Über der Leiste und am rechten Rand, damit der Daumen
+   ihn erreicht, ohne die Liste zu verdecken. */
+.nach-oben {
+  position: fixed; right: 14px; z-index: 40;
+  bottom: calc(env(safe-area-inset-bottom) + 74px);
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--surface); color: var(--ink);
+  font-size: 1.25rem; line-height: 1; cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center;
+}
+.nach-oben:active { transform: translateY(2px); box-shadow: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .nach-oben { transition: opacity .15s ease; }
+}

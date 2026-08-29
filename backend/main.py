@@ -2273,6 +2273,24 @@ def cancel_update(user: dict = Depends(admin_user)):
     return {"ok": True}
 
 
+@app.get("/api/laufzeit")
+def laufzeit():
+    """Version und Startzeitpunkt – **ohne Anmeldung.**
+
+    Die Wache im Browser erkennt einen Neustart daran, dass sich
+    `started_at` ändert. Hing das an `/update/status`, und ging während des
+    Updates die Anmeldung verloren, erfuhr die Seite nie, dass der Server
+    zurück ist: Die Sperre „Update wird installiert" blieb stehen, bis
+    jemand von Hand neu lud (nachgebaut am 29.08.2026).
+
+    Geheim ist hier nichts. Die Version steht ohnehin in jeder ausgelieferten
+    Seite als `?v=` an den Dateien; der Startzeitpunkt sagt nur, wann der
+    Container hochkam. Alles Weitere – Countdown, Helfer, wer es angefordert
+    hat – bleibt hinter der Anmeldung.
+    """
+    return {"version": core.APP_VERSION, "started_at": _STARTED_AT}
+
+
 @app.get("/api/update/status")
 def update_status(user: dict = Depends(current_user)):
     """Läuft gleich ein Update? Wird von allen Browsern kurz abgefragt."""

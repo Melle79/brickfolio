@@ -43,7 +43,10 @@ MINIFIG_PREFIXES = {
     "loc": "Legends of Chima",
     "lom": "Lone Ranger",
     "lor": "Herr der Ringe",
-    "mar": "Marvel",
+    # **Nicht Marvel.** `mar001` ff. sind Boo, Bowser und Bowser Jr. –
+    # das Kürzel gehört Super Mario. Marvel-Figuren laufen unter `sh`
+    # (Super Heroes). Am 29.08.2026 an den Katalognamen geprüft.
+    "mar": "Super Mario",
     "mk": "Monkie Kid",
     "min": "Minecraft",
     "nex": "Nexo Knights",
@@ -66,6 +69,56 @@ MINIFIG_PREFIXES = {
     "uagt": "Ultra Agents",
     "vid": "Vidiyo",
     "wc": "Western",
+    # ── Am 29.08.2026 aus den Katalognamen ergänzt ────────────────────
+    # Der Index kennt 212 Kürzel, benannt waren 57. Der Rest stand als
+    # Großbuchstaben-Kürzel in der Themenauswahl – „SOC" statt „Fußball".
+    # Aufgenommen wurde nur, was die Namen selbst belegen; wo sie es nicht
+    # taten (etwa `bdp`), bleibt das Kürzel stehen. Ein falscher Name ist
+    # schlechter als gar keiner: Er sieht aus, als wüsste man es.
+    "agt": "Agents",
+    "air": "Flughafen",
+    "ani": "Animal Crossing",
+    "belvfemale": "Belville",
+    "belvmale": "Belville",
+    "bio": "Bionicle",
+    "bob": "SpongeBob",
+    "but": "Klassisch: Knopfhemd",
+    "chef": "Koch",
+    "colhp": "Sammelfiguren: Harry Potter",
+    "coltlbm": "Sammelfiguren: Batman Movie",
+    "cop": "Polizei (klassisch)",
+    "crs": "Cars",
+    "div": "Taucher",
+    "doc": "Arzt",
+    "drm": "DREAMZzz",
+    "dupfig": "Duplo",
+    "edu": "Education",
+    "firec": "Feuerwehr (klassisch)",
+    "fst": "FIRST LEGO League",
+    "gb": "Ghostbusters",
+    "hor": "Klassisch: Querstreifen",
+    "js": "Jack Stone",
+    "llp": "LEGOLAND",
+    "mnn": "Minions",
+    "nba": "Basketball (NBA)",
+    "oct": "Octan",
+    "old": "LEGOLAND (klassisch)",
+    "op": "One Piece",
+    "par": "Paradisa",
+    "pln": "Ohne Aufdruck",
+    "rac": "Racers",
+    "sc": "Speed Champions",
+    "shg": "DC Super Hero Girls",
+    "sim": "Die Simpsons",
+    "soc": "Fußball",
+    "son": "Sonic",
+    "tech": "Technic",
+    "tls": "LEGO Store",
+    "twt": "Trolls",
+    "uni": "Unikitty",
+    "vik": "Wikinger",
+    "wck": "Wicked",
+    "wr": "World Racers",
     "zip": "Sonstige",
 }
 

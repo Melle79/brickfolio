@@ -1331,9 +1331,15 @@ Themas in **Nummernfolge**, nicht alphabetisch. Das ist Absicht: So stehen
 Varianten beieinander (sw0001a bis sw0001d), und das Jahr wächst von oben
 nach unten.
 
-**Rechts am Rand liegt ein Sprungbalken** mit den Hunderterblöcken (00, 01,
-02 …). Ein Tipp darauf springt dorthin – bei 1.663 Star-Wars-Figuren ist das
-der Unterschied zwischen Suchen und Finden.
+**Rechts am Rand liegt ein Sprungbalken.** Oben steht das Kürzel des
+Themas, darunter die Hunderterblöcke: **SW** über **12** heißt `sw12xx`. Ein
+Tipp darauf springt dorthin – bei 1.663 Star-Wars-Figuren ist das der
+Unterschied zwischen Suchen und Finden. Der gerade sichtbare Block ist rot
+markiert und zieht beim Scrollen mit.
+
+**Der runde Pfeil unten rechts** bringt euch in einem Schritt zurück an den
+Anfang. Er erscheint, sobald ihr zwei Bildschirmhöhen weit unten seid – und
+zwar in *jeder* langen Liste, nicht nur hier.
 
 **Antippen:**
 

@@ -452,7 +452,10 @@
       </div>
       <div class="kat-rahmen">
         <div id="kat-liste" class="kat-liste"></div>
-        <div id="kat-balken" class="kat-balken" aria-hidden="true"></div>
+        <nav id="kat-balken" class="kat-balken" aria-label="Zur Nummer springen">
+          <span id="kat-balken-kopf" class="kat-balken-kopf"></span>
+          <div id="kat-balken-zahlen"></div>
+        </nav>
       </div>
       <p id="kat-leer" class="empty" hidden>Hier ist nichts.</p>
     </section>
@@ -1174,6 +1177,8 @@ sudo bash update.sh</pre>
   </div>
 </div>
 
+<button id="btn-nach-oben" class="nach-oben" hidden
+        aria-label="Zum Anfang der Liste">↑</button>
 <div id="toast" class="toast" hidden></div>
 <div id="lightbox" class="lightbox" hidden>
   <button id="lb-prev" class="lb-nav" aria-label="Vorheriges Bild">‹</button>
