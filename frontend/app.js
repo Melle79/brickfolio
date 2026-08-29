@@ -4419,10 +4419,26 @@ function katSpringen(block) {
   katBalkenMitziehen();
 }
 
+/* Was der Katalog überhaupt enthält – der Abzug bringt bisher nur
+   Minifiguren mit. Ein Schalter, der immer in einen leeren Raum führt, ist
+   schlechter als gar keiner. */
+let katArten = null;
+
+function katArtenSchalter() {
+  if (!katArten) return;
+  document.querySelectorAll("[data-katart]").forEach((b) => {
+    const n = katArten[b.dataset.katart] || 0;
+    b.disabled = !n;
+    b.title = n ? "" : tr("Dazu liegt im Katalog noch nichts.");
+  });
+}
+
 async function katThemenLaden() {
   const wahl = $("kat-thema");
   try {
     const d = await api(`/katalog/liste/themen?art=${katStand.art}`);
+    katArten = d.arten || null;
+    katArtenSchalter();
     if (!d.themen.length) {
       wahl.innerHTML = "";
       return false;
@@ -11728,10 +11744,15 @@ async function katalogReiterOeffnen() {
       // Zwei sehr verschiedene Gründe für dieselbe leere Seite: Entweder
       // liegt kein Katalog vor, oder man hat sich alle Themen selbst
       // ausgeblendet. Ohne den Unterschied sucht man am falschen Ende.
-      $("kat-leer").textContent = katThemenAlle.length
-        ? tr("Alle Themen sind ausgeblendet. Unter Mehr → Katalog-Themen "
-             + "wieder einschalten.")
-        : tr("Der Katalog ist auf dieser Instanz noch nicht geladen.");
+      // Drei Gründe für dieselbe leere Seite, und sie führen an ganz
+      // verschiedene Enden.
+      $("kat-leer").textContent =
+        (katArten && !katArten[katStand.art])
+          ? tr("Der Katalog enthält bisher nur Figuren, keine Sets.")
+          : (katThemenAlle.length
+             ? tr("Alle Themen sind ausgeblendet. Unter Mehr → Katalog-Themen "
+                  + "wieder einschalten.")
+             : tr("Der Katalog ist auf dieser Instanz noch nicht geladen."));
       $("kat-balken").hidden = true;
       $("kat-zahl").textContent = "0";
       return;
@@ -11850,6 +11871,7 @@ function _such_klein(s) {
 async function katThemenLadenAlle() {
   try {
     const d = await api(`/katalog/liste/themen?alle=1&art=${katStand.art}`);
+    katArten = d.arten || null;
     katThemenAlle = d.themen;
     $("kat-themen-card").hidden = !d.themen.length;
     katThemenZeichnen();

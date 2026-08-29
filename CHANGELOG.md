@@ -27,6 +27,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.65.1 – August 2026
+
+### Behoben
+- 📦 **„Sets" im Katalog führte in einen leeren Raum.** Der veröffentlichte
+  Abzug enthält bisher **nur Minifiguren** – null Sets. Der Schalter ließ
+  sich trotzdem umlegen, und die Meldung dort sagte fälschlich, es sei gar
+  kein Katalog geladen.
+
+  Jetzt ist der Schalter ausgegraut, solange nichts dahintersteht, und die
+  Meldung nennt den wahren Grund. Drei Gründe für dieselbe leere Seite –
+  kein Katalog, alle Themen ausgeblendet, keine Sets im Abzug – führen an
+  ganz verschiedene Enden.
+
 ## 2.65.0 – August 2026
 
 ### Behoben

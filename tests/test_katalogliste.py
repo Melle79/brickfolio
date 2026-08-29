@@ -259,3 +259,20 @@ def test_kopf_des_sprungbalkens(ctx):
 def test_unbekanntes_thema_liefert_leer(ctx):
     d = ctx.get("/api/katalog/liste?thema=Gibtsnicht").json()
     assert d["gesamt"] == 0 and d["eintraege"] == []
+
+
+def test_die_auswahl_sagt_was_der_katalog_enthaelt(ctx):
+    """Der veröffentlichte Abzug bringt bisher nur Minifiguren mit.
+
+    „Sets" führte damit in einen leeren Raum, und die Meldung dort sagte
+    fälschlich, es sei gar kein Katalog geladen. Ein Schalter, der immer
+    ins Leere führt, muss das wenigstens zugeben.
+    """
+    d = ctx.get("/api/katalog/liste/themen").json()
+    assert d["arten"]["minifig"] > 0
+    assert d["arten"]["set"] == 0
+    # Und die Zählung gilt für den ganzen Index, nicht für die gefragte Art:
+    # Sonst stünde bei `art=set` überall null und der Schalter bliebe stumm.
+    d2 = ctx.get("/api/katalog/liste/themen?art=set").json()
+    assert d2["themen"] == []
+    assert d2["arten"] == d["arten"]

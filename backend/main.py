@@ -1093,8 +1093,19 @@ def katalog_themen(art: str = "minifig", alle: int = 0,
         liste.sort(key=lambda x: x["thema"].lower())
     else:
         liste.sort(key=lambda x: (not x["fav"], -x["anzahl"], x["thema"]))
+    with core.db() as conn:
+        arten = {r["item_type"]: r["n"] for r in conn.execute(
+            "SELECT item_type, COUNT(*) AS n FROM katalog_index"
+            " GROUP BY item_type")}
     return {"themen": liste,
-            "versteckt": sum(1 for t in zaehler if t in versteckt)}
+            "versteckt": sum(1 for t in zaehler if t in versteckt),
+            # Womit die Oberfläche den Schalter „Figuren/Sets" richtig
+            # stellen kann: Der veröffentlichte Abzug enthält bisher **nur
+            # Minifiguren**. „Sets" führte damit in einen leeren Raum, und
+            # die Meldung dort sagte fälschlich, es sei gar kein Katalog
+            # geladen (29.08.2026).
+            "arten": {"minifig": arten.get("minifig", 0),
+                      "set": arten.get("set", 0)}}
 
 
 class ThemenWahlBody(BaseModel):
