@@ -27,6 +27,38 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.62.0 – August 2026
+
+### Behoben
+- 🗂️ **Die Themenauswahl gruppiert nach Thema, nicht nach Kürzel.**
+
+  Mit den vielen neuen Namen aus 2.61.0 tragen mehrere Kürzel denselben:
+  Belville läuft bei BrickLink unter vier (`belvbaby`, `belvfairy`,
+  `belvfemale`, `belvmale`), Scala unter dreien, Duplo unter vieren. Nach
+  Kürzeln gruppiert stand „Belville" viermal in der Auswahl, und jeder
+  Eintrag zeigte ein Viertel der 213 Figuren. Ein Fehler, den erst das
+  Benennen erzeugt hat.
+
+  Der Sprungbalken zeigt bei solchen Themen die Kürzel statt der Ziffern –
+  gekürzt um den gemeinsamen Anfang, weil „BELVFEMALE" auf einem Handy zu
+  breit ist und die ersten vier Buchstaben ohnehin bei allen gleich sind:
+  BABY, FAIRY, FEMALE, MALE.
+
+### Neu
+- 🥤 **Ein Kürzel kann zwei Themen tragen.** `cc4058` bis `cc4066` sind
+  Studios-Figuren (Kameramann, Schauspieler, Assistentin), `cc4443` bis
+  `cc4472` die Coca-Cola-Fußballer der WM-Serie 2002 – dieselben zwei
+  Buchstaben, weil BrickLink sie über die Artikelnummer der Packung führt
+  und nicht über das Thema.
+
+  Dafür gibt es jetzt Bereichsregeln neben der Kürzeltabelle. Eine eigene
+  Tabelle statt einer Ausnahme in der Zuordnung: So sieht man beim Lesen
+  sofort, dass es Bereiche gibt, und der nächste Fall ist eine Zeile.
+
+- 🏷️ Drei weitere Kürzel benannt, alle von Sven aus dem BrickLink-Katalog
+  bestätigt: `game` → Games, `hrf` → Studios (Frankenstein, Vampir,
+  Werwolf, Mumie) und `cc` → Studios beziehungsweise Coca-Cola.
+
 ## 2.61.0 – August 2026
 
 ### Behoben

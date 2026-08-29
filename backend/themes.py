@@ -229,7 +229,31 @@ MINIFIG_PREFIXES = {
     "wtr": "Kellner",
     "ww": "Wild West",
     "x": "Scala",
+    # Von Sven aus dem BrickLink-Katalog bestätigt (29.08.2026):
+    "game": "Games",
+    # Die Studios-Monster: Frankenstein, Vampir, Werwolf, Mumie, Buckliger.
+    "hrf": "Studios",
+    # `cc` ist zweigeteilt – siehe MINIFIG_BEREICHE weiter unten. Hier steht
+    # der Rest, also die Studios-Figuren cc4058 ff.
+    "cc": "Studios",
     "zip": "Sonstige",
+}
+
+
+# Ein Kürzel, zwei Themen.
+#
+# Die Regel „Kürzel bestimmt Thema" hält fast überall – bei `cc` nicht:
+# `cc4058`–`cc4066` sind Studios-Figuren (Kameramann, Schauspieler), aber
+# `cc4443`–`cc4472` die Coca-Cola-Fußballer aus der WM-Serie 2002. Beide
+# tragen dasselbe Kürzel, weil BrickLink sie über die Artikelnummer der
+# Packung führt und nicht über das Thema.
+#
+# Eine eigene Tabelle statt einer Ausnahme in der Zuordnung: So sieht man
+# beim Lesen sofort, dass es Bereiche gibt, und der nächste Fall ist eine
+# Zeile. Was in keinen Bereich fällt, nimmt den Namen aus
+# MINIFIG_PREFIXES.
+MINIFIG_BEREICHE = {
+    "cc": [((4400, 4499), "Coca-Cola")],
 }
 
 _PREFIXES_BY_LEN = sorted(MINIFIG_PREFIXES, key=len, reverse=True)
@@ -241,13 +265,19 @@ def from_minifig_number(item_id: str) -> str | None:
     """Thema aus dem Nummern-Kürzel einer Minifigur, z. B. sw1213 → Star Wars."""
     if not item_id:
         return None
-    m = re.match(r"^([a-z]+)\d", item_id.strip().lower())
+    m = re.match(r"^([a-z]+)(\d+)", item_id.strip().lower())
     if not m:
         return None
-    letters = m.group(1)
+    letters, ziffern = m.group(1), m.group(2)
     for p in _PREFIXES_BY_LEN:
-        if letters == p:
-            return MINIFIG_PREFIXES[p]
+        if letters != p:
+            continue
+        # Erst die Bereiche, dann der Regelfall: Ein Kürzel kann zwei
+        # Themen tragen (siehe MINIFIG_BEREICHE).
+        for (von, bis), thema in MINIFIG_BEREICHE.get(p, ()):
+            if von <= int(ziffern) <= bis:
+                return thema
+        return MINIFIG_PREFIXES[p]
     return None
 
 

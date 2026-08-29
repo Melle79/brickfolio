@@ -4139,7 +4139,7 @@ const KAT_BLOCK = 80;          // Zeilen je Nachschub-Schritt
 let katBeobachter = null;
 let katBildBeobachter = null;
 const katStand = {
-  praefix: "", art: "minifig", q: "", filter: "",
+  thema: "", kopf: "", art: "minifig", q: "", filter: "",
   eintraege: [], gesamt: 0, gezeigt: 0, laeuft: false, letzterBlock: "",
 };
 
@@ -4213,7 +4213,7 @@ function katNachschub() {
     if (e.block && e.block !== katStand.letzterBlock) {
       katStand.letzterBlock = e.block;
       html += `<div class="kat-block" data-block="${esc(e.block)}">`
-        + esc(katStand.praefix.toUpperCase() + e.block) + `</div>`;
+        + esc(e.block) + `</div>`;
     }
     html += katZeile(e);
   }
@@ -4251,7 +4251,7 @@ function katBalkenZeichnen() {
   });
   // Das Kürzel über den Zahlen: „SW" über „12" ist sw12xx. Ohne den Kopf
   // stehen dort nur Zahlen, und die erklären sich nicht von selbst.
-  $("kat-balken-kopf").textContent = katStand.praefix.toUpperCase();
+  $("kat-balken-kopf").textContent = katStand.kopf;
   $("kat-balken-zahlen").innerHTML = bloecke.map((b) =>
     `<button data-sprung="${esc(b)}">${esc(b)}</button>`).join("");
   $("kat-balken").hidden = bloecke.length < 3;
@@ -4353,14 +4353,15 @@ async function katThemenLaden() {
     }
     // Das zuletzt gewählte Thema überlebt den Wechsel Figuren↔Sets, wenn
     // es das dort auch gibt.
-    const gemerkt = katStand.praefix
-      || localStorage.getItem("kat-praefix") || "";
+    const gemerkt = katStand.thema
+      || localStorage.getItem("kat-thema") || "";
     wahl.innerHTML = d.themen.map((t) =>
-      `<option value="${esc(t.praefix)}">${esc(t.thema)} · `
-      + `${t.besitz}/${t.anzahl}</option>`).join("");
-    const gibts = d.themen.some((t) => t.praefix === gemerkt);
-    wahl.value = gibts ? gemerkt : d.themen[0].praefix;
-    katStand.praefix = wahl.value;
+      `<option value="${esc(t.thema)}" data-kopf="${esc(t.kopf)}">`
+      + `${esc(t.thema)} · ${t.besitz}/${t.anzahl}</option>`).join("");
+    const treffer = d.themen.find((t) => t.thema === gemerkt) || d.themen[0];
+    wahl.value = treffer.thema;
+    katStand.thema = treffer.thema;
+    katStand.kopf = treffer.kopf;
     return true;
   } catch (err) {
     wahl.innerHTML = "";
@@ -4375,7 +4376,7 @@ async function katListeLaden() {
   liste.innerHTML = brickSpinner("Katalog");
   try {
     const p = new URLSearchParams({
-      praefix: katStand.praefix, art: katStand.art,
+      thema: katStand.thema, art: katStand.art,
       q: katStand.q, nur: katStand.filter,
       // Der Nachschub schneidet im Browser zu; der Server schickt das
       // Thema einmal ganz. 1.579 Zeilen JSON sind rund 200 kB – einmal
@@ -4459,8 +4460,10 @@ async function katMarkeUmlegen(zeile, knopf) {
 
 function katVerdrahten() {
   $("kat-thema").addEventListener("change", (ev) => {
-    katStand.praefix = ev.target.value;
-    try { localStorage.setItem("kat-praefix", katStand.praefix); } catch (e) {}
+    katStand.thema = ev.target.value;
+    katStand.kopf = ev.target.selectedOptions[0]
+      ? ev.target.selectedOptions[0].dataset.kopf : "";
+    try { localStorage.setItem("kat-thema", katStand.thema); } catch (e) {}
     katListeLaden();
   });
   document.querySelectorAll("[data-katart]").forEach((b) => {

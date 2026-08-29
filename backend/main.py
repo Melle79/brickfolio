@@ -964,17 +964,45 @@ def _nummer_teile(item_no: str):
     return (m.group(1), m.group(2)) if m else ("", "")
 
 
-# Unter `/liste/…`, nicht unter `/katalog/themen`: Diesen Namen trug einmal
-# die Steuerung, die BrickLink nach Themen abklapperte. Sie ist weg, und ein
-# Test wacht darüber, dass sie weg bleibt – der Name soll nicht wiederkommen
-# und dabei etwas ganz anderes bedeuten.
+def _thema_von(item_no: str) -> str:
+    """Thema einer Katalognummer – oder das Kürzel, wenn keines bekannt ist.
+
+    Geht über `themes.from_minifig_number`, nicht über die Kürzeltabelle:
+    Nur so greifen die Bereichsregeln. `cc4063` ist Studios, `cc4443`
+    Coca-Cola – dieselben zwei Buchstaben, zwei Themen.
+    """
+    kuerzel, _ = _nummer_teile(item_no)
+    if not kuerzel:
+        return ""
+    return themes.from_minifig_number(item_no) or kuerzel.upper()
+
+
+def _praefixe_zum_thema(thema: str) -> list:
+    """Alle Kürzel, unter denen dieses Thema vorkommen kann.
+
+    Dient nur als Vorfilter in SQL – die genaue Zuordnung macht danach
+    `_thema_von`. Ein Kürzel kann zwei Themen tragen, deshalb reicht der
+    Vorfilter allein nicht.
+    """
+    treffer = {p for p, t in themes.MINIFIG_PREFIXES.items() if t == thema}
+    for p, bereiche in getattr(themes, "MINIFIG_BEREICHE", {}).items():
+        if any(t == thema for _, t in bereiche):
+            treffer.add(p)
+    if not treffer and re.fullmatch(r"[A-Z]+", thema or ""):
+        # Ein Thema ohne Namen ist sein eigenes Kürzel.
+        treffer.add(thema.lower())
+    return sorted(treffer)
+
+
 @app.get("/api/katalog/liste/themen")
 def katalog_themen(art: str = "minifig", user: dict = Depends(current_user)):
     """Welche Themen liegen im Index, und wie viele hat man schon?
 
-    Die Zählung läuft über dasselbe `substr`, das auch die Liste benutzt –
-    sonst zeigt der Kopf eine andere Zahl als die Liste darunter, und das
-    fällt sofort auf.
+    **Gruppiert wird nach Thema, nicht nach Kürzel.** Belville steht unter
+    vier Kürzeln (`belvfemale`, `belvmale`, `belvfairy`, `belvbaby`), Scala
+    unter dreien, Duplo unter vieren. Nach Kürzeln gruppiert stünde
+    „Belville" viermal in der Auswahl, und jeder Eintrag zeigte ein Viertel
+    der Figuren.
     """
     art = "set" if art == "set" else "minifig"
     with core.db() as conn:
@@ -984,30 +1012,35 @@ def katalog_themen(art: str = "minifig", user: dict = Depends(current_user)):
         besitz = {r["item_id"].lower() for r in conn.execute(
             "SELECT item_id FROM collection WHERE item_type = ?", (art,))}
 
-    zaehler: dict[str, list[int]] = {}
+    zaehler: dict = {}
+    kuerzel_je_thema: dict = {}
     for r in rows:
-        kuerzel, _ = _nummer_teile(r["item_no"])
-        if not kuerzel:
+        thema = _thema_von(r["item_no"])
+        if not thema:
             continue
-        eintrag = zaehler.setdefault(kuerzel, [0, 0])
+        eintrag = zaehler.setdefault(thema, [0, 0])
         eintrag[0] += 1
         if r["item_no"].lower() in besitz:
             eintrag[1] += 1
+        kuerzel_je_thema.setdefault(thema, set()).add(
+            _nummer_teile(r["item_no"])[0])
 
     aus = []
-    for kuerzel, (gesamt, hat) in zaehler.items():
-        aus.append({"praefix": kuerzel,
-                    # Ohne Namen im Verzeichnis bleibt das Kürzel stehen –
-                    # „sw" ist immer noch besser als gar nichts.
-                    "thema": themes.MINIFIG_PREFIXES.get(kuerzel,
-                                                         kuerzel.upper()),
-                    "anzahl": gesamt, "besitz": hat})
+    for thema, (gesamt, hat) in zaehler.items():
+        kuerzel = sorted(kuerzel_je_thema[thema])
+        aus.append({"thema": thema, "anzahl": gesamt, "besitz": hat,
+                    # Was über dem Sprungbalken steht. Bei einem einzelnen
+                    # Kürzel dessen Großschreibung, sonst das Thema selbst –
+                    # „BELVFEMALE" hülfe niemandem.
+                    "kopf": kuerzel[0].upper() if len(kuerzel) == 1
+                            else thema[:9],
+                    "mehrteilig": len(kuerzel) > 1})
     aus.sort(key=lambda x: (-x["anzahl"], x["thema"]))
     return {"themen": aus}
 
 
 @app.get("/api/katalog/liste")
-def katalog_liste(praefix: str = "", art: str = "minifig", q: str = "",
+def katalog_liste(thema: str = "", art: str = "minifig", q: str = "",
                   nur: str = "", offset: int = 0, limit: int = 60,
                   user: dict = Depends(current_user)):
     """Ein Stück des Katalogs, mit dem eigenen Besitzstand daneben.
@@ -1017,19 +1050,24 @@ def katalog_liste(praefix: str = "", art: str = "minifig", q: str = "",
     Verbinden mit der Sammlung, sonst wäre der Besitzstand nicht bekannt.
     """
     art = "set" if art == "set" else "minifig"
-    praefix = re.sub(r"[^a-z]", "", (praefix or "").lower())
     limit = max(1, min(200, limit))
+    praefixe = _praefixe_zum_thema(thema) if thema else []
 
     with core.db() as conn:
         bedingung = ["item_type = ?"]
         werte: list = [art]
-        if praefix:
-            # `substr` statt `LIKE 'sw%'`: `LIKE` fängt bei „sw" auch
-            # „swtv" mit, und das ist ein anderes Thema.
-            bedingung.append(
-                "lower(substr(item_no, 1, ?)) = ?"
-                " AND substr(item_no, ?, 1) BETWEEN '0' AND '9'")
-            werte += [len(praefix), praefix, len(praefix) + 1]
+        if thema:
+            if not praefixe:
+                return {"gesamt": 0, "eintraege": [], "hat_katalog": True}
+            # Vorfilter in SQL über die Kürzel; die genaue Zuordnung macht
+            # danach `_thema_von`. `substr` statt `LIKE 'sw%'`: `LIKE`
+            # fängt bei „sw" auch „swtv" mit, und das ist ein anderes Thema.
+            teile = []
+            for p in praefixe:
+                teile.append("(lower(substr(item_no, 1, ?)) = ?"
+                             " AND substr(item_no, ?, 1) BETWEEN '0' AND '9')")
+                werte += [len(p), p, len(p) + 1]
+            bedingung.append("(" + " OR ".join(teile) + ")")
         if q.strip():
             bedingung.append("(such LIKE ? OR lower(item_no) LIKE ?)")
             n = "%" + _such_norm(q.strip()) + "%"
@@ -1039,7 +1077,7 @@ def katalog_liste(praefix: str = "", art: str = "minifig", q: str = "",
             " WHERE " + " AND ".join(bedingung) + " ORDER BY item_no",
             werte).fetchall()
 
-        besitz: dict[str, int] = {}
+        besitz: dict = {}
         for r in conn.execute(
                 "SELECT item_id, SUM(quantity) AS n FROM collection"
                 " WHERE item_type = ? GROUP BY item_id", (art,)):
@@ -1047,8 +1085,13 @@ def katalog_liste(praefix: str = "", art: str = "minifig", q: str = "",
         wunsch = {r["item_id"].lower() for r in conn.execute(
             "SELECT item_id FROM wanted WHERE item_type = ?", (art,))}
 
+    mehrteilig = len(praefixe) > 1
     eintraege = []
     for r in rows:
+        # Der Vorfilter kann zu viel geliefert haben: `cc` trägt Studios
+        # **und** Coca-Cola.
+        if thema and _thema_von(r["item_no"]) != thema:
+            continue
         nr = r["item_no"].lower()
         n = besitz.get(nr, 0)
         w = nr in wunsch
@@ -1058,15 +1101,37 @@ def katalog_liste(praefix: str = "", art: str = "minifig", q: str = "",
             continue
         if nur == "wunsch" and not w:
             continue
-        _, ziffern = _nummer_teile(r["item_no"])
+        kuerzel, ziffern = _nummer_teile(r["item_no"])
         eintraege.append({
             "item_no": r["item_no"], "name": r["name"],
             "img_url": r["img_url"], "jahr": r["jahr"],
-            # Der Sprungbalken am Rand: die ersten beiden Ziffern der
-            # Nummer. Bei vierstelligen Nummern sind das Hunderterblöcke,
-            # und die verteilen sich in der Praxis gleichmäßig genug.
+            # Der Sprungbalken am Rand. Normalerweise die ersten beiden
+            # Ziffern der Nummer – bei Themen, die unter mehreren Kürzeln
+            # laufen (Belville, Scala, Duplo), stattdessen das Kürzel: Dort
+            # wären die Zifferngruppen doppelt und dazu bedeutungslos.
+            "kuerzel": kuerzel,
             "block": ziffern[:2] if len(ziffern) >= 3 else ziffern,
             "besitz": n, "wunsch": w})
+
+    if mehrteilig:
+        # Bei Themen unter mehreren Kürzeln zeigt der Sprungbalken die
+        # Kürzel statt der Ziffern – die wären bei jedem Kürzel dieselben
+        # und dazu bedeutungslos.
+        #
+        # Gerechnet wird über die Kürzel, die **wirklich vorkommen**, nicht
+        # über alle theoretisch zugeordneten: Zu Belville gehört auch `bel`,
+        # und mit dem im Satz bliebe vom gemeinsamen Anfang nichts übrig,
+        # obwohl im Index nur `belvbaby`, `belvfairy`, `belvfemale` und
+        # `belvmale` stehen.
+        vorhanden = sorted({e["kuerzel"] for e in eintraege})
+        gemeinsam = os.path.commonprefix(vorhanden) if len(vorhanden) > 1 else ""
+        if len(gemeinsam) < 3 or any(len(k) - len(gemeinsam) < 2
+                                     for k in vorhanden):
+            gemeinsam = ""
+        for e in eintraege:
+            e["block"] = e["kuerzel"][len(gemeinsam):].upper()
+    for e in eintraege:
+        e.pop("kuerzel", None)
 
     return {"gesamt": len(eintraege),
             "eintraege": eintraege[offset:offset + limit],

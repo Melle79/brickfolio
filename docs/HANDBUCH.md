@@ -1337,6 +1337,15 @@ Tipp darauf springt dorthin – bei 1.663 Star-Wars-Figuren ist das der
 Unterschied zwischen Suchen und Finden. Der gerade sichtbare Block ist rot
 markiert und zieht beim Scrollen mit.
 
+Ein paar Themen laufen bei BrickLink unter **mehreren Kürzeln** – Belville
+etwa unter vier (`belvbaby`, `belvfairy`, `belvfemale`, `belvmale`). Sie
+stehen trotzdem als *ein* Thema in der Auswahl; der Sprungbalken zeigt dann
+die Kürzel statt der Ziffern: BABY, FAIRY, FEMALE, MALE.
+
+Und einmal ist es umgekehrt: **`cc` trägt zwei Themen.** `cc4058` ff. sind
+Studios-Figuren, `cc4443` ff. die Coca-Cola-Fußballer der WM 2002. Die
+beiden stehen getrennt in der Auswahl.
+
 **Der runde Pfeil unten rechts** bringt euch in einem Schritt zurück an den
 Anfang. Er erscheint, sobald ihr zwei Bildschirmhöhen weit unten seid – und
 zwar in *jeder* langen Liste, nicht nur hier.

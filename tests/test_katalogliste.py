@@ -54,14 +54,14 @@ def ctx(tmp_path, monkeypatch):
 
 def test_kuerzel_trennt_verwandte_themen(ctx):
     """`sw` darf `swtv` nicht mitnehmen."""
-    d = ctx.get("/api/katalog/liste?praefix=sw").json()
+    d = ctx.get("/api/katalog/liste?thema=Star Wars").json()
     nummern = [e["item_no"] for e in d["eintraege"]]
     assert "swtv001" not in nummern
     assert nummern == ["sw0001a", "sw0001b", "sw0002", "sw0003"]
 
 
 def test_besitz_und_wunsch_stehen_daneben(ctx):
-    d = ctx.get("/api/katalog/liste?praefix=sw").json()
+    d = ctx.get("/api/katalog/liste?thema=Star Wars").json()
     nach_nr = {e["item_no"]: e for e in d["eintraege"]}
     assert nach_nr["sw0002"]["besitz"] == 2
     assert nach_nr["sw0002"]["wunsch"] is False
@@ -71,35 +71,36 @@ def test_besitz_und_wunsch_stehen_daneben(ctx):
 
 
 def test_nur_fehlt_laesst_besessene_weg(ctx):
-    d = ctx.get("/api/katalog/liste?praefix=sw&nur=fehlt").json()
+    d = ctx.get("/api/katalog/liste?thema=Star Wars&nur=fehlt").json()
     nummern = [e["item_no"] for e in d["eintraege"]]
     assert "sw0002" not in nummern
     assert d["gesamt"] == 3
 
 
 def test_nur_habe_zeigt_nur_besessene(ctx):
-    d = ctx.get("/api/katalog/liste?praefix=sw&nur=habe").json()
+    d = ctx.get("/api/katalog/liste?thema=Star Wars&nur=habe").json()
     assert [e["item_no"] for e in d["eintraege"]] == ["sw0002"]
 
 
 def test_block_fuer_den_sprungbalken(ctx):
-    d = ctx.get("/api/katalog/liste?praefix=sw").json()
+    d = ctx.get("/api/katalog/liste?thema=Star Wars").json()
     assert {e["block"] for e in d["eintraege"]} == {"00"}
 
 
 def test_themen_zaehlen_wie_die_liste(ctx):
     """Der Kopf muss dieselbe Zahl zeigen wie die Liste darunter."""
-    themen = {t["praefix"]: t for t in ctx.get("/api/katalog/liste/themen").json()["themen"]}
-    assert themen["sw"]["anzahl"] == 4
-    assert themen["sw"]["besitz"] == 1      # Stück 2, aber eine Figur
-    assert themen["sw"]["thema"] == "Star Wars"
-    assert themen["swtv"]["anzahl"] == 1
-    liste = ctx.get("/api/katalog/liste?praefix=sw").json()
-    assert liste["gesamt"] == themen["sw"]["anzahl"]
+    themen = {t["thema"]: t for t in
+              ctx.get("/api/katalog/liste/themen").json()["themen"]}
+    assert themen["Star Wars"]["anzahl"] == 4
+    assert themen["Star Wars"]["besitz"] == 1   # Stück 2, aber eine Figur
+    # `swtv` hat keinen Namen – dann steht das Kürzel als Thema da.
+    assert themen["SWTV"]["anzahl"] == 1
+    liste = ctx.get("/api/katalog/liste?thema=Star Wars").json()
+    assert liste["gesamt"] == themen["Star Wars"]["anzahl"]
 
 
 def test_suche_in_der_liste(ctx):
-    d = ctx.get("/api/katalog/liste?praefix=sw&q=boba").json()
+    d = ctx.get("/api/katalog/liste?thema=Star Wars&q=boba").json()
     assert [e["item_no"] for e in d["eintraege"]] == ["sw0002"]
 
 
@@ -109,7 +110,7 @@ def test_haken_legt_die_figur_in_die_sammlung(ctx):
     d = ctx.post("/api/katalog/marke", json={
         "item_no": "sw0001a", "marke": "habe", "an": True}).json()
     assert d["ok"] is True
-    liste = ctx.get("/api/katalog/liste?praefix=sw").json()["eintraege"]
+    liste = ctx.get("/api/katalog/liste?thema=Star Wars").json()["eintraege"]
     assert next(e for e in liste if e["item_no"] == "sw0001a")["besitz"] == 1
     with core.db() as conn:
         r = conn.execute("SELECT name, bricklink_url FROM collection"
@@ -122,7 +123,7 @@ def test_haken_legt_die_figur_in_die_sammlung(ctx):
 def test_herz_legt_die_figur_auf_die_wunschliste(ctx):
     ctx.post("/api/katalog/marke", json={
         "item_no": "sw0001b", "marke": "wunsch", "an": True})
-    liste = ctx.get("/api/katalog/liste?praefix=sw").json()["eintraege"]
+    liste = ctx.get("/api/katalog/liste?thema=Star Wars").json()["eintraege"]
     assert next(e for e in liste if e["item_no"] == "sw0001b")["wunsch"] is True
 
 
@@ -132,7 +133,7 @@ def test_aushaken_nimmt_die_einfache_zeile_zurueck(ctx):
     d = ctx.post("/api/katalog/marke", json={
         "item_no": "sw0001a", "marke": "habe", "an": False}).json()
     assert d["ok"] is True and d["an"] is False
-    liste = ctx.get("/api/katalog/liste?praefix=sw").json()["eintraege"]
+    liste = ctx.get("/api/katalog/liste?thema=Star Wars").json()["eintraege"]
     assert next(e for e in liste if e["item_no"] == "sw0001a")["besitz"] == 0
 
 
@@ -199,3 +200,62 @@ def test_der_sprung_misst_nicht_an_der_klebenden_ueberschrift():
     sprung = re.search(r"function katSpringen\(block\) \{.*?\n\}\n", js, re.S)
     assert sprung, "katSpringen nicht gefunden"
     assert "blockAnfang(" in sprung.group(0)
+
+
+# ── Ein Kürzel, zwei Themen – und ein Thema, viele Kürzel ───────────────
+
+def _mehr_kataloge(conn):
+    """cc ist zweigeteilt, Belville läuft unter mehreren Kürzeln."""
+    _kat(conn, "cc4063", "Cameraman - Red Jacket")
+    _kat(conn, "cc4443", "Soccer Player Coca-Cola Defender 1")
+    _kat(conn, "cc4472", "Soccer Player Coca-Cola Secret Player B")
+    _kat(conn, "belvfemale01", "Belville Female - Witch")
+    _kat(conn, "belvmale01", "Belville Male - King")
+    _kat(conn, "belvbaby01", "Belville Baby Princess")
+
+
+def test_ein_kuerzel_zwei_themen(ctx):
+    """`cc4063` ist Studios, `cc4443` Coca-Cola – dieselben zwei
+    Buchstaben. Nach Kürzel gruppiert liefen beide unter einem Namen."""
+    with core.db() as conn:
+        _mehr_kataloge(conn)
+    studios = ctx.get("/api/katalog/liste?thema=Studios").json()
+    cola = ctx.get("/api/katalog/liste?thema=Coca-Cola").json()
+    assert [e["item_no"] for e in studios["eintraege"]] == ["cc4063"]
+    assert [e["item_no"] for e in cola["eintraege"]] == ["cc4443", "cc4472"]
+
+
+def test_ein_thema_viele_kuerzel(ctx):
+    """Belville steht unter vier Kürzeln. Nach Kürzel gruppiert stünde es
+    viermal in der Auswahl, und jeder Eintrag zeigte ein Viertel."""
+    with core.db() as conn:
+        _mehr_kataloge(conn)
+    themen = [t for t in ctx.get("/api/katalog/liste/themen").json()["themen"]
+              if t["thema"] == "Belville"]
+    assert len(themen) == 1, "Belville darf nur einmal in der Auswahl stehen"
+    assert themen[0]["anzahl"] == 3
+    assert themen[0]["mehrteilig"] is True
+    liste = ctx.get("/api/katalog/liste?thema=Belville").json()
+    assert liste["gesamt"] == 3
+    # Der Sprungbalken zeigt dann die Kürzel, nicht die Ziffern: Die wären
+    # bei jedem Kürzel dieselben und dazu bedeutungslos.
+    # Der gemeinsame Anfang „belv" fällt weg – auf einem Handy wären
+    # „BELVFEMALE" und „BELVBABY" nebeneinander zu breit, und die ersten
+    # vier Buchstaben sind bei allen gleich.
+    assert {e["block"] for e in liste["eintraege"]} == {
+        "BABY", "FEMALE", "MALE"}
+
+
+def test_kopf_des_sprungbalkens(ctx):
+    """Ein Kürzel → seine Großschreibung. Mehrere → das Thema."""
+    with core.db() as conn:
+        _mehr_kataloge(conn)
+    nach = {t["thema"]: t for t in
+            ctx.get("/api/katalog/liste/themen").json()["themen"]}
+    assert nach["Star Wars"]["kopf"] == "SW"
+    assert nach["Belville"]["kopf"] == "Belville"
+
+
+def test_unbekanntes_thema_liefert_leer(ctx):
+    d = ctx.get("/api/katalog/liste?thema=Gibtsnicht").json()
+    assert d["gesamt"] == 0 and d["eintraege"] == []
