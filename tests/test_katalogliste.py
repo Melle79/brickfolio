@@ -165,3 +165,37 @@ def test_unbekannte_nummer_wird_abgewiesen(ctx):
     r = ctx.post("/api/katalog/marke", json={
         "item_no": "sw9999", "marke": "habe", "an": True})
     assert r.status_code == 404
+
+
+# ── Der Sprungbalken ────────────────────────────────────────────────────
+
+def test_der_sprung_misst_nicht_an_der_klebenden_ueberschrift():
+    """Blocküberschriften kleben – ihre gemeldete Position lügt.
+
+    `position: sticky` heißt: Alle schon durchlaufenen Überschriften
+    stapeln sich unsichtbar unter der Kopfleiste, und der Browser meldet
+    für jede von ihnen **diese** Position – über `getBoundingClientRect`
+    genauso wie über `offsetTop`. Gemessen am 29.08.2026 lagen Block 08
+    und Block 15 angeblich zwölf Pixel auseinander, obwohl 7.000 Zeilen
+    dazwischenstehen. Ein Sprung nach oben rechnete daraufhin „bin schon
+    da" und bewegte sich nicht.
+
+    Gemessen wird deshalb an der ersten Zeile hinter der Überschrift. Die
+    klebt nicht.
+    """
+    import pathlib
+    import re
+    js = (pathlib.Path(__file__).resolve().parents[1]
+          / "frontend" / "app.js").read_text()
+    m = re.search(r"function blockAnfang\(kopf\) \{.*?\n\}\n", js, re.S)
+    assert m, "blockAnfang nicht gefunden"
+    f = m.group(0)
+    assert "nextElementSibling" in f, \
+        "Der Blockanfang muss an der ersten Zeile gemessen werden"
+    # Der Fallstrick selbst: weder das eine noch das andere am Kopf.
+    assert "kopf.getBoundingClientRect" not in f
+    assert "offsetTop" not in f
+
+    sprung = re.search(r"function katSpringen\(block\) \{.*?\n\}\n", js, re.S)
+    assert sprung, "katSpringen nicht gefunden"
+    assert "blockAnfang(" in sprung.group(0)

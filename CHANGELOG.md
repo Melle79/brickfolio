@@ -27,6 +27,37 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.61.0 – August 2026
+
+### Behoben
+- ↕️ **Der Sprungbalken sprang nur nach unten.** Wer bei Block 15 stand
+  und auf 08 tippte, blieb stehen.
+
+  Die Blocküberschriften kleben (`position: sticky`). Alle schon
+  durchlaufenen stapeln sich unsichtbar unter der Kopfleiste, und der
+  Browser meldet für jede von ihnen **diese** Position – über
+  `getBoundingClientRect` genauso wie über `offsetTop`. Gemessen lagen
+  Block 08 und Block 15 zwölf Pixel auseinander, obwohl 7.000 Zeilen
+  dazwischenstehen; der Sprung rechnete daraufhin „bin schon da".
+
+  Gemessen wird jetzt an der ersten Zeile hinter der Überschrift. Die
+  klebt nicht.
+
+  Dieselbe verfälschte Zahl hatte zuvor eine Prüfung bestanden: „Ziel bei
+  57 px" sah nach einem gelungenen Sprung aus und war der Wert, den der
+  Fehler erzeugt. Der Test prüft deshalb jetzt, **woran** gemessen wird.
+
+- 🏷️ **Noch 100 Themenkürzel benannt** – darunter `fort` (Fortnite), das
+  beim ersten Durchgang durchfiel, weil nur die 45 größten Gruppen
+  angesehen worden waren. Jetzt sind alle 115 verbliebenen durchgegangen:
+  aus „ST" wurde Stranger Things, aus „BLU" Bluey, aus „SCD" Scooby-Doo,
+  aus „MOF" Monster Fighters. Von 212 Kürzeln im Index tragen 203 einen
+  Namen.
+
+  Nicht benannt bleibt, was die Katalognamen nicht hergeben – etwa `bdp`,
+  wo Löwenstein-Ritter, ein Hot-Dog-Verkäufer und ein Belagerungstechniker
+  nebeneinanderstehen.
+
 ## 2.60.0 – August 2026
 
 ### Behoben

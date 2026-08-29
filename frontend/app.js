@@ -4285,6 +4285,24 @@ function katBalkenMitziehen() {
 /* Zu einem Block springen. Steht er noch nicht im Dokument, wird so lange
    nachgeschoben, bis er da ist – sonst führt der Balken bei Block 15 ins
    Leere, weil erst 80 Zeilen geladen sind. */
+/* Wo steht ein Block wirklich?
+
+   Nicht an der Überschrift messen: Die klebt (`position: sticky`), und
+   alle schon durchlaufenen stapeln sich unsichtbar unter der Kopfleiste.
+   Für jede von ihnen meldet der Browser dann **diese** Position – und
+   zwar sowohl über `getBoundingClientRect().top` als auch über
+   `offsetTop`. Gemessen am 29.08.2026: Block 08 und Block 15 lagen
+   angeblich zwölf Pixel auseinander, obwohl 7.000 Zeilen dazwischen
+   stehen. Ein Sprung nach oben rechnete daraufhin „bin schon da" und
+   bewegte sich nicht.
+
+   Die erste Zeile hinter der Überschrift klebt nicht und steht da, wo
+   sie steht. */
+function blockAnfang(kopf) {
+  const zeile = kopf.nextElementSibling || kopf;
+  return zeile.getBoundingClientRect().top + window.scrollY;
+}
+
 function katSpringen(block) {
   const finden = () =>
     $("kat-liste").querySelector(`[data-block="${CSS.escape(block)}"]`);
@@ -4300,8 +4318,7 @@ function katSpringen(block) {
   // unter der Kopfleiste, 29.08.2026).
   while (finden() && katStand.gezeigt < katStand.eintraege.length
          && schutz++ < 200
-         && document.body.scrollHeight
-            - (finden().getBoundingClientRect().top + window.scrollY)
+         && document.body.scrollHeight - blockAnfang(finden())
             < window.innerHeight * 1.5) {
     katNachschub();
   }
@@ -4315,10 +4332,13 @@ function katSpringen(block) {
     // Fensterrand aus, dort klebt aber die Kopfleiste. Der angesprungene
     // Blockkopf lag darunter, und sichtbar blieb der Kopf des Blocks
     // davor – man landete gefühlt eine Seite zu früh.
-    const kopf = document.querySelector(".topbar");
-    const abstand = (kopf ? kopf.getBoundingClientRect().height : 55) + 2;
-    const oben = ziel.getBoundingClientRect().top + window.scrollY - abstand;
-    window.scrollTo({ top: Math.max(0, oben), behavior: "auto" });
+    const leiste = document.querySelector(".topbar");
+    // Kopfleiste **plus** die Blocküberschrift selbst: Sonst steht die
+    // Überschrift zwar oben, die erste Zeile aber darunter versteckt.
+    const abstand = (leiste ? leiste.getBoundingClientRect().height : 55)
+      + ziel.getBoundingClientRect().height + 2;
+    window.scrollTo({ top: Math.max(0, blockAnfang(ziel) - abstand),
+                      behavior: "auto" });
   }
   katBalkenMitziehen();
 }

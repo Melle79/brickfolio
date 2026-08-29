@@ -46,3 +46,27 @@ def test_das_laengste_kuerzel_gewinnt():
 def test_unbekanntes_kuerzel_bleibt_unbenannt():
     """Lieber kein Thema als ein falsches."""
     assert themes.from_minifig_number("bdp0001") is None
+
+
+def test_fort_ist_fortnite():
+    """Der Anlass für den zweiten Durchgang.
+
+    Beim ersten Mal waren nur die 45 größten Gruppen angesehen worden;
+    `fort` mit 26 Figuren fiel durch und stand als „FORT" in der Auswahl.
+    """
+    assert themes.MINIFIG_PREFIXES["fort"] == "Fortnite"
+    assert themes.from_minifig_number("fort001") == "Fortnite"
+
+
+def test_gleichnamige_themen_bleiben_unterscheidbar():
+    """Mehrere Kürzel dürfen dasselbe Thema tragen (Belville, Scala,
+    Duplo kommen in Varianten vor) – aber die Fernsehserie „Friends"
+    und LEGO Friends sind zweierlei."""
+    assert themes.MINIFIG_PREFIXES["frnd"] == "Friends"
+    assert themes.MINIFIG_PREFIXES["ftv"] == "Friends (Fernsehserie)"
+    assert themes.MINIFIG_PREFIXES["avt"] != themes.MINIFIG_PREFIXES["ava"]
+
+
+def test_die_tabelle_ist_deutlich_gewachsen():
+    """Untergrenze, damit ein Rückbau auffällt."""
+    assert len(themes.MINIFIG_PREFIXES) >= 200
