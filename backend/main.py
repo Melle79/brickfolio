@@ -114,17 +114,45 @@ async def cache_control(request: Request, call_next):
 def startup():
     core.init_db()
     threading.Thread(target=_price_refresher, daemon=True).start()
+    threading.Thread(target=_sicherungs_waechter, daemon=True).start()
 
 
-def _price_refresher():
-    """Frischt Ø-Preise auf, die älter als 7 Tage sind (max. 40 pro Lauf)."""
-    time.sleep(120)   # Start nicht ausbremsen
+
+# Wie oft nachgesehen wird, ob der heutige Tagesstand schon liegt. Der
+# Aufruf ist billig – gibt es die Datei, kehrt er sofort zurück.
+SICHERUNG_TAKT = 15 * 60
+
+
+def _sicherungs_waechter():
+    """Sieht viertelstündlich nach, ob die Tagessicherung schon liegt.
+
+    **Vorher hing das an der Preisschleife, und die schläft zwölf Stunden.**
+    Damit entstand der Tagesstand irgendwann zwischen Mitternacht und Mittag
+    – je nachdem, wann der Container zuletzt neu startete –, und der halbe
+    Tag davor war ungeschützt.
+
+    Am 30.08.2026 ist genau das eingetreten: Letzter Neustart 29.08. um
+    23:33, Sicherung dort übersprungen (die des 29. lag schon), nächster
+    Lauf wäre 30.08. um 11:35 gewesen. Sven spielte um 10:55 zurück – vierzig
+    Minuten zu früh, und ein ganzer Tag Arbeit hing an der Sicherheitskopie,
+    die das Zurückspielen selbst anlegt.
+
+    Ein eigener Faden, weil die Sicherung nichts mit Preisen zu tun hat und
+    nicht davon abhängen soll, wie lange ein BrickLink-Lauf dauert.
+    """
+    time.sleep(60)          # den Start nicht ausbremsen
     while True:
         try:
             _auto_backup()
         except Exception as e:
             print(f"[brickfolio] Auto-Sicherung übersprungen: {e}",
                   flush=True)
+        time.sleep(SICHERUNG_TAKT)
+
+def _price_refresher():
+    """Frischt Ø-Preise auf, die älter als 7 Tage sind (max. 40 pro Lauf)."""
+    time.sleep(120)   # Start nicht ausbremsen
+    while True:
         try:
             if integrations.bricklink_enabled():
                 for table in PRICE_TABLES:
@@ -3458,6 +3486,16 @@ def backup_restore_file(body: RestoreFileBody,
     finally:
         snap.close()
         live.close()
+
+    # **Migrationen nachziehen.** `backup()` überschreibt die Datenbank
+    # samt Aufbau – ein alter Stand bringt also den alten Aufbau mit. Am
+    # 30.08.2026 fehlte danach `katalog_kategorien` (tags zuvor
+    # dazugekommen), und die Themenauswahl im Katalog antwortete mit 500,
+    # bis der Container das nächste Mal startete.
+    #
+    # `init_db` ist absichtlich wiederholbar: Es legt nur an, was fehlt.
+    core.init_db()
+
     print(f"[brickfolio] Wiederhergestellt: {body.name} "
           f"(Sicherheitskopie: {os.path.basename(safety)})", flush=True)
     return {"ok": True, "restored": body.name,
@@ -7626,6 +7664,40 @@ PRICE_TABLES = ("collection", "wanted", "shopping_items")
 BACKUP_KEEP = int(os.environ.get("BACKUP_KEEP", "14"))
 
 
+# `brickfolio-2026-08-30.db` – der tägliche Stand.
+TAGESSICHERUNG_RE = re.compile(r"^brickfolio-\d{4}-\d{2}-\d{2}\.db$")
+# `brickfolio-manuell-20260830-105508.db` – die Kopie, die das Zurückspielen
+# vor sich selbst anlegt.
+KOPIE_RE = re.compile(r"^brickfolio-manuell-\d{8}-\d{6}\.db$")
+
+
+def _sicherungen_aufraeumen(bdir: str) -> None:
+    """Alte Sicherungen wegräumen – **getrennt nach Art**.
+
+    Vorher lief das über ein einziges `glob("brickfolio-*.db")`, und das
+    fängt die Sicherheitskopien mit. Alphabetisch sortiert steht
+    `brickfolio-manuell-…` **hinter** `brickfolio-2026-…`, gilt damit als
+    die neueste Datei und bleibt immer liegen – gelöscht wurde stattdessen
+    der älteste Tagesstand.
+
+    Jede Sicherheitskopie kostete so einen Tag Historie, lautlos. Bei Sven
+    waren aus 14 Tagen 12 geworden (30.08.2026).
+
+    Beide Töpfe behalten jetzt je `BACKUP_KEEP` Stände. Was in keines der
+    beiden Muster passt, wird **nicht** angefasst: Wer eine Datei von Hand
+    dort ablegt, soll sie wiederfinden.
+    """
+    import glob
+    alle = glob.glob(os.path.join(bdir, "*.db"))
+    for muster in (TAGESSICHERUNG_RE, KOPIE_RE):
+        passend = sorted(f for f in alle
+                         if muster.match(os.path.basename(f)))
+        for f in passend[:-BACKUP_KEEP] if BACKUP_KEEP > 0 else []:
+            os.remove(f)
+            print("[brickfolio] alte Sicherung entfernt: %s"
+                  % os.path.basename(f), flush=True)
+
+
 def _auto_backup():
     """Tägliche Sicherung der Datenbank (konsistent via SQLite-Backup-API).
 
@@ -7649,9 +7721,7 @@ def _auto_backup():
     finally:
         dst_conn.close()
         src_conn.close()
-    old_files = sorted(glob.glob(os.path.join(bdir, "brickfolio-*.db")))
-    for f in old_files[:-BACKUP_KEEP]:
-        os.remove(f)
+    _sicherungen_aufraeumen(bdir)
     print(f"[brickfolio] Auto-Sicherung angelegt: {target}", flush=True)
 
 

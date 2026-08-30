@@ -27,6 +27,38 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.75.0 – August 2026
+
+### Behoben
+- 💾 **Die tägliche Sicherung entstand erst mittags.** Sie hing an der
+  Preisschleife, und die schläft **zwölf Stunden**. Wann der Tagesstand
+  angelegt wurde, hing damit davon ab, wann der Container zuletzt neu
+  startete – irgendwo zwischen Mitternacht und Mittag. Der halbe Tag davor
+  war ungeschützt.
+
+  Am 30.08.2026 trat genau das ein: letzter Neustart 29.08. um 23:33,
+  Sicherung dort übersprungen (die des 29. lag schon), nächster Lauf wäre
+  **11:35** gewesen. Zurückgespielt wurde um **10:55** – vierzig Minuten zu
+  früh, und ein ganzer Tag Arbeit hing an der Sicherheitskopie, die das
+  Zurückspielen selbst anlegt.
+
+  Ein eigener Wächter sieht jetzt **viertelstündlich** nach. Der Aufruf ist
+  billig: Liegt der heutige Stand schon, kehrt er sofort zurück.
+
+- 🗑️ **Jede Sicherheitskopie kostete einen Tagesstand.** Die Aufräumlogik
+  lief über ein einziges `brickfolio-*.db` – und alphabetisch steht
+  `brickfolio-manuell-…` **hinter** `brickfolio-2026-…`. Die Kopie galt
+  damit als neueste Datei und blieb immer liegen; gelöscht wurde der
+  älteste Tag. Lautlos. Aus 14 Tagen Historie waren 12 geworden.
+
+  Tagesstände und Sicherheitskopien werden jetzt getrennt gezählt, jeder
+  Topf behält seine 14. Fremde Dateien im Ordner werden nicht angefasst.
+
+- 🧱 **Zurückspielen zieht die Migrationen nach.** Ein alter Stand bringt
+  den alten Datenbankaufbau mit. Nach dem Zurückspielen fehlte deshalb eine
+  tags zuvor hinzugekommene Tabelle, und die Themenauswahl im Katalog
+  antwortete mit **500** – bis der Container das nächste Mal startete.
+
 ## 2.74.2 – August 2026
 
 ### Geändert
