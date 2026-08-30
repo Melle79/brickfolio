@@ -27,6 +27,21 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.76.0 – August 2026
+
+### Geändert
+- 🧩 **`in_sets` nennt jetzt auch den Zustand des Sets.** Bisher kamen
+  Nummer, Name und Anzahl – der Live-Scanner konnte damit nicht
+  unterscheiden, ob ein Set **versiegelt** oder längst geöffnet ist.
+
+  Der Unterschied ist beim Mitbieten entscheidend: In einem neuen Set
+  stecken die Figuren noch. Bei einem gebrauchten stünden sie längst
+  einzeln in der Sammlung – wer ein Set *mit* Figuren kauft, trägt die
+  Figuren einzeln ein.
+
+  Angehängt als **viertes** Feld (`nummer|name|anzahl|zustand`): Wer nur
+  drei liest, bekommt weiterhin genau das, was er bisher bekam.
+
 ## 2.75.1 – August 2026
 
 ### Behoben

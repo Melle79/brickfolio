@@ -4518,9 +4518,18 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
                 (it.item_id, it.item_type)).fetchall()
             if lrows:
                 info["on_lists"] = [r["name"] for r in lrows]
+            # **Der Zustand des Sets gehört dazu.** Ein neues, ungeöffnetes
+            # Set enthält seine Figuren noch – ein gebrauchtes in aller
+            # Regel nicht mehr, denn wer ein Set mit Figuren kauft, trägt
+            # die Figuren einzeln ein. Ohne diese Angabe kann der
+            # Live-Scanner beides nicht unterscheiden (30.08.2026).
+            #
+            # Als **viertes** Feld angehängt: Wer nur drei liest, bekommt
+            # weiterhin genau das, was er bisher bekam.
             srow = conn.execute(
                 "SELECT GROUP_CONCAT(c2.item_id || '|' || c2.name || '|' || "
-                "sc.qty, ';;') AS s FROM set_contents sc JOIN collection c2 "
+                "sc.qty || '|' || c2.condition, ';;') AS s "
+                "FROM set_contents sc JOIN collection c2 "
                 "ON c2.item_type = 'set' AND c2.item_id = sc.set_no "
                 "WHERE sc.fig_no = ?", (it.item_id,)).fetchone()
             if srow and srow["s"]:
