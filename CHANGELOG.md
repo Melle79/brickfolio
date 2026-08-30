@@ -27,6 +27,24 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.75.1 – August 2026
+
+### Behoben
+- 📱 **Kompakte Ansicht plus Sortierung nach Thema war auf dem Handy
+  unbrauchbar.** Das Raster legte sich über die **Themenkarten** statt über
+  die Figuren: vier Spalten à 85 Pixel, in denen „Minifigure, Headgear"
+  und „Ohne Thema" samt Erklärtext zu Buchstabentürmen zerfielen.
+
+  Für die Rasteransicht gab es die Lösung längst
+  (`#collection-list.by-theme`), nur griff sie hier nicht: Sie hat dieselbe
+  Spezifität wie `#collection-list.kompakt-mode`, und bei Gleichstand
+  gewinnt die Regel, die weiter unten steht – meine neuere. Zwei Klassen
+  schlagen eine.
+
+  Jetzt trägt die Themenkarte das Layout, und das Raster sitzt eine Ebene
+  tiefer: auf 375 Pixeln drei Kacheln je Zeile, der Themenkopf über die
+  volle Breite.
+
 ## 2.75.0 – August 2026
 
 ### Behoben

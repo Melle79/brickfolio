@@ -483,6 +483,23 @@ code {
 #collection-list.by-theme.grid-mode .theme-body {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
 }
+/* Dasselbe für die kompakte Ansicht.
+
+   **Ohne diese Regel legt sich das kompakte Raster über die Themenkarten
+   statt über die Figuren** – vier Spalten à 85 px, in denen „Minifigure,
+   Headgear" und „Ohne Thema" samt Erklärtext zu Buchstabentürmen
+   zerfallen. Auf dem Handy unbrauchbar (30.08.2026).
+
+   `#collection-list.by-theme` allein genügt nicht: Es hat dieselbe
+   Spezifität wie `#collection-list.kompakt-mode`, und die steht weiter
+   unten – bei Gleichstand gewinnt die spätere. Zwei Klassen schlagen
+   eine. */
+#collection-list.by-theme.kompakt-mode { display: block; }
+#collection-list.by-theme.kompakt-mode .theme-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px; align-items: start;
+}
 
 /* Eigene Figuren (Custom) im manuellen Formular */
 .custom-toggle {
