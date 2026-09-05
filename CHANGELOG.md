@@ -27,6 +27,47 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.78.0 – September 2026
+
+### Neu
+- 📖 **Das ⓘ führt jetzt in den Artikel — auch dort, wo er anders heißt.**
+  „Bespin Guard" steht in der Jedipedia unter **Bespin-Sicherheitskräfte**;
+  das lässt sich aus dem Katalognamen nicht ableiten, nur nachschlagen. Für
+  die geläufigen Figuren liegt die Zuordnung jetzt bei — 190 Einträge, jeder
+  einzeln gegen die MediaWiki-Schnittstelle des Wikis geprüft. Im Betrieb
+  ruft Brickfolio dort weiterhin nichts ab.
+
+  **Was hinausgeht, sind Namen — nie BrickLinks Beschreibungen.** Die löst
+  die Begriffsbildung vorher heraus, und ein Test hält die Grenze: Jeder
+  Schlüssel muss schon sein eigenes Ergebnis sein, sonst steckt eine
+  Beschreibung darin.
+
+- 📖 **Die Einheit hinter dem Komma bleibt stehen und wird verlinkt.** Bei
+  „Clone Trooper Commander, 187th Legion" ist die **187. Legion** der
+  interessantere Verweis, nicht der allgemeine Klonkommandant. Erkannt wird
+  eine Einheit an ihrer Form (Ordnungszahl oder Legion/Bataillon/Korps/…) —
+  eine Verbotsliste müsste jede Bemalung kennen, die BrickLink sich je
+  ausdenkt.
+
+  **Steht dort ein Name, geht er vor:** „Commander Fox, Coruscant Guard"
+  führt zu Fox, nicht zu seiner Garde.
+
+- 📖 **Begriffsklärungsseiten werden aussortiert.** „Cody", „Fox", „Hammer",
+  „Hunter" — lauter Klonkrieger, und jeder dieser Titel ist im Wiki eine
+  Auswahlliste. Das Werkzeug erkennt sie an der Kategorie und nimmt
+  stattdessen den nächsten Kandidaten (`Commander Cody` → `CC-2224`). Ohne
+  das landete „Echo" sogar bei einem **imperialen Piloten** statt beim
+  Klon.
+
+  Nachgemessen an 563 Star-Wars-Figuren: **554 landen im Artikel** — vorher
+  waren es 151.
+
+### Behoben
+- 📖 **Eine offene Klammer als Suchbegriff.** „AT-DP Pilot (Imperial Combat
+  Driver - White Uniform)" wurde am Bindestrich *innerhalb* der Klammer
+  zerschnitten; übrig blieb „AT-DP Pilot (Imperial Combat Driver". Jetzt
+  fliegen die Klammern zuerst raus, dann wird getrennt.
+
 ## 2.77.2 – September 2026
 
 ### Behoben

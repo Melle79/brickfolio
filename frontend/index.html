@@ -723,10 +723,11 @@
       <h3>📖 Jedipedia-Verweis</h3>
       <p class="search-hint">Bei Star-Wars-Figuren ein kleines <b>ⓘ</b> neben
         dem Namen, das die Figur im deutschen Star-Wars-Wiki
-        (<i>jedipedia.net</i>) nachschlägt. Bei Eigennamen und Kennungen wie
-        <i>IG-88</i> landet ihr direkt im Artikel; bei englischen
-        Gattungsnamen („Battle Droid") in der Trefferliste, denn dort heißen
-        sie deutsch. Ein Verweis nach draußen – deshalb
+        (<i>jedipedia.net</i>) nachschlägt – in aller Regel direkt im
+        Artikel. „Bespin Guard" heißt dort <i>Bespin-Sicherheitskräfte</i>,
+        und steht im Namen eine Einheit, führt der Verweis dorthin
+        („Clone Trooper Commander, 187th Legion" → <i>187. Legion</i>).
+        Ein Verweis nach draußen – deshalb
         ausgeschaltet, bis du ihn willst. Es werden keine Daten übertragen,
         solange du ihn nicht antippst.</p>
       <label class="wahl-kasten">
@@ -1194,13 +1195,16 @@ sudo bash update.sh</pre>
         Brickognize übertragen. Für die Dienste gelten deren jeweilige
         Nutzungsbedingungen.</p>
       <p class="search-hint"><b>Jedipedia</b> (optional, ausgeschaltet
-        voreingestellt): Das <b>ⓘ</b> neben Star-Wars-Figuren öffnet eine
-        Suche in der
+        voreingestellt): Das <b>ⓘ</b> neben Star-Wars-Figuren öffnet einen
+        Artikel der
         <a href="https://jedipedia.net/" target="_blank" rel="noopener noreferrer">Jedipedia</a>,
-        einem unabhängigen deutschsprachigen Fan-Wiki. Es wird nur verlinkt –
+        eines unabhängigen deutschsprachigen Fan-Wikis. Es wird nur verlinkt –
         keine Inhalte abgerufen, übernommen oder gespeichert, und solange
-        niemand das Zeichen antippt, geht nichts dorthin. Die Artikel stehen
-        unter der GNU-FDL 1.3 und gehören ihren Autoren.</p>
+        niemand das Zeichen antippt, geht nichts dorthin. Welcher Artikel zu
+        welcher Figur gehört, wurde <b>einmalig</b> beim Wiki erfragt und
+        liegt als feste Liste bei; im Betrieb fragt Brickfolio dort nichts.
+        Die Artikel stehen unter der GNU-FDL 1.3 und gehören ihren
+        Autoren.</p>
       <p class="search-hint"><b>LEGO®</b> ist eine Marke der LEGO Gruppe, die
         dieses Projekt weder sponsert noch autorisiert oder unterstützt.
         BrickLink, Rebrickable und Brickognize sind Marken ihrer jeweiligen
@@ -1299,6 +1303,7 @@ sudo bash update.sh</pre>
 
 <div id="print-area"></div>
 
+<script src="/static/jedipedia-titel.js?v=__APPVERSION__"></script>
 <script src="/static/app.js?v=__APPVERSION__"></script>
 <div id="profile-overlay" class="help-overlay" hidden>
   <div class="help-sheet" role="dialog" aria-label="Profil">

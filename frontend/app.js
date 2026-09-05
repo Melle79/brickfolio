@@ -12090,21 +12090,31 @@ function katKategorienVerdrahten() {
    von selbst in den Artikel, sobald der Begriff der Titel ist – und genau
    darauf zielt die Begriffsbildung unten.
 
-   **Warum hier keine Übersetzungstabelle liegt.** Sie lag hier, in 2.77.0,
-   mit BrickLink-Namen als Schlüssel. Das war falsch: Namen sind BrickLinks
-   Inhalt, und deren Weitergabe an Dritte untersagen die
-   Nutzungsbedingungen – derselbe Grund, aus dem
-   `katalogdienst/veroeffentlichen.py` nur Nummer und eigene
-   Bildbeschreibung hinausgibt. Eine Zuordnung müsste an der **Nummer**
-   hängen, nicht am Namen.
+   **Und wo das nicht reicht, steht es in `jedipedia-titel.js`.** „Bespin
+   Guard" heißt dort „Bespin-Sicherheitskräfte" – das lässt sich nicht
+   ableiten. Die Zuordnung hat `tools/jedipedia_titel.py` einmal gegen das
+   Wiki geprüft; im Betrieb wird nichts abgerufen.
+
+   **Schlüssel sind Namen, nie BrickLinks Beschreibungen.** In 2.77.0 lag
+   hier eine Tabelle, deren Schlüssel ganze Katalognamen waren, samt
+   „Light Bluish Gray Head" – das ist BrickLinks Inhalt und wurde wieder
+   entfernt. Was `jedipediaBegriff` übrig lässt, ist der Name der Figur
+   und – wenn eine dabeisteht – ihre Einheit.
 
    Und **nur bei Star Wars**: Das Wiki kennt nichts anderes. Bei einer
    City-Figur wäre der Verweis eine leere Trefferliste. */
 const JEDIPEDIA_SUCHE =
   "https://www.jedipedia.net/wiki/Spezial:Suche?search=";
+const JEDIPEDIA_ARTIKEL = "https://www.jedipedia.net/wiki/";
 
 /* Eine Kennung wie IG-88, R2-D2, C1-10P, U-3PO. */
 const JEDIPEDIA_KENNZEICHEN = /^[A-Z0-9]{1,4}[-–][A-Z0-9]{1,5}$/;
+
+/* Was hinter einem Komma eine **Einheit** ist und keine Beschreibung.
+   Erlaubt statt verboten: Eine Verbotsliste müsste jede Bemalung kennen,
+   die BrickLink sich je ausdenkt. Eine Einheit sieht immer gleich aus. */
+const JEDIPEDIA_EINHEIT =
+  /(\b\d+(st|nd|rd|th)\b|\b(Legion|Battalion|Corps|Company|Squadron|Squad|Guard|Force|Unit|Division|Regiment|Brigade)\b)/i;
 
 function istStarWars(itemId) {
   return /^sw(tv)?\d/i.test(String(itemId || ""));
@@ -12121,22 +12131,28 @@ function istStarWars(itemId) {
    `tools/jedipedia_titel.py`: Die Tabelle ist damit beschriftet. Ein Test
    vergleicht beide Fassungen an echten Katalognamen. */
 function jedipediaBegriff(name) {
-  const kopf = String(name || "").split(" - ")[0];
+  /* **Klammern zuerst weg, dann am Bindestrich trennen.** Andersherum
+     zerschneidet „AT-DP Pilot (Imperial Combat Driver - White Uniform)"
+     mitten in der Klammer, und übrig bleibt eine offene Klammer. */
+  const ganz = String(name || "");
+  const ohne = ganz.replace(/\([^)]*\)/g, " ").split(" - ")[0];
   /* Eine Kennung gewinnt, wo immer sie steht – in der Klammer wie hinter
      einem Komma. Sie ist im Wiki **selbst** der Artikeltitel, damit
      springt die Suche von allein hinein. */
-  const ohne = kopf.replace(/\([^)]*\)/g, " ");
-  const stuecke = (kopf.match(/\(([^)]*)\)/g) || [])
+  const stuecke = (ganz.match(/\(([^)]*)\)/g) || [])
     .map((s) => s.slice(1, -1))
     .concat(ohne.split(","));
   for (const stueck of stuecke) {
     if (JEDIPEDIA_KENNZEICHEN.test(stueck.trim())) return stueck.trim();
   }
-  /* Sonst der Teil vor dem ersten Komma: Dahinter steht BrickLinks
-     Beiwerk – Einheit („, 41st Elite Corps"), Farbe, Bedruckung. Das
-     findet im Wiki nichts, es verhindert nur den Treffer. */
-  return ohne
-    .split(",")[0]
+  /* Hinter dem Komma steht zweierlei: BrickLinks **Beschreibung** (Farbe,
+     Bedruckung, „Young") – die fliegt raus – und die **Einheit**, die im
+     Wiki einen eigenen Artikel hat. Bei „Clone Trooper Commander, 187th
+     Legion" ist die 187. Legion der interessantere Verweis. */
+  const teile = ohne.split(",").map((x) => x.trim());
+  const behalten = [teile[0]].concat(
+    teile.slice(1).filter((x) => JEDIPEDIA_EINHEIT.test(x)));
+  return behalten.join(", ")
     .replace(/\s+/g, " ")
     .replace(/^[\s,;-]+|[\s,;-]+$/g, "");
 }
@@ -12149,6 +12165,15 @@ function jedipediaSuchbegriff(begriff) {
 }
 
 function jedipediaZiel(begriff) {
+  /* `typeof`, nicht `window.…`: Fehlt die Tabellendatei (alter
+     Zwischenspeicher, blockiertes Skript), ist der Name schlicht nicht
+     vergeben – und dann bleibt es bei der Suche, statt dass hier alles
+     stehenbleibt. */
+  const titel = (typeof JEDIPEDIA_TITEL === "object" && JEDIPEDIA_TITEL)
+    ? JEDIPEDIA_TITEL[begriff] : "";
+  if (titel) {
+    return JEDIPEDIA_ARTIKEL + encodeURIComponent(titel.replace(/ /g, "_"));
+  }
   return JEDIPEDIA_SUCHE + encodeURIComponent(jedipediaSuchbegriff(begriff));
 }
 

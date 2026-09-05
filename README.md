@@ -62,9 +62,9 @@ kommen von [BrickLink](https://www.bricklink.com) und
   Gilt je Benutzer, nicht für die ganze Instanz
 - 📖 **Jedipedia-Verweis** (Mehr, ausgeschaltet voreingestellt): ein kleines
   **ⓘ** neben Star-Wars-Figuren, das sie im deutschen Star-Wars-Wiki
-  nachschlägt. Gesucht statt direkt verlinkt – aus dem Katalognamen wird
-  dafür das Wesentliche herausgelöst, damit die Suche des Wikis von allein
-  in den Artikel springt
+  nachschlägt – in aller Regel direkt im Artikel. „Bespin Guard" heißt
+  dort *Bespin-Sicherheitskräfte*, und bei „Clone Trooper Commander,
+  187th Legion" führt der Verweis zur *187. Legion*
 
 **Preise & Wert**
 - 💶 BrickLink-Ø-Preise (neu/gebraucht) automatisch im Hintergrund, mit
@@ -436,10 +436,13 @@ wird das Foto dorthin übertragen). Dieselben Angaben stehen in der App unter
 **Mehr → Quellen & Rechtliches**.
 
 Der optionale **Jedipedia-Verweis** (ausgeschaltet voreingestellt) öffnet
-lediglich eine Suche in der [Jedipedia](https://jedipedia.net/), einem
-unabhängigen deutschsprachigen Star-Wars-Fanwiki: Es wird nur verlinkt –
-keine Inhalte abgerufen, übernommen oder gespeichert, und solange niemand
-das ⓘ antippt, geht nichts dorthin. Die Artikel stehen unter der GNU-FDL 1.3
+einen Artikel der [Jedipedia](https://jedipedia.net/), eines unabhängigen
+deutschsprachigen Star-Wars-Fanwikis: Es wird nur verlinkt – keine Inhalte
+abgerufen, übernommen oder gespeichert, und solange niemand das ⓘ antippt,
+geht nichts dorthin. Welcher Artikel zu welcher Figur gehört, wurde
+**einmalig** über die MediaWiki-Schnittstelle des Wikis erfragt
+(`tools/jedipedia_titel.py`) und liegt als feste Liste bei; im Betrieb
+fragt Brickfolio dort nichts. Die Artikel stehen unter der GNU-FDL 1.3
 und gehören ihren Autoren; die Jedipedia steht in keiner Verbindung zu
 diesem Projekt.
 

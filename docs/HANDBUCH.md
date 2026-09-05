@@ -317,9 +317,12 @@ Schrift- und Programmlizenz auf – dazu einen Abschnitt zur **Haftung**:
 Preise sind Anhaltspunkte und keine Bewertung, die Erkennung kann sich
 irren, und die Sicherung eurer Daten liegt bei euch. Dort steht auch der
 optionale
-**Jedipedia-Verweis**: Er öffnet nur eine Suche in einem unabhängigen
+**Jedipedia-Verweis**: Er öffnet einen Artikel in einem unabhängigen
 deutschsprachigen Fan-Wiki – keine Inhalte werden abgerufen, übernommen
 oder gespeichert, und solange niemand das ⓘ antippt, geht nichts dorthin.
+Welcher Artikel zu welcher Figur gehört, wurde **einmalig** beim Wiki
+erfragt und liegt als feste Liste bei; im Betrieb fragt Brickfolio dort
+nichts.
 
 ### 2.7 Von unterwegs erreichbar machen (Cloudflare Tunnel)
 
@@ -1165,14 +1168,21 @@ Im Popup zeigt sich:
   aller Regel also erst, wenn ihr ein eigenes Foto dazugehängt habt.
 - **ⓘ neben dem Namen** (nur Star Wars, und nur wenn eingeschaltet unter
   *Mehr → 📖 Jedipedia-Verweis*) schlägt die Figur im deutschen
-  Star-Wars-Wiki nach. Gesucht wird – und die Suche des Wikis springt von
-  allein in den Artikel, sobald der Begriff dort ein Titel ist. Damit das
-  öfter gelingt, wird aus dem Katalognamen das Wesentliche herausgelöst:
-  Steht eine Kennung darin (`IG-88`, `C1-10P`, `R2-D2`), zählt **sie**;
-  sonst der Teil vor dem ersten Komma, denn dahinter steht Beiwerk wie
-  „, 41st Elite Corps". Bei englischen Gattungsnamen („Battle Droid")
-  bleibt es bei der Trefferliste – das Wiki führt sie unter dem deutschen
-  Namen.
+  Star-Wars-Wiki nach – in aller Regel **direkt im Artikel**. Dafür wird
+  aus dem Katalognamen das Wesentliche herausgelöst und, wo nötig,
+  übersetzt:
+
+  - Steht eine Kennung im Namen (`IG-88`, `C1-10P`, `R2-D2`), zählt **sie**.
+  - Steht dort eine **Einheit** („, 187th Legion"), führt der Verweis zur
+    Einheit – bei „Clone Trooper Commander, 187th Legion" also zur
+    *187. Legion*. Steht dort ein **Name**, geht der vor: „Commander Fox,
+    Coruscant Guard" führt zu Fox.
+  - Englische Gattungsnamen sind übersetzt: „Bespin Guard" →
+    *Bespin-Sicherheitskräfte*, „Imperial Stormtrooper" → *Sturmtruppen*.
+  - BrickLinks Beschreibungen („Light Bluish Gray Head") bleiben außen vor.
+
+  Wo nichts hinterlegt ist, öffnet sich wie bisher die Trefferliste des
+  Wikis.
 - **Löschen** über den **Papierkorb bei der Anzahl** (erscheint, sobald
   nur noch eines übrig ist) – mit Sicherheitsabfrage.
 

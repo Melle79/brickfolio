@@ -57,13 +57,15 @@ def test_der_schalter_haelt(client):
 
 def test_der_verweis_raet_keinen_artikelpfad():
     """Aus dem Katalognamen darf **nie** ein Artikelpfad gebaut werden:
-    `/wiki/Battle_Droid` wäre tot. Gesucht wird – und die Suche des Wikis
-    springt von allein in den Artikel, wenn der Begriff der Titel ist."""
+    `/wiki/Battle_Droid` wäre tot. Ein Artikelpfad entsteht nur aus der
+    nachgeschlagenen Tabelle, sonst bleibt es bei der Suche."""
     quelle = APP_JS.read_text()
     assert "Spezial:Suche?search=" in quelle
     z = _fn("jedipediaZiel")
-    assert "JEDIPEDIA_SUCHE" in z
-    assert "/wiki/" not in z
+    kopf, rest = z.split("if (titel)", 1)
+    assert "JEDIPEDIA_ARTIKEL" not in kopf
+    assert "JEDIPEDIA_ARTIKEL + encodeURIComponent(titel" in rest
+    assert "JEDIPEDIA_SUCHE" in rest
 
 
 def test_nur_bei_star_wars():
@@ -103,6 +105,9 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import jedipedia_titel as jt                                    # noqa: E402
+
+TABELLE = (Path(__file__).resolve().parents[1] / "frontend"
+           / "jedipedia-titel.js")
 
 NAMEN = [
     "Assassin Droid (IG-88) - Dark Bluish Gray, Printed Head",
@@ -151,12 +156,13 @@ def test_die_kennung_gewinnt_wo_sie_steht():
 
 
 def test_hinter_dem_komma_steht_beiwerk():
-    """»Clone Scout Trooper, 41st Elite Corps« findet nichts – die Einheit
-    verhindert den Treffer, statt ihn zu schärfen."""
-    assert jt.begriff("Clone Scout Trooper, 41st Elite Corps (Phase 2)") \
-        == "Clone Scout Trooper"
+    """Die entfernte Klammer ließ ein freistehendes Komma zurück, und die
+    Bemalung dahinter findet im Wiki nichts – sie verhindert den Treffer,
+    statt ihn zu schärfen. Die **Einheit** ist der Gegenfall und bleibt
+    stehen; das prüft `test_die_einheit_bleibt_stehen_die_bemalung_nicht`."""
     assert jt.begriff("Gonk Droid (GNK Power Droid) , Light Bluish Gray") \
         == "Gonk Droid"
+    assert jt.begriff("Boba Fett, Young") == "Boba Fett"
 
 
 @ohne_node
@@ -176,27 +182,67 @@ def test_bei_mehreren_namen_wird_einer_gesucht():
     assert "Irgendwer" in ziel and "Sonstwer" not in ziel
 
 
-def test_keine_bricklink_namen_im_ausgelieferten_stand():
-    """**Der Fehler aus 2.77.0.** Dort lag eine Zuordnung im Frontend,
-    deren Schlüssel BrickLink-Namen waren – in einem öffentlichen Repo.
-    Namen sind BrickLinks Inhalt; `katalogdienst/veroeffentlichen.py`
-    gibt aus demselben Grund nur Nummer und eigene Bildbeschreibung
-    hinaus. Was hier ausgeliefert wird, darf keine Namensliste sein."""
-    frontend = Path(__file__).resolve().parents[1] / "frontend"
-    assert not (frontend / "jedipedia-titel.js").exists()
-    quelle = APP_JS.read_text()
-    assert "JEDIPEDIA_TITEL" not in quelle
+def test_kein_schluessel_traegt_eine_bricklink_beschreibung():
+    """**Die Grenze aus 2.77.0, diesmal als Probe.** Damals standen ganze
+    Katalognamen in der Tabelle – »Astromech Droid, R2-D2, Light Bluish
+    Gray Head«. Namen sind Star-Wars-Begriffe und dürfen mit; BrickLinks
+    Beschreibung im Titel nicht.
+
+    Geprüft wird nicht gegen eine Wortliste – die kennte nie jede Bemalung
+    –, sondern über die Regel selbst: `jedipediaBegriff` löst die
+    Beschreibung heraus, also **muss jeder Schlüssel schon sein eigenes
+    Ergebnis sein**. Steckt eine Beschreibung darin, ändert die Regel ihn,
+    und die Probe fällt durch."""
+    daten = json.loads("{" + TABELLE.read_text().split("{", 1)[1]
+                       .rsplit("}", 1)[0] + "}")
+    assert daten, "die Tabelle ist leer"
+    schmutzig = [k for k in daten if jt.begriff(k) != k]
+    assert not schmutzig, schmutzig
 
 
-def test_das_werkzeug_schreibt_ueberhaupt_nichts():
-    """Dasselbe eine Ebene tiefer: Das Nachschlage-Werkzeug darf sein
-    Ergebnis gar nicht erst irgendwohin schreiben können, sonst passiert
-    es wieder. Es misst – mehr nicht."""
+def test_die_einheit_bleibt_stehen_die_bemalung_nicht():
+    """Sven am 05.09.2026: Bei »Clone Trooper Commander, 187th Legion« ist
+    die 187. Legion der interessantere Verweis. Die Farbe des Kopfes ist
+    es nicht."""
+    assert jt.begriff("Clone Trooper Commander, 187th Legion (Phase 2)"
+                      " - Nougat Head") == "Clone Trooper Commander, 187th Legion"
+    assert jt.begriff("Snowtrooper, Printed Legs, Dark Tan Hands, Frown") \
+        == "Snowtrooper"
+
+
+def test_bei_einem_namen_geht_die_person_vor_der_einheit():
+    """Svens zweiter Hinweis: »Commander Fox« gibt es, also gehört der
+    Verweis zu ihm – nicht zu seiner Garde. Bei einer bloßen Rolle ist es
+    umgekehrt, sonst landete jeder Klonkommandant auf derselben Seite."""
+    daten = json.loads("{" + TABELLE.read_text().split("{", 1)[1]
+                       .rsplit("}", 1)[0] + "}")
+    assert daten.get("Clone Trooper Commander Fox, Coruscant Guard") \
+        == "Commander Fox"
+    assert daten.get("Clone Trooper Commander, 187th Legion") == "187. Legion"
+
+
+def test_keine_begriffsklaerung_in_der_tabelle():
+    """»Cody«, »Fox«, »Hammer« – lauter Klonkrieger, und jeder dieser
+    Titel ist im Wiki eine Begriffsklärungsseite. Wer darauf klickt, steht
+    vor einer Auswahlliste statt vor der Figur. Die bekannten Fälle dürfen
+    nicht als Ziel auftauchen."""
+    daten = json.loads("{" + TABELLE.read_text().split("{", 1)[1]
+                       .rsplit("}", 1)[0] + "}")
+    for seite in ("Cody", "Fox", "Gree", "Bly", "Hammer", "Hunter", "Jag",
+                  "Rex", "Bacara", "Gregor", "Echo", "Kommandodroide",
+                  "Mausdroide", "Schneetruppen", "Sith-Soldaten",
+                  "Stoßtruppen", "Droide"):
+        treffer = [k for k, v in daten.items() if v == seite]
+        assert not treffer, "%s zeigen auf »%s«" % (treffer, seite)
+
+
+def test_das_werkzeug_schreibt_nur_die_eine_datei():
+    """Es darf die Tabelle schreiben – aber nur sie. Ein zweites Ziel wäre
+    der Weg, auf dem versehentlich wieder Katalogtext hinausginge."""
     quelle = (Path(__file__).resolve().parents[1] / "tools"
               / "jedipedia_titel.py").read_text()
-    assert not hasattr(jt, "schreiben")
-    for schreibend in ("write_text(", "write_bytes(", '"w"', "'w'"):
-        assert schreibend not in quelle, schreibend
+    assert quelle.count("write_text(") == 1
+    assert 'ZIEL = Path(__file__).resolve().parents[1] / "frontend"' in quelle
 
 
 def test_die_app_holt_nichts_von_jedipedia():
