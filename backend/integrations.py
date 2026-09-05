@@ -810,9 +810,15 @@ def catalog_number_changes(year: int, month: int,
                            max_pages: int = 20) -> dict[str, dict]:
     """Nummernwechsel und Zusammenlegungen eines Monats aus dem Change Log.
 
-    BrickLink bietet dafür keine API, nur die öffentliche Log-Seite. Gelesen
-    wird sie ausschließlich dann, wenn wirklich ein Artikel der Sammlung
-    verschwunden ist – im Normalbetrieb also gar nicht.
+    BrickLink bietet dafür keine API, nur die öffentliche Log-Seite.
+
+    **Zwei Aufrufer, und nur einer ist selten.** `_resolve_gone_items`
+    greift wirklich erst zu, wenn ein Artikel der Sammlung verschwunden
+    ist. `_katalog_changelog` dagegen liest den laufenden Monat bei
+    **jedem** Hintergrundlauf, also zweimal am Tag – zusammen mit den
+    Namensänderungen rund ein halbes Dutzend Seitenabrufe täglich. Hier
+    stand früher „im Normalbetrieb also gar nicht"; das galt nur für den
+    ersten Aufrufer und war damit falsch.
     """
     changes: dict[str, dict] = {}
     for action, kind in (("I", "renumbered"), ("M", "merged")):
