@@ -1,5 +1,29 @@
 # Changelog
 
+## Hub 1.11.0 – September 2026
+
+### Geändert
+- 📚 **Der Katalogabzug ist wieder aus dem Hub heraus** — er liegt auf der
+  NAS. Was hier stand (Hub 1.8.0, weiter unten), beschreibt seitdem nicht
+  mehr den Ist-Zustand; das hat am 05.09.2026 zu einer berechtigten
+  Rückfrage geführt und wird deshalb hier nachgetragen.
+
+  **Der Code** — Cron-Auslöser, Workers AI, das BrickLink-Abklappern,
+  `/v1/katalog` — war gemessen unbrauchbar: Der Cron löste über eine halbe
+  Stunde und mehrere Termine **kein einziges Mal** aus, und Workers AI
+  beantwortete die Sichtprobe mit einem Fehler.
+
+  **Die Daten** — 9.741 Katalogzeilen **mit Namen** und die vier
+  BrickLink-Zugangsdaten — lagen bei einem Dritten. Genau das vermeidet die
+  veröffentlichte Datei mit gutem Grund: Dort stehen nur Nummer und eigene
+  Beschreibung.
+
+  Heute gilt: **Anlegen** macht der Katalogdienst auf der NAS (BrickLink-API
+  plus lokales Sehmodell), **veröffentlicht** wird als Datei im Repo (nur
+  Nummer und Beschreibung), und die **Namen** holt sich jede Installation
+  über ihren eigenen BrickLink-Zugang — oder in Sekunden aus der
+  Katalogdatei.
+
 ## Hub 1.8.0 – August 2026
 
 ### Neu

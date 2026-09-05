@@ -583,13 +583,23 @@ Der BrickLink-Zugang bleibt gebraucht – aber nur noch für die Namen und die
 Preise, nicht mehr für den Abzug selbst.
 
 In den Einstellungen steht deshalb nur noch eine Zeile: wie viele Figuren
-angekommen sind, wie viele davon beschrieben, und wann zuletzt geholt wurde.
-Gesteuert wird nichts mehr – Themen, Prüfknopf, Abzug starten, Bilderlauf,
-das Modell fürs Bilderansehen: alles im Hub.
+und Sets angekommen sind, wie viele davon beschrieben, und wann zuletzt
+geholt wurde. Gesteuert wird nichts mehr – Themen, Prüfknopf, Abzug
+starten, Bilderlauf, das Modell fürs Bilderansehen: alles im
+**Katalogdienst auf der NAS**.
+
+> **Nicht im Hub.** Von August bis September 2026 lag der Abzug dort
+> (Hub 1.8.0), und in älteren Notizen steht es noch so. Mit Hub 1.11.0 ist
+> er wieder heraus: Der Cloudflare-Auslöser feuerte über eine halbe Stunde
+> und mehrere Termine **kein einziges Mal**, das Sehmodell dort beantwortete
+> die Probe mit einem Fehler – und vor allem lagen 9.741 Katalogzeilen
+> **mit Namen** samt der vier BrickLink-Zugangsdaten bei einem Dritten.
+> Genau das vermeidet die veröffentlichte Datei mit gutem Grund; dieselben
+> Namen bei Cloudflare liegen zu lassen wäre wunderlich gewesen.
 
 > **Was die App trotzdem noch braucht.** Der Abzug liegt lokal in
-> `katalog_index`, nicht nur im Hub: Gesucht wird darin ohne Netz und ohne
-> Wartezeit. Der Hub ist die Quelle, nicht die Suchmaschine.
+> `katalog_index`, nicht nur an der Quelle: Gesucht wird darin ohne Netz
+> und ohne Wartezeit. Die Datei ist die Quelle, nicht die Suchmaschine.
 
 Die lokale KI übersetzt weiterhin **Suchbegriffe** – „Ritter" zu „Knight".
 Das ist eine ganz andere Aufgabe als Bilder ansehen und bleibt deshalb hier.
