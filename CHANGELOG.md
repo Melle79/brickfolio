@@ -27,6 +27,32 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.77.0 – September 2026
+
+### Behoben
+- 📖 **Das ⓘ führt jetzt in den Artikel statt auf die Suchseite.** Gemeldet:
+  „Bei vielen kommt nur die Suchseite raus." Nachgemessen an 563
+  Star-Wars-Figuren: nur **151** landeten im Artikel, die übrigen 412 auf
+  einer Trefferliste.
+
+  Der Grund war die Sprache. Der Katalog ist englisch, die Jedipedia
+  deutsch — „Imperial Stormtrooper" steht dort unter „Sturmtruppen",
+  „Battle Droid" unter „B1-Kampfdroide". Das Wiki springt nur dann von
+  selbst in den Artikel, wenn der Suchbegriff der Titel ist.
+
+  Deshalb liegt jetzt eine feste Zuordnung bei (`frontend/jedipedia-titel.js`),
+  die `tools/jedipedia_titel.py` **einmalig** über die MediaWiki-Schnittstelle
+  des Wikis erfragt hat. Übernommen wurde nur, was es dort wirklich gibt.
+  Im Betrieb holt Brickfolio nach wie vor nichts von dort — es verlinkt nur.
+  Jetzt landen **398 der 563** Figuren im Artikel; wo nichts eingetragen ist,
+  öffnet sich unverändert die Suche.
+
+- 📖 **Die Klammer trug den Namen und wurde weggeworfen.** „Assassin Droid
+  (IG-88)" wurde zum Suchbegriff „Assassin Droid" — Trefferliste, obwohl
+  „IG-88" ein Artikel ist. Steht in der Klammer eine Kennung wie `IG-88`,
+  `C1-10P` oder `U-3PO`, ist **sie** der Name; Beschreibungen wie
+  „(Padawan)" fliegen weiter raus.
+
 ## 2.76.0 – August 2026
 
 ### Geändert
