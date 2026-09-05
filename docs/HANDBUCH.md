@@ -586,16 +586,20 @@ In den Einstellungen steht deshalb nur noch eine Zeile: wie viele Figuren
 und Sets angekommen sind, wie viele davon beschrieben, und wann zuletzt
 geholt wurde. Gesteuert wird nichts mehr – Themen, Prüfknopf, Abzug
 starten, Bilderlauf, das Modell fürs Bilderansehen: alles im
-**Katalogdienst auf der NAS**.
+**Katalogdienst**, bedient über die Konsole.
 
-> **Nicht im Hub.** Von August bis September 2026 lag der Abzug dort
-> (Hub 1.8.0), und in älteren Notizen steht es noch so. Mit Hub 1.11.0 ist
-> er wieder heraus: Der Cloudflare-Auslöser feuerte über eine halbe Stunde
-> und mehrere Termine **kein einziges Mal**, das Sehmodell dort beantwortete
-> die Probe mit einem Fehler – und vor allem lagen 9.741 Katalogzeilen
-> **mit Namen** samt der vier BrickLink-Zugangsdaten bei einem Dritten.
-> Genau das vermeidet die veröffentlichte Datei mit gutem Grund; dieselben
-> Namen bei Cloudflare liegen zu lassen wäre wunderlich gewesen.
+**Der Weg in drei Schritten:**
+
+1. **Angelegt und vervollständigt wird der Katalog im Katalogdienst** –
+   Nummern der Reihe nach, dazu die Beschreibung, was auf dem Katalogfoto
+   zu sehen ist. Dort liegen die BrickLink-Schlüssel dafür, und **nur
+   dort**: Keine Instanz klappert den Katalog selbst ab.
+2. **Ausgerollt wird über GitHub** – als Datei mit **Nummer und
+   Beschreibung, ohne Namen**. Namen sind BrickLinks Inhalt; deren
+   Weitergabe an Dritte untersagen die Nutzungsbedingungen.
+3. **Die Namen holt sich jede Instanz selbst** über ihren eigenen
+   BrickLink-Zugang – oder in Sekunden aus der Katalogdatei
+   (*My Account → Downloads*).
 
 > **Was die App trotzdem noch braucht.** Der Abzug liegt lokal in
 > `katalog_index`, nicht nur an der Quelle: Gesucht wird darin ohne Netz
