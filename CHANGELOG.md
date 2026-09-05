@@ -27,6 +27,26 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.79.1 – September 2026
+
+### Behoben
+- 📚 **„40878 Figuren" — der Katalog zählte Sets als Figuren.** BrickLinks
+  Figurenkatalog hat gut 19.000 Einträge; die Zahl war mehr als das
+  Doppelte. Sie stimmte trotzdem: Wer die Katalogdatei auch für **Sets**
+  einliest (der Text daneben rät ausdrücklich dazu), hat beides im Abzug —
+  bei Sven 19.209 Figuren und 21.669 Sets. Nur die Beschriftung zählte
+  alles zusammen und nannte es „Figuren".
+
+  Jetzt steht dort, was drin ist: *„19.209 Figuren (19.209 beschrieben) und
+  21.669 Sets"*. Auch nach dem Einlesen: *„21.669 neu, 0 berichtigt ·
+  19.209 Figuren und 21.669 Sets im Abzug"*.
+
+  Dazu passend: **„beschrieben" und „ohne Namen" gelten nur für Figuren.**
+  Die Bildbeschreibung gibt es nur für sie, und der Namens-Nachtrag greift
+  ohnehin nur nach Zeilen mit Beschreibung — ein Set ohne Namen als „wird
+  nachgeschlagen" zu zählen wäre ein Versprechen gewesen, das niemand
+  einlöst.
+
 ## 2.79.0 – September 2026
 
 ### Behoben

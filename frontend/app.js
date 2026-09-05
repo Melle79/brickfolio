@@ -6589,8 +6589,12 @@ async function katalogDateiLesen(ev) {
     });
     const d = await antwort.json().catch(() => ({}));
     if (!antwort.ok) throw new Error(d.detail || "Fehler " + antwort.status);
-    out.textContent = tr("{n} neu, {b} berichtigt · {g} Figuren im Abzug",
-      { n: d.neu, b: d.berichtigt, g: d.gesamt })
+    /* Figuren und Sets getrennt: Wer die Set-Datei einliest, hatte hier
+       sonst „40.878 Figuren" stehen – bei einem Figurenkatalog von gut
+       19.000. Die Zahl stimmte, die Beschriftung nicht. */
+    out.textContent = tr("{n} neu, {b} berichtigt · {f} Figuren und {s} Sets "
+      + "im Abzug", { n: d.neu, b: d.berichtigt,
+                      f: d.figuren ?? d.gesamt, s: d.sets ?? 0 })
       + (d.uebersprungen
         ? " " + tr("({u} andere Artikel übersprungen)", { u: d.uebersprungen })
         : "");
@@ -6625,8 +6629,8 @@ async function katalogStand() {
   }
   const teile = [];
   teile.push(d.geholt_at
-    ? tr("{n} Figuren, {b} beschrieben · zuletzt geholt am {d}",
-        { n: d.figuren, b: d.beschrieben,
+    ? tr("{n} Figuren ({b} beschrieben) und {s} Sets · zuletzt geholt am {d}",
+        { n: d.figuren, b: d.beschrieben, s: d.sets ?? 0,
           d: new Date(d.geholt_at * 1000).toLocaleDateString() })
     : tr("{n} Figuren · noch nichts geholt", { n: d.figuren }));
   // Die Namen fehlen am Anfang allen: Der veröffentlichte Abzug enthält sie

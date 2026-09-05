@@ -19,6 +19,7 @@ Abzug in `katalog_index` und die Suche darin. Wie er hineinkommt, steht in
 `test_katalog_hub.py`; wie er entsteht, im Hub-Repo.
 """
 import time
+from pathlib import Path
 
 import pytest
 import requests
@@ -516,3 +517,58 @@ def test_die_rangfolge_sieht_alle_treffer_nicht_nur_die_ersten(client):
                farben="blue", kategorie="9")
     namen = [t["item_id"] for t in main._katalog_suchen("Knight", hoechstens=4)]
     assert all(n.startswith("cas") for n in namen), namen
+
+
+# ── Figuren und Sets getrennt zählen ──────────────────────────────────
+#
+# Am 05.09.2026 stand in den Einstellungen „40878 Figuren, 19209
+# beschrieben" – bei einem BrickLink-Figurenkatalog von gut 19.000. Die
+# Zahl war richtig, die Beschriftung nicht: Sven hatte auch die Set-Datei
+# eingelesen, und beide Sorten wurden als „Figuren" zusammengezählt.
+
+def test_stand_zaehlt_figuren_und_sets_getrennt(client):
+    with core.db() as conn:
+        for i in range(3):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " merkmale, updated_at) VALUES (?,?,?,?,?,0)",
+                ("sw%04d" % i, "minifig", "Figur %d" % i, "figur",
+                 "torso red"))
+        for i in range(5):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " merkmale, updated_at) VALUES (?,?,?,?,?,0)",
+                ("%d-1" % i, "set", "Set %d" % i, "set", ""))
+    d = client.get("/api/katalog/stand").json()
+    assert d["figuren"] == 3, "Sets dürfen nicht als Figuren gezählt werden"
+    assert d["sets"] == 5
+    # Die Bildbeschreibung gibt es nur für Figuren – ein Set ohne sie ist
+    # nicht „unbeschrieben", es hat schlicht keine.
+    assert d["beschrieben"] == 3
+
+
+def test_ohne_namen_meint_nur_was_auch_nachgeschlagen_wird(client):
+    """Der Namens-Nachtrag greift nur nach Zeilen **mit** Beschreibung und
+    fragt BrickLink immer nach einer Figur. Ein Set ohne Namen käme also
+    nie dran – es als „wird nachgeschlagen" zu zählen wäre ein
+    Versprechen, das niemand einlöst."""
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at) VALUES ('sw9001','minifig','','x',"
+            "'torso blue',0)")
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at) VALUES ('9999-1','set','','x','',0)")
+    d = client.get("/api/katalog/stand").json()
+    assert d["ohne_namen"] == 1
+
+
+def test_die_anzeige_nennt_beide_sorten():
+    """Die Beschriftung im Frontend muss die Trennung auch zeigen – sonst
+    stimmt die Zahl im Server und die Lüge steht weiter auf dem Schirm."""
+    quelle = (Path(__file__).resolve().parents[1] / "frontend"
+              / "app.js").read_text()
+    assert "{n} Figuren ({b} beschrieben) und {s} Sets" in quelle
+    assert "{f} Figuren und {s} Sets" in quelle
+    assert "{g} Figuren im Abzug" not in quelle

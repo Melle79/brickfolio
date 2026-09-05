@@ -983,15 +983,30 @@ def katalog_stand(user: dict = Depends(admin_user)):
     diese Instanz holt ihn nur. Ohne die Anzeige sähe man erst zwölf Stunden
     später am Protokoll, ob das überhaupt ankommt.
     """
+    # **Getrennt zählen, nicht zusammen.** Im Abzug stehen Figuren *und*
+    # Sets - wer die Katalogdatei für Sets eingelesen hat, hatte hier
+    # plötzlich »40.878 Figuren« stehen, bei einem Katalog von gut 19.000.
+    # Die Zahl war richtig, die Beschriftung nicht.
+    #
+    # »beschrieben« und »ohne_namen« gelten nur für Figuren: Die
+    # Bildbeschreibung gibt es nur für sie, und der Namens-Nachtrag greift
+    # ebenfalls nur nach Zeilen mit Beschreibung.
     with core.db() as conn:
         r = conn.execute(
-            "SELECT COUNT(*) AS n,"
-            " SUM(CASE WHEN merkmale NOT IN ('', '–') THEN 1 ELSE 0 END)"
+            "SELECT"
+            " SUM(CASE WHEN item_type = 'minifig' THEN 1 ELSE 0 END)"
+            " AS figuren,"
+            " SUM(CASE WHEN item_type = 'set' THEN 1 ELSE 0 END) AS sets,"
+            " SUM(CASE WHEN item_type = 'minifig'"
+            "          AND merkmale NOT IN ('', '–') THEN 1 ELSE 0 END)"
             " AS beschrieben,"
-            " SUM(CASE WHEN name = '' THEN 1 ELSE 0 END) AS ohne_namen"
+            " SUM(CASE WHEN item_type = 'minifig' AND name = ''"
+            "          AND merkmale NOT IN ('', '–') THEN 1 ELSE 0 END)"
+            " AS ohne_namen"
             " FROM katalog_index").fetchone()
     return {"aktiv": core.get_setting("katalog_aus") != "1",
-            "figuren": r["n"] or 0,
+            "figuren": r["figuren"] or 0,
+            "sets": r["sets"] or 0,
             "beschrieben": r["beschrieben"] or 0,
             # Namen fehlen am Anfang **allen**: Der veröffentlichte Abzug
             # enthält sie nicht, jede Installation schlägt sie über ihren
@@ -1586,6 +1601,12 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
     with core.db() as conn:
         gesamt = conn.execute(
             "SELECT COUNT(*) AS n FROM katalog_index").fetchone()["n"]
+    with core.db() as conn:
+        aufteilung = conn.execute(
+            "SELECT"
+            " SUM(CASE WHEN item_type = 'minifig' THEN 1 ELSE 0 END) AS f,"
+            " SUM(CASE WHEN item_type = 'set' THEN 1 ELSE 0 END) AS s"
+            " FROM katalog_index").fetchone()
     print("[brickfolio] Katalogdatei eingelesen: %d neu, %d berichtigt, "
           "%d übersprungen" % (neu, geaendert, uebersprungen), flush=True)
     if uebersprungen and not neu and not geaendert:
@@ -1597,7 +1618,8 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
                  "Artikel übersprungen). Gebraucht wird der Download mit "
                  "Item Type „Minifigures\" oder „Sets\"." % uebersprungen)
     return {"ok": True, "neu": neu, "berichtigt": geaendert,
-            "uebersprungen": uebersprungen, "gesamt": gesamt}
+            "uebersprungen": uebersprungen, "gesamt": gesamt,
+            "figuren": aufteilung["f"] or 0, "sets": aufteilung["s"] or 0}
 
 
 @app.post("/api/katalog/kategorien")
