@@ -27,6 +27,17 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.77.1 – September 2026
+
+### Behoben
+- 📖 **Die Beschreibung in der App stand noch auf »öffnet eine Suche«.** Mit
+  2.77.0 führt das ⓘ in den Artikel — nachgezogen hatte ich das aber nur in
+  README und Handbuch, nicht dort, wo es jemand liest: in der App selbst.
+  Betrifft die Karte *Mehr → 📖 Jedipedia-Verweis* und den Abschnitt unter
+  *Quellen & Rechtliches*. Beide sagen jetzt, was tatsächlich passiert —
+  einschließlich des Hinweises, dass die Zuordnung **einmalig** erfragt wurde
+  und im Betrieb nichts abgerufen wird.
+
 ## 2.77.0 – September 2026
 
 ### Behoben
