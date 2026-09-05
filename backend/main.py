@@ -5,6 +5,7 @@ import collections
 import html
 import io
 import json
+import math
 import os
 import re
 import sqlite3
@@ -149,6 +150,32 @@ def _sicherungs_waechter():
                   flush=True)
         time.sleep(SICHERUNG_TAKT)
 
+def preis_stapel(anzahl: int) -> int:
+    """Wie viele Einträge ein Lauf nimmt, damit alle rechtzeitig drankommen.
+
+    **Vorher waren es feste 40 – und das reichte irgendwann nicht mehr.**
+    Zwei Läufe am Tag zu 40 sind 80 Preise täglich; wer 926 Artikel hat,
+    bräuchte 133. Die Folge war kein Fehler, sondern ein Rückstand: Jeder
+    Artikel kam nur alle 11,6 Tage dran, und damit stand dauerhaft ein
+    Drittel der Sammlung als »älter als 7 Tage« da. Am 05.09.2026 waren es
+    328 von 926 – genau die Zahl, die diese Rechnung vorhersagt.
+
+    Also wird der Stapel aus der Menge berechnet: Er muss reichen, um in
+    `PRICE_STALE_SECONDS` einmal durch alles zu kommen. Ein Viertel
+    Zuschlag für Ausfälle, ein Deckel fürs Kontingent. Bei zwei API-Rufen
+    je Artikel sind das am Deckel 1.600 Rufe am Tag – gegen BrickLinks
+    5.000, und der Namens-Nachtrag teilt sich dasselbe Kontingent.
+
+    **Ab etwa 5.600 Artikeln greift der Deckel**, dann dauert eine Runde
+    wieder länger als sieben Tage. Das ist Absicht: Lieber ein ehrlicher
+    Rückstand als ein gesperrter Zugang.
+    """
+    tage = PRICE_STALE_SECONDS / 86400
+    noetig = anzahl / (tage * PRICE_LAEUFE_JE_TAG)
+    return max(PRICE_STAPEL_MIN,
+               min(PRICE_STAPEL_MAX, math.ceil(noetig * 1.25)))
+
+
 def _price_refresher():
     """Frischt Ø-Preise auf, die älter als 7 Tage sind (max. 40 pro Lauf)."""
     time.sleep(120)   # Start nicht ausbremsen
@@ -184,11 +211,22 @@ def _price_refresher():
                               f"{filled} Einträge", flush=True)
                     cutoff = int(time.time()) - PRICE_STALE_SECONDS
                     with core.db() as conn:
+                        # **Zuerst die ältesten.** Ohne `ORDER BY` entscheidet
+                        # die Zeilennummer, und ein Artikel, dessen Abruf
+                        # dauernd scheitert, käme in jedem Lauf wieder vorn
+                        # zu liegen – während die dahinter nie an die Reihe
+                        # kämen.
+                        stapel = preis_stapel(conn.execute(
+                            f"SELECT COUNT(*) FROM {table} WHERE "
+                            "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE "
+                            "'manuell-%' AND item_id NOT LIKE 'custom-%'"
+                        ).fetchone()[0])
                         rows = conn.execute(
                             f"SELECT * FROM {table} WHERE "
                             "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE 'manuell-%' AND item_id NOT LIKE 'custom-%' "
                             "AND (price_updated_at IS NULL OR price_updated_at < ?) "
-                            "LIMIT 40", (cutoff,)).fetchall()
+                            "ORDER BY COALESCE(price_updated_at, 0) "
+                            "LIMIT ?", (cutoff, stapel)).fetchall()
                     for row in rows:
                         try:
                             _fetch_and_store_prices(dict(row), table)
@@ -7666,6 +7704,10 @@ def undo_list_item(item_id: int, user: dict = Depends(dealer_user)):
 # ---------------------------------------------------------------- Preise
 
 PRICE_STALE_SECONDS = 7 * 86400      # Hintergrund-Refresh: älter als 7 Tage
+# Der Refresher läuft alle zwölf Stunden, macht also zwei Läufe am Tag.
+PRICE_LAEUFE_JE_TAG = 2
+PRICE_STAPEL_MIN = 40                # wie bisher, für kleine Sammlungen
+PRICE_STAPEL_MAX = 400               # Deckel: schützt das BrickLink-Kontingent
 
 
 PRICE_TABLES = ("collection", "wanted", "shopping_items")

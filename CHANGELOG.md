@@ -27,6 +27,36 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.79.0 – September 2026
+
+### Behoben
+- 📈 **Der Preis-Hintergrundjob kam bei größeren Sammlungen nie hinterher.**
+  Im Preis-Protokoll stand „Bei 328 Artikeln ist der Preisabruf älter als
+  7 Tage" — und die Zahl ging nicht weg. Das war kein Fehler, sondern
+  Arithmetik: feste **40 Einträge je Lauf**, zwei Läufe am Tag, also
+  **80 Preise täglich**. Bei 926 Artikeln bräuchte es 133.
+
+  Nachgemessen an der Altersverteilung: exakt 80 je Tagesstufe, und die
+  ältesten Einträge lagen bei 12,5 Tagen — genau der Kreislauf, den die
+  Rechnung vorhersagt (926 ÷ 80 ≈ 11,6 Tage). Damit war dauerhaft rund ein
+  Drittel überfällig, ohne dass irgendetwas hängen geblieben wäre.
+
+  **Der Stapel richtet sich jetzt nach der Sammlung**: so viel, dass eine
+  Runde in sieben Tagen durch ist, mindestens 40 und höchstens 400 je Lauf.
+  Bei 926 Artikeln sind das 83 je Lauf — eine Runde in 5,6 Tagen. Der
+  Deckel schützt das BrickLink-Kontingent: selbst ausgereizt sind es 1.600
+  Abrufe am Tag gegen erlaubte 5.000.
+
+  Das Handbuch versprach „nie älter als gut eine Woche" — das stimmte für
+  Sammlungen über 560 Artikel nicht und ist nachgezogen.
+
+- 📈 **Die ältesten kommen zuerst dran.** Die Auswahl hatte kein
+  `ORDER BY`, also entschied die Zeilennummer. Ein Artikel, dessen Abruf
+  dauernd scheitert, behält seinen alten Zeitstempel und hätte sich so in
+  jedem Lauf wieder vorgedrängt, während die dahinter nie an die Reihe
+  gekommen wären. Bei Sven ist das (noch) nicht passiert — alle
+  Rückstände hatten Preise —, aber die Reihenfolge war Zufall.
+
 ## 2.78.0 – September 2026
 
 ### Neu

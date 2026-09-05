@@ -2,6 +2,7 @@
 Kennzahl „Preisabruf älter als 7 Tage" im Preis-Protokoll.
 """
 import time
+from pathlib import Path
 
 import pytest
 
@@ -138,3 +139,49 @@ def test_suggest_info_rejects_absurd_amounts(client):
              for n in range(200)]
     assert client.post("/api/suggest_info", json={"items": items}
                        ).status_code == 422
+
+
+# ── Der Hintergrund-Refresh muss die Sammlung schaffen ────────────────
+#
+# Am 05.09.2026 stand in Svens Preis-Protokoll: „Bei 328 Artikeln ist der
+# Preisabruf älter als 7 Tage." Das war kein Fehler, sondern Arithmetik:
+# feste 40 Einträge je Lauf, zwei Läufe am Tag – 80 Preise täglich bei 926
+# Artikeln. Jeder kam nur alle 11,6 Tage dran, also war dauerhaft ein
+# Drittel überfällig. Gemessen an der Altersverteilung: genau 80 je Tag.
+
+def test_der_stapel_reicht_fuer_die_ganze_sammlung():
+    """Ein Lauf muss so viel nehmen, dass in sieben Tagen alles drankommt –
+    sonst wächst der Rückstand, und die Anzeige meldet ihn für immer."""
+    tage = main.PRICE_STALE_SECONDS / 86400
+    for anzahl in (300, 926, 2000, 5000):
+        stapel = main.preis_stapel(anzahl)
+        schafft = stapel * main.PRICE_LAEUFE_JE_TAG * tage
+        if stapel < main.PRICE_STAPEL_MAX:
+            assert schafft >= anzahl, (
+                "%d Artikel: %d je Lauf schaffen nur %d in %g Tagen"
+                % (anzahl, stapel, schafft, tage))
+
+
+def test_kleine_sammlungen_bleiben_beim_alten_takt():
+    """Wer wenig hat, soll BrickLink nicht öfter behelligen als nötig."""
+    assert main.preis_stapel(0) == main.PRICE_STAPEL_MIN
+    assert main.preis_stapel(50) == main.PRICE_STAPEL_MIN
+
+
+def test_der_deckel_schuetzt_das_kontingent():
+    """Auch eine riesige Sammlung darf den Zugang nicht sprengen."""
+    assert main.preis_stapel(10 ** 6) == main.PRICE_STAPEL_MAX
+    rufe = main.PRICE_STAPEL_MAX * main.PRICE_LAEUFE_JE_TAG * 2
+    assert rufe <= 2000, "%d BrickLink-Rufe am Tag sind zu viel" % rufe
+
+
+def test_die_aeltesten_kommen_zuerst_dran():
+    """Ohne `ORDER BY` entscheidet die Zeilennummer. Ein Artikel, dessen
+    Abruf dauernd scheitert, behält seinen alten Zeitstempel und läge in
+    jedem Lauf wieder vorn – die dahinter kämen nie an die Reihe."""
+    quelle = (Path(__file__).resolve().parents[1] / "backend"
+              / "main.py").read_text()
+    block = quelle.split("def _price_refresher")[1]
+    block = block[:block.index("for row in rows")]
+    assert "ORDER BY COALESCE(price_updated_at, 0)" in block
+    assert "LIMIT 40" not in block, "der feste Stapel ist wieder da"

@@ -2068,10 +2068,20 @@ Damit klar ist, was wann von allein passiert:
 **Preisabruf.** BrickLink-Ø-Preise (neu & gebraucht) werden geholt:
 (1) sofort beim Erfassen eines Artikels, (2) manuell über „Preise
 aktualisieren" in den Details, (3) automatisch vom **Hintergrundjob**:
-Er läuft alle **12 Stunden**, nimmt sich Artikel vor, deren Preise älter
-als **7 Tage** sind – maximal **40 je Durchlauf** und Tabelle, mit 2 s
-Pause pro Anfrage, um BrickLink nicht zu belasten. Ergebnis: Jeder
-Artikel ist automatisch nie älter als gut eine Woche.
+Er läuft alle **12 Stunden** und nimmt sich die Artikel vor, deren
+Preise älter als **7 Tage** sind – die ältesten zuerst, mit 2 s Pause
+pro Anfrage, um BrickLink nicht zu belasten.
+
+**Wie viele je Durchlauf, richtet sich nach der Sammlung.** Genug, um in
+sieben Tagen einmal durch alles zu kommen, mindestens 40 und höchstens
+400. Bis 2.78.x waren es feste 40 – zwei Läufe am Tag also 80 Preise, und
+wer mehr als 560 Artikel hat, bekam sie nie alle rechtzeitig durch. Bei
+926 Artikeln kam jeder nur alle 11,6 Tage dran, und im Preis-Protokoll
+stand dauerhaft ein Drittel der Sammlung als überfällig.
+
+Ab etwa **5.600 Artikeln** greift der Deckel, dann dauert eine Runde
+wieder länger als sieben Tage – lieber ein ehrlicher Rückstand als ein
+gesperrter BrickLink-Zugang.
 
 **Preisverlauf.** Bei jedem Abruf entsteht ein Verlaufs-Punkt – höchstens
 **einer pro 20 Stunden** je Artikel. Die Wertentwicklungs-Kurve im
