@@ -57,16 +57,13 @@ def test_der_schalter_haelt(client):
 
 def test_der_verweis_raet_keinen_artikelpfad():
     """Aus dem Katalognamen darf **nie** ein Artikelpfad gebaut werden:
-    `/wiki/Battle_Droid` wäre tot. Ein Artikelpfad entsteht nur aus der
-    nachgeschlagenen Tabelle, sonst bleibt es bei der Suche."""
+    `/wiki/Battle_Droid` wäre tot. Gesucht wird – und die Suche des Wikis
+    springt von allein in den Artikel, wenn der Begriff der Titel ist."""
     quelle = APP_JS.read_text()
     assert "Spezial:Suche?search=" in quelle
     z = _fn("jedipediaZiel")
-    assert "JEDIPEDIA_TITEL[begriff]" in z
-    # Der Artikelzweig hängt am Tabellentreffer, nicht am Begriff.
-    kopf, rest = z.split("if (titel)", 1)
-    assert "JEDIPEDIA_ARTIKEL" not in kopf
-    assert "JEDIPEDIA_ARTIKEL + encodeURIComponent(titel" in rest
+    assert "JEDIPEDIA_SUCHE" in z
+    assert "/wiki/" not in z
 
 
 def test_nur_bei_star_wars():
@@ -91,13 +88,13 @@ def test_ohne_zustimmung_kein_verweis():
     assert f.index("state.jedipedia") < f.index("return `")
 
 
-# ── Nachschlagen statt suchen ──────────────────────────────────────────
+# ── Der Begriff soll selbst der Artikeltitel sein ─────────────────────
 #
-# Am 05.09.2026 gemeldet: „Bei vielen kommt nur die Suchseite raus."
-# Nachgemessen an Svens 563 Star-Wars-Figuren landeten nur 151 im Artikel.
-# Der Rest scheiterte an drei Dingen: englische Gattungsnamen, für die das
-# Wiki einen deutschen Titel führt; weggeworfene Klammern, in denen die
-# Kennung stand; und Kandidaten, die auf Sammelartikel zeigten.
+# Am 05.09.2026 gemeldet: „Bei vielen kommt nur die Suchseite raus." Die
+# Suche des Wikis springt von allein in den Artikel, sobald der Begriff
+# der Titel ist – sie tat es nur selten, weil BrickLinks Namen Beiwerk
+# mitschleppen. Nachgemessen an 563 Star-Wars-Figuren: 151 vorher, 218
+# nachher, ohne dass eine Zeile Wiki-Inhalt mitgeliefert würde.
 
 import json
 import shutil
@@ -107,122 +104,104 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import jedipedia_titel as jt                                    # noqa: E402
 
-TABELLE = Path(__file__).resolve().parents[1] / "frontend" / "jedipedia-titel.js"
-
-# Echte Katalognamen, jeder mit seiner Eigenheit.
 NAMEN = [
     "Assassin Droid (IG-88) - Dark Bluish Gray, Printed Head",
     "Astromech Droid, C1-10P (Chopper) - White Body",
+    "Astromech Droid, R2-D2, Light Bluish Gray Head",
     "Boba Fett - Classic Grays",
     "Gonk Droid (GNK Power Droid) , Light Bluish Gray Body",
     "The Mandalorian / Din Djarin / 'Mando'",
-    "Clone Trooper (Phase 1) - Black Head",
-    "Imperial Stormtrooper - Detailed Armor",
-    "Anakin Skywalker (Dark Brown Legs, Headset)",
+    "Clone Scout Trooper, 41st Elite Corps (Phase 2) - Kama",
+    "Ahsoka Tano (Padawan) - Tube Top and Belt",
     "Silver Protocol Droid (U-3PO)",
     "Luke Skywalker (Tatooine, White Legs, Stern / Smile Face Print)",
 ]
+
+ohne_node = pytest.mark.skipif(
+    not shutil.which("node"),
+    reason="node fehlt – die Probe läse sonst nur Text")
 
 
 def _js(aufruf):
     """Die echten Funktionen aus app.js ausführen, nicht ihren Text lesen."""
     quelle = APP_JS.read_text()
-    schnipsel = "\n".join(
-        m.group(0) for name in ("jedipediaBegriff", "jedipediaSuchbegriff",
-                                "jedipediaZiel")
-        for m in [re.search(r"function %s\([^)]*\) \{.*?\n\}\n" % name,
-                            quelle, re.S)] if m)
-    konst = "\n".join(
-        m.group(0) for m in re.finditer(
-            r"^const JEDIPEDIA_[A-Z]+ =.*?;$", quelle, re.M | re.S))
+    stuecke = [m.group(0) for m in re.finditer(
+        r"^const JEDIPEDIA_[A-Z]+ =.*?;$", quelle, re.M | re.S)]
+    for name in ("jedipediaBegriff", "jedipediaSuchbegriff", "jedipediaZiel"):
+        m = re.search(r"function %s\([^)]*\) \{.*?\n\}\n" % name,
+                      quelle, re.S)
+        assert m, name
+        stuecke.append(m.group(0))
     return subprocess.run(
-        ["node", "-e", TABELLE.read_text() + konst + schnipsel
+        ["node", "-e", "\n".join(stuecke)
          + "\nconsole.log(JSON.stringify(%s));" % aufruf],
         capture_output=True, text=True, check=True).stdout
 
 
-ohne_node = pytest.mark.skipif(not shutil.which("node"),
-                               reason="node fehlt – die Proben lesen sonst nur Text")
-
-
-def test_die_kennung_in_der_klammer_ueberlebt():
+def test_die_kennung_gewinnt_wo_sie_steht():
     """»Assassin Droid (IG-88)« wurde zu »Assassin Droid« – Trefferliste,
-    obwohl »IG-88« ein Artikel ist. Die Klammer trug den Namen."""
+    obwohl »IG-88« im Wiki der Artikeltitel ist. Dasselbe hinter dem
+    Komma: »Astromech Droid, C1-10P« verschenkte »C1-10P«."""
     assert jt.begriff("Assassin Droid (IG-88) - Dark Bluish Gray") == "IG-88"
+    assert jt.begriff("Astromech Droid, C1-10P (Chopper)") == "C1-10P"
     assert jt.begriff("Silver Protocol Droid (U-3PO)") == "U-3PO"
+    assert jt.begriff("Astromech Droid, R2-D2, Light Gray Head") == "R2-D2"
     # Eine Beschreibung in Klammern bleibt draußen.
     assert jt.begriff("Ahsoka Tano (Padawan) - Tube Top") == "Ahsoka Tano"
 
 
-def test_die_luecke_nach_der_klammer_verschwindet():
-    """»Gonk Droid (GNK Power Droid) , Light …« hinterließ ein freistehendes
-    Komma im Tabellenschlüssel."""
+def test_hinter_dem_komma_steht_beiwerk():
+    """»Clone Scout Trooper, 41st Elite Corps« findet nichts – die Einheit
+    verhindert den Treffer, statt ihn zu schärfen."""
+    assert jt.begriff("Clone Scout Trooper, 41st Elite Corps (Phase 2)") \
+        == "Clone Scout Trooper"
     assert jt.begriff("Gonk Droid (GNK Power Droid) , Light Bluish Gray") \
-        == "Gonk Droid, Light Bluish Gray"
+        == "Gonk Droid"
 
 
 @ohne_node
 def test_javascript_und_python_bilden_denselben_begriff():
-    """Die Tabelle ist mit dem Python-Ergebnis beschriftet. Weichen die
-    beiden Fassungen ab, findet die App ihre eigenen Einträge nicht mehr –
-    und niemand sähe es, weil beide für sich richtig aussehen."""
+    """Das Werkzeug misst, wie gut die Begriffe treffen – die App bildet
+    sie. Weichen die beiden ab, misst das Werkzeug etwas anderes, als der
+    Anwender bekommt, und beide sähen für sich richtig aus."""
     aus = json.loads(_js("[%s].map(jedipediaBegriff)"
                          % ",".join(json.dumps(n) for n in NAMEN)))
     assert aus == [jt.begriff(n) for n in NAMEN]
 
 
 @ohne_node
-def test_wer_in_der_tabelle_steht_kommt_im_artikel_an():
-    """Der gemeldete Fehler: „Imperial Stormtrooper" führte auf die
-    Suchseite. Jetzt steht in der Tabelle »Sturmtruppen«."""
-    ziel = json.loads(_js('jedipediaZiel("Imperial Stormtrooper")'))
-    assert "Spezial:Suche" not in ziel
-    assert ziel.endswith("/wiki/Sturmtruppen")
-
-
-@ohne_node
-def test_wer_nicht_drinsteht_wird_weiter_gesucht():
-    """Die Tabelle ersetzt die Suche nicht, sie geht ihr vor. Was fehlt,
-    verhält sich wie vorher – kein toter Artikelpfad."""
-    ziel = json.loads(_js('jedipediaZiel("Gibt Es Bestimmt Nicht Xyz")'))
-    assert "Spezial:Suche?search=" in ziel
-
-
-@ohne_node
 def test_bei_mehreren_namen_wird_einer_gesucht():
     """»The Mandalorian / Din Djarin / 'Mando'« als Ganzes findet nichts."""
-    assert jt.begriff(NAMEN[4]) == "The Mandalorian / Din Djarin / 'Mando'"
-    ziel = json.loads(_js('jedipediaZiel("Irgendwer / Sonstwer / \'Wer\'")'))
+    ziel = json.loads(_js("jedipediaZiel(\"Irgendwer / Sonstwer\")"))
     assert "Irgendwer" in ziel and "Sonstwer" not in ziel
 
 
-def test_kein_eintrag_zeigt_auf_einen_sammelartikel():
-    """**Der schädlichste Fehler beim Bauen der Tabelle.** Die
-    Kandidatenkette nahm notfalls das letzte großgeschriebene Wort – bei
-    »Battle Droid« also »Droid«, und das Wiki leitet es auf »Droide« um.
-    Dreißig verschiedene Figuren zeigten auf denselben Sammelartikel. Ein
-    falscher Artikel ist schlechter als eine Trefferliste."""
-    inhalt = TABELLE.read_text()
-    daten = json.loads("{" + inhalt.split("{", 1)[1].rsplit("}", 1)[0] + "}")
-    assert daten, "die Tabelle ist leer"
-    for sammel in ("Droide", "Leutnant", "Offizier", "Soldat"):
-        treffer = [k for k, v in daten.items() if v == sammel]
-        assert not treffer, "%s zeigen auf »%s«" % (treffer, sammel)
-
-
-def test_gattungswoerter_kommen_aus_dem_bestand():
-    """Was Gattung ist, wird gezählt, nicht geraten: Ein Wort, das viele
-    verschiedene Figuren beendet, ist eine Kategorie."""
-    g = jt.gattungswoerter(["Battle Droid", "Gonk Droid", "Assassin Droid",
-                            "Clone Commando Wrecker"])
-    assert "droid" in g
-    assert "wrecker" not in g
-
-
-def test_das_werkzeug_holt_nichts_im_betrieb():
-    """Die App verlinkt nur. Kein Aufruf der Jedipedia darf im Frontend
-    stehen – die Tabelle ist im Auslieferungsstand fertig."""
+def test_keine_bricklink_namen_im_ausgelieferten_stand():
+    """**Der Fehler aus 2.77.0.** Dort lag eine Zuordnung im Frontend,
+    deren Schlüssel BrickLink-Namen waren – in einem öffentlichen Repo.
+    Namen sind BrickLinks Inhalt; `katalogdienst/veroeffentlichen.py`
+    gibt aus demselben Grund nur Nummer und eigene Bildbeschreibung
+    hinaus. Was hier ausgeliefert wird, darf keine Namensliste sein."""
+    frontend = Path(__file__).resolve().parents[1] / "frontend"
+    assert not (frontend / "jedipedia-titel.js").exists()
     quelle = APP_JS.read_text()
-    for verboten in ("api.php", "fetch(\"https://www.jedipedia",
+    assert "JEDIPEDIA_TITEL" not in quelle
+
+
+def test_das_werkzeug_schreibt_ueberhaupt_nichts():
+    """Dasselbe eine Ebene tiefer: Das Nachschlage-Werkzeug darf sein
+    Ergebnis gar nicht erst irgendwohin schreiben können, sonst passiert
+    es wieder. Es misst – mehr nicht."""
+    quelle = (Path(__file__).resolve().parents[1] / "tools"
+              / "jedipedia_titel.py").read_text()
+    assert not hasattr(jt, "schreiben")
+    for schreibend in ("write_text(", "write_bytes(", '"w"', "'w'"):
+        assert schreibend not in quelle, schreibend
+
+
+def test_die_app_holt_nichts_von_jedipedia():
+    """Sie verlinkt nur. Kein Aufruf des Wikis darf im Frontend stehen."""
+    quelle = APP_JS.read_text()
+    for verboten in ("api.php", 'fetch("https://www.jedipedia',
                      "fetch('https://www.jedipedia"):
         assert verboten not in quelle

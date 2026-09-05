@@ -27,6 +27,37 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.77.2 – September 2026
+
+### Behoben
+- ⚠️ **Die Zuordnungstabelle aus 2.77.0 ist wieder raus — sie enthielt
+  BrickLink-Namen.** `frontend/jedipedia-titel.js` trug 123 Katalognamen als
+  Schlüssel („Imperial Stormtrooper", „Astromech Droid, R2-D2, Light Bluish
+  Gray Head") und lag damit in einem **öffentlichen** Repo.
+
+  Das verstößt gegen genau die Regel, die `katalogdienst/veroeffentlichen.py`
+  seit Langem festhält und begründet: Veröffentlicht werden Nummer und
+  eigene Bildbeschreibung, **nicht** der Name — der ist BrickLinks Inhalt,
+  und dessen Weitergabe an Dritte untersagen deren Nutzungsbedingungen. Die
+  Datei ist gelöscht, und das Werkzeug kann nichts mehr ausliefern; es misst
+  nur noch. Eine Zuordnung müsste an der **Nummer** hängen.
+
+### Geändert
+- 📖 **Dafür löst die Begriffsbildung jetzt mehr heraus.** Die Suche des
+  Wikis springt von allein in den Artikel, sobald der Begriff dort ein Titel
+  ist — es kam nur selten dazu, weil BrickLinks Namen Beiwerk mitschleppen:
+
+  - Eine **Kennung gewinnt, wo immer sie steht**. „Assassin Droid (IG-88)"
+    wurde zu „Assassin Droid"; jetzt zu `IG-88`. Ebenso hinter dem Komma:
+    „Astromech Droid, R2-D2, Light Bluish Gray Head" → `R2-D2`.
+  - **Hinter dem ersten Komma steht Beiwerk** — Einheit, Farbe, Bedruckung.
+    „Clone Scout Trooper, 41st Elite Corps" → „Clone Scout Trooper".
+
+  Nachgemessen an 563 Star-Wars-Figuren: **220 landen im Artikel** statt 151
+  — ohne dass eine Zeile Katalogtext mitgeliefert würde. Bei englischen
+  Gattungsnamen („Battle Droid" → „B1-Kampfdroide") bleibt es bei der
+  Trefferliste.
+
 ## 2.77.1 – September 2026
 
 ### Behoben

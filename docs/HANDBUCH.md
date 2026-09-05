@@ -317,12 +317,9 @@ Schrift- und Programmlizenz auf – dazu einen Abschnitt zur **Haftung**:
 Preise sind Anhaltspunkte und keine Bewertung, die Erkennung kann sich
 irren, und die Sicherung eurer Daten liegt bei euch. Dort steht auch der
 optionale
-**Jedipedia-Verweis**: Er öffnet einen Artikel in einem unabhängigen
+**Jedipedia-Verweis**: Er öffnet nur eine Suche in einem unabhängigen
 deutschsprachigen Fan-Wiki – keine Inhalte werden abgerufen, übernommen
 oder gespeichert, und solange niemand das ⓘ antippt, geht nichts dorthin.
-Welcher Artikel zu welcher Figur gehört, wurde **einmalig** beim Wiki
-erfragt und liegt als feste Liste bei; im Betrieb fragt Brickfolio dort
-nichts.
 
 ### 2.7 Von unterwegs erreichbar machen (Cloudflare Tunnel)
 
@@ -1168,11 +1165,14 @@ Im Popup zeigt sich:
   aller Regel also erst, wenn ihr ein eigenes Foto dazugehängt habt.
 - **ⓘ neben dem Namen** (nur Star Wars, und nur wenn eingeschaltet unter
   *Mehr → 📖 Jedipedia-Verweis*) schlägt die Figur im deutschen
-  Star-Wars-Wiki nach. Der Katalog ist englisch, das Wiki deutsch –
-  „Imperial Stormtrooper" heißt dort „Sturmtruppen", „Battle Droid"
-  „B1-Kampfdroide". Für die geläufigen Figuren liegt diese Zuordnung
-  fertig bei, und das ⓘ führt **direkt in den Artikel**. Wo sie fehlt,
-  öffnet sich wie bisher die Trefferliste des Wikis.
+  Star-Wars-Wiki nach. Gesucht wird – und die Suche des Wikis springt von
+  allein in den Artikel, sobald der Begriff dort ein Titel ist. Damit das
+  öfter gelingt, wird aus dem Katalognamen das Wesentliche herausgelöst:
+  Steht eine Kennung darin (`IG-88`, `C1-10P`, `R2-D2`), zählt **sie**;
+  sonst der Teil vor dem ersten Komma, denn dahinter steht Beiwerk wie
+  „, 41st Elite Corps". Bei englischen Gattungsnamen („Battle Droid")
+  bleibt es bei der Trefferliste – das Wiki führt sie unter dem deutschen
+  Namen.
 - **Löschen** über den **Papierkorb bei der Anzahl** (erscheint, sobald
   nur noch eines übrig ist) – mit Sicherheitsabfrage.
 

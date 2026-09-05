@@ -12084,24 +12084,24 @@ function katKategorienVerdrahten() {
    Ein kleines ⓘ bei Star-Wars-Figuren, das die Figur im deutschen
    Star-Wars-Wiki nachschlägt.
 
-   **Erst nachschlagen, dann suchen.** Der Katalog ist englisch, die
-   Jedipedia deutsch. Bis 1.7.x wurde immer nur gesucht, und bei allem
-   Englischen kam statt des Artikels die Trefferliste heraus – nachgemessen
-   an 563 Figuren: nur jede vierte landete im Artikel. Deshalb liegt in
-   `jedipedia-titel.js` eine feste Zuordnung, die `tools/jedipedia_titel.py`
-   einmal gegen das Wiki geprüft hat: „Imperial Stormtrooper" →
-   „Sturmtruppen", „Battle Droid" → „B1-Kampfdroide". Was dort nicht steht,
-   geht weiter über die Suche – dieselbe Adresse wie bisher.
+   **Gesucht wird, nicht direkt verlinkt.** Der Katalog ist englisch, die
+   Jedipedia deutsch: „Battle Droid" heißt dort „B1-Kampfdroide", und
+   `/wiki/Battle_Droid` wäre eine tote Adresse. Die Suche des Wikis springt
+   von selbst in den Artikel, sobald der Begriff der Titel ist – und genau
+   darauf zielt die Begriffsbildung unten.
 
-   **Die App holt nichts von Jedipedia.** Sie verlinkt nur; die Tabelle ist
-   fertig im Auslieferungsstand. Das Nachschlagen macht das Werkzeug von
-   Hand, wenn der Katalog gewachsen ist.
+   **Warum hier keine Übersetzungstabelle liegt.** Sie lag hier, in 2.77.0,
+   mit BrickLink-Namen als Schlüssel. Das war falsch: Namen sind BrickLinks
+   Inhalt, und deren Weitergabe an Dritte untersagen die
+   Nutzungsbedingungen – derselbe Grund, aus dem
+   `katalogdienst/veroeffentlichen.py` nur Nummer und eigene
+   Bildbeschreibung hinausgibt. Eine Zuordnung müsste an der **Nummer**
+   hängen, nicht am Namen.
 
    Und **nur bei Star Wars**: Das Wiki kennt nichts anderes. Bei einer
    City-Figur wäre der Verweis eine leere Trefferliste. */
 const JEDIPEDIA_SUCHE =
   "https://www.jedipedia.net/wiki/Spezial:Suche?search=";
-const JEDIPEDIA_ARTIKEL = "https://www.jedipedia.net/wiki/";
 
 /* Eine Kennung wie IG-88, R2-D2, C1-10P, U-3PO. */
 const JEDIPEDIA_KENNZEICHEN = /^[A-Z0-9]{1,4}[-–][A-Z0-9]{1,5}$/;
@@ -12122,15 +12122,21 @@ function istStarWars(itemId) {
    vergleicht beide Fassungen an echten Katalognamen. */
 function jedipediaBegriff(name) {
   const kopf = String(name || "").split(" - ")[0];
-  for (const stueck of kopf.match(/\(([^)]*)\)/g) || []) {
-    const drin = stueck.slice(1, -1).trim();
-    if (JEDIPEDIA_KENNZEICHEN.test(drin)) return drin;
+  /* Eine Kennung gewinnt, wo immer sie steht – in der Klammer wie hinter
+     einem Komma. Sie ist im Wiki **selbst** der Artikeltitel, damit
+     springt die Suche von allein hinein. */
+  const ohne = kopf.replace(/\([^)]*\)/g, " ");
+  const stuecke = (kopf.match(/\(([^)]*)\)/g) || [])
+    .map((s) => s.slice(1, -1))
+    .concat(ohne.split(","));
+  for (const stueck of stuecke) {
+    if (JEDIPEDIA_KENNZEICHEN.test(stueck.trim())) return stueck.trim();
   }
-  return kopf
-    .replace(/\([^)]*\)/g, " ")
-    /* Die entfernte Klammer lässt Lücken zurück: „Gonk Droid (…), Light
-       Bluish Gray" wurde zu „Gonk Droid , Light …". */
-    .replace(/\s+([,;])/g, "$1")
+  /* Sonst der Teil vor dem ersten Komma: Dahinter steht BrickLinks
+     Beiwerk – Einheit („, 41st Elite Corps"), Farbe, Bedruckung. Das
+     findet im Wiki nichts, es verhindert nur den Treffer. */
+  return ohne
+    .split(",")[0]
     .replace(/\s+/g, " ")
     .replace(/^[\s,;-]+|[\s,;-]+$/g, "");
 }
@@ -12143,11 +12149,6 @@ function jedipediaSuchbegriff(begriff) {
 }
 
 function jedipediaZiel(begriff) {
-  const titel = (typeof JEDIPEDIA_TITEL === "object" && JEDIPEDIA_TITEL)
-    ? JEDIPEDIA_TITEL[begriff] : "";
-  if (titel) {
-    return JEDIPEDIA_ARTIKEL + encodeURIComponent(titel.replace(/ /g, "_"));
-  }
   return JEDIPEDIA_SUCHE + encodeURIComponent(jedipediaSuchbegriff(begriff));
 }
 
