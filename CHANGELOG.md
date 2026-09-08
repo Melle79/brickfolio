@@ -45,6 +45,28 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.79.2 – September 2026
+
+### Behoben
+- 🧩 **Der Sprung zu einem Set blitzte nur auf.** Ein Klick auf das Set in
+  „Fehlende Set-Figuren" wechselt in die Sammlung und trägt die Setnummer
+  ins Suchfeld — das Set erschien kurz und wich dann wieder der
+  **vollständigen** Sammlung, obwohl die Nummer im Suchfeld stehenblieb.
+
+  Zwei Ursachen, beide behoben:
+
+  **Die Reihenfolge.** `showTab("collection")` stößt selbst einen
+  Ladevorgang an. Das Suchfeld wurde erst *danach* gesetzt, also lief ein
+  zweiter mit **leerer** Abfrage — und dessen Antwort kam zuletzt an. Jetzt
+  stehen die Felder vorher, `showTab` gibt seinen Ladevorgang zurück, und
+  es wird nur noch **einmal** geladen statt zweimal.
+
+  **Das Netz darunter.** `loadCollection` hatte keine Sperre gegen überholte
+  Antworten: Es gewann schlicht die, die zuletzt eintraf — auch die ältere.
+  Jede Abfrage trägt jetzt eine Laufnummer; wer überholt wurde, schreibt
+  nichts mehr. Das betrifft auch das schnelle Tippen im Suchfeld, wo
+  dasselbe passieren konnte.
+
 ## 2.79.1 – September 2026
 
 ### Behoben

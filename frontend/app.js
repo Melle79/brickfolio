@@ -1749,10 +1749,13 @@ function renderFigSets(root, item) {
 }
 
 async function jumpToSet(setNo) {
-  showTab("collection");
+  /* **Erst die Felder, dann der Wechsel.** `showTab` stößt den Ladevorgang
+     selbst an; stand das Suchfeld dabei noch leer, lief ein zweiter mit
+     leerer Abfrage – und dessen Antwort kam zuletzt an. Das Set blitzte
+     auf und wich der vollständigen Sammlung. */
   $("type-filter").value = "";
   $("search").value = setNo;
-  await loadCollection();
+  await showTab("collection");
   const item = state.collection.find(
     (i) => i.item_id === setNo && i.item_type === "set");
   if (!item) { toast("Set nicht in der Sammlung gefunden"); return; }
@@ -1817,12 +1820,17 @@ function showTab(name) {
   document.querySelectorAll(".tab").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name));
   letzterStand = null;           // frisch geladen ist per Definition aktuell
-  if (name === "collection") loadCollection(true);
+  /* **Der Ladevorgang wird zurückgegeben**, damit ein Aufrufer darauf warten
+     kann. `jumpToSet` brauchte das: Es lud sonst ein zweites Mal, und die
+     beiden Läufe kamen sich in die Quere. */
+  let geladen;
+  if (name === "collection") geladen = loadCollection(true);
   if (name === "lists") showListsTab(listsTab);
   if (name === "stats") loadStats();
   if (name === "hub") loadHubView();
   else updatePolling();          // außerhalb des Tausch-Tabs ruhiger takten
   if (name === "settings") { loadSettings(); katThemenLadenAlle(); }
+  return geladen;
 }
 
 /* Die Sammlung ist mit Abstand die größte Ansicht: bei 815 Einträgen rund
@@ -3580,7 +3588,15 @@ function renderScanResults(items) {
 }
 
 /* ---------------------------------------------------------------- Sammlung */
+/* Welcher Ladevorgang der jüngste ist. Ohne diese Nummer gewann schlicht
+   der, dessen Antwort zuletzt eintraf – auch wenn er der ältere war und
+   nach einer anderen Abfrage suchte. Genau daran scheiterte der Sprung zu
+   einem Set: Der Treffer stand kurz da und wurde von der vollständigen
+   Sammlung überschrieben (gemeldet am 08.09.2026). */
+let sammlungLauf = 0;
+
 async function loadCollection(showSpinner = false) {
+  const meinLauf = ++sammlungLauf;
   const q = $("search").value;
   const sort = $("sort").value;
   const typeFilter = $("type-filter").value;
@@ -3599,6 +3615,9 @@ async function loadCollection(showSpinner = false) {
     const data = await api("/collection?q=" + encodeURIComponent(q)
       + "&sort=" + encodeURIComponent(sort)
       + "&item_type=" + encodeURIComponent(typeFilter));
+    // Überholt? Dann gehört das Ergebnis zu einer Abfrage, die niemand
+    // mehr sehen will – und es darf die neuere nicht überschreiben.
+    if (meinLauf !== sammlungLauf) return;
     state.collection = data.items;
     $("stat-total").textContent = data.stats.total;
     $("stat-unique").textContent = data.stats.unique_items;
@@ -3609,9 +3628,11 @@ async function loadCollection(showSpinner = false) {
       : tr("Wert (BrickLink Ø)");
     renderCollection();
   } catch (e) {
-    toast(e.message);
+    if (meinLauf === sammlungLauf) toast(e.message);
   } finally {
-    list.removeAttribute("aria-busy");
+    // Die Lade-Anzeige gehört dem jüngsten Lauf: Ein überholter darf sie
+    // nicht wegnehmen, solange der neuere noch arbeitet.
+    if (meinLauf === sammlungLauf) list.removeAttribute("aria-busy");
   }
 }
 
