@@ -1,0 +1,24 @@
+{
+  // Die Projektseite unter brickfolio.cc – rein statisch, kein Programmcode.
+  //
+  // Cloudflare Pages ist inzwischen in Workers aufgegangen; `wrangler pages`
+  // reicht die Arbeit nur noch dorthin weiter. Deshalb ein Worker, der
+  // ausschließlich Dateien ausliefert: keine Funktion, kein Zustand.
+  "name": "brickfolio-website",
+  // Die eigene Domain. Cloudflare legt den DNS-Eintrag dafuer selbst an;
+  // die MX-Eintraege der E-Mail-Weiterleitung bleiben davon unberuehrt.
+  "routes": [
+    { "pattern": "brickfolio.cc", "custom_domain": true },
+    { "pattern": "www.brickfolio.cc", "custom_domain": true }
+  ],
+  "compatibility_date": "2026-09-18",
+  "assets": {
+    "directory": "./",
+    // Standardbehandlung: "/" liefert index.html, und /impressum.html
+    // leitet einmal auf /impressum um. Mit "none" waeren die .html-Namen
+    // zwar direkt erreichbar, dafuer liefe "/" ins Leere - nachgemessen
+    // am 19.09.2026, HTTP 404. Eine unsichtbare Weiterleitung ist der
+    // bessere Tausch.
+    "not_found_handling": "404-page"
+  }
+}

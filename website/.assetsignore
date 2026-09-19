@@ -1,0 +1,4 @@
+# Gehört zur Veröffentlichung, nicht zur Seite – sonst läge die
+# Konfiguration unter brickfolio.cc/wrangler.jsonc offen.
+wrangler.jsonc
+.assetsignore
