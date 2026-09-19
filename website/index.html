@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brickfolio – die eigene LEGO®-Sammlung, auf dem eigenen Server</title>
+<meta name="description" content="Selbst gehostete App für LEGO®-Sammlungen: Figur fotografieren, Treffer antippen, fertig. Preise, Wunschlisten, Einkaufslisten für den Flohmarkt – die Daten bleiben bei dir.">
+<meta property="og:title" content="Brickfolio – die eigene LEGO®-Sammlung, auf dem eigenen Server">
+<meta property="og:description" content="Figur fotografieren, Treffer antippen, fertig. Selbst gehostet, kein Konto, keine Wolke.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://brickfolio.cc/">
+<meta property="og:image" content="https://brickfolio.cc/assets/sammlung.png">
+<link rel="icon" href="assets/favicon.ico">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="studs"><i></i><i></i><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <img src="assets/icon-192.png" alt="">
+    <strong>Brickfolio</strong>
+    <nav>
+      <a href="#funktionen">Was es kann</a>
+      <a href="#installieren">Installieren</a>
+      <a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md">Handbuch</a>
+      <a href="https://github.com/Melle79/brickfolio">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <h1>Die eigene LEGO®-Sammlung,<br>auf dem eigenen Server.</h1>
+  <p class="lead">
+    <span class="claim">Foto → Treffer → drin.</span> Minifigur oder Set mit
+    dem Handy fotografieren, den richtigen Treffer antippen – fertig. Kein
+    Konto, keine Wolke, kein Abo: Brickfolio läuft auf deinem Rechner, und
+    die Sammlung bleibt dort.
+  </p>
+  <div class="btns">
+    <a class="btn btn-main" href="#installieren">Installieren</a>
+    <a class="btn btn-ghost" href="https://github.com/Melle79/brickfolio">Quellcode auf GitHub</a>
+    <a class="btn btn-ghost" href="https://hub.docker.com/r/melle79/brickfolio">Docker Hub</a>
+  </div>
+
+  <div class="shots">
+    <figure><img src="assets/scannen.png" alt="Die Erkennung: ein Foto, darunter die Treffer mit Nummer und Preis">
+      <figcaption>Fotografieren und antippen</figcaption></figure>
+    <figure><img src="assets/sammlung.png" alt="Die Sammlung als Kachelansicht mit Bildern, Nummern und Preisen">
+      <figcaption>Die Sammlung im Blick</figcaption></figure>
+    <figure><img src="assets/statistik.png" alt="Statistik mit Wertentwicklung und Verteilung nach Thema">
+      <figcaption>Wert und Entwicklung</figcaption></figure>
+  </div>
+</div>
+
+<section class="alt" id="funktionen">
+  <div class="wrap">
+    <h2>Was es kann</h2>
+    <div class="grid">
+      <div class="card"><span class="tag">📷</span>
+        <h3>Erkennen statt tippen</h3>
+        <p>Die Kamera erkennt Minifiguren und Sets. Wer lieber sucht: nach
+        Nummer, Name oder Aussehen – „roter Protokolldroide“ findet R-3PO.</p></div>
+      <div class="card"><span class="tag">💶</span>
+        <h3>Preise und Wert</h3>
+        <p>Ø-Preise von BrickLink, neu und gebraucht, mit eigenem Verlauf je
+        Figur. Über deinen eigenen kostenlosen Zugang.</p></div>
+      <div class="card"><span class="tag">🛒</span>
+        <h3>Gemacht für den Flohmarkt</h3>
+        <p>Einkaufslisten mit anteiliger Aufteilung des Gesamtpreises,
+        Wunschliste, Doppelte-Liste – und offline nutzbar.</p></div>
+      <div class="card"><span class="tag">👨‍👩‍👧‍👦</span>
+        <h3>Für die ganze Familie</h3>
+        <p>Mehrere Benutzer auf einer gemeinsamen Sammlung. Jeder sieht, was
+        schon da ist – Doppelkäufe fallen weg.</p></div>
+      <div class="card"><span class="tag">🤝</span>
+        <h3>Tauschen</h3>
+        <p>Mehrere Installationen verbinden sich über einen kleinen
+        Vermittler. Nachrichten sind Ende-zu-Ende verschlüsselt.</p></div>
+      <div class="card"><span class="tag">🔒</span>
+        <h3>Deine Daten bleiben da</h3>
+        <p>Kein Brickfolio-Dienst dazwischen, keine Anmeldung bei uns. Was
+        gespeichert wird, liegt auf deinem Server.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="installieren">
+  <div class="wrap">
+    <h2>Installieren</h2>
+    <p>Brickfolio ist ein Docker-Image für <strong>x86-64</strong> (jeder
+    gewöhnliche Intel- oder AMD-Rechner) und <strong>arm64</strong>
+    (Raspberry Pi, ARM-NAS, Apple Silicon). Docker sucht die passende
+    Fassung selbst aus – der Befehl ist überall derselbe.</p>
+
+    <div class="ways">
+      <div class="card way">
+        <h3>🐳 Docker Compose</h3>
+        <p class="where">Der kürzeste Weg. PC, Server, NAS, Raspberry Pi.</p>
+<pre><span class="c"># docker-compose.yml</span>
+services:
+  brickfolio:
+    image: melle79/brickfolio:latest
+    restart: unless-stopped
+    ports: ["8300:8300"]
+    volumes: ["./data:/data"]</pre>
+        <p style="margin-top:12px"><code>docker compose up -d</code>, dann
+        <code>http://&lt;rechner&gt;:8300</code> aufrufen.</p>
+      </div>
+
+      <div class="card way">
+        <h3>📦 Synology &amp; Unraid</h3>
+        <p class="where">Fertige Anleitung, keine Kommandozeile nötig.</p>
+        <p>Für DSM gibt es eine Schritt-für-Schritt-Anleitung mit Container
+        Manager. Für Unraid liegt eine Vorlage bereit, die sich in den
+        Community Applications eintragen lässt.</p>
+        <p><a href="https://github.com/Melle79/brickfolio/blob/main/docs/SYNOLOGY.md">Synology-Anleitung</a>
+        · <a href="https://github.com/Melle79/brickfolio/blob/main/unraid/brickfolio.xml">Unraid-Vorlage</a></p>
+      </div>
+
+      <div class="card way">
+        <h3>☁️ Render oder Railway</h3>
+        <p class="where">Ohne eigenen Rechner, mit einem Klick.</p>
+        <p>Beide Anbieter lesen die Vorlage aus dem Projekt und richten alles
+        ein. <strong>Wichtig:</strong> ein dauerhaftes Verzeichnis buchen –
+        ohne eigene Platte wäre die Sammlung nach jedem Neustart weg.</p>
+        <p><a href="https://github.com/Melle79/brickfolio/blob/main/render.yaml">render.yaml</a>
+        · <a href="https://github.com/Melle79/brickfolio/tree/main/deploy/railway">Railway-Vorlage</a></p>
+      </div>
+
+      <div class="card way">
+        <h3>🛠️ Aus dem Quellcode</h3>
+        <p class="where">Zum Mitentwickeln oder für eigene Änderungen.</p>
+<pre>git clone https://github.com/Melle79/brickfolio
+cd brickfolio
+docker compose up -d --build</pre>
+        <p style="margin-top:12px">FastAPI und SQLite im Rücken, Vanilla-JS
+        im Browser – kein Bauschritt fürs Frontend.</p>
+      </div>
+    </div>
+
+    <p class="note">
+      <strong>Beim ersten Start führt ein Assistent durch alles Weitere:</strong>
+      Admin-Konto, Anzeigename und die Zugänge für Preise und Katalogsuche.
+      Jeder Schritt lässt sich überspringen und später nachholen. Die Zugänge
+      bei BrickLink und Rebrickable sind kostenlos und bleiben deine.
+    </p>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Was es <em>nicht</em> ist</h2>
+    <div class="grid">
+      <div class="card"><h3>Kein Dienst</h3>
+        <p>Es gibt keine Brickfolio-Wolke und kein Konto bei uns. Wer die App
+        nutzen will, betreibt sie selbst.</p></div>
+      <div class="card"><h3>Kein Shop</h3>
+        <p>Brickfolio verkauft nichts und vermittelt keine Käufe. Preise sind
+        Anhaltspunkte von BrickLink, keine Bewertung.</p></div>
+      <div class="card"><h3>Nicht von der LEGO Gruppe</h3>
+        <p>Ein privates Hobbyprojekt, das weder gesponsert noch autorisiert
+        noch unterstützt wird.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap cols">
+    <div>
+      <h4>Brickfolio</h4>
+      <p>Selbst gehostete App für LEGO®-Sammlungen. Freie Software unter der
+      MIT-Lizenz – benutzen, ändern, weitergeben.</p>
+    </div>
+    <div>
+      <h4>Projekt</h4>
+      <ul>
+        <li><a href="https://github.com/Melle79/brickfolio">Quellcode</a></li>
+        <li><a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md">Handbuch</a></li>
+        <li><a href="https://github.com/Melle79/brickfolio/blob/main/CHANGELOG.md">Änderungen</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Images</h4>
+      <ul>
+        <li><a href="https://hub.docker.com/r/melle79/brickfolio">Docker Hub</a></li>
+        <li><a href="https://github.com/Melle79/brickfolio/pkgs/container/brickfolio">GHCR</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:22px; color:#9BA1A8; font-size:.86rem">
+    LEGO® ist eine Marke der LEGO Gruppe, die dieses Projekt weder sponsert
+    noch autorisiert noch unterstützt. BrickLink, Rebrickable und Brickognize
+    sind Marken ihrer jeweiligen Inhaber.
+  </div>
+</footer>
+
+</body>
+</html>
