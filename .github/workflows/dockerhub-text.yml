@@ -18,9 +18,16 @@ name: Docker-Hub-Beschreibung setzen
 # längst im Repo und war nie eingefügt worden. Was von Hand gepflegt werden
 # muss, bleibt irgendwann stehen.
 #
-# Reicht der Token nicht: Der Lauf scheitert mit 401 und hat nichts
-# angefasst. Dann braucht es einen Token mit weiterem Recht – und das ist
-# dann eine Entscheidung, keine Nebenwirkung.
+# **Eigenes Secret, nicht das des Bau-Laufs.** Am 19.09.2026 gemessen: Der
+# Token in `DOCKERHUB_TOKEN` hat `Read & Write` und meldet sich damit
+# erfolgreich an – die Beschreibung ändern darf er trotzdem nicht
+# („Forbidden" nach geglückter Anmeldung). Der Endpunkt verlangt
+# `read/write/delete`.
+#
+# So ein Token darf auch Images löschen. Deshalb liegt er in einem
+# **eigenen** Secret, das nur diese Folge benutzt – und die läuft nur auf
+# Knopfdruck. `DOCKERHUB_TOKEN` bleibt der schmale Schiebe-Token für
+# `image.yml`, das bei jedem Push läuft.
 on:
   workflow_dispatch:
 
@@ -36,7 +43,7 @@ jobs:
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ vars.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKERHUB_DESC_TOKEN }}
           repository: ${{ vars.DOCKERHUB_USER }}/brickfolio
           readme-filepath: ./docs/DOCKERHUB.md
           short-description: "Self-hosted PWA to scan, manage and value your LEGO® collection"
