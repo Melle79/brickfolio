@@ -24,7 +24,8 @@
     <strong>Brickfolio</strong>
     <nav>
       <a href="#funktionen">Was es kann</a>
-      <a href="#installieren">Installieren</a>
+      <a href="#nas">Auf der NAS</a>
+      <a href="#installieren">Andere Wege</a>
       <a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md">Handbuch</a>
       <a href="https://github.com/Melle79/brickfolio">GitHub</a>
     </nav>
@@ -40,7 +41,7 @@
     die Sammlung bleibt dort.
   </p>
   <div class="btns">
-    <a class="btn btn-main" href="#installieren">Installieren</a>
+    <a class="btn btn-main" href="#nas">Auf der NAS installieren</a>
     <a class="btn btn-ghost" href="https://github.com/Melle79/brickfolio">Quellcode auf GitHub</a>
     <a class="btn btn-ghost" href="https://hub.docker.com/r/melle79/brickfolio">Docker Hub</a>
   </div>
@@ -87,9 +88,87 @@
   </div>
 </section>
 
-<section id="installieren">
+<section id="nas">
   <div class="wrap">
-    <h2>Installieren</h2>
+    <h2>Auf der NAS – der übliche Weg</h2>
+    <p class="lead-small">Die meisten betreiben Brickfolio auf ihrer NAS: Sie
+    läuft ohnehin durch, steht im eigenen Netz, und die Sammlung liegt dort,
+    wo auch die Fotos liegen. Für Synology gibt es eine Anleitung Schritt für
+    Schritt – <strong>ohne Kommandozeile</strong>.</p>
+
+    <div class="steps">
+      <div class="step">
+        <span class="num">1</span>
+        <h3>Ordner anlegen</h3>
+        <p>In der <strong>File Station</strong> unter <code>docker</code>
+        einen Ordner <code>brickfolio</code> anlegen, darin
+        <code>data</code>.</p>
+        <p class="where">Ergebnis: <code>/volume1/docker/brickfolio/data</code>
+        – der einzige Ordner, auf den es ankommt. Dort liegt die Datenbank,
+        alles andere ist ersetzbar.</p>
+      </div>
+      <div class="step">
+        <span class="num">2</span>
+        <h3>Projekt erstellen</h3>
+        <p><strong>Container Manager → Projekt → Erstellen</strong>, Name
+        <code>brickfolio</code>, Pfad <code>/docker/brickfolio</code>, Quelle
+        <em>YAML-Code erstellen</em>. Hinein kommt:</p>
+<pre>services:
+  brickfolio:
+    image: ghcr.io/melle79/brickfolio:latest
+    container_name: brickfolio
+    restart: unless-stopped
+    ports: ["8300:8300"]
+    volumes: ["/volume1/docker/brickfolio/data:/data"]</pre>
+      </div>
+      <div class="step">
+        <span class="num">3</span>
+        <h3>Aufrufen</h3>
+        <p><code>http://&lt;NAS&gt;:8300</code> im Browser öffnen. Der
+        Einrichtungsassistent führt durch Admin-Konto, Anzeigename und die
+        Zugänge – jeder Schritt lässt sich überspringen.</p>
+      </div>
+      <div class="step">
+        <span class="num">4</span>
+        <h3>Aktualisieren</h3>
+        <p>Im Container Manager das Projekt <em>Erstellen</em> lassen – es
+        zieht das neue Image und startet neu. Die Daten in
+        <code>data</code> bleiben unberührt.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:34px">Drei Stolpersteine, die wir kennen</h3>
+    <div class="grid">
+      <div class="card"><h3>„Image kann nicht gefunden werden"</h3>
+        <p>Im Container Manager ist unter <em>Registrierung</em> nur Docker Hub
+        eingetragen. Das stört nicht: Ein Projekt mit vollem Namen
+        (<code>ghcr.io/…</code>) zieht direkt – die Suche braucht man dafür
+        gar nicht.</p></div>
+      <div class="card"><h3>Der Container startet nicht</h3>
+        <p>Steht im Protokoll etwas von fehlenden Schreibrechten, gehört
+        <code>data</code> dem falschen Besitzer. In der File Station unter
+        <em>Eigenschaften → Berechtigung</em> für <code>brickfolio</code>
+        samt Unterordnern Schreibrechte setzen.</p></div>
+      <div class="card"><h3>ARM-Modelle</h3>
+        <p>Geräte wie DS220j oder DS223 laufen – das Image gibt es für
+        <code>arm64</code>. Nur sehr alte 32-Bit-Modelle
+        (<code>armv7</code>) fallen raus.</p></div>
+    </div>
+
+    <p class="note">
+      <strong>Andere NAS?</strong> Für <strong>Unraid</strong> liegt eine
+      fertige Vorlage bereit. <strong>QNAP</strong> und alles andere mit
+      Container Station oder Portainer nehmen dieselbe Compose-Datei wie
+      oben – nur der Pfad vor dem Doppelpunkt heißt dort anders.
+      <a href="https://github.com/Melle79/brickfolio/blob/main/docs/SYNOLOGY.md">Vollständige Synology-Anleitung</a>
+      · <a href="https://github.com/Melle79/brickfolio/blob/main/unraid/brickfolio.xml">Unraid-Vorlage</a>
+    </p>
+  </div>
+</section>
+
+<section class="alt" id="installieren">
+  <div class="wrap">
+    <h2>Andere Wege</h2>
     <p>Brickfolio ist ein Docker-Image für <strong>x86-64</strong> (jeder
     gewöhnliche Intel- oder AMD-Rechner) und <strong>arm64</strong>
     (Raspberry Pi, ARM-NAS, Apple Silicon). Docker sucht die passende
@@ -108,16 +187,6 @@ services:
     volumes: ["./data:/data"]</pre>
         <p style="margin-top:12px"><code>docker compose up -d</code>, dann
         <code>http://&lt;rechner&gt;:8300</code> aufrufen.</p>
-      </div>
-
-      <div class="card way">
-        <h3>📦 Synology &amp; Unraid</h3>
-        <p class="where">Fertige Anleitung, keine Kommandozeile nötig.</p>
-        <p>Für DSM gibt es eine Schritt-für-Schritt-Anleitung mit Container
-        Manager. Für Unraid liegt eine Vorlage bereit, die sich in den
-        Community Applications eintragen lässt.</p>
-        <p><a href="https://github.com/Melle79/brickfolio/blob/main/docs/SYNOLOGY.md">Synology-Anleitung</a>
-        · <a href="https://github.com/Melle79/brickfolio/blob/main/unraid/brickfolio.xml">Unraid-Vorlage</a></p>
       </div>
 
       <div class="card way">

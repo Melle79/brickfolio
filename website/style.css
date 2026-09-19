@@ -130,3 +130,32 @@ footer li { margin-bottom: 6px; }
   .shots, .grid, .ways, footer .cols { grid-template-columns: 1fr; }
   .bar nav { width: 100%; margin: 6px 0 0; }
 }
+
+/* ── Die NAS bekommt Platz: vier nummerierte Schritte ──────────────────
+   Sie ist für die meisten das Zielgerät – sie läuft ohnehin durch und
+   steht im eigenen Netz. Deshalb steht sie vor den anderen Wegen und
+   nicht als eine Karte unter vielen. */
+.lead-small { font-size: 1.08rem; max-width: 62ch; color: #35373A; }
+
+.steps { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); margin-top: 26px; }
+.step {
+  position: relative; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 18px 18px 18px 58px;
+  box-shadow: var(--shadow);
+}
+.step .num {
+  position: absolute; left: 16px; top: 17px;
+  width: 30px; height: 30px; border-radius: 9px;
+  background: var(--yellow); color: var(--ink);
+  font-weight: 900; font-size: 1.02rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { margin-bottom: .35em; }
+.step p { margin-bottom: .6em; }
+.step p:last-child { margin-bottom: 0; }
+.step .where { color: var(--muted); font-size: .92rem; }
+.step pre { margin-top: 10px; }
+
+#nas .grid .card h3 { font-size: 1rem; }
+
+@media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
