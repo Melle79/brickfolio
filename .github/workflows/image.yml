@@ -81,6 +81,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # **Etiketten reichen bei mehreren Architekturen nicht.** Sie
+          # landen in der Abbild-Beschreibung je Architektur; GitHub liest
+          # aber die Anmerkungen am gemeinsamen Index, um das Paket mit dem
+          # Repo zu verbinden und dessen README zu zeigen. Am 19.09.2026
+          # nachgesehen: Der Index trug keine einzige Anmerkung, die
+          # amd64-Beschreibung dagegen alle acht - deshalb stand die
+          # GHCR-Seite ohne Beschreibung da.
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
