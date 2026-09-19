@@ -26,6 +26,7 @@
       <a href="#funktionen">Was es kann</a>
       <a href="#nas">Auf der NAS</a>
       <a href="#desktop">Am Rechner</a>
+      <a href="#scanner">Live-Scanner</a>
       <a href="#installieren">Andere Wege</a>
       <a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md">Handbuch</a>
       <a href="https://github.com/Melle79/brickfolio">GitHub</a>
@@ -183,18 +184,87 @@
         Danach liegt Brickfolio bei den Programmen.</p></div>
       <div class="card"><h3>Breiter Bildschirm, mehr Übersicht</h3>
         <p>Am Rechner steht die Navigation links und die Sammlung zweispaltig
-        daneben – so wie auf den Bildern oben. Auf dem Handy rutscht die
-        Navigation nach unten und alles wird einspaltig.</p></div>
+        daneben. Auf dem Handy rutscht sie nach unten, alles wird einspaltig
+        – dieselbe App, zwei Zuschnitte.</p></div>
       <div class="card"><h3>Auch ohne Netz</h3>
         <p>Einmal geladen, bleibt die Oberfläche verfügbar. Zum Nachschlagen
         der Sammlung genügt der eigene Server – wer unterwegs ist, kommt per
         VPN oder Tunnel heran.</p></div>
     </div>
 
+    <div class="beide">
+      <figure><img src="assets/sammlung.png" alt="Brickfolio am Rechner: Navigation links, Sammlung zweispaltig">
+        <figcaption>Am Rechner</figcaption></figure>
+      <figure class="phone"><img src="assets/handy-sammlung.png" alt="Brickfolio auf dem Handy: Navigation unten, Sammlung einspaltig">
+        <figcaption>Auf dem Handy</figcaption></figure>
+    </div>
+
     <p class="note"><strong>Dasselbe gilt fürs Handy:</strong> „Zum
-    Startbildschirm hinzufügen" macht daraus eine App mit eigenem Symbol –
-    praktisch, wenn man auf dem Flohmarkt schnell nachsehen will, ob eine
-    Figur schon da ist.</p>
+    Startbildschirm hinzufügen" macht daraus eine App mit eigenem Symbol.
+    Praktisch, wenn man auf dem Flohmarkt schnell nachsehen will, ob eine
+    Figur schon da ist – dafür muss die App allerdings von unterwegs
+    erreichbar sein, siehe unten.</p>
+  </div>
+</section>
+
+<section id="unterwegs">
+  <div class="wrap">
+    <h2>Von unterwegs darauf zugreifen</h2>
+    <p class="lead-small">Brickfolio läuft zunächst nur im <strong>eigenen
+    Netz</strong>. Wer auf dem Flohmarkt nachsehen will, ob eine Figur schon
+    da ist, braucht einen Weg von außen – und der heißt <strong>nicht
+    Portfreigabe am Router</strong>. Die stellt den Server dem ganzen
+    Internet hin.</p>
+
+    <div class="grid">
+      <div class="card"><h3>Cloudflare Tunnel <em>(empfohlen)</em></h3>
+        <p>Der Tunnel baut die Verbindung <strong>von innen nach außen</strong>
+        auf – am Router bleibt alles zu. In der App steckt unter
+        <em>Mehr → Externer Zugriff</em> ein Assistent, der aus deinem
+        Tunnel-Token den fertigen Compose-Block baut. Der Token bleibt dabei
+        im Browser; die App speichert ihn nicht und schickt ihn nirgendwohin.
+        Kostenlos.</p></div>
+      <div class="card"><h3>VPN ins eigene Netz</h3>
+        <p>Wer ohnehin WireGuard oder Tailscale nutzt oder die VPN-Funktion
+        seines Routers, braucht gar nichts weiter: Im VPN ist die NAS
+        erreichbar wie zu Hause.</p></div>
+      <div class="card"><h3>Nur zu Hause</h3>
+        <p>Völlig in Ordnung. Erfassen lässt sich auch ohne Netz von außen –
+        wer unterwegs nur nachschlagen will, nimmt die Sammlung als CSV oder
+        Druckliste mit.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="scanner">
+  <div class="wrap">
+    <h2>Der Live-Scanner</h2>
+    <p class="lead-small">Ein eigenes kleines Programm für Mac und Windows –
+    gedacht für <strong>Auktions-Streams</strong>. Der Verkäufer hält eine
+    Figur in die Kamera, du ziehst am Bildschirm einen Rahmen darum, und der
+    Treffer steht mit Nummer, Ø-Preisen und „habt ihr schon“ da. Ohne
+    Bildschirmfoto, ohne Datei, ohne Ziehen und Ablegen.</p>
+
+    <div class="grid">
+      <div class="card"><h3>Für den Moment gemacht</h3>
+        <p>Im Stream zählt jede Sekunde. Ein Tastendruck genügt; auf Wunsch
+        löst er selbst aus, sobald im gemerkten Bereich eine neue Figur
+        erscheint.</p></div>
+      <div class="card"><h3>Buchen mit einem Klick</h3>
+        <p>Vom Treffer direkt in Sammlung, Wunschliste oder auf eine
+        Einkaufsliste – über dieselbe Schnittstelle, die auch der Browser
+        benutzt. Gebucht wird nur, was du anklickst.</p></div>
+      <div class="card"><h3>Bringt alles mit</h3>
+        <p>Mac und Windows, nichts nachzuinstallieren, und er hält sich
+        selbst aktuell. Eigenes Projekt, eigene Veröffentlichungen.</p></div>
+    </div>
+
+    <p class="note">
+      Der Scanner braucht eine laufende Brickfolio-Installation – er meldet
+      sich daran an wie der Browser.
+      <a href="https://github.com/Melle79/brickfolio-livescan">Live-Scanner auf GitHub</a>
+      · <a href="https://github.com/Melle79/brickfolio-livescan/releases/latest">Neueste Fassung laden</a>
+    </p>
   </div>
 </section>
 
@@ -281,6 +351,8 @@ docker compose up -d --build</pre>
         <li><a href="https://github.com/Melle79/brickfolio">Quellcode</a></li>
         <li><a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md">Handbuch</a></li>
         <li><a href="https://github.com/Melle79/brickfolio/blob/main/CHANGELOG.md">Änderungen</a></li>
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
       </ul>
     </div>
     <div>

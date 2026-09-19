@@ -159,3 +159,37 @@ footer li { margin-bottom: 6px; }
 #nas .grid .card h3 { font-size: 1rem; }
 
 @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+
+/* ── Rechner und Handy nebeneinander ───────────────────────────────────
+   Dieselbe App in zwei Zuschnitten. Das Handybild steht schmaler, damit
+   der Unterschied ohne Bildunterschrift erkennbar ist. */
+.beide { display: grid; gap: 18px; grid-template-columns: 2fr 1fr;
+  align-items: end; margin-top: 26px; }
+.beide figure { margin: 0; }
+.beide img {
+  width: 100%; display: block; border-radius: var(--radius);
+  border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--card);
+}
+.beide figcaption { color: var(--muted); font-size: .9rem; margin-top: 8px; }
+.beide .phone img { border-radius: 18px; }
+
+@media (max-width: 860px) { .beide { grid-template-columns: 1fr; } }
+
+/* ── Die beiden Rechtsseiten: reiner Text, ruhig gesetzt ─────────────── */
+.text { max-width: 68ch; }
+.text h1 { margin-bottom: .6em; }
+.text h2 { font-size: 1.24rem; margin-top: 1.6em; }
+.text p { color: #35373A; }
+.text .kurz {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow);
+}
+/* Was im Entwurf noch zu tun ist, soll auffallen und nicht versehentlich
+   so veroeffentlicht werden. */
+.text .hinweis, .hinweis {
+  display: block; background: #FFF6D6; border-left: 4px solid var(--yellow);
+  padding: 12px 14px; border-radius: 0 10px 10px 0; color: #4A4325;
+  font-size: .95rem;
+}
+#kontakt { background: #FFF0A8; padding: 1px 6px; border-radius: 5px; }
+footer .wrap p { margin: 0; }
