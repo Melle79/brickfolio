@@ -155,7 +155,8 @@ can be skipped; anything can be added later under *More*. The database is
 stored persistently at `./data/brickfolio.db`.
 
 The image (`ghcr.io/melle79/brickfolio:latest`, mirrored as
-`melle79/brickfolio:latest` on Docker Hub) is built for **amd64** (Synology,
+`melle79/brickfolio:latest` on Docker Hub) is built for **amd64** – that is
+**x86-64**, any ordinary Intel *or* AMD machine (Synology,
 Intel NAS, PC) and **arm64** (Raspberry Pi, ARM NAS).
 
 ### Synology NAS

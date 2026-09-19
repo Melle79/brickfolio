@@ -190,7 +190,8 @@ Willkommens-Bogen steht **„📥 Sicherung einspielen"**. Der alte Stand kommt
 samt Konten herüber; danach meldest du dich mit deinen bisherigen
 Zugangsdaten an.
 
-Das Image gibt es für **amd64** (Synology, Intel-NAS, PC) und **arm64**
+Das Image gibt es für **amd64** – das ist **x86-64**, also jeder gewöhnliche
+Intel- *oder* AMD-Rechner (PC, Intel-NAS, Synology) – und **arm64**
 (Raspberry Pi, ARM-NAS), auf zwei Registries – derselbe Build, nur zwei
 Adressen:
 

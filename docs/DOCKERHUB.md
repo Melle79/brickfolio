@@ -8,7 +8,7 @@ people who buy and sell at flea markets.
 phone, tap the match, done.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Melle79/brickfolio/blob/main/LICENSE)
-[![Platforms](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-informational)](https://hub.docker.com/r/melle79/brickfolio/tags)
+[![Platforms](https://img.shields.io/badge/arch-x86--64%20(Intel%2FAMD)%20%7C%20arm64-informational)](https://hub.docker.com/r/melle79/brickfolio/tags)
 [![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/Melle79/brickfolio)
 
 📖 **[Full documentation on GitHub](https://github.com/Melle79/brickfolio)** ·
@@ -67,7 +67,10 @@ environment variables:
 
 The database lives in `/data` – that is the only volume that matters.
 
-**Architectures:** `linux/amd64` and `linux/arm64`.
+**Architectures:** `linux/amd64` – that is **x86-64**, so any ordinary
+Intel *or* AMD machine: a PC, an Intel NAS, an old office desktop – and
+`linux/arm64` for Raspberry Pi, ARM NAS and Apple Silicon. Docker picks the
+right one by itself; the command is the same everywhere.
 Also available as `ghcr.io/melle79/brickfolio`.
 
 ## Tags
