@@ -7,8 +7,16 @@ people who buy and sell at flea markets.
 **Photo → recognition → collection.** Photograph a minifigure or set with your
 phone, tap the match, done.
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Melle79/brickfolio/blob/main/LICENSE)
+[![Platforms](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-informational)](https://hub.docker.com/r/melle79/brickfolio/tags)
+[![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/Melle79/brickfolio)
+
 📖 **[Full documentation on GitHub](https://github.com/Melle79/brickfolio)** ·
 🇩🇪 [Deutsches Handbuch](https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md)
+
+| Scan | Collection | Statistics |
+|---|---|---|
+| ![Scanning](https://raw.githubusercontent.com/Melle79/brickfolio/main/docs/screenshots/scannen.png) | ![Collection](https://raw.githubusercontent.com/Melle79/brickfolio/main/docs/screenshots/sammlung.png) | ![Statistics](https://raw.githubusercontent.com/Melle79/brickfolio/main/docs/screenshots/statistik.png) |
 
 ## Quick start
 
@@ -61,6 +69,14 @@ The database lives in `/data` – that is the only volume that matters.
 
 **Architectures:** `linux/amd64` and `linux/arm64`.
 Also available as `ghcr.io/melle79/brickfolio`.
+
+## Tags
+
+| Tag | What it is |
+|---|---|
+| `latest` | The newest release. Pre-releases are excluded on purpose. |
+| `2.79.2`, `2.79`, `2` | Pinned to a release, down to the level you want. |
+| `main` | Follows the development branch – newest, least tested. |
 
 ## Notes
 
