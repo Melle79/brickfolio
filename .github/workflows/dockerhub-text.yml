@@ -1,0 +1,42 @@
+name: Docker-Hub-Beschreibung setzen
+
+# **Von Hand ausgelöst, nicht bei jedem Bau** – und das ist der ganze Punkt.
+#
+# Am Ende von `image.yml` steht seit jeher die Begründung, warum die
+# Beschreibungsseite dort *nicht* gesetzt wird: Docker Hubs Endpunkt dafür
+# verlangt einen Token mit „read/write/delete", der also auch Images löschen
+# dürfte. So etwas in die Bau-Kette zu hängen, die bei jedem Push läuft, ist
+# das Risiko nicht wert.
+#
+# Diese Ablauffolge ändert daran nichts: Sie läuft **nur auf Knopfdruck**,
+# nie automatisch, und sie baut und schiebt kein Image. Damit ist der Zugang
+# genau so oft offen, wie jemand ihn öffnet – statt bei jeder Änderung an
+# main.
+#
+# Warum überhaupt: Am 19.09.2026 stand die Seite bei 26.553 Zügen völlig
+# leer da – kein Kurztext, keine Beschreibung. `docs/DOCKERHUB.md` lag
+# längst im Repo und war nie eingefügt worden. Was von Hand gepflegt werden
+# muss, bleibt irgendwann stehen.
+#
+# Reicht der Token nicht: Der Lauf scheitert mit 401 und hat nichts
+# angefasst. Dann braucht es einen Token mit weiterem Recht – und das ist
+# dann eine Entscheidung, keine Nebenwirkung.
+on:
+  workflow_dispatch:
+
+jobs:
+  beschreibung:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Text zu Docker Hub schieben
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ vars.DOCKERHUB_USER }}/brickfolio
+          readme-filepath: ./docs/DOCKERHUB.md
+          short-description: "Self-hosted PWA to scan, manage and value your LEGO® collection"
