@@ -321,7 +321,12 @@ footer .wrap p { margin: 0; }
 /* Die Seite gehoert zu einer Reihe; der Hinweis steht da, wo man die Herkunft
    sucht - unter dem, was das Projekt ist, nicht zwischen den Links. */
 footer .herkunft { margin: -4px 0 12px; font-size: .92rem; }
-footer .herkunft a { display: inline-flex; align-items: center; gap: 9px; }
+/* Die Unterstreichung gehoert zum Link und wird ueber alles gezogen, was
+   darin steht - auch ueber das Zeichen. Deshalb traegt sie hier nicht der
+   Link, sondern nur das Wort darin. */
+footer .herkunft a { display: inline-flex; align-items: center; gap: 9px;
+  text-decoration: none; }
+footer .herkunft .wort { text-decoration: underline; }
 /* Dasselbe Zeichen wie im Kopf von melle79.dev: gleiches Blau, gleiche Form,
    nur kleiner. Es ist gesetzt und kein Bild - so braucht es keine Datei und
    bleibt bei jeder Größe scharf. */
