@@ -103,6 +103,17 @@ header { background: var(--card); border-bottom: 1px solid var(--line); }
   border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--card);
 }
 .shots figcaption { color: var(--muted); font-size: .9rem; margin-top: 8px; }
+.shots picture { display: block; }
+/* Zwei Bildunterschriften fuer dasselbe Bild – je nachdem, welche der
+   beiden Aufnahmen `<picture>` gerade waehlt. */
+.nur-handy { display: none; }
+@media (max-width: 860px) {
+  .nur-handy { display: inline; }
+  .nur-rechner { display: none; }
+  /* Das Handybild ist hochkant: ueber die volle Breite waere es zwei
+     Bildschirmhoehen hoch. */
+  .shots figure:first-child img { max-width: 300px; margin: 0 auto; }
+}
 
 section { padding: 44px 0; }
 section.alt { background: var(--card); border-top: 1px solid var(--line);

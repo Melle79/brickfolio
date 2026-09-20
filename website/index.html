@@ -18,7 +18,7 @@
      wird zwar jedes Mal neu geholt (max-age=0), die Formatdatei
      dahinter aber nicht. Am 20.09.2026 stand deshalb auf Svens
      iPhone noch die Fassung mit dem Ueberlauf. -->
-<link rel="stylesheet" href="style.css?v=20260920f">
+<link rel="stylesheet" href="style.css?v=20260920g">
 </head>
 <body>
 
@@ -84,8 +84,21 @@
   </div>
 
   <div class="shots">
-    <figure><img src="assets/scannen.png" width="1280" height="860" alt="Die Erfassung: Fläche zum Fotografieren, daneben die Seitenleiste">
-      <figcaption>Fotografieren oder Bild hineinziehen</figcaption></figure>
+    <!-- Auf dem Handy steht hier die Handy-Ansicht: Die Rechner-Aufnahme
+         ist auf 400 Pixel geschrumpft nicht mehr zu lesen. `<picture>`
+         laedt nur das Bild, das auch gezeigt wird. -->
+    <figure>
+      <picture>
+        <source media="(max-width: 860px)" srcset="assets/handy-sammlung.png"
+                width="560" height="940">
+        <img src="assets/scannen.png" width="1280" height="860"
+             alt="Die Erfassung: Fläche zum Fotografieren, daneben die Seitenleiste">
+      </picture>
+      <figcaption>
+        <span class="nur-handy">So sieht es auf dem Handy aus</span><span
+              class="nur-rechner">Fotografieren oder Bild hineinziehen</span>
+      </figcaption>
+    </figure>
     <figure><img src="assets/sammlung.png" width="1280" height="860" alt="Die Sammlung als Kachelansicht mit Bildern, Nummern und Preisen">
       <figcaption>Die Sammlung mit Preisen</figcaption></figure>
     <figure><img src="assets/statistik.png" width="1280" height="860" alt="Statistik mit Wertentwicklung und Verteilung nach Thema">
