@@ -1,4 +1,4 @@
-# Finn's Brickfolio 🧱
+# Brickfolio 🧱
 
 *[🇬🇧 English](README.en.md) · 🇩🇪 Deutsch*
 

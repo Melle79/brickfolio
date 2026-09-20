@@ -1,4 +1,4 @@
-# Finn's Brickfolio – The Manual
+# Brickfolio – The Manual
 
 *July 2026 · [🇩🇪 Deutsche Fassung](HANDBUCH.md)*
 
@@ -1034,7 +1034,7 @@ press **"Distribute"**:
 (even without the pro role) taps **"✔ Got it! Into the collection"**. Confirm
 the condition (the stored one is marked with ✓); pros can adjust the price
 again – it is pre-filled with the list's purchase price. Items booked in are
-**greyed out** with the note *"✔ in the collection, by Finn on 09/07/2026"*.
+**greyed out** with the note *"✔ in the collection, by sammler on 09/07/2026"*.
 Into the **notes** of the collection entry the app automatically writes which
 list the item came from (e.g. *"From list »Flea market Riem« (09/07/2026)"*) –
 an existing note is kept, the hint is appended.

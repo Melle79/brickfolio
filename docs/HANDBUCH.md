@@ -1,4 +1,4 @@
-# Finn's Brickfolio – Das Handbuch
+# Brickfolio – Das Handbuch
 
 *Juli 2026 · [🇬🇧 English version](MANUAL.md)*
 
@@ -1536,7 +1536,7 @@ tippt **irgendjemand** (auch ohne Profi-Rolle) auf **„✔ Da! Ab in die
 Sammlung"**. Zustand bestätigen (der gespeicherte ist mit ✓ markiert),
 Profis können den Preis nochmal anpassen – vorausgefüllt ist der
 Listen-Einkaufspreis. Verbuchte Artikel werden **ausgegraut** mit Vermerk
-*„✔ in Sammlung von Finn am 09.07.2026"*. In die **Notizen** des
+*„✔ in Sammlung von sammler am 09.07.2026"*. In die **Notizen** des
 Sammlungs-Eintrags schreibt die App automatisch, von welcher Liste der
 Artikel stammt (z. B. *„Von Liste »Flohmarkt Riem« (09.07.2026)"*) –
 eine vorhandene Notiz bleibt erhalten, der Hinweis wird angehängt.
