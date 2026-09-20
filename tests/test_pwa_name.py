@@ -40,9 +40,15 @@ def test_manifest_traegt_den_eingestellten_namen(client):
     assert "Finn" not in m["name"]
 
 
-def test_manifest_ohne_einstellung_bleibt_beim_standard(client):
+def test_manifest_ohne_einstellung_heisst_dein_brickfolio(client):
+    """Ohne gesetzten Namen gehört die Instanz niemandem Bestimmten.
+
+    Früher stand hier ein fester Vorname – den trug dann jede fremde
+    Installation, die nichts eingestellt hatte, bis aufs Handy.
+    """
     m = client.get("/manifest.webmanifest").json()
-    assert m["short_name"].endswith("'s Brickfolio")
+    assert m["short_name"] == "Dein Brickfolio"
+    assert "'s" not in m["short_name"]
 
 
 def test_titel_der_seite_traegt_den_namen(client):

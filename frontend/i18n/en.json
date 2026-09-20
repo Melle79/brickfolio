@@ -275,7 +275,6 @@
  "Der Katalog enthält bisher nur Figuren, keine Sets.": "The catalogue only holds minifigs so far, no sets.",
  "Der Katalog ist auf dieser Instanz noch nicht geladen.": "The catalogue has not been loaded on this instance yet.",
  "Der Katalog ist noch nicht geladen.": "The catalogue has not been loaded yet.",
- "Der Name im Logo und Fenstertitel, z. B. „Finn's Brickfolio\". Leer lassen setzt auf den Standard „Finn\" zurück.": "The name in the logo and window title, e.g. \"Finn's Brickfolio\". Leave it empty to fall back to \"Finn\".",
  "Der Name steht im Logo und im Fenstertitel – „<span id=\"wiz-name-preview\">Finn</span>'s Brickfolio\". Später änderbar unter <b>Mehr → Anzeigename</b>.": "The name appears in the logo and the window title – \"<span id=\"wiz-name-preview\">Finn</span>'s Brickfolio\". Changeable later under <b>More → Display name</b>.",
  "Der Server ist gerade nicht erreichbar – vermutlich startet er neu. Gleich noch einmal versuchen.": "The server is unreachable right now – it is probably restarting. Try again in a moment.",
  "Der Tausch ist noch nicht angenommen.": "This trade has not been accepted yet.",
@@ -377,7 +376,6 @@
  "Figuren, die in euren Sets stecken, sind im Set-Preis enthalten und werden nicht doppelt gezählt ({sum}). Details unter ❓ Hilfe → „Wie der Wert berechnet wird“.": "Figures sitting in your sets are included in the set price and are not counted twice ({sum}). Details under ❓ Help → „How the value is calculated“.",
  "Filter zurücksetzen": "Clear filters",
  "Finden soll er … (mit Komma trennen)": "Should find … (comma separated)",
- "Finn's Brickfolio": "Finn's Brickfolio",
  "Finnland": "Finland",
  "Foto entfernt": "Photo removed",
  "Foto nicht gefunden": "Photo not found",
@@ -1141,5 +1139,8 @@
  "🧩 Teile ausblenden": "🧩 Hide parts",
  "🧩 fehlt zu eurem Set:": "🧩 missing from your set:",
  "🧱 Klassisch": "🧱 Classic",
- "🧹 {n}× hat der Browser den Tab weggeräumt – das tut er bei Speichermangel.": "🧹 The browser discarded the tab {n}× – it does that when memory runs short."
+ "🧹 {n}× hat der Browser den Tab weggeräumt – das tut er bei Speichermangel.": "🧹 The browser discarded the tab {n}× – it does that when memory runs short.",
+ "Der Name im Logo und Fenstertitel, z. B. „Lukas' Brickfolio\". Leer lassen: Das Symbol bleibt namenlos und der Titel lautet „Dein Brickfolio\".": "The name in the logo and window title, e.g. \"Lukas' Brickfolio\". Leave it empty: the icon stays without a name and the title reads \"Your Brickfolio\".",
+ "Dein Brickfolio": "Your Brickfolio",
+ "ohne Namen": "without a name"
 }

@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.80.3"
+APP_VERSION = "2.81.0"
 
 
 def hash_password(password: str) -> str:

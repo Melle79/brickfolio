@@ -2110,9 +2110,13 @@ async function updateListsTab() {
   }
 }
 
-/* Titel der App inkl. Anzeigename – auch für Kopfzeilen im Druck */
+/* Titel der App inkl. Anzeigename – auch für Kopfzeilen im Druck.
+   Ohne gesetzten Namen heisst sie schlicht „Dein Brickfolio"; frueher stand
+   dort ein fester Vorname, den jede fremde Installation mitschleppte. */
 function appTitle() {
-  return (state.ownerName || "Finn") + "'s Brickfolio";
+  return state.ownerName
+    ? state.ownerName + "'s Brickfolio"
+    : "Dein Brickfolio";
 }
 
 function applyOwnerName(name) {
@@ -2373,7 +2377,7 @@ function wireWizardOnce() {
   wizWired = true;
 
   $("wiz-owner").addEventListener("input", () => {
-    $("wiz-name-preview").textContent = $("wiz-owner").value.trim() || "Finn";
+    $("wiz-name-preview").textContent = $("wiz-owner").value.trim();
   });
 
   $("wiz-next").addEventListener("click", async () => {
@@ -2426,7 +2430,7 @@ function showApp() {
     state.catalogSearch = c.catalog_search;
     schonendUebernehmen(c.schonend);
     state.bricklinkLookup = c.bricklink_lookup;
-    state.ownerName = c.owner_name || "Finn";
+    state.ownerName = c.owner_name || "";
     applyOwnerName(state.ownerName);
     setCurrency(c.currency);
     state.hubConnected = !!c.hub_connected;
@@ -11025,9 +11029,8 @@ async function loadSettings() {
   $("default-theme-hint").hidden = !isAdmin;
   if (isAdmin) markDefaultTheme();
   if (isAdmin && $("owner-name")) {
-    $("owner-name").value =
-      (state.ownerName && state.ownerName !== "Finn") ? state.ownerName : "";
-    $("owner-name").placeholder = "Finn";
+    $("owner-name").value = state.ownerName || "";
+    $("owner-name").placeholder = "ohne Namen";
   }
   $("backup-card").hidden = !isAdmin;
   if (isAdmin) zeigeBilderWahl();

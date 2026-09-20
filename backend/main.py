@@ -408,11 +408,22 @@ class UpdateItemBody(BaseModel):
 # ---------------------------------------------------------------- Auth
 
 def _owner_name() -> str:
-    """Anzeigename für Logo/Titel: DB-Einstellung, sonst ENV, sonst 'Finn'."""
+    """Anzeigename für Logo/Titel: DB-Einstellung, sonst ENV, sonst leer.
+
+    Leer ist ein gültiger Zustand: Dann trägt das Symbol keinen Namen und der
+    Titel lautet schlicht »Dein Brickfolio«. Früher stand hier ein fester
+    Vorname – der erschien dann bei jedem, der nichts eingestellt hatte.
+    """
     import os as _os
     name = core.get_setting("owner_name") or _os.environ.get(
         "BRICKFOLIO_NAME", "").strip()
-    return name or "Finn"
+    return name
+
+
+def _app_title() -> str:
+    """»Xs Brickfolio«, solange ein Name gesetzt ist – sonst »Dein Brickfolio«."""
+    wer = _owner_name()
+    return f"{wer}'s Brickfolio" if wer else "Dein Brickfolio"
 
 
 @app.get("/api/setup")
@@ -668,8 +679,8 @@ def totp_start(body: TotpStartBody, user: dict = Depends(current_user)):
         conn.execute("UPDATE users SET totp_pending = ? WHERE id = ?",
                      (secret, user["id"]))
     return {"secret": secret,
-            "otpauth": totp.otpauth_url(secret, user["name"], _owner_name()
-                                        + "'s Brickfolio")}
+            "otpauth": totp.otpauth_url(secret, user["name"],
+                                        _app_title())}
 
 
 @app.get("/api/me/2fa/qr")
@@ -689,7 +700,7 @@ def totp_qr(user: dict = Depends(current_user)):
 
     import segno
     url = totp.otpauth_url(row["totp_pending"], user["name"],
-                           _owner_name() + "'s Brickfolio")
+                           _app_title())
     puffer = io.BytesIO()
     segno.make(url, error="m").save(puffer, kind="svg", scale=5, border=2)
     return Response(puffer.getvalue(), media_type="image/svg+xml",
@@ -3457,7 +3468,7 @@ class OwnerNameBody(BaseModel):
 
 @app.post("/api/settings/owner_name")
 def set_owner_name(body: OwnerNameBody, user: dict = Depends(admin_user)):
-    """Anzeigename anpassen (leer = zurück auf Standard 'Finn')."""
+    """Anzeigename anpassen (leer = namenloses Symbol, Titel »Dein Brickfolio«)."""
     core.set_setting("owner_name", body.name.strip())
     return {"ok": True, "owner_name": _owner_name()}
 
@@ -8178,8 +8189,8 @@ def manifest():
     """
     wer = _owner_name()
     return JSONResponse({
-        "name": f"{wer}'s Brickfolio – Deine LEGO-Sammlung",
-        "short_name": f"{wer}'s Brickfolio",
+        "name": f"{_app_title()} – Deine LEGO-Sammlung",
+        "short_name": _app_title(),
         "description": "LEGO Minifiguren scannen, erkennen und "
                        "gemeinsam verwalten",
         "start_url": "/",

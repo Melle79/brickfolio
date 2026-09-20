@@ -45,6 +45,30 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.81.0 – September 2026
+
+### Geändert
+- 🏷 **Kein fremder Vorname mehr in der eigenen Installation.** Wer Brickfolio
+  aufsetzte und keinen Anzeigenamen eintrug, bekam einen fest eingebauten
+  Vornamen – im Logo, im Fenstertitel, auf dem Startbildschirm des Handys und
+  in den Kopfzeilen der Druckexporte. Das war der Name des Kindes, für das
+  diese App ursprünglich entstand, und er hatte in fremden Sammlungen nichts
+  zu suchen.
+
+  Ohne gesetzten Namen heißt die Instanz jetzt schlicht **„Dein Brickfolio"**
+  (englisch *Your Brickfolio*), und das Symbol bleibt namenlos – der
+  Symbol-Erzeuger zeichnet einfach keine Zeile mehr über das Gesicht. Wer
+  einen Namen einträgt, bekommt wie bisher „*Name*'s Brickfolio". Das
+  Eingabefeld zeigt statt eines Beispielnamens den Hinweis „ohne Namen".
+
+  Zusammengesetzt wird der Titel jetzt an **einer** Stelle (`_app_title()`)
+  statt an vier – vorher hing das `'s` an jedem Verwendungsort einzeln, und
+  aus „Dein" wäre dort „Dein's" geworden.
+
+  Dieselbe Bereinigung in der Beschreibung: Die vier Handbuch- und
+  README-Überschriften lauteten „*Name*'s Brickfolio" und heißen jetzt nur
+  noch **Brickfolio** – so wie das Projekt überall sonst auftritt.
+
 ## 2.80.3 – September 2026
 
 ### Geändert
