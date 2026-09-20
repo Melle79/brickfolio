@@ -297,30 +297,20 @@ footer .wrap p { margin: 0; }
   .scannerbild figure { max-width: 320px; margin: 0 auto; }
 }
 
-/* ── Das Aufmacherfoto: die Geste vor dem Ergebnis ─────────────────────
-   Der Rahmen um den Treffer liegt als eigenes Element darueber, in Prozent
-   der Bildflaeche. So braucht eine Korrektur kein neues Foto, und auf dem
-   Handy sitzt er genauso wie auf dem Rechner. */
-.szene { margin: 30px auto 0; max-width: 380px; }
-.szene-bild { position: relative; line-height: 0; }
-.szene-bild img {
-  width: 100%; height: auto; display: block;
-  border-radius: var(--radius); border: 1px solid var(--line);
-  box-shadow: var(--shadow); background: var(--card);
+/* ── Der Scan im Gerät ────────────────────────────────────────────────
+   Ein gezeichneter Rahmen statt eines nachgestellten Fotos: Er gibt sich als
+   Zeichnung zu erkennen, während das Bild darin echt ist. Der Versuch, den
+   Screenshot auf ein erzeugtes Handyfoto zu legen, sah nach aufgeklebtem
+   Rechteck aus – und kein Format passte zum anderen. */
+.szene { margin: 32px auto 0; max-width: 310px; }
+.geraet {
+  background: #1D1D1B; border-radius: 30px; padding: 10px;
+  box-shadow: 0 6px 0 rgba(29,29,27,.22), 0 0 0 1px rgba(29,29,27,.35);
+  line-height: 0;
 }
-/* Der Screenshot liegt auf dem leeren Display des Fotos. Die Werte sind in
-   Prozent der Bildflaeche gemessen, damit er auf jeder Groesse sitzt. */
-.szene-bild .display {
-  position: absolute;
-  left: 13.4%; top: 7.4%; width: 71.2%; height: 69.0%;
-  /* 'fill' statt 'cover': Der Screenshot ist um 11 % breiter angelegt als
-     die Displayflaeche im Foto. Mit 'cover' fielen links und rechts je
-     5,5 % weg - und damit das M von MUSTERHAUSHALT und das r von
-     sammler. Eine Stauchung um 11 % sieht man einem Display, das man
-     leicht schraeg sieht, nicht an; fehlende Buchstaben schon. */
-  object-fit: fill;
-  border: 0; border-radius: 5px; box-shadow: none;
-}
+.geraet img { width: 100%; height: auto; display: block; border-radius: 22px; }
 .szene figcaption {
-  color: var(--muted); font-size: .95rem; margin-top: 10px; line-height: 1.5;
+  color: var(--muted); font-size: .95rem; margin-top: 12px; line-height: 1.5;
+  text-align: center;
 }
+
