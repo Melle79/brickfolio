@@ -1,14 +1,27 @@
 """Der Rahmen aus der Erkennung muss zum Bild des Browsers passen.
 
 Brickognize rahmt sauber ein – geprüft am 20.09.2026 mit einem eigenen Foto,
-der zurückgegebene Rahmen lag genau auf der Figur. Nur: Er gilt für das Bild,
-das der **Dienst** bekommen hat, und das ist das in `prepare_image`
-verkleinerte. Der Browser zeichnet ihn aber in den Maßen *seines* Bildes.
+der zurückgegebene Rahmen lag genau auf der Figur. Nur gilt er für das Bild,
+auf dem der **Dienst** gearbeitet hat, und das ist nicht das geschickte: Er
+rechnet selbst auf höchstens 1024 Pixel herunter. Aus 900×1200 wird dort
+768×1024, und ein Rahmen daraus sitzt im Browser um 1024/1200 = 0,853 zu
+klein und zu weit links oben.
 
-Schickt er etwas Größeres als `max_side`, lagen die Rahmen deshalb zu klein
-und zu weit links oben – auf Svens Foto mit drei Figuren um den Faktor 0,86,
-also 1200/1400. Sichtbar wurde es erst bei mehreren Figuren nebeneinander:
-Bei einer einzelnen sieht ein etwas zu kleiner Rahmen richtig aus.
+Sichtbar wurde es erst bei mehreren Figuren nebeneinander: Bei einer
+einzelnen sieht ein etwas zu kleiner Rahmen richtig aus.
+
+**Zwei falsche Fährten auf dem Weg dahin**, beide hier festgehalten, damit
+sie niemand noch einmal verfolgt:
+
+1. Eine erste Probe mit demselben Motiv in zwei Größen (600×800, 450×600)
+   zeigte den Dienst die geschickten Maße *echoen* – beide lagen aber unter
+   1024, wo er nichts verkleinert.
+2. Daraufhin galt der Browser als Verursacher (er habe größer als 1200
+   geschickt). Das Protokoll des Servers zeigte dann `Upload 900x1200,
+   Dienst 768x1024`: Der Browser war es nie.
+
+Die Umrechnung nimmt deshalb `image_width`/`image_height` aus der Antwort –
+die Zahlen gelten, ganz gleich wer verkleinert hat.
 """
 import io
 
@@ -65,7 +78,8 @@ def dienst(monkeypatch):
 
 
 def test_grosses_bild_wird_zurueckgerechnet(dienst):
-    """1400 px hoch hochgeladen, 1200 px beim Dienst – der Rahmen wächst mit."""
+    """Der Dienst arbeitet kleiner, als hochgeladen wurde – der Rahmen wächst
+    auf die Maße des Uploads zurück."""
     d = integrations.recognize(_bild(1050, 1400))
     assert dienst["masse"] == (900, 1200), "der Dienst sieht das verkleinerte Bild"
     r = d["box"]
@@ -104,3 +118,22 @@ def test_ohne_masse_vom_dienst_bleibt_alles_wie_es_war(monkeypatch):
     monkeypatch.setattr(integrations.requests, "post", post)
     r = integrations.recognize(_bild(2000, 2000))["box"]
     assert (r["left"], r["upper"], r["right"], r["lower"]) == (10, 20, 30, 40)
+
+
+def test_dienst_rechnet_selbst_kleiner(monkeypatch):
+    """**Der eigentliche Fall, gemessen am 20.09.2026.**
+
+    Der Browser schickt 900×1200 – richtig verkleinert. Brickognize rechnet
+    intern auf 768×1024 herunter und antwortet in diesen Maßen. Ohne
+    Umrechnung säße jeder Rahmen um 0,853 zu klein.
+    """
+    def post(url, files=None, **rest):
+        return _Antwort({"left": 128.0, "upper": 256.0, "right": 384.0,
+                         "lower": 768.0, "image_width": 768.0,
+                         "image_height": 1024.0, "score": 0.9})
+    monkeypatch.setattr(integrations.requests, "post", post)
+    r = integrations.recognize(_bild(900, 1200))["box"]
+    assert r["left"] == pytest.approx(128 * 900 / 768, abs=0.5)
+    assert r["upper"] == pytest.approx(256 * 1200 / 1024, abs=0.5)
+    assert r["right"] == pytest.approx(384 * 900 / 768, abs=0.5)
+    assert r["lower"] == pytest.approx(768 * 1200 / 1024, abs=0.5)

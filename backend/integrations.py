@@ -255,16 +255,20 @@ def recognize(raw_image: bytes) -> dict:
     box = data.get("bounding_box") or {}
     rahmen = None
     if all(k in box for k in ("left", "upper", "right", "lower")):
-        # **Der Rahmen kommt in den Maßen des Bildes, das der Dienst bekommen
-        # hat** – und das ist das hier verkleinerte, nicht das hochgeladene.
-        # Der Browser zeichnet ihn aber in den Maßen *seines* Bildes. Schickt
-        # er etwas Größeres als `max_side`, saßen die Rahmen deshalb zu klein
-        # und zu weit links oben, und zwar um genau dieses Verhältnis.
+        # **Der Rahmen kommt in den Maßen des Bildes, auf dem der Dienst
+        # gearbeitet hat – und die sind nicht die, die er bekommen hat.**
+        # Brickognize rechnet selbst auf höchstens 1024 Pixel herunter: Aus
+        # 900×1200 wird dort 768×1024. Der Browser zeichnete den Rahmen aber
+        # in den Maßen seines eigenen Bildes, also um 1024/1200 = 0,853 zu
+        # klein und entsprechend zu weit links oben.
         #
-        # Nachgemessen am 20.09.2026 an einem Foto mit drei Figuren: Die
-        # Rahmen lagen bei 0,86 der richtigen Größe — 1200/1400. Der Dienst
-        # selbst rahmt sauber ein (eigens geprüft), und beide Zahlen, die es
-        # dafür braucht, liefert er mit: `image_width` und `image_height`.
+        # Am 20.09.2026 am Protokoll belegt (`Upload 900x1200, Dienst
+        # 768x1024`); die Vermutung davor – der Browser habe zu groß
+        # geschickt – war falsch. Der Dienst selbst rahmt sauber ein (eigens
+        # geprüft, indem sein Rahmen ins Foto gezeichnet wurde), und beide
+        # Zahlen zum Zurückrechnen liefert er mit: `image_width`,
+        # `image_height`. Dasselbe greift, wenn `prepare_image` oben
+        # verkleinert hat – der Weg ist derselbe.
         fx = fy = 1.0
         dienst_b = float(box.get("image_width") or 0)
         dienst_h = float(box.get("image_height") or 0)
@@ -275,15 +279,15 @@ def recognize(raw_image: bytes) -> dict:
                 eigen_b = eigen_h = 0
             if eigen_b and eigen_h:
                 fx, fy = eigen_b / dienst_b, eigen_h / dienst_h
-                if abs(fx - 1) > 0.01 or abs(fy - 1) > 0.01:
-                    # **Eine Zeile ins Container-Protokoll, wenn umgerechnet
-                    # werden musste.** Der Browser soll selbst auf 1200
-                    # verkleinern; tut er es nicht, ist das ein Hinweis auf
-                    # eine fehlgeschlagene Verkleinerung auf dem Gerät – und
-                    # anders als die Spur im Browser ist diese Zeile von außen
-                    # lesbar. Sie kommt nur im Ausnahmefall.
-                    print(f"[scan] Rahmen umgerechnet: Upload {eigen_b}x"
-                          f"{eigen_h}, Dienst {dienst_b:.0f}x{dienst_h:.0f}",
+                # Umgerechnet wird **immer**, das ist der Normalfall und
+                # keine Meldung wert. Auffällig ist nur, wenn der Browser
+                # gar nicht erst verkleinert hat: Dann ist auf dem Gerät
+                # etwas schiefgegangen (siehe `verkleinern()` im Frontend),
+                # und anders als die Spur im Browser ist diese Zeile von
+                # außen lesbar.
+                if max(eigen_b, eigen_h) > 1300:
+                    print(f"[scan] Bild kam ungekürzt an: {eigen_b}x{eigen_h}"
+                          f" (Dienst {dienst_b:.0f}x{dienst_h:.0f})",
                           flush=True)
         rahmen = {"left": box["left"] * fx, "upper": box["upper"] * fy,
                   "right": box["right"] * fx, "lower": box["lower"] * fy,
