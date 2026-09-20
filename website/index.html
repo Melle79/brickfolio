@@ -99,18 +99,6 @@
     <!-- Auf dem Handy steht hier die Handy-Ansicht: Die Rechner-Aufnahme
          ist auf 400 Pixel geschrumpft nicht mehr zu lesen. `<picture>`
          laedt nur das Bild, das auch gezeigt wird. -->
-    <figure>
-      <picture>
-        <source media="(max-width: 860px)" srcset="assets/handy-sammlung.png"
-                width="560" height="940">
-        <img src="assets/scannen.png" width="1280" height="860"
-             alt="Die Erfassung: Fläche zum Fotografieren, daneben die Seitenleiste">
-      </picture>
-      <figcaption>
-        <span class="nur-handy">So sieht es auf dem Handy aus</span><span
-              class="nur-rechner">Fotografieren oder Bild hineinziehen</span>
-      </figcaption>
-    </figure>
     <figure><img src="assets/sammlung.png" width="1280" height="860" alt="Die Sammlung als Kachelansicht mit Bildern, Nummern und Preisen">
       <figcaption>Die Sammlung mit Preisen</figcaption></figure>
     <figure><img src="assets/statistik.png" width="1280" height="860" alt="Statistik mit Wertentwicklung und Verteilung nach Thema">
@@ -467,6 +455,7 @@ docker compose up -d --build</pre>
       <h4>Brickfolio</h4>
       <p>Selbst gehostete App für LEGO®-Sammlungen. Freie Software unter der
       MIT-Lizenz – benutzen, ändern, weitergeben.</p>
+      <p class="herkunft">Ein Projekt von <a href="https://www.melle79.dev">melle79.dev</a></p>
       <a class="coffee" href="https://buymeacoffee.com/melle79">
         <span aria-hidden="true">☕</span> Einen Kaffee ausgeben
       </a>

@@ -97,7 +97,10 @@ header { background: var(--card); border-bottom: 1px solid var(--line); }
 .btn-ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
 .btn-ghost:hover { background: #F6F7F9; }
 
-.shots { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); margin: 38px 0 0; }
+/* Zwei statt drei: Das dritte Bild zeigte die noch leere Scan-Ansicht und
+   damit dasselbe Thema wie das Geraet darueber. Die beiden verbliebenen
+   bekommen dadurch mehr Platz und sind endlich lesbar. */
+.shots { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); margin: 38px 0 0; }
 .shots figure { margin: 0; }
 .shots img {
   width: 100%; height: auto; display: block; border-radius: var(--radius);
@@ -314,3 +317,7 @@ footer .wrap p { margin: 0; }
   text-align: center;
 }
 
+
+/* Die Seite gehoert zu einer Reihe; der Hinweis steht da, wo man die Herkunft
+   sucht - unter dem, was das Projekt ist, nicht zwischen den Links. */
+footer .herkunft { margin: -4px 0 12px; font-size: .92rem; }
