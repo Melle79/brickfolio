@@ -204,6 +204,20 @@ def prepare_image(raw: bytes, max_side: int = 1200) -> bytes:
     return out.getvalue()
 
 
+def _masse_mit_drehung(raw: bytes) -> tuple[int, int]:
+    """Maße des Bildes, **wie der Browser es sieht** – EXIF-Drehung eingerechnet.
+
+    Liest nur die Kopfdaten; das Bild wird dafür nicht entpackt.
+    """
+    with Image.open(io.BytesIO(raw)) as bild:
+        b, h = bild.size
+        try:
+            drehung = (bild.getexif() or {}).get(274, 1)
+        except Exception:
+            drehung = 1
+    return (h, b) if drehung in (5, 6, 7, 8) else (b, h)
+
+
 def recognize(raw_image: bytes) -> dict:
     """Bild an Brickognize schicken, Kandidatenliste zurückgeben."""
     jpeg = prepare_image(raw_image)
@@ -241,8 +255,28 @@ def recognize(raw_image: bytes) -> dict:
     box = data.get("bounding_box") or {}
     rahmen = None
     if all(k in box for k in ("left", "upper", "right", "lower")):
-        rahmen = {"left": box["left"], "upper": box["upper"],
-                  "right": box["right"], "lower": box["lower"],
+        # **Der Rahmen kommt in den Maßen des Bildes, das der Dienst bekommen
+        # hat** – und das ist das hier verkleinerte, nicht das hochgeladene.
+        # Der Browser zeichnet ihn aber in den Maßen *seines* Bildes. Schickt
+        # er etwas Größeres als `max_side`, saßen die Rahmen deshalb zu klein
+        # und zu weit links oben, und zwar um genau dieses Verhältnis.
+        #
+        # Nachgemessen am 20.09.2026 an einem Foto mit drei Figuren: Die
+        # Rahmen lagen bei 0,86 der richtigen Größe — 1200/1400. Der Dienst
+        # selbst rahmt sauber ein (eigens geprüft), und beide Zahlen, die es
+        # dafür braucht, liefert er mit: `image_width` und `image_height`.
+        fx = fy = 1.0
+        dienst_b = float(box.get("image_width") or 0)
+        dienst_h = float(box.get("image_height") or 0)
+        if dienst_b > 0 and dienst_h > 0:
+            try:
+                eigen_b, eigen_h = _masse_mit_drehung(raw_image)
+            except Exception:
+                eigen_b = eigen_h = 0
+            if eigen_b and eigen_h:
+                fx, fy = eigen_b / dienst_b, eigen_h / dienst_h
+        rahmen = {"left": box["left"] * fx, "upper": box["upper"] * fy,
+                  "right": box["right"] * fx, "lower": box["lower"] * fy,
                   "score": box.get("score")}
     return {"items": items, "listing_id": data.get("listing_id", ""),
             "box": rahmen}
