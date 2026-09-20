@@ -2784,9 +2784,18 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
   try {
     masse = await bildMasse(file);
   } catch (_) {
+    // **Jede Stelle, die hier das Original durchreicht, sagt es.** Bis 2.80.1
+    // ging das lautlos, und das Bild kam größer beim Server an, als der
+    // Browser dachte – die Rahmen der Erkennung saßen daneben, ohne dass
+    // irgendwo etwas davon stand. Der Server rechnet das inzwischen zurück;
+    // dass es überhaupt passiert, gehört trotzdem in die Spur.
+    spur("Verkleinern: Maße nicht lesbar – Original geht raus");
     return file;                     // kein lesbares Bild – der Server sagt es
   }
-  if (!masse.w || !masse.h) return file;
+  if (!masse.w || !masse.h) {
+    spur("Verkleinern: Maße 0 – Original geht raus");
+    return file;
+  }
   spur(`Foto ${Math.round(masse.w * masse.h / 1e5) / 10} MP, `
     + `${Math.round(file.size / 104858) / 10} MB`);
   const faktor = Math.min(1, maxSeite / Math.max(masse.w, masse.h));
@@ -2803,7 +2812,10 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
     entpackt = await bildEntpacken(file, bw, bh);
   } catch (_) {
     try { entpackt = await bildEntpacken(file); }      // älterer Browser
-    catch (_2) { return file; }
+    catch (_2) {
+      spur("Verkleinern: Entpacken misslungen – Original geht raus");
+      return file;
+    }
   }
   const c = document.createElement("canvas");
   c.width = bw;
@@ -2812,8 +2824,14 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
   entpackt.schliessen();             // das Original sofort freigeben
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   c.width = c.height = 0;            // auch die Zeichenfläche
+  if (!blob) {
+    // Auf iOS gibt `toBlob` unter Speicherdruck nichts zurück. Dann geht das
+    // Original hinaus – in voller Größe.
+    spur(`Verkleinern: toBlob leer – Original ${masse.w}×${masse.h} geht raus`);
+    return file;
+  }
   spur(`verkleinert auf ${bw}×${bh}`);
-  return blob ? new File([blob], "scan.jpg", { type: "image/jpeg" }) : file;
+  return new File([blob], "scan.jpg", { type: "image/jpeg" });
 }
 
 async function handlePhoto(file) {

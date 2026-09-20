@@ -275,6 +275,16 @@ def recognize(raw_image: bytes) -> dict:
                 eigen_b = eigen_h = 0
             if eigen_b and eigen_h:
                 fx, fy = eigen_b / dienst_b, eigen_h / dienst_h
+                if abs(fx - 1) > 0.01 or abs(fy - 1) > 0.01:
+                    # **Eine Zeile ins Container-Protokoll, wenn umgerechnet
+                    # werden musste.** Der Browser soll selbst auf 1200
+                    # verkleinern; tut er es nicht, ist das ein Hinweis auf
+                    # eine fehlgeschlagene Verkleinerung auf dem Gerät – und
+                    # anders als die Spur im Browser ist diese Zeile von außen
+                    # lesbar. Sie kommt nur im Ausnahmefall.
+                    print(f"[scan] Rahmen umgerechnet: Upload {eigen_b}x"
+                          f"{eigen_h}, Dienst {dienst_b:.0f}x{dienst_h:.0f}",
+                          flush=True)
         rahmen = {"left": box["left"] * fx, "upper": box["upper"] * fy,
                   "right": box["right"] * fx, "lower": box["lower"] * fy,
                   "score": box.get("score")}

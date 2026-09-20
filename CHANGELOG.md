@@ -45,6 +45,20 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.80.2 – September 2026
+
+### Geändert
+- 🔎 **Das Verkleinern eines Fotos sagt jetzt, wenn es nicht greift.** Vor dem
+  Scannen rechnet der Browser jedes Foto auf 1200 Pixel herunter. An fünf
+  Stellen konnte er dabei stillschweigend das Original durchreichen – und
+  genau das war die Vorgeschichte der verrutschten Rahmen aus 2.80.1: Der
+  Server bekam ein größeres Bild, als der Browser annahm. Jeder dieser fünf
+  Ausgänge schreibt jetzt seinen Grund in die Spur (*Mehr → Wartung*).
+
+  Dazu eine Zeile im **Container-Protokoll**, wenn der Server einen Rahmen
+  umrechnen musste. Die Spur im Browser liegt auf dem Gerät; diese Zeile ist
+  von außen lesbar und kommt nur im Ausnahmefall.
+
 ## 2.80.1 – September 2026
 
 ### Behoben
