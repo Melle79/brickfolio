@@ -141,6 +141,9 @@ pre {
   overflow-x: auto; font-size: .86rem; line-height: 1.5; margin: 0;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-weight: 600;
+  /* Lange Pfade brechen um, statt hinter dem Rand zu verschwinden.
+     Der Umbruch ist rein optisch – kopiert wird die Zeile unverändert. */
+  white-space: pre-wrap; overflow-wrap: anywhere;
 }
 pre .c { color: #9BA1A8; }
 code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
