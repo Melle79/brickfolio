@@ -358,6 +358,36 @@ def bl_enabled():
     return all(konfig(n) for n in BL_FELDER)
 
 
+# Wie lange eine Netzstörung ausgesessen wird, bevor der Lauf aufgibt.
+# Am 20.09.2026 riss die Internetverbindung für 5½ Minuten ab (belegt am
+# Protokoll des Tunnels: alle vier Verbindungen fielen um 16:10:41 aus und
+# meldeten sich um 16:16:15 zurück). Eine einzige nicht auflösbare Adresse
+# beendete daraufhin einen Abzug, der schon Stunden gelaufen war – mitten
+# im Themenkürzel „cc". Die Summe hier deckt gut sieben Minuten ab, also
+# auch die übliche Zwangstrennung.
+NETZ_WARTEN = (10, 30, 60, 120, 240)
+
+
+def _get_mit_geduld(url, **kwargs):
+    """GET, der eine kurze Netzstörung aussitzt.
+
+    **Nur Verbindungsfehler.** Statuscodes bleiben unberührt: 404 zählt eine
+    Lücke, 401 und 429 sollen den Lauf weiterhin sofort beenden. Eine
+    Wiederholung wäre dort schädlich.
+    """
+    letzter = None
+    for i in range(len(NETZ_WARTEN) + 1):
+        try:
+            return requests.get(url, **kwargs)
+        except (requests.ConnectionError, requests.Timeout) as e:
+            letzter = e
+            if i < len(NETZ_WARTEN):
+                print("[katalogdienst] Netz gestört (%s) – warte %d s"
+                      % (type(e).__name__, NETZ_WARTEN[i]), flush=True)
+                time.sleep(NETZ_WARTEN[i])
+    raise letzter
+
+
 def bricklink_item(item_type, item_no):
     """Eine Figur bei BrickLink nachschlagen.
 
@@ -368,7 +398,7 @@ def bricklink_item(item_type, item_no):
     (aufhören). Gäbe es hier `None`, liefe der Lauf bei erschöpftem
     Kontingent munter weiter und hielte 4.000 Fehlgriffe für Lücken.
     """
-    r = requests.get(
+    r = _get_mit_geduld(
         "https://api.bricklink.com/api/store/v1/items/%s/%s"
         % (item_type, item_no),
         auth=bl_auth(), timeout=20, headers={"User-Agent": USER_AGENT})

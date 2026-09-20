@@ -487,3 +487,65 @@ def test_ergaenzen_haelt_still_wenn_nichts_fehlt(monkeypatch):
                         lambda *a, **k: pytest.fail("nicht fragen"))
     assert bild.merkmale_ergaenzen(
         b"x", "head yellow; torso red; arms yellow; legs blue") == ""
+
+
+# ── Eine kurze Netzstörung darf den Abzug nicht beenden ────────────────
+#
+# Am 20.09.2026 riss die Internetverbindung für 5½ Minuten ab; der Abzug
+# brach mitten im Kürzel „cc" ab, nach Stunden Arbeit. Abgebrochen hat ihn
+# nicht BrickLink, sondern eine Adresse, die sich nicht auflösen ließ.
+
+def test_verbindungsfehler_wird_ausgesessen(monkeypatch):
+    import katalog
+    import requests
+    versuche = {"n": 0}
+    geschlafen = []
+
+    def get(url, **k):
+        versuche["n"] += 1
+        if versuche["n"] < 3:
+            raise requests.ConnectionError("Name nicht auflösbar")
+        return "antwort"
+
+    monkeypatch.setattr(katalog.requests, "get", get)
+    monkeypatch.setattr(katalog.time, "sleep", lambda s: geschlafen.append(s))
+    assert katalog._get_mit_geduld("https://example.invalid") == "antwort"
+    assert versuche["n"] == 3
+    assert geschlafen == [10, 30], "erst 10 s, dann 30 s warten"
+
+
+def test_nach_allen_versuchen_wird_durchgereicht(monkeypatch):
+    """Hält die Störung an, bleibt es beim Abbruch – nur später."""
+    import katalog
+    import requests
+    geschlafen = []
+
+    def get(url, **k):
+        raise requests.ConnectionError("immer noch weg")
+
+    monkeypatch.setattr(katalog.requests, "get", get)
+    monkeypatch.setattr(katalog.time, "sleep", lambda s: geschlafen.append(s))
+    with pytest.raises(requests.ConnectionError):
+        katalog._get_mit_geduld("https://example.invalid")
+    assert geschlafen == [10, 30, 60, 120, 240]
+    assert sum(geschlafen) > 7 * 60, "deckt eine Zwangstrennung ab"
+
+
+def test_statuscodes_werden_nicht_wiederholt(monkeypatch):
+    """401 und 429 sollen den Lauf sofort beenden – Wiederholen schadet."""
+    import katalog
+
+    class Antwort:
+        status_code = 429
+
+    versuche = {"n": 0}
+
+    def get(url, **k):
+        versuche["n"] += 1
+        return Antwort()
+
+    monkeypatch.setattr(katalog.requests, "get", get)
+    monkeypatch.setattr(katalog.time, "sleep",
+                        lambda s: pytest.fail("hier darf nicht gewartet werden"))
+    assert katalog._get_mit_geduld("https://example.invalid").status_code == 429
+    assert versuche["n"] == 1
