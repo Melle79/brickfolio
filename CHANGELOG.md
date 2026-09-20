@@ -45,6 +45,29 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.80.1 – September 2026
+
+### Behoben
+- 🎯 **Die Rahmen um die erkannten Figuren saßen daneben.** Bei „Alle Figuren
+  erkennen" lagen sie zu klein und zu weit links oben – je weiter rechts die
+  Figur stand, desto deutlicher.
+
+  Der Erkennungsdienst rahmt sauber ein; das wurde eigens geprüft, indem der
+  zurückgegebene Rahmen in ein Foto gezeichnet wurde. Nur gilt er für das
+  Bild, das **er** bekommen hat – und der Server verkleinert vorher auf 1200
+  Pixel. Der Browser zeichnete ihn aber in den Maßen *seines* Bildes. Schickt
+  er etwas Größeres, verschiebt sich alles um genau dieses Verhältnis: Auf
+  dem gemessenen Foto waren es 1200/1400, also 0,86.
+
+  Der Server rechnet den Rahmen jetzt in die Maße des Bildes zurück, das er
+  bekommen hat – samt EXIF-Drehung. Beide Zahlen dafür liefert der Dienst
+  ohnehin mit (`image_width`, `image_height`), sie wurden bisher nur nicht
+  gelesen.
+
+  **Das betraf mehr als die Anzeige:** Aus denselben Rahmen schneidet die App
+  die Ausschnitte fürs eigene Foto am Artikel und fürs Weitersuchen. Die
+  kamen bisher vom falschen Fleck.
+
 ## 2.80.0 – September 2026
 
 ### Behoben
