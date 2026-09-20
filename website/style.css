@@ -313,7 +313,12 @@ footer .wrap p { margin: 0; }
 .szene-bild .display {
   position: absolute;
   left: 13.4%; top: 7.4%; width: 71.2%; height: 69.0%;
-  object-fit: cover; object-position: top center;
+  /* 'fill' statt 'cover': Der Screenshot ist um 11 % breiter angelegt als
+     die Displayflaeche im Foto. Mit 'cover' fielen links und rechts je
+     5,5 % weg - und damit das M von MUSTERHAUSHALT und das r von
+     sammler. Eine Stauchung um 11 % sieht man einem Display, das man
+     leicht schraeg sieht, nicht an; fehlende Buchstaben schon. */
+  object-fit: fill;
   border: 0; border-radius: 5px; box-shadow: none;
 }
 .szene figcaption {
