@@ -38,6 +38,12 @@ body {
   background: var(--plate); line-height: 1.6; font-weight: 600;
   -webkit-font-smoothing: antialiased;
 }
+/* Der Seitenrand der ganzen Seite. **Wer `.wrap` mit einer zweiten Klasse
+   kombiniert, darf `padding` nicht als Kurzform setzen** – sonst nimmt die
+   Kurzform die 20 Pixel links und rechts wieder weg. Genau das taten `.bar`
+   und `.hero`: Am Rechner faellt es nicht auf, weil das Fenster breiter als
+   1020 Pixel ist und der Rand ohnehin entsteht; auf dem Handy klebten Kopf
+   und Aufmacher am Bildschirmrand (gemessen am 20.09.2026: 0 statt 20). */
 .wrap { max-width: 1020px; margin: 0 auto; padding: 0 20px; }
 h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
 h1 { font-weight: 900; font-size: clamp(2.1rem, 5vw, 3.2rem); letter-spacing: -.02em; }
@@ -55,14 +61,26 @@ a { color: var(--blue); }
 .studs i:nth-child(4) { background: var(--green); }
 
 header { background: var(--card); border-bottom: 1px solid var(--line); }
-.bar { display: flex; align-items: center; gap: 12px; padding: 14px 0; }
+.bar { display: flex; align-items: center; gap: 12px;
+  padding-top: 14px; padding-bottom: 14px; }
 .bar img { width: 34px; height: 34px; border-radius: 9px; }
 .bar strong { font-weight: 900; font-size: 1.22rem; }
 .bar nav { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
 .bar nav a { color: var(--muted); text-decoration: none; }
 .bar nav a:hover { color: var(--ink); }
 
-.hero { padding: 54px 0 38px; }
+/* ── Das Klappmenü ─────────────────────────────────────────────────────
+   Am Rechner gibt es keinen Knopf, das Menü steht als Reihe da. Auf dem
+   Handy waren acht Punkte drei Zeilen, die vor dem Aufmacher standen –
+   dort klappt es hinter einen Knopf. */
+.menuknopf {
+  display: none; margin-left: auto; font: inherit; font-weight: 800;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 14px; cursor: pointer;
+}
+.menuknopf:hover { background: #F6F7F9; }
+
+.hero { padding-top: 54px; padding-bottom: 38px; }
 .hero .lead { font-size: 1.22rem; max-width: 46ch; color: #35373A; }
 .hero .claim { display: inline-block; background: var(--yellow);
   padding: 2px 10px; border-radius: 8px; font-weight: 900; }
@@ -125,6 +143,14 @@ footer .cols { display: grid; gap: 18px; grid-template-columns: 2fr 1fr 1fr; }
 footer h4 { color: #fff; font-weight: 800; margin: 0 0 .5em; font-size: 1rem; }
 footer ul { list-style: none; margin: 0; padding: 0; }
 footer li { margin-bottom: 6px; }
+/* Derselbe Knopf wie auf melle79.dev – gleiche Farbe, gleicher Zuschnitt. */
+footer .coffee {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 4px; padding: 9px 16px; border-radius: 11px;
+  background: #FFDD00; color: #10161F;
+  font-weight: 800; font-size: .92rem; text-decoration: none;
+}
+footer .coffee:hover { background: #FFE84D; }
 
 /* ── Nichts darf breiter werden als der Bildschirm ─────────────────────
    Ein Gitterfeld ist von sich aus mindestens so breit wie sein laengster
@@ -146,7 +172,17 @@ h1, h2, h3, p { overflow-wrap: break-word; }
      der Navigation verpufft: Das Symbol staende dann mitten neben einem
      vierzeiligen Menue. */
   .bar { flex-wrap: wrap; }
-  .bar nav { width: 100%; margin: 8px 0 0; gap: 8px 16px; }
+  .menuknopf { display: inline-flex; align-items: center; gap: 6px; }
+  /* **Nur das Hauptmenue klappt weg**, nicht jede Navigation: Impressum
+     und Datenschutz tragen in derselben Leiste nur den Rueckweg zur
+     Startseite und haben keinen Knopf – mit `.bar nav` waere der Link auf
+     dem Handy unsichtbar gewesen. */
+  #hauptmenue { display: none; width: 100%; margin: 10px 0 2px; }
+  #hauptmenue.offen {
+    display: flex; flex-direction: column; gap: 2px;
+    border-top: 1px solid var(--line); padding-top: 10px;
+  }
+  #hauptmenue.offen a { padding: 8px 2px; color: var(--ink); }
 }
 
 /* ── Die NAS bekommt Platz: vier nummerierte Schritte ──────────────────
@@ -181,6 +217,7 @@ h1, h2, h3, p { overflow-wrap: break-word; }
 /* Auf dem Handy sind 58 Pixel Einzug ein Sechstel der Breite. Dort steht
    die Nummer darum ueber der Ueberschrift und der Text nutzt die Karte. */
 @media (max-width: 560px) {
+  .hero { padding-top: 26px; padding-bottom: 28px; }
   .step { padding: 16px; }
   .step .num { position: static; margin-bottom: 10px; }
   pre { font-size: .78rem; padding: 12px; }

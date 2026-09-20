@@ -18,7 +18,7 @@
      wird zwar jedes Mal neu geholt (max-age=0), die Formatdatei
      dahinter aber nicht. Am 20.09.2026 stand deshalb auf Svens
      iPhone noch die Fassung mit dem Ueberlauf. -->
-<link rel="stylesheet" href="style.css?v=20260920">
+<link rel="stylesheet" href="style.css?v=20260920f">
 </head>
 <body>
 
@@ -28,7 +28,12 @@
   <div class="wrap bar">
     <img src="assets/icon-192.png" width="192" height="192" alt="">
     <strong>Brickfolio</strong>
-    <nav>
+    <!-- Auf dem Handy klappt das Menü hinter diesen Knopf. Ohne
+         JavaScript bleibt es einfach aufgeklappt – siehe <noscript>. -->
+    <button class="menuknopf" aria-expanded="false" aria-controls="hauptmenue">
+      <span aria-hidden="true">☰</span> Menü
+    </button>
+    <nav id="hauptmenue">
       <a href="#funktionen">Was es kann</a>
       <a href="#nas">Auf der NAS</a>
       <a href="#installieren">Andere Wege</a>
@@ -40,6 +45,29 @@
     </nav>
   </div>
 </header>
+<noscript><style>
+  .menuknopf { display: none !important; }
+  #hauptmenue { display: flex !important; }
+</style></noscript>
+<script>
+  // Der einzige Programmcode auf dieser Seite: das Klappmenü.
+  (function () {
+    var knopf = document.querySelector(".menuknopf");
+    var menue = document.getElementById("hauptmenue");
+    if (!knopf || !menue) return;
+    function setzen(offen) {
+      menue.classList.toggle("offen", offen);
+      knopf.setAttribute("aria-expanded", offen ? "true" : "false");
+    }
+    knopf.addEventListener("click", function () {
+      setzen(knopf.getAttribute("aria-expanded") !== "true");
+    });
+    // Nach dem Antippen eines Ziels soll das Menü aus dem Weg sein.
+    menue.addEventListener("click", function (e) {
+      if (e.target.tagName === "A") setzen(false);
+    });
+  })();
+</script>
 
 <div class="wrap hero">
   <h1>Die eigene LEGO®-Sammlung,<br>auf dem eigenen Server.</h1>
@@ -375,6 +403,9 @@ docker compose up -d --build</pre>
       <h4>Brickfolio</h4>
       <p>Selbst gehostete App für LEGO®-Sammlungen. Freie Software unter der
       MIT-Lizenz – benutzen, ändern, weitergeben.</p>
+      <a class="coffee" href="https://buymeacoffee.com/melle79">
+        <span aria-hidden="true">☕</span> Einen Kaffee ausgeben
+      </a>
     </div>
     <div>
       <h4>Projekt</h4>
