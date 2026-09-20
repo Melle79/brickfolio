@@ -45,15 +45,32 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.80.3 – September 2026
+
+### Geändert
+- 📏 **Berichtigt, woran die verrutschten Rahmen lagen.** Die Erklärung in
+  2.80.1 und 2.80.2 war falsch: Nicht der Browser schickte zu große Bilder,
+  sondern **Brickognize rechnet selbst auf 1024 Pixel herunter** und
+  antwortet in diesem Maßstab. Belegt durch das Protokoll der Instanz:
+  `Upload 900x1200, Dienst 768x1024`. Die Lösung aus 2.80.1 stimmt
+  unverändert – sie nimmt die Maße aus der Antwort und nicht aus einer
+  Annahme. Berichtigt sind die Einträge, die Kommentare im Quelltext und die
+  Proben; dazu eine neue Probe mit genau diesen Zahlen.
+
+  Die Zeile im Container-Protokoll meldet jetzt nur noch den wirklich
+  auffälligen Fall – ein Bild, das ungekürzt ankommt. Umgerechnet wird bei
+  jedem Scan, das ist der Normalfall und keine Meldung wert.
+
 ## 2.80.2 – September 2026
 
 ### Geändert
 - 🔎 **Das Verkleinern eines Fotos sagt jetzt, wenn es nicht greift.** Vor dem
   Scannen rechnet der Browser jedes Foto auf 1200 Pixel herunter. An fünf
-  Stellen konnte er dabei stillschweigend das Original durchreichen – und
-  genau das war die Vorgeschichte der verrutschten Rahmen aus 2.80.1: Der
-  Server bekam ein größeres Bild, als der Browser annahm. Jeder dieser fünf
-  Ausgänge schreibt jetzt seinen Grund in die Spur (*Mehr → Wartung*).
+  Stellen konnte er dabei stillschweigend das Original durchreichen. Das war
+  die **vermutete** Ursache der verrutschten Rahmen aus 2.80.1 – sie war es
+  nicht (siehe dort). Die fünf stummen Ausgänge bleiben trotzdem ein blinder
+  Fleck, und jeder schreibt jetzt seinen Grund in die Spur
+  (*Mehr → Wartung*).
 
   Dazu eine Zeile im **Container-Protokoll**, wenn der Server einen Rahmen
   umrechnen musste. Die Spur im Browser liegt auf dem Gerät; diese Zeile ist
@@ -68,10 +85,19 @@
 
   Der Erkennungsdienst rahmt sauber ein; das wurde eigens geprüft, indem der
   zurückgegebene Rahmen in ein Foto gezeichnet wurde. Nur gilt er für das
-  Bild, das **er** bekommen hat – und der Server verkleinert vorher auf 1200
-  Pixel. Der Browser zeichnete ihn aber in den Maßen *seines* Bildes. Schickt
-  er etwas Größeres, verschiebt sich alles um genau dieses Verhältnis: Auf
-  dem gemessenen Foto waren es 1200/1400, also 0,86.
+  Bild, auf dem **er** gearbeitet hat – und Brickognize rechnet selbst auf
+  höchstens 1024 Pixel herunter. Aus den 900×1200, die der Browser schickt,
+  werden dort 768×1024; der Browser zeichnete den Rahmen aber in den Maßen
+  seines eigenen Bildes, also um 1024/1200 = **0,853** zu klein und
+  entsprechend zu weit links oben.
+
+  **Nachtrag vom selben Tag:** In der ersten Fassung dieses Eintrags stand
+  als Ursache, der Browser habe ein zu großes Bild geschickt (1200/1400).
+  Das war falsch, belegt durch die Protokollzeile aus 2.80.2: `Upload
+  900x1200, Dienst 768x1024`. Die Probe, die zu dem Fehlschluss führte,
+  hatte zwei Bilder **unter** 1024 verglichen – dort verkleinert der Dienst
+  nichts. Die Lösung bleibt dieselbe, denn sie rechnet mit den Zahlen aus
+  der Antwort und nicht mit einer Annahme.
 
   Der Server rechnet den Rahmen jetzt in die Maße des Bildes zurück, das er
   bekommen hat – samt EXIF-Drehung. Beide Zahlen dafür liefert der Dienst
