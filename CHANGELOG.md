@@ -45,6 +45,23 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.80.0 – September 2026
+
+### Behoben
+- 🏷 **Im Browser-Reiter stand auf jeder Instanz „FINN".** Das App-Symbol
+  trägt seit 2.2.0 den eigenen Anzeigenamen – das kleine Symbol im Reiter
+  aber nicht: `/favicon.ico` reichte eine feste Datei aus dem Repo durch.
+
+  Aufgefallen ist es erst, weil es auf der Instanz, auf der entwickelt
+  wird, richtig aussah. Nachgemessen am 20.09.2026 an einer fremden
+  Instanz: `/icon/192.png` lieferte dort ein Symbol mit **ihrem** Namen,
+  `/favicon.ico` dieselbe Datei wie das Repo, Prüfsumme gleich.
+
+  Jetzt kommt auch das Reiter-Symbol aus dem Erzeuger, als .ico mit den
+  drei Größen, die Browser abholen. Und die **mitgelieferten** Symbole
+  (`frontend/icons/`) sind namenlos: Sie sind der Rückfall, wenn Pillow
+  fehlt, und liegen öffentlich im Repo.
+
 ## 2.79.2 – September 2026
 
 ### Behoben

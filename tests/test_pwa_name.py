@@ -3,6 +3,9 @@
 Legt man Brickfolio aufs Handy, steht dort der Name aus dem Manifest – und der
 war bis 2.2.0 fest „Finn's Brickfolio", samt „FINN" im Symbol. Beides kommt
 jetzt aus der Einstellung, die auch Titel und Logo speist.
+
+Das Symbol im Browser-Reiter blieb dabei bis 2.79.2 zurück: `/favicon.ico`
+reichte eine feste Datei durch. Seit 2.80.0 kommt auch sie aus dem Erzeuger.
 """
 import time
 
@@ -74,3 +77,33 @@ def test_symbol_kommt_beim_zweiten_mal_aus_dem_zwischenspeicher(client):
     vorher = len(main._icon_cache)
     client.get("/icon/192.png")
     assert len(main._icon_cache) == vorher
+
+
+# ── Das Reiter-Symbol ──────────────────────────────────────────────────
+# Es kam bis 2.79.2 als feste Datei aus dem Repo – mit „FINN" darin, auf
+# jeder fremden Instanz. Die Proben hier halten fest, dass es erzeugt wird.
+
+def test_favicon_ist_ein_ico(client):
+    r = client.get("/favicon.ico")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/x-icon"
+    assert r.content[:4] == b"\x00\x00\x01\x00", "kein ICO-Behälter"
+
+
+def test_favicon_aendert_sich_mit_dem_namen(client):
+    eins = client.get("/favicon.ico").content
+    client.post("/api/settings/owner_name", json={"name": "Sven"})
+    zwei = client.get("/favicon.ico").content
+    assert eins != zwei, "Das Reiter-Symbol muss den neuen Namen zeigen"
+
+
+def test_favicon_ist_nicht_die_mitgelieferte_datei(client):
+    """Der Rückfall darf nicht die Regel sein.
+
+    Genau das war der Fehler: Die Route reichte die Datei durch, und
+    niemandem fiel es auf, weil sie auf Svens Instanz richtig aussah.
+    """
+    import os
+    mitgeliefert = open(os.path.join(
+        main.FRONTEND_DIR, "icons", "favicon.ico"), "rb").read()
+    assert client.get("/favicon.ico").content != mitgeliefert

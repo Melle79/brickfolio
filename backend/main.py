@@ -2694,9 +2694,31 @@ def update_status(user: dict = Depends(current_user)):
 
 @app.get("/favicon.ico")
 def favicon():
+    """Das Symbol im Browser-Reiter – aus demselben Erzeuger wie /icon/….
+
+    Bis 2.79.2 lag hier eine feste Datei aus dem Repo, und die trug „FINN".
+    Damit stand auf **jeder** Instanz dieser Name im Reiter, obwohl das
+    App-Symbol längst den eigenen zeigte: Am 20.09.2026 lieferte Pauls
+    Instanz unter `/icon/192.png` ein „PAUL"-Symbol und unter
+    `/favicon.ico` dieselbe Datei wie das Repo, Prüfsumme gleich.
+
+    Fällt der Erzeuger aus (kein Pillow), bleibt die mitgelieferte Datei –
+    sie ist seit 2.80.0 namenlos.
+    """
     from fastapi.responses import FileResponse
-    return FileResponse(os.path.join(FRONTEND_DIR, "icons", "favicon.ico"),
-                        media_type="image/x-icon")
+    wer = _owner_name().upper()[:12]
+    schluessel = (wer, "ico")
+    if schluessel not in _icon_cache:
+        try:
+            gebaut = _ico_bauen(wer)
+        except Exception:
+            return FileResponse(
+                os.path.join(FRONTEND_DIR, "icons", "favicon.ico"),
+                media_type="image/x-icon")
+        _icon_cache.clear()          # Name geändert: alte Größen sind hinfällig
+        _icon_cache[schluessel] = gebaut
+    return Response(_icon_cache[schluessel], media_type="image/x-icon",
+                    headers={"Cache-Control": "public, max-age=3600"})
 
 
 def _offer_percent() -> int:
@@ -8189,6 +8211,21 @@ def icon(groesse: int):
         _icon_cache[schluessel] = _icon_bauen(wer, groesse)
     return Response(_icon_cache[schluessel], media_type="image/png",
                     headers={"Cache-Control": "public, max-age=3600"})
+
+
+def _ico_bauen(wer: str) -> bytes:
+    """Dasselbe Symbol als .ico, in den drei Größen, die Browser abholen.
+
+    Ein .ico ist ein Behälter; Pillow packt aus dem großen Bild selbst die
+    kleineren. Gerechnet wird aus dem 192er, nicht aus dem 512er – der
+    Schriftzug bleibt so beim Verkleinern lesbarer.
+    """
+    import io as _io
+    from PIL import Image
+    im = Image.open(_io.BytesIO(_icon_bauen(wer, 192))).convert("RGBA")
+    puffer = _io.BytesIO()
+    im.save(puffer, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
+    return puffer.getvalue()
 
 
 def _icon_bauen(wer: str, groesse: int) -> bytes:
