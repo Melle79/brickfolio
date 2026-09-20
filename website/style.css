@@ -65,7 +65,8 @@ header { background: var(--card); border-bottom: 1px solid var(--line); }
   padding-top: 14px; padding-bottom: 14px; }
 .bar img { width: 34px; height: 34px; border-radius: 9px; }
 .bar strong { font-weight: 900; font-size: 1.22rem; }
-.bar nav { margin-left: auto; display: flex; gap: 18px; flex-wrap: wrap; }
+.bar nav { margin-left: auto; display: flex; gap: 15px; flex-wrap: wrap;
+  font-size: .96rem; }
 .bar nav a { color: var(--muted); text-decoration: none; }
 .bar nav a:hover { color: var(--ink); }
 
@@ -179,6 +180,14 @@ h1, h2, h3, p { overflow-wrap: break-word; }
 
 @media (max-width: 860px) {
   .shots, .grid, .ways, footer .cols { grid-template-columns: 1fr; }
+}
+
+/* ── Das Klappmenü kommt früher als das übrige Layout ──────────────────
+   Acht Punkte brauchen samt Logo rund 1040 Pixel. Zwischen dieser Grenze
+   und den 860 Pixeln des Spaltenumbruchs stand das Menü deshalb in zwei
+   Zeilen – auf einem 1024er Laptop also immer. Der Knopf kommt darum
+   eher als der Rest. */
+@media (max-width: 1000px) {
   /* Ohne `flex-wrap` bleibt die Leiste einzeilig und die Breitenangabe
      der Navigation verpufft: Das Symbol staende dann mitten neben einem
      vierzeiligen Menue. */
@@ -286,4 +295,27 @@ footer .wrap p { margin: 0; }
   .scannerbild { grid-template-columns: 1fr; }
   /* Auf dem Handy nimmt das Fenster sonst zwei Bildschirmhoehen ein. */
   .scannerbild figure { max-width: 320px; margin: 0 auto; }
+}
+
+/* ── Das Aufmacherfoto: die Geste vor dem Ergebnis ─────────────────────
+   Der Rahmen um den Treffer liegt als eigenes Element darueber, in Prozent
+   der Bildflaeche. So braucht eine Korrektur kein neues Foto, und auf dem
+   Handy sitzt er genauso wie auf dem Rechner. */
+.szene { margin: 30px auto 0; max-width: 380px; }
+.szene-bild { position: relative; line-height: 0; }
+.szene-bild img {
+  width: 100%; height: auto; display: block;
+  border-radius: var(--radius); border: 1px solid var(--line);
+  box-shadow: var(--shadow); background: var(--card);
+}
+/* Der Screenshot liegt auf dem leeren Display des Fotos. Die Werte sind in
+   Prozent der Bildflaeche gemessen, damit er auf jeder Groesse sitzt. */
+.szene-bild .display {
+  position: absolute;
+  left: 13.4%; top: 7.4%; width: 71.2%; height: 69.0%;
+  object-fit: cover; object-position: top center;
+  border: 0; border-radius: 5px; box-shadow: none;
+}
+.szene figcaption {
+  color: var(--muted); font-size: .95rem; margin-top: 10px; line-height: 1.5;
 }

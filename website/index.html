@@ -35,11 +35,11 @@
     </button>
     <nav id="hauptmenue">
       <a href="#funktionen">Was es kann</a>
+      <a href="#desktop">Am Rechner</a>
+      <a href="#scanner">Live-Scanner</a>
       <a href="#nas">Auf der NAS</a>
       <a href="#installieren">Andere Wege</a>
-      <a href="#desktop">Am Rechner</a>
       <a href="#unterwegs">Von unterwegs</a>
-      <a href="#scanner">Live-Scanner</a>
       <a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md">Handbuch</a>
       <a href="https://github.com/Melle79/brickfolio">GitHub</a>
     </nav>
@@ -77,11 +77,24 @@
     Konto, keine Wolke, kein Abo: Brickfolio läuft auf deinem Rechner, und
     die Sammlung bleibt dort.
   </p>
-  <div class="btns">
-    <a class="btn btn-main" href="#nas">Auf der NAS installieren</a>
-    <a class="btn btn-ghost" href="https://github.com/Melle79/brickfolio">Quellcode auf GitHub</a>
-    <a class="btn btn-ghost" href="https://hub.docker.com/r/melle79/brickfolio">Docker Hub</a>
-  </div>
+
+  <!-- Zuerst die Geste, dann das Ergebnis: Das Foto zeigt, was man tut -
+       fotografieren -, die drei Aufnahmen daneben, was dabei herauskommt.
+       Der Treffer-Rahmen liegt als eigenes Element ueber dem Bild und nicht
+       im Bild selbst: So sitzt er auf jeder Groesse gleich und laesst sich
+       verschieben, ohne das Foto neu zu erzeugen. -->
+  <!-- Das Foto ist erzeugt, der Bildschirminhalt nicht: Auf dem leeren
+       Display liegt die echte Aufnahme der App. So zeigt das Bild die Geste
+       und zugleich das Programm - und der Screenshot laesst sich austauschen,
+       ohne das Foto neu zu erzeugen. -->
+  <figure class="szene">
+    <div class="szene-bild">
+      <img src="assets/scannen-handy.jpg" width="560" height="1090"
+           alt="Eine Hand hält ein Handy über eine Minifigur auf dem Tisch; auf dem Bildschirm läuft Brickfolio">
+      <img class="display" src="assets/handy-sammlung.png" width="560" height="940" alt="">
+    </div>
+    <figcaption>Draufhalten, Treffer antippen – und die Figur steht mit Preis in der Sammlung</figcaption>
+  </figure>
 
   <div class="shots">
     <!-- Auf dem Handy steht hier die Handy-Ansicht: Die Rechner-Aufnahme
@@ -130,7 +143,24 @@
         <h3>Tauschen</h3>
         <p>Mehrere Installationen verbinden sich über einen kleinen
         Vermittler. Nachrichten sind Ende-zu-Ende verschlüsselt.</p></div>
-      <div class="card"><span class="tag">🔒</span>
+      <div class="card"><span class="tag">🔎</span>
+        <h3>Mehrere auf einmal</h3>
+        <p>Eine Handvoll Figuren nebeneinander legen und einmal
+        fotografieren: „Alle Figuren erkennen“ arbeitet sie nacheinander ab –
+        erkennen, das Gefundene ausblenden, erneut fragen, bis nichts mehr
+        kommt. Wie viele es sind, muss niemand vorgeben. Vier Klonkrieger
+        dicht an dicht: alle vier, in 1,2 Sekunden.</p></div>
+
+    <div class="card"><span class="tag">📥</span>
+        <h3>Umziehen statt neu anfangen</h3>
+        <p>Wer schon eine Liste hat, tippt sie nicht noch einmal ab: Eine
+        Excel-Erfassung oder eine BrickLink-Inventarliste als CSV einlesen –
+        Pflicht ist allein die Nummer. Was schon drin ist, wird
+        zusammengeführt statt verdoppelt, fehlerhafte Zeilen werden gemeldet
+        statt verschluckt. Namen, Bilder und Preise holt die App danach
+        selbst nach.</p></div>
+
+    <div class="card"><span class="tag">🔒</span>
         <h3>Deine Daten bleiben da</h3>
         <p>Kein Brickfolio-Dienst dazwischen, keine Anmeldung bei uns. Was
         gespeichert wird, liegt auf deinem Server.</p></div>
@@ -138,6 +168,93 @@
   </div>
 </section>
 
+<section id="desktop">
+  <div class="wrap">
+    <h2>Am Rechner wie ein Programm</h2>
+    <p class="lead-small">Brickfolio läuft im Browser – aber es muss nicht
+    darin bleiben. Chrome, Edge und Safari können die Seite <strong>als
+    Programm installieren</strong>: eigenes Fenster, eigenes Symbol im Dock
+    oder in der Taskleiste, kein Adressfeld, keine Lesezeichen. Es startet
+    wie jede andere Anwendung.</p>
+
+    <div class="grid">
+      <div class="card"><h3>So geht es</h3>
+        <p>In der Adressleiste erscheint rechts ein Symbol zum Installieren
+        (Chrome und Edge). Bei Safari: <em>Ablage → Zum Dock hinzufügen</em>.
+        Danach liegt Brickfolio bei den Programmen.</p></div>
+      <div class="card"><h3>Breiter Bildschirm, mehr Übersicht</h3>
+        <p>Am Rechner steht die Navigation links und die Sammlung zweispaltig
+        daneben. Auf dem Handy rutscht sie nach unten, alles wird einspaltig
+        – dieselbe App, zwei Zuschnitte.</p></div>
+      <div class="card"><h3>Auch ohne Netz</h3>
+        <p>Einmal geladen, bleibt die Oberfläche verfügbar. Zum Nachschlagen
+        der Sammlung genügt der eigene Server – wer unterwegs ist, kommt per
+        VPN oder Tunnel heran.</p></div>
+    </div>
+
+    <div class="beide">
+      <figure><img src="assets/sammlung.png" width="1280" height="860" alt="Brickfolio am Rechner: Navigation links, Sammlung zweispaltig">
+        <figcaption>Am Rechner</figcaption></figure>
+      <figure class="phone"><img src="assets/handy-sammlung.png" width="560" height="940" alt="Brickfolio auf dem Handy: Navigation unten, Sammlung einspaltig">
+        <figcaption>Auf dem Handy</figcaption></figure>
+    </div>
+
+    <p class="note"><strong>Dasselbe gilt fürs Handy:</strong> „Zum
+    Startbildschirm hinzufügen" macht daraus eine App mit eigenem Symbol.
+    Praktisch, wenn man auf dem Flohmarkt schnell nachsehen will, ob eine
+    Figur schon da ist – dafür muss die App allerdings von unterwegs
+    erreichbar sein, siehe unten.</p>
+  </div>
+</section>
+
+<section class="alt" id="scanner">
+  <div class="wrap">
+    <h2>Der Live-Scanner</h2>
+    <p class="lead-small">Ein eigenes kleines Programm für Mac und Windows –
+    gedacht für <strong>Auktions-Streams</strong>. Der Verkäufer hält eine
+    Figur in die Kamera, du ziehst am Bildschirm einen Rahmen darum, und der
+    Treffer steht mit Nummer, Ø-Preisen und „habt ihr schon“ da. Ohne
+    Bildschirmfoto, ohne Datei, ohne Ziehen und Ablegen.</p>
+
+    <p class="hinweis"><strong>Er läuft nicht für sich allein.</strong> Der
+    Live-Scanner ist die Fernbedienung zu einer <strong>laufenden
+    Brickfolio-Instanz</strong>: Dort meldet er sich beim ersten Start mit
+    Adresse, Benutzername und Passwort an, von dort kommen Sammlung, Listen
+    und Preise, und dorthin bucht er. Ohne eigene Instanz hat er nichts,
+    woran er sich wenden könnte.</p>
+
+    <div class="scannerbild">
+      <figure>
+        <img src="assets/livescanner.png" width="626" height="1015"
+             alt="Das Fenster des Live-Scanners: oben die Knöpfe zum Rahmenziehen, darunter die eigene Aufnahme neben dem Katalogbild auf grünem Grund, eine Trefferliste mit Quoten und darunter Name, Nummer, Preise und die Zeile „1× in eurer Sammlung“">
+        <figcaption>Musterbild: Grün heißt „habt ihr schon“ – darunter
+        Nummer, Trefferquote, Ø-Preise und die Knöpfe zum Buchen.</figcaption>
+      </figure>
+      <div class="karten">
+        <div class="card"><h3>Für den Moment gemacht</h3>
+          <p>Im Stream zählt jede Sekunde. Ein Tastendruck genügt; auf Wunsch
+          löst er selbst aus, sobald im gemerkten Bereich eine neue Figur
+          erscheint.</p></div>
+        <div class="card"><h3>Selten nur ein Treffer</h3>
+          <p>Die Erkennung liefert eine Liste mit Quoten – bei Varianten
+          derselben Figur liegt die richtige oft auf Platz zwei. Ein Klick
+          wechselt die Zeile, Preise und Bild gehen mit.</p></div>
+        <div class="card"><h3>Buchen mit einem Klick</h3>
+          <p>Vom Treffer direkt in Sammlung, Wunschliste oder auf eine
+          Einkaufsliste – über dieselbe Schnittstelle, die auch der Browser
+          benutzt. Gebucht wird nur, was du anklickst.</p></div>
+        <div class="card"><h3>Bringt alles mit</h3>
+          <p>Mac und Windows, nichts nachzuinstallieren, und er hält sich
+          selbst aktuell. Eigenes Projekt, eigene Veröffentlichungen.</p></div>
+      </div>
+    </div>
+
+    <p class="note">
+      <a href="https://github.com/Melle79/brickfolio-livescan">Live-Scanner auf GitHub</a>
+      · <a href="https://github.com/Melle79/brickfolio-livescan/releases/latest">Neueste Fassung laden</a>
+    </p>
+  </div>
+</section>
 
 <section id="nas">
   <div class="wrap">
@@ -217,7 +334,6 @@
   </div>
 </section>
 
-
 <section class="alt" id="installieren">
   <div class="wrap">
     <h2>Andere Wege</h2>
@@ -271,48 +387,7 @@ docker compose up -d --build</pre>
   </div>
 </section>
 
-
-<section id="desktop">
-  <div class="wrap">
-    <h2>Am Rechner wie ein Programm</h2>
-    <p class="lead-small">Brickfolio läuft im Browser – aber es muss nicht
-    darin bleiben. Chrome, Edge und Safari können die Seite <strong>als
-    Programm installieren</strong>: eigenes Fenster, eigenes Symbol im Dock
-    oder in der Taskleiste, kein Adressfeld, keine Lesezeichen. Es startet
-    wie jede andere Anwendung.</p>
-
-    <div class="grid">
-      <div class="card"><h3>So geht es</h3>
-        <p>In der Adressleiste erscheint rechts ein Symbol zum Installieren
-        (Chrome und Edge). Bei Safari: <em>Ablage → Zum Dock hinzufügen</em>.
-        Danach liegt Brickfolio bei den Programmen.</p></div>
-      <div class="card"><h3>Breiter Bildschirm, mehr Übersicht</h3>
-        <p>Am Rechner steht die Navigation links und die Sammlung zweispaltig
-        daneben. Auf dem Handy rutscht sie nach unten, alles wird einspaltig
-        – dieselbe App, zwei Zuschnitte.</p></div>
-      <div class="card"><h3>Auch ohne Netz</h3>
-        <p>Einmal geladen, bleibt die Oberfläche verfügbar. Zum Nachschlagen
-        der Sammlung genügt der eigene Server – wer unterwegs ist, kommt per
-        VPN oder Tunnel heran.</p></div>
-    </div>
-
-    <div class="beide">
-      <figure><img src="assets/sammlung.png" width="1280" height="860" alt="Brickfolio am Rechner: Navigation links, Sammlung zweispaltig">
-        <figcaption>Am Rechner</figcaption></figure>
-      <figure class="phone"><img src="assets/handy-sammlung.png" width="560" height="940" alt="Brickfolio auf dem Handy: Navigation unten, Sammlung einspaltig">
-        <figcaption>Auf dem Handy</figcaption></figure>
-    </div>
-
-    <p class="note"><strong>Dasselbe gilt fürs Handy:</strong> „Zum
-    Startbildschirm hinzufügen" macht daraus eine App mit eigenem Symbol.
-    Praktisch, wenn man auf dem Flohmarkt schnell nachsehen will, ob eine
-    Figur schon da ist – dafür muss die App allerdings von unterwegs
-    erreichbar sein, siehe unten.</p>
-  </div>
-</section>
-
-
-<section class="alt" id="unterwegs">
+<section id="unterwegs">
   <div class="wrap">
     <h2>Von unterwegs darauf zugreifen</h2>
     <p class="lead-small">Brickfolio läuft zunächst nur im <strong>eigenen
@@ -340,57 +415,6 @@ docker compose up -d --build</pre>
     </div>
   </div>
 </section>
-
-
-<section id="scanner">
-  <div class="wrap">
-    <h2>Der Live-Scanner</h2>
-    <p class="lead-small">Ein eigenes kleines Programm für Mac und Windows –
-    gedacht für <strong>Auktions-Streams</strong>. Der Verkäufer hält eine
-    Figur in die Kamera, du ziehst am Bildschirm einen Rahmen darum, und der
-    Treffer steht mit Nummer, Ø-Preisen und „habt ihr schon“ da. Ohne
-    Bildschirmfoto, ohne Datei, ohne Ziehen und Ablegen.</p>
-
-    <p class="hinweis"><strong>Er läuft nicht für sich allein.</strong> Der
-    Live-Scanner ist die Fernbedienung zu einer <strong>laufenden
-    Brickfolio-Instanz</strong>: Dort meldet er sich beim ersten Start mit
-    Adresse, Benutzername und Passwort an, von dort kommen Sammlung, Listen
-    und Preise, und dorthin bucht er. Ohne eigene Instanz hat er nichts,
-    woran er sich wenden könnte.</p>
-
-    <div class="scannerbild">
-      <figure>
-        <img src="assets/livescanner.png" width="626" height="1015"
-             alt="Das Fenster des Live-Scanners: oben die Knöpfe zum Rahmenziehen, darunter die eigene Aufnahme neben dem Katalogbild auf grünem Grund, eine Trefferliste mit Quoten und darunter Name, Nummer, Preise und die Zeile „1× in eurer Sammlung“">
-        <figcaption>Musterbild: Grün heißt „habt ihr schon“ – darunter
-        Nummer, Trefferquote, Ø-Preise und die Knöpfe zum Buchen.</figcaption>
-      </figure>
-      <div class="karten">
-        <div class="card"><h3>Für den Moment gemacht</h3>
-          <p>Im Stream zählt jede Sekunde. Ein Tastendruck genügt; auf Wunsch
-          löst er selbst aus, sobald im gemerkten Bereich eine neue Figur
-          erscheint.</p></div>
-        <div class="card"><h3>Selten nur ein Treffer</h3>
-          <p>Die Erkennung liefert eine Liste mit Quoten – bei Varianten
-          derselben Figur liegt die richtige oft auf Platz zwei. Ein Klick
-          wechselt die Zeile, Preise und Bild gehen mit.</p></div>
-        <div class="card"><h3>Buchen mit einem Klick</h3>
-          <p>Vom Treffer direkt in Sammlung, Wunschliste oder auf eine
-          Einkaufsliste – über dieselbe Schnittstelle, die auch der Browser
-          benutzt. Gebucht wird nur, was du anklickst.</p></div>
-        <div class="card"><h3>Bringt alles mit</h3>
-          <p>Mac und Windows, nichts nachzuinstallieren, und er hält sich
-          selbst aktuell. Eigenes Projekt, eigene Veröffentlichungen.</p></div>
-      </div>
-    </div>
-
-    <p class="note">
-      <a href="https://github.com/Melle79/brickfolio-livescan">Live-Scanner auf GitHub</a>
-      · <a href="https://github.com/Melle79/brickfolio-livescan/releases/latest">Neueste Fassung laden</a>
-    </p>
-  </div>
-</section>
-
 
 <section class="alt">
   <div class="wrap">
