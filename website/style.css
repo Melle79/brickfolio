@@ -81,7 +81,7 @@ header { background: var(--card); border-bottom: 1px solid var(--line); }
 .shots { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); margin: 38px 0 0; }
 .shots figure { margin: 0; }
 .shots img {
-  width: 100%; display: block; border-radius: var(--radius);
+  width: 100%; height: auto; display: block; border-radius: var(--radius);
   border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--card);
 }
 .shots figcaption { color: var(--muted); font-size: .9rem; margin-top: 8px; }
@@ -126,9 +126,27 @@ footer h4 { color: #fff; font-weight: 800; margin: 0 0 .5em; font-size: 1rem; }
 footer ul { list-style: none; margin: 0; padding: 0; }
 footer li { margin-bottom: 6px; }
 
+/* ── Nichts darf breiter werden als der Bildschirm ─────────────────────
+   Ein Gitterfeld ist von sich aus mindestens so breit wie sein laengster
+   nicht umbrechbarer Inhalt. Die YAML-Bloecke machten die Seite auf dem
+   Handy dadurch 573 statt 375 Pixel breit — gemessen am 20.09.2026. Erst
+   `min-width: 0` erlaubt dem Feld zu schrumpfen, und dann rollt der
+   Befehlsblock in sich statt die ganze Seite mitzunehmen. */
+.grid > *, .ways > *, .steps > *, .shots > *, .beide > *,
+footer .cols > * { min-width: 0; }
+
+/* Lange Pfade und Adressen umbrechen notfalls mitten im Wort — ohne das
+   schiebt `/volume1/docker/brickfolio/data` die Karte auseinander. */
+code { overflow-wrap: break-word; }
+h1, h2, h3, p { overflow-wrap: break-word; }
+
 @media (max-width: 860px) {
   .shots, .grid, .ways, footer .cols { grid-template-columns: 1fr; }
-  .bar nav { width: 100%; margin: 6px 0 0; }
+  /* Ohne `flex-wrap` bleibt die Leiste einzeilig und die Breitenangabe
+     der Navigation verpufft: Das Symbol staende dann mitten neben einem
+     vierzeiligen Menue. */
+  .bar { flex-wrap: wrap; }
+  .bar nav { width: 100%; margin: 8px 0 0; gap: 8px 16px; }
 }
 
 /* ── Die NAS bekommt Platz: vier nummerierte Schritte ──────────────────
@@ -160,6 +178,14 @@ footer li { margin-bottom: 6px; }
 
 @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
 
+/* Auf dem Handy sind 58 Pixel Einzug ein Sechstel der Breite. Dort steht
+   die Nummer darum ueber der Ueberschrift und der Text nutzt die Karte. */
+@media (max-width: 560px) {
+  .step { padding: 16px; }
+  .step .num { position: static; margin-bottom: 10px; }
+  pre { font-size: .78rem; padding: 12px; }
+}
+
 /* ── Rechner und Handy nebeneinander ───────────────────────────────────
    Dieselbe App in zwei Zuschnitten. Das Handybild steht schmaler, damit
    der Unterschied ohne Bildunterschrift erkennbar ist. */
@@ -167,7 +193,7 @@ footer li { margin-bottom: 6px; }
   align-items: end; margin-top: 26px; }
 .beide figure { margin: 0; }
 .beide img {
-  width: 100%; display: block; border-radius: var(--radius);
+  width: 100%; height: auto; display: block; border-radius: var(--radius);
   border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--card);
 }
 .beide figcaption { color: var(--muted); font-size: .9rem; margin-top: 8px; }
@@ -184,8 +210,8 @@ footer li { margin-bottom: 6px; }
   background: var(--card); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow);
 }
-/* Was im Entwurf noch zu tun ist, soll auffallen und nicht versehentlich
-   so veroeffentlicht werden. */
+/* Der gelbe Merkkasten: fuer den einen Satz, den man nicht ueberlesen
+   darf — beim Live-Scanner die noetige Instanz. */
 .text .hinweis, .hinweis {
   display: block; background: #FFF6D6; border-left: 4px solid var(--yellow);
   padding: 12px 14px; border-radius: 0 10px 10px 0; color: #4A4325;
@@ -193,3 +219,23 @@ footer li { margin-bottom: 6px; }
 }
 #kontakt { background: #FFF0A8; padding: 1px 6px; border-radius: 5px; }
 footer .wrap p { margin: 0; }
+
+/* ── Der Live-Scanner: das Fenster neben den Karten ────────────────────
+   Das Fenster ist hoch und schmal; nebeneinander gestellt, tragen die
+   vier Karten genau die Hoehe. Untereinander waere das Bild so gross,
+   dass es den Abschnitt allein fuellt. */
+.scannerbild { display: grid; grid-template-columns: 320px 1fr; gap: 20px;
+  align-items: start; margin: 18px 0 0; }
+.scannerbild figure { margin: 0; }
+.scannerbild img {
+  width: 100%; height: auto; display: block; border-radius: var(--radius);
+  border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--card);
+}
+.scannerbild figcaption { color: var(--muted); font-size: .9rem; margin-top: 8px; }
+.scannerbild .karten { display: grid; gap: 16px; }
+
+@media (max-width: 860px) {
+  .scannerbild { grid-template-columns: 1fr; }
+  /* Auf dem Handy nimmt das Fenster sonst zwei Bildschirmhoehen ein. */
+  .scannerbild figure { max-width: 320px; margin: 0 auto; }
+}

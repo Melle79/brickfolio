@@ -2,3 +2,10 @@
 # Konfiguration unter brickfolio.cc/wrangler.jsonc offen.
 wrangler.jsonc
 .assetsignore
+
+# Wranglers eigener Arbeitsordner. Er liegt im selben Verzeichnis, aus dem
+# ausgeliefert wird: Am 20.09.2026 standen darum `.wrangler/cache/
+# wrangler-account.json` (Kontonummer und -name) und eine Quellkarte des
+# leeren Workers oeffentlich im Netz.
+.wrangler
+.wrangler/**
