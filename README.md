@@ -27,6 +27,12 @@ kommen von [BrickLink](https://www.bricklink.com) und
   (mit 🔍-Symbol und ✕ zum Leeren), Sortierung und Typ-Filter
 - 🔎 Katalogsuche ab drei Zeichen, **10 Treffer pro Seite** mit „Weitere
   Ergebnisse laden" – alle Treffer sind erreichbar
+- 🇩🇪 **Deutsch suchen, ohne KI**: Die Katalognamen sind englisch, gesucht
+  wird auf Deutsch. Die App bringt dafür ein Wörterbuch mit (rund 1.400
+  Stichwörter), streift Endungen ab und zerlegt zusammengesetzte Wörter –
+  „Protokolldroide" wird zu `protocol droid`. Teil und Farbe lassen sich
+  kombinieren: „Figur mit blauem Hut, roten Beinen und grünem Torso". Eine
+  lokale KI ist weiterhin nützlich, aber nicht mehr nötig
 - 👥 **Figuren beim Set übernehmen**: Beim Hinzufügen eines Sets fragt die App,
   welche der enthaltenen Minifiguren dabei sind (alle, keine oder eine Auswahl,
   inklusive Zustand) – ohne den Gesamtwert doppelt zu zählen
