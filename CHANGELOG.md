@@ -45,6 +45,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.84.1 – September 2026
+
+### Behoben
+- 📘 **Eine Dublette im Handbuch wieder entfernt.** 2.84.0 hat einen
+  Abschnitt 9.1 „Wie der Gesamtwert gerechnet wird" angelegt, weil ein
+  Suchlauf die vorhandene Erklärung nicht fand – gesucht wurde nach
+  „bereinigt", im Handbuch steht „**B**ereinigt" am Satzanfang. Die Regel
+  stand also längst in Kapitel 13, und das Handbuch erklärte sie danach
+  zweimal mit verschiedenen Worten. 9.1 ist wieder raus, Kapitel 9 verweist
+  nur noch auf 13, und die Hilfe verlinkt dorthin.
+
+  *Diese Fassung sollte man 2.84.0 vorziehen.*
+
 ## 2.84.0 – September 2026
 
 ### Geändert
@@ -74,12 +87,10 @@
   der man dort suchen würde. Vier Zeilen: beide Sprachen, Merkmale
   kombinieren, reine Nummern, und dass ein *kürzerer* Begriff mehr bringt
   als ein längerer.
-- 📘 **Handbuch, Abschnitt 9.1 „Wie der Gesamtwert gerechnet wird".** Beim
-  Kürzen fiel auf, dass die Regel zu den nicht doppelt gezählten
-  Set-Figuren **nur** in der Hilfe stand – im Handbuch fehlte sie ganz.
-  Die ausführliche Fassung ist deshalb dorthin umgezogen (inklusive einer
-  Tabelle, wo bereinigt wird und wo nicht), statt gekürzt zu werden; die
-  Hilfe verlinkt sie.
+- 🔗 **Die Hilfe verlinkt das Handbuch abschnittsweise.** Was beim Kürzen
+  wegfiel, ist nicht verloren – „Wie der Wert berechnet wird" zeigt jetzt
+  auf [Kapitel 13](docs/HANDBUCH.md#13-die-preis-automatik-im-detail), wo
+  die Rechnung seit jeher ausführlich steht.
 
 ## 2.83.0 – September 2026
 

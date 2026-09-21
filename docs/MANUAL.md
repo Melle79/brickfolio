@@ -1165,53 +1165,8 @@ Visible to everyone (📊 in the tab bar), loads automatically when opened:
   booked in and taken into the collection drops out of the calculation without
   having to delete the list.
 
-### 9.1 How the total value is calculated
-
-**Where the prices come from.** For every item the app fetches BrickLink's
-**average sold prices over the last 6 months** – separately for *new* and
-*used*. It always uses the price matching the **condition** on record; if
-that one is missing, it falls back to the other. Items without price data
-(hand-entered own builds, for instance) count as zero and are listed as
-*"no price"* below the value widget.
-
-**The sum.** Value of an entry = average price × quantity. The total is
-the sum over all entries – with one important exception.
-
-**Set figures are not counted twice.** On BrickLink a set price covers the
-*complete* set, so its minifigures are already in there. Anyone recording
-sets *and* their figures separately would otherwise have them twice in the
-total. So the app counts sets in full, and of each figure only the copies
-that are **not** sitting in a set of your own.
-
-How many that is: *number of sets owned × how often the figure is in the
-set*, capped at how many you actually have.
-
-> **Example.** The set contains 2 stormtroopers, you own the set once and
-> recorded the figure 3× → 2 sit in the set, **1 counts** as a genuine
-> extra.
-
-With mixed conditions, same-condition copies are assigned first (a used set
-"takes" the used figures). How much was netted out is shown openly beneath
-the tiles in the statistics tab.
-
-**Where it is netted – and where not.** The netting only applies where sets
-and figures meet in *one* number:
-
-| Netted | Full value |
-|---|---|
-| total value | filter **figures** or **sets** in the collection |
-| value widget on filter *all* | individual cards and profiles |
-| split by type/condition | **Top 10 by value** |
-| value by release year | **spent/profit** *(Collector-Pro)* |
-| value-development curve | |
-
-Filter to **figures** (or **sets**) and you see the **full** value of that
-group – there is no second category in play there.
-
-**What stays the same.** The **quantity** does not change – the figures are
-physically yours, wherever they sit. And **spent/profit** keeps using the
-full individual value, because that is about what you paid for the items
-you bought.
+> **How the total value comes about** – and why set figures only count
+> once in it – is in [chapter 13](#13-the-price-automation-in-detail).
 
 ---
 

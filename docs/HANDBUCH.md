@@ -1693,56 +1693,8 @@ Für alle sichtbar (📊 in der Tab-Leiste), lädt beim Öffnen automatisch:
   in die Sammlung übernommen wurde, fällt aus der Rechnung heraus, ohne
   dass die Liste gelöscht werden muss.
 
-### 9.1 Wie der Gesamtwert gerechnet wird
-
-**Woher die Preise kommen.** Für jeden Artikel holt die App die
-**Ø-Verkaufspreise der letzten 6 Monate** von BrickLink – getrennt nach
-*neu* und *gebraucht*. Verwendet wird immer der Preis, der zum
-eingetragenen **Zustand** passt; fehlt er, weicht die App auf den anderen
-Wert aus. Artikel ohne Preisdaten (z. B. manuell erfasste Eigenbauten)
-zählen mit null und stehen als *„ohne Preis"* unter dem Wert-Widget.
-Wann welcher Preis geholt wird, steht in [Kapitel
-13](#13-die-preis-automatik-im-detail).
-
-**Die Rechnung.** Wert eines Eintrags = Ø-Preis × Menge. Der Gesamtwert
-ist die Summe über alle Einträge – mit einer wichtigen Ausnahme.
-
-**Set-Figuren werden nicht doppelt gezählt.** Ein Set-Preis gilt bei
-BrickLink für das *komplette* Set, die Minifiguren sind darin also schon
-enthalten. Wer Sets *und* deren Figuren einzeln erfasst, hätte sie sonst
-zweimal in der Summe. Deshalb rechnet die App so: Sets zählen voll, und
-von jeder Figur zählen nur die Exemplare, die **nicht** in einem eigenen
-Set stecken.
-
-Wie viele das sind: *Anzahl der besessenen Sets × Stückzahl der Figur im
-Set*, höchstens so viele, wie wirklich vorhanden sind.
-
-> **Beispiel.** Das Set enthält 2 Sturmtruppler, du besitzt das Set einmal
-> und hast die Figur 3× erfasst → 2 stecken im Set, **1 zählt** als echtes
-> Extra.
-
-Bei mehreren Zuständen werden zuerst zustandsgleiche Exemplare zugeordnet
-(ein gebrauchtes Set „nimmt" die gebrauchten Figuren). Wie viel dabei
-herausgerechnet wurde, steht offen unter den Kacheln im Statistik-Tab.
-
-**Wo bereinigt wird – und wo nicht.** Die Bereinigung greift nur dort, wo
-Sets und Figuren in *einer* Zahl zusammenkommen:
-
-| Bereinigt | Voller Wert |
-|---|---|
-| Gesamtwert | Filter **Figuren** oder **Sets** in der Sammlung |
-| Wert-Widget bei Filter *Alle* | einzelne Karten und Steckbriefe |
-| Aufteilung nach Typ/Zustand | **Top 10 nach Wert** |
-| Wert nach Erscheinungsjahr | **bezahlt/Gewinn** *(Sammlerprofi)* |
-| Wertentwicklungs-Kurve | |
-
-Filterst du auf **Figuren** (oder **Sets**), siehst du den **vollen** Wert
-dieser Gruppe – dort ist ja keine zweite Kategorie im Spiel.
-
-**Was unverändert bleibt.** Die **Stückzahl** ändert sich nicht – die
-Figuren gehören dir ja physisch, egal wo sie stecken. Und
-**bezahlt/Gewinn** rechnet weiter mit dem vollen Einzelwert, denn dort
-geht es um das, was du für gekaufte Artikel ausgegeben hast.
+> **Wie der Gesamtwert entsteht** – und warum Set-Figuren darin nur
+> einmal zählen – steht in [Kapitel 13](#13-die-preis-automatik-im-detail).
 
 ---
 
