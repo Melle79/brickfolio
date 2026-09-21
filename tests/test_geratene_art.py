@@ -28,15 +28,17 @@ def abzug(tmp_path, monkeypatch):
     with core.db() as conn:
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such, "
-            "img_url, farben, art, merkmale, updated_at) VALUES "
+            "woerter, img_url, farben, art, merkmale, updated_at) VALUES "
             "('sw0021', 'minifig', 'Luke Skywalker (Tatooine)', "
-            "'luke skywalker tatooine', '', 'white, tan', 'knight', "
+            "'luke skywalker tatooine', ' luke skywalker tatooine ', "
+            "'', 'white, tan', 'knight', "
             "'head yellow simple face; torso white tunic', 0)")
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such, "
-            "img_url, farben, art, merkmale, updated_at) VALUES "
+            "woerter, img_url, farben, art, merkmale, updated_at) VALUES "
             "('cas001', 'minifig', 'Knight with Blue Plumes', "
-            "'knight with blue plumes', '', 'blue, silver', 'knight', "
+            "'knight with blue plumes', ' knight with blue plumes ', "
+            "'', 'blue, silver', 'knight', "
             "'helmet silver with blue plumes; torso blue', 0)")
     return True
 

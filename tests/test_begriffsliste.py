@@ -16,6 +16,7 @@ import pytest
 
 import core
 import integrations
+import woerterbuch
 import main
 from fastapi.testclient import TestClient
 
@@ -24,6 +25,12 @@ from fastapi.testclient import TestClient
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "bl.db"))
     core.init_db()
+    # **Das mitgelieferte Wörterbuch bleibt hier außen vor.** Es beantwortet
+    # „Ritter" seit 2.82.0 ohne Modell – richtig so, aber diese Datei prüft
+    # genau den anderen Weg: was passiert, wenn das Modell gefragt wird,
+    # was gemerkt wird und was verfällt. Mit Liste käme die Frage dort nie
+    # an. Der Weg ohne Modell steht in `test_suche_deutsch.py`.
+    monkeypatch.setattr(woerterbuch, "WOERTERBUCH", {})
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"

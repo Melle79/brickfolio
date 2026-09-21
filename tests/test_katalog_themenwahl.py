@@ -18,10 +18,11 @@ from fastapi.testclient import TestClient
 
 def _kat(conn, nr, name):
     conn.execute(
-        "INSERT INTO katalog_index (item_no, item_type, name, such, img_url,"
-        " category_id, jahr, updated_at)"
-        " VALUES (?, 'minifig', ?, ?, '', '65', 2011, ?)",
-        (nr, name, main._such_norm(name), int(time.time())))
+        "INSERT INTO katalog_index (item_no, item_type, name, such, woerter,"
+        " img_url, category_id, jahr, updated_at)"
+        " VALUES (?, 'minifig', ?, ?, ?, '', '65', 2011, ?)",
+        (nr, name, main._such_norm(name), core.suchwoerter(name),
+         int(time.time())))
 
 
 @pytest.fixture

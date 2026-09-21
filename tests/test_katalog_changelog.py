@@ -33,8 +33,9 @@ def abzug(tmp_path, monkeypatch):
                          ("sw9999", "Ziel der Zusammenlegung")):
             conn.execute(
                 "INSERT INTO katalog_index (item_no, item_type, name, such, "
-                "img_url, merkmale, updated_at) VALUES (?, 'minifig', ?, ?, "
-                "'', 'head red', 0)", (nr, name, nr))
+                "woerter, img_url, merkmale, updated_at) VALUES "
+                "(?, 'minifig', ?, ?, ?, '', 'head red', 0)",
+                (nr, name, nr, core.suchwoerter(name)))
     core.set_setting("katalog_log_stand", "2026-8")
     return True
 

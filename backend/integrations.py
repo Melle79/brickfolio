@@ -11,6 +11,7 @@ import requests
 from PIL import Image, ImageOps
 
 import core
+import woerterbuch
 
 BRICKOGNIZE_URL = "https://api.brickognize.com/predict/"
 # Echte Version und ein Kontaktweg: Brickognize stellt seine Erkennung
@@ -1140,8 +1141,20 @@ def suchbegriffe(q: str) -> list:
     gelernt, quelle = begriffe_gelernt(key)
     if gelernt and quelle == "hand":
         return gelernt
+    # **Das mitgelieferte Wörterbuch, vor dem Modell – aber nur, wenn es
+    # die *ganze* Anfrage kennt.** Es kostet nichts, antwortet immer gleich
+    # und braucht keine KI (siehe `woerterbuch.py`). Gelerntes hat Vorrang:
+    # Was auf dieser Instanz schon einmal getroffen hat, weiß mehr über
+    # diese Sammlung als eine allgemeine Liste.
+    halb = []
+    if not gelernt:
+        ganz = woerterbuch.uebersetzen(q, nur_ganz=True)
+        if ganz:
+            return ganz[:4]
+        halb = woerterbuch.uebersetzen(q)
     if not ollama_enabled():
-        return gelernt
+        # Ohne Modell ist die halbe Übersetzung das Beste, was es gibt.
+        return gelernt or halb[:4]
     gemerkt = _begriff_cache.get(key)
     if gemerkt is not None:
         bis, treffer = gemerkt
@@ -1172,6 +1185,9 @@ def suchbegriffe(q: str) -> list:
         if b and b.casefold() != key and b not in begriffe:
             begriffe.append(b[:60])
     begriffe = begriffe[:4]
+    # Das Modell hat nichts hergegeben – dann doch die halbe Übersetzung.
+    if not begriffe and halb:
+        return halb[:4]
     if len(_begriff_cache) >= _CACHE_MAX:
         _begriff_cache.clear()
     # Treffer gelten dauerhaft, ein leeres Ergebnis nur kurz: Sonst macht ein

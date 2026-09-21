@@ -127,6 +127,50 @@ def db():
         conn.close()
 
 
+# Umlaute und ß haben im Deutschen zwei übliche Schreibweisen, und der
+# Suchtext kennt nur `a-z0-9`. **Ohne diese Faltung sind Umlaute
+# Trennzeichen:** „Mütze" zerfiel in „m" + „tze", „König" in „k" + „nig",
+# „Fußball" in „fu" + „ball" – und weil einzelne Buchstaben wegfallen,
+# blieb von der Suche ein Wortfetzen übrig, der zufällig irgendwo passte
+# oder gar nicht. Gefunden am 21.09.2026 beim ersten Trainingslauf der
+# deutschen Suche: Zwölf von zwölf gescheiterten Anfragen enthielten einen
+# Umlaut.
+#
+# Auf die englischen Katalognamen wirkt die Faltung nicht – dort kommt
+# keins dieser Zeichen vor. Sie betrifft nur deutsche Eingaben und selbst
+# vergebene Namen.
+_FALTUNG = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+                          "á": "a", "à": "a", "â": "a", "é": "e", "è": "e",
+                          "ê": "e", "í": "i", "ó": "o", "ô": "o", "ú": "u",
+                          "ç": "c", "ñ": "n"})
+
+
+def falten(text: str) -> str:
+    """Kleinschreibung und Umlaute in ihre zweibuchstabige Form."""
+    return (text or "").lower().translate(_FALTUNG)
+
+
+def suchwoerter(name: str) -> str:
+    """Derselbe Text, aber **wortweise** – mit Leerzeichen ringsum.
+
+    Wofür das gebraucht wird: Die Vorauswahl der Suche fragt mit `LIKE`,
+    und `such` klebt alle Wörter aneinander („crownkingwith"). Ein
+    `LIKE '%king%'` trifft damit auch „Markings" und „Parking" – bei
+    „king" waren das 377 Zeilen, und weil die Vorauswahl bei 400 abbricht,
+    kam kein einziger echter König mehr durch. Die Suche fand nichts,
+    obwohl der Katalog voll davon ist (gemessen am 21.09.2026).
+
+    Mit Leerzeichen davor lässt sich auf **Wortanfang** prüfen:
+    `LIKE '% king%'` trifft „King" und „Kingdom", aber nicht „Markings" –
+    genau die Elle, die `_passt` danach anlegt.
+
+    `such` bleibt daneben bestehen: Es klebt bewusst zusammen, damit
+    „c3 po" den Artikel „C-3PO" findet.
+    """
+    return " " + " ".join(w for w in re.split(r"[^a-z0-9]+", falten(name))
+                          if w) + " "
+
+
 def wortanfaenge(name: str) -> tuple:
     """Der Name ohne Satzzeichen – und die Stellen, an denen ein Wort beginnt.
 
@@ -136,7 +180,7 @@ def wortanfaenge(name: str) -> tuple:
     Anakin Skywalker aus einer echten Sammlung.
     """
     ganz, anfaenge = "", []
-    for wort in re.split(r"[^a-z0-9]+", name.lower()):
+    for wort in re.split(r"[^a-z0-9]+", falten(name)):
         if not wort:
             continue
         anfaenge.append(len(ganz))
@@ -356,6 +400,8 @@ def init_db():
                 -- Bindestrich. Ohne diese Spalte müsste der ganze Index
                 -- durch Python – bei einem Thema egal, bei allen nicht.
                 such TEXT NOT NULL DEFAULT '',
+                -- Wortweise Fassung für die Vorauswahl, siehe `suchwoerter`
+                woerter TEXT NOT NULL DEFAULT '',
                 img_url TEXT NOT NULL DEFAULT '',
                 -- Was auf dem Bild zu sehen ist – **nur Farben**.
                 --
@@ -595,6 +641,51 @@ def init_db():
             if kaputt:
                 print("[brickfolio] %d Namen entschlüsselt" % len(kaputt),
                       flush=True)
+        # Migration: die wortweise Spalte nachrüsten und füllen. Sie ist
+        # neu in 2.81.0 und der Grund, warum „king" überhaupt etwas findet.
+        if kat_cols and "woerter" not in kat_cols:
+            conn.execute("ALTER TABLE katalog_index ADD COLUMN woerter "
+                         "TEXT NOT NULL DEFAULT ''")
+            kat_cols.append("woerter")
+        # **Der Index erst hier, nicht oben im Schema.** Dort läuft er in
+        # derselben Folge wie `CREATE TABLE IF NOT EXISTS` – auf einer
+        # bestehenden Datenbank gibt es die Spalte in diesem Moment aber
+        # noch nicht, und der ganze Start bricht ab (nachgestellt am
+        # 21.09.2026 auf der Testinstanz).
+        if kat_cols and "woerter" in kat_cols:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_katalog_woerter "
+                         "ON katalog_index(woerter)")
+        if kat_cols:
+            offen = conn.execute(
+                "SELECT item_no, item_type, name FROM katalog_index"
+                " WHERE woerter = ''").fetchall()
+            for r in offen:
+                conn.execute(
+                    "UPDATE katalog_index SET woerter = ?"
+                    " WHERE item_no = ? AND item_type = ?",
+                    (suchwoerter(r["name"]), r["item_no"], r["item_type"]))
+            if offen:
+                print("[brickfolio] %d Zeilen wortweise erfasst" % len(offen),
+                      flush=True)
+        # Migration: Suchtext neu bilden, wo ein Umlaut drinsteckt. Bis
+        # 2.80.3 waren Umlaute Trennzeichen – ein Name wie „Café" stand
+        # deshalb als „caf" + „" im Suchtext. Betrifft in der Regel keine
+        # einzige Zeile (BrickLinks Namen sind englisch), kostet dann aber
+        # auch nichts. Ein halb geheilter Suchtext wäre schlimmer als ein
+        # kaputter: Er sieht richtig aus.
+        if kat_cols:
+            umlaute = conn.execute(
+                "SELECT item_no, item_type, name FROM katalog_index WHERE "
+                + " OR ".join("name LIKE '%' || ? || '%'" for _ in _FALTUNG),
+                tuple(chr(c) for c in _FALTUNG)).fetchall()
+            for r in umlaute:
+                conn.execute(
+                    "UPDATE katalog_index SET such = ?"
+                    " WHERE item_no = ? AND item_type = ?",
+                    (wortanfaenge(r["name"])[0], r["item_no"], r["item_type"]))
+            if umlaute:
+                print("[brickfolio] %d Suchtexte mit Umlaut neu gebildet"
+                      % len(umlaute), flush=True)
         # Migration: Die Figur Teil für Teil – Torso, Kopf, Haare, Helm, samt
         # Aufdruck und dessen Farben. Vorher standen hier Art und bis zu drei
         # Farben; damit fand „roter Droide" zwar etwas, „roter Droide mit

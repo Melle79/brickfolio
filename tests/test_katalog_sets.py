@@ -40,9 +40,10 @@ def ctx(tmp_path, monkeypatch):
                               ("60380-1", "161", "Downtown")):
             conn.execute(
                 "INSERT INTO katalog_index (item_no, item_type, name, such,"
-                " img_url, category_id, jahr, updated_at)"
-                " VALUES (?, 'set', ?, ?, '', ?, 2017, ?)",
-                (nr, name, main._such_norm(name), kat, now))
+                " woerter, img_url, category_id, jahr, updated_at)"
+                " VALUES (?, 'set', ?, ?, ?, '', ?, 2017, ?)",
+                (nr, name, main._such_norm(name),
+                 core.suchwoerter(name), kat, now))
     c = TestClient(main.app)
     c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
     return c

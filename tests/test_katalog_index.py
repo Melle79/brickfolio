@@ -50,12 +50,13 @@ def _zeile(item_no, name, merkmale="", farben="", art="", item_type="minifig", k
     with core.db() as conn:
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such,"
-            " img_url, farben, art, merkmale, category_id, jahr,"
-            " updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2011, 1)",
-            # Dieselbe Elle wie beim Eintragen: Der Name zusammengezogen,
-            # ohne Satzzeichen. Der Vorfilter sucht mit `LIKE '%c3%'`, und
-            # mit Leerzeichen („c 3po") fände er nichts.
+            " woerter, img_url, farben, art, merkmale, category_id, jahr,"
+            " updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 2011, 1)",
+            # Dieselbe Elle wie beim Eintragen: einmal zusammengezogen
+            # (dafür findet „c3 po" den „C-3PO"), einmal wortweise mit
+            # Leerzeichen – daran prüft die Vorauswahl den Wortanfang.
             (item_no, item_type, name, main._wortanfaenge(name)[0],
+             core.suchwoerter(name),
              "https://img.bricklink.com/ML/%s.jpg" % item_no,
              farben, art, merkmale, kategorie))
 

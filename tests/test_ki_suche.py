@@ -18,6 +18,7 @@ import pytest
 
 import core
 import integrations
+import woerterbuch
 import main
 from fastapi.testclient import TestClient
 
@@ -45,6 +46,12 @@ def client(tmp_path, monkeypatch):
                 " condition, added_at, added_by) "
                 "VALUES (?, 'minifig', ?, 1, 'used', ?, 1)",
                 (item_id, name, now))
+    # **Das mitgelieferte Wörterbuch bleibt hier außen vor.** Es beantwortet
+    # „Ritter" seit 2.82.0 ohne Modell – richtig so, aber diese Datei prüft
+    # genau den anderen Weg: was passiert, wenn das Modell gefragt wird,
+    # was gemerkt wird und was verfällt. Mit Liste käme die Frage dort nie
+    # an. Der Weg ohne Modell steht in `test_suche_deutsch.py`.
+    monkeypatch.setattr(woerterbuch, "WOERTERBUCH", {})
     integrations._begriff_cache.clear()
     c = TestClient(main.app)
     c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)

@@ -21,6 +21,7 @@ import pytest
 
 import core
 import integrations
+import woerterbuch
 import main
 from fastapi.testclient import TestClient
 
@@ -29,6 +30,9 @@ from fastapi.testclient import TestClient
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "kat.db"))
     core.init_db()
+    # Auch hier geht es um den Weg über das Modell – das mitgelieferte
+    # Wörterbuch beantwortet „Ritter" sonst ohne Rückfrage (2.82.0).
+    monkeypatch.setattr(woerterbuch, "WOERTERBUCH", {})
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
@@ -252,9 +256,10 @@ def test_bei_typ_set_kommt_keine_figur_aus_dem_eigenen_index(client,
     with core.db() as conn:
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such,"
-            " updated_at) VALUES ('sw0297', 'minifig',"
+            " woerter, updated_at) VALUES ('sw0297', 'minifig',"
             " 'Clone ARF Trooper Razor / Stak, 91st Mobile Recon', "
-            " 'clone arf trooper razor stak 91st mobile recon', 0)")
+            " 'clone arf trooper razor stak 91st mobile recon', "
+            " ' clone arf trooper razor stak 91st mobile recon ', 0)")
     _ollama(monkeypatch, ["Razor"])
     gefragt = []
     _katalog(monkeypatch, {"Razor": ["Razor Crest UCS"]}, gefragt)
@@ -275,8 +280,9 @@ def test_bei_typ_minifig_bleibt_der_index_die_erste_wahl(client, monkeypatch):
     with core.db() as conn:
         conn.execute(
             "INSERT INTO katalog_index (item_no, item_type, name, such,"
-            " updated_at) VALUES ('sw0297', 'minifig',"
-            " 'Clone ARF Trooper Razor', 'clone arf trooper razor', 0)")
+            " woerter, updated_at) VALUES ('sw0297', 'minifig',"
+            " 'Clone ARF Trooper Razor', 'clone arf trooper razor', "
+            " ' clone arf trooper razor ', 0)")
     _ollama(monkeypatch, ["Razor"])
     gefragt = []
     _katalog(monkeypatch, {"Razor": ["Irgendwas von Rebrickable"]}, gefragt)

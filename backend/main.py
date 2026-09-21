@@ -1594,14 +1594,15 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
                 "item_type = ?", (nr, art)).fetchone()
             conn.execute(
                 "INSERT INTO katalog_index (item_no, item_type, name, such,"
-                " img_url, category_id, jahr, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                " woerter, img_url, category_id, jahr, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 " ON CONFLICT(item_no, item_type) DO UPDATE SET"
                 " name = excluded.name, such = excluded.such,"
+                " woerter = excluded.woerter,"
                 " category_id = excluded.category_id, jahr = excluded.jahr,"
                 " img_url = excluded.img_url,"
                 " updated_at = excluded.updated_at",
-                (nr, art, name, _wortanfaenge(name)[0],
+                (nr, art, name, _wortanfaenge(name)[0], core.suchwoerter(name),
                  _katalog_bildadresse(art, nr),
                  (el.findtext("CATEGORY") or "").strip(),
                  int(jahr) if jahr.isdigit() else 0, jetzt))
@@ -2029,9 +2030,9 @@ def _katalog_changelog() -> dict:
         with core.db() as conn:
             for nr, name in namen.items():
                 cur = conn.execute(
-                    "UPDATE katalog_index SET name = ?, such = ?, "
+                    "UPDATE katalog_index SET name = ?, such = ?, woerter = ?, "
                     "updated_at = ? WHERE lower(item_no) = ? AND name != ?",
-                    (name, _wortanfaenge(name)[0], int(time.time()),
+                    (name, _wortanfaenge(name)[0], core.suchwoerter(name), int(time.time()),
                      nr.lower(), name))
                 umbenannt += cur.rowcount
             for alt, hin in nummern.items():
@@ -2217,9 +2218,9 @@ def _katalog_namen(grenze: int = KATALOG_NAMEN_JE_LAUF) -> dict:
             if name:
                 with core.db() as conn:
                     conn.execute(
-                        "UPDATE katalog_index SET name = ?, such = ?, "
+                        "UPDATE katalog_index SET name = ?, such = ?, woerter = ?, "
                         "jahr = ?, category_id = ? WHERE item_no = ?",
-                        (name, _wortanfaenge(name)[0],
+                        (name, _wortanfaenge(name)[0], core.suchwoerter(name),
                          (d.get("year_released") or 0),
                          str(d.get("category_id") or ""), r["item_no"]))
                 _namen_lauf["getan"] += 1
@@ -4047,17 +4048,68 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
     if not woerter:
         return []
     with core.db() as conn:
-        # Vorauswahl über das längste Wort, damit nicht der ganze Index
+        # Vorauswahl **über alle Wörter**, damit nicht der ganze Index
         # durch Python muss: Bei 1.400 Figuren egal, bei allen Themen nicht.
-        laengstes = max(woerter, key=len)
         # Farben zählen mit: „R-3PO Protocol Droid" sagt nirgends „rot",
         # das steht nur im Bild. Deshalb greift der Vorfilter auf beides zu.
+        # **Am Wortanfang, und über jedes Wort.** Zwei Fehler steckten
+        # hier, beide am 21.09.2026 gemessen:
+        #
+        # 1. `such` klebt alle Wörter aneinander („crownkingwith"). Ein
+        #    `LIKE '%king%'` traf damit auch „Markings" und „Parking" –
+        #    377 Zeilen, die Vorauswahl brach bei 400 ab, und kein
+        #    einziger echter König kam durch. `woerter` trägt dieselben
+        #    Wörter mit Leerzeichen dazwischen; `'% king%'` trifft „King"
+        #    und „Kingdom", aber nicht „Markings".
+        # 2. Gefiltert wurde nur über das **längste** Wort. Bei
+        #    „schwarzer ninja" war das „black", und die 400 Zeilen waren
+        #    voll, bevor der erste Ninja kam.
+        #
+        # Jetzt muss **jedes** Wort am Wortanfang vorkommen, in Name,
+        # Farben oder Merkmalen – genau das, was `_passt` gleich danach
+        # verlangt. Die 400 sind damit keine Hungerfalle mehr, sondern
+        # nur noch eine Obergrenze.
+        #
+        # **Ohne Textverkettung.** `(woerter || farben || merkmale) LIKE`
+        # wäre kürzer, kostet aber je Zeile einen neuen String: gemessen
+        # 146 ms statt 40. Zwei Muster je Wort tun dasselbe – `'wort%'`
+        # fängt den Anfang des Feldes ab, `'% wort%'` alles Weitere.
+        # **Bei mehreren Wörtern zählt auch der zusammengeklebte Text.**
+        # „gold c3po" meint den `C-3PO - Pearl Light Gold`, und dessen
+        # Wörter sind „c" und „3po" – „c3po" steht dort nur, wenn man alles
+        # aneinanderschreibt. Erlaubt ist das nur, wenn mehrere Wörter
+        # zusammen filtern: Bei **einem** Wort brächte `such` wieder
+        # „Markings" für „king" herein und füllte die 400 Zeilen.
+        geklebt = len(woerter) > 1
+        bedingungen, werte = [], [item_type]
+        for w in woerter:
+            teil = ("(woerter LIKE ? OR farben LIKE ? OR farben LIKE ?"
+                    " OR merkmale LIKE ? OR merkmale LIKE ?")
+            werte += ["% " + w + "%", w + "%", "% " + w + "%",
+                      w + "%", "% " + w + "%"]
+            if geklebt:
+                teil += " OR such LIKE ?"
+                werte.append("%" + w + "%")
+            bedingungen.append(teil + ")")
+        spalten = ("SELECT item_no, item_type, name, jahr, img_url, farben, "
+                   "category_id, merkmale FROM katalog_index")
         rows = conn.execute(
-            "SELECT item_no, item_type, name, jahr, img_url, farben, "
-            "category_id, merkmale FROM katalog_index"
-            " WHERE item_type = ? AND (such LIKE ? "
-            "OR farben LIKE ? OR merkmale LIKE ?) LIMIT 400",
-            (item_type,) + ("%" + laengstes + "%",) * 3).fetchall()
+            spalten + " WHERE item_type = ? AND " + " AND ".join(bedingungen)
+            + " LIMIT 400", werte).fetchall()
+        # **Zweiter Griff für über Wortgrenzen hinweg.** „c3 po" meint den
+        # `C-3PO`, und dessen Wörter sind „c" und „3po" – am Wortanfang
+        # findet man das nie. Dafür gibt es `such`, wo alles aneinander
+        # klebt. Als eigener Durchgang und nicht als ODER daneben: Sonst
+        # zöge „king" über `such` wieder „Markings" herein und füllte die
+        # 400 Zeilen, genau der Fehler, der hier gerade behoben wurde.
+        if len(rows) < 400:
+            gesehen = {(r["item_no"], r["item_type"]) for r in rows}
+            ganz = _such_norm(begriff)
+            rows = list(rows) + [
+                r for r in conn.execute(
+                    spalten + " WHERE item_type = ? AND such LIKE ?"
+                    " LIMIT 400", (item_type, "%" + ganz + "%")).fetchall()
+                if (r["item_no"], r["item_type"]) not in gesehen]
     treffer = []
     for r in rows:
         # Name **und** Farben als ein Text: „roter Protokolldroide" braucht
@@ -5526,7 +5578,9 @@ def _such_norm(text: str) -> str:
 
 
 def _such_woerter(text: str) -> list:
-    return [t for t in re.split(r"[^a-z0-9]+", text.lower()) if len(t) >= 2]
+    # Dieselbe Faltung wie im gespeicherten Suchtext – siehe `core.falten`.
+    # Anfrage und Index müssen mit derselben Elle gemessen werden.
+    return [t for t in re.split(r"[^a-z0-9]+", core.falten(text)) if len(t) >= 2]
 
 
 # Liegt in `core`, weil die Migration dort denselben Suchtext bilden muss.
