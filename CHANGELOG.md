@@ -45,6 +45,60 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.82.0 – September 2026
+
+### Neu
+- 🔎 **Deutsch suchen, ohne lokale KI.** Die Katalognamen sind englisch;
+  „Ritter" fand bisher nur etwas, wenn ein Sprachmodell eingerichtet war.
+  Die App bringt jetzt ein Wörterbuch mit: rund 1.400 deutsche Stichwörter,
+  dazu Endungen abstreifen und zusammengesetzte Wörter zerlegen
+  („Protokolldroide" → `protocol droid`, „Sturmtruppler" → `storm trooper`).
+
+  Gewonnen wurde es aus der Worthäufigkeit des Katalogs selbst: 19.267
+  Figurennamen bestehen aus 7.016 verschiedenen Wörtern, aber die
+  häufigsten 300 decken 77 % aller Vorkommen – Farben, Kleidung,
+  Körperteile. Der Rest sind Eigennamen, die man ohnehin so tippt.
+
+  Die KI bleibt nützlich: Sie springt ein, wenn das Wörterbuch eine Anfrage
+  nicht **vollständig** kennt. Von Hand Gepflegtes schlägt weiterhin beides.
+
+### Behoben
+- 🔤 **Umlaute waren Trennzeichen.** „Mütze" zerfiel in „m" + „tze",
+  „König" in „k" + „nig", „Fußball" in „fu" + „ball" – und weil einzelne
+  Buchstaben wegfallen, blieb ein Wortfetzen übrig. Zwölf von zwölf
+  gescheiterten Anfragen im ersten Trainingslauf hatten einen Umlaut.
+- 👑 **„king" fand gar nichts.** Der gespeicherte Suchtext klebt alle Wörter
+  aneinander, `LIKE '%king%'` traf deshalb auch „Markings" und „Parking":
+  377 Zeilen, und die Vorauswahl bricht bei 400 ab. Kein einziger echter
+  König kam durch. Neue Spalte mit Leerzeichen zwischen den Wörtern.
+- 🥷 **Bei mehreren Wörtern zählte nur das längste.** „schwarzer ninja"
+  suchte nach „black" – die 400 Zeilen waren voll, bevor der erste Ninja
+  kam. Jetzt muss jedes Wort vorkommen.
+- 🎨 **Deutsche Farben umgingen die Farbprüfung.** „helm weiss" fand
+  Figuren, die gar nicht weiß sind, während „helmet white" sie richtig
+  aussortierte: `weiss` stand nicht in der Farbliste. Die Suche war nicht
+  besser, sondern lockerer.
+
+### Geändert
+- 🧩 **Allerweltswörter zählen in der Bildbeschreibung nur im Verbund.** Das
+  Sehmodell beschreibt jede Figur Teil für Teil, deshalb steht `torso` in
+  19.266 von 19.267 Beschreibungen und `yellow` in 13.209 – im Namen
+  dagegen nur 833 bzw. 1.155 Mal. Wer „gelb" suchte, bekam zwei Drittel des
+  Katalogs. Ein Wort über 30 % Häufigkeit zählt dort jetzt nur noch, wenn
+  die Anfrage im selben Abschnitt etwas Eigenes trifft: „gelber Kopf"
+  findet ihn, „gelb" allein nicht.
+
+  **Teil und Farbe zusammen bleiben scharf** – darum ging es: „Figur mit
+  blauem Hut, roten Beinen und grünem Torso" trifft genau eine Figur, und
+  zwar die richtige.
+- 🇩🇪 **Die Bildbeschreibungen werden beim Update eingedeutscht.** Neu
+  beschriebene Figuren bekommen ihren deutschen Teil vom Sehmodell; die
+  vorhandenen zieht eine Wanderung nach – Wort für Wort aus demselben
+  Wörterbuch, ohne Modell und ohne Netz. 19.267 Zeilen in rund neun
+  Sekunden. Sie läuft bewusst **hier** und nicht zentral: Danach steht
+  „kopf" in praktisch jeder Beschreibung, und eine ältere App ohne die
+  Verbund-Regel fände damit den ganzen Katalog.
+
 ## 2.81.0 – September 2026
 
 ### Geändert

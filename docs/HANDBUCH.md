@@ -470,10 +470,30 @@ Ganz freiwillig – ohne diesen Abschnitt funktioniert Brickfolio vollständig.
 
 **Wozu.** Die Oberfläche ist deutsch, die Artikelnamen kommen von BrickLink
 und sind englisch. „Ritter" fand deshalb nichts, obwohl die Figur als
-„Castle Knight" in der Sammlung liegt. Ist hier eine lokale KI hinterlegt,
-übersetzt die App erfolglose Suchbegriffe ins Englische und sucht erneut –
-sowohl in der eigenen Sammlung (siehe 5.1) als auch im Katalog beim manuellen
-Erfassen (siehe 4.2 und 4.4).
+„Castle Knight" in der Sammlung liegt. Übersetzt wird deshalb der
+**Suchbegriff**, nicht der Katalog – gesucht wird weiterhin nur in der
+eigenen Datenbank, in der Sammlung (siehe 5.1) wie im Katalog (siehe 4.2
+und 4.4).
+
+**Seit 2.82.0 geht das auch ohne KI.** Die App bringt ein Wörterbuch mit:
+rund 1.400 deutsche Stichwörter, dazu die Fähigkeit, Endungen abzustreifen
+und zusammengesetzte Wörter zu zerlegen – „Protokolldroide" wird zu
+`protocol droid`, „Sturmtruppler" zu `storm trooper`. Es deckt 95 % der
+Wörter ab, die in den Katalognamen vorkommen; der Rest sind Eigennamen, die
+man ohnehin so tippt, wie sie geschrieben werden.
+
+Die lokale KI bleibt trotzdem nützlich: Sie springt ein, wenn das
+Wörterbuch eine Anfrage **nicht vollständig** kennt, und was dabei
+wirklich etwas trifft, merkt sich die Installation (siehe 2.10). Ohne KI
+ist die Suche also nicht mehr blind, nur weniger findig.
+
+**Was sich damit suchen lässt.** Teil und Farbe zusammen, mehrfach in einer
+Anfrage: „Figur mit blauem Hut, roten Beinen und grünem Torso" trifft genau
+die Figuren, bei denen alle drei zusammenkommen. Je mehr Paare, desto
+schärfer. Einzelne Allerweltswörter wie „Kopf" oder „gelb" treffen dagegen
+viel – das ist gewollt, denn das Sehmodell schreibt zu fast jeder Figur
+„torso …" und „yellow head". Ein solches Wort zählt in der Bildbeschreibung
+deshalb nur **im Verbund**: „gelber Kopf" findet ihn, „gelb" allein nicht.
 
 **Einrichten.** Unter **Mehr → 🤖 Lokale KI für die Suche**:
 

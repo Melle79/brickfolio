@@ -669,6 +669,20 @@ The search starts **from three characters** – with a shorter input you get a
 short hint instead of a request. The **type** (minifigure/part/set) sits right
 next to the name field so you can search deliberately.
 
+**German search terms, no AI needed (since 2.82.0).** The catalogue names are
+English; the interface is German. The app therefore ships a dictionary of
+about 1,400 German keywords and translates the **query**, not the catalogue.
+It strips endings and splits compound words – „Protokolldroide" becomes
+`protocol droid`. A local AI is still useful for queries the dictionary does
+not fully know, but it is no longer required.
+
+Part and colour can be combined, several times in one query: „Figur mit
+blauem Hut, roten Beinen und grünem Torso" matches only figures where all
+three come together. A single everyday word such as „Kopf" or „gelb" matches
+a lot on purpose – the vision model writes „torso …" and „yellow head" for
+almost every figure, so such a word counts in the image description only **in
+combination**.
+
 You get **10 hits per page**; below them it says "X of Y shown" plus a **Load
 more results** button that appends ten more each time – so every match is
 reachable.
