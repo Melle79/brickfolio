@@ -45,6 +45,42 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.84.0 – September 2026
+
+### Geändert
+- 📖 **Die Hilfe ist auf die Hälfte geschrumpft.** Sie war über die Jahre
+  zu acht Textwänden gewachsen: **934 Wörter**, davon 340 allein für „Wie
+  der Wert berechnet wird", und in sechs von acht Abschnitten keine
+  einzige Aufzählung. Wer auf dem Handy eine schnelle Antwort suchte, las
+  einen Aufsatz.
+
+  Jetzt hat jeder Abschnitt dieselbe Form: **ein Leitsatz, dann kurze
+  Punkte**. Aus 934 Wörtern wurden **560** – und das mit einem Abschnitt
+  *mehr*. Der längste Abschnitt hat jetzt 91 statt 340 Wörter.
+
+- 🗣 **Eine Anrede statt zwei.** Die App duzte und ihrzte gleichzeitig: in
+  der Oberfläche 32× „du" gegen 13× „ihr", in den Meldungen aus dem Code
+  13× „ihr" gegen 12× „du", und innerhalb der Hilfe 9× „ihr" gegen 2× „du".
+  Mal hieß es „in eurer Sammlung", zwei Zeilen weiter „deine Sammlung".
+
+  Jetzt sagt alles **„du"**: Oberfläche, Meldungen, Hilfe und Handbuch.
+  Betroffen waren 27 Stellen im Code und rund 100 im Handbuch; die
+  englischen Schlüssel sind mitgewandert, sonst wäre die englische Fassung
+  an 13 Stellen ins Deutsche zurückgefallen.
+
+### Hinzugefügt
+- 🔍 **Ein eigener Abschnitt „Suchen".** Dass die Suche seit 2.80.0 Deutsch
+  versteht, stand in der Hilfe nirgends – ausgerechnet die Neuerung, nach
+  der man dort suchen würde. Vier Zeilen: beide Sprachen, Merkmale
+  kombinieren, reine Nummern, und dass ein *kürzerer* Begriff mehr bringt
+  als ein längerer.
+- 📘 **Handbuch, Abschnitt 9.1 „Wie der Gesamtwert gerechnet wird".** Beim
+  Kürzen fiel auf, dass die Regel zu den nicht doppelt gezählten
+  Set-Figuren **nur** in der Hilfe stand – im Handbuch fehlte sie ganz.
+  Die ausführliche Fassung ist deshalb dorthin umgezogen (inklusive einer
+  Tabelle, wo bereinigt wird und wo nicht), statt gekürzt zu werden; die
+  Hilfe verlinkt sie.
+
 ## 2.83.0 – September 2026
 
 ### Geändert

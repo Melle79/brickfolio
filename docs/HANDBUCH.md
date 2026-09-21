@@ -40,20 +40,20 @@ Metadaten kommen von Rebrickable und BrickLink.
 werden automatisch geholt und fortlaufend aufgezeichnet – daraus entstehen
 Preisverläufe pro Artikel und die Wertentwicklung der Gesamtsammlung.
 
-**Eure Daten bleiben bei euch.** Alles läuft in einem einzigen
-Docker-Container auf eurem eigenen Server (FastAPI + SQLite). Es gibt keinen
-Brickfolio-Dienst dazwischen, bei dem ihr euch anmelden müsstet, und eure
+**Deine Daten bleiben bei dir.** Alles läuft in einem einzigen
+Docker-Container auf deinem eigenen Server (FastAPI + SQLite). Es gibt keinen
+Brickfolio-Dienst dazwischen, bei dem du dich anmelden müsstest, und deine
 Sammlung liegt nirgendwo sonst. Mehrere Familienmitglieder teilen sich eine
 Datenbank, jeder mit eigenem Login.
 
 Nach außen fragt die App nur dort, wo sie muss: beim Scannen (Brickognize),
 bei der Namenssuche (Rebrickable) und für Preise und Set-Inhalte
-(BrickLink). Für die beiden letzten braucht ihr eigene kostenlose Zugänge –
+(BrickLink). Für die beiden letzten brauchst du eigene kostenlose Zugänge –
 siehe 2.4. Ohne sie läuft alles andere weiter.
 
 **Ein Punkt, der leicht übersehen wird: die Bilder.** In der Datenbank steht
 zu jedem Artikel nur die *Adresse* seines Katalogbildes. Geholt wurde es
-früher von **eurem Browser** direkt bei `img.bricklink.com`,
+früher von **deinem Browser** direkt bei `img.bricklink.com`,
 `cdn.rebrickable.com` oder – für alles Gescannte – bei
 `storage.googleapis.com`, wo Brickognize seine Vorschaubilder ablegt. Aus der
 Sammlung ging dabei nichts nach außen, aber die Bildadresse nennt die
@@ -68,7 +68,7 @@ viele noch fehlen, und arbeitet sie in Häppchen ab.
 
 Der Abruf kann ausschließlich zu den vier Katalog-Hosts gehen – als Weg nach
 außen taugt er nicht, das prüfen eigene Tests. Der Dateiname wird aus der
-Bildadresse **und dem Schlüssel eurer Instanz** gebildet; ohne den lässt sich
+Bildadresse **und dem Schlüssel deiner Instanz** gebildet; ohne den lässt sich
 aus einer Teilenummer nicht ausrechnen, ob dieses Bild hier liegt.
 
 Grob 10–25 KB je Artikel: 1000 Artikel sind also rund 15–25 MB auf der
@@ -256,8 +256,11 @@ Scannen.
 ### 2.6 Orientierung: Kopfzeile und Mehr-Tab
 
 In der Kopfzeile sitzen zwei ständige Begleiter: der **❓-Knopf** (oben
-rechts) öffnet die Hilfe als Popup – von jedem Tab aus, mit Anleitungen zu
-allen Funktionen. Und der **eigene Name** daneben ist antippbar: Dahinter
+rechts) öffnet die Hilfe als Popup – von jedem Tab aus. Sie ist bewusst
+knapp gehalten: neun aufklappbare Abschnitte mit je einem Leitsatz und ein
+paar Punkten, für die schnelle Antwort unterwegs. Was ausführlicher
+erklärt gehört, steht hier im Handbuch und ist aus der Hilfe verlinkt. Und
+der **eigene Name** daneben ist antippbar: Dahinter
 liegt das **Profil-Popup** mit Anzeigename ändern, Passwort ändern und
 Abmelden.
 
@@ -316,7 +319,7 @@ Benutzer, die noch keine eigene Wahl getroffen haben (die eigene Auswahl
 Abfotografieren das Foto zur Erkennung übertragen wird, und führt Marken-,
 Schrift- und Programmlizenz auf – dazu einen Abschnitt zur **Haftung**:
 Preise sind Anhaltspunkte und keine Bewertung, die Erkennung kann sich
-irren, und die Sicherung eurer Daten liegt bei euch. Dort steht auch der
+irren, und die Sicherung deiner Daten liegt bei dir. Dort steht auch der
 optionale
 **Jedipedia-Verweis**: Er öffnet einen Artikel in einem unabhängigen
 deutschsprachigen Fan-Wiki – keine Inhalte werden abgerufen, übernommen
@@ -440,8 +443,8 @@ freigibt, sollte wissen, was dann greift und was nicht.
   `:latest` einträgt, bekommt bei jedem Update den neuesten Stand von dort –
   auch dann, wenn dieses Konto einmal in falsche Hände geriete. Wer das nicht
   möchte, trägt eine **feste Version** ein
-  (`image: ghcr.io/melle79/brickfolio:1.67.0`). Dann läuft nur, was ihr selbst
-  ausgewählt habt.
+  (`image: ghcr.io/melle79/brickfolio:1.67.0`). Dann läuft nur, was du selbst
+  ausgewählt hast.
   > **Aber:** Eine feste Versionsnummer legt nur den *Namen* fest. Wer die
   > Registry kontrolliert, könnte unter `1.67.0` genauso etwas anderes
   > ausliefern wie unter `latest`. Wirklich schützt nur ein **Digest**
@@ -646,7 +649,7 @@ selbst ein und sie haben **Vorrang**:
 |---|---|
 | `roter c3po` | `R-3PO` |
 
-Das ist nützlich, wo ihr etwas anders nennt als der Katalog. Der rote
+Das ist nützlich, wo du etwas anders nennst als der Katalog. Der rote
 Protokolldroide heißt bei BrickLink „R-3PO Protocol Droid" – wer ihn „roter
 C-3PO" nennt, fand ihn vorher nie, weil das Modell am Eigennamen C-3PO
 festhält.
@@ -875,7 +878,7 @@ Für diese Fälle gibt es den **verlässlichen Weg**, und der ist schnell:
    stehen
 4. **🔎 Alle erkennen**
 
-Das funktioniert bei jeder Anordnung, weil ihr die Grenzen setzt und nicht
+Das funktioniert bei jeder Anordnung, weil du die Grenzen setzt und nicht
 die App sie raten muss. **Verwerfen** räumt die gemerkten Rahmen wieder weg.
 
 Der einzelne grüne Rahmen mit der Beschriftung **„hier geschaut"** ist etwas
@@ -885,47 +888,47 @@ Scan geraten hat. Sobald nummerierte Rahmen da sind, verschwindet er.
 ### 5.6 Das eigene Foto zusätzlich am Artikel
 
 Über den Treffern steht ein Kästchen: **📷 Mein Foto zusätzlich am
-Artikel.** Ist es angehakt, hängt alles, was ihr aus diesem Scan anlegt –
-Sammlung, Wunschliste **und** Einkaufsliste –, euer eigenes Foto an den
+Artikel.** Ist es angehakt, hängt alles, was du aus diesem Scan anlegst –
+Sammlung, Wunschliste **und** Einkaufsliste –, dein eigenes Foto an den
 Artikel. Gedacht ist es wie die Bilder, die Käufer bei BrickLink
-beisteuern: Das **Katalogbild bleibt**, wo es ist, euer Foto kommt daneben.
+beisteuern: Das **Katalogbild bleibt**, wo es ist, dein Foto kommt daneben.
 
 Zu sehen sind sie in der **Galerie**: Tippt auf das Bild eines Artikels, und
 blättert. Das Katalogbild ist das erste – es zeigt die Figur sauber
-freigestellt –, eure Fotos folgen. Bei einem eigenen steht oben **„mein
+freigestellt –, deine Fotos folgen. Bei einem eigenen steht oben **„mein
 Foto"**, und unten erscheint **🗑 Mein Foto entfernen**.
 
 Bei mehreren Figuren auf einem Foto bekommt **jede ihren eigenen
 Ausschnitt**: genau den Rahmen, in dem sie gefunden wurde. Ob der aus der
-Reihum-Suche stammt, von einem gemerkten Rahmen oder von einem, den ihr
-selbst gezogen habt, spielt keine Rolle. Nur wenn es gar keinen Rahmen gibt,
+Reihum-Suche stammt, von einem gemerkten Rahmen oder von einem, den du
+selbst gezogen hast, spielt keine Rolle. Nur wenn es gar keinen Rahmen gibt,
 wird das ganze Foto genommen.
 
 **Standardmäßig ist es aus.** Die Entscheidung merkt sich die App auf diesem
-Gerät, ihr müsst sie also nicht bei jedem Scan neu treffen.
+Gerät, du musst sie also nicht bei jedem Scan neu treffen.
 
 **Nur das Foto, sonst nichts.** Steht die Figur längst in der Sammlung und
-ihr wollt bloß ein Bild davon hinterlegen, nehmt den Knopf **📷 Nur Foto
+du willst bloß ein Bild davon hinterlegen, nimm den Knopf **📷 Nur Foto
 dazu** auf der Trefferkarte. Er hängt das Foto an den Artikel und rührt
 sonst nichts an – keine zweite Zeile, keine erhöhte Menge, kein Eintrag auf
 einer Liste. Der Knopf wirkt **unabhängig vom Kästchen** oben: Das gilt
 fürs Anlegen, hier ist das Foto ja der ganze Zweck. Danach heißt er
 „📷 Foto dabei ✔".
 
-Er erscheint **nur, wenn es den Artikel schon gibt** – in eurer Sammlung
+Er erscheint **nur, wenn es den Artikel schon gibt** – in deiner Sammlung
 oder auf einer Einkaufsliste. Sonst gäbe es ja nichts, woran das Foto hängen
-könnte. Die **Wunschliste zählt hier nicht**: Was ihr euch wünscht, habt ihr
+könnte. Die **Wunschliste zählt hier nicht**: Was du dir wünschst, hast du
 gerade nicht.
 
 > Praktisch, wenn man die Sammlung nach und nach bebildern will: Figur vor
-> die Kamera, scannen, ein Tipp – fertig. Das grüne Schild **„✔ 1× in eurer
-> Sammlung"** auf der Karte zeigt dabei gleich, dass ihr sie schon habt.
+> die Kamera, scannen, ein Tipp – fertig. Das grüne Schild **„✔ 1× in deiner
+> Sammlung"** auf der Karte zeigt dabei gleich, dass du sie schon hast.
 
 > **Die Fotos hängen am Artikel, nicht an der Zeile.** Wer dieselbe Figur
 > zweimal besitzt – einmal neu, einmal gebraucht –, sieht bei beiden
 > dieselben Fotos. Das ist Absicht: Es ist ja dieselbe Figur.
 >
-> Daraus folgt auch, wann sie **verschwinden**: Löscht ihr eine Zeile, bleiben
+> Daraus folgt auch, wann sie **verschwinden**: Löschst du eine Zeile, bleiben
 > die Fotos, solange den Artikel noch irgendetwas führt – die zweite Zeile,
 > die Wunschliste, eine Einkaufsliste. Erst wenn er nirgends mehr auftaucht,
 > werden Fotos und Dateien mit entfernt. Sie wären danach ohnehin durch
@@ -1003,15 +1006,15 @@ beurteilen. Die Knöpfe zum Übernehmen sind dieselben wie auf der Karte.
   oder mit **„＋ Neue Liste"** direkt am Stand eine anlegen (Name
   „Flohmarkt <Datum>" ist vorbefüllt).
 
-Die Treffer-Karten tragen außerdem Hinweis-Badges: **✔ n× in eurer
-Sammlung**, **⭐ auf eurer Wunschliste** und **🛒 auf »Listenname«**, wenn
+Die Treffer-Karten tragen außerdem Hinweis-Badges: **✔ n× in deiner
+Sammlung**, **⭐ auf deiner Wunschliste** und **🛒 auf »Listenname«**, wenn
 der Artikel bereits auf einer aktiven Einkaufsliste eingeplant ist – der
 eingebaute Schutz vor Doppelkäufen und Doppel-Einplanung.
 
-Gehört eine gefundene Figur zu einem **Set aus eurer Sammlung** und fehlt
-dort noch, steht statt „📦 in Sets" deutlich in Rot: **🧩 fehlt zu eurem
-Set: <Setname>**. Auf dem Flohmarkt seht ihr damit sofort, ob ein Fund
-eine Lücke schließt. Besitzt ihr die Figur bereits, bleibt es beim
+Gehört eine gefundene Figur zu einem **Set aus deiner Sammlung** und fehlt
+dort noch, steht statt „📦 in Sets" deutlich in Rot: **🧩 fehlt zu deinem
+Set: <Setname>**. Auf dem Flohmarkt siehst du damit sofort, ob ein Fund
+eine Lücke schließt. Besitzt du die Figur bereits, bleibt es beim
 normalen Hinweis „in Sets".
 
 ### 4.4 Manuell erfassen
@@ -1034,7 +1037,7 @@ Der Schalter **„🎨 Eigene Figur (Custom)"** im manuellen Formular ist für
 Eigenbauten gedacht:
 
 - Die **Nummer vergibt die App fortlaufend** (`custom-001`, `-002`, …),
-  überschreibbar, wenn ihr ein eigenes Schema führt.
+  überschreibbar, wenn du ein eigenes Schema führst.
 - **Eigenes Bild**: hochladen – oder, wenn beim Scannen nichts erkannt
   wurde, mit **„📷 Foto vom Scan verwenden"** direkt das eben gemachte
   Foto nehmen. Auf der Scan-Seite gibt es dafür auch den Knopf
@@ -1142,7 +1145,7 @@ Zeilen zu viel. Der **✏️** daneben holt sie zurück, wenn doch etwas falsch
 einsortiert ist. Ein von Hand gesetztes Thema bleibt stehen; die Automatik
 überschreibt nie eins, das schon da ist.
 
-> Der Wert einer Themenkarte rechnet Figuren, die in euren eigenen Sets
+> Der Wert einer Themenkarte rechnet Figuren, die in deinen eigenen Sets
 > stecken, nur anteilig mit – genau wie die Gesamtsumme oben. Sonst läge
 > die Summe der Karten über dem Gesamtwert.
 
@@ -1181,7 +1184,7 @@ BrickLink-Zugang steht keine Überschrift „Marktpreise" über einer leeren
 Fläche.
 
 **Das Thema steht oben im Kopf**, gleich unter Nummer und Zustand – es
-gehört zur Figur, nicht zu dem, was ihr mit ihr macht. Einen **✏️** gibt es
+gehört zur Figur, nicht zu dem, was du mit ihr machst. Einen **✏️** gibt es
 dort nur, wo die App das Thema nicht aus der Nummer ableiten kann: bei
 eigenen Figuren, Teilen und unbekannten Kürzeln. `sw1213` ist Star Wars, da
 gibt es nichts zu entscheiden.
@@ -1204,7 +1207,7 @@ Im Popup zeigt sich:
   Chart (blau = neu, grün = gebraucht) mit Link zur BrickLink-Preisseite.
 - **Bild antippen** öffnet die Großansicht. Der Hinweis „Wischen zum
   Blättern" erscheint nur, wenn es wirklich mehr als ein Bild gibt – in
-  aller Regel also erst, wenn ihr ein eigenes Foto dazugehängt habt.
+  aller Regel also erst, wenn du ein eigenes Foto dazugehängt hast.
 - **ⓘ neben dem Namen** (nur Star Wars, und nur wenn eingeschaltet unter
   *Mehr → 📖 Jedipedia-Verweis*) schlägt die Figur im deutschen
   Star-Wars-Wiki nach – in aller Regel **direkt im Artikel**. Dafür wird
@@ -1250,7 +1253,7 @@ Die App merkt das und legt einen Hinweis auf die **Scan-Seite**:
 - **Ein Exemplar** – derselbe Kasten, zweimal erfasst. Es bleibt eine Zeile
   mit der Stückzahl der BrickLink-Nummer; das Kaufbuch der aufgegebenen
   Zeile fällt weg, sonst stünde der Betrag doppelt drin.
-- **Zwei Exemplare** – ihr besitzt wirklich zwei. Die Stückzahlen werden
+- **Zwei Exemplare** – du besitzt wirklich zwei. Die Stückzahlen werden
   addiert und beide Käufe stehen danach im Kaufbuch.
 
 Bleiben darf die Zeile mit der **BrickLink-Nummer**: Sie hat Preise,
@@ -1270,11 +1273,11 @@ die Wunschliste und den CSV-Import.
 
 > **Wo sich die App heraushält:** Bei zwei echten Varianten – etwa `21306-1`
 > und `21306-2` – kommt kein Hinweis. Dort sind es zwei verschiedene
-> Ausgaben, und welche gemeint ist, weiß nur ihr.
+> Ausgaben, und welche gemeint ist, weißt nur du.
 
 ### 5.4 Sets und ihre Figuren
 
-Brickfolio kennt die Figuren-Inventare eurer Sets (via BrickLink,
+Brickfolio kennt die Figuren-Inventare deiner Sets (via BrickLink,
 automatisch geladen):
 
 - Die Set-Karte zeigt in der Infozeile dezent **„👥 3/4"** – drei der vier
@@ -1283,11 +1286,11 @@ automatisch geladen):
 - In den Set-Details listet **„👥 Enthaltene Figuren"** alle Figuren mit
   Besitz-Badges; fehlende lassen sich mit einem Knopf **gesammelt auf die
   Wunschliste** setzen.
-- Umgekehrt zeigen Figuren-Karten **„📦 aus euren Sets"** mit Sprung zur
+- Umgekehrt zeigen Figuren-Karten **„📦 aus deinen Sets"** mit Sprung zur
   jeweiligen Set-Karte.
-- In den Figuren-Details (Suche wie Sammlung) sind Sets aus **eurer
+- In den Figuren-Details (Suche wie Sammlung) sind Sets aus **deiner
   Sammlung** als **gelbe Chips mit ✔** gekennzeichnet und springen zur
-  Set-Karte; Sets, die ihr nicht besitzt, erscheinen als blaue
+  Set-Karte; Sets, die du nicht besitzt, erscheinen als blaue
   BrickLink-Links.
 
 ### 5.5 Kaufpreise & Gewinn *(Sammlerprofi)*
@@ -1344,7 +1347,7 @@ den Tab **Listen** – drei Reiter über der Ansicht:
 | Reiter | Inhalt | Sichtbar |
 |---|---|---|
 | ⭐ **Wünsche** | alles Gemerkte | immer |
-| 🛒 **Einkaufen** | aktive Einkaufslisten, Verkaufsliste, fehlende Set-Figuren | wenn es Listen gibt oder ihr Profi seid |
+| 🛒 **Einkaufen** | aktive Einkaufslisten, Verkaufsliste, fehlende Set-Figuren | wenn es Listen gibt oder du Profi bist |
 | 📦 **Archiv** | abgearbeitete Listen | ebenso |
 | 📚 **Katalog** | alle Figuren eines Themas zum Durchblättern | immer |
 
@@ -1362,7 +1365,7 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
 - **Nummer korrigieren:** In den Details lässt sich eine falsche Nummer
   ersetzen („Setzen") oder automatisch suchen („🔍 Auto") – die Preise
   werden danach sofort neu geholt.
-- Artikel, die ihr schon besitzt, tragen ein Besitz-Badge – praktisch
+- Artikel, die du schon besitzt, tragen ein Besitz-Badge – praktisch
   gegen Doppelkäufe.
 - Ein Tipp auf **Name oder Nummer** öffnet den **Steckbrief** (siehe unten).
 - Steht ein Wunsch schon auf einer **offenen Einkaufsliste**, trägt die
@@ -1370,8 +1373,8 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
   ist er unterwegs und niemand muss ihn ein zweites Mal besorgen. Mehrere
   Listen werden alle genannt, mit zusammengezählter Stückzahl. Abgehakte
   Posten und archivierte Listen zählen nicht mehr mit.
-- Gehört eine gemerkte Figur zu einem **Set aus eurer Sammlung** und fehlt
-  dort noch, steht auf der Karte **🧩 fehlt zu eurem Set: <Setname>**. Ein
+- Gehört eine gemerkte Figur zu einem **Set aus deiner Sammlung** und fehlt
+  dort noch, steht auf der Karte **🧩 fehlt zu deinem Set: <Setname>**. Ein
   Tipp auf das Set springt direkt dorthin in die Sammlung.
 
 ### 6.1 Der Steckbrief
@@ -1379,7 +1382,7 @@ Widgets, die die geschätzten Anschaffungskosten (gebraucht/neu) summieren.
 Überall, wo eine Figur oder ein Teil nur als **Zeile** auftaucht, führt ein
 Tipp auf Name oder Nummer zum **Steckbrief**. Das gilt
 
-- unter einem Set in eurer Sammlung („👥 Enthaltene Figuren anzeigen"),
+- unter einem Set in deiner Sammlung („👥 Enthaltene Figuren anzeigen"),
 - in der Teileliste einer Figur („🧩 Enthaltene Teile anzeigen"),
 - bei den **fehlenden Set-Figuren**,
 - auf der **Wunschliste** und den **Einkaufslisten**,
@@ -1390,12 +1393,12 @@ Er beantwortet die Frage, die man an dieser Stelle hat:
 | Zeile | Was sie sagt |
 |---|---|
 | Bild und Nummer | welche Variante genau, mit Erscheinungsjahr |
-| 🟢 ✔ *n*× in eurer Sammlung | habt ihr |
+| 🟢 ✔ *n*× in deiner Sammlung | hast du |
 | 🔵 🛒 <Listenname> | liegt schon im Einkaufskorb |
-| 🟡 ⭐ auf eurer Wunschliste | wollt ihr |
+| 🟡 ⭐ auf deiner Wunschliste | willst du |
 | „noch nirgends erfasst" | kennt die App noch gar nicht |
 | 💶 Marktpreis | Ø neu und Ø gebraucht |
-| 📦 Steckt in diesen Sets | eure Sets zuerst und anklickbar, danach die übrigen bei BrickLink |
+| 📦 Steckt in diesen Sets | deine Sets zuerst und anklickbar, danach die übrigen bei BrickLink |
 
 Unten stehen **＋ Sammlung**, **☆ Merken** (fällt weg, wenn die Figur schon
 auf der Wunschliste liegt) und **BrickLink ↗**.
@@ -1414,9 +1417,9 @@ schließt dann erst das Bild und beim zweiten Druck den Steckbrief.
 Die Suche beantwortet *„wo ist X?"*. Dieser Reiter beantwortet die andere
 Frage: **„was gibt es überhaupt, und was davon fehlt mir?"**
 
-Oben wählt ihr ein **Thema** – Star Wars, City, Ninjago … – und ob ihr
-Figuren oder Sets sehen wollt. Daneben steht, wie viele davon ihr schon
-habt: *Star Wars · 225/1663*. Darunter läuft die vollständige Liste des
+Oben wählst du ein **Thema** – Star Wars, City, Ninjago … – und ob du
+Figuren oder Sets sehen willst. Daneben steht, wie viele davon du schon
+hast: *Star Wars · 225/1663*. Darunter läuft die vollständige Liste des
 Themas in **Nummernfolge**, nicht alphabetisch. Das ist Absicht: So stehen
 Varianten beieinander (sw0001a bis sw0001d), und das Jahr wächst von oben
 nach unten.
@@ -1436,26 +1439,26 @@ Und einmal ist es umgekehrt: **`cc` trägt zwei Themen.** `cc4058` ff. sind
 Studios-Figuren, `cc4443` ff. die Coca-Cola-Fußballer der WM 2002. Die
 beiden stehen getrennt in der Auswahl.
 
-**Der runde Pfeil unten rechts** bringt euch in einem Schritt zurück an den
-Anfang. Er erscheint, sobald ihr zwei Bildschirmhöhen weit unten seid – und
+**Der runde Pfeil unten rechts** bringt dich in einem Schritt zurück an den
+Anfang. Er erscheint, sobald du zwei Bildschirmhöhen weit unten bist – und
 zwar in *jeder* langen Liste, nicht nur hier.
 
 **Antippen:**
 
 | Ihr tippt auf … | … dann passiert |
 |---|---|
-| **✔** | die Figur wandert in eure Sammlung (Stück 1, gebraucht) |
+| **✔** | die Figur wandert in deine Sammlung (Stück 1, gebraucht) |
 | **♥** | die Figur kommt auf die Wunschliste |
 | **den Namen** | ein Steckbrief mit großem Bild und denselben zwei Knöpfen |
 
 Der Haken lässt sich auch wieder ausschalten – aber **nur, wenn nichts
-daran hängt.** Habt ihr die Figur mehrfach, oder steht eine Notiz oder ein
+daran hängt.** Hast du die Figur mehrfach, oder steht eine Notiz oder ein
 Kaufpreis daran, sagt die App das und rührt den Eintrag nicht an: Ein
 Fehltipper auf einem daumengroßen Knopf darf keine Daten wegräumen. Löschen
 geht dann in der Sammlung selbst.
 
 **Die Themenauswahl aufräumen:** Bei 199 Themen ist die Liste lang, und
-die meisten braucht ihr nie. Unter **Mehr → 📚 Katalog-Themen** bekommt
+die meisten brauchst du nie. Unter **Mehr → 📚 Katalog-Themen** bekommt
 jedes Thema zwei Schalter:
 
 | | |
@@ -1465,7 +1468,7 @@ jedes Thema zwei Schalter:
 
 Der bequemste Weg: ein paar Sterne setzen, dann **★ Nur Favoriten** – das
 blendet alles andere aus. **Alle einblenden** holt sie zurück. Beides gilt
-nur für euch; Paul kann eine ganz andere Auswahl haben als Sven.
+nur für dich; Paul kann eine ganz andere Auswahl haben als Sven.
 
 Der Stern überlebt das Ausblenden: Wer ein Thema wieder einschaltet, findet
 seine Markierung, wo er sie gelassen hat.
@@ -1518,8 +1521,8 @@ angekommene Artikel verbuchen; alles andere ist Profi-Sache.
 >
 > Der **Scannen-Tab bleibt ausgenommen** – dort steht womöglich ein Foto samt
 > Treffern, und das darf nichts wegräumen. Ein Tab im Hintergrund fragt gar
-> nicht erst. Und zusätzlich frischt die App auf, wenn ihr nach ein paar
-> Sekunden aus einem anderen Fenster zurückkommt.
+> nicht erst. Und zusätzlich frischt die App auf, wenn du nach ein paar
+> Sekunden aus einem anderen Fenster zurückkommst.
 
 ### 7.1 Der typische Ablauf am Stand
 
@@ -1529,7 +1532,7 @@ angekommene Artikel verbuchen; alles andere ist Profi-Sache.
 Zwei Tipps, und die Liste existiert samt erstem Artikel.
 
 **2. Kiste durchscannen.** Jeden interessanten Fund per 🛒 auf die Liste
-legen – den **Zustand** wählt ihr direkt im Dialog (Gebraucht ist
+legen – den **Zustand** wählst du direkt im Dialog (Gebraucht ist
 vorausgewählt), und wer den Preis schon kennt (Preisschild am Stand),
 trägt ihn optional gleich im Feld **„Einkauf €"** mit ein – er landet als
 Einkaufspreis am Listen-Artikel. Nachträglich geht beides am
@@ -1598,7 +1601,7 @@ bestehen und wird bei Bedarf manuell angepasst).
 Auf Knopfdruck erzeugt Brickfolio die Liste aller mehrfach vorhandenen
 Artikel – live berechnet, keine Pflege nötig. Die Grundregel:
 
-> **„So viele Figuren bleiben, wie eure Sets brauchen – mindestens
+> **„So viele Figuren bleiben, wie deine Sets brauchen – mindestens
 > aber eine."**
 
 Gibt es eine Figur in beiden Zuständen, wird der Behalten-Anteil
@@ -1607,11 +1610,11 @@ die gebrauchten.
 
 In der Zeile steht, **warum** etwas zurückbleibt: Wird die Figur für
 eigene Sets gebraucht, erscheint „*N× für Sets reserviert*". Steckt sie
-in keinem eurer Sets, bleibt nur das eine Behalte-Exemplar – dann steht
+in keinem deiner Sets, bleibt nur das eine Behalte-Exemplar – dann steht
 schlicht „*1 behalten*".
 
 Konkret: Für jede Figur wird der **Set-Bedarf** ermittelt (Inventar-Menge
-× Anzahl des Sets in eurer Sammlung). Abgebbar ist nur, was über
+× Anzahl des Sets in deiner Sammlung). Abgebbar ist nur, was über
 `max(Set-Bedarf, 1)` hinausgeht. Beispiele:
 
 | vorhanden | in Sets benötigt | bleibt | abgebbar |
@@ -1638,7 +1641,7 @@ Oben steht die Zusammenfassung („6 Figuren fehlen in 2 von 5 Sets ·
 Nachkauf ca. 14,24 €"), darunter je Figur:
 
 - Bild, Name und Nummer
-- **„3× fehlt (1 von 4 da)"** – der Bedarf berücksichtigt, **wie oft ihr
+- **„3× fehlt (1 von 4 da)"** – der Bedarf berücksichtigt, **wie oft du
   ein Set besitzt**: Zwei TIE Fighter mit je zwei Piloten ergeben Bedarf 4
 - **📦 für:** die Sets, die sie brauchen – antippbar, springt zum Set
 - Ø-Preis, sofern bekannt (aus der Wunschliste oder dem Preisverlauf)
@@ -1680,7 +1683,7 @@ Für alle sichtbar (📊 in der Tab-Leiste), lädt beim Öffnen automatisch:
   > Die Verluste stehen bewusst getrennt. Vorher gab es nur die
   > Steigerungen, und ein Verlust rutschte dort nur hinein, wenn es weniger
   > als fünf Gewinner gab – ausgerechnet in einer gewachsenen Sammlung sah
-  > man sie also nie. Und solange ihr die Stücke behaltet, ist der Verlust
+  > man sie also nie. Und solange du die Stücke behältst, ist der Verlust
   > ohnehin nur auf dem Papier.
 - **Einkauf auf Listen** *(Profi)*: die Summe aller eingetragenen
   Einkaufspreise. Auf der Übersicht zählen bewusst nur **offene** Listen –
@@ -1689,6 +1692,57 @@ Für alle sichtbar (📊 in der Tab-Leiste), lädt beim Öffnen automatisch:
   Dort lässt sich je Liste **„inventarisiert"** ankreuzen: Was verbucht und
   in die Sammlung übernommen wurde, fällt aus der Rechnung heraus, ohne
   dass die Liste gelöscht werden muss.
+
+### 9.1 Wie der Gesamtwert gerechnet wird
+
+**Woher die Preise kommen.** Für jeden Artikel holt die App die
+**Ø-Verkaufspreise der letzten 6 Monate** von BrickLink – getrennt nach
+*neu* und *gebraucht*. Verwendet wird immer der Preis, der zum
+eingetragenen **Zustand** passt; fehlt er, weicht die App auf den anderen
+Wert aus. Artikel ohne Preisdaten (z. B. manuell erfasste Eigenbauten)
+zählen mit null und stehen als *„ohne Preis"* unter dem Wert-Widget.
+Wann welcher Preis geholt wird, steht in [Kapitel
+13](#13-die-preis-automatik-im-detail).
+
+**Die Rechnung.** Wert eines Eintrags = Ø-Preis × Menge. Der Gesamtwert
+ist die Summe über alle Einträge – mit einer wichtigen Ausnahme.
+
+**Set-Figuren werden nicht doppelt gezählt.** Ein Set-Preis gilt bei
+BrickLink für das *komplette* Set, die Minifiguren sind darin also schon
+enthalten. Wer Sets *und* deren Figuren einzeln erfasst, hätte sie sonst
+zweimal in der Summe. Deshalb rechnet die App so: Sets zählen voll, und
+von jeder Figur zählen nur die Exemplare, die **nicht** in einem eigenen
+Set stecken.
+
+Wie viele das sind: *Anzahl der besessenen Sets × Stückzahl der Figur im
+Set*, höchstens so viele, wie wirklich vorhanden sind.
+
+> **Beispiel.** Das Set enthält 2 Sturmtruppler, du besitzt das Set einmal
+> und hast die Figur 3× erfasst → 2 stecken im Set, **1 zählt** als echtes
+> Extra.
+
+Bei mehreren Zuständen werden zuerst zustandsgleiche Exemplare zugeordnet
+(ein gebrauchtes Set „nimmt" die gebrauchten Figuren). Wie viel dabei
+herausgerechnet wurde, steht offen unter den Kacheln im Statistik-Tab.
+
+**Wo bereinigt wird – und wo nicht.** Die Bereinigung greift nur dort, wo
+Sets und Figuren in *einer* Zahl zusammenkommen:
+
+| Bereinigt | Voller Wert |
+|---|---|
+| Gesamtwert | Filter **Figuren** oder **Sets** in der Sammlung |
+| Wert-Widget bei Filter *Alle* | einzelne Karten und Steckbriefe |
+| Aufteilung nach Typ/Zustand | **Top 10 nach Wert** |
+| Wert nach Erscheinungsjahr | **bezahlt/Gewinn** *(Sammlerprofi)* |
+| Wertentwicklungs-Kurve | |
+
+Filterst du auf **Figuren** (oder **Sets**), siehst du den **vollen** Wert
+dieser Gruppe – dort ist ja keine zweite Kategorie im Spiel.
+
+**Was unverändert bleibt.** Die **Stückzahl** ändert sich nicht – die
+Figuren gehören dir ja physisch, egal wo sie stecken. Und
+**bezahlt/Gewinn** rechnet weiter mit dem vollen Einzelwert, denn dort
+geht es um das, was du für gekaufte Artikel ausgegeben hast.
 
 ---
 
@@ -1771,8 +1825,8 @@ Start** einspielt (Kapitel 2.3).
 
 > **Wenn es zu viel wird:** Ab etwa 150 MB Bildern wird eine einzelne
 > JSON-Datei unhandlich. Dann verweigert die App das Mitsichern und sagt es
-> auch – nehmt in dem Fall den Ordner `data/uploads/` (oder gleich das ganze
-> `data/`) über euer normales Backup mit.
+> auch – nimm in dem Fall den Ordner `data/uploads/` (oder gleich das ganze
+> `data/`) über dein normales Backup mit.
 
 **Automatisch passiert es außerdem von selbst:** Brickfolio legt täglich
 eine konsistente Sicherung der Datenbank unter `data/backups/` ab und
@@ -1802,7 +1856,7 @@ gelber Banner mit Link zu den Release-Notes.
 > laufen und man wissen will, welche man gerade vor sich hat – oder wenn
 > jemand einen Fehler meldet und die Version dazu braucht.
 
-Wie eingespielt wird, hängt davon ab, wie ihr installiert habt.
+Wie eingespielt wird, hängt davon ab, wie du installiert hast.
 
 **Mit fertigem Image** (der übliche Weg, siehe 2.2):
 
@@ -1828,9 +1882,9 @@ Projekt → brickfolio → Aktion → Erstellen neu starten*.
 > leeres. Vorher unbedingt *Mehr → Sicherung* herunterladen.
 
 > **`update.sh` liegt hier nicht.** Das Skript gehört zum Quellcode und
-> steckt weder im Image noch im Ordner, wenn ihr nur die
-> `docker-compose.yml` geholt habt. Die beiden Befehle oben tun dasselbe –
-> nur den **Schnappschuss** müsst ihr selbst machen: in der App unter
+> steckt weder im Image noch im Ordner, wenn du nur die
+> `docker-compose.yml` geholt hast. Die beiden Befehle oben tun dasselbe –
+> nur den **Schnappschuss** musst du selbst machen: in der App unter
 > *Mehr → Sicherung*. Wer die Bequemlichkeit möchte, lädt das Skript einmal
 > dazu:
 >
@@ -1846,18 +1900,18 @@ sudo bash update.sh
 ```
 
 Das Skript legt zuerst einen **Datenbank-Schnappschuss** an (die letzten
-drei bleiben erhalten) und erkennt dann an eurer `docker-compose.yml`, wie
+drei bleiben erhalten) und erkennt dann an deiner `docker-compose.yml`, wie
 die Installation läuft:
 
 - steht dort `image: ghcr.io/…`, zieht es das neue Image (Sekunden)
 - steht dort `build: .`, holt es den Quellcode von GitHub und baut neu
 
-**In beiden Fällen gilt:** Eure `docker-compose.yml` und der `data/`-Ordner
-bleiben unberührt – dort liegen Datenbank, Sicherungen und eure hochgeladenen
+**In beiden Fällen gilt:** Deine `docker-compose.yml` und der `data/`-Ordner
+bleiben unberührt – dort liegen Datenbank, Sicherungen und deine hochgeladenen
 Bilder. Datenbank-Migrationen laufen beim Start automatisch und sind
 idempotent; mehrfaches Aktualisieren schadet nie. Ein Rückschritt auf eine
 ältere Version ist dagegen **nicht** vorgesehen: Migrationen erweitern nur.
-Wollt ihr das trotzdem, spielt vorher die Sicherung zurück.
+Willst du das trotzdem, spielt vorher die Sicherung zurück.
 
 #### Update direkt aus der App *(optional)*
 
@@ -1865,7 +1919,7 @@ Mit einem kleinen Helfer auf dem Server geht es auch ohne SSH: In der
 Karte **Version & Updates** stehen dann die Knöpfe **Jetzt**, **In 1
 Minute** und **In 5 Minuten**.
 
-> Dafür braucht ihr **beide** Skripte auf dem Server – auch bei einer
+> Dafür brauchst du **beide** Skripte auf dem Server – auch bei einer
 > Installation über das fertige Image, wo sie nicht mitkommen:
 >
 > ```bash
@@ -1911,7 +1965,7 @@ Benutzerdefiniertes Skript.
 Unter Linux mit cron: `* * * * * sh /pfad/zu/brickfolio/update-watch.sh`
 
 **Mehrere Instanzen:** am besten **je Instanz eine eigene Aufgabe** – so
-seht ihr pro Instanz, ob sie durchgelaufen ist. Wer alles in eine Aufgabe
+siehst du pro Instanz, ob sie durchgelaufen ist. Wer alles in eine Aufgabe
 schreibt, hängt an jede Zeile `|| true`, sonst bricht ein Fehler in der
 ersten Zeile die zweite mit ab.
 
@@ -1935,7 +1989,7 @@ Nachrichten dazu. Alles freiwillig; ohne Verbindung fehlt der Tab schlicht.
 Vermittelt wird über einen kleinen **Hub**. Wichtig für das Verständnis:
 
 - Im Hub liegen **nur die veröffentlichten Angebote** und die
-  Vorgangsdaten. Eure Sammlung, Preise, Notizen und Einkaufslisten
+  Vorgangsdaten. Deine Sammlung, Preise, Notizen und Einkaufslisten
   verlassen die eigene Instanz **nicht**.
 - **Nachrichten sind Ende-zu-Ende verschlüsselt.** Der Hub kann sie nicht
   lesen; er bewahrt sie nur auf, bis die Gegenseite sie abholt, und löscht
@@ -2153,7 +2207,7 @@ bei Sets, samt Figuren-Frage.
 
 **Beim Löschen genauso.** Wird ein Set aus der Sammlung entfernt, fragt die
 App, ob die dazugehörigen Figuren mitgehen sollen. Vorgeschlagen wird genau
-die Menge, die rechnerisch zu diesem Set gehört: Besitzt ihr eine Figur
+die Menge, die rechnerisch zu diesem Set gehört: Besitzt du eine Figur
 dreimal und steckten zwei im Set, wird auf **eine** reduziert statt alles zu
 löschen. „Figuren behalten" entfernt nur das Set.
 
@@ -2168,17 +2222,17 @@ Deshalb rechnet die App so: **Sets zählen voll**, und von jeder Figur zählen
 nur die Exemplare, die **nicht** in einem eigenen Set stecken. Gebunden sind
 *Anzahl der besessenen Sets × Stückzahl der Figur im Set*, höchstens so
 viele, wie tatsächlich vorhanden sind. Enthält ein Set zwei Sturmtruppler,
-besitzt ihr das Set einmal und habt die Figur 3× erfasst, dann stecken zwei
+besitzt du das Set einmal und hast die Figur 3× erfasst, dann stecken zwei
 im Set und **eines zählt** als echtes Extra. Bei gemischten Zuständen werden
 zuerst zustandsgleiche Exemplare zugeordnet. Wie viel herausgerechnet wurde,
 zeigt die Statistik offen unter den Kacheln.
 
 Bereinigt wird nur dort, wo Sets und Figuren in **einer** Zahl zusammenkommen:
 Gesamtwert, Wert-Widget der Sammlung bei Filter *Alle*, Aufteilung nach
-Typ/Zustand, Wert nach Erscheinungsjahr und Wertentwicklungs-Kurve. Filtert
-ihr auf **Figuren** oder **Sets**, erscheint der **volle** Wert dieser Gruppe;
+Typ/Zustand, Wert nach Erscheinungsjahr und Wertentwicklungs-Kurve. Filterst
+du auf **Figuren** oder **Sets**, erscheint der **volle** Wert dieser Gruppe;
 einzelne Karten und die **Top 10** zeigen immer den vollen Einzelwert. Die
-**Stückzahl** bleibt unverändert – die Figuren gehören euch ja physisch –,
+**Stückzahl** bleibt unverändert – die Figuren gehören dir ja physisch –,
 und **bezahlt/Gewinn** rechnet weiter mit dem vollen Einzelwert.
 
 **Weitere Hintergrund-Arbeiten:** fehlende Erscheinungsjahre werden
@@ -2265,8 +2319,8 @@ Version 1.13.0 behoben.)
 **Mehr → 📈 Preis-Protokoll** *(Sammlerprofi)* listet die jüngsten
 Aufzeichnungen mit Zeitpunkt, Artikel, Preisen und Quelle (`auto` oder
 `manuell`). Darüber steht, **bei wie vielen Artikeln der Preisabruf älter
-als sieben Tage ist** – so seht ihr auf einen Blick, wie aktuell die
-Bewertung eurer Sammlung ist. Sind alle Preise frisch, steht dort
+als sieben Tage ist** – so siehst du auf einen Blick, wie aktuell die
+Bewertung deiner Sammlung ist. Sind alle Preise frisch, steht dort
 stattdessen eine Bestätigung.
 
 ---
@@ -2323,15 +2377,15 @@ nur ein fehlendes Lebenszeichen.
 > Das ist wichtiger, als es klingt: Fremder Code läuft im **selben
 > Prozess** wie die App. Stürzt er ab, nimmt er den Tab mit – ganz gleich,
 > wie sparsam die Seite gerade ist. Die App entfernt trotzdem nichts; es ist
-> euer Browser.
+> dein Browser.
 
 > Ärgert es dich, teste einmal im **privaten Fenster** oder mit
 > abgeschalteten Erweiterungen. Bleibt es dort aus, war es genau das.
 
 **Was nicht gemeldet wird:** API-Schlüssel und der GitHub-Token werden aus
 jedem Text entfernt (`***`), bevor er gespeichert oder verschickt wird.
-Die Meldung geht ausschließlich an euren eigenen Server – nach außen geht
-nur, was ihr selbst per Issue verschickt.
+Die Meldung geht ausschließlich an deinen eigenen Server – nach außen geht
+nur, was du selbst per Issue verschickst.
 
 **Mitbekommen, dass etwas war.** Ein *neuer* Fehler legt einen Zettel auf
 der Startseite ab – mit der Meldung und einem Knopf, der direkt zur Karte
@@ -2347,7 +2401,7 @@ Gerät einzeln**, mit einer Berechtigungsabfrage des Browsers. Danach kommt
 bei einem neuen Fehler eine Meldung aufs Handy oder an den Desktop.
 
 > **Was dabei wohin geht.** Die Schlüssel entstehen beim ersten Einschalten
-> auf eurem Server und bleiben dort – der private Teil verlässt ihn nie.
+> auf deinem Server und bleiben dort – der private Teil verlässt ihn nie.
 > Zustellen muss der Push-Dienst des jeweiligen Browser-Herstellers (Apple,
 > Google, Mozilla); anders funktioniert Web-Push nicht. Deshalb steht in der
 > Meldung nur „Ein Fehler wurde aufgezeichnet" – kein Fehlertext, keine
@@ -2379,7 +2433,7 @@ vier Fälle:
 | Zeile | Bedeutung |
 | --- | --- |
 | „ohne sich zu verabschieden" | echter Absturz |
-| „weiterer Tab" | ihr habt Brickfolio ein zweites Mal geöffnet |
+| „weiterer Tab" | du hast Brickfolio ein zweites Mal geöffnet |
 | „von Hand neu geladen" | jemand hat neu geladen oder nach unten gezogen |
 | „hat die App selbst neu geladen" | z. B. nach einem Server-Neustart |
 | „vom Browser weggeräumt" | der Browser hat den Tab bei Speichermangel entsorgt |
@@ -2447,7 +2501,7 @@ weil er dort zuletzt etwas nachgesehen hat.
 **🔬 Bausteine einzeln abschalten** (ab 2.73.0). Vier Kästchen in derselben
 Karte, alle standardmäßig an:
 
-| Baustein | was aus ist | was ihr merkt |
+| Baustein | was aus ist | was du merkst |
 |---|---|---|
 | Sichtbarkeitsoptimierung | `content-visibility` auf den Sammlungskarten | große Sammlungen öffnen etwas langsamer |
 | Klebende Leisten | `position: sticky` | Kopfleiste und Blocküberschriften scrollen mit |
@@ -2462,9 +2516,9 @@ Namen. Raten hilft dann nicht, halbieren schon.
 Der Weg: **eines** abschalten, ein paar Stunden normal arbeiten. Was
 abgeschaltet war, steht in jedem Fehlerbericht mit (`OHNE: cv,blur`) – erst
 dadurch lässt sich hinterher zuordnen, welche Sitzung womit lief. Bleibt es
-ruhig, habt ihr den Auslöser. Stürzt es weiter ab, das nächste Kästchen.
+ruhig, hast du den Auslöser. Stürzt es weiter ab, das nächste Kästchen.
 
-Nichts davon rührt eure Daten an, und die Wahl übersteht einen Absturz
+Nichts davon rührt deine Daten an, und die Wahl übersteht einen Absturz
 samt Neuladen.
 
 **🐢 Schonender Bildmodus.** Ein Kästchen in derselben Karte, standardmäßig
@@ -2479,9 +2533,9 @@ Der schonende Modus geht denselben Weg zu Fuß: Entpacken über ein
 gewöhnliches Bildelement, alle Zeichenflächen im Hauptspeicher. Etwas
 langsamer, sonst gleich – dieselben Ergebnisse, dieselben Ausschnitte.
 
-> **So grenzt ihr ein:** Modus einschalten, eine Weile wie gewohnt
+> **So grenzt du ein:** Modus einschalten, eine Weile wie gewohnt
 > arbeiten. Bleibt es ruhig, lag es an diesem Weg. Stürzt es weiter ab –
-> besonders **ohne dass ihr gescannt habt** –, liegt es nicht daran, und der
+> besonders **ohne dass du gescannt hast** –, liegt es nicht daran, und der
 > Weg führt über den Browser: andere Anwendung testen,
 > Hardwarebeschleunigung abschalten, melden.
 
@@ -2490,7 +2544,7 @@ langsamer, sonst gleich – dieselben Ergebnisse, dieselben Ausschnitte.
 > des JS-Speichers. Eine Ansicht mit 800 Bildern trug so über 500 MB, die in
 > keiner Kurve auftauchten. Seit 2.11.0 holen die Karten deshalb eine
 > Daumennagel-Fassung mit 160 px – dieselbe Ansicht kommt damit auf 85 MB.
-> Steigt die Bilderzahl bei euch in die Hunderte und der Tab bricht ab, ist
+> Steigt die Bilderzahl bei dir in die Hunderte und der Tab bricht ab, ist
 > das der erste Ort zum Nachsehen.
 
 > **Was die Zahl aussagt – und was nicht.** Gemessen wird der
@@ -2544,14 +2598,14 @@ auf GitHub unter *Settings → Developer settings → Personal access tokens →
 Fine-grained tokens* einen Token erzeugen, als **Repository access** nur
 **dieses eine Repository** wählen und als einzige Berechtigung
 **Issues: Read and write** setzen. Mehr braucht die App nicht – und mehr
-sollte der Token auch nicht können. Er liegt danach in eurer Datenbank
+sollte der Token auch nicht können. Er liegt danach in deiner Datenbank
 und wird in der Oberfläche nie wieder angezeigt.
 
 ### 14.2 Wenn BrickLink eine Nummer ändert oder löscht
 
 Der BrickLink-Katalog ist nicht in Stein gemeißelt: Nummern werden
 umbenannt, doppelte Einträge zusammengelegt, selten auch gelöscht. Trifft
-das einen Artikel aus eurer Sammlung, würde sein Preis stillschweigend auf
+das einen Artikel aus deiner Sammlung, würde sein Preis stillschweigend auf
 dem alten Stand einfrieren. Damit das nicht passiert, meldet sich die App.
 
 **Wie sie es merkt.** Für jeden Artikel holt die App ohnehin alle sieben
@@ -2579,7 +2633,7 @@ Danach holt die App die Preise unter der neuen Nummer frisch.
 **Findet der Log nichts** – etwa weil der Eintrag wirklich gelöscht wurde
 –, bleibt der Hinweis trotzdem stehen, nur eben ohne neue Nummer. Nichts
 geht verloren: Der Artikel bleibt mit seinem letzten bekannten Preis in
-der Sammlung. Ihr könnt die Nummer dann von Hand über „BrickLink-Nr.
+der Sammlung. Du kannst die Nummer dann von Hand über „BrickLink-Nr.
 setzen" in den Karten-Details korrigieren.
 
 ### 14.3 Typische Stolpersteine
@@ -2631,7 +2685,7 @@ der Bauanleitung nutzen.
 
 **Braucht Brickfolio Internet?** Für Scannen, Preise und Suche: ja (die
 APIs liegen im Netz). Die eigenen Daten bleiben trotzdem komplett auf
-eurem Server.
+deinem Server.
 
 **Kostet BrickLink/Rebrickable etwas?** Nein, beide API-Zugänge sind
 kostenlos – BrickLink verlangt nur ein Verkäuferkonto mit Shop.
@@ -2671,10 +2725,10 @@ die jeweiligen Nutzungsbedingungen.
 | ⚙️ | Kaufpreis automatisch (BrickLink-Ø; Datum im Tooltip) |
 | ✏️ | Kaufpreis manuell eingetragen |
 | 👥 3/4 (✔) | 3 von 4 Set-Figuren vorhanden (✔ = komplett) |
-| 📦 | „steckt in euren Sets" bzw. Archiv |
+| 📦 | „steckt in deinen Sets" bzw. Archiv |
 | ⭐ / ☆ | steht auf der Wunschliste / merken |
 | 🛒 auf »…« | Artikel ist auf einer aktiven Einkaufsliste eingeplant |
-| gelber Set-Link mit ✔ | dieses Set ist in eurer Sammlung |
+| gelber Set-Link mit ✔ | dieses Set ist in deiner Sammlung |
 | ✔ (ausgegraut) | Listen-Artikel wurde in die Sammlung verbucht |
 | 🛒 | auf eine Einkaufsliste legen |
 | 🐞 | Fehlerbericht (nur Admin, unter „Mehr") |

@@ -609,7 +609,7 @@ function wireWantButtons(box, items, vorbereiten = null) {
           bricklink_url: it.bricklink_url || "", year: it.year || 0,
         }});
         if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-        else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
+        else if (res.owned > 0) toast(tr("Gemerkt ⭐ (hast du schon {n}×)", { n: res.owned }));
         else toast("Auf die Wunschliste gesetzt ⭐");
         btn.textContent = tr("⭐ Gemerkt");
       } catch (e) {
@@ -649,9 +649,9 @@ function renderWanted(items) {
         <div class="card-title tappbar" data-info="${esc(it.item_type || "minifig")}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
-          ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in eurer Sammlung</span>` : ""}
+          ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in deiner Sammlung</span>` : ""}
           ${it.on_lists && it.on_lists.length ? `<span class="badge badge-list" title="${esc(tr("Schon eingeplant – nicht doppelt kaufen"))}">🛒 ${it.on_lists_qty > 1 ? it.on_lists_qty + "× " : ""}${esc(tr("auf Einkaufsliste"))}: ${esc(it.on_lists.join(", "))}</span>` : ""}
-          ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">${esc(tr("🧩 fehlt zu eurem Set:"))}</span>${inSetLinks(it.in_sets)}</div>` : ""}
+          ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">${esc(tr("🧩 fehlt zu deinem Set:"))}</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
       </div>
       ${needsBlNo && state.bricklinkLookup ? `
@@ -839,7 +839,7 @@ function applySuggestInfo(info, withDetail) {
         // Gehört zu einem eigenen Set und fehlt noch? Dann deutlich sagen.
         const missingForOwn = d.in_sets && !(d.owned > 0);
         el.classList.toggle("missing", !!missingForOwn);
-        let html = (missingForOwn ? tr("🧩 fehlt zu eurem Set:") + " "
+        let html = (missingForOwn ? tr("🧩 fehlt zu deinem Set:") + " "
           : tr("📦 in Sets:") + " ")
           + links[0];
         if (links.length > 1) {
@@ -867,10 +867,10 @@ function applySuggestInfo(info, withDetail) {
       }
     }
     if (ownedEl && d.owned > 0) {
-      ownedEl.textContent = `✔ ${d.owned}× in eurer Sammlung`;
+      ownedEl.textContent = `✔ ${d.owned}× in deiner Sammlung`;
       ownedEl.hidden = false;
     } else if (ownedEl && d.wanted) {
-      ownedEl.textContent = tr("⭐ auf eurer Wunschliste");
+      ownedEl.textContent = tr("⭐ auf deiner Wunschliste");
       ownedEl.classList.remove("badge-owned");
       ownedEl.classList.add("badge-wanted");
       ownedEl.hidden = false;
@@ -1147,7 +1147,7 @@ async function askRemoveSetFigures(item) {
   if (!figs.length) return 0;
   body.innerHTML = `
     <p class="search-hint">Zu „${esc(item.name)}" sind
-      <b>${figs.length} Figur${figs.length === 1 ? "" : "en"}</b> in eurer
+      <b>${figs.length} Figur${figs.length === 1 ? "" : "en"}</b> in deiner
       Sammlung. Sollen sie mit entfernt werden?</p>
     <button class="mini-btn setfigs-all" id="setfigs-toggle">Alle ab-/anwählen</button>
     <div class="setfigs-list">
@@ -1376,14 +1376,14 @@ function steckbriefBesitzHtml(d) {
   const teile = [];
   if (d.owned > 0) {
     teile.push(`<span class="badge badge-owned">${esc(
-      tr("✔ {n}× in eurer Sammlung", { n: d.owned }))}</span>`);
+      tr("✔ {n}× in deiner Sammlung", { n: d.owned }))}</span>`);
   }
   (d.on_lists || []).forEach((name) => {
     teile.push(`<span class="badge badge-list">🛒 ${esc(name)}</span>`);
   });
   if (d.wanted) {
     teile.push(`<span class="badge badge-wanted">${esc(
-      tr("⭐ auf eurer Wunschliste"))}</span>`);
+      tr("⭐ auf deiner Wunschliste"))}</span>`);
   }
   if (!teile.length) {
     teile.push(`<span class="badge badge-none">${esc(
@@ -1576,7 +1576,7 @@ function wireFigActions(out, figs) {
           img_url: f.img_url, bricklink_url: f.bricklink_url,
         }});
         if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-        else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
+        else if (res.owned > 0) toast(tr("Gemerkt ⭐ (hast du schon {n}×)", { n: res.owned }));
         else toast("Auf die Wunschliste gesetzt ⭐");
         markFigOwnership(out, figs);
       } catch (e) {
@@ -6109,7 +6109,7 @@ function openSuggestModal(it) {
         year: pit.year || 0,
       }});
       if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-      else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
+      else if (res.owned > 0) toast(tr("Gemerkt ⭐ (hast du schon {n}×)", { n: res.owned }));
       else toast("Auf die Wunschliste gesetzt ⭐");
       b.textContent = tr("⭐ Gemerkt");
     } catch (e) { toast(e.message); } finally { b.disabled = false; }
@@ -6191,10 +6191,10 @@ async function loadSuggestDetail(inner, pit, orig) {
   const badge = inner.querySelector("[data-sug-owned]");
   if (badge) {
     if (d.owned > 0) {
-      badge.textContent = `✔ ${d.owned}× in eurer Sammlung`;
+      badge.textContent = `✔ ${d.owned}× in deiner Sammlung`;
       badge.hidden = false;
     } else if (d.wanted) {
-      badge.textContent = tr("⭐ auf eurer Wunschliste");
+      badge.textContent = tr("⭐ auf deiner Wunschliste");
       badge.classList.replace("badge-owned", "badge-wanted");
       badge.hidden = false;
     }
@@ -6834,7 +6834,7 @@ async function addManualWanted() {
       bricklink_url: blUrl, year, notes: $("m-notes").value,
     }});
     if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
-    else if (res.owned > 0) toast(tr("Gemerkt ⭐ (habt ihr schon {n}×)", { n: res.owned }));
+    else if (res.owned > 0) toast(tr("Gemerkt ⭐ (hast du schon {n}×)", { n: res.owned }));
     else toast("Auf die Wunschliste gesetzt ⭐");
     entwurfLoeschen();
     $("m-name").value = ""; $("m-id").value = "";
@@ -7457,13 +7457,13 @@ function renderStats(data) {
       </div>
     </div>` : ""}
     ${t.paid_estimated > 0 ? `<div class="price-note" style="margin-top:6px">${
-      esc(tr("Bei Figuren, die in euren Sets stecken, zählt ein nur ⚙️ "
+      esc(tr("Bei Figuren, die in deinen Sets stecken, zählt ein nur ⚙️ "
         + "automatisch ermittelter Kaufpreis nicht extra – der Set-Preis "
         + "deckt sie ab ({sum}). ✏️ Selbst eingetragene Preise zählen immer "
         + "mit, auch bei Set-Figuren.", { sum: fmtEur(t.paid_estimated) }))
     }</div>` : ""}
     ${t.in_sets_value > 0 ? `<div class="price-note" style="margin-top:6px">${
-      esc(tr("Figuren, die in euren Sets stecken, sind im Set-Preis enthalten "
+      esc(tr("Figuren, die in deinen Sets stecken, sind im Set-Preis enthalten "
         + "und werden nicht doppelt gezählt ({sum}). Details unter ❓ Hilfe → "
         + "„Wie der Wert berechnet wird“.", { sum: fmtEur(t.in_sets_value) }))
     }</div>` : ""}
@@ -7532,7 +7532,7 @@ function renderStats(data) {
       tr("Aktueller Wert minus Kaufpreis")) : "";
   const losers = dealer
     ? wertliste(tr("📉 Größte Wertverluste"), data.losers || [],
-      tr("Kaufpreis minus aktueller Wert – solange ihr sie behaltet, "
+      tr("Kaufpreis minus aktueller Wert – solange du sie behältst, "
          + "ist das nur auf dem Papier")) : "";
 
   $("stats-view").innerHTML = chips + chart + split + years + top
@@ -7680,7 +7680,7 @@ function totalChart(pts) {
     <text x="${padX}" y="${padT + 2}" class="hist-label">${fmtEur(hi)}</text>
     <text x="${padX}" y="${h - padB - 4}" class="hist-label">${fmtEur(lo)}</text>
   </svg>
-  <div class="price-note">Wertentwicklung eurer heutigen Sammlung
+  <div class="price-note">Wertentwicklung deiner heutigen Sammlung
     (eigene Preisaufzeichnung)</div>`;
 }
 
@@ -7872,7 +7872,7 @@ function renderMissingFigs(data) {
   if (!data.items.length) {
     box.innerHTML = `<div class="card"><div class="price-note">${
       s.sets_total
-        ? "Alle Figuren eurer Sets sind vollständig ✔"
+        ? "Alle Figuren deiner Sets sind vollständig ✔"
         : "Noch keine Sets in der Sammlung."
     }</div></div>`;
     return;

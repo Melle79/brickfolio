@@ -374,7 +374,7 @@
     </div>
     <div id="collection-list" class="results"></div>
     <p id="collection-empty" class="empty" hidden>
-      Noch nichts erfasst.<br>Los geht's – scannt eure erste Figur oder euer erstes Set!
+      Noch nichts erfasst.<br>Los geht's – scanne deine erste Figur oder dein erstes Set!
     </p>
   </main>
 
@@ -540,7 +540,7 @@
           <button class="mini-btn" id="interest-cancel">Abbrechen</button>
         </div>
         <p class="search-hint">🔒 Die Nachricht ist Ende-zu-Ende verschlüsselt –
-          nur ihr beide könnt sie lesen.</p>
+          nur du und dein Gegenüber könnt sie lesen.</p>
       </div>
     </div>
   </div>
@@ -828,7 +828,7 @@
       <h4>📖 Gelernte Begriffe</h4>
       <p class="search-hint">Was die Suche gelernt hat – und was du ihr
         beibringst. Eigene Zeilen haben Vorrang vor der KI und gelten auch
-        ohne sie. Nützlich, wenn ihr etwas anders nennt als der Katalog:
+        ohne sie. Nützlich, wenn du etwas anders nennst als der Katalog:
         <code>roter c3po → R-3PO</code>.</p>
       <!-- Hier steht nur die Bilanz. Die Liste wächst mit jedem Suchlauf und
            würde die Einstellungen sonst unbenutzbar machen; sie hat ein
@@ -915,7 +915,7 @@
     <div class="settings-card" id="images-card" hidden>
       <h3>🖼 Bilder auf der Instanz</h3>
       <p class="search-hint">Gespeichert ist zu jedem Artikel nur die Adresse
-        seines Katalogbildes – geholt hat es bisher euer Browser direkt bei
+        seines Katalogbildes – geholt hat es bisher dein Browser direkt bei
         BrickLink, Rebrickable oder Brickognize. Aus der Sammlung ging dabei
         nichts nach außen, aber die Bildadresse nennt die Teilenummer. Wer
         die Bilder einmal hierher holt, beendet auch das: Danach fragt der
@@ -1185,7 +1185,7 @@ sudo bash update.sh</pre>
     <div class="settings-card" id="about-card">
       <h3>ℹ️ Quellen &amp; Rechtliches</h3>
       <p class="search-hint">Brickfolio ist ein privates Hobby-Projekt ohne
-        kommerzielle Absicht und läuft auf eurem eigenen Server.</p>
+        kommerzielle Absicht und läuft auf deinem eigenen Server.</p>
       <p class="search-hint"><b>Daten &amp; Bilder</b> stammen von
         <a href="https://rebrickable.com/" target="_blank" rel="noopener">Rebrickable</a>
         (Katalogsuche),
@@ -1227,9 +1227,9 @@ sudo bash update.sh</pre>
           für Versicherungssummen, Verkaufsentscheidungen oder Angaben
           gegenüber Behörden.</li>
         <li><b>Die Erkennung kann sich irren.</b> Was Kamera und Suche
-          vorschlagen, ist ein Vorschlag – die Zuordnung prüft ihr.</li>
-        <li><b>Eure Daten liegen bei euch.</b> Die App hilft beim Sichern,
-          aber Server, Platte und Sicherung gehören euch. Ein Backup, das
+          vorschlagen, ist ein Vorschlag – die Zuordnung prüfst du.</li>
+        <li><b>Deine Daten liegen bei dir.</b> Die App hilft beim Sichern,
+          aber Server, Platte und Sicherung gehören dir. Ein Backup, das
           nie zurückgespielt wurde, ist keines.</li>
       </ul>
       <p class="search-hint">Die zwingende Haftung – Vorsatz, grobe
@@ -1398,57 +1398,63 @@ sudo bash update.sh</pre>
 
       <details class="help">
         <summary>🚀 Erste Schritte</summary>
-        <p>Im Tab <b>Scannen</b> eine Figur oder ein Set fotografieren und den
-        richtigen Treffer antippen – oder unten per Name/Nummer suchen (reine
-        Nummern wie <i>75154</i> oder <i>sw0815</i> findet die App als Set
-        <i>und</i> Figur). Mit <b>＋ Zur Sammlung</b> landet der Fund nach
-        einer kurzen Zustandsfrage in eurer Sammlung. Alles, was die
-        Erkennung nicht kennt, geht über <b>✏️ Manuell erfassen</b>.</p>
+        <p>Im Tab <b>Scannen</b> fotografierst du eine Figur oder ein Set und
+        tippst den richtigen Treffer an.</p>
+        <ul>
+          <li>Ohne Kamera: unten nach <b>Name oder Nummer</b> suchen.</li>
+          <li><b>＋ Zur Sammlung</b> legt den Fund nach einer kurzen
+            Zustandsfrage ab.</li>
+          <li>Was die Erkennung nicht kennt, kommt über
+            <b>✏️ Manuell erfassen</b> hinein.</li>
+        </ul>
+      </details>
+
+      <details class="help">
+        <summary>🔍 Suchen</summary>
+        <p>Die Suche versteht <b>Deutsch und Englisch</b> – „roter Droide"
+        findet auch <i>red droid</i>.</p>
+        <ul>
+          <li>Merkmale lassen sich kombinieren:
+            <i>Jedi mit gelbem Kopf und braunem Umhang</i>.</li>
+          <li>Reine Nummern wie <i>75154</i> oder <i>sw0815</i> gelten als
+            Set <i>und</i> Figur.</li>
+          <li>Kommt zu wenig zurück, hilft ein <b>kürzerer</b> Begriff mehr
+            als ein längerer.</li>
+        </ul>
       </details>
 
       <details class="help" id="help-keys">
         <summary>🔑 API-Schlüssel besorgen</summary>
-        <p>Ohne Schlüssel funktioniert das Scannen (Brickognize ist frei) –
-        <b>Preise, Namenssuche und Set-Inhalte</b> brauchen aber eigene,
-        kostenlose API-Zugänge. Eintragen kann sie nur der Admin unter
-        <b>Mehr → API-Schlüssel</b>.</p>
+        <p>Scannen geht ohne Schlüssel. <b>Preise, Namenssuche und
+        Set-Inhalte</b> brauchen zwei kostenlose Zugänge – eintragen kann sie
+        nur der Admin unter <b>Mehr → API-Schlüssel</b>.</p>
         <p><b>BrickLink</b> (Preise &amp; Set-Inhalte):</p>
         <ol>
-          <li>Ein BrickLink-Konto mit <b>eröffnetem Shop</b> wird benötigt –
-            die Store-API steht nur Verkäufern offen. Der Shop muss nichts
-            anbieten, er muss nur eingerichtet sein
-            (BrickLink: <i>My Store</i>).</li>
-          <li>Auf der Seite <a href="https://www.bricklink.com/v2/api/register_consumer.page" target="_blank" rel="noopener">API → Register Consumer</a>
-            die Nutzungsbedingungen akzeptieren und einen Access Token
-            erzeugen. Dabei <b>beide IP-Felder</b> (IP-Adresse <i>und</i>
-            Maske) mit <i>0.0.0.0</i> ausfüllen = Zugriff von beliebiger
-            Adresse.</li>
-          <li>Die vier Werte – <i>Consumer Key</i>, <i>Consumer Secret</i>,
-            <i>Token</i>, <i>Token Secret</i> – hier in die vier Felder
-            kopieren und speichern.</li>
+          <li>Konto mit <b>eröffnetem Shop</b> – die Store-API steht nur
+            Verkäufern offen. Anbieten musst du nichts.</li>
+          <li>Unter <a href="https://www.bricklink.com/v2/api/register_consumer.page" target="_blank" rel="noopener">API → Register Consumer</a>
+            einen Access Token erzeugen, <b>beide IP-Felder</b> auf
+            <i>0.0.0.0</i>.</li>
+          <li>Die vier Werte hierher kopieren und speichern.</li>
         </ol>
-        <p><b>Rebrickable</b> (Suche nach Namen):</p>
-        <ol>
-          <li>Kostenloses Konto auf rebrickable.com anlegen.</li>
-          <li>Unter <a href="https://rebrickable.com/api/" target="_blank" rel="noopener">Account → API</a>
-            einen Key erzeugen und ins Feld <i>Rebrickable Key</i>
-            eintragen.</li>
-        </ol>
-        <p>Danach <b>„Verbindung testen"</b> drücken – zwei grüne Haken, und
-        die Preise laufen ab sofort automatisch ein.</p>
+        <p><b>Rebrickable</b> (Suche nach Namen): Konto anlegen, unter
+        <a href="https://rebrickable.com/api/" target="_blank" rel="noopener">Account → API</a>
+        einen Key erzeugen.</p>
+        <p>Dann <b>„Verbindung testen"</b> – zwei grüne Haken, und die Preise
+        laufen von selbst ein.</p>
       </details>
 
       <details class="help">
         <summary>👤 Rollen &amp; Rechte</summary>
-        <p><b>Standard</b>: Sammlung, Listen und Statistik – bewusst
-        einfach. Der Tab <b>Listen</b> führt die Wünsche, die Einkaufslisten
-        und das Archiv zusammen; die beiden hinteren Reiter erscheinen nur,
-        wenn es dort etwas gibt. Angekommene Artikel darf jeder verbuchen.<br>
-        <b>Sammlerprofi</b> 💼: zusätzlich Kaufpreise &amp; Gewinn,
-        Einkaufslisten verwalten, Gesamtangebot, Verkaufsliste, Archiv,
-        CSV-Import. Die Rolle vergibt der Admin in der Benutzerverwaltung
-        („Profi"-Knopf).<br>
-        <b>Admin</b> 🔧: Benutzer, API-Schlüssel, Sicherung.</p>
+        <ul>
+          <li><b>Standard</b>: Sammlung, Listen, Statistik. Der Tab
+            <b>Listen</b> führt Wünsche, Einkaufslisten und Archiv zusammen;
+            die hinteren Reiter erscheinen nur, wenn es dort etwas gibt.</li>
+          <li><b>Sammlerprofi</b> 💼: zusätzlich Kaufpreise &amp; Gewinn,
+            Einkaufslisten, Gesamtangebot, Verkaufsliste, Archiv, CSV-Import.
+            Vergibt der Admin per „Profi"-Knopf.</li>
+          <li><b>Admin</b> 🔧: Benutzer, API-Schlüssel, Sicherung.</li>
+        </ul>
       </details>
 
       <details class="help">
@@ -1460,7 +1466,7 @@ sudo bash update.sh</pre>
             umschaltbar.</li>
           <li><b>💰 Gesamtangebot</b>: Der rote Vorschlag ist deine
             Verhandlungsbasis; „Verteilen" legt den Endpreis anteilig nach
-            Marktwert auf die Artikel um.</li>
+            Marktwert um.</li>
           <li>Zu Hause verbucht jeder die Funde mit <b>✔ Da!</b> – ist alles
             drin, archiviert sich die Liste selbst.</li>
         </ol>
@@ -1468,76 +1474,53 @@ sudo bash update.sh</pre>
 
       <details class="help">
         <summary>👥 Figuren beim Set übernehmen</summary>
-        <p>Kommt ein <b>Set</b> in die Sammlung – egal ob per Foto, Suche,
-        <b>Wunschliste</b>, <b>Einkaufsliste</b> oder manuell –, fragt die App
-        anschließend, welche der enthaltenen Minifiguren dabei sind. Alle sind
-        vorausgewählt; einzelne lassen sich abwählen, <b>„Keine übernehmen"</b>
-        überspringt die Frage. Der <b>Zustand</b> ist mit dem des Sets
-        vorbelegt und kann umgestellt werden. Figuren, die mehrfach im Set
-        stecken, werden auch mehrfach erfasst.</p>
-        <p>Das kostet keinen doppelten Wert: Solche Figuren gelten als „im Set
-        enthalten" und werden im Gesamtwert nicht zweimal gezählt (siehe
-        nächster Abschnitt). Ohne BrickLink-Schlüssel oder bei Sets ohne
-        Minifiguren erscheint die Frage nicht.</p>
-        <p><b>Beim Löschen genauso.</b> Wird ein Set aus der Sammlung
-        entfernt, fragt die App, ob die dazugehörigen Figuren mitgehen sollen.
-        Vorgeschlagen wird genau die Menge, die rechnerisch zu diesem Set
-        gehört – besitzt ihr eine Figur dreimal und steckten zwei im Set,
-        bleibt <b>eine</b> als echtes Extra erhalten. Mit <b>„Figuren
-        behalten"</b> verschwindet nur das Set.</p>
+        <p>Kommt ein <b>Set</b> in die Sammlung – per Foto, Suche,
+        Wunschliste, Einkaufsliste oder manuell –, fragt die App, welche
+        Minifiguren dabei sind.</p>
+        <ul>
+          <li>Alle sind vorausgewählt, <b>„Keine übernehmen"</b> überspringt
+            die Frage. Der Zustand ist vom Set vorbelegt.</li>
+          <li>Mehrfach enthaltene Figuren werden mehrfach erfasst – im
+            Gesamtwert zählen sie trotzdem nur einmal.</li>
+          <li><b>Beim Löschen</b> fragt die App, ob die Figuren mitgehen.
+            Vorgeschlagen wird die Menge, die rechnerisch zum Set gehört:
+            drei Exemplare, zwei im Set → eines bleibt.</li>
+          <li>Ohne BrickLink-Schlüssel oder bei Sets ohne Minifiguren
+            erscheint die Frage nicht.</li>
+        </ul>
       </details>
 
       <details class="help">
         <summary>💶 Wie der Wert berechnet wird</summary>
-        <p><b>Woher die Preise kommen.</b> Für jeden Artikel holt die App die
-        <b>Ø-Verkaufspreise der letzten 6 Monate</b> von BrickLink – getrennt
-        nach <i>neu</i> und <i>gebraucht</i>. Verwendet wird immer der Preis,
-        der zum eingetragenen <b>Zustand</b> passt; fehlt er, springt die App
-        auf den anderen Wert aus. Artikel ohne Preisdaten (z. B. manuell
-        erfasste Eigenbauten) zählen mit null und stehen als
-        <i>„ohne Preis"</i> unter dem Wert-Widget.</p>
-        <p><b>Die Rechnung.</b> Wert eines Eintrags = Ø-Preis × Menge.
-        Der Gesamtwert ist die Summe über alle Einträge – mit einer
-        wichtigen Ausnahme:</p>
-        <p><b>Set-Figuren werden nicht doppelt gezählt.</b> Ein Set-Preis
-        gilt bei BrickLink für das <i>komplette</i> Set, die Minifiguren sind
-        darin also schon enthalten. Wer Sets <i>und</i> deren Figuren einzeln
-        erfasst, hätte sie sonst zweimal in der Summe. Deshalb rechnet die App
-        so: Sets zählen voll, und von jeder Figur zählen nur die Exemplare,
-        die <b>nicht</b> in einem eigenen Set stecken.</p>
-        <p>Wie viele das sind: <i>Anzahl der besessenen Sets × Stückzahl der
-        Figur im Set</i>, höchstens so viele, wie wirklich vorhanden sind.
-        Beispiel: Das Set enthält 2 Sturmtruppler, ihr besitzt das Set einmal
-        und habt die Figur 3× erfasst → 2 stecken im Set, <b>1 zählt</b> als
-        echtes Extra. Bei mehreren Zuständen werden zuerst zustandsgleiche
-        Exemplare zugeordnet (ein gebrauchtes Set „nimmt" die gebrauchten
-        Figuren). Wie viel dabei herausgerechnet wurde, steht offen unter den
-        Kacheln im Statistik-Tab.</p>
-        <p><b>Wo bereinigt wird – und wo nicht.</b> Die Bereinigung greift
-        nur, wo Sets und Figuren in <i>einer</i> Zahl zusammenkommen: im
-        Gesamtwert, im Wert-Widget der Sammlung bei Filter <i>Alle</i>, in der
-        Aufteilung nach Typ/Zustand, im Wert nach Erscheinungsjahr und in der
-        Wertentwicklungs-Kurve. Filtert ihr auf <b>Figuren</b> (oder
-        <b>Sets</b>), seht ihr den <b>vollen</b> Wert dieser Gruppe – dort ist
-        ja keine zweite Kategorie im Spiel. Auch einzelne Karten und die
-        <b>Top 10</b> zeigen immer den vollen Einzelwert des Artikels.</p>
-        <p><b>Was unverändert bleibt.</b> Die <b>Stückzahl</b> ändert sich
-        nicht – die Figuren gehören euch ja physisch, egal wo sie stecken.
-        Und <b>bezahlt/Gewinn</b> (Sammlerprofi) rechnet weiter mit dem vollen
-        Einzelwert, denn dort geht es um das, was ihr für gekaufte Artikel
-        ausgegeben habt.</p>
+        <p>Grundlage sind die <b>Ø-Verkaufspreise der letzten 6 Monate</b> von
+        BrickLink, passend zum eingetragenen Zustand.</p>
+        <ul>
+          <li>Wert eines Eintrags = Ø-Preis × Menge. Artikel ohne Preisdaten
+            zählen mit null.</li>
+          <li><b>Set-Figuren zählen nicht doppelt</b>: Der Set-Preis enthält
+            seine Minifiguren schon. Von jeder Figur zählen nur die
+            Exemplare, die in keinem eigenen Set stecken.</li>
+          <li>Beispiel: Set mit 2 Sturmtrupplern, einmal besessen, Figur 3×
+            erfasst → <b>1</b> zählt extra.</li>
+          <li>Gefiltert auf <i>Figuren</i> oder <i>Sets</i> siehst du den
+            vollen Wert; Stückzahl und Gewinn bleiben unberührt.</li>
+        </ul>
+        <p>Ausführlich im <a href="https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md#91-wie-der-gesamtwert-gerechnet-wird" target="_blank" rel="noopener">Handbuch, Abschnitt 9.1</a>.</p>
       </details>
 
       <details class="help">
         <summary>🔣 Symbole</summary>
-        <p>🗑 statt <b>−</b> beim Mengenknopf: Es ist nur noch <b>ein</b>
-        Exemplar da – ein Tipp löscht den Eintrag (mit Rückfrage, bei Sets
-        inklusive Figuren-Frage) ·<br>
-        ⚙️ Kaufpreis automatisch (BrickLink-Ø, Datum im Tooltip) ·
-        ✏️ Kaufpreis manuell · 👥 3/4 ✔ Set-Figuren vorhanden/komplett ·
-        📦 „steckt in euren Sets" bzw. Archiv · ⭐ auf der Wunschliste ·
-        gelb hinterlegter Set-Link mit ✔ = dieses Set besitzt ihr ·
-        ausgegraut = Listen-Artikel schon verbucht.</p>
+        <ul>
+          <li>🗑 statt <b>−</b> beim Mengenknopf: Es ist nur noch <b>ein</b>
+            Exemplar da – ein Tipp löscht den Eintrag.</li>
+          <li>⚙️ Kaufpreis automatisch (BrickLink-Ø) · ✏️ Kaufpreis
+            manuell.</li>
+          <li>👥 3/4 ✔ Set-Figuren vorhanden/komplett ·
+            📦 „steckt in deinen Sets" bzw. Archiv · ⭐ auf der
+            Wunschliste.</li>
+          <li>Gelber Set-Link mit ✔ = dieses Set besitzt du · ausgegraut =
+            Listen-Artikel schon verbucht.</li>
+        </ul>
       </details>
 
       <details class="help">
