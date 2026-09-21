@@ -150,6 +150,58 @@ def falten(text: str) -> str:
     return (text or "").lower().translate(_FALTUNG)
 
 
+# Wörter, an denen sich erkennen lässt, dass ein Text schon deutsch ist.
+# Bewusst **eindeutige**: „torso", „arm", „gold" schreiben sich in beiden
+# Sprachen gleich.
+_DEUTSCH_ERKANNT = frozenset("""
+kopf haare helm arme beine umhang hut muetze brille bart gesicht augen
+schwarz weiss rot blau gelb gruen grau braun silber dunkel hell mit und
+""".split())
+
+
+def _merkmale_eindeutschen(conn) -> int:
+    """Die englischen Bildbeschreibungen Wort für Wort eindeutschen.
+
+    Kein Modell, kein Bild: Das mitgelieferte Wörterbuch ist aus genau
+    diesem Wortschatz entstanden, also reicht es zum Rückübersetzen.
+    Angehängt wird abschnittsweise, damit die Gliederung erhalten bleibt
+    (`head … ; torso …` wird zu `… ; kopf … ; torso …`).
+
+    Ein Abschnitt kommt nur mit, wenn mindestens zwei Wörter ankommen und
+    eines davon eindeutig deutsch ist – sonst stünde dort bloß dasselbe
+    noch einmal.
+    """
+    import woerterbuch
+    rueck: dict = {}
+    for de, engl in woerterbuch.WOERTERBUCH.items():
+        for e in engl:
+            if " " not in e:
+                rueck.setdefault(e, de)
+    zeilen = conn.execute(
+        "SELECT item_no, merkmale FROM katalog_index"
+        " WHERE item_type = 'minifig' AND merkmale <> ''").fetchall()
+    getan = 0
+    for r in zeilen:
+        text = r["merkmale"]
+        worte_ganz = re.split(r"[^a-z0-9]+", falten(text))
+        if any(w in _DEUTSCH_ERKANNT for w in worte_ganz):
+            continue                     # trägt schon Deutsch
+        teile = []
+        for teil in text.split(";"):
+            neu = [rueck[w] for w in re.split(r"[^a-z0-9]+", falten(teil))
+                   if w in rueck]
+            if len(neu) >= 2 and any(w in _DEUTSCH_ERKANNT for w in neu):
+                teile.append(" ".join(dict.fromkeys(neu))[:90])
+        if not teile:
+            continue
+        conn.execute(
+            "UPDATE katalog_index SET merkmale = ?"
+            " WHERE item_no = ? AND item_type = 'minifig'",
+            (text.rstrip("; ") + "; " + "; ".join(teile), r["item_no"]))
+        getan += 1
+    return getan
+
+
 def suchwoerter(name: str) -> str:
     """Derselbe Text, aber **wortweise** – mit Leerzeichen ringsum.
 
@@ -667,6 +719,46 @@ def init_db():
             if offen:
                 print("[brickfolio] %d Zeilen wortweise erfasst" % len(offen),
                       flush=True)
+        # Migration: die Bildbeschreibungen eindeutschen.
+        #
+        # **Warum überhaupt.** Neu beschriebene Figuren bekommen vom
+        # Sehmodell seit 21.09.2026 einen deutschen Teil. Solange nur sie
+        # ihn haben, sind deutsche Wörter im Katalog selten – und seltene
+        # Wörter trennen scharf. Eine frisch beschriebene Figur stünde vor
+        # einer alten, nur weil „kopf rot" in ihrem Text steht. Entweder
+        # alle oder keine.
+        #
+        # **Warum hier und nicht zentral.** Das Wörterbuch liegt in jeder
+        # Installation, der Katalog auch – die Übersetzung braucht kein
+        # Modell, keine Bilder und kein Netz. 19.267 Zeilen in rund neun
+        # Sekunden, gemessen am 21.09.2026. Veröffentlicht wird dadurch
+        # nichts Neues.
+        #
+        # **Warum zusammen mit dem Update.** Danach steht „kopf" in
+        # praktisch jeder Beschreibung. Eine App ohne die Verbund-Regel
+        # (siehe `_merkmale_fuer`) fände damit bei „Kopf" schlagartig den
+        # ganzen Katalog. Die Wanderung darf also nie vor dem Code
+        # ankommen, der sie verträgt – deshalb steht sie hier.
+        # **Der Merker läuft über dieselbe Verbindung.** `get_setting` und
+        # `set_setting` öffnen jeweils eine eigene – mitten in der
+        # schreibenden Wanderung gibt das „database is locked", und zwar
+        # erst nach dem Zeitablauf von 30 Sekunden je Aufruf.
+        schon = conn.execute("SELECT value FROM settings WHERE name = ?",
+                             ("merkmale_deutsch",)).fetchone()
+        if kat_cols and not (schon and schon["value"] == "1"):
+            try:
+                anzahl = _merkmale_eindeutschen(conn)
+            except Exception as e:                 # nie den Start blockieren
+                print("[brickfolio] Eindeutschen übersprungen: %s" % e,
+                      flush=True)
+            else:
+                conn.execute(
+                    "INSERT INTO settings (name, value) VALUES (?, '1')"
+                    " ON CONFLICT(name) DO UPDATE SET value = '1'",
+                    ("merkmale_deutsch",))
+                if anzahl:
+                    print("[brickfolio] %d Bildbeschreibungen eingedeutscht"
+                          % anzahl, flush=True)
         # Migration: Suchtext neu bilden, wo ein Umlaut drinsteckt. Bis
         # 2.80.3 waren Umlaute Trennzeichen – ein Name wie „Café" stand
         # deshalb als „caf" + „" im Suchtext. Betrifft in der Regel keine

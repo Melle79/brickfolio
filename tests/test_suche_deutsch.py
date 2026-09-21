@@ -225,3 +225,55 @@ def test_deutsche_farben_unterliegen_derselben_pruefung(client):
     # Die Figur ist schwarz – ein weißer Helm macht sie nicht weiß.
     assert main._katalog_lauf_suchen("weiss helm", 20, "minifig") == []
     assert main._katalog_lauf_suchen("white helmet", 20, "minifig") == []
+
+
+# ── Eindeutschen der Bildbeschreibungen ───────────────────────────────
+#
+# Neu beschriebene Figuren bekommen vom Sehmodell einen deutschen Teil.
+# Solange nur sie ihn haben, sind deutsche Wörter selten – und seltene
+# Wörter trennen scharf. Eine frische Figur stünde vor einer alten, nur
+# weil „kopf rot" in ihrem Text steht. Deshalb zieht die Wanderung beim
+# Update alle nach.
+
+def test_beschreibungen_werden_eingedeutscht(client):
+    _katalog([("sw1000", "Droid", "red")])
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET merkmale = ? WHERE item_no = ?",
+                     ("head red face with black eyes; legs red", "sw1000"))
+        anzahl = core._merkmale_eindeutschen(conn)
+        neu = conn.execute("SELECT merkmale FROM katalog_index "
+                           "WHERE item_no = 'sw1000'").fetchone()["merkmale"]
+    assert anzahl == 1
+    assert "head red face" in neu, "das Englische bleibt stehen"
+    assert "kopf rot gesicht" in neu
+
+
+def test_schon_deutsches_wird_nicht_angefasst(client):
+    """Was das Sehmodell selbst übersetzt hat, ist besser als eine
+    Wort-für-Wort-Fassung – und darf nicht doppelt danebenstehen."""
+    _katalog([("sw1001", "Droid", "red")])
+    vorher = "head red face; kopf rot gesicht"
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET merkmale = ? WHERE item_no = ?",
+                     (vorher, "sw1001"))
+        assert core._merkmale_eindeutschen(conn) == 0
+        assert conn.execute("SELECT merkmale FROM katalog_index WHERE "
+                            "item_no = 'sw1001'").fetchone()["merkmale"] == vorher
+
+
+def test_die_wanderung_laeuft_nur_einmal(client):
+    """Sonst hängt bei jedem Start eine weitere Fassung hinten dran."""
+    _katalog([("sw1002", "Droid", "red")])
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET merkmale = ? WHERE item_no = ?",
+                     ("head red face with black eyes", "sw1002"))
+    # Die Vorrichtung hat `init_db` schon laufen lassen – mit leerem Katalog,
+    # und damit steht der Merker bereits. Für diese Probe zurücksetzen.
+    core.set_setting("merkmale_deutsch", "")
+    core.init_db()
+    core.init_db()
+    with core.db() as conn:
+        text = conn.execute("SELECT merkmale FROM katalog_index WHERE "
+                            "item_no = 'sw1002'").fetchone()["merkmale"]
+    assert text.count("kopf") == 1
+    assert core.get_setting("merkmale_deutsch") == "1"
