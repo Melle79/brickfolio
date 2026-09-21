@@ -5846,9 +5846,13 @@ def suggest_collection(q: str = "", item_type: str = "",
     """
     if not q.strip():
         return {"begriffe": [], "items": []}
-    begriffe = integrations.suchbegriffe(q)
-    if not begriffe:
-        return {"begriffe": [], "items": []}
+    # **Zuerst ohne Modell.** Das Wörterbuch antwortet sofort und immer
+    # gleich; gefragt wird das Modell erst, wenn damit nichts gefunden
+    # wurde (siehe unten). Vorher genügte ein einziges unbekanntes Wort,
+    # um es zu bemühen – und bei „Jedi mit gelbem Kopf" ist das ein
+    # Eigenname, den keine Liste je enthalten wird, während die Übersetzung
+    # ringsum tadellos ist.
+    begriffe = integrations.suchbegriffe(q, nur_liste=True)
     # Einmal alles holen und in Python vergleichen: Der Vergleich ignoriert
     # Satzzeichen, das bekäme SQL nur mit verschachtelten replace() hin – und
     # der Zweig läuft ohnehin nur, wenn die gewöhnliche Suche nichts fand.
@@ -5876,6 +5880,23 @@ def suggest_collection(q: str = "", item_type: str = "",
                                  hoechstens=SUGGEST_MAX - len(items))
         items += mehr
         treffer += [b for b in treffer2 if b not in treffer]
+    if not items:
+        # Zweiter Anlauf, jetzt darf das Modell. Es sieht den ganzen Satz
+        # und kennt Wörter, die in keiner Katalogliste stehen – „Bademantel"
+        # ist ein `bathrobe`.
+        begriffe = [b for b in integrations.suchbegriffe(q)
+                    if b not in begriffe]
+        if begriffe:
+            begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
+            eng, weit = _teilmengen_teilen(
+                [(b, [e for e in alle if _passt(b, e["name"] or "")])
+                 for b in begriffe])
+            items, treffer = _reihum(eng, lambda e: e["id"], gesehen)
+            if len(items) < BREITER_AB and weit:
+                mehr, treffer2 = _reihum(weit, lambda e: e["id"], gesehen,
+                                         hoechstens=SUGGEST_MAX - len(items))
+                items += mehr
+                treffer += [b for b in treffer2 if b not in treffer]
     _begriffe_bewaehrt(q, treffer)
     return {"begriffe": treffer, "items": items[:SUGGEST_MAX]}
 
@@ -5918,26 +5939,52 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     #
     # Gebraucht wird Rebrickable erst weiter unten, wenn der eigene Abzug
     # nichts hergibt. Dort steht die Prüfung jetzt auch.
-    begriffe = integrations.suchbegriffe(q)
-    if not begriffe:
-        return {"begriffe": [], "items": []}
-    # Dieselbe Sortierung wie in der Sammlung: der genaueste Begriff zuerst,
-    # nach Wortzahl und ausdrücklich nicht nach Länge. Sonst liefe wieder
-    # `Minifigure` vor `Knight`.
-    begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
-    gesehen: set = set()
-    # **Zuerst der eigene Index.** Er kostet nichts, kennt die beschreibenden
-    # BrickLink-Namen und findet damit, was Rebrickable nicht hergibt:
-    # `R-3PO` heißt dort nur so, bei BrickLink „R-3PO Protocol Droid".
-    eng, weit = _teilmengen_teilen(
-        [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe])
     kennung = lambda e: (e["item_id"], e["item_type"])          # noqa: E731
-    items, treffer = _reihum(eng, kennung, gesehen)
-    if len(items) < BREITER_AB and weit:
-        mehr, treffer2 = _reihum(weit, kennung, gesehen,
-                                 hoechstens=SUGGEST_MAX - len(items))
+    gesehen: set = set()
+
+    def im_abzug(begriffe):
+        """Denselben Weg für eine Menge Begriffe gehen."""
+        if not begriffe:
+            return [], []
+        # Dieselbe Sortierung wie in der Sammlung: der genaueste Begriff
+        # zuerst, nach Wortzahl und ausdrücklich nicht nach Länge. Sonst
+        # liefe wieder `Minifigure` vor `Knight`.
+        begriffe = sorted(begriffe, key=lambda b: len(_such_woerter(b)),
+                          reverse=True)
+        eng, weit = _teilmengen_teilen(
+            [(b, _katalog_suchen(b, item_type=item_type)) for b in begriffe])
+        items, treffer = _reihum(eng, kennung, gesehen)
+        if len(items) < BREITER_AB and weit:
+            mehr, treffer2 = _reihum(weit, kennung, gesehen,
+                                     hoechstens=SUGGEST_MAX - len(items))
+            items += mehr
+            treffer += [b for b in treffer2 if b not in treffer]
+        return items, treffer
+
+    # **Zuerst ohne Modell und zuerst im eigenen Index.** Beides kostet
+    # nichts. Der Index kennt die beschreibenden BrickLink-Namen und findet
+    # damit, was Rebrickable nicht hergibt: `R-3PO` heißt dort nur so, bei
+    # BrickLink „R-3PO Protocol Droid".
+    aus_liste = integrations.suchbegriffe(q, nur_liste=True)
+    items, treffer = im_abzug(aus_liste)
+    # `begriffe` sammelt **alles Versuchte** – der Rebrickable-Teil weiter
+    # unten arbeitet damit weiter, wenn der eigene Abzug nichts hergab.
+    begriffe = list(aus_liste)
+    if not items:
+        # Jetzt erst das Modell – es sieht den ganzen Satz und kennt
+        # Wörter, die in keiner Katalogliste stehen.
+        vom_modell = [b for b in integrations.suchbegriffe(q)
+                      if b not in begriffe]
+        mehr, treffer2 = im_abzug(vom_modell)
         items += mehr
         treffer += [b for b in treffer2 if b not in treffer]
+        begriffe += vom_modell
+    if not begriffe:
+        return {"begriffe": [], "items": []}
+    # **Auch für Rebrickable gilt: der genaueste Begriff zuerst.** Sortiert
+    # wird sonst nur noch innerhalb von `im_abzug`; hier unten lief danach
+    # „C-3PO" vor „C-3PO red", und die Eingrenzung verpuffte.
+    begriffe.sort(key=lambda b: len(_such_woerter(b)), reverse=True)
     # Hat der eigene Abzug etwas, ist Rebrickable nicht mehr nötig: Die
     # Antwort ist da, kostenlos und mit den beschreibenden Namen. Jede
     # weitere Anfrage wäre nur Wartezeit für den Tippenden und Last auf

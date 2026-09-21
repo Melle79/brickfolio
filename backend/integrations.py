@@ -1120,8 +1120,12 @@ def begriffe_merken(begriff: str, begriffe: list, quelle: str = "ki"):
                 (schluessel, schluessel, jetzt - BEGRIFF_TIPPFENSTER))
 
 
-def suchbegriffe(q: str) -> list:
+def suchbegriffe(q: str, nur_liste: bool = False) -> list:
     """Deutsche Suchanfrage in englische BrickLink-Begriffe uebersetzen.
+
+    Mit `nur_liste` bleibt das Modell außen vor – das ist der **erste**
+    Anlauf, den die Oberfläche macht. Erst wenn damit nichts gefunden wird,
+    fragt sie ohne diesen Schalter noch einmal.
 
     Drei Stufen, in dieser Reihenfolge: die gelernte Liste in der Datenbank,
     der Zwischenspeicher, dann das Modell. Was das Modell liefert, wandert in
@@ -1152,6 +1156,15 @@ def suchbegriffe(q: str) -> list:
         if ganz:
             return ganz[:4]
         halb = woerterbuch.uebersetzen(q)
+    if nur_liste:
+        # **Erster Anlauf: ohne Modell.** Der Aufrufer sucht damit und
+        # fragt erst wieder nach, wenn nichts dabei herauskam. Gerade bei
+        # Eigennamen ist die halbe Übersetzung oft die richtige: „Jedi mit
+        # gelbem Kopf und braunem Umhang" wird zu `jedi yellow head brown
+        # cape` – tadellos, obwohl „Jedi" nirgends in der Liste steht.
+        # Vorher ging genau das ans Modell, und bei Star-Wars-Figuren ist
+        # ein unbekannter Eigenname der Normalfall, nicht die Ausnahme.
+        return gelernt or halb[:4]
     if not ollama_enabled():
         # Ohne Modell ist die halbe Übersetzung das Beste, was es gibt.
         return gelernt or halb[:4]

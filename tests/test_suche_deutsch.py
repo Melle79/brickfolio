@@ -277,3 +277,46 @@ def test_die_wanderung_laeuft_nur_einmal(client):
                             "item_no = 'sw1002'").fetchone()["merkmale"]
     assert text.count("kopf") == 1
     assert core.get_setting("merkmale_deutsch") == "1"
+
+
+# ── Das Modell ist das letzte Mittel, nicht der zweite Reflex ─────────
+#
+# Bis 2.82.0 genügte **ein** unbekanntes Wort, um das Modell zu bemühen –
+# und bei Star-Wars-Figuren ist ein Eigenname der Normalfall: „Jedi mit
+# gelbem Kopf und braunem Umhang" ging ans Modell, obwohl das Wörterbuch
+# `jedi yellow head brown cape` liefert und damit drei richtige Figuren
+# findet. Seit 2.83.0 wird zuerst gesucht und erst dann gefragt.
+
+def test_eigenname_fragt_das_modell_nicht(client, monkeypatch):
+    gefragt = []
+    monkeypatch.setattr(integrations, "ollama_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "suchbegriffe",
+                        lambda q, nur_liste=False: (
+                            gefragt.append(q) if not nur_liste else None)
+                        or woerterbuch.uebersetzen(q) or [])
+    _katalog([("sw2000", "Jedi Knight with Brown Cape", "yellow, brown")])
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET merkmale = ? WHERE item_no = ?",
+                     ("head yellow; cape brown", "sw2000"))
+    main._merkmal_breit = ()
+    d = client.get("/api/search/suggest?q=Jedi%20mit%20braunem%20Umhang").json()
+    assert [i["item_id"] for i in d["items"]] == ["sw2000"]
+    assert gefragt == [], "das Modell wurde gefragt, obwohl die Liste reichte"
+
+
+def test_ohne_treffer_kommt_das_modell_doch(client, monkeypatch):
+    """Für „Bademantel" hilft nur noch das Modell – `bathrobe` steht in
+    keiner Liste, die aus Katalogwörtern gebaut ist."""
+    gefragt = []
+
+    def begriffe(q, nur_liste=False):
+        if nur_liste:
+            return []
+        gefragt.append(q)
+        return ["bathrobe"]
+
+    monkeypatch.setattr(integrations, "ollama_enabled", lambda: True)
+    monkeypatch.setattr(integrations, "suchbegriffe", begriffe)
+    _katalog([("cty900", "Man in Bathrobe", "white")])
+    client.get("/api/search/suggest?q=Bademantel")
+    assert gefragt == ["Bademantel"]

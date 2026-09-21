@@ -482,10 +482,14 @@ und zusammengesetzte Wörter zu zerlegen – „Protokolldroide" wird zu
 Wörter ab, die in den Katalognamen vorkommen; der Rest sind Eigennamen, die
 man ohnehin so tippt, wie sie geschrieben werden.
 
-Die lokale KI bleibt trotzdem nützlich: Sie springt ein, wenn das
-Wörterbuch eine Anfrage **nicht vollständig** kennt, und was dabei
-wirklich etwas trifft, merkt sich die Installation (siehe 2.10). Ohne KI
-ist die Suche also nicht mehr blind, nur weniger findig.
+Die lokale KI bleibt trotzdem nützlich: Sie springt ein, wenn mit dem
+Wörterbuch **nichts gefunden** wurde, und was dabei wirklich etwas trifft,
+merkt sich die Installation (siehe 2.10). Ohne KI ist die Suche also nicht
+mehr blind, nur weniger findig.
+
+Seit 2.83.0 in dieser Reihenfolge: erst suchen, dann fragen. Vorher genügte
+ein einziges unbekanntes Wort – und ein Eigenname wie „Jedi" steht in
+keiner Liste, obwohl die Übersetzung ringsum tadellos ist.
 
 **Was sich damit suchen lässt.** Teil und Farbe zusammen, mehrfach in einer
 Anfrage: „Figur mit blauem Hut, roten Beinen und grünem Torso" trifft genau

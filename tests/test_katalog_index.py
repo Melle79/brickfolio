@@ -401,7 +401,9 @@ def test_der_weitere_begriff_kommt_nur_bei_duerftiger_ausbeute(client, monkeypat
     # leere Liste – er lief auch ohne die Änderung durch. Die Übersetzung
     # wird deshalb vorgegeben.
     monkeypatch.setattr(integrations, "suchbegriffe",
-                        lambda q: ["Red Droid", "Droid"])
+                        # `nur_liste` seit 2.83.0 – der erste Anlauf
+                        # läuft ohne Modell.
+                        lambda q, **k: ["Red Droid", "Droid"])
     core.set_setting("ollama_url", "http://x")
     assert len(main._katalog_suchen("Red Droid")) == 6
     d = main.suggest_catalog(q="roter droide", item_type="minifig",

@@ -45,6 +45,26 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.83.0 – September 2026
+
+### Geändert
+- 🐢 **Das Modell ist jetzt das letzte Mittel, nicht der zweite Reflex.**
+  Bisher genügte **ein** unbekanntes Wort in der Anfrage, um die lokale KI
+  zu bemühen – und bei Star-Wars-Figuren ist ein unbekannter Eigenname der
+  Normalfall, nicht die Ausnahme. „Jedi mit gelbem Kopf und braunem
+  Umhang" ging deshalb ans Modell, obwohl das Wörterbuch `jedi yellow head
+  brown cape` liefert und damit auf Anhieb die richtigen Figuren findet.
+
+  Jetzt wird **erst gesucht und dann gefragt**: Die Oberfläche versucht es
+  mit dem, was das Wörterbuch hergibt, und holt das Modell nur, wenn dabei
+  nichts herauskommt. Gemessen an 103 echten Anfragen: 97 beantwortet das
+  Wörterbuch vollständig, und von den übrigen sechs war eine („Jedi mit …")
+  schon vorher richtig übersetzt.
+
+  Für „Bademantel", „Dirndl" oder „Trachtenhut" bleibt das Modell die
+  einzige Hilfe – `bathrobe` steht in keiner Liste, die aus Katalogwörtern
+  gebaut ist.
+
 ## 2.82.0 – September 2026
 
 ### Neu
