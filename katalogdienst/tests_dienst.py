@@ -549,3 +549,41 @@ def test_statuscodes_werden_nicht_wiederholt(monkeypatch):
                         lambda s: pytest.fail("hier darf nicht gewartet werden"))
     assert katalog._get_mit_geduld("https://example.invalid").status_code == 429
     assert versuche["n"] == 1
+
+
+# ── Der deutsche Teil der Bildbeschreibung ────────────────────────────
+#
+# Seit 21.09.2026 liefert das Sehmodell dieselbe Beschreibung zusätzlich
+# auf Deutsch. **Nicht statt der englischen:** Das Modell antwortet auf
+# Englisch messbar besser, und die Farbliste speist die englische
+# Farbprüfung der App. Der deutsche Teil ist reiner Suchtext.
+
+def test_deutsche_teile_werden_gefaltet():
+    """Die Suche faltet jede Anfrage – der Text muss mitziehen.
+
+    `core.falten` macht aus „grün" ein „gruen" und vergleicht das per
+    `LIKE` gegen diesen Text. Stünde hier „grün", träfe die Anfrage nie.
+    """
+    import bild
+    teile = bild._deutsche_teile("Kopf grün; Torso weiß mit Gürtel")
+    assert teile == ["kopf gruen", "torso weiss mit guertel"]
+
+
+def test_fehlende_teile_fallen_weg():
+    """„umhang none" träfe sonst jede Suche nach Nichtvorhandenem."""
+    import bild
+    teile = bild._deutsche_teile("Kopf rot; Umhang none; Brille keine")
+    assert teile == ["kopf rot"]
+
+
+def test_ein_wort_allein_ist_keine_auskunft():
+    """„kopf" ohne Farbe steht bei jeder Figur und sagt nichts."""
+    import bild
+    assert bild._deutsche_teile("Kopf; Arme schwarz") == ["arme schwarz"]
+
+
+def test_ohne_deutsches_feld_bleibt_alles_wie_es_war():
+    """Ältere oder schwächere Modelle liefern das Feld gar nicht."""
+    import bild
+    assert bild._deutsche_teile(None) == []
+    assert bild._deutsche_teile("") == []

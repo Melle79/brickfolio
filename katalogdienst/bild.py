@@ -102,7 +102,15 @@ _BILD_SCHEMA = {
                            "print": {"type": "string", "maxLength": 100}},
             "required": ["part", "color", "print"]}},
         "accessories": {"type": "array", "maxItems": 3,
-                        "items": {"type": "string", "maxLength": 40}}},
+                        "items": {"type": "string", "maxLength": 40}},
+        # **Dieselbe Beschreibung noch einmal auf Deutsch.** Nicht statt der
+        # englischen – daneben. Warum nicht statt: Das Modell antwortet auf
+        # Englisch messbar besser (Wookiee → „Wookiee" statt nur „Alien"),
+        # die Farbliste speist die englische Farbprüfung der App, und der
+        # Katalog bliebe sonst halb. Warum überhaupt: Der Suchtext ist das
+        # Einzige, was die Bildanalyse beiträgt, und wer auf Deutsch sucht,
+        # kam bisher nur über die Übersetzung heran.
+        "de": {"type": "string", "maxLength": 300}},
     "required": ["kind", "parts"]}
 # **Teil für Teil, nicht nur „rot".**
 #
@@ -157,7 +165,15 @@ _BILD_FRAGE = (
     "description of what is printed on it - pattern, markings, face, insignia, "
     "and the colours of that printing. "
     "Only list parts that stand out by colour or printing; skip plain parts "
-    "and anything you cannot see. Finally list what the figure holds.")
+    "and anything you cannot see. Then list what the figure holds. "
+    "Finally, in the field \"de\", give the same description in German, "
+    "parts separated by semicolons, using the words a German LEGO collector "
+    "would search for: Kopf, Haare, Helm, Torso, Arme, Beine, Umhang, Hut, "
+    "Brille, Bart, Guertel. **Translate the colours too** - rot, blau, "
+    "schwarz, weiss, grau, braun, gelb, gruen, beige, gold, silber, orange, "
+    "rosa, lila, tuerkis - and say dunkel or hell for dark or light. "
+    "Nouns and colours only, no sentences, and leave out any part you would "
+    "describe as none or plain.")
 
 
 def _ollama_inhalt(nachricht: dict) -> str:
@@ -323,12 +339,23 @@ def bild_merkmale(bild: bytes) -> dict:
             continue
         stuecke.append(" ".join(x for x in (name, farbe, druck) if x))
         for wort in farbe.split():
-            if len(wort) >= 3 and wort not in farben:
+            # „red and blue jester hat" – das Bindewort ist keine Farbe.
+            # Es rutschte durch, weil es drei Buchstaben hat, und stand
+            # dann als Farbe in der Liste, die die App zum Sortieren
+            # benutzt (gesehen am 21.09.2026 an `njo0017`).
+            if len(wort) >= 3 and wort not in farben and wort not in _NICHTS \
+                    and wort not in _SCHWEBEND:
                 farben.append(wort)
     for ding in halt if isinstance(halt, list) else []:
         d2 = _bild_wort(ding, 4)
         if d2 and d2 != "none":
             stuecke.append("holding " + d2)
+    # **Der deutsche Teil wird gefaltet abgelegt.** Die Suche der App faltet
+    # jede Anfrage (`core.falten`: ä→ae, ß→ss) und vergleicht sie mit
+    # `LIKE` gegen diesen Text. Stünde hier „grün", träfe „gruen" nie – und
+    # umgekehrt genauso. Angezeigt wird der Text nirgends, er ist reiner
+    # Suchindex; die ungewohnte Schreibweise stört dort niemanden.
+    stuecke += _deutsche_teile(d.get("de"))
     # Die Art knapp halten: Ein ganzer Satz im Suchtext trifft irgendwann
     # alles. Zwei Wörter reichen für „Alien", „Clone Trooper", „Droide".
     art = " ".join(re.sub(r"[^a-z ]", " ", str(art).lower()).split()[:2])
@@ -347,6 +374,39 @@ _SCHWEBEND = frozenset("""
 with and on the a an of in or to at for from by over under into onto
 his her its their that which having between across along
 """.split())
+
+
+# Dieselbe Faltung wie `core.falten` in der App. Bewusst hier noch einmal
+# ausgeschrieben: Der Katalogdienst hängt nicht am Code der App.
+_FALTUNG = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
+
+# Wie das Modell „hat es nicht" sagt – auf beiden Sprachen.
+_NICHTS = frozenset("""
+none kein keine keins nicht nichts ohne unsichtbar sichtbar leer plain
+no not n a null nein
+""".split())
+
+
+def _deutsche_teile(roh) -> list:
+    """Den deutschen Teil der Antwort in Abschnitte zerlegen.
+
+    Leer ist in Ordnung – ältere oder schwächere Modelle liefern das Feld
+    einfach nicht, und der Abzug ist auch ohne brauchbar.
+    """
+    text = str(roh or "").lower().translate(_FALTUNG)
+    teile = []
+    for teil in text.split(";"):
+        # Nur Buchstaben und Ziffern; alles andere trennt ohnehin.
+        worte = re.sub(r"[^a-z0-9]+", " ", teil).split()
+        # „umhang none", „brille keine" – das Modell sagt so, dass etwas
+        # fehlt. Als Wort im Suchtext träfe es jede Suche nach
+        # Nichtvorhandenem, genau wie auf der englischen Seite.
+        worte = [w for w in worte if w not in _NICHTS]
+        # Ein Teil allein ist keine Auskunft: „kopf" ohne Farbe sagt nichts
+        # und steht ohnehin bei jeder Figur.
+        if len(worte) >= 2:
+            teile.append(" ".join(worte[:12]))
+    return teile[:8]
 
 
 def _bild_wort(roh, hoechstens: int) -> str:
