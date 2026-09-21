@@ -206,3 +206,22 @@ def test_bei_wenigen_zeilen_gilt_keine_beschraenkung(client):
     main._merkmal_breit = ()
     assert [t["item_id"] for t in
             main._katalog_lauf_suchen("tunic", 20, "minifig")] == ["sw0021"]
+
+
+def test_deutsche_farben_unterliegen_derselben_pruefung(client):
+    """Sonst ist „helm weiss" lockerer als „helmet white".
+
+    Die Farbprüfung verlangt, dass die Farbe die Figur beschreibt und nicht
+    nur ein Detail. Deutsche Farbwörter standen nicht in `FARBWOERTER` –
+    damit entfiel sie stillschweigend, und die deutsche Anfrage fand mehr
+    als die englische. Gemessen am 21.09.2026: 76 gegen 51 Treffer, und der
+    ganze Unterschied war diese fehlende Prüfung.
+    """
+    _katalog([("w0001", "Knight", "black")])
+    with core.db() as conn:
+        conn.execute("UPDATE katalog_index SET merkmale = ? WHERE item_no = ?",
+                     ("helm weiss mit visier", "w0001"))
+    main._merkmal_breit = ()
+    # Die Figur ist schwarz – ein weißer Helm macht sie nicht weiß.
+    assert main._katalog_lauf_suchen("weiss helm", 20, "minifig") == []
+    assert main._katalog_lauf_suchen("white helmet", 20, "minifig") == []

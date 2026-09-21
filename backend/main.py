@@ -3898,10 +3898,22 @@ FARBVERWANDT = {
 
 # Farbwörter, die in einer Suche eine **Eigenschaft der Figur** meinen und
 # nicht ein Detail im Fließtext.
+# **Deutsch gehört dazu.** Die Farbprüfung verlangt, dass eine gesuchte
+# Farbe wirklich die Figur beschreibt und nicht nur ein Detail. Stand hier
+# nur Englisch, entfiel sie bei jeder deutschen Farbe stillschweigend:
+# „helm weiss" fand Figuren, die gar nicht weiß sind, während „helmet
+# white" sie richtig aussortierte. Gemessen am 21.09.2026 an 30 Figuren –
+# die deutsche Fassung traf 76-mal, die englische 51-mal, und der ganze
+# Unterschied war diese fehlende Prüfung.
+#
+# Gebraucht wird das, seit die Anfrage auch roh deutsch durchlaufen kann
+# und die Bildbeschreibung deutsche Abschnitte enthalten darf.
 FARBWOERTER = frozenset("""
 red blue green yellow black white tan orange brown gray grey silver gold
 pink purple azure lime olive magenta lavender turquoise bronze copper beige
 maroon teal
+rot blau gruen gelb schwarz weiss grau braun silber lila rosa tuerkis
+orange oliv bronze kupfer beige purpur
 """.split())
 
 
