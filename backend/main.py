@@ -2803,6 +2803,12 @@ def config(user: dict = Depends(current_user)):
             "currency": integrations.currency(),
             "price_region": integrations.price_region(),
             "ki_suche": integrations.ollama_enabled(),
+            # **Übersetzt wird immer.** Das mitgelieferte Wörterbuch
+            # braucht kein Modell; `ki_suche` sagt nur noch, ob zusätzlich
+            # eins bereitsteht. Die Oberfläche hing ihren ganzen
+            # Übersetzungsweg an `ki_suche` – ohne Ollama fragte sie gar
+            # nicht erst nach, und das Wörterbuch kam nie zum Zug.
+            "such_uebersetzung": True,
             "hub_connected": hub.enabled()}
 
 
@@ -5738,10 +5744,14 @@ def suggest_collection(q: str = "", item_type: str = "",
     eigenen Datenbank, und gemeldet werden nur Begriffe, die wirklich etwas
     getroffen haben.
 
-    Ohne eingerichtete KI ist die Antwort leer; die Oberfläche zeigt dann
-    denselben Hinweis wie vorher.
+    **Auch ohne KI.** Bis 2.81.0 stand hier ein `ollama_enabled()`, und der
+    ganze Weg blieb zu, wenn kein Modell eingerichtet war – auf Pauls und
+    Kellos Instanzen also immer. Seit dem mitgelieferten Wörterbuch gibt es
+    eine zweite Quelle für Übersetzungen, und `suchbegriffe` entscheidet
+    selbst, welche greift. Bleibt es dabei ohne Begriffe, ist die Antwort
+    leer wie zuvor.
     """
-    if not q.strip() or not integrations.ollama_enabled():
+    if not q.strip():
         return {"begriffe": [], "items": []}
     begriffe = integrations.suchbegriffe(q)
     if not begriffe:
@@ -5802,8 +5812,10 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
 
     Gemeldet wird nur der Begriff, der wirklich etwas gefunden hat – ein vom
     Modell erfundener bleibt unsichtbar, weil er im Katalog nichts trifft.
+
+    **Auch ohne KI** – siehe `/api/collection/suggest`.
     """
-    if not q.strip() or not integrations.ollama_enabled():
+    if not q.strip():
         return {"begriffe": [], "items": []}
     # **Rebrickable wird hier nicht mehr vorausgesetzt.** Es stand ein
     # `return` an dieser Stelle, und das war falsch: Der eigene Abzug

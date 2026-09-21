@@ -2435,6 +2435,8 @@ function showApp() {
     setCurrency(c.currency);
     state.hubConnected = !!c.hub_connected;
     state.kiSuche = !!c.ki_suche;
+    // Übersetzt wird auch ohne Modell – siehe `such_uebersetzung`.
+    state.uebersetzt = c.such_uebersetzung !== false;
     state.jedipedia = !!c.jedipedia;
     if ($("opt-jedipedia")) $("opt-jedipedia").checked = state.jedipedia;
     updateHubTab();
@@ -4045,10 +4047,10 @@ function renderCollection() {
    eingerichtet hat oder wessen Dienst schweigt, sieht genau das, was vorher
    auch dastand. */
 async function kiNachschlagen(list, q) {
-  if (!state.kiSuche || !q) return;
+  if (!state.uebersetzt || !q) return;
   const warten = document.createElement("p");
   warten.className = "empty ki-hinweis";
-  warten.textContent = tr("Lokale KI sucht nach englischen Begriffen …");
+  warten.textContent = tr("Suche nach englischen Begriffen …");
   list.appendChild(warten);
   let daten;
   try {
@@ -5882,9 +5884,10 @@ function nichtsGefundenHinweis(hint) {
 }
 
 async function katalogKiVersuch(q, type, seq, hint) {
-  // Ohne KI bleibt die Meldung stehen, die `renderSuggestions` gesetzt hat.
-  if (!state.kiSuche) return;
-  hint.textContent = tr("Nichts gefunden – die lokale KI übersetzt …");
+  // Ohne Übersetzung bleibt die Meldung stehen, die `renderSuggestions`
+  // gesetzt hat.
+  if (!state.uebersetzt) return;
+  hint.textContent = tr("Nichts gefunden – übersetze den Suchbegriff …");
   hint.hidden = false;
   let daten;
   try {
