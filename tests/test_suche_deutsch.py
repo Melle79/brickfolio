@@ -144,3 +144,65 @@ def test_von_hand_gepflegtes_schlaegt_die_liste(client):
     """Was jemand eingetragen hat, gilt – auch gegen das Wörterbuch."""
     integrations.begriffe_merken("ritter", ["jedi"], quelle="hand")
     assert integrations.suchbegriffe("ritter") == ["jedi"]
+
+
+# ── Breite Wörter aus der Bildbeschreibung ────────────────────────────
+#
+# Das Sehmodell beschreibt **jede** Figur Teil für Teil. Gemessen am
+# 21.09.2026 an 19.267 Figuren: `torso` steht in 19.266 Beschreibungen,
+# `legs` in 19.188, `yellow` in 13.209 – im Namen dagegen nur 833, 5.801
+# und 1.155 Mal. Wer „gelb" suchte, bekam zwei Drittel des Katalogs.
+#
+# Sven hat die Regel dafür gesetzt: Ein gelber Kopf *ist* gelb, und das
+# soll auch zu finden sein – aber nur, wenn man nach dem gelben **Kopf**
+# fragt, nicht bei „gelb" allein.
+
+def _viele_mit_merkmalen(anzahl=250):
+    """So viele Zeilen, dass die Regel überhaupt greift."""
+    with core.db() as conn:
+        for i in range(anzahl):
+            conn.execute(
+                "INSERT INTO katalog_index (item_no, item_type, name, such,"
+                " woerter, farben, merkmale, updated_at)"
+                " VALUES (?, 'minifig', ?, ?, ?, ?, ?, 0)",
+                ("fig%04d" % i, "Figur %d" % i,
+                 core.wortanfaenge("Figur %d" % i)[0],
+                 core.suchwoerter("Figur %d" % i), "",
+                 "head yellow eyes; torso blue shirt"))
+
+
+def test_ein_einzelnes_breites_wort_zieht_nicht_den_ganzen_katalog(client):
+    """`torso` steht in jeder Beschreibung – allein sagt es nichts.
+
+    Bei **Farben** greift ohnehin schon die Farbliste (`_farbrang`): Wer
+    „gelb" sucht, bekommt nur Figuren, die das Sehmodell insgesamt als gelb
+    sieht. Bei Körperteilen gab es diese Bremse nicht, und `torso` traf
+    19.266 von 19.267 Figuren.
+    """
+    _viele_mit_merkmalen()
+    main._merkmal_breit = ()          # Zwischenspeicher verwerfen
+    assert main._katalog_lauf_suchen("torso", 50, "minifig") == []
+
+
+def test_im_verbund_zaehlt_die_beschreibung_sehr_wohl(client):
+    """Der blaue Torso ist zu finden – man muss ihn nur meinen.
+
+    Svens Regel: Die Auskunft aus dem Bild ist richtig und soll bleiben;
+    sie darf nur nicht auf ein einzelnes Allerweltswort anspringen.
+    """
+    _viele_mit_merkmalen()
+    main._merkmal_breit = ()
+    assert len(main._katalog_lauf_suchen("torso shirt", 50, "minifig")) > 0
+
+
+def test_bei_wenigen_zeilen_gilt_keine_beschraenkung(client):
+    """Sonst entwertet die Regel bei einer jungen Instanz die Bildanalyse."""
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " woerter, farben, merkmale, updated_at)"
+            " VALUES ('sw0021', 'minifig', 'Luke', 'luke', ' luke ', '',"
+            " 'torso white tunic', 0)")
+    main._merkmal_breit = ()
+    assert [t["item_id"] for t in
+            main._katalog_lauf_suchen("tunic", 20, "minifig")] == ["sw0021"]

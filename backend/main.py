@@ -4037,6 +4037,80 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20,
     return treffer
 
 
+# ── Wörter, die in fast jeder Bildbeschreibung stehen ─────────────────
+#
+# Die Merkmale kommen vom Sehmodell und beschreiben **jede** Figur Teil für
+# Teil: „torso …", „yellow head", „legs …". Gemessen am 21.09.2026 an
+# 19.267 Figuren: `torso` steht in 19.266 Beschreibungen, `legs` in 19.188,
+# `yellow` in 13.209 – im **Namen** dagegen nur 833, 5.801 und 1.155 Mal.
+#
+# Ein Wort, das fast überall steht, trennt nichts. Wer „gelb" sucht, bekam
+# darüber zwei Drittel des Katalogs.
+#
+# **Weggeworfen wird die Auskunft trotzdem nicht** – ein gelber Kopf *ist*
+# gelb. Sie soll nur nicht auf ein einzelnes Wort anspringen: „gelber Kopf"
+# darf sie finden, „gelb" allein nicht. Die Beschreibung ist dafür
+# gegliedert (`head … ; torso … ; arms …`), und ein Abschnitt zählt nur
+# mit, wenn die Anfrage dort **etwas Eigenes** trifft: ein Wort, das nicht
+# überall steht, oder zwei Wörter zusammen.
+#
+# Die Grenze rechnet sich aus den Daten selbst aus, es gibt keine gepflegte
+# Liste, die veralten könnte.
+MERKMAL_GRENZE = 0.30          # Anteil der Beschreibungen
+# **Erst ab einer nennenswerten Menge.** Bei fünf beschriebenen Figuren
+# steht jedes Wort in mehr als 30 % der Beschreibungen – die Regel würde
+# dann alles für belanglos erklären und die Bildanalyse komplett
+# entwerten. Gemessen an zwei Zeilen in den Proben: „tunic" galt als
+# überall stehend, und die Figur war nicht mehr zu finden. Darunter gilt
+# schlicht keine Beschränkung; der Fall, für den die Regel gebaut ist,
+# entsteht ohnehin erst bei Tausenden.
+MERKMAL_MINDESTZEILEN = 200
+_merkmal_breit: tuple = ()     # (Zeilenzahl, Menge der Wörter)
+
+
+def _breite_merkmalswoerter() -> set:
+    """Welche Wörter stehen in mehr als `MERKMAL_GRENZE` der Beschreibungen?"""
+    global _merkmal_breit
+    with core.db() as conn:
+        zeilen = conn.execute(
+            "SELECT COUNT(*) c FROM katalog_index WHERE item_type = 'minifig'"
+            " AND merkmale <> ''").fetchone()["c"]
+        if _merkmal_breit and _merkmal_breit[0] == zeilen:
+            return _merkmal_breit[1]
+        if zeilen < MERKMAL_MINDESTZEILEN:
+            _merkmal_breit = (zeilen, set())
+            return _merkmal_breit[1]
+        zaehler: collections.Counter = collections.Counter()
+        for (text,) in conn.execute(
+                "SELECT merkmale FROM katalog_index WHERE item_type = 'minifig'"
+                " AND merkmale <> ''"):
+            zaehler.update(set(_such_woerter(text)))
+    grenze = zeilen * MERKMAL_GRENZE
+    _merkmal_breit = (zeilen, {w for w, n in zaehler.items() if n > grenze})
+    return _merkmal_breit[1]
+
+
+def _merkmale_fuer(merkmale: str, woerter: list, breit: set) -> str:
+    """Die Abschnitte der Beschreibung, die für *diese* Anfrage zählen.
+
+    Ein Abschnitt (`head green yoda s face …`) zählt mit, wenn die Anfrage
+    dort etwas Eigenes trifft: ein Wort, das nicht in fast jeder
+    Beschreibung steht, oder zwei Wörter zusammen. „gelber Kopf" findet
+    damit den gelben Kopf; „gelb" allein findet ihn nicht, denn `yellow`
+    steht in 13.209 von 19.267 Beschreibungen und sagt für sich genommen
+    nichts.
+    """
+    if not merkmale:
+        return ""
+    gesucht = set(woerter)
+    behalten = []
+    for teil in merkmale.split(";"):
+        drin = [w for w in _such_woerter(teil) if w in gesucht]
+        if any(w not in breit for w in drin) or len(set(drin)) > 1:
+            behalten.append(teil)
+    return " ".join(behalten)
+
+
 def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
                          item_type: str = "minifig") -> list:
     """Ein einzelner Suchlauf – mit derselben Elle wie die Sammlung.
@@ -4087,12 +4161,17 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         # zusammen filtern: Bei **einem** Wort brächte `such` wieder
         # „Markings" für „king" herein und füllte die 400 Zeilen.
         geklebt = len(woerter) > 1
+        breit = _breite_merkmalswoerter()
+        # Ein einzelnes breites Wort darf gar nicht erst über die
+        # Beschreibung hereinkommen; im Verbund prüft die Feinprüfung
+        # abschnittsweise nach.
         bedingungen, werte = [], [item_type]
         for w in woerter:
-            teil = ("(woerter LIKE ? OR farben LIKE ? OR farben LIKE ?"
-                    " OR merkmale LIKE ? OR merkmale LIKE ?")
-            werte += ["% " + w + "%", w + "%", "% " + w + "%",
-                      w + "%", "% " + w + "%"]
+            teil = "(woerter LIKE ? OR farben LIKE ? OR farben LIKE ?"
+            werte += ["% " + w + "%", w + "%", "% " + w + "%"]
+            if w not in breit or len(woerter) > 1:
+                teil += " OR merkmale LIKE ? OR merkmale LIKE ?"
+                werte += [w + "%", "% " + w + "%"]
             if geklebt:
                 teil += " OR such LIKE ?"
                 werte.append("%" + w + "%")
@@ -4137,8 +4216,10 @@ def _katalog_lauf_suchen(begriff: str, hoechstens: int = 20,
         # Was bleibt, ist entweder Katalogwahrheit (Name) oder Beobachtetes
         # (Farben, Teilbeschreibung). Geraten wird im Index nicht mehr.
         # `art` bleibt in der Datenbank, wird aber nirgends gelesen.
-        volltext = " ".join((r["name"] or "", r["farben"] or "",
-                             r["merkmale"] or ""))
+        # Abschnittsweise: „head yellow eyes" zählt für „gelber Kopf",
+        # aber nicht für „gelb" allein.
+        merkmale = _merkmale_fuer(r["merkmale"] or "", woerter, breit)
+        volltext = " ".join((r["name"] or "", r["farben"] or "", merkmale))
         if not _passt(begriff, volltext):
             continue
         # Eine gesuchte Farbe muss die Figur beschreiben, nicht ein Detail.

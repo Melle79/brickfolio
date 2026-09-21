@@ -279,6 +279,86 @@ WOERTERBUCH.update({
     "fahr": ("driving",), "flug": ("flight", "air"), "see": ("sea",),
 })
 
+# ── Nachgetragen aus der Deckungsmessung ──────────────────────────────
+# Am 21.09.2026 gegen die 800 häufigsten Katalogwörter gemessen: Diese
+# kamen dort oft vor, waren aber von keinem deutschen Wort aus
+# erreichbar. Eigennamen (Batman, Weasley, Ninjago) fehlen bewusst – die
+# tippt man ohnehin, wie sie geschrieben werden.
+WOERTERBUCH.update({
+    "torso": ("torso",), "oberkoerper": ("torso",), "oberkörper": ("torso",),
+    "rumpf": ("torso",),
+    "zubehoer": ("accessories",), "zubehör": ("accessories",),
+    "nur": ("only",), "ueber": ("over",), "über": ("over",),
+    "sicherheit": ("safety",), "warnweste": ("safety vest",),
+    "rettungsweste": ("life jacket",), "leben": ("life",),
+    "kleidung": ("outfit",), "aufzug": ("outfit",),
+    "zerzaust": ("tousled",), "strubbelig": ("tousled",),
+    "nummer": ("number",), "zahl": ("number",),
+    "linien": ("lines",), "linie": ("line",),
+    "strick": ("knit",), "gestrickt": ("knit",),
+    "film": ("movie",), "schutz": ("protector",),
+    "schirm": ("bill", "brim"), "aera": ("era",), "ära": ("era",),
+    "epoche": ("era",), "fantasie": ("fantasy",),
+    "halterung": ("bracket",), "typ": ("type",), "art": ("type",),
+    "gestuft": ("layered",), "geschichtet": ("layered",),
+    "schmunzeln": ("smirk",), "schief": ("lopsided",),
+    "erwachsener": ("adult",), "erwachsene": ("adult",),
+    "phase": ("phase",), "super": ("super",), "loch": ("hole",),
+    "kueste": ("coast",), "küste": ("coast",),
+    "kettenhemd": ("chain mail",), "post": ("mail",),
+    "rebell": ("rebel",), "rebellen": ("rebel",),
+    "flieger": ("aviator",), "park": ("park",),
+    "packung": ("pack",), "riemen": ("strap",), "gurt": ("strap",),
+    "schuppen": ("scale",), "massstab": ("scale",),
+    "koerper": ("body",), "körper": ("body",),
+    "totenkopf": ("skull",), "schaedel": ("skull",), "schädel": ("skull",),
+    "federbusch": ("plume",), "tunika": ("tunic",),
+    "finster": ("scowl",), "kostuem": ("costume",), "kostüm": ("costume",),
+    "ausserirdischer": ("alien",), "außerirdischer": ("alien",),
+    "besatzung": ("crew",), "lord": ("lord",), "herr": ("lord",),
+    "ziegenbart": ("goatee",), "kinnbart": ("goatee",),
+    "waagerecht": ("horizontal",), "senkrecht": ("vertical",),
+    "arktis": ("arctic",), "polar": ("arctic",),
+    "gepolstert": ("pads",), "schulterklappen": ("epaulettes",),
+    "schleife": ("bow",), "guertelschlaufe": ("belt loop",),
+    "taucherbrille": ("goggles",), "atemgeraet": ("breathing",),
+    "stethoskop": ("stethoscope",), "werkzeuggurt": ("utility belt",),
+    "schwimmweste": ("life jacket",), "kapitaensmuetze": ("captain cap",),
+    "sandalen": ("sandals",), "turnschuhe": ("sneakers",),
+    "jeans": ("jeans",), "karohemd": ("plaid shirt",),
+    "trikot": ("jersey",), "helmvisier": ("helmet visor",),
+})
+
+# ── Zweite Runde der Deckungsmessung ──────────────────────────────────
+WOERTERBUCH.update({
+    "kurzgeschnitten": ("cropped",), "zurueckgekaemmt": ("swept",),
+    "zurückgekämmt": ("swept",), "gescheitelt": ("swept",),
+    "wickel": ("wrap",), "charakter": ("character",),
+    "doppelt": ("dual",), "laenge": ("length",), "länge": ("length",),
+    "besatz": ("trim",), "schmutz": ("dirt",), "dreckig": ("dirt",),
+    "passagier": ("passenger",), "beifahrer": ("passenger",),
+    "kerl": ("guy",), "geschirr": ("harness",), "gurtzeug": ("harness",),
+    "turnier": ("tournament",), "glocke": ("bell",),
+    "kraft": ("power",), "meister": ("master",),
+    "flanell": ("flannel",), "fleck": ("stains", "mark"),
+    "flecken": ("stains",), "reitend": ("riding",), "reiter": ("rider",),
+    "platte": ("plate",), "haeuptling": ("chief",), "häuptling": ("chief",),
+    "chef": ("chief",), "mitte": ("center",), "monster": ("monster",),
+    "filzhut": ("fedora",), "scheide": ("scabbard",), "bluse": ("blouse",),
+    "falke": ("falcon",), "schatten": ("shadow",), "klammer": ("clip",),
+    "ausruestung": ("gear",), "ausrüstung": ("gear",),
+    "pony": ("bangs",), "kaempfer": ("fighter",), "kämpfer": ("fighter",),
+    "fransen": ("fringe",), "gitter": ("grille",), "anker": ("anchor",),
+    "schaerpe": ("sash",), "schärpe": ("sash",), "grube": ("pit",),
+    "angestellter": ("employee",), "oel": ("oil",), "öl": ("oil",),
+    "streifenmuster": ("stripe",), "welle": ("wave",),
+    "schlange": ("snake",), "spinnennetz": ("web",),
+    "blitz": ("lightning",), "wolke": ("cloud",), "regen": ("rain",),
+    "stiefeletten": ("boots",), "guertelt": ("belted",),
+    "kurzarm": ("short sleeves",), "langarm": ("long sleeves",),
+    "rollkragen": ("turtleneck",), "kragenlos": ("collarless",),
+})
+
 
 # ══════════════════════════════════════════════════════════════════════
 # Nachschlagen
@@ -358,9 +438,25 @@ def nachschlagen(wort: str) -> tuple:
     return _direkt(wort) or _zerlegen(wort)
 
 
+# Wörter, die aus der Anfrage **verschwinden**, statt übersetzt zu werden.
+#
+# „Jedi mit gelbem Kopf und braunem Umhang" – „mit" und „und" tragen hier
+# nichts bei, würden aber als Suchwörter mitverlangt. `with` steht in
+# 18.049 von 19.267 Einträgen, `and` in 14.364: Wer sie fordert, schließt
+# jede Figur aus, die ohne sie benannt ist, und gewinnt dafür nichts.
+#
+# `ohne` bleibt drin – „ohne Beine" ist eine echte Einschränkung, und
+# `without` steht in gerade einmal 940 Namen.
+FUELLWOERTER = {"mit", "und", "der", "die", "das", "den", "dem", "des",
+                "ein", "eine", "einem", "einen", "einer", "eines",
+                "im", "am", "an", "auf", "bei", "von", "vom", "zum", "zur",
+                "als", "auch", "noch", "sowie"}
+
+
 def anfrage_teilen(q: str) -> list:
     """Eine Anfrage in dieselben Wörter zerlegen, die die Suche benutzt."""
-    return [w for w in re.split(r"[^a-z0-9]+", core.falten(q)) if len(w) >= 2]
+    return [w for w in re.split(r"[^a-z0-9]+", core.falten(q))
+            if len(w) >= 2 and w not in FUELLWOERTER]
 
 
 def uebersetzen(q, nur_ganz: bool = False) -> list:
