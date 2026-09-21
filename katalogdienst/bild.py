@@ -111,6 +111,12 @@ _BILD_SCHEMA = {
         # Einzige, was die Bildanalyse beiträgt, und wer auf Deutsch sucht,
         # kam bisher nur über die Übersetzung heran.
         "de": {"type": "string", "maxLength": 300}},
+    # **`de` steht bewusst nicht in der Pflichtliste.** Naheliegend wäre
+    # es – ohne sie lässt `qwen3-vl` das Feld bei 3 von 10 Figuren weg.
+    # Gemessen am 21.09.2026 an denselben zehn Figuren wurde es damit
+    # aber **schlechter**: 6 von 10 statt 7 von 10 übersetzt, und 11,8 s
+    # statt 9,2 s je Figur. Erzwungen antwortet das Modell kürzer und
+    # mischt die Sprachen. Also bleibt es freiwillig.
     "required": ["kind", "parts"]}
 # **Teil für Teil, nicht nur „rot".**
 #
@@ -380,6 +386,27 @@ his her its their that which having between across along
 # ausgeschrieben: Der Katalogdienst hängt nicht am Code der App.
 _FALTUNG = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
 
+# **Woran man erkennt, dass wirklich übersetzt wurde.** `qwen3-vl` hält
+# sich nicht immer an die Bitte: Bei `cas001` kamen im deutschen Feld
+# englische Bruchstücke zurück („golden dragon emblem on chest"), bei
+# `col001` sauberes Deutsch („kopf gelb; haare schwarz"). Ohne Prüfung
+# stünde der englische Text doppelt im Suchtext – doppelt so lang, ohne
+# einen einzigen zusätzlichen Treffer.
+#
+# Geprüft wird an den Wörtern, die in einer deutschen Figurenbeschreibung
+# fast zwangsläufig vorkommen. Findet sich keines, ist das Feld nichts
+# wert und fällt weg; der Rest der Antwort bleibt davon unberührt.
+# **Nur eindeutig deutsche Wörter.** „torso", „arm", „gold", „beige" und
+# „orange" schreiben sich in beiden Sprachen gleich – standen sie hier,
+# galt eine rein englische Antwort als übersetzt (gesehen an `hp001`:
+# „torso light blue floral collar design" kam als Deutsch durch).
+_DEUTSCHE_MARKER = frozenset("""
+kopf haare helm arme beine bein haende umhang hut muetze kappe
+brille bart guertel koerper gesicht augen mund nase ruestung maske
+schwarz weiss rot blau gelb gruen grau braun silber lila tuerkis
+dunkel hell mit und ohne auf einem einer seinem ihrem
+""".split())
+
 # Wie das Modell „hat es nicht" sagt – auf beiden Sprachen.
 _NICHTS = frozenset("""
 none kein keine keins nicht nichts ohne unsichtbar sichtbar leer plain
@@ -406,6 +433,10 @@ def _deutsche_teile(roh) -> list:
         # und steht ohnehin bei jeder Figur.
         if len(worte) >= 2:
             teile.append(" ".join(worte[:12]))
+    # Kein einziges deutsches Wort darin? Dann hat das Modell nicht
+    # übersetzt, sondern sich wiederholt.
+    if not any(w in _DEUTSCHE_MARKER for teil in teile for w in teil.split()):
+        return []
     return teile[:8]
 
 

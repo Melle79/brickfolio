@@ -587,3 +587,28 @@ def test_ohne_deutsches_feld_bleibt_alles_wie_es_war():
     import bild
     assert bild._deutsche_teile(None) == []
     assert bild._deutsche_teile("") == []
+
+
+def test_englische_wiederholung_faellt_weg():
+    """`qwen3-vl` hält sich nicht immer an die Bitte.
+
+    Bei `cas001` kamen im deutschen Feld englische Bruchstücke zurück.
+    Ungeprüft stünde der englische Text doppelt im Suchtext – doppelt so
+    lang, ohne einen einzigen zusätzlichen Treffer.
+    """
+    import bild
+    assert bild._deutsche_teile(
+        "golden dragon emblem on chest; red and black pattern") == []
+    # Ein einziges deutsches Wort genügt als Nachweis
+    assert bild._deutsche_teile("kopf yellow; torso blue") != []
+
+
+def test_gleiche_woerter_gelten_nicht_als_nachweis():
+    """„torso" heißt in beiden Sprachen gleich.
+
+    Stand es in der Markerliste, galt eine rein englische Antwort als
+    übersetzt – gesehen an `hp001`.
+    """
+    import bild
+    assert bild._deutsche_teile(
+        "torso light blue floral collar design in darker blue") == []
