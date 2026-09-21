@@ -183,11 +183,11 @@
 <section id="desktop">
   <div class="wrap">
     <h2>Am Rechner wie ein Programm</h2>
-    <p class="lead-small">Brickfolio läuft im Browser – aber es muss nicht
-    darin bleiben. Chrome, Edge und Safari können die Seite <strong>als
-    Programm installieren</strong>: eigenes Fenster, eigenes Symbol im Dock
-    oder in der Taskleiste, kein Adressfeld, keine Lesezeichen. Es startet
-    wie jede andere Anwendung.</p>
+    <p class="lead-small">Brickfolio läuft im Browser, muss aber nicht darin
+    bleiben. Chrome, Edge und Safari können die Seite <strong>als Programm
+    installieren</strong>: Sie bekommt dann ein eigenes Fenster ohne
+    Adressleiste und ein eigenes Symbol im Dock oder in der Taskleiste, und
+    du startest sie wie jede andere Anwendung.</p>
 
     <div class="grid">
       <div class="card"><h3>So geht es</h3>
@@ -196,8 +196,8 @@
         Danach liegt Brickfolio bei den Programmen.</p></div>
       <div class="card"><h3>Breiter Bildschirm, mehr Übersicht</h3>
         <p>Am Rechner steht die Navigation links und die Sammlung zweispaltig
-        daneben. Auf dem Handy rutscht sie nach unten, alles wird einspaltig
-        – dieselbe App, zwei Zuschnitte.</p></div>
+        daneben. Auf dem Handy rutscht sie nach unten und alles wird
+        einspaltig. Es ist dieselbe App in zwei Zuschnitten.</p></div>
       <div class="card"><h3>Wo es läuft</h3>
         <p>Die Oberfläche liegt nach dem ersten Laden im Browser, die Sammlung
         auf deinem Server. Im Heimnetz genügt das; von unterwegs führt der
@@ -213,7 +213,7 @@
 
     <p class="note"><strong>Dasselbe gilt fürs Handy:</strong> „Zum
     Startbildschirm hinzufügen" macht daraus eine App mit eigenem Symbol.
-    Praktisch, wenn man auf dem Flohmarkt schnell nachsehen will, ob eine
+    Praktisch, wenn du auf dem Flohmarkt schnell nachsehen willst, ob eine
     Figur schon da ist – dafür muss die App allerdings von unterwegs
     erreichbar sein, siehe unten.</p>
   </div>
@@ -225,15 +225,14 @@
     <p class="lead-small">Ein eigenes kleines Programm für Mac und Windows –
     gedacht für <strong>Auktions-Streams</strong>. Der Verkäufer hält eine
     Figur in die Kamera, du ziehst am Bildschirm einen Rahmen darum, und der
-    Treffer steht mit Nummer, Ø-Preisen und „habt ihr schon“ da. Ohne
-    Bildschirmfoto, ohne Datei, ohne Ziehen und Ablegen.</p>
+    Treffer steht mit Nummer, Ø-Preisen und „habt ihr schon“ da. Der Rahmen
+    genügt – ein Bildschirmfoto oder eine Datei brauchst du nicht.</p>
 
-    <p class="hinweis"><strong>Er läuft nicht für sich allein.</strong> Der
-    Live-Scanner ist die Fernbedienung zu einer <strong>laufenden
-    Brickfolio-Instanz</strong>: Dort meldet er sich beim ersten Start mit
-    Adresse, Benutzername und Passwort an, von dort kommen Sammlung, Listen
-    und Preise, und dorthin bucht er. Ohne eigene Instanz hat er nichts,
-    woran er sich wenden könnte.</p>
+    <p class="hinweis"><strong>Er ist die Fernbedienung zu deiner
+    Brickfolio-Instanz.</strong> Beim ersten Start meldet er sich dort mit
+    Adresse, Benutzername und Passwort an. Von dort kommen Sammlung, Listen
+    und Preise, und dorthin bucht er auch. Eine laufende Installation ist
+    deshalb die Voraussetzung.</p>
 
     <div class="scannerbild">
       <figure>
@@ -247,17 +246,19 @@
           <p>Im Stream zählt jede Sekunde. Ein Tastendruck genügt; auf Wunsch
           löst er selbst aus, sobald im gemerkten Bereich eine neue Figur
           erscheint.</p></div>
-        <div class="card"><h3>Selten nur ein Treffer</h3>
-          <p>Die Erkennung liefert eine Liste mit Quoten – bei Varianten
-          derselben Figur liegt die richtige oft auf Platz zwei. Ein Klick
-          wechselt die Zeile, Preise und Bild gehen mit.</p></div>
+        <div class="card"><h3>Varianten stehen daneben</h3>
+          <p>Die Erkennung liefert eine ganze Liste mit Trefferquoten, denn
+          bei Varianten derselben Figur liegt die richtige oft auf Platz
+          zwei. Ein Klick wechselt die Zeile, Preise und Bild gehen
+          mit.</p></div>
         <div class="card"><h3>Buchen mit einem Klick</h3>
           <p>Vom Treffer direkt in Sammlung, Wunschliste oder auf eine
           Einkaufsliste – über dieselbe Schnittstelle, die auch der Browser
           benutzt. Gebucht wird nur, was du anklickst.</p></div>
         <div class="card"><h3>Bringt alles mit</h3>
-          <p>Mac und Windows, nichts nachzuinstallieren, und er hält sich
-          selbst aktuell. Eigenes Projekt, eigene Veröffentlichungen.</p></div>
+          <p>Es gibt ihn für Mac und für Windows, und er bringt alles
+          Nötige schon mit. Neue Fassungen holt er sich selbst. Er ist ein
+          eigenes Projekt mit eigenen Veröffentlichungen.</p></div>
       </div>
     </div>
 
@@ -322,7 +323,7 @@
       <div class="card"><h3>„Image kann nicht gefunden werden"</h3>
         <p>Im Container Manager ist unter <em>Registrierung</em> nur Docker Hub
         eingetragen. Das stört nicht: Ein Projekt mit vollem Namen
-        (<code>ghcr.io/…</code>) zieht direkt – die Suche braucht man dafür
+        (<code>ghcr.io/…</code>) zieht direkt – die Suche brauchst du dafür
         gar nicht.</p></div>
       <div class="card"><h3>Der Container startet nicht</h3>
         <p>Steht im Protokoll etwas von fehlenden Schreibrechten, gehört
@@ -385,8 +386,9 @@ services:
 <pre>git clone https://github.com/Melle79/brickfolio
 cd brickfolio
 docker compose up -d --build</pre>
-        <p style="margin-top:12px">FastAPI und SQLite im Rücken, Vanilla-JS
-        im Browser – kein Bauschritt fürs Frontend.</p>
+        <p style="margin-top:12px">Im Rücken arbeiten FastAPI und SQLite, im
+        Browser reines JavaScript. Das Frontend braucht deshalb keinen
+        Bauschritt.</p>
       </div>
     </div>
 
@@ -404,9 +406,9 @@ docker compose up -d --build</pre>
     <h2>Von unterwegs darauf zugreifen</h2>
     <p class="lead-small">Brickfolio läuft zunächst nur im <strong>eigenen
     Netz</strong>. Wer auf dem Flohmarkt nachsehen will, ob eine Figur schon
-    da ist, braucht einen Weg von außen – und der heißt <strong>nicht
-    Portfreigabe am Router</strong>. Die stellt den Server dem ganzen
-    Internet hin.</p>
+    da ist, braucht einen Weg von außen. Dafür gibt es zwei sichere Wege.
+    Eine <strong>Portfreigabe am Router</strong> gehört nicht dazu, denn sie
+    stellt den Server dem ganzen Internet hin.</p>
 
     <div class="grid">
       <div class="card"><h3>Cloudflare Tunnel <em>(empfohlen)</em></h3>
@@ -417,8 +419,8 @@ docker compose up -d --build</pre>
         im Browser; die App speichert ihn nicht und schickt ihn nirgendwohin.
         Kostenlos.</p></div>
       <div class="card"><h3>VPN ins eigene Netz</h3>
-        <p>Wer ohnehin WireGuard oder Tailscale nutzt oder die VPN-Funktion
-        seines Routers, braucht gar nichts weiter: Im VPN ist die NAS
+        <p>Wer ohnehin WireGuard, Tailscale oder die VPN-Funktion seines
+        Routers nutzt, braucht gar nichts weiter: Im VPN ist die NAS
         erreichbar wie zu Hause.</p></div>
       <div class="card"><h3>Nur zu Hause</h3>
         <p>Völlig in Ordnung. Erfassen lässt sich auch ohne Netz von außen –
@@ -452,8 +454,8 @@ docker compose up -d --build</pre>
         <p>Brickfolio verkauft nichts und vermittelt keine Käufe. Preise sind
         Anhaltspunkte von BrickLink, keine Bewertung.</p></div>
       <div class="card"><h3>Nicht von der LEGO Gruppe</h3>
-        <p>Ein privates Hobbyprojekt, das weder gesponsert noch autorisiert
-        noch unterstützt wird.</p></div>
+        <p>Brickfolio ist ein privates Hobbyprojekt und wird von der LEGO
+        Gruppe weder gesponsert noch autorisiert noch unterstützt.</p></div>
     </div>
   </div>
 </section>
