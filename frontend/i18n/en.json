@@ -263,7 +263,7 @@
  "Der Katalog enthält bisher nur Figuren, keine Sets.": "The catalogue only holds minifigs so far, no sets.",
  "Der Katalog ist auf dieser Instanz noch nicht geladen.": "The catalogue has not been loaded on this instance yet.",
  "Der Katalog ist noch nicht geladen.": "The catalogue has not been loaded yet.",
- "Der Name steht im Logo und im Fenstertitel – „<span id=\"wiz-name-preview\">Finn</span>'s Brickfolio\". Später änderbar unter <b>Mehr → Anzeigename</b>.": "The name appears in the logo and the window title – \"<span id=\"wiz-name-preview\">Finn</span>'s Brickfolio\". Changeable later under <b>More → Display name</b>.",
+ "Der Name steht im Logo und im Fenstertitel: „<span id=\"wiz-name-preview\">Dein Brickfolio</span>\". Das Feld darf leer bleiben. Später änderbar unter <b>Mehr → Anzeigename</b>.": "The name appears in the logo and the window title: \"<span id=\"wiz-name-preview\">Your Brickfolio</span>\". The field may stay empty. Changeable later under <b>More → Display name</b>.",
  "Der Server ist gerade nicht erreichbar – vermutlich startet er neu. Gleich noch einmal versuchen.": "The server is unreachable right now – it is probably restarting. Try again in a moment.",
  "Der Tausch ist noch nicht angenommen.": "This trade has not been accepted yet.",
  "Der Text ist zu kurz": "The text is too short",

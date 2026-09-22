@@ -2120,10 +2120,12 @@ function appTitle() {
 }
 
 function applyOwnerName(name) {
-  if (!name) return;
-  state.ownerName = name;
+  // **Auch der leere Name ist ein Name.** Vorher stand hier ein frühes
+  // `return`: Wer keinen setzte, behielt das „FINN" aus der Vorlage im Logo
+  // und „'s Brickfolio" im Reiter – auf jeder frischen Installation.
+  state.ownerName = name || "";
   document.querySelectorAll(".logo-name").forEach((el) => {
-    el.textContent = name.toUpperCase();
+    el.textContent = state.ownerName.toUpperCase();
   });
   document.title = appTitle();
 }
@@ -2377,7 +2379,11 @@ function wireWizardOnce() {
   wizWired = true;
 
   $("wiz-owner").addEventListener("input", () => {
-    $("wiz-name-preview").textContent = $("wiz-owner").value.trim();
+    // Vorschau zeigt den **fertigen Titel**, nicht den nackten Namen –
+    // bei leerem Feld stand dort sonst „'s Brickfolio".
+    const roh = $("wiz-owner").value.trim();
+    $("wiz-name-preview").textContent =
+      roh ? roh + "'s Brickfolio" : "Dein Brickfolio";
   });
 
   $("wiz-next").addEventListener("click", async () => {

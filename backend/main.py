@@ -8487,6 +8487,16 @@ def index():
     Cachen der versionierten Dateien (siehe cache_control).
     """
     with open(os.path.join(FRONTEND_DIR, "index.html"), encoding="utf-8") as f:
-        html = (f.read().replace("__APPVERSION__", core.APP_VERSION)
-                .replace("__OWNER__", _owner_name()))
-    return HTMLResponse(html)
+        # `__APPTITLE__` statt des nackten Namens: Ohne gesetzten Namen
+        # stand im Reiter sonst „'s Brickfolio" – die Vorlage klebte das
+        # Genitiv-s an eine leere Zeichenkette. `_app_title()` kennt den
+        # Fall und liefert dann »Dein Brickfolio«.
+        seite = (f.read().replace("__APPVERSION__", core.APP_VERSION)
+                 # `quote=False`: Die Marken stehen in Textinhalt, nicht
+                 # in einem Attribut. Sonst würde aus „Sven's Brickfolio"
+                 # im Reiter „Sven&#x27;s Brickfolio".
+                 .replace("__APPTITLE__", html.escape(_app_title(), False))
+                 .replace("__OWNERUP__",
+                          html.escape(_owner_name().upper(), False))
+                 .replace("__OWNER__", html.escape(_owner_name(), False)))
+    return HTMLResponse(seite)

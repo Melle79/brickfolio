@@ -113,3 +113,36 @@ def test_favicon_ist_nicht_die_mitgelieferte_datei(client):
     mitgeliefert = open(os.path.join(
         main.FRONTEND_DIR, "icons", "favicon.ico"), "rb").read()
     assert client.get("/favicon.ico").content != mitgeliefert
+
+
+def test_titel_ohne_namen_ist_nicht_s_brickfolio(client):
+    """Der Reiter darf nicht »'s Brickfolio« heißen.
+
+    Bis 2.84.1 stand in der Vorlage `__OWNER__'s Brickfolio`, und der Server
+    ersetzte nur den nackten Namen. Ohne gesetzten Namen klebte das
+    Genitiv-s damit an einer leeren Zeichenkette – auf **jeder** frischen
+    Installation, bevor jemand einen Namen eintrug. Das Manifest hatte den
+    Fall längst richtig, die Seite nicht.
+    """
+    html = client.get("/").text
+    assert "<title>Dein Brickfolio</title>" in html
+    assert "'s Brickfolio</title>" not in html
+    assert "__APPTITLE__" not in html
+
+
+def test_logo_traegt_ohne_namen_kein_finn(client):
+    """Das Logo kam mit „FINN" aus der Vorlage und blieb ohne Namen stehen.
+
+    `applyOwnerName` stieg bei leerem Namen sofort aus, also überschrieb
+    nichts den Platzhalter – im Willkommensbogen einer fremden Installation
+    stand damit ein fremder Vorname.
+    """
+    html = client.get("/").text
+    assert "FINN" not in html
+    assert "__OWNERUP__" not in html
+
+
+def test_logo_traegt_den_namen_in_grossbuchstaben(client):
+    client.post("/api/settings/owner_name", json={"name": "Sven"})
+    html = client.get("/").text
+    assert '<span class="logo-name">SVEN</span>' in html

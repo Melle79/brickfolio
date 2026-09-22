@@ -904,6 +904,9 @@ body.update-pending .topbar { top: var(--update-bar-h, 46px); }
 
 .set-link.ext { color: var(--ink); text-decoration-style: dotted; }
 
+/* Ohne gesetzten Namen bleibt die Zeile leer – dann soll sie auch keinen
+   Platz und keinen Abstand beanspruchen, sonst rutscht das Logo nach unten. */
+.logo-name:empty { display: none; }
 .logo-name {
   display: block; font-weight: 900; font-size: 18px;
   letter-spacing: 7px; color: var(--red);
