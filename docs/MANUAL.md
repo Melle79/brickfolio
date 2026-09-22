@@ -1571,9 +1571,27 @@ So it is clear what happens by itself, and when:
 **Fetching prices.** BrickLink average prices (new & used) are fetched:
 (1) immediately when an item is added, (2) manually via "update prices" in the
 details, (3) automatically by the **background job**: it runs every **12
-hours**, takes on items whose prices are older than **7 days** – at most **40
-per run** and table, with a 2 s pause per request so as not to burden
-BrickLink. The result: no item is ever automatically older than a good week.
+hours** and takes on items whose prices are older than **7 days**, oldest
+first, with a 2 s pause per request so as not to burden BrickLink.
+
+**How many per run depends on the collection.** Enough to get through
+everything once in seven days, at least **40** and at most **400**. Up to
+2.78.x it was a fixed 40 – two runs a day meant 80 prices, so anyone with
+more than 560 items never got through in time. From about **5,600 items**
+the cap bites and a full round takes longer than seven days again: better an
+honest backlog than a blocked BrickLink account.
+
+**Names for the catalogue dump.** The published dump carries item numbers and
+image descriptions but **no names** – each instance looks those up through its
+own BrickLink access. That is a one-off of roughly 19,000 requests, sharing the
+quota with the prices. Since 2.85.1 the app works out how many per run:
+whatever the prices leave over goes to the names. A **fresh** instance has an
+empty collection and therefore gets the most – around 3,600 names a day, so the
+set is complete in a good five days. With 9,000 items it is 2,180 a day.
+
+> Until a name arrives, the search shows the number. The figure is **found**
+> regardless: the image description takes care of that, and it is there from
+> day one.
 
 **Price history.** Every fetch creates a history point – at most **one per 20
 hours** per item. The value curve in the statistics tab is built from exactly

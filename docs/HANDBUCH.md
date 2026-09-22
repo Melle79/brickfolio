@@ -2136,6 +2136,20 @@ Ab etwa **5.600 Artikeln** greift der Deckel, dann dauert eine Runde
 wieder länger als sieben Tage – lieber ein ehrlicher Rückstand als ein
 gesperrter BrickLink-Zugang.
 
+**Namen des Katalogabzugs.** Der veröffentlichte Abzug enthält Nummer und
+Bildbeschreibung, aber **keine Namen** – die holt jede Instanz über ihren
+eigenen BrickLink-Zugang nach. Das sind einmalig rund 19.000 Abrufe, und
+sie teilen sich das Kontingent mit den Preisen. Wie viele je Lauf, rechnet
+die App seit 2.85.1 aus: Was nach den Preisen übrig bleibt, gehört den
+Namen. Eine **frische** Instanz hat eine leere Sammlung und bekommt
+deshalb am meisten – rund 3.600 Namen am Tag, der Bestand ist in gut fünf
+Tagen beisammen. Bei 9.000 Artikeln sind es noch 2.180 am Tag.
+
+> Bis ein Name da ist, steht in der Suche die Nummer. **Gefunden** wird die
+> Figur trotzdem: Dafür sorgt die Bildbeschreibung, und die ist vom ersten
+> Tag an da. „Gelber Kopf" findet also sofort etwas, „Ritter mit Schwert"
+> erst, wenn die Namen nachgezogen sind.
+
 **Preisverlauf.** Bei jedem Abruf entsteht ein Verlaufs-Punkt – höchstens
 **einer pro 20 Stunden** je Artikel. Die Wertentwicklungs-Kurve im
 Statistik-Tab entsteht aus genau diesen Punkten. Ein manueller Abruf

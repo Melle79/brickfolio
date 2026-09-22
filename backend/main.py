@@ -2101,11 +2101,58 @@ KATALOG_MAX_BYTES = 32 * 1024 * 1024
 # **Der Abzug ist seitdem gewachsen:** 19.267 Figuren (Stand 22.09.2026),
 # also rund **sechseinhalb Tage** statt der früher hier genannten drei.
 # So lange sucht eine frische Instanz nur über die Bildbeschreibungen –
-# „knight sword" findet dann nichts, „gelber Kopf" schon. Wer schneller
-# vollständig sein will, muss KATALOG_NAMEN_JE_LAUF erhöhen und dafür
-# den Preisen Kontingent wegnehmen.
-KATALOG_NAMEN_JE_LAUF = 1500
+# „knight sword" findet dann nichts, „gelber Kopf" schon. Seit 2.85.1
+# rechnet `katalog_namen_je_lauf()` den Stapel aus dem übrigen Tagesbudget
+# aus – bei leerer Sammlung sind das rund 1.960 je Lauf und damit knapp
+# fünf Tage.
+# **Fest war die falsche Antwort.** 1.500 je Lauf stammten aus einer Zeit
+# mit 9.700 Namen; bei inzwischen 19.267 wären das sechseinhalb Tage, in
+# denen eine neue Instanz nur über die Bildbeschreibungen sucht. Einfach
+# hochsetzen geht aber nicht: Preise, Jahres-Nachtrag, Set-Inhalte und
+# Change-Log teilen sich dasselbe Kontingent, und am Preis-Deckel ist es
+# bereits ausgeschöpft.
+#
+# Nur trifft dieser Deckel genau die Instanzen, die den Namenslauf längst
+# hinter sich haben – wer gerade erst installiert, hat eine **leere**
+# Sammlung, und die Preise brauchen fast nichts. Deshalb wird der Stapel
+# gerechnet statt gesetzt: Was nach den Preisen vom Tagesbudget übrig
+# bleibt, gehört den Namen.
 KATALOG_NAMEN_TAKT = 1.0
+KATALOG_NAMEN_MIN = 300              # nie ganz verhungern lassen
+KATALOG_NAMEN_MAX = 2200             # Deckel gegen Ausreißer nach oben
+
+# BrickLink lässt 5.000 Abrufe am Tag zu. Die Rücklage deckt, was neben
+# Preisen und Namen noch anfällt: Jahres-Nachtrag (bis 60 je Tabelle und
+# Lauf), Set-Inhalte, Change-Log – und den Kopf für alles, was jemand von
+# Hand auslöst, während die Läufe arbeiten.
+BRICKLINK_TAGESBUDGET = 5000
+BRICKLINK_RUECKLAGE = 900
+
+
+def katalog_namen_je_lauf() -> int:
+    """Wie viele Namen ein Lauf nachschlägt – der Rest des Tagesbudgets.
+
+    Geschätzt wird der Preisbedarf so, wie ihn `preis_stapel` bemisst: zwei
+    API-Rufe je Artikel, `PRICE_LAEUFE_JE_TAG` Läufe. Das ist die obere
+    Schranke, nicht der tatsächliche Verbrauch – ein Lauf holt nur, was
+    wirklich älter als sieben Tage ist. Lieber zu vorsichtig schätzen: Ein
+    gesperrter Zugang kostet mehr als ein Tag Wartezeit.
+    """
+    try:
+        with core.db() as conn:
+            preise = 0
+            for table in PRICE_TABLES:
+                anzahl = conn.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE "
+                    "item_id NOT LIKE 'fig-%' AND item_id NOT LIKE "
+                    "'manuell-%' AND item_id NOT LIKE 'custom-%'"
+                ).fetchone()[0]
+                preise += preis_stapel(anzahl) * 2 * PRICE_LAEUFE_JE_TAG
+    except Exception:
+        return KATALOG_NAMEN_MIN          # im Zweifel bescheiden
+    frei = BRICKLINK_TAGESBUDGET - preise - BRICKLINK_RUECKLAGE
+    return max(KATALOG_NAMEN_MIN,
+               min(KATALOG_NAMEN_MAX, frei // PRICE_LAEUFE_JE_TAG))
 
 _namen_lauf = {"aktiv": False, "getan": 0, "stop": False, "fehler": ""}
 
@@ -2182,19 +2229,23 @@ def _katalog_ziehen() -> dict:
     return {"geholt": neu + geaendert, "neu": neu, "geaendert": geaendert}
 
 
-def _katalog_namen(grenze: int = KATALOG_NAMEN_JE_LAUF) -> dict:
+def _katalog_namen(grenze: int | None = None) -> dict:
     """Die Namen nachschlagen – über den **eigenen** BrickLink-Zugang.
 
     Der veröffentlichte Abzug enthält sie nicht, und das ist der Punkt: So
     geht nichts von BrickLink an Dritte. Jede Installation holt sie selbst –
     und ohne BrickLink-Zugang tut eine Installation ohnehin nichts.
 
-    Gedrosselt und in Häppchen. Beim ersten Mal sind es rund 9.700 Abrufe,
+    Gedrosselt und in Häppchen. Beim ersten Mal sind es rund 19.000 Abrufe,
     verteilt über ein paar Tage: Dasselbe Kontingent trägt die Preise, und
-    die braucht man täglich. Bis ein Name da ist, steht in der Suche die
-    Nummer – **gefunden** wird die Figur trotzdem, denn dafür sorgt die
-    Beschreibung, und die ist längst da.
+    die braucht man täglich. Wie viele je Lauf, rechnet
+    `katalog_namen_je_lauf()` aus dem aus, was die Preise übriglassen. Bis
+    ein Name da ist, steht in der Suche die Nummer – **gefunden** wird die
+    Figur trotzdem, denn dafür sorgt die Beschreibung, und die ist längst
+    da.
     """
+    if grenze is None:
+        grenze = katalog_namen_je_lauf()
     if core.get_setting("katalog_aus") == "1":
         return {"getan": 0, "grund": "abgeschaltet"}
     if not integrations.bricklink_enabled():

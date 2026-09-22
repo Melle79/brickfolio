@@ -45,6 +45,35 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.85.1 – September 2026
+
+### Geändert
+- ⏱ **Die Namen des Katalogabzugs kommen schneller – ohne das Kontingent zu
+  reißen.** Der Stapel je Lauf war fest auf 1.500 gesetzt. Die Zahl stammte
+  aus einer Zeit mit 9.700 Namen; bei inzwischen **19.267** wären das
+  sechseinhalb Tage, in denen eine frische Instanz nur über die
+  Bildbeschreibungen sucht.
+
+  Einfach hochsetzen ging nicht: BrickLink lässt 5.000 Abrufe am Tag zu, und
+  am Preis-Deckel ist das bereits ausgeschöpft. Nur trifft dieser Deckel
+  genau die Instanzen, die den Namenslauf **längst hinter sich haben** – wer
+  gerade erst installiert hat, hat eine leere Sammlung, und die Preise
+  brauchen fast nichts. Deshalb wird der Stapel jetzt gerechnet statt
+  gesetzt: Was nach den Preisen vom Tagesbudget übrig bleibt, gehört den
+  Namen.
+
+  | Sammlung | Namen je Tag | 19.267 Namen in |
+  |---|---|---|
+  | leer (Neuinstallation) | 3.620 | **5,3 Tagen** (vorher 6,4) |
+  | 900 Artikel | 3.456 | 5,6 Tagen |
+  | 3.000 Artikel | 2.708 | 7,1 Tagen |
+  | 9.000 Artikel | 2.180 | 8,8 Tagen |
+
+  Bei großen Sammlungen ist das **langsamer** als die festen 1.500 – und
+  genau richtig so: Dort war die feste Zahl ein Überzug aufs Kontingent.
+  Sieben Proben halten fest, dass die Summe aus Preisen und Namen das
+  Tagesbudget in keinem Fall überschreitet.
+
 ## 2.85.0 – September 2026
 
 ### Behoben
