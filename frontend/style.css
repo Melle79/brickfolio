@@ -67,6 +67,78 @@ button { font-family: inherit; }
 .logo-studs i:nth-child(4) { background: var(--green); box-shadow: inset 0 -3px 0 #00702E; }
 .logo-studs.small i { width: 12px; height: 6px; }
 
+/* ---------- Startbildschirm ----------
+   Er deckt die Ladezeit ab, er verlängert sie nicht: `app.js` nimmt ihn
+   weg, sobald die erste Ansicht steht (`.weg`), mindestens aber nach der
+   Animation – sonst bliebe er ein Aufblitzen ohne Aussage.
+
+   Die Farben kommen aus dem Design, das `theme-boot.js` **vor** dem ersten
+   Bild setzt. In Galaxy und Nova ist der Schirm deshalb dunkel, nicht kurz
+   hell. */
+#splash {
+  /* **Die Haltedauer steht hier, und nur hier.** `app.js` liest sie von
+     diesem Element ab, statt eine zweite Zahl zu führen – sonst liefen
+     Balken und Ausblenden früher oder später auseinander, und genau das
+     sieht man sofort: Der Balken stünde voll da, während das Logo noch
+     wartet. 1,1 s baut sich das Logo auf, den Rest steht es einfach. */
+  --halt: 3s;
+  position: fixed; inset: 0; z-index: 9999;
+  display: grid; place-items: center;
+  background: var(--plate);
+  transition: opacity .32s ease-out;
+}
+#splash.weg { opacity: 0; pointer-events: none; }
+#splash .logo { margin-bottom: 0; }
+
+/* **Der Inhalt kommt erst, wenn der Schirm ganz weg ist.** Ohne das
+   schiene er während des Ausblendens durch, und aus dem Auftritt würde
+   eine Überblendung. `app.js` nimmt die Marke vom Körper, sobald der
+   Schirm verschwunden ist; dann fährt der Inhalt weich auf.
+
+   Nur die drei obersten Behälter – alles darin hängt daran. */
+.splash-laeuft #view-login,
+.splash-laeuft #view-wizard,
+.splash-laeuft #app { opacity: 0; }
+#view-login, #view-wizard, #app { transition: opacity .28s ease-out; }
+
+/* Die vier Steine fallen nacheinander ein und federn leicht – danach
+   Name, Wortmarke und Unterzeile, jeweils einen Wimpernschlag versetzt. */
+#splash .logo-studs i { animation: splash-fall .5s cubic-bezier(.3, 1.5, .5, 1) backwards; }
+#splash .logo-studs i:nth-child(1) { animation-delay: 0s; }
+#splash .logo-studs i:nth-child(2) { animation-delay: .09s; }
+#splash .logo-studs i:nth-child(3) { animation-delay: .18s; }
+#splash .logo-studs i:nth-child(4) { animation-delay: .27s; }
+#splash .logo-name { animation: splash-ein .45s ease-out .42s backwards; }
+#splash .logo h1   { animation: splash-ein .45s ease-out .52s backwards; }
+#splash .logo p    { animation: splash-ein .45s ease-out .62s backwards; }
+
+@keyframes splash-fall { from { transform: translateY(-46px); opacity: 0; } }
+@keyframes splash-ein  { from { transform: translateY(-7px);  opacity: 0; } }
+
+/* Ein Balken, der läuft – aber nichts behauptet: Er zeigt, dass etwas
+   geschieht, nicht wie weit es ist. Einen echten Fortschritt gibt es hier
+   nicht, und einen zu erfinden wäre gelogen. */
+.splash-bar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 4px; background: var(--track);
+}
+.splash-bar i {
+  display: block; height: 100%; width: 0; background: var(--yellow);
+  animation: splash-laden var(--halt) ease-out forwards;
+}
+@keyframes splash-laden { to { width: 100%; } }
+
+/* **Wer Bewegung abgestellt hat, bekommt keine.** Das Bild bleibt, die
+   Animation entfällt – der Startbildschirm ist Schmuck, kein Inhalt. */
+@media (prefers-reduced-motion: reduce) {
+  #splash .logo-studs i,
+  #splash .logo-name,
+  #splash .logo h1,
+  #splash .logo p,
+  .splash-bar i { animation: none; }
+  .splash-bar i { width: 100%; }
+}
+
 /* ---------- Topbar ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 20;
@@ -182,6 +254,43 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 }
 @keyframes bf-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner-brick { animation-duration: 1.8s; } }
+
+/* Die vier Steine aus dem Logo, die nacheinander hüpfen – derselbe Takt
+   und dieselbe Federung wie im Startbildschirm, wo sie hereinfallen. So
+   erzählt das Warten dieselbe Geschichte wie der Auftritt: Es wird
+   gebaut.
+
+   Maße und Farben stammen 1:1 von `.logo-studs`; wer dort etwas ändert,
+   soll es hier wiederfinden. */
+.spinner-welle { display: flex; gap: 6px; }
+.spinner-welle i {
+  width: 22px; height: 10px; border-radius: 4px 4px 2px 2px;
+  background: var(--yellow); box-shadow: inset 0 -3px 0 var(--yellow-dark);
+  animation: bf-welle 1.1s cubic-bezier(.3, 1.5, .5, 1) infinite;
+}
+.spinner-welle i:nth-child(2) {
+  background: var(--red); box-shadow: inset 0 -3px 0 #A50D0F;
+  animation-delay: .09s;
+}
+.spinner-welle i:nth-child(3) {
+  background: var(--blue); box-shadow: inset 0 -3px 0 #003F7A;
+  animation-delay: .18s;
+}
+.spinner-welle i:nth-child(4) {
+  background: var(--green); box-shadow: inset 0 -3px 0 #00702E;
+  animation-delay: .27s;
+}
+/* Die Pause zwischen den Wellen gehört dazu: Ohne sie wirkt es hektisch,
+   und man sieht nicht mehr, dass die Steine **nacheinander** springen. */
+@keyframes bf-welle {
+  0%, 55%, 100% { transform: translateY(0); }
+  25%           { transform: translateY(-11px); }
+}
+/* Wer Bewegung abgestellt hat, sieht die vier Steine ruhig stehen – sie
+   sagen auch so, dass hier etwas lädt. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner-welle i { animation: none; }
+}
 
 /* ---------- Scan ---------- */
 .scan-hero { margin-top: 12px; }

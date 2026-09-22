@@ -45,6 +45,54 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.87.0 – September 2026
+
+### Hinzugefügt
+- 🧱 **Ein Startbildschirm, der sich aufbaut.** Beim Aufrufen der Seite
+  fallen die vier Steine des Logos nacheinander ein und federn leicht,
+  dann kommen Name, Wortmarke und Unterzeile versetzt hinterher. Nach drei
+  Sekunden blendet das Bild aus – und **erst danach** fährt der Inhalt
+  auf; sonst schiene er während des Ausblendens durch, und aus dem
+  Auftritt würde eine Überblendung.
+
+  **Der Name kommt vom Server**, nicht aus JavaScript. Sonst blitzte das
+  Logo erst ohne Namen auf und spränge dann um. Ohne gesetzten
+  Anzeigenamen fällt die Zeile weg und das Logo rückt zusammen.
+
+  Die Haltedauer steht an **einer** Stelle (`--halt` am `#splash`), und
+  der Ladebalken hängt an derselben – zwei Zahlen wären zwei
+  Gelegenheiten, sie auseinanderlaufen zu lassen. Wer Bewegung reduziert
+  hat, sieht dasselbe Bild ohne Animation.
+
+  Ein Notausgang in `theme-boot.js` nimmt das Bild nach sechs Sekunden in
+  jedem Fall weg. Bricht `app.js` je ab, läge es sonst für immer über
+  einer App, die man nicht mehr bedienen kann – lieber ohne Startbild als
+  ausgesperrt.
+
+- 🌊 **Das Ladezeichen passt dazu.** Statt des drehenden Klemmsteins
+  hüpfen in den Listen jetzt dieselben vier Steine nacheinander, im Takt
+  des Startbildschirms. Beim **Herunterziehen zum Aktualisieren** bleibt
+  es beim drehenden Stein: Dort sitzt das Zeichen in einem kleinen runden
+  Knopf, und das Drehen gehört zur Geste.
+
+### Behoben
+- 🌙 **Das dunkle Design blitzte auf dem Anmeldebogen kurz hell auf.**
+  `theme-boot.js` setzte vor dem ersten Zeichnen korrekt Galaxy – und
+  `checkSetup()` überschrieb es eine Zehntelsekunde später mit dem
+  Instanz-Standard. Genau das Aufblitzen, gegen das `theme-boot.js`
+  überhaupt geschrieben wurde.
+
+  Jetzt gilt auch dort, was nach dem Anmelden längst galt: **die eigene
+  Wahl auf diesem Gerät vor dem Instanz-Standard.** Aufgefallen ist es
+  erst beim Startbildschirm – mit einem ruhig stehenden Logo wird aus dem
+  Zucken ein sichtbarer Farbwechsel.
+
+- 🍎 **Die iOS-Kachel hieß „'s Brickfolio".** Derselbe Genitiv-Fehler wie
+  in 2.85.0, nur an einer Stelle übersehen: Die Vorlage trug
+  `__OWNER__'s Brickfolio`, und ohne gesetzten Namen klebte das s an einer
+  leeren Zeichenkette. Wer die App aufs Handy legte, hatte das auf dem
+  Startbildschirm stehen.
+
 ## 2.86.5 – September 2026
 
 ### Behoben

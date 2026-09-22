@@ -434,9 +434,22 @@ function brickSpinner(label, size = 46) {
     + "</g></svg>";
 }
 
-/* Ganzer Lade-Block: Baustein plus Text, wie in der Sammlung. */
+/* Die vier Steine aus dem Logo, die nacheinander hüpfen – derselbe Takt
+   wie der Startbildschirm, in dem sie von oben hereinfallen.
+
+   **Nicht überall statt des drehenden Steins.** Beim Herunterziehen zum
+   Aktualisieren sitzt das Zeichen in einem kleinen runden Knopf, und dort
+   gehört das Drehen zur Geste: Der Stein steht still, solange man zieht,
+   und dreht sich, sobald es losgeht. Eine Reihe aus vier Steinen wäre
+   dafür zu breit und erzählte das Falsche. */
+function brickWelle(label) {
+  return `<span class="spinner-welle" role="status" aria-label="${esc(label)}">`
+    + "<i></i><i></i><i></i><i></i></span>";
+}
+
+/* Ganzer Lade-Block: Steine plus Text, wie in der Sammlung. */
 function brickLoading(text) {
-  return `<div class="list-loading">${brickSpinner(text)}`
+  return `<div class="list-loading">${brickWelle(text)}`
     + `<span>${esc(text)}</span></div>`;
 }
 
@@ -2167,7 +2180,17 @@ async function checkSetup() {
   try {
     const s = await api("/setup");
     applyOwnerName(s.owner_name);
-    if (s.default_theme) applyTheme(s.default_theme);   // Login-Screen: Instanz-Standard
+    // **Die eigene Wahl auf diesem Gerät geht vor.** Angemeldet gilt
+    // `data.theme || defaultTheme` – auf dem Anmeldebogen kennt die App
+    // den Benutzer noch nicht, wohl aber das zuletzt hier benutzte
+    // Design. Stand nur der Instanz-Standard, setzte `theme-boot.js` beim
+    // Zeichnen erst richtig Dunkel und diese Zeile eine Zehntelsekunde
+    // später wieder Hell – genau das Aufblitzen, gegen das theme-boot.js
+    // überhaupt geschrieben wurde (22.09.2026, beim Startbildschirm
+    // aufgefallen).
+    let eigenes = "";
+    try { eigenes = localStorage.getItem("bf_theme") || ""; } catch (_) { /* egal */ }
+    if (!eigenes && s.default_theme) applyTheme(s.default_theme);
     // Diese Abfrage läuft nebenher. Steht inzwischen der zweite
     // Anmeldeschritt auf dem Schirm, darf sie den Anmeldebogen nicht
     // wieder darüberlegen – sonst stünden beide Kästen gleichzeitig da.
@@ -4626,7 +4649,7 @@ async function katListeLaden() {
   if (katStand.laeuft) return;
   katStand.laeuft = true;
   const liste = $("kat-liste");
-  liste.innerHTML = brickSpinner("Katalog");
+  liste.innerHTML = brickWelle("Katalog");
   try {
     const p = new URLSearchParams({
       thema: katStand.thema, art: katStand.art,
@@ -11268,6 +11291,59 @@ async function addUser() {
 }
 
 /* ---------------------------------------------------------------- Start */
+/* Den Startbildschirm wegnehmen, sobald die erste Ansicht steht.
+
+   **Mit einer Mindestdauer.** Aus dem Zwischenspeicher ist die App in
+   150 ms da; ohne Untergrenze wäre der Schirm ein Zucken, das man eher
+   als Fehler liest denn als Gruß. Die Animation läuft 1,1 s, danach darf
+   er gehen.
+
+   **Und nur einmal.** Aufgerufen wird sie am Ende des Starts; findet sie
+   nichts mehr vor, ist der Notausgang in `index.html` schon gelaufen –
+   dann gibt es nichts zu tun.
+
+   Wer Bewegung abgestellt hat, wartet nicht: Ohne Animation gibt es auch
+   nichts abzuwarten. */
+/* Wie lange der Schirm mindestens steht – **abgelesen vom Element**,
+   nicht hier festgelegt. Die Zahl steht in `style.css` als `--halt` am
+   `#splash`, und der Ladebalken hängt an derselben. Zwei Zahlen wären
+   zwei Gelegenheiten, sie auseinanderlaufen zu lassen.
+
+   Gebraucht wird sie überhaupt nur, weil die App aus dem
+   Zwischenspeicher in 150 ms dasteht: Ohne Untergrenze wäre der Schirm
+   ein Zucken, das man eher als Fehler liest denn als Gruß. */
+const SPLASH_RUECKFALL = 3000;
+
+function splashHaltedauer(el) {
+  const roh = getComputedStyle(el).getPropertyValue("--halt").trim();
+  const zahl = parseFloat(roh);
+  if (!isFinite(zahl) || zahl <= 0) return SPLASH_RUECKFALL;
+  return roh.endsWith("ms") ? zahl : zahl * 1000;
+}
+
+function startbildschirmSchliessen() {
+  const el = document.getElementById("splash");
+  const frei = () => document.body.classList.remove("splash-laeuft");
+  if (!el) { frei(); return; }
+  const ruhig = window.matchMedia
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Ohne Animation gibt es nichts abzuwarten – dann nur kurz halten,
+  // damit der Wechsel nicht ruckt.
+  const halten = ruhig ? 300 : splashHaltedauer(el);
+  const wartet = Math.max(0, halten - performance.now());
+  setTimeout(() => {
+    el.classList.add("weg");
+    // **Erst weg, dann der Inhalt.** Der Aufbau des Inhalts startet, wenn
+    // der Schirm zu Ende ausgeblendet ist – nicht währenddessen, sonst
+    // wäre es eine Überblendung statt eines Auftritts.
+    const fertig = () => { el.remove(); frei(); };
+    el.addEventListener("transitionend", fertig, { once: true });
+    // Fällt der Übergang aus (reduzierte Bewegung, alter Browser), bliebe
+    // der Schirm sonst unsichtbar über der App liegen und schluckte Tipps.
+    setTimeout(fertig, 600);
+  }, wartet);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Sprache zuerst: Danach steht das Dokument fertig übersetzt da, ohne dass
   // deutscher Text kurz aufblitzt. Bei Deutsch kostet das nichts.
@@ -11764,6 +11840,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   if (state.token) { refreshMe(); showApp(); } else showLogin();
+  startbildschirmSchliessen();
 
   // Galerie: Tipp auf ein Kartenbild öffnet alle Katalogbilder der Figur.
   //

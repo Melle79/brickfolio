@@ -255,6 +255,20 @@ Scannen.
 
 ### 2.6 Orientierung: Kopfzeile und Mehr-Tab
 
+**Beim Aufrufen der Seite baut sich das Logo auf.** Die vier Steine fallen
+nacheinander ein, dann erscheinen der Name deiner Instanz, die Wortmarke
+und die Unterzeile; nach drei Sekunden blendet das Bild aus und der Inhalt
+fährt auf. Der Name kommt dabei vom Server – ohne gesetzten Anzeigenamen
+steht dort nur „Brickfolio". Das Bild deckt die Zeit ab, in der die App
+ohnehin lädt; es verlängert nichts. Wer am Gerät **Bewegung reduziert**
+hat, sieht dasselbe Bild kurz und ohne Animation.
+
+> Dieselben vier Steine hüpfen auch, während eine Liste lädt – Sammlung,
+> Statistik, Katalog, Angebote. Beim Herunterziehen zum Aktualisieren
+> bleibt es beim drehenden Stein: Der steht still, solange du ziehst, und
+> dreht sich, sobald es losgeht.
+
+
 In der Kopfzeile sitzen zwei ständige Begleiter: der **❓-Knopf** (oben
 rechts) öffnet die Hilfe als Popup – von jedem Tab aus. Sie ist bewusst
 knapp gehalten: neun aufklappbare Abschnitte mit je einem Leitsatz und ein

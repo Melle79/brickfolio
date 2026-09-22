@@ -17,13 +17,31 @@
      Browser melden sie als abgekündigt. Beide, bis iOS nachzieht. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="__OWNER__'s Brickfolio">
+<meta name="apple-mobile-web-app-title" content="__APPTITLE__">
 <link rel="stylesheet" href="/static/fonts.css?v=__APPVERSION__">
 <link rel="stylesheet" href="/static/style.css?v=__APPVERSION__">
 <script src="/static/theme-boot.js?v=__APPVERSION__"></script>
 </head>
-<body>
+<body class="splash-laeuft">
 
+<!-- ===== Startbildschirm =====
+     Steht **vor** allem anderen und ist von Haus aus sichtbar: Er deckt
+     die Zeit ab, in der die App ohnehin lädt (Sprache holen, Sitzung
+     prüfen, erste Ansicht bauen). Der Name kommt vom Server, nicht aus
+     JavaScript – sonst blitzte er erst leer auf und spränge dann um.
+
+     Der Notausgang steht in `theme-boot.js`: Bricht `app.js` ab, läge
+     sonst ein undurchsichtiger Schirm über einer App, die man nicht mehr
+     bedienen kann. Lieber ohne Startbild als ausgesperrt. -->
+<div id="splash">
+  <div class="logo">
+    <span class="logo-name">__OWNERUP__</span>
+    <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
+    <h1>Brickfolio</h1>
+    <p>Deine LEGO-Sammlung</p>
+  </div>
+  <div class="splash-bar"><i></i></div>
+</div>
 <!-- ===== Login ===== -->
 <section id="view-login" class="view" hidden>
   <div class="login-box" id="setup-box" hidden>

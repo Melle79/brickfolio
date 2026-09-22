@@ -244,6 +244,19 @@ including camera access for scanning.
 
 ### 2.6 Getting your bearings: header and the More tab
 
+**Opening the page builds the logo.** The four bricks drop in one after
+another, then your instance's name, the wordmark and the subtitle appear;
+after three seconds the image fades and the content comes up. The name
+comes from the server – without a display name set it simply reads
+"Brickfolio". The image covers the time the app is loading anyway; it does
+not add any. With **reduced motion** enabled on the device, the same image
+shows briefly without the animation.
+
+> The same four bricks bounce while a list is loading – collection,
+> statistics, catalogue, offers. Pull-to-refresh keeps the spinning brick:
+> it stands still while you pull and spins once it gets going.
+
+
 Two companions sit in the header: the **❓ button** (top right) opens the help
 as a popup – from any tab. It is deliberately brief: nine collapsible sections,
 each a lead sentence and a few points, for the quick answer on the go. Anything
