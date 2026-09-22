@@ -986,6 +986,13 @@ Gefunden werden **10 Treffer pro Seite**; darunter steht „X von Y
 angezeigt" und ein Knopf **Weitere Ergebnisse laden**, der jeweils zehn
 weitere anhängt – so lassen sich alle Treffer durchblättern.
 
+> **Bei Figuren kommt alles auf einmal.** Seit 2.86.3 antwortet dort der
+> eigene Katalogabzug allein, und er gibt heraus, was er hat: „Stormtrooper"
+> sind 69 Treffer statt der früheren 20. Angezeigt werden trotzdem zehn –
+> das Blättern läuft aus dem, was schon da ist, und fragt nicht noch einmal
+> nach. Bei **Sets und Teilen** kommt jede Seite weiterhin frisch von
+> Rebrickable.
+
 **Detailansicht.** Ein Tipp auf einen Treffer – aus der Suche **wie aus dem
 Scan** – öffnet ein Popup mit allem, was bekannt ist: Bild in groß, Jahr,
 Thema, Ø-Preise neu/gebraucht, BrickLink-Link. Bei **Minifiguren** lässt

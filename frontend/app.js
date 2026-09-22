@@ -5852,9 +5852,9 @@ async function runCatalogSearch() {
                      // von Rebrickable? Danach entscheidet sich, ob die
                      // KI-Übersetzung noch drankommt.
                      eigeneLeer: !!data.eigene_leer,
+                     gezeigt: SEITE,
                      hasMore: !!data.has_more };
-    renderSuggestions(suggestState.items,
-      { count: suggestState.count, hasMore: suggestState.hasMore });
+    zeigeSuggestSeite();
     // **Nur bei Treffern** wegnehmen. `renderSuggestions` setzt bei leerer
     // Liste selbst „Nichts gefunden …" – ein pauschales Ausblenden löschte
     // genau diese Meldung eine Zeile später wieder, und die Suche endete
@@ -5926,8 +5926,8 @@ async function katalogKiVersuch(q, type, seq, hint, hatteTreffer) {
     return;
   }
   suggestState = { q, type, page: 1, items: daten.items,
-                   count: daten.items.length, hasMore: false };
-  renderSuggestions(daten.items, { count: daten.items.length, hasMore: false });
+                   count: daten.items.length, gezeigt: SEITE, hasMore: false };
+  zeigeSuggestSeite();
   // Der Begriff gehört dazu: Sonst steht da ein Treffer, den man mit dem
   // Getippten nicht zusammenbringt – und weiß nicht, ob er zufällig kam.
   hint.textContent = tr("Auch gesucht nach: {begriffe}",
@@ -5935,8 +5935,33 @@ async function katalogKiVersuch(q, type, seq, hint, hatteTreffer) {
   hint.hidden = false;
 }
 
+/* Wie viele Karten eine Seite zeigt. Der Server liefert bei Figuren seit
+   2.86.3 alles auf einmal (bis zu 200) – „stormtrooper" sind 69 Stück.
+   Die alle gleichzeitig hinzustellen wäre keine Liste mehr, sondern eine
+   Wand; geblättert wird deshalb hier, ohne noch einmal zu fragen. */
+const SEITE = 10;
+
+function zeigeSuggestSeite() {
+  if (!suggestState) return;
+  const bis = Math.min(suggestState.gezeigt, suggestState.items.length);
+  renderSuggestions(suggestState.items.slice(0, bis), {
+    count: suggestState.count,
+    // Weiter geht es, solange noch Vorrat da ist – oder der Server noch
+    // eine Seite hätte.
+    hasMore: bis < suggestState.items.length || suggestState.hasMore,
+  });
+}
+
 async function loadMoreSuggestions() {
-  if (!suggestState || !suggestState.hasMore) return;
+  if (!suggestState) return;
+  // **Erst der Vorrat.** Was schon geholt wurde, braucht keine zweite
+  // Anfrage – das ist der Normalfall bei Figuren.
+  if (suggestState.gezeigt < suggestState.items.length) {
+    suggestState.gezeigt += SEITE;
+    zeigeSuggestSeite();
+    return;
+  }
+  if (!suggestState.hasMore) return;
   const btn = $("m-suggestions").querySelector("[data-more-suggest]");
   if (btn) { btn.disabled = true; btn.textContent = tr("Lade …"); }
   try {
@@ -5947,8 +5972,8 @@ async function loadMoreSuggestions() {
     suggestState.items = suggestState.items.concat(data.items || []);
     suggestState.count = data.count || suggestState.count;
     suggestState.hasMore = !!data.has_more;
-    renderSuggestions(suggestState.items,
-      { count: suggestState.count, hasMore: suggestState.hasMore });
+    suggestState.gezeigt = suggestState.items.length;
+    zeigeSuggestSeite();
   } catch (e) {
     toast(e.message);
     if (btn) { btn.disabled = false; btn.textContent = tr("Weitere Ergebnisse laden"); }

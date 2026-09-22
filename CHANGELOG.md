@@ -45,6 +45,44 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.86.3 – September 2026
+
+### Geändert
+- 🔍 **Bei Figuren antwortet nur noch der eigene Katalogabzug.** Sven fiel
+  auf, dass die Trefferliste zwei Quellen mit denselben Figuren mischt –
+  und er hatte recht: `dis080 · Donald Duck - Jester` und
+  `fig-012635 · Donald Duck, Jester` sind dieselbe Figur.
+
+  Die Entdoppelung konnte das nicht fangen. Sie vergleicht Nummer plus Typ,
+  und die Nummern gehören zwei verschiedenen Katalogen. Über die Namen
+  ginge es auch nicht, die sind nur gleichbedeutend („Qui-Gon Jinn (Yellow
+  Head)" gegen „Qui-Gon Jinn, Yellow Skin"). Und eine Brücke gibt es nicht:
+  **Rebrickable liefert für Figuren keine BrickLink-Nummer** – weder in der
+  Suche noch im Einzelabruf, für Teile dagegen schon.
+
+  Dazu kam, dass die zweite Hälfte die schlechtere war: ohne Preis, ohne
+  Set-Zugehörigkeit, ohne BrickLink-Nummer – also ohne alles, woran hier
+  die Bewertung hängt.
+
+  Rebrickable springt bei Figuren jetzt nur noch ein, wenn der eigene Abzug
+  **nichts** findet. Für **Sets und Teile** bleibt alles wie es war; dort
+  ist es oft die einzige Quelle, und bei Teilen liefert es sogar die
+  BrickLink-Nummer mit.
+
+- 📜 **Mehr Treffer, und das Blättern geht ohne Nachfragen.** Der Abzug war
+  auf 20 Treffer gedeckelt – das war der eigentliche Grund, warum
+  Rebrickable überhaupt etwas beitragen konnte. Er gibt jetzt heraus, was
+  er hat: „Stormtrooper" sind **69** statt 20, „Darth Vader" 35 statt 20.
+
+  Angezeigt werden weiterhin zehn; **Weitere Ergebnisse laden** blättert
+  durch das, was schon geholt wurde, und löst keine neue Anfrage aus.
+  Nachgemessen: 10 von 45 → ein Klick → 20 von 45, ohne einen einzigen
+  Netzzugriff.
+
+  Die Schwelle für den Farb-Rückfall bleibt dabei bei 20. Wäre sie
+  mitgewandert, liefe die Verbreiterung praktisch immer – und „gold" hieße
+  wieder „yellow", was 9.231 Figuren hereinzöge.
+
 ## 2.86.2 – September 2026
 
 ### Behoben

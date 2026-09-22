@@ -3004,7 +3004,14 @@ def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
 
     # Der eigene Abzug kennt kein Blättern – er trägt deshalb nur zur
     # ersten Seite bei. Auf Seite zwei geht es bei Rebrickable weiter.
-    eigene = _katalog_suchen(q, item_type=item_type) if page == 1 else []
+    #
+    # **Bei Figuren gibt er alles heraus, was er hat** (bis SUGGEST_MAX),
+    # weil er dort seit 2.86.3 allein antwortet und es keine zweite Seite
+    # mehr gibt. Die Schwelle für den Farb-Rückfall bleibt davon unberührt
+    # bei 20 – siehe `_katalog_suchen`.
+    grenze = SUGGEST_MAX if item_type == "minifig" else 20
+    eigene = (_katalog_suchen(q, grenze, item_type, genug=20)
+              if page == 1 else [])
 
     if not integrations.rebrickable_enabled():
         if eigene or _katalogsuche_moeglich():
@@ -3018,6 +3025,22 @@ def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
                     "eigene_leer": not eigene}
         raise HTTPException(501, "Katalogsuche nicht konfiguriert "
                                  "(REBRICKABLE_KEY in docker-compose setzen)")
+    # **Bei Figuren fragt Rebrickable nur, wenn der eigene Abzug leer
+    # blieb.** Beide Quellen kennen dieselben Figuren, aber unter
+    # verschiedenen Nummern: `dis080` hier, `fig-012635` dort. Die
+    # Entdoppelung vergleicht Nummer plus Typ und kann das nicht fangen –
+    # und über die Namen ginge es auch nicht, die sind nur
+    # gleichbedeutend („Qui-Gon Jinn (Yellow Head)" gegen „Qui-Gon Jinn,
+    # Yellow Skin"). Eine Brücke gibt es nicht: Rebrickable liefert für
+    # Figuren **keine** BrickLink-Nummer, weder in der Suche noch im
+    # Einzelabruf (geprüft am 22.09.2026; für Teile dagegen schon).
+    #
+    # Also stand jede Figur zweimal in der Liste, und die zweite Hälfte war
+    # die schlechtere: ohne Preis, ohne Set-Zugehörigkeit, ohne
+    # BrickLink-Nummer – also ohne alles, woran hier die Bewertung hängt.
+    if item_type == "minifig" and eigene:
+        return {"items": eigene[:SUGGEST_MAX], "count": len(eigene),
+                "page": 1, "has_more": False, "eigene_leer": False}
     try:
         fremd = integrations.search_catalog(q, item_type, page=page)
         if not eigene:
@@ -4115,7 +4138,7 @@ def _farbvarianten(begriff: str) -> list:
 
 
 def _katalog_suchen(begriff: str, hoechstens: int = 20,
-                    item_type: str = "minifig") -> list:
+                    item_type: str = "minifig", genug: int | None = None) -> list:
     """Im eigenen Abzug suchen – erst genau, dann mit gröberen Farben.
 
     **Der zweite Versuch ist ein Rückfall, keine Verbreiterung.** Er läuft
@@ -4125,9 +4148,16 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20,
     anderer Stelle. So greift die Verwandtschaft genau dort, wo sie
     gebraucht wird: „goldener Ritter" findet strikt nichts, mit „yellow
     knight" aber die Figur, die das Modell eben so gesehen hat.
+
+    **`genug` ist nicht `hoechstens`.** Wie viele Treffer zurückkommen und
+    ab wann es „reicht" sind zwei Fragen. Seit der Abzug bei Figuren allein
+    antwortet, gibt er bis zu 200 Treffer heraus – würde damit auch die
+    Schwelle wandern, liefe die Verbreiterung praktisch immer, und „gold"
+    hieße wieder „yellow". Die Schwelle bleibt deshalb bei 20.
     """
+    genug = hoechstens if genug is None else genug
     treffer = _katalog_lauf_suchen(begriff, hoechstens, item_type)
-    if len(treffer) >= hoechstens:
+    if len(treffer) >= genug:
         return treffer
     gesehen = {t["item_id"] for t in treffer}
     for variante in _farbvarianten(begriff):
@@ -4135,7 +4165,7 @@ def _katalog_suchen(begriff: str, hoechstens: int = 20,
             if t["item_id"] not in gesehen:
                 gesehen.add(t["item_id"])
                 treffer.append(t)
-                if len(treffer) >= hoechstens:
+                if len(treffer) >= genug:
                     return treffer
     return treffer
 
