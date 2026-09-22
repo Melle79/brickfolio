@@ -40,3 +40,8 @@ abzug*.sql
 # katalogdienst/docker-compose.example.yml.
 katalogdienst/docker-compose.yml
 katalogdienst/data/
+
+# Wrangler legt hier Kontokennung und Adresse ab. Das ist kein Schlüssel,
+# gehört aber trotzdem nicht in ein öffentliches Repo – und die Datei wird
+# bei jedem `wrangler`-Aufruf neu erzeugt.
+.wrangler/
