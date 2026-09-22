@@ -397,3 +397,17 @@ def test_zug_zum_neuladen_bleibt_nachvollziehbar():
         "Neu laden muss über neuLadenMit gehen, sonst zählt der Verlauf es"
         " als Absturz")
     assert "location.reload()" not in rumpf
+
+
+def test_permissions_policy_sperrt_ungenutzte_geraete(client):
+    """Was die App nicht braucht, soll sie auch nicht anfordern dürfen.
+
+    Ergänzt am 22.09.2026 beim Sicherheits-Durchgang. Die Kamera bleibt
+    ausdrücklich erlaubt: Gescannt wird über ein Dateifeld mit `capture`,
+    das diese Regel nicht betrifft – ein `camera=()` wäre aber eine Falle
+    für den Tag, an dem jemand auf `getUserMedia` umstellt.
+    """
+    kopf = client.get("/").headers.get("permissions-policy", "")
+    assert "camera=(self)" in kopf
+    for gesperrt in ("microphone=()", "geolocation=()", "payment=()"):
+        assert gesperrt in kopf, f"{gesperrt} fehlt"

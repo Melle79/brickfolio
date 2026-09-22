@@ -1227,7 +1227,14 @@ addresses, and **🔄 Retry priceless items** also covers the ones never tried.
 
 **More → Backup → 💾 download** produces a JSON file with *everything*: users
 (including password hashes), collection, wishlist, shopping lists, price
-histories, set links and settings. **📥 restore** brings that state back
+histories, set links and settings.
+
+> ⚠️ **The file is as confidential as the database itself.** Under
+> "settings" the **API keys sit in plain text** – BrickLink (consumer key,
+> secret, token, token secret) and Rebrickable. The interface only ever
+> shows them masked (`…41c7`); the backup holds them in full, because an
+> instance could not be restored otherwise. So do not drop the file into a
+> shared cloud folder, and do not attach it to an error report. **📥 restore** brings that state back
 completely – after a confirmation showing its date; **all current data is
 replaced**. Backups without an admin user are rejected (lock-out protection).
 

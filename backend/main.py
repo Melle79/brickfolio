@@ -56,6 +56,15 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "same-origin")
+    # Was die App nicht braucht, soll auch niemand von ihr aus anfordern
+    # können – etwa über eine eingebettete Fremdseite. **Die Kamera bleibt
+    # erlaubt**: Gescannt wird zwar über ein Dateifeld mit `capture`, das
+    # diese Regel gar nicht betrifft, aber ein `camera=()` wäre eine Falle
+    # für den Tag, an dem jemand auf `getUserMedia` umstellt.
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(self), microphone=(), geolocation=(), payment=(), "
+        "usb=(), midi=(), serial=()")
     if not request.url.path.startswith("/api/"):
         response.headers.setdefault("Content-Security-Policy", "; ".join([
             "default-src 'self'",

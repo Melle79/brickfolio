@@ -1761,6 +1761,14 @@ nie versuchten Artikel.
 **Mehr → Sicherung → 💾 herunterladen** erzeugt eine JSON-Datei mit
 *allem*: Benutzer (inkl. Passwort-Hashes), Sammlung, Wunschliste,
 Einkaufslisten, Preisverläufe, Set-Zuordnungen und Einstellungen.
+
+> ⚠️ **Die Datei ist so vertraulich wie die Datenbank selbst.** Unter
+> „Einstellungen" stehen die **API-Schlüssel im Klartext** – BrickLink
+> (Consumer Key, Secret, Token, Token Secret) und Rebrickable. In der
+> Oberfläche zeigt die App sie nur maskiert (`…41c7`), in der Sicherung
+> stehen sie vollständig; anders ließe sich eine Instanz nicht
+> wiederherstellen. Leg die Datei also nicht in eine geteilte Cloud und
+> häng sie nicht an einen Fehlerbericht.
 **📥 einspielen** stellt diesen Stand komplett wieder her – nach
 Sicherheitsabfrage mit Datum; **alle aktuellen Daten werden ersetzt**.
 Sicherungen ohne Admin-Benutzer werden abgelehnt (Aussperr-Schutz).
