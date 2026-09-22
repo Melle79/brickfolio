@@ -15,7 +15,7 @@ werden. Übersetzt werden muss also ein kleiner, allgemeiner Teil.
 
 **Was hier drinsteht und was nicht.** Nur einzelne Wörter des allgemeinen
 Sprachgebrauchs. **Keine Katalogtexte, keine Titel, keine Beschreibungen** –
-die Grenze aus `katalogdienst/veroeffentlichen.py` gilt hier genauso. Die
+dieselbe Grenze wie im Katalogdienst (eigenes Repo) gilt hier genauso. Die
 Liste ist aus der Worthäufigkeit entstanden, nicht aus Einträgen; sie darf
 deshalb mitreisen. Sven hat das am 21.09.2026 ausdrücklich so entschieden.
 

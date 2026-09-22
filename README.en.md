@@ -364,6 +364,21 @@ FastAPI + SQLite (no ORM) · Vanilla-JS PWA (no build step) ·
 Docker deployment · APIs: Brickognize, BrickLink Store API (OAuth1),
 Rebrickable.
 
+### What lives in its own repo
+
+This repo holds the **program**. Three things beside it move at their own
+pace and therefore have their own repo – all three private, because they
+describe credentials or carry screenshots of a real collection:
+
+| what | repo | for |
+|---|---|---|
+| project site brickfolio.cc | `brickfolio-website` | static Cloudflare Worker, published by hand |
+| catalogue service | `brickfolio-katalogdienst` | builds the catalogue index and writes it here to `katalog/index.ndjson` |
+| hub console | `brickfolio-hub-admin` | interface for running the trade network |
+
+The **trade hub itself** does live here, under `hub/`, and is published
+automatically on every change.
+
 ## Legal
 
 LEGO® is a trademark of the LEGO Group, which does not sponsor, authorise or

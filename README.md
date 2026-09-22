@@ -429,6 +429,22 @@ FastAPI + SQLite (ohne ORM) · Vanilla JS PWA (kein Build-Schritt) ·
 Docker-Deployment · APIs: Brickognize, BrickLink Store API (OAuth1),
 Rebrickable.
 
+### Was in eigenen Repos liegt
+
+Hier liegt das **Programm**. Drei Dinge daneben haben einen eigenen
+Rhythmus und deshalb ein eigenes Repo – alle drei nicht öffentlich, weil
+sie Zugangsdaten beschreiben oder Bildschirmfotos aus einer echten
+Sammlung tragen:
+
+| was | Repo | wozu |
+|---|---|---|
+| Projektseite brickfolio.cc | `brickfolio-website` | statischer Cloudflare Worker, von Hand veröffentlicht |
+| Katalogdienst | `brickfolio-katalogdienst` | baut den Katalogindex und schreibt ihn hierher nach `katalog/index.ndjson` |
+| Hub-Konsole | `brickfolio-hub-admin` | Oberfläche zur Verwaltung des Tausch-Netzwerks |
+
+Der **Tausch-Hub selbst** liegt dagegen hier unter `hub/` und wird bei
+jeder Änderung automatisch veröffentlicht.
+
 ## Rechtliches
 
 LEGO® ist eine Marke der LEGO Gruppe, die dieses Projekt weder sponsert noch
