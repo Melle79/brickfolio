@@ -421,29 +421,18 @@ function imgGross(adresse) {
   return String(adresse || "").replace(/&s=\d+$/, "");
 }
 
-/* Drehender Klemmbaustein als Lade-Anzeige. */
-function brickSpinner(label, size = 46) {
-  return `<svg class="spinner-brick" viewBox="0 0 48 48" width="${size}"`
-    + ` height="${size}" role="status" aria-label="${esc(label)}"`
-    + ' xmlns="http://www.w3.org/2000/svg">'
-    + '<g stroke="var(--ink)" stroke-width="2" stroke-linejoin="round">'
-    + '<rect x="11" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
-    + '<rect x="21" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
-    + '<rect x="31" y="15" width="6" height="9" rx="2" fill="var(--yellow)"/>'
-    + '<rect x="8" y="22" width="32" height="14" rx="3" fill="var(--yellow)"/>'
-    + "</g></svg>";
-}
-
 /* Die vier Steine aus dem Logo, die nacheinander hüpfen – derselbe Takt
    wie der Startbildschirm, in dem sie von oben hereinfallen.
 
-   **Nicht überall statt des drehenden Steins.** Beim Herunterziehen zum
-   Aktualisieren sitzt das Zeichen in einem kleinen runden Knopf, und dort
-   gehört das Drehen zur Geste: Der Stein steht still, solange man zieht,
-   und dreht sich, sobald es losgeht. Eine Reihe aus vier Steinen wäre
-   dafür zu breit und erzählte das Falsche. */
-function brickWelle(label) {
-  return `<span class="spinner-welle" role="status" aria-label="${esc(label)}">`
+   **Auch beim Herunterziehen zum Aktualisieren.** Dort saß zunächst
+   weiter der drehende Stein, weil eine Reihe aus vier Steinen nicht in
+   den runden Knopf passte – aus dem Knopf ist deshalb eine Pille
+   geworden, und `klein` schrumpft die Steine auf Knopfgröße. Der Takt
+   der Geste bleibt: Beim Ziehen stehen sie still, gehüpft wird erst,
+   wenn das Neuladen losgeht. */
+function brickWelle(label, klein = false) {
+  return `<span class="spinner-welle${klein ? " klein" : ""}"`
+    + ` role="status" aria-label="${esc(label)}">`
     + "<i></i><i></i><i></i><i></i></span>";
 }
 
@@ -11958,7 +11947,7 @@ function zugZumNeuladen() {
   const anzeige = document.createElement("div");
   anzeige.className = "ptr";
   anzeige.setAttribute("aria-hidden", "true");
-  anzeige.innerHTML = brickSpinner(tr("Neu laden"), 26);
+  anzeige.innerHTML = brickWelle(tr("Neu laden"), true);
   document.body.appendChild(alsEigenMerken(anzeige));
 
   let startY = null, startX = 0, zug = 0, laeuft = false;

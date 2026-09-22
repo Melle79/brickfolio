@@ -45,6 +45,32 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.87.1 – September 2026
+
+### Geändert
+- 🧱 **Der drehende Klemmbaustein ist überall der hüpfenden Reihe
+  gewichen.** Mit 2.87.0 kamen die vier Logo-Steine als Lade-Anzeige, aber
+  zwei Stellen hatten den alten Stein behalten: das Feld, das beim
+  Herunterziehen zum Aktualisieren oben erscheint, und der Bildschirm
+  während eines Updates. Dort dreht sich jetzt nichts mehr.
+
+  Aus dem runden Feld am oberen Rand ist dafür eine Pille geworden — vier
+  Steine nebeneinander passten in 42 Pixel Durchmesser nicht hinein. Der
+  Takt der Geste bleibt: Beim Ziehen stehen die Steine still, gehüpft wird
+  erst, wenn das Neuladen losgeht.
+
+- 🟢 **Die Schwelle beim Herunterziehen ist ein grüner Ring statt einer
+  grünen Fläche.** Die Füllung stammte aus der Zeit des einfarbigen
+  Steins; unter den vier bunten hätte sie ausgerechnet den grünen
+  verschluckt.
+
+### Behoben
+- 📏 **Eine Regel im Stylesheet stand ohne schließende Klammer da** — ein
+  zu großzügiger Schnitt beim Ausbau der alten Anzeige. Browser werfen so
+  etwas stillschweigend weg; hier war die Sammlungsansicht betroffen, die
+  im Raster über beide Spalten mittig stehen soll. Eine neue Probe
+  (`test_css_wohlgeformt.py`) prüft künftig Klammern und Blöcke mit.
+
 ## 2.87.0 – September 2026
 
 ### Hinzugefügt

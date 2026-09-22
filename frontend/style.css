@@ -246,14 +246,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   /* Im Raster-Modus über beide Spalten spannen, damit sie mittig bleibt */
   grid-column: 1 / -1;
 }
-.spinner-brick {
-  /* GPU-Animation: dreht sich weiter, auch wenn der Haupt-Thread kurz baut */
-  animation: bf-spin .9s linear infinite;
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-@keyframes bf-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner-brick { animation-duration: 1.8s; } }
 
 /* Die vier Steine aus dem Logo, die nacheinander hüpfen – derselbe Takt
    und dieselbe Federung wie im Startbildschirm, wo sie hereinfallen. So
@@ -262,29 +254,48 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 
    Maße und Farben stammen 1:1 von `.logo-studs`; wer dort etwas ändert,
    soll es hier wiederfinden. */
-.spinner-welle { display: flex; gap: 6px; }
+/* `justify-content` gehört hierher und nicht an die Fundstellen: Als
+   Flex-Kasten wird die Reihe so breit wie ihr Platz, und `text-align`
+   des Elternteils erreicht sie nicht mehr – in der Update-Sperre wären
+   die Steine sonst an den linken Rand gerutscht. */
+.spinner-welle {
+  display: flex; justify-content: center; gap: 6px;
+  --hub: 11px; --tiefe: 3px;
+}
 .spinner-welle i {
   width: 22px; height: 10px; border-radius: 4px 4px 2px 2px;
-  background: var(--yellow); box-shadow: inset 0 -3px 0 var(--yellow-dark);
+  background: var(--yellow);
+  box-shadow: inset 0 calc(-1 * var(--tiefe)) 0 var(--yellow-dark);
   animation: bf-welle 1.1s cubic-bezier(.3, 1.5, .5, 1) infinite;
 }
 .spinner-welle i:nth-child(2) {
-  background: var(--red); box-shadow: inset 0 -3px 0 #A50D0F;
+  background: var(--red);
+  box-shadow: inset 0 calc(-1 * var(--tiefe)) 0 #A50D0F;
   animation-delay: .09s;
 }
 .spinner-welle i:nth-child(3) {
-  background: var(--blue); box-shadow: inset 0 -3px 0 #003F7A;
+  background: var(--blue);
+  box-shadow: inset 0 calc(-1 * var(--tiefe)) 0 #003F7A;
   animation-delay: .18s;
 }
 .spinner-welle i:nth-child(4) {
-  background: var(--green); box-shadow: inset 0 -3px 0 #00702E;
+  background: var(--green);
+  box-shadow: inset 0 calc(-1 * var(--tiefe)) 0 #00702E;
   animation-delay: .27s;
+}
+/* **Knopfgröße** – für die Zieh-Anzeige oben am Bildschirmrand. Hub und
+   Kantentiefe schrumpfen mit: 11 px Sprung über einem 5 px hohen Stein
+   sähe aus wie ein Hüpfball, und eine 3-px-Kante wäre mehr als halb so
+   hoch wie der Stein selbst. Die Farben stehen bewusst nur oben. */
+.spinner-welle.klein { gap: 4px; --hub: 6px; --tiefe: 2px; }
+.spinner-welle.klein i {
+  width: 10px; height: 5px; border-radius: 2px 2px 1px 1px;
 }
 /* Die Pause zwischen den Wellen gehört dazu: Ohne sie wirkt es hektisch,
    und man sieht nicht mehr, dass die Steine **nacheinander** springen. */
 @keyframes bf-welle {
   0%, 55%, 100% { transform: translateY(0); }
-  25%           { transform: translateY(-11px); }
+  25%           { transform: translateY(calc(-1 * var(--hub))); }
 }
 /* Wer Bewegung abgestellt hat, sieht die vier Steine ruhig stehen – sie
    sagen auch so, dass hier etwas lädt. */
@@ -724,10 +735,14 @@ code {
    fehlt. Der Stein hängt über dem oberen Rand und kommt mit dem Finger
    herunter; ab der Schwelle färbt er sich, damit man weiß, dass Loslassen
    jetzt wirkt. */
+/* **Eine Pille, kein Kreis.** Hier standen vier Steine nebeneinander nicht
+   hinein, solange das Feld 42 px rund war – und ein drehender Stein
+   daneben wäre das einzige Ladezeichen der App gewesen, das aus der Reihe
+   tanzt. */
 .ptr {
   position: fixed; top: calc(env(safe-area-inset-top) + 4px); left: 50%;
   transform: translate(-50%, 0);
-  width: 42px; height: 42px; border-radius: 50%;
+  height: 34px; padding: 0 11px; border-radius: 17px;
   display: flex; align-items: center; justify-content: center;
   background: var(--card); border: 2px solid var(--ink);
   box-shadow: var(--shadow);
@@ -735,13 +750,20 @@ code {
   margin-top: -54px;                 /* außerhalb, bis gezogen wird */
 }
 .ptr.ptr-an { opacity: 1; }
-/* Grün statt Gelb: Der Balken darüber ist selbst gelb – die Schwelle wäre
-   dort nicht zu erkennen gewesen. */
-.ptr.ptr-bereit { background: var(--green); }
-/* Beim Ziehen steht der Stein still – er dreht sich erst, wenn es losgeht */
-.ptr .spinner-brick { animation: none; }
+/* **Ein grüner Ring statt grüner Fläche.** Grün war gewählt, weil der
+   Balken darüber selbst gelb ist – als Füllung verschluckte es jetzt aber
+   den grünen Stein. Ein `outline` verschiebt nichts, anders als eine
+   dickere Kontur. */
+.ptr.ptr-bereit {
+  outline: 3px solid var(--green); outline-offset: 1px;
+}
+/* Beim Ziehen stehen die Steine still – gehüpft wird erst, wenn es losgeht.
+   Angehalten, nicht abgeschaltet: Die Kurzschreibweise `animation: none`
+   hätte auch den Versatz der vier Steine mitgelöscht, und sie hätte die
+   Regel für „weniger Bewegung“ überstimmt, weil sie genauer zielt. */
+.ptr .spinner-welle i { animation-play-state: paused; }
 .ptr.ptr-laeuft { opacity: 1; }
-.ptr.ptr-laeuft .spinner-brick { animation: bf-spin .9s linear infinite; }
+.ptr.ptr-laeuft .spinner-welle i { animation-play-state: running; }
 
 /* ---------- Lightbox (Bild-Großansicht) ---------- */
 .card-img { cursor: zoom-in; }
