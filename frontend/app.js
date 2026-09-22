@@ -549,9 +549,19 @@ function fallbackFlagText(it) {
    Treffer holen – das sind reine lokale Abfragen. Die teuren BrickLink-
    Details (Jahr, Preise) bleiben auf die ersten Treffer beschränkt. */
 const SUGGEST_INFO_MAX = 60;    // Grenze des Endpoints
-const SUGGEST_DETAIL_MAX = 8;   // teure Abrufe
+// Teure Abrufe – **so viele, wie eine Seite zeigt**. Stand hier eine
+// andere Zahl als im Backend (dort waren es 5, hier 8), setzte die
+// Oberfläche acht Karten auf „lade …", bekam fünf beantwortet und nahm
+// den Hinweis bei den übrigen wortlos wieder weg.
+const SUGGEST_DETAIL_MAX = 10;
 
-async function enrichSuggestions(items) {
+/* `detailVon` sagt, ab welchem Treffer die **teuren** Abrufe ansetzen.
+
+   Vorher waren es immer die ersten acht. Das reichte, solange die Liste
+   bei rund dreißig endete – seit 2.86.3 liefert der eigene Abzug bis zu
+   200, und wer blätterte, bekam ab Treffer neun nie wieder ein Jahr oder
+   einen Preis zu sehen. Jetzt wandert das Fenster mit der Seite mit. */
+async function enrichSuggestions(items, detailVon = 0) {
   const all = items.slice(0, SUGGEST_INFO_MAX).map((i) => ({
     item_id: i.item_id, item_type: i.item_type || "minifig" }));
   if (!all.length) return;
@@ -561,7 +571,7 @@ async function enrichSuggestions(items) {
     applySuggestInfo(info, true);   // gespeicherte Jahre/Preise sofort zeigen
   } catch (_) { /* Badges sind nice-to-have */ }
 
-  const detail = all.slice(0, SUGGEST_DETAIL_MAX);
+  const detail = all.slice(detailVon, detailVon + SUGGEST_DETAIL_MAX);
   const detailIds = new Set(detail.map((i) => i.item_id));
   const hasBl = detail.some((i) => !/^(fig-|manuell-|custom-)/.test(i.item_id));
   if (state.bricklinkPrices && hasBl) {
@@ -576,7 +586,7 @@ async function enrichSuggestions(items) {
     try {
       const info = await api("/suggest_info?detail=1",
         { method: "POST", body: { items: detail } });
-      applySuggestInfo(info, true);
+      applySuggestInfo(info, true, detailIds);
       // Angereicherte Details am Item merken, damit das Detail-Popup sie
       // nicht ein zweites Mal von BrickLink holen muss.
       items.forEach((it) => {
@@ -802,7 +812,11 @@ function renderWanted(items) {
   });
 }
 
-function applySuggestInfo(info, withDetail) {
+/* `geprueft` nennt die Nummern, für die der **teure** Abruf wirklich
+   gelaufen ist. Nur bei denen heißt „kein Preis" auch „es gibt keinen" –
+   bei allen anderen heißt es bloß „noch nicht gefragt", und das darf man
+   nicht als Auskunft hinstellen. */
+function applySuggestInfo(info, withDetail, geprueft) {
   document.querySelectorAll("[data-sug-id]").forEach((card) => {
     const d = info[card.dataset.sugId];
     if (!d) return;
@@ -901,6 +915,15 @@ function applySuggestInfo(info, withDetail) {
       if (d.year > 0) parts.push(String(d.year));
       if (d.new != null) parts.push(tr("Ø neu") + " " + fmtEur(d.new));
       if (d.used != null) parts.push(tr("Ø gebr.") + " " + fmtEur(d.used));
+      // **Leer ist nicht kaputt.** Manche BrickLink-Einträge haben keinen
+      // einzigen Verkauf im Preisfenster – `cas123` etwa, eine
+      // Castle-Figur von 1987. Dann stand dort bisher gar nichts, und die
+      // Karte sah neben ihren Nachbarn aus, als fehle etwas. Gesagt wird
+      // es nur, wo tatsächlich nachgefragt wurde.
+      if (geprueft && geprueft.has(card.dataset.sugId)
+          && d.new == null && d.used == null) {
+        parts.push(tr("keine Preisdaten bei BrickLink"));
+      }
       if (sub && parts.length) {
         sub.textContent = card.dataset.sugBase + " · " + parts.join(" · ");
       }
@@ -3541,7 +3564,7 @@ function renderScanResults(items) {
     });
   });
 
-  enrichSuggestions(items);
+  enrichSuggestions(items, meta.detailVon || 0);
   wireWantButtons(box, items, eigenbildAnhaengen);
   wireCartButtons(box, items, eigenbildAnhaengen);
 
@@ -5941,7 +5964,7 @@ async function katalogKiVersuch(q, type, seq, hint, hatteTreffer) {
    Wand; geblättert wird deshalb hier, ohne noch einmal zu fragen. */
 const SEITE = 10;
 
-function zeigeSuggestSeite() {
+function zeigeSuggestSeite(detailVon = 0) {
   if (!suggestState) return;
   const bis = Math.min(suggestState.gezeigt, suggestState.items.length);
   renderSuggestions(suggestState.items.slice(0, bis), {
@@ -5949,6 +5972,9 @@ function zeigeSuggestSeite() {
     // Weiter geht es, solange noch Vorrat da ist – oder der Server noch
     // eine Seite hätte.
     hasMore: bis < suggestState.items.length || suggestState.hasMore,
+    // Beim Blättern gehören die **neuen** Treffer angereichert, nicht
+    // noch einmal die ersten acht.
+    detailVon,
   });
 }
 
@@ -5957,8 +5983,9 @@ async function loadMoreSuggestions() {
   // **Erst der Vorrat.** Was schon geholt wurde, braucht keine zweite
   // Anfrage – das ist der Normalfall bei Figuren.
   if (suggestState.gezeigt < suggestState.items.length) {
+    const vorher = suggestState.gezeigt;
     suggestState.gezeigt += SEITE;
-    zeigeSuggestSeite();
+    zeigeSuggestSeite(vorher);
     return;
   }
   if (!suggestState.hasMore) return;
@@ -5972,8 +5999,9 @@ async function loadMoreSuggestions() {
     suggestState.items = suggestState.items.concat(data.items || []);
     suggestState.count = data.count || suggestState.count;
     suggestState.hasMore = !!data.has_more;
+    const vorher = suggestState.gezeigt;
     suggestState.gezeigt = suggestState.items.length;
-    zeigeSuggestSeite();
+    zeigeSuggestSeite(vorher);
   } catch (e) {
     toast(e.message);
     if (btn) { btn.disabled = false; btn.textContent = tr("Weitere Ergebnisse laden"); }
@@ -6022,7 +6050,7 @@ function renderSuggestions(items, meta) {
   const moreBtn = box.querySelector("[data-more-suggest]");
   if (moreBtn) moreBtn.addEventListener("click", loadMoreSuggestions);
 
-  enrichSuggestions(items);
+  enrichSuggestions(items, meta.detailVon || 0);
   wireWantButtons(box, items);
   wireCartButtons(box, items);
 

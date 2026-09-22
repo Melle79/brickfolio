@@ -4886,6 +4886,24 @@ def fig_parts(fig_no: str, user: dict = Depends(current_user)):
         raise HTTPException(502, "BrickLink nicht erreichbar")
 
 
+# Wie viele Vorschläge einen **teuren** Abruf bekommen – Jahr, Preise und
+# Set-Zugehörigkeit von BrickLink, bis zu drei Anfragen je Artikel.
+#
+# **Die Zahl muss zur Seitengröße der Oberfläche passen.** Bis zum
+# 22.09.2026 standen hier 5 und dort 8: Die Oberfläche setzte acht Karten
+# auf „lade Jahr & Preise …", bekam für fünf etwas und räumte bei den
+# übrigen den Hinweis kommentarlos wieder weg. Sven sah es an „gelber
+# Umhang" – fünf Karten mit Preis, fünf ohne, obwohl BrickLink für alle
+# etwas hat.
+#
+# Jetzt sind es zehn, so viele wie eine Seite zeigt (`SEITE` in app.js).
+# Das kostet Kontingent: bis zu 30 BrickLink-Abrufe je Suche, gedeckt aus
+# der Rücklage von 900 am Tag (siehe `BRICKLINK_RUECKLAGE`). Die
+# Preisabfrage hat einen eigenen Zwischenspeicher, wiederholte Suchen nach
+# demselben Begriff kosten also nichts.
+SUGGEST_DETAIL_MAX = 10
+
+
 @app.post("/api/suggest_info")
 def suggest_info(body: SuggestInfoBody, detail: int = 0,
                  user: dict = Depends(current_user)):
@@ -4966,7 +4984,7 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
         todo = [it for it in body.items
                 if not it.item_id.startswith(("fig-", "manuell-", "custom-"))
                 and not all(k in out[it.item_id] for k in ("year", "new", "used"))
-                ][:5]
+                ][:SUGGEST_DETAIL_MAX]
         if todo:
             from concurrent.futures import ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=5) as pool:

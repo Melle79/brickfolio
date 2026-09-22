@@ -45,6 +45,35 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.86.5 – September 2026
+
+### Behoben
+- 💶 **Ab dem sechsten Treffer fehlten Jahr und Preis.** Zwei Grenzen
+  passten nicht zusammen: Die Oberfläche schickte **acht** Nummern zum
+  teuren Abruf, der Server bediente davon **fünf** (`[:5]`). Die drei
+  dazwischen bekamen den Hinweis „lade Jahr & Preise …", nie Daten – und
+  am Ende räumte die Oberfläche den Hinweis wortlos wieder weg.
+
+  Beide stehen jetzt auf **zehn**, so viele wie eine Seite zeigt. Und beim
+  Blättern wandert das Fenster mit: Bisher wurden immer wieder dieselben
+  ersten Treffer angereichert, seit 2.86.3 konnte man aber bis Treffer 200
+  blättern.
+
+  Gemessen an Svens Beispiel „gelber Umhang": vorher fünf Karten mit
+  Preis und fünf ohne, jetzt alle zehn – und nach einem Klick auf
+  „Weitere Ergebnisse laden" auch die beiden nächsten.
+
+### Hinzugefügt
+- 🏷 **„keine Preisdaten bei BrickLink"** steht jetzt dort, wo bisher
+  einfach nichts stand. Manche Einträge haben im Preisfenster **null
+  Verkäufe** – `cas123`, eine Castle-Figur von 1987, ist so ein Fall;
+  BrickLink führt sie dort sogar ohne Namen („Castle") und ohne Jahr.
+  Neben ihren Nachbarn sah so eine Karte aus, als sei etwas kaputt.
+
+  Gesagt wird es **nur, wo wirklich nachgefragt wurde**. Bei allem anderen
+  hieße „kein Preis" bloß „noch nicht gefragt", und das als Auskunft
+  hinzustellen wäre schlimmer als zu schweigen.
+
 ## 2.86.3 – September 2026
 
 ### Geändert

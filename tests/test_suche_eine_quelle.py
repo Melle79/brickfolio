@@ -121,3 +121,48 @@ def test_die_oberflaeche_blaettert_aus_dem_vorrat():
     assert block.index("suggestState.gezeigt < suggestState.items.length") \
         < block.index("api(`/search"), \
         "es wird gefragt, bevor der Vorrat aufgebraucht ist"
+
+
+# ── Zwei Grenzen, die zusammenpassen müssen ────────────────────────────
+
+def test_oberflaeche_und_server_reichern_gleich_viele_an():
+    """Svens Fund vom 22.09.2026 an „gelber Umhang": fünf Karten mit Preis,
+    fünf ohne – obwohl BrickLink für alle etwas hat.
+
+    Die Oberfläche schickte acht Nummern zum teuren Abruf, der Server
+    bediente davon fünf (`[:5]`). Die drei dazwischen bekamen den Hinweis
+    „lade Jahr & Preise …", nie Daten, und am Ende räumte die Oberfläche
+    den Hinweis wortlos weg. Solche Fehler sieht man nicht im Code – nur
+    in der Liste.
+    """
+    import re
+    from pathlib import Path
+    wurzel = Path(__file__).resolve().parents[1]
+    js = (wurzel / "frontend" / "app.js").read_text(encoding="utf-8")
+    vorne = int(re.search(r"const SUGGEST_DETAIL_MAX = (\d+);", js).group(1))
+    assert vorne == main.SUGGEST_DETAIL_MAX, (
+        f"Oberfläche fragt {vorne} an, Server reichert "
+        f"{main.SUGGEST_DETAIL_MAX} an")
+    seite = int(re.search(r"const SEITE = (\d+);", js).group(1))
+    assert vorne == seite, (
+        "jede angezeigte Karte soll Daten bekommen – sonst sieht eine "
+        "halbe Seite aus wie kaputt")
+
+
+def test_der_server_deckelt_die_teuren_abrufe(client, monkeypatch):
+    """Ohne Deckel zöge eine Suche beliebig viel BrickLink-Kontingent."""
+    gerufen = []
+
+    def teuer(item_type, item_no, *a, **k):
+        gerufen.append(item_no)
+        return {"avg": "1.00"}
+
+    monkeypatch.setattr(main.integrations, "bricklink_enabled", lambda: True)
+    monkeypatch.setattr(main.integrations, "price_guide", teuer)
+    monkeypatch.setattr(main.integrations, "bricklink_item",
+                        lambda *a, **k: {"year": 2020})
+    monkeypatch.setattr(main, "_fig_sets_cached", lambda *a, **k: [])
+    viele = [{"item_id": "sw%04d" % i, "item_type": "minifig"}
+             for i in range(30)]
+    client.post("/api/suggest_info?detail=1", json={"items": viele})
+    assert len(set(gerufen)) <= main.SUGGEST_DETAIL_MAX
