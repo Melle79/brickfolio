@@ -45,6 +45,28 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.86.2 – September 2026
+
+### Behoben
+- ⚡ **Die erste Suche nach einem Neustart dauerte fünf Sekunden.** Danach
+  war alles schnell, und niemand konnte sich erklären, warum ausgerechnet
+  die eine Anfrage hing.
+
+  Die Suche rechnet aus den Daten selbst aus, welche Wörter in fast jeder
+  Bildbeschreibung stehen (`torso`, `legs`, `yellow` …) – sonst fände
+  „gelb" zwei Drittel des Katalogs. Dafür liest sie **alle** Beschreibungen
+  und zerlegt sie: bei 19.267 Figuren gemessene **5,1 s** auf der NAS. Das
+  Ergebnis lag bisher nur im Arbeitsspeicher, war also nach jedem
+  Containerstart weg – und der nächste Suchende zahlte es.
+
+  Jetzt steht es auch in den Einstellungen, mit der Zeilenzahl als
+  Schlüssel: Ändert sich der Abzug, wird neu gezählt, sonst gelesen.
+  Zusätzlich wärmt der Start es im Hintergrund vor, damit auch der erste
+  Lauf nach einem neuen Abzug nicht vor dem Suchfeld stattfindet.
+
+  Gemessen auf Finns Instanz: erster Lauf **5,1 s → 0,2 s**, jeder weitere
+  war schon vorher 0,2 s.
+
 ## 2.86.1 – September 2026
 
 ### Behoben

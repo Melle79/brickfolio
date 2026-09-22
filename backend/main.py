@@ -125,6 +125,10 @@ def startup():
     core.init_db()
     threading.Thread(target=_price_refresher, daemon=True).start()
     threading.Thread(target=_sicherungs_waechter, daemon=True).start()
+    # Die breiten Merkmalswörter im Hintergrund bereitlegen. Steht das
+    # Ergebnis schon in den Einstellungen, ist das in Millisekunden vorbei;
+    # muss gezählt werden, wartet wenigstens niemand vor dem Suchfeld.
+    threading.Thread(target=_breite_merkmalswoerter, daemon=True).start()
 
 
 
@@ -4168,7 +4172,21 @@ _merkmal_breit: tuple = ()     # (Zeilenzahl, Menge der Wörter)
 
 
 def _breite_merkmalswoerter() -> set:
-    """Welche Wörter stehen in mehr als `MERKMAL_GRENZE` der Beschreibungen?"""
+    """Welche Wörter stehen in mehr als `MERKMAL_GRENZE` der Beschreibungen?
+
+    **Das Zählen kostet eine Sekunde je 4.000 Beschreibungen.** Es liest
+    jede einzelne und zerlegt sie – bei 19.267 Figuren gemessene **5,1 s**
+    auf der NAS. Deshalb wird das Ergebnis gemerkt, und zwar zweifach:
+
+    * im Arbeitsspeicher, für alle weiteren Suchen dieses Prozesses,
+    * in den Einstellungen, damit ein **Neustart** nicht von vorn anfängt.
+
+    Der Schlüssel ist die Zeilenzahl. Ändert sie sich – nach einem
+    Katalogabzug –, wird neu gezählt; bleibt sie gleich, ist das Ergebnis
+    dasselbe. Ohne die zweite Ebene zahlte die **erste Suche nach jedem
+    Containerstart** die vollen fünf Sekunden, und niemand konnte sich
+    erklären, warum ausgerechnet diese eine Anfrage hängt (22.09.2026).
+    """
     global _merkmal_breit
     with core.db() as conn:
         zeilen = conn.execute(
@@ -4179,14 +4197,29 @@ def _breite_merkmalswoerter() -> set:
         if zeilen < MERKMAL_MINDESTZEILEN:
             _merkmal_breit = (zeilen, set())
             return _merkmal_breit[1]
+        gemerkt = core.get_setting("merkmal_breit")
+        if gemerkt:
+            try:
+                daten = json.loads(gemerkt)
+                if daten.get("zeilen") == zeilen:
+                    _merkmal_breit = (zeilen, set(daten["woerter"]))
+                    return _merkmal_breit[1]
+            except (ValueError, KeyError, TypeError):
+                pass                  # unbrauchbar gemerkt – neu zählen
         zaehler: collections.Counter = collections.Counter()
         for (text,) in conn.execute(
                 "SELECT merkmale FROM katalog_index WHERE item_type = 'minifig'"
                 " AND merkmale <> ''"):
             zaehler.update(set(_such_woerter(text)))
     grenze = zeilen * MERKMAL_GRENZE
-    _merkmal_breit = (zeilen, {w for w, n in zaehler.items() if n > grenze})
-    return _merkmal_breit[1]
+    worte = {w for w, n in zaehler.items() if n > grenze}
+    _merkmal_breit = (zeilen, worte)
+    try:
+        core.set_setting("merkmal_breit", json.dumps(
+            {"zeilen": zeilen, "woerter": sorted(worte)}))
+    except Exception:
+        pass                          # Merken ist Kür, Zählen ist Pflicht
+    return worte
 
 
 def _merkmale_fuer(merkmale: str, woerter: list, breit: set) -> str:

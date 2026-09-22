@@ -275,6 +275,13 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # ein Zeitstempel, kein Zugang
         "katalog_hub_geholt",   # dasselbe für die Gegenrichtung: bis wohin
                                 # vom Hub nachgezogen wurde
+        "merkmal_breit",        # welche Wörter in fast jeder
+                                # Bildbeschreibung stehen, z. B. „torso,
+                                # legs, yellow“ – ein Ergebnis aus den
+                                # eigenen Katalogdaten, damit der Zähllauf
+                                # einen Neustart überlebt. Kein Zugang,
+                                # nichts Persönliches; steht so ähnlich
+                                # schon im Quelltext als Kommentar.
         "katalog_etag",         # welchen Stand der veröffentlichten Datei
                                 # diese Instanz schon hat – spart 3,3 MB,
                                 # wenn sich nichts geändert hat

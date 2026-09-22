@@ -75,3 +75,63 @@ def test_ohne_datenbank_bescheiden(db, monkeypatch):
         raise RuntimeError("keine Datenbank")
     monkeypatch.setattr(core, "db", kaputt)
     assert main.katalog_namen_je_lauf() == main.KATALOG_NAMEN_MIN
+
+
+# ── Der Zähllauf darf keinen Neustart kosten ───────────────────────────
+# Gemessen am 22.09.2026 auf der NAS: Das Zählen der breiten
+# Merkmalswörter liest alle 19.267 Beschreibungen und braucht 5,1 s. Wer
+# nach einem Containerstart als Erster sucht, zahlte das voll – und es
+# sah aus, als hinge ausgerechnet seine Anfrage.
+
+def test_das_ergebnis_ueberlebt_einen_neustart(db, monkeypatch):
+    import json
+    with core.db() as conn:
+        conn.executemany(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at) VALUES (?, 'minifig', '', '', ?, 0)",
+            [("sw%05d" % i, "head yellow face; torso blue jacket; legs black")
+             for i in range(main.MERKMAL_MINDESTZEILEN + 10)])
+
+    main._merkmal_breit = ()
+    erst = main._breite_merkmalswoerter()
+    assert erst, "bei genug Zeilen muss etwas herauskommen"
+    gemerkt = core.get_setting("merkmal_breit")
+    assert gemerkt, "das Ergebnis gehört in die Einstellungen"
+    assert json.loads(gemerkt)["zeilen"] == main.MERKMAL_MINDESTZEILEN + 10
+
+    # Neustart nachstellen: Arbeitsspeicher leer, Datenbank unverändert.
+    # Gezählt werden darf jetzt **nicht** mehr.
+    main._merkmal_breit = ()
+    gezaehlt = {"mal": 0}
+    echtes = main._such_woerter
+
+    def zaehlend(text):
+        gezaehlt["mal"] += 1
+        return echtes(text)
+
+    monkeypatch.setattr(main, "_such_woerter", zaehlend)
+    wieder = main._breite_merkmalswoerter()
+    assert wieder == erst, "dasselbe Ergebnis wie vorher"
+    assert gezaehlt["mal"] == 0, "es wurde neu gezählt, statt zu lesen"
+
+
+def test_ein_neuer_abzug_laesst_neu_zaehlen(db):
+    """Der Schlüssel ist die Zeilenzahl – kommen Figuren dazu, gilt das
+    Gemerkte nicht mehr."""
+    with core.db() as conn:
+        conn.executemany(
+            "INSERT INTO katalog_index (item_no, item_type, name, such,"
+            " merkmale, updated_at)"
+            " VALUES (?, 'minifig', '', '', 'head yellow; torso blue', 0)",
+            [("sw%05d" % i,) for i in range(main.MERKMAL_MINDESTZEILEN + 5)])
+    main._merkmal_breit = ()
+    main._breite_merkmalswoerter()
+    with core.db() as conn:
+        conn.execute("INSERT INTO katalog_index (item_no, item_type, name,"
+                     " such, merkmale, updated_at) VALUES ('neu01',"
+                     " 'minifig', '', '', 'head green; torso red', 0)")
+    main._merkmal_breit = ()
+    main._breite_merkmalswoerter()
+    import json
+    assert json.loads(core.get_setting("merkmal_breit"))["zeilen"] == \
+        main.MERKMAL_MINDESTZEILEN + 6
