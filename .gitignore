@@ -17,6 +17,10 @@ __pycache__/
 .DS_Store
 
 .claude/settings.local.json
+# Startbefehle für die Vorschau im Editor – Pfade eines einzelnen Rechners,
+# nichts, was jemand anders gebrauchen könnte. Eine leere Fassung davon ist
+# am 22.09.2026 versehentlich mit einem `git add -A` hereingerutscht.
+.claude/launch.json
 # Arbeitsbäume von Agentenläufen – ein vollständiger Abzug des Repos im Repo.
 # Auf dem Mac mini lag so einer mit 3,5 MB unversioniert herum. Genau diese
 # Sorte hat am 09.08.2026 schon einmal Ärger gemacht: Eine unversionierte
