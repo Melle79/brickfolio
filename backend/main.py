@@ -2091,12 +2091,19 @@ KATALOG_MAX_BYTES = 32 * 1024 * 1024
 # Die Rechnung dahinter: BrickLink lässt 5.000 Abrufe am Tag zu, und
 # dasselbe Kontingent trägt die Preise – die braucht man täglich, den
 # vollständigen Namensbestand einmal. 1.500 je Durchgang und zwei Durchgänge
-# am Tag sind 3.000; die restlichen 2.000 bleiben den Preisen. Bei rund
-# 9.700 Namen ist der Bestand damit in gut drei Tagen beisammen.
+# am Tag sind 3.000; die restlichen 2.000 bleiben den Preisen.
 #
-# 300 waren es zuerst – das wären **sechzehn Tage** gewesen, und so lange
-# fehlt der Suche der halbe Text. Ein Durchgang dauert bei einem Abruf je
-# Sekunde rund 25 Minuten und läuft im Hintergrund.
+# 300 waren es zuerst – bei den damaligen 9.700 Namen wären das
+# **sechzehn Tage** gewesen, und so lange fehlt der Suche der halbe Text.
+# Ein Durchgang dauert bei einem Abruf je Sekunde rund 25 Minuten und
+# läuft im Hintergrund.
+#
+# **Der Abzug ist seitdem gewachsen:** 19.267 Figuren (Stand 22.09.2026),
+# also rund **sechseinhalb Tage** statt der früher hier genannten drei.
+# So lange sucht eine frische Instanz nur über die Bildbeschreibungen –
+# „knight sword" findet dann nichts, „gelber Kopf" schon. Wer schneller
+# vollständig sein will, muss KATALOG_NAMEN_JE_LAUF erhöhen und dafür
+# den Preisen Kontingent wegnehmen.
 KATALOG_NAMEN_JE_LAUF = 1500
 KATALOG_NAMEN_TAKT = 1.0
 

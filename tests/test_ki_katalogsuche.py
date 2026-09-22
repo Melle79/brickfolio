@@ -193,7 +193,13 @@ def test_die_oberflaeche_fragt_erst_nach_einer_leeren_suche(client):
     # unscharf, und „ritter" lieferte von dort `Miss Fritter` – ein
     # Ergebnis, das `Knight` verhinderte.
     assert "suggestState.items.length || suggestState.eigeneLeer" in block
-    assert "katalogKiVersuch(q, type, seq, hint)" in block
+    # Seit 2.84.x mit einem fünften Wert: ob schon Treffer zu sehen sind.
+    # `eigeneLeer` ist auf einer frischen Instanz fast immer wahr – die
+    # Namen im Abzug sind dann noch nicht nachgeschlagen –, der Versuch
+    # läuft also **über** sichtbaren Treffern, und sein Misserfolg darf
+    # sie nicht mit „Nichts gefunden" überschreiben.
+    assert "katalogKiVersuch(q, type, seq, hint," in block
+    assert "suggestState.items.length > 0" in block
 
 
 # ------------------------------------------------- Eine Suche endet nie stumm
@@ -225,13 +231,22 @@ def test_die_nichts_gefunden_meldung_wird_nicht_gleich_wieder_geloescht():
 
 def test_jeder_ausgang_des_ki_versuchs_hinterlaesst_eine_meldung():
     """Fehlschlag und leeres Ergebnis blendeten den Hinweis aus – dann stand
-    gar nichts mehr da, und man wusste nicht, ob noch gesucht wird."""
+    gar nichts mehr da, und man wusste nicht, ob noch gesucht wird.
+
+    **Seit 22.09.2026 mit einer Ausnahme:** Stehen schon Treffer da, ist
+    Stillschweigen richtig. Der Zusatzversuch läuft auch dann, wenn nur der
+    eigene Abzug leer blieb – und dann schrieb sein Misserfolg „Nichts
+    gefunden" über zehn sichtbare Treffer. Gefunden beim Durchlauf einer
+    frischen Installation, wo der Fall der Normalfall ist.
+    """
     js = _js()
     i = js.index("async function katalogKiVersuch(")
     block = js[i:js.index("async function loadMoreSuggestions(")]
     assert block.count("nichtsGefundenHinweis(hint)") >= 2
-    assert "hint.hidden = true" not in block, \
-        "es gibt weiterhin einen stummen Ausgang"
+    # Stumm enden darf er nur mit Treffern im Rücken.
+    for stelle in block.split("hint.hidden = true")[:-1]:
+        assert "hatteTreffer" in stelle[-120:], \
+            "stummer Ausgang ohne Prüfung auf sichtbare Treffer"
 
 
 def test_ohne_katalogzugang_sagt_die_oberflaeche_warum():

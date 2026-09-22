@@ -5870,7 +5870,8 @@ async function runCatalogSearch() {
     // etwas hatte – der kennt die deutschen Begriffe nicht, aber wenn er
     // trifft, ist der Treffer gut (28.08.2026).
     if (!suggestState.items.length || suggestState.eigeneLeer) {
-      await katalogKiVersuch(q, type, seq, hint);
+      await katalogKiVersuch(q, type, seq, hint,
+                             suggestState.items.length > 0);
     }
   } catch (e) {
     if (seq !== searchSeq) return;
@@ -5889,11 +5890,19 @@ function nichtsGefundenHinweis(hint) {
   hint.hidden = false;
 }
 
-async function katalogKiVersuch(q, type, seq, hint) {
-  // Ohne Übersetzung bleibt die Meldung stehen, die `renderSuggestions`
-  // gesetzt hat.
+async function katalogKiVersuch(q, type, seq, hint, hatteTreffer) {
+  // `hatteTreffer` sagt, ob schon etwas auf dem Schirm steht. Der Versuch
+  // läuft nämlich **auch dann**, wenn Rebrickable geliefert hat und nur
+  // der eigene Abzug leer blieb (`eigeneLeer`) – und dann darf sein
+  // Misserfolg nicht „Nichts gefunden" über zehn sichtbare Treffer
+  // schreiben. Genau das tat er: Auf einer frischen Instanz sind die
+  // Namen im Abzug noch nicht nachgeschlagen, `eigeneLeer` ist also fast
+  // immer wahr (gefunden am 22.09.2026 beim Durchlauf einer
+  // Neuinstallation).
   if (!state.uebersetzt) return;
-  hint.textContent = tr("Nichts gefunden – übersetze den Suchbegriff …");
+  hint.textContent = hatteTreffer
+    ? tr("Suche zusätzlich nach der Übersetzung …")
+    : tr("Nichts gefunden – übersetze den Suchbegriff …");
   hint.hidden = false;
   let daten;
   try {
@@ -5901,14 +5910,19 @@ async function katalogKiVersuch(q, type, seq, hint) {
       + `&item_type=${type}`);
   } catch (e) {
     // Ein Zusatzversuch, der scheitert, ist kein Fehler der Suche – aber
-    // stumm enden darf er auch nicht.
-    if (seq === searchSeq) nichtsGefundenHinweis(hint);
+    // stumm enden darf er auch nicht. Steht schon etwas da, ist er
+    // trotzdem kein „Nichts gefunden": dann einfach wieder still werden.
+    if (seq === searchSeq) {
+      if (hatteTreffer) hint.hidden = true;
+      else nichtsGefundenHinweis(hint);
+    }
     return;
   }
   // Inzwischen weitergetippt? Dann gehört die Antwort zu einer alten Frage.
   if (seq !== searchSeq) return;
   if (!daten || !daten.items || !daten.items.length) {
-    nichtsGefundenHinweis(hint);
+    if (hatteTreffer) hint.hidden = true;
+    else nichtsGefundenHinweis(hint);
     return;
   }
   suggestState = { q, type, page: 1, items: daten.items,

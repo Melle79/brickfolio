@@ -439,3 +439,39 @@ def test_bindestrichname_bleibt_trotz_wortgrenze_auffindbar(client,
     namen = [i["name"] for i in
              client.get("/api/collection/suggest?q=c3 po").json()["items"]]
     assert "C-3PO" in namen and "C-3PO - Red Arm" in namen
+
+
+# ── Der Hinweis darf Treffern nicht widersprechen ──────────────────────
+# Gefunden am 22.09.2026 beim Durchlauf einer frischen Installation:
+# „Qui-Gon Jinn" lieferte zehn sichtbare Treffer, und darüber stand
+# „Nichts gefunden – einfach weitertippen". Ursache war nicht die Suche,
+# sondern der **Zusatzversuch**: Er läuft auch dann, wenn nur der eigene
+# Abzug leer blieb (`eigeneLeer`) – und auf einer neuen Instanz sind die
+# Namen darin noch nicht nachgeschlagen, das ist also der Normalfall.
+
+from pathlib import Path
+
+_APP_JS = (Path(__file__).resolve().parents[1] / "frontend" / "app.js")
+
+
+def _app_js() -> str:
+    return _APP_JS.read_text(encoding="utf-8")
+
+
+def test_zusatzversuch_weiss_ob_schon_treffer_dastehen():
+    j = _app_js()
+    assert "katalogKiVersuch(q, type, seq, hint," in j
+    assert "suggestState.items.length > 0" in j, \
+        "Der Aufruf muss mitgeben, ob schon etwas angezeigt wird"
+
+
+def test_misserfolg_ueberschreibt_sichtbare_treffer_nicht():
+    j = _app_js()
+    anfang = j.index("async function katalogKiVersuch")
+    stelle = j[anfang:j.index("async function loadMoreSuggestions", anfang)]
+    # Beide Ausgänge ohne Treffer müssen den Fall „steht schon etwas da"
+    # kennen; ein nacktes nichtsGefundenHinweis() darf es dort nicht geben.
+    for teil in stelle.split("nichtsGefundenHinweis(hint)")[:-1]:
+        assert "hatteTreffer" in teil.rsplit("if", 1)[-1] or \
+               "else" in teil[-40:], \
+               "nichtsGefundenHinweis ohne Prüfung auf sichtbare Treffer"
