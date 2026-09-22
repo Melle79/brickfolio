@@ -45,6 +45,37 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.86.1 – September 2026
+
+### Behoben
+- 🔍 **„Figur mit blauem Hut" fand nichts.** Das Wörterbuch machte daraus
+  `figure blue hat`, und weil die Suche **alle** Wörter verlangt, blieb sie
+  leer: `figure` steht in 1.268 von 40.936 Katalogzeilen, fast nur bei
+  Duplo. Dabei ist „Figur" in dieser Frage gar kein Merkmal, sondern ein
+  Füllwort – gemeint ist „eine Figur, die einen blauen Hut hat", gesucht
+  ist der Hut. Welche Gattung gemeint ist, sagt ohnehin schon die
+  Typ-Auswahl über dem Feld.
+
+  „Figur", „Figuren", „Minifigur" und „Minifiguren" zählen jetzt zu den
+  Füllwörtern. Gemessen an **79 echten Anfragen** aus der Instanz plus neun
+  Mustern: **sieben besser, keine schlechter, 82 unverändert.**
+
+  | Anfrage | vorher | nachher |
+  |---|---|---|
+  | Figur mit blauem Hut | 0 | **20** |
+  | Figur mit blauem Hut, roten Beinen und grünem Torso | 0 | **4** |
+  | Figur mit gelbem Kopf | 2 | **20** |
+  | Figur mit Kopf und Arm | 0 | **6** |
+  | Figuren mit Umhang | 14 | **20** |
+
+  Zwei der besseren Fälle standen so im echten Anfragen-Protokoll – das
+  Muster wurde also wirklich getippt und lief wirklich ins Leere.
+
+  **Eine Anfrage wird dabei nie zu nichts.** Wer nur „Figur" tippt, hat ein
+  Füllwort getippt und sonst nichts; dann bleiben die Füllwörter stehen.
+  Ohne diese Rückfallebene wäre genau diese eine Anfrage schlechter
+  geworden – der einzige Rückschritt in der ersten Messung, und vermeidbar.
+
 ## 2.86.0 – September 2026
 
 ### Hinzugefügt

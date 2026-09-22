@@ -1181,13 +1181,30 @@ def nachschlagen(wort: str) -> tuple:
 FUELLWOERTER = {"mit", "und", "der", "die", "das", "den", "dem", "des",
                 "ein", "eine", "einem", "einen", "einer", "eines",
                 "im", "am", "an", "auf", "bei", "von", "vom", "zum", "zur",
-                "als", "auch", "noch", "sowie"}
+                "als", "auch", "noch", "sowie",
+                # **Die Gattung ist kein Merkmal.** „Figur mit blauem Hut"
+                # heißt „eine Figur, die einen blauen Hut hat" – gesucht ist
+                # der Hut. Übersetzt stand hier `figure blue hat`, und weil
+                # die Suche alle Wörter verlangt, fand das nichts: `figure`
+                # steht in 1.268 von 40.936 Katalogzeilen, fast nur bei
+                # Duplo. Gemessen an 79 echten Anfragen plus Svens Muster:
+                # fünf besser, eine schlechter, achtzig unverändert
+                # (22.09.2026). Welche Gattung gemeint ist, sagt ohnehin
+                # schon die Typ-Auswahl über dem Feld.
+                "figur", "figuren", "minifigur", "minifiguren"}
 
 
 def anfrage_teilen(q: str) -> list:
-    """Eine Anfrage in dieselben Wörter zerlegen, die die Suche benutzt."""
-    return [w for w in re.split(r"[^a-z0-9]+", core.falten(q))
-            if len(w) >= 2 and w not in FUELLWOERTER]
+    """Eine Anfrage in dieselben Wörter zerlegen, die die Suche benutzt.
+
+    **Eine Anfrage darf nie zu nichts werden.** Wer nur „Figur" tippt, hat
+    ein Füllwort getippt und sonst nichts – dann sind die Füllwörter alles,
+    was da ist, und sie bleiben stehen. Sonst verlöre genau diese Anfrage
+    ihre bisherigen Treffer, während die Änderung alle anderen verbessert.
+    """
+    roh = [w for w in re.split(r"[^a-z0-9]+", core.falten(q)) if len(w) >= 2]
+    ohne = [w for w in roh if w not in FUELLWOERTER]
+    return ohne or roh
 
 
 def uebersetzen(q, nur_ganz: bool = False) -> list:

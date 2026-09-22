@@ -320,3 +320,50 @@ def test_ohne_treffer_kommt_das_modell_doch(client, monkeypatch):
     _katalog([("cty900", "Man in Bathrobe", "white")])
     client.get("/api/search/suggest?q=Bademantel")
     assert gefragt == ["Bademantel"]
+
+
+# ── Die Gattung ist kein Merkmal ───────────────────────────────────────
+# „Figur mit blauem Hut" heißt „eine Figur, die einen blauen Hut hat" –
+# gesucht ist der Hut. Übersetzt stand dort `figure blue hat`, und weil
+# die Suche alle Wörter verlangt, fand das nichts: `figure` steht in
+# 1.268 von 40.936 Katalogzeilen, fast nur bei Duplo.
+#
+# Gemessen am 22.09.2026 an 79 echten Anfragen aus Svens Instanz plus
+# neun Mustern: sieben besser, keine schlechter, 82 unverändert.
+
+def test_gattungswoerter_sind_fuellwoerter():
+    for w in ("figur", "figuren", "minifigur", "minifiguren"):
+        assert w in woerterbuch.FUELLWOERTER, f"{w} gehört zu den Füllwörtern"
+
+
+def test_die_gattung_faellt_aus_der_anfrage():
+    """`anfrage_teilen` faltet nur – die Endungen fallen erst beim
+    Nachschlagen. Hier zählt allein, dass die Gattung fehlt."""
+    assert woerterbuch.anfrage_teilen("Figur mit blauem Hut") == ["blauem", "hut"]
+    assert woerterbuch.anfrage_teilen("Minifigur mit rotem Helm") == ["rotem", "helm"]
+
+
+def test_uebersetzt_ohne_die_gattung():
+    """Vorher: `figure blue hat` – und das fand nichts."""
+    for q in ("Figur mit blauem Hut", "Minifigur mit blauem Hut"):
+        for begriff in woerterbuch.uebersetzen(q):
+            assert "figure" not in begriff, f"{q} schleppt die Gattung mit"
+            assert "blue" in begriff and "hat" in begriff
+
+
+def test_eine_anfrage_wird_nie_zu_nichts():
+    """Wer nur „Figur" tippt, hat ein Füllwort getippt und sonst nichts.
+
+    Ohne diese Rückfallebene verlöre genau diese Anfrage ihre Treffer,
+    während die Änderung alle anderen verbessert – der einzige
+    Rückschritt in der Messung, und vermeidbar.
+    """
+    assert woerterbuch.anfrage_teilen("Figur") == ["figur"]
+    assert woerterbuch.anfrage_teilen("Minifigur") == ["minifigur"]
+    assert woerterbuch.uebersetzen("Figur"), "muss weiterhin etwas liefern"
+
+
+def test_die_gattung_stoert_andere_anfragen_nicht():
+    """Was kein Gattungswort enthält, darf sich nicht ändern."""
+    assert woerterbuch.anfrage_teilen("roter Droide") == ["roter", "droide"]
+    assert woerterbuch.uebersetzen("gelber Kopf") == ["yellow head"]
