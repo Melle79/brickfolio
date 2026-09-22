@@ -825,22 +825,42 @@ def _ver_tuple(v: str):
 
 @app.get("/api/price_log")
 def price_log(limit: int = 50, user: dict = Depends(dealer_user)):
-    """Die jüngsten Preisverlaufs-Punkte mit Artikelnamen (Profi)."""
+    """Die jüngsten Preisverlaufs-Punkte mit Artikelnamen (Profi).
+
+    **Mit dem jeweils vorherigen Wert desselben Artikels.** Eine Zahl allein
+    sagt nicht, ob sie gut ist: „Ø 4,55 €" liest sich gleich, ob der Preis
+    gestiegen oder gefallen ist. `LAG` holt den Punkt davor, und die
+    Oberfläche macht daraus einen Pfeil.
+
+    Das Fenster läuft über den **ganzen** Verlauf, nicht über die
+    angezeigten Zeilen: Der vorherige Punkt eines Artikels liegt fast immer
+    außerhalb der letzten 50 Zeilen, und mit `LIMIT` davor wäre er weg.
+    """
     limit = max(1, min(limit, 200))
     with core.db() as conn:
         rows = conn.execute(
-            "SELECT ph.item_id, ph.item_type, ph.ts, ph.price_new, "
-            "ph.price_used, ph.source, "
-            "COALESCE(c.name, w.name, si.name, ph.item_id) AS name "
-            "FROM price_history ph "
-            "LEFT JOIN collection c ON c.item_id = ph.item_id "
-            "  AND c.item_type = ph.item_type "
-            "LEFT JOIN wanted w ON w.item_id = ph.item_id "
-            "  AND w.item_type = ph.item_type "
-            "LEFT JOIN shopping_items si ON si.item_id = ph.item_id "
-            "  AND si.item_type = ph.item_type "
-            "GROUP BY ph.rowid "
-            "ORDER BY ph.ts DESC LIMIT ?", (limit,)).fetchall()
+            "WITH verlauf AS ("
+            "  SELECT rowid AS rid, item_id, item_type, ts, price_new,"
+            "         price_used, source,"
+            "         LAG(price_new) OVER ("
+            "           PARTITION BY item_id, item_type ORDER BY ts, rowid"
+            "         ) AS vorher_new,"
+            "         LAG(price_used) OVER ("
+            "           PARTITION BY item_id, item_type ORDER BY ts, rowid"
+            "         ) AS vorher_used"
+            "  FROM price_history) "
+            "SELECT v.item_id, v.item_type, v.ts, v.price_new, "
+            "v.price_used, v.source, v.vorher_new, v.vorher_used, "
+            "COALESCE(c.name, w.name, si.name, v.item_id) AS name "
+            "FROM verlauf v "
+            "LEFT JOIN collection c ON c.item_id = v.item_id "
+            "  AND c.item_type = v.item_type "
+            "LEFT JOIN wanted w ON w.item_id = v.item_id "
+            "  AND w.item_type = v.item_type "
+            "LEFT JOIN shopping_items si ON si.item_id = v.item_id "
+            "  AND si.item_type = v.item_type "
+            "GROUP BY v.rid "
+            "ORDER BY v.ts DESC LIMIT ?", (limit,)).fetchall()
         cutoff = int(time.time()) - PRICE_STALE_SECONDS
         stale = conn.execute(
             "SELECT COUNT(*) AS c FROM collection WHERE "

@@ -45,6 +45,30 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.86.0 – September 2026
+
+### Hinzugefügt
+- 📈 **Pfeile im Preis-Protokoll.** Neben jedem Betrag steht jetzt ein
+  grünes **↑** oder ein rotes **↓** – je nachdem, wohin der Preis seit dem
+  vorherigen Punkt desselben Artikels gegangen ist. Eine Zahl allein sagt
+  nämlich nicht, ob sie gut ist: „Ø 4,55 €" liest sich gleich, ob der Preis
+  gestiegen oder gefallen ist. Der Hinweis unter der Maus nennt den alten
+  Wert und die Veränderung („vorher 620,00 € · −14,50 €"). Neu und
+  gebraucht haben je einen eigenen Pfeil; sie laufen nicht immer in
+  dieselbe Richtung.
+
+  **Kein Pfeil heißt: nichts zu zeigen** – erster Punkt eines Artikels,
+  oder der Betrag ist derselbe geblieben. Verglichen wird **auf Cent**,
+  also genau das, was in der Zeile steht: BrickLink liefert vier
+  Nachkommastellen, und ein Pfeil für eine Bewegung, die im angezeigten
+  Betrag nicht zu sehen ist, wäre nur verwirrend.
+
+  Der Endpunkt liefert den Vorgänger über eine Fensterfunktion (`LAG`) mit.
+  Der Fallstrick steckte im `LIMIT`: Das Protokoll zeigt die jüngsten 50
+  Zeilen, aber der vorherige Punkt eines Artikels liegt fast immer weiter
+  zurück. Das Fenster läuft deshalb über den **ganzen** Verlauf und wird
+  erst danach begrenzt – dafür gibt es eine eigene Probe.
+
 ## 2.85.1 – September 2026
 
 ### Geändert

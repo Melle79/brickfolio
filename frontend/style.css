@@ -1154,6 +1154,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   text-overflow: ellipsis; white-space: nowrap; font-weight: 700;
 }
 .pl-prices { color: var(--muted); flex-shrink: 0; }
+/* Der Pfeil sagt, wohin der Preis ging. Dieselben Farben wie bei
+   Gewinn/Verlust (.profit-pos/.profit-neg) – zwei Grüntöne für dasselbe
+   „mehr wert" wären eine Stolperfalle. */
+.pl-trend { font-weight: 900; margin-left: 3px; }
+.pl-up { color: var(--green); }
+.pl-down { color: var(--red); }
 .pl-src {
   flex: 0 0 auto; font-size: 10.5px; font-weight: 900;
   border: 1.5px solid var(--line); border-radius: 999px;

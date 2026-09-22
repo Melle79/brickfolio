@@ -2297,6 +2297,23 @@ als sieben Tage ist** – so siehst du auf einen Blick, wie aktuell die
 Bewertung deiner Sammlung ist. Sind alle Preise frisch, steht dort
 stattdessen eine Bestätigung.
 
+**Ein Pfeil sagt, wohin der Preis ging.** Neben jedem Betrag steht ein
+grünes **↑**, wenn er seit dem vorherigen Punkt desselben Artikels
+gestiegen ist, und ein rotes **↓**, wenn er gefallen ist. Zeigt die Maus
+darauf, nennt der Hinweis den alten Wert und die Veränderung („vorher
+620,00 € · −14,50 €"). Neu und gebraucht haben je einen eigenen Pfeil –
+sie laufen nicht immer in dieselbe Richtung.
+
+> **Kein Pfeil heißt: nichts zu zeigen.** Entweder ist es der erste Punkt
+> eines Artikels, oder der Betrag ist derselbe geblieben. Verglichen wird
+> dabei **auf Cent**, also genau das, was in der Zeile steht: BrickLink
+> liefert vier Nachkommastellen, und ein Pfeil für eine Bewegung, die man
+> im angezeigten Betrag gar nicht sieht, wäre nur verwirrend.
+>
+> Die meisten Zeilen tragen deshalb keinen Pfeil – der Ø-Preis über sechs
+> Monate bewegt sich langsam. Genau das macht die Pfeile nützlich: Sie
+> markieren die Ausnahme, nicht die Regel.
+
 ---
 
 ## 14. Fehlerbehebung

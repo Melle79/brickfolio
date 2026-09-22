@@ -1604,6 +1604,19 @@ found and a badge saying whether the point came about **automatically**
 (background job) or **manually** (the ↻ button). So it is always traceable when
 which prices were recorded.
 
+**An arrow says where the price went.** Next to each amount a green **↑**
+means it rose since the previous point for that same item, a red **↓** that it
+fell. Hovering names the old value and the change ("previously €620.00 ·
+−€14.50"). New and used each get their own arrow – they do not always move
+together.
+
+> **No arrow means nothing to show:** either it is the item's first point, or
+> the amount stayed the same. The comparison is made **in cents**, exactly what
+> the line displays – BrickLink returns four decimal places, and an arrow for a
+> movement invisible in the shown amount would only confuse. Most lines
+> therefore carry no arrow: a six-month average moves slowly. That is what
+> makes the arrows useful – they mark the exception, not the rule.
+
 **Purchase-price automation.** Entries without a manual purchase price receive
 the day's average as a ⚙️ value at the first price fetch (see 5.4). Prices set
 manually always stay untouched.

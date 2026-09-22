@@ -10750,6 +10750,34 @@ function initCollapsibleCards() {
     });
 }
 
+/* Wohin ging der Preis? Ein Pfeil je Wert, gemessen am vorherigen Punkt
+   desselben Artikels (`vorher_new`/`vorher_used` aus dem Endpunkt).
+
+   **Kein Pfeil ist auch eine Aussage.** Fehlt der Vorgänger – erster
+   Eintrag eines Artikels –, gibt es nichts zu vergleichen; blieb der Preis
+   gleich, gibt es nichts zu zeigen. Ein dritter Zustand „unverändert" mit
+   eigenem Zeichen machte die Zeile nur unruhig, und das Protokoll ist eine
+   lange Liste.
+
+   **Verglichen wird auf Cent, nicht auf die Rohzahl.** BrickLink liefert
+   vier Nachkommastellen, angezeigt werden zwei: 4,3760 und 4,3820 stehen
+   beide als „4,38 €" da. Ein Pfeil daneben behauptete eine Bewegung, die
+   in der Zeile nicht zu sehen ist – der Pfeil muss zum Betrag passen. */
+function preisPfeil(jetzt, vorher) {
+  if (jetzt == null || vorher == null) return "";
+  const a = Math.round(Number(vorher) * 100);
+  const b = Math.round(Number(jetzt) * 100);
+  if (a === b) return "";
+  const hoch = b > a;
+  const titel = tr("vorher {alt} · {diff}", {
+    alt: fmtEur(vorher),
+    diff: (hoch ? "+" : "−") + fmtEur(Math.abs(b - a) / 100),
+  });
+  return `<span class="pl-trend ${hoch ? "pl-up" : "pl-down"}" `
+    + `title="${esc(titel)}" aria-label="${esc(titel)}">`
+    + `${hoch ? "↑" : "↓"}</span>`;
+}
+
 async function loadPriceLog(limit) {
   const box = $("pricelog-list");
   if (!box) return;
@@ -10782,8 +10810,14 @@ async function loadPriceLog(limit) {
         + d.toLocaleTimeString(dateLocale(),
           { hour: "2-digit", minute: "2-digit" });
       const prices = [
-        e.price_new != null ? tr("neu") + " " + fmtEur(e.price_new) : null,
-        e.price_used != null ? tr("gebr.") + " " + fmtEur(e.price_used) : null,
+        e.price_new != null
+          ? tr("neu") + " " + fmtEur(e.price_new)
+            + preisPfeil(e.price_new, e.vorher_new)
+          : null,
+        e.price_used != null
+          ? tr("gebr.") + " " + fmtEur(e.price_used)
+            + preisPfeil(e.price_used, e.vorher_used)
+          : null,
       ].filter(Boolean).join(" · ");
       const src = e.source === "manuell"
         ? `<span class="pl-src manual">${esc(tr("manuell"))}</span>`
