@@ -441,9 +441,10 @@ Sammlung tragen:
 | Projektseite brickfolio.cc | `brickfolio-website` | statischer Cloudflare Worker, von Hand veröffentlicht |
 | Katalogdienst | `brickfolio-katalogdienst` | baut den Katalogindex und schreibt ihn hierher nach `katalog/index.ndjson` |
 | Hub-Konsole | `brickfolio-hub-admin` | Oberfläche zur Verwaltung des Tausch-Netzwerks |
+| Tausch-Hub | `brickfolio-hub` | Cloudflare Worker + D1, den die Instanzen zum Tauschen ansprechen |
 
-Der **Tausch-Hub selbst** liegt dagegen hier unter `hub/` und wird bei
-jeder Änderung automatisch veröffentlicht.
+Die App selbst spricht den Hub nur über HTTP an; sie braucht seinen
+Quelltext nicht.
 
 ## Rechtliches
 

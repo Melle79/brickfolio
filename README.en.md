@@ -375,9 +375,10 @@ describe credentials or carry screenshots of a real collection:
 | project site brickfolio.cc | `brickfolio-website` | static Cloudflare Worker, published by hand |
 | catalogue service | `brickfolio-katalogdienst` | builds the catalogue index and writes it here to `katalog/index.ndjson` |
 | hub console | `brickfolio-hub-admin` | interface for running the trade network |
+| trade hub | `brickfolio-hub` | Cloudflare Worker + D1 that instances talk to for trading |
 
-The **trade hub itself** does live here, under `hub/`, and is published
-automatically on every change.
+The app itself only talks to the hub over HTTP; it does not need its
+source.
 
 ## Legal
 

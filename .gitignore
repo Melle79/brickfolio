@@ -40,3 +40,9 @@ abzug*.sql
 # gehört aber trotzdem nicht in ein öffentliches Repo – und die Datei wird
 # bei jedem `wrangler`-Aufruf neu erzeugt.
 .wrangler/
+
+# Node-Abhängigkeiten. Standen nie im Repo, waren aber nur durch
+# hub/.gitignore gedeckt – als der Hub am 22.09.2026 auszog, verschwand
+# die Regel mit ihm, und `git add -A` sammelte 191 MB ein (ein einzelnes
+# workerd-Binärstück mit 109 MB, das GitHub rundheraus ablehnte).
+node_modules/
