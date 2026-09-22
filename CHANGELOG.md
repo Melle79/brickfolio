@@ -45,6 +45,55 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.85.0 – September 2026
+
+### Behoben
+- 🏷 **Ohne Anzeigenamen hieß die App „'s Brickfolio" – und das Logo
+  „FINN".** Auf **jeder** frischen Installation, bevor jemand einen Namen
+  setzt. Die Vorlage trug `__OWNER__'s Brickfolio`, und der Server setzte
+  nur den nackten Namen ein: Das Genitiv-s klebte an einer leeren
+  Zeichenkette. Das Logo blieb beim Platzhalter, weil `applyOwnerName` bei
+  leerem Namen mit einem frühen `return` ausstieg.
+
+  Jetzt setzt der Server denselben `_app_title()` ein, den das Manifest
+  längst richtig benutzt („Dein Brickfolio"), der Name kommt ebenfalls von
+  dort, und eine leere Namenszeile blendet sich aus. Auch der
+  Einrichtungsassistent nennt nicht mehr „Finn's Brickfolio" als Beispiel,
+  sondern zeigt den fertigen Titel als Vorschau.
+
+- 🔍 **„Nichts gefunden" stand über zehn sichtbaren Treffern.** Nicht die
+  Suche war schuld, sondern der Übersetzungs-Zusatzversuch: Er läuft auch
+  dann, wenn nur der *eigene* Abzug leer blieb – und auf einer neuen
+  Instanz ist das der Normalfall, weil die Namen darin erst nach und nach
+  bei BrickLink nachgeschlagen werden. Fand die Übersetzung nichts, schrieb
+  sie ihr „Nichts gefunden" über die Treffer, die schon dastanden.
+
+  Der Versuch weiß jetzt, ob schon etwas zu sehen ist: Dann heißt es
+  währenddessen „Suche zusätzlich nach der Übersetzung …", und ein
+  Misserfolg endet still, statt zu widersprechen.
+
+### Geändert
+- 🔒 **`Permissions-Policy` ergänzt.** Sie fehlte als einzige der üblichen
+  Kopfzeilen. Gesperrt sind jetzt Mikrofon, Standort, Zahlung, USB, MIDI und
+  Seriell; die Kamera bleibt für die eigene Seite erlaubt. Gescannt wird
+  zwar über ein Dateifeld mit `capture`, das die Regel gar nicht betrifft –
+  ein `camera=()` wäre aber eine Falle für den Tag, an dem jemand auf
+  `getUserMedia` umstellt.
+- 📘 **Das Handbuch sagt jetzt, dass die Sicherung die API-Schlüssel im
+  Klartext trägt.** Genannt waren bisher nur die Passwort-Hashes. In der
+  Oberfläche erscheinen die Schlüssel maskiert (`…41c7`), in der Sicherung
+  vollständig – anders ließe sich eine Instanz nicht wiederherstellen. Die
+  Datei ist damit so vertraulich wie die Datenbank selbst.
+- 🧹 **Drei Dateien entfernt, die niemand mehr abrief:**
+  `frontend/icons/icon-180.png` (das Apple-Touch-Symbol wird je Instanz
+  erzeugt), `frontend/manifest.webmanifest` (wird erzeugt, seit der Name aus
+  den Einstellungen kommt – die feste Fassung war obendrein veraltet) und
+  `docs/screenshots/start.png` (seit Juli in keiner Doku eingebunden).
+
+  Ebenfalls aufgeräumt, aber ohne Wirkung auf die App: Projektseite,
+  Katalogdienst, Tausch-Hub und Hub-Konsole liegen jetzt in eigenen,
+  nicht öffentlichen Repos. Hier bleibt das Programm.
+
 ## 2.84.1 – September 2026
 
 ### Behoben
