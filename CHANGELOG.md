@@ -45,6 +45,23 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.17 – September 2026
+
+### Geändert
+- 📚 **Der Katalogkopf spricht dieselbe Sprache wie der Rest.** Die vier
+  Filter („Alle", „Fehlt mir", „Hab ich", „Gemerkt") waren einzeln
+  umrandete Knöpfe, einer davon gelb – das sah aus wie vier Aktionen, ist
+  aber eine Wahl. Jetzt ein Schiebeschalter, dieselbe Form wie
+  „Gebraucht/Neu" im Steckbrief. „Figuren/Sets" ebenso.
+
+  Themenwahl und Suchfeld tragen die ruhige Fassung aus den Fenstern:
+  weiche Kontur, Fläche statt Kasten, Rand erst beim Hineingehen.
+
+- 🛡 **Dieselbe Vorsorge wie in der Sammlung.** Im Katalogkopf steht
+  dasselbe Auswahlfeld in derselben Bauweise, an der Safari die Seite
+  seitlich aufschob – der Kopf schneidet jetzt ab, bevor es dort dazu
+  kommen kann.
+
 ## 2.88.16 – September 2026
 
 ### Geändert
