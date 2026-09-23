@@ -45,6 +45,15 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.21 – September 2026
+
+### Behoben
+- 🧱 **Die Ladeanzeige im Katalog klebte unter der Filterleiste** und sagte
+  nicht, worauf man wartet. Dort standen nur die vier Steine – ohne
+  Abstand, ohne Beschriftung. Jetzt derselbe Block wie in Sammlung,
+  Statistik und Tauschbörse: Luft darum und „Katalog wird geladen …"
+  darunter.
+
 ## 2.88.20 – September 2026
 
 ### Geändert

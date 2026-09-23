@@ -4828,7 +4828,12 @@ async function katListeLaden() {
   if (katStand.laeuft) return;
   katStand.laeuft = true;
   const liste = $("kat-liste");
-  liste.innerHTML = brickWelle("Katalog");
+  // **Der ganze Block, nicht nur die Steine.** Bis 2.88.20 stand hier
+  // `brickWelle("Katalog")`: vier Steine ohne Rahmen, ohne Abstand und
+  // ohne sichtbaren Text – sie klebten direkt unter der Filterleiste und
+  // sagten niemandem, worauf man wartet. Überall sonst in der App steht
+  // dafür `brickLoading`, mit Luft darum und einer Beschriftung.
+  liste.innerHTML = brickLoading("Katalog wird geladen …");
   try {
     const p = new URLSearchParams({
       thema: katStand.thema, art: katStand.art,
