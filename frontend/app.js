@@ -12870,8 +12870,13 @@ function ueberstandWachen() {
   //
   // `reportError` sendet je Sitzung nur einmal je Meldung und schluckt
   // eigene Fehler – melden darf nie selbst stören.
-  reportError("Seite ist breiter als das Fenster (" + sicht + ")",
-    bericht, "überstand");
+  // **Die Fassung gehört in die Meldung.** Der Server fasst gleichartige
+  // Meldungen zusammen und behält den Text der ersten – ein Wiedersehen
+  // nach einem Fix erhöhte damit nur den Zähler einer alten Zeile, und man
+  // sah nicht, ob der Befund von vor oder nach der Änderung stammt. Mit der
+  // Fassung im Text bekommt jede eine eigene Zeile.
+  reportError("Seite ist breiter als das Fenster (" + sicht + ", "
+    + (state.appVersion || "?") + ")", bericht, "überstand");
 }
 
 /* Was steht über den rechten Rand hinaus?
@@ -12892,6 +12897,15 @@ function ueberstandMessen() {
   const jetzt = ueberstandBericht("jetzt geöffnet");
   let gemerkt = "";
   try { gemerkt = localStorage.getItem(UEBERSTAND_KEY) || ""; } catch (_) { /* egal */ }
+  // **Ein Befund aus einer älteren Fassung ist kein Befund mehr.** Genau
+  // daran sind zwei Runden verlorengegangen: Nach dem Update stand hier
+  // noch der alte Text, und „nichts geändert" war die naheliegende – und
+  // falsche – Lesart.
+  if (gemerkt && state.appVersion
+      && gemerkt.indexOf("Fassung " + state.appVersion) < 0) {
+    gemerkt = "(Der gespeicherte Befund stammt aus einer älteren Fassung –\n"
+      + "blättere noch einmal durch die Ansicht, dann steht hier ein neuer.)";
+  }
   const teile = [];
   if (w.scrollWidth > w.clientWidth + 1) teile.push(jetzt);
   if (gemerkt) teile.push("── Zuletzt beim Blättern bemerkt ──", gemerkt);

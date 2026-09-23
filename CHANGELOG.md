@@ -45,6 +45,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.10 – September 2026
+
+### Behoben
+- 📐 **Alte Überstands-Befunde gaben sich als neu aus.** Der gespeicherte
+  Text blieb nach einem Update stehen, und die naheliegende Lesart war
+  „nichts geändert" – zweimal geschehen. Jetzt sagt die Anzeige es, wenn
+  der Befund aus einer älteren Fassung stammt.
+
+  Dasselbe auf der Serverseite: Gleichartige Meldungen werden dort
+  zusammengefasst und behalten den Text der **ersten**. Ein Wiedersehen
+  nach einem Fix erhöhte damit nur den Zähler einer alten Zeile. Die
+  Fassung steht jetzt in der Meldung, also bekommt jede ihre eigene.
+
 ## 2.88.9 – September 2026
 
 ### Behoben
