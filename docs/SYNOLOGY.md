@@ -14,7 +14,7 @@ neuer). Bei älterem DSM heißt das Paket **Docker**; dann geht Weg 2.
 In der **File Station** unter `docker` einen Ordner `brickfolio` anlegen, darin
 einen Ordner `data`. Ergebnis: `/volume1/docker/brickfolio/data`.
 
-Der Ordner `data` ist der einzige, auf den es ankommt – dort liegt eure
+Der Ordner `data` ist der einzige, auf den es ankommt – dort liegt deine
 Datenbank. Alles andere ist ersetzbar.
 
 ### 2. Projekt anlegen
@@ -24,8 +24,8 @@ Datenbank. Alles andere ist ersetzbar.
 | Feld | Eingabe |
 |---|---|
 | Projektname | `brickfolio` |
-| Pfad | `/docker/brickfolio` |
-| Quelle | **YAML-Code erstellen** |
+| Pfad | über **Pfad fes…** auf `/docker/brickfolio` |
+| Quelle | **docker-compose.yml erstellen** |
 
 In das Textfeld kommt:
 
@@ -117,7 +117,7 @@ Aktualisieren später:
 sudo bash update.sh
 ```
 
-(`update.sh` liegt im Projektordner, wenn ihr den Quellcode geholt habt –
+(`update.sh` liegt im Projektordner, wenn du den Quellcode geholt hast –
 sonst genügt `sudo docker compose pull && sudo docker compose up -d`.)
 
 ---
