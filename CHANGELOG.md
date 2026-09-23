@@ -45,6 +45,20 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.8 – September 2026
+
+### Behoben
+- 📐 **Die Überstands-Messung nennt jetzt den richtigen Kasten.** Zwei
+  Schwächen: Sie schlug den Scroll-Versatz auch fest positionierten
+  Elementen auf – dadurch stand die Tab-Leiste als Übeltäter da, obwohl sie
+  gar nicht mitwandert. Und die Liste „scrollt innen über" war nach innen
+  sortiert: Ganz innen stehen harmlose Dinge (der Text in einem Auswahlfeld
+  ist länger als das Feld – das klippt der Browser), während der
+  interessante Kasten weiter außen liegt.
+
+  Jetzt wird eigens ausgewiesen, welcher Kasten **genau den Überstand des
+  Dokuments** weiterreicht, innerste Quelle zuerst. Das ist der Ort.
+
 ## 2.88.7 – September 2026
 
 ### Geändert

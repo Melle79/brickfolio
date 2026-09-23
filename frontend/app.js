@@ -12936,12 +12936,16 @@ function ueberstandBericht(woher) {
     if (!k.width && !k.height) return;
     const s = getComputedStyle(el);
     const rand = parseFloat(s.marginRight) || 0;
+    // **Festes bleibt stehen.** Eine `position: fixed`-Leiste wandert beim
+    // Schieben nicht mit; ihr den Scroll-Versatz aufzuschlagen machte aus
+    // der Tab-Leiste einen Übeltäter, der keiner war.
+    const mitversatz = s.position === "fixed" ? 0 : versatz;
     alle.push({
       el,
-      rechts: Math.round(k.right + versatz + rand),
+      rechts: Math.round(k.right + mitversatz + rand),
       breit: Math.round(k.width),
       rand: Math.round(rand),
-      links: Math.round(k.left + versatz),
+      links: Math.round(k.left + mitversatz),
     });
   });
   alle.sort((a, b) => b.rechts - a.rechts);
@@ -12980,11 +12984,24 @@ function ueberstandBericht(woher) {
   });
   if (innen.length) {
     innen.sort((a, b) => b.tiefe - a.tiefe);
-    zeilen.push("", "Scrollt innen über (innerste zuerst):");
-    innen.slice(0, 6).forEach((t) => {
-      zeilen.push(`  ${nenne(t.el)} – innen ${t.innenBreit},`
-        + ` Inhalt ${t.rollBreit} (+${t.ueber})`);
-    });
+    // **Der Kasten, der genau diesen Überstand trägt.** Ganz innen stehen
+    // meist harmlose Dinge – der Text in einem Auswahlfeld ist länger als
+    // das Feld, das klippt der Browser. Wer den Überstand des *Dokuments*
+    // weiterreicht, hat ihn auch; der innerste davon ist die Quelle.
+    const traeger = innen.filter((t) => t.ueber >= rolle - breite - 1);
+    if (traeger.length) {
+      zeilen.push("", "Trägt den Überstand (innerste zuerst) ⬅ hier suchen:");
+      traeger.slice(0, 4).forEach((t) => {
+        zeilen.push(`  ${nenne(t.el)} – innen ${t.innenBreit},`
+          + ` Inhalt ${t.rollBreit} (+${t.ueber})`);
+      });
+    }
+    zeilen.push("", "Scrollt sonst noch innen über:");
+    innen.filter((t) => t.ueber < rolle - breite - 1).slice(0, 5)
+      .forEach((t) => {
+        zeilen.push(`  ${nenne(t.el)} – innen ${t.innenBreit},`
+          + ` Inhalt ${t.rollBreit} (+${t.ueber})`);
+      });
   }
 
   // Ein Element, das nach **links** hinausragt, macht das Dokument in
