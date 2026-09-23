@@ -2623,24 +2623,6 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: .9em; line-height: 1;
 }
 
-/* ── Fehlersuche: Bausteine abschalten ──────────────────────────────────
-   Gesetzt wird eine Klasse an <html>, damit ein einziger Schalter alle
-   Stellen erreicht – auch die, die erst später ins Dokument kommen.
-
-   `!important` ist hier richtig: Diese Regeln sollen jede andere
-   überstimmen, gerade die aus den Designs. */
-html.ohne-cv #collection-list .card {
-  content-visibility: visible !important;
-  contain-intrinsic-size: auto !important;
-}
-html.ohne-sticky .topbar,
-html.ohne-sticky .kat-block,
-html.ohne-sticky .kat-balken,
-html.ohne-sticky .stats-side { position: static !important; }
-html.ohne-blur * {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
 
 /* Die Notiz stand auf dem Exemplar-Blatt mit drei Zeilen da und schnitt den
    letzten Satz ab. Auf einem eigenen Blatt ist Platz. */

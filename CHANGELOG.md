@@ -45,6 +45,37 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.13 – September 2026
+
+Diese Fassung bündelt alles seit 2.88.2. Die Zwischenschritte 2.88.3 bis
+2.88.12 liefen nur auf einer Instanz und stehen unten einzeln – hier das
+Wesentliche für alle.
+
+### Geändert
+- 🔍 **Zu klein abgelegte Bilder holen sich selbst nach**, sobald jemand die
+  Figur oder das Set aufruft. Kein Sammellauf: Das ginge gegen dasselbe
+  BrickLink-Tageskontingent wie die Preise, für Bilder, die vielleicht nie
+  jemand ansieht. Wer durch die Sammlung blättert, löst nichts aus.
+
+- 🧹 **Die Fehlersuche-Abschnitte sind raus** – sowohl die Überstands-
+  Messung, die eigens für die Jagd unten gebaut wurde, als auch das
+  Abschalten einzelner Bausteine aus 2.73.0. Letzteres war für die
+  Absturzsuche gedacht; die ist abgeschlossen, und was damals gelernt wurde,
+  steht in den Proben. Wer Bausteine abgeschaltet hatte, bekommt sie damit
+  automatisch zurück.
+
+### Behoben
+- ↔️ **Die Sammlung ließ sich seitlich schieben** – auf dem iPhone, nicht
+  auf dem Prüfgerät. Der Rahmen um das Sortierfeld ist 98 Pixel breit, sein
+  Inhalt meldete 175: Safari rechnet die Textbreite der `<option>`-Einträge
+  in den Überlauf ein, obwohl diese Liste nie gezeichnet wird. Von dort
+  wanderte es in die Filterleiste und bis zur Seite. Der Rahmen schneidet
+  jetzt ab, und die Felder dürfen schrumpfen (`min-width: 0`).
+
+  Sichtbar verschwindet dadurch nichts: Das Feld klippt seinen Text ohnehin,
+  und die aufgeklappte Liste zeichnet das Betriebssystem außerhalb des
+  Kastens.
+
 ## 2.88.12 – September 2026
 
 ### Geändert
