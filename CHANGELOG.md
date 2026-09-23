@@ -45,6 +45,15 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.12 – September 2026
+
+### Geändert
+- 🧹 **Die Überstands-Messung ist wieder raus.** Sie war für genau eine
+  Jagd gebaut (2.88.4 bis 2.88.11) und hat sie erledigt: Ein Fehler, der
+  sich auf keinem Prüfgerät nachstellen ließ, wurde dort gemessen, wo er
+  auftrat. Was bleibt, sind die Proben und der Eintrag hier – das Werkzeug
+  selbst muss niemand mit sich herumtragen.
+
 ## 2.88.11 – September 2026
 
 ### Behoben

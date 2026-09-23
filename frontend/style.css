@@ -2757,12 +2757,3 @@ html.ohne-blur * {
 }
 .kamera-ausloeser:active { transform: scale(.92); }
 
-/* Ausgabe der Fehlersuche: feste Breite, damit Zahlen untereinander stehen,
-   und umbruchfähig – auf dem Telefon ist kein Platz für lange Zeilen. */
-.diag-ausgabe {
-  margin: 10px 0 0; padding: 10px 12px;
-  background: var(--field); border: 1px solid var(--line); border-radius: 12px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11.5px; line-height: 1.5; white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
