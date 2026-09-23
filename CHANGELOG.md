@@ -45,6 +45,20 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.5 – September 2026
+
+### Behoben
+- 📐 **Die Überstands-Messung konnte gar nichts finden.** Sie maß die
+  Ansicht, die gerade offen ist – und sobald man in die Einstellungen
+  wechselt, ist die Sammlung ausgeblendet. Ausgeblendetes steht nicht über:
+  Die Messung meldete pflichtschuldig „nichts" und hatte dabei recht. Nur
+  eben nutzlos.
+
+  Jetzt schaut eine Wache beim Blättern mit und schreibt den Befund einmal
+  je Ansicht weg; die Einstellungen zeigen ihn später an. Man blättert also
+  einfach durch die betroffene Ansicht und sieht danach nach. Der teure
+  Durchlauf durch alle Elemente passiert nur, wenn wirklich etwas übersteht.
+
 ## 2.88.4 – September 2026
 
 ### Neu

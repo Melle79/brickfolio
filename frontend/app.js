@@ -1895,6 +1895,9 @@ function showTab(name) {
   else updatePolling();          // außerhalb des Tausch-Tabs ruhiger takten
   if (name === "settings") { loadSettings(); katThemenLadenAlle(); }
   return geladen;
+  // Jede Ansicht bekommt beim Wechsel eine neue Gelegenheit, ihren
+  // Überstand zu melden – sonst bliebe es beim ersten Befund des Abends.
+  setTimeout(ueberstandWachen, 600);
 }
 
 /* Die Sammlung ist mit Abstand die größte Ansicht: bei 815 Einträgen rund
@@ -12281,6 +12284,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const messKnopf = $("diag-messen");
   if (messKnopf) messKnopf.addEventListener("click", ueberstandMessen);
+  // Die Wache schaut beim Blättern und beim Drehen mit. `passive`, damit
+  // sie das Scrollen nicht ausbremst.
+  window.addEventListener("scroll", ueberstandWachen, { passive: true });
+  window.addEventListener("resize", ueberstandWachen);
+  document.addEventListener("click", () => setTimeout(ueberstandWachen, 400));
 
   if ("serviceWorker" in navigator && !ausLesen().includes("sw")) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -12823,6 +12831,38 @@ function jedipediaVerdrahten() {
 const AUS_KEY = "bf_aus";
 const AUS_BAUSTEINE = ["cv", "sticky", "blur", "sw"];
 
+/* Der Überstand merkt sich selbst, wo er auftritt.
+
+   **Warum das nötig war.** Der Knopf in den Einstellungen misst die
+   Ansicht, die gerade offen ist – und sobald man dorthin wechselt, ist die
+   Sammlung ausgeblendet. Ausgeblendetes steht nicht über: Die erste
+   Fassung meldete pflichtschuldig „nichts" und war dabei völlig richtig.
+   Nur eben nutzlos.
+
+   Jetzt schaut eine Wache beim Blättern mit. Findet sie einen Überstand,
+   schreibt sie **einmal je Ansicht** den Befund weg; die Einstellungen
+   zeigen ihn später an. Der teure Durchlauf durch alle Elemente passiert
+   nur, wenn wirklich etwas übersteht – der billige Vergleich zweier Zahlen
+   davor kostet nichts. */
+const UEBERSTAND_KEY = "bf_ueberstand";
+let ueberstandGeprueft = new Set();
+let ueberstandTakt = 0;
+
+function ueberstandWachen() {
+  const jetzt = Date.now();
+  if (jetzt - ueberstandTakt < 900) return;
+  ueberstandTakt = jetzt;
+  const w = document.documentElement;
+  if (w.scrollWidth <= w.clientWidth + 1) return;
+  const sicht = ([...document.querySelectorAll("[id^=\"view-\"]")]
+    .find((v) => !v.hidden) || {}).id || "?";
+  if (ueberstandGeprueft.has(sicht)) return;
+  ueberstandGeprueft.add(sicht);
+  try {
+    localStorage.setItem(UEBERSTAND_KEY, ueberstandBericht(sicht));
+  } catch (_) { /* privater Modus – dann hilft nur der Knopf */ }
+}
+
 /* Was steht über den rechten Rand hinaus?
 
    **Gemessen wird dort, wo es auftritt.** Ob sich eine Ansicht seitlich
@@ -12837,18 +12877,31 @@ const AUS_BAUSTEINE = ["cv", "sticky", "blur", "sw"];
 function ueberstandMessen() {
   const ziel = $("diag-ueberstand-stand");
   if (!ziel) return;
+  const w = document.documentElement;
+  const jetzt = ueberstandBericht("jetzt geöffnet");
+  let gemerkt = "";
+  try { gemerkt = localStorage.getItem(UEBERSTAND_KEY) || ""; } catch (_) { /* egal */ }
+  const teile = [];
+  if (w.scrollWidth > w.clientWidth + 1) teile.push(jetzt);
+  if (gemerkt) teile.push("── Zuletzt beim Blättern bemerkt ──", gemerkt);
+  if (!teile.length) {
+    teile.push(`Fenster ${w.clientWidth} · Inhalt ${w.scrollWidth} · Überstand 0 px`,
+      "", "Bisher ist nichts aufgefallen. Blättere durch die Ansicht, die",
+      "sich schieben lässt – die App merkt es sich von selbst. Danach hier",
+      "noch einmal nachsehen.");
+  }
+  ziel.textContent = teile.join("\n");
+  ziel.hidden = false;
+}
+
+/* Der Befund als Text – von der Wache wie vom Knopf benutzt. */
+function ueberstandBericht(woher) {
   const breite = document.documentElement.clientWidth;
   const rolle = document.documentElement.scrollWidth;
   const zeilen = [
-    `Fenster ${breite} · Inhalt ${rolle} · Überstand ${rolle - breite} px`,
+    `${woher}: Fenster ${breite} · Inhalt ${rolle}`
+    + ` · Überstand ${rolle - breite} px`,
   ];
-  if (rolle <= breite + 1) {
-    zeilen.push("", "Hier steht nichts über. Die Ansicht, die sich schieben",
-      "lässt, muss beim Messen offen sein – zuerst dorthin, dann hierher.");
-    ziel.textContent = zeilen.join("\n");
-    ziel.hidden = false;
-    return;
-  }
   const treffer = [];
   document.querySelectorAll("body *").forEach((el) => {
     const k = el.getBoundingClientRect();
@@ -12880,8 +12933,7 @@ function ueberstandMessen() {
       el = el.parentElement;
     }
   }
-  ziel.textContent = zeilen.join("\n");
-  ziel.hidden = false;
+  return zeilen.join("\n");
 }
 
 function ausLesen() {
