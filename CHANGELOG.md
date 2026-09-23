@@ -45,6 +45,24 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.9 – September 2026
+
+### Behoben
+- ↔️ **Das seitliche Schieben in der Sammlung – der zweite und
+  wahrscheinlich letzte Grund.** Das Sortier- und das Typ-Feld standen mit
+  175 Pixeln in einem 98 Pixel breiten Rahmen und schoben die Seite auf.
+
+  Ein Flex-Kind schrumpft von sich aus **nicht** unter die Breite seines
+  Inhalts – bei einem Auswahlfeld ist das die längste Option („Wert (hoch →
+  niedrig)"). `width: 100%` hilft dagegen nicht, die Mindestgröße gewinnt;
+  es braucht ausdrücklich `min-width: 0`. Safari hält sich strikt daran,
+  Chromium schrumpft von selbst – deshalb war davon in der Nachbildung bei
+  vier Bildschirmbreiten, allen Ansichten und 800 Einträgen nie etwas zu
+  sehen.
+
+  Gefunden hat es die Messung auf dem Gerät selbst. Dasselbe gilt jetzt für
+  das Suchfeld, das denselben Bau hat.
+
 ## 2.88.8 – September 2026
 
 ### Behoben

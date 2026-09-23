@@ -980,7 +980,13 @@ code {
   position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
   color: var(--muted); pointer-events: none;
 }
-.select-wrap select { width: 100%; padding-left: 32px; }
+/* **`min-width: 0` ist hier kein Beiwerk.** Ein Flex-Kind schrumpft von
+   sich aus nicht unter die Breite seines Inhalts – bei einem Auswahlfeld
+   ist das die längste Option („Wert (hoch → niedrig)"). Safari hält sich
+   strikt daran: Das Feld blieb 175 px breit in einem 98 px breiten Rahmen
+   und schob die Seite auf. Chromium schrumpft es von selbst, deshalb war
+   davon hier nie etwas zu sehen (23.09.2026). */
+.select-wrap select { width: 100%; min-width: 0; padding-left: 32px; }
 .filter-row .select-wrap select { flex: unset; }
 
 /* Suchfeld mit Lupe links und X zum Leeren rechts */
@@ -989,8 +995,11 @@ code {
   position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
   color: var(--muted); pointer-events: none;
 }
+/* Dasselbe für das Suchfeld: ebenfalls ein Flex-Kind mit `width: 100%`,
+   ebenfalls mit einem Platzhaltertext, der breiter sein kann als der Platz. */
 .search-wrap input {
-  width: 100%; padding-left: 32px; padding-right: 34px; margin-top: 0;
+  width: 100%; min-width: 0; padding-left: 32px; padding-right: 34px;
+  margin-top: 0;
 }
 /* native Browser-Löschtaste aus, wir haben eine eigene */
 .search-wrap input::-webkit-search-cancel-button {
