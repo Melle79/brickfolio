@@ -45,6 +45,18 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.14 – September 2026
+
+### Behoben
+- 📈 **Am Telefon blieb der abgelesene Preis nicht stehen.** Beim Antippen
+  der Kurve erschienen Datum und beide Preise – und verschwanden beim
+  Loslassen wieder, also genau in dem Moment, in dem man sie lesen wollte.
+
+  Am Zeiger ist das Ausblenden richtig: Die Maus fährt weiter, ein
+  klebender Wert wäre dort falsch. Am Finger ist es andersherum, denn zum
+  Ablesen muss man loslassen. Jetzt bleibt der Wert stehen, bis man die
+  Kurve erneut antippt oder eine andere Zeitspanne wählt.
+
 ## 2.88.13 – September 2026
 
 Diese Fassung bündelt alles seit 2.88.2. Die Zwischenschritte 2.88.3 bis

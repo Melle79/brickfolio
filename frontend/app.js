@@ -5886,11 +5886,19 @@ function verlaufAblesen(box, pts) {
     // beim bloßen Darüberwischen mit.
     if (ev.pointerType === "mouse" || ev.buttons) zeigen(ev);
   });
-  svg.addEventListener("pointerleave", weg);
-  svg.addEventListener("pointercancel", weg);
-  svg.addEventListener("pointerup", (ev) => {
-    if (ev.pointerType !== "mouse") weg();
+
+  // **Der Zeiger nimmt den Wert mit, der Finger lässt ihn stehen.**
+  //
+  // Eine Maus fährt weiter und der Wert soll nicht kleben bleiben – dafür
+  // `pointerleave`. Ein Finger muss zum Ablesen aber **loslassen**: Bis
+  // 2.88.13 verschwand der Preis genau in dem Moment, in dem man ihn
+  // lesen wollte. Am Finger bleibt er deshalb stehen, bis man die Kurve
+  // erneut antippt oder eine andere Zeitspanne wählt (dann wird das
+  // Diagramm ohnehin neu gezeichnet).
+  svg.addEventListener("pointerleave", (ev) => {
+    if (ev.pointerType === "mouse") weg();
   });
+  svg.addEventListener("pointercancel", weg);
 }
 
 function historyChart(pts) {
