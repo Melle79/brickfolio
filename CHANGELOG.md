@@ -45,6 +45,26 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.18 – September 2026
+
+### Behoben
+- 🔁 **„Bilder holen" lief endlos über dieselben Bilder.** Von BrickLink
+  kommen die meisten Figurenbilder mit **400 Pixeln** – nachgemessen: von
+  100 frisch geholten waren 91 genau 400 groß und acht 800. Die Ablage
+  verkleinert nur, sie erfindet keine Pixel; ein solches Bild ist nach dem
+  Holen genauso klein wie vorher und galt deshalb sofort wieder als offen.
+
+  Neben jedem geholten Bild liegt jetzt eine Merkdatei mit der Zielgröße im
+  Namen. Damit endet der Lauf – und wenn die Zielgröße später steigt, gilt
+  sie nicht mehr und alles wird noch einmal versucht.
+
+  **Was das für die Schärfe heißt:** Das große Bild im Steckbrief wird nur
+  dort besser, wo BrickLink mehr als 400 Pixel liefert. Bei vielen Figuren
+  ist 400 schlicht das Original.
+
+- ↩️ **Der Text im Update-Fenster bricht ausgeglichen um.** „bitte kurz /
+  warten." ließ das letzte Wort allein stehen.
+
 ## 2.88.17 – September 2026
 
 ### Geändert

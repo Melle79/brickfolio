@@ -160,3 +160,51 @@ def test_ein_grosses_bild_gilt_nicht_als_offen(client, monkeypatch):
             " VALUES ('sw0402', 'minifig', 'Test', ?, 1, 'used', 1, ?)",
             (ADRESSE, int(time.time())))
     assert client.get("/api/images/status").json()["pending"] == 0
+
+
+def test_eine_kleine_quelle_wird_nicht_ewig_wieder_geholt(client, altes_bild,
+                                                          monkeypatch):
+    """**Größer als die Quelle geht nicht.**
+
+    Von BrickLink kommen die meisten Figurenbilder mit 400 Pixeln –
+    nachgemessen am 23.09.2026: von 100 frisch geholten waren 91 genau 400
+    groß. `prepare_image` verkleinert nur, es erfindet keine Pixel. Ohne
+    eine Merkdatei hätte jeder Lauf dieselben Bilder wieder und wieder
+    geholt, weil sie hinterher genauso klein sind wie vorher – Sven lief
+    genau in diese Schleife.
+    """
+    geholt = []
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image",
+                        lambda url, hosts: geholt.append(url) or _bild(400))
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, img_url,"
+            " quantity, condition, added_by, added_at)"
+            " VALUES ('sw0402', 'minifig', 'Test', ?, 1, 'used', 1, ?)",
+            (ADRESSE, int(time.time())))
+    assert client.get("/api/images/status").json()["pending"] == 1
+    client.post("/api/images/fetch", params={"limit": 5})
+    assert len(geholt) == 1
+    # Das Bild ist immer noch 400 – aber es gilt als erledigt.
+    with Image.open(altes_bild) as b:
+        assert max(b.size) == 400
+    assert client.get("/api/images/status").json()["pending"] == 0
+    client.post("/api/images/fetch", params={"limit": 5})
+    assert len(geholt) == 1, "kein zweiter Abruf für dieselbe Datei"
+
+
+def test_eine_groessere_zielgroesse_hebt_die_marke_auf(client, altes_bild,
+                                                       monkeypatch):
+    """Wird später größer abgelegt, darf alles noch einmal versucht werden."""
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image",
+                        lambda url, hosts: _bild(400))
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, img_url,"
+            " quantity, condition, added_by, added_at)"
+            " VALUES ('sw0402', 'minifig', 'Test', ?, 1, 'used', 1, ?)",
+            (ADRESSE, int(time.time())))
+    client.post("/api/images/fetch", params={"limit": 5})
+    assert client.get("/api/images/status").json()["pending"] == 0
+    monkeypatch.setattr(main, "BILD_KANTE", 1200)
+    assert client.get("/api/images/status").json()["pending"] == 1

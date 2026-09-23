@@ -5279,6 +5279,13 @@ def _bild_ersetzen(url: str, pfad: str) -> bool:
                 os.remove(f"{pfad}.{kante}.jpg")
             except OSError:
                 pass
+        # Merken, dass für diese Zielgröße geholt wurde – auch wenn das
+        # Ergebnis klein blieb, weil die Quelle nicht mehr hergibt.
+        try:
+            with open(_bild_marke(pfad), "w"):
+                pass
+        except OSError:
+            pass
         return True
     except Exception:
         return False
@@ -5325,13 +5332,32 @@ def _bild_zu_klein(pfad: str) -> bool:
     Briefmarke von 72 Pixeln zeigte. Seit es mit dem Bild über die volle
     Breite aufmacht, sind es auf einem Retina-Telefon 750 echte Bildpunkte
     und mehr; ein 400er wird dort hochgerechnet und franst aus.
+
+    **Größer als die Quelle geht nicht.** Von BrickLink kommen die meisten
+    Figurenbilder mit 400 Pixeln – nachgemessen am 23.09.2026: von 100
+    frisch geholten waren 91 genau 400 groß und acht 800. `prepare_image`
+    verkleinert nur, es erfindet keine Pixel. Ohne die Merkdatei unten
+    hätte jeder Lauf dieselben Bilder wieder und wieder geholt, weil sie
+    hinterher genauso klein sind wie vorher.
     """
+    if os.path.exists(_bild_marke(pfad)):
+        return False              # schon einmal geholt, größer gibt es nicht
     try:
         from PIL import Image
         with Image.open(pfad) as bild:
             return max(bild.size) < BILD_KANTE
     except Exception:
         return False              # unlesbar? Dann lieber nichts anfassen
+
+
+def _bild_marke(pfad: str) -> str:
+    """Die Merkdatei, die sagt: für diese Zielgröße schon geholt.
+
+    Neben dem Bild, nicht in der Datenbank: Sie gehört zur Datei und
+    verschwindet mit ihr. Die Zielgröße steht im Namen – wird sie später
+    erhöht, gilt die Marke nicht mehr und alles wird noch einmal versucht.
+    """
+    return f"{pfad}.k{BILD_KANTE}"
 
 
 def _bild_fehlt_oder_zu_klein(url: str) -> bool:

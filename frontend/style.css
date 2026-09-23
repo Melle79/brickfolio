@@ -1071,8 +1071,16 @@ body.update-pending .topbar { top: var(--update-bar-h, 46px); }
   border-radius: var(--radius); box-shadow: var(--shadow);
   padding: 28px 24px; text-align: center; max-width: 380px; width: 100%;
 }
-.update-lock-box h2 { margin: 14px 0 6px; font-size: 21px; }
-.update-lock-box p { margin: 0; color: var(--muted); line-height: 1.5; }
+/* `text-wrap: balance` verteilt kurze, mittige Texte auf gleich lange
+   Zeilen, statt das letzte Wort allein stehen zu lassen – „bitte kurz /
+   warten." sah aus wie ein Versehen. Wo der Browser es nicht kennt,
+   bleibt es beim gewohnten Umbruch. */
+.update-lock-box h2 {
+  margin: 14px 0 6px; font-size: 21px; text-wrap: balance;
+}
+.update-lock-box p {
+  margin: 0; color: var(--muted); line-height: 1.5; text-wrap: balance;
+}
 .update-lock-box .mini-btn { margin-top: 16px; flex: none; }
 
 .mf-pending {
