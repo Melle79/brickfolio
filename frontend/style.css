@@ -1298,10 +1298,22 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: 13px; font-weight: 800; color: rgba(29,29,27,.65);
   cursor: pointer; padding: 4px 2px;
 }
+/* **Derselbe Auftritt wie bei den anderen Fenstern.** Hilfe und
+   Figuren-Steckbrief hängen an dieser Hülle, nicht an `.card-modal` – und
+   blieben deshalb beim Umbau am 23.09.2026 zurück: Sie sprangen herein,
+   während alles daneben auffuhr. */
 .help-overlay {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(20, 20, 20, .5);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   display: flex; padding: 18px 12px;
+  animation: bf-schleier .18s ease-out;
+}
+.help-overlay > .help-sheet {
+  animation: bf-fenster-auf .2s cubic-bezier(.2, .9, .3, 1.2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .help-overlay, .help-overlay > .help-sheet { animation: none; }
 }
 .help-sheet {
   background: var(--sheet-bg); margin: auto;
@@ -2515,7 +2527,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kat-modal-tasten {
   display: flex; gap: 8px; justify-content: center; margin: 14px 0 10px;
 }
-.kat-modal-tasten .mini-btn { flex: 1; padding: 10px 6px; }
+/* Dieselben Maße wie in den anderen Fenstern: ein Knopf, den man am
+   Telefon sicher trifft. */
+.kat-modal-tasten .mini-btn {
+  flex: 1; padding: 10px 6px; min-height: 44px;
+  border-width: 1.5px; border-radius: 12px;
+}
 .kat-modal-link { font-size: .82rem; color: var(--muted); }
 /* Einträge, deren Name noch nicht nachgeschlagen ist: Die Nummer steht
    dann oben, und die Zeile darunter sagt warum – statt die Nummer stumm

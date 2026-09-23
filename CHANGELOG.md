@@ -45,6 +45,18 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.16 – September 2026
+
+### Geändert
+- 🪟 **Auch Hilfe und Figuren-Steckbrief fahren jetzt auf.** Sie hängen an
+  einer anderen Hülle als die übrigen Fenster und blieben deshalb beim
+  Umbau zurück – sie sprangen herein, während alles daneben aufging. Der
+  Schleier dahinter ist jetzt ebenfalls weichgezeichnet.
+
+- 🔘 **Die Knöpfe im Katalogfenster haben dieselben Maße wie überall
+  sonst** – mindestens 44 Pixel hoch, weiche Ecken. Am Telefon trifft man
+  sie damit sicher.
+
 ## 2.88.15 – September 2026
 
 ### Geändert
