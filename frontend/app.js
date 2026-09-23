@@ -12902,24 +12902,64 @@ function ueberstandBericht(woher) {
     `${woher}: Fenster ${breite} · Inhalt ${rolle}`
     + ` · Überstand ${rolle - breite} px`,
   ];
-  const treffer = [];
+  // **Zwei Fallen, beide am 23.09.2026 zugeschnappt.** Der erste Anlauf fand
+  // bei 11 px Überstand *kein einziges* Element:
+  //
+  // 1. `getBoundingClientRect` misst gegen das **Fenster**, nicht gegen das
+  //    Dokument. Ist die Seite schon seitlich geschoben, rutscht alles nach
+  //    links und der Übeltäter versteckt sich hinter dem Rand. Deshalb
+  //    `+ scrollX`.
+  // 2. **Ränder zählen nicht mit.** Ein `margin-right` steht in keinem
+  //    Rechteck, macht das Dokument aber trotzdem breiter. Genau so sehen
+  //    elf Pixel aus, die nirgends zu sehen sind.
+  //
+  // Und wenn danach immer noch nichts über der Schwelle liegt, werden die
+  // äußersten Elemente trotzdem genannt: Eine leere Liste hat mir schon
+  // einmal einen Abend gekostet.
+  const versatz = window.scrollX || 0;
+  const alle = [];
   document.querySelectorAll("body *").forEach((el) => {
     const k = el.getBoundingClientRect();
-    if (k.width && k.right > breite + 1) {
-      treffer.push({ el, rechts: Math.round(k.right), breit: Math.round(k.width) });
-    }
+    if (!k.width && !k.height) return;
+    const s = getComputedStyle(el);
+    const rand = parseFloat(s.marginRight) || 0;
+    alle.push({
+      el,
+      rechts: Math.round(k.right + versatz + rand),
+      breit: Math.round(k.width),
+      rand: Math.round(rand),
+      links: Math.round(k.left + versatz),
+    });
   });
-  treffer.sort((a, b) => b.rechts - a.rechts);
+  alle.sort((a, b) => b.rechts - a.rechts);
+  let treffer = alle.filter((t) => t.rechts > breite + 1);
+  let knapp = false;
+  if (!treffer.length) { treffer = alle.slice(0, 5); knapp = true; }
   const nenne = (el) => {
     const kl = (el.getAttribute("class") || "").trim().split(/\s+/)
       .filter(Boolean).slice(0, 3).join(".");
     return el.tagName.toLowerCase() + (el.id ? "#" + el.id : "")
       + (kl ? "." + kl : "");
   };
-  zeilen.push("", "Am weitesten draußen:");
-  treffer.slice(0, 5).forEach((t) => {
-    zeilen.push(`  ${nenne(t.el)} – bis ${t.rechts}, breit ${t.breit}`);
+  zeilen.push("", knapp
+    ? "Keins über der Schwelle – hier die äußersten:"
+    : "Am weitesten draußen:");
+  treffer.slice(0, 6).forEach((t) => {
+    zeilen.push(`  ${nenne(t.el)} – bis ${t.rechts}, breit ${t.breit}`
+      + (t.rand ? `, Rand ${t.rand}` : "")
+      + (t.links < 0 ? `, links ${t.links}` : ""));
   });
+  // Ein Element, das nach **links** hinausragt, macht das Dokument in
+  // manchen Browsern ebenfalls breiter – und fällt bei einer Suche nach
+  // rechts nie auf.
+  const nachLinks = alle.filter((t) => t.links < -1)
+    .sort((a, b) => a.links - b.links).slice(0, 3);
+  if (nachLinks.length) {
+    zeilen.push("", "Ragt nach links hinaus:");
+    nachLinks.forEach((t) => {
+      zeilen.push(`  ${nenne(t.el)} – ab ${t.links}, breit ${t.breit}`);
+    });
+  }
   // Der Weg nach oben: Welcher Kasten hätte es halten müssen?
   if (treffer.length) {
     zeilen.push("", "Darüber:");

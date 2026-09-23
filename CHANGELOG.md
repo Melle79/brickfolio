@@ -45,6 +45,23 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.6 – September 2026
+
+### Behoben
+- 📐 **Die Überstands-Messung fand bei 11 Pixeln kein einziges Element.**
+  Zwei Gründe, beide behoben:
+
+  `getBoundingClientRect` misst gegen das **Fenster**, nicht gegen das
+  Dokument – ist die Seite schon seitlich geschoben, rutscht alles nach
+  links und der Übeltäter versteckt sich hinter dem Rand. Und **Ränder
+  zählen nicht mit**: Ein `margin-right` steht in keinem Rechteck, macht
+  das Dokument aber trotzdem breiter. Genau so sehen elf Pixel aus, die
+  nirgends zu sehen sind.
+
+  Außerdem nennt die Messung jetzt immer etwas: Liegt nichts über der
+  Schwelle, kommen die äußersten Elemente trotzdem in die Liste, dazu alles,
+  was nach **links** hinausragt. Eine leere Liste hilft niemandem.
+
 ## 2.88.5 – September 2026
 
 ### Behoben
