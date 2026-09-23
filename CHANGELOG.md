@@ -45,26 +45,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
-## 2.88.19 – September 2026
+## 2.88.20 – September 2026
 
 ### Geändert
-- 🎚 **Alle Reiterreihen sind jetzt Schiebeschalter.**
-  Wünsche/Einkaufen/Archiv/Katalog, die Katalogfilter und die Reiter der
-  Tauschbörse sind dasselbe Bedienteil: Genau eines gilt. Als einzeln
-  umrandete Knöpfe – einer davon gelb – sahen sie aus wie eine Reihe von
-  Aktionen.
+- ↩️ **Die Schiebeschalter aus 2.88.17 und 2.88.19 sind zurückgenommen.**
+  Sie kamen aus der Formensprache der Fenster und wirkten in den Listen
+  geborgt: Die App lebt von kräftigen Konturen, ein weicher Schalter sieht
+  darin aus wie aus einer anderen App hineinkopiert. Reiterreihen,
+  Katalogfilter, Themenwahl und Suchfeld stehen wieder wie zuvor.
 
-  Mit 2.88.17 war nur die untere Hälfte umgestellt, und das Ergebnis sah
-  schlechter aus als vorher: zwei Sprachen übereinander. Eine halb
-  umgestellte Fläche ist schlimmer als eine ganz alte.
-
-- ✔️ **Die Marken im Katalog sind zu treffen und zu sehen.** „Hab ich" und
-  „Merken" hatten eine Trefferfläche von 35 Pixeln – jetzt 44, das Maß, das
-  überall sonst gilt. Ausgeschaltet standen sie bei 22 % Deckkraft und
-  waren kaum zu erkennen; wer eine Liste von 1.600 Einträgen durchgeht,
-  muss auf einen Blick sehen, wo noch nichts steht. Gesetzt liegen sie
-  jetzt auf einer getönten Fläche: Beim Überfliegen zählt der Fleck, nicht
-  das Zeichen.
+  Geblieben ist nur, was kein Geschmack ist: die Trefferfläche der Marken
+  „Hab ich" und „Merken" im Katalog – 44 statt 35 Pixel, das Maß, das
+  überall sonst gilt. Und die unsichtbare Vorsorge im Katalogkopf gegen das
+  seitliche Verschieben.
 
 ## 2.88.18 – September 2026
 
