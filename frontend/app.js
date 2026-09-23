@@ -11412,8 +11412,14 @@ async function pollUpdateStatus() {
     } else if (waited > 20000) {
       // Ein Kasten, in dem sich nichts rührt, sieht nach zwei Minuten aus
       // wie abgestürzt – auch wenn die Wache im Hintergrund arbeitet.
+      // Die geschützten Leerzeichen halten „gleich neu –" zusammen, sonst
+      // bricht `text-wrap: balance` durchs trennbare Verb oder setzt den
+      // Gedankenstrich an den Zeilenanfang – dieselbe Stelle steht in
+      // index.html. Im Englischen läuft der Austausch ins Leere, dort
+      // steht der Satz anders.
       $("update-lock-text").textContent = tr("Die App startet gleich neu – "
-        + "bitte kurz warten.") + " (" + Math.round(waited / 1000) + " s)";
+        + "bitte kurz warten.").replace("gleich neu – ", "gleich\u00A0neu\u00A0– ")
+        + " (" + Math.round(waited / 1000) + " s)";
     }
     next = UPDATE_WAIT_MS;
   }

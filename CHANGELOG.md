@@ -45,6 +45,14 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.22 – September 2026
+
+### Behoben
+- 📐 **Der Update-Kasten brach mitten durch den Satz.** „Die App startet
+  gleich / neu – bitte kurz warten." – der Umbruch riss das Verb
+  auseinander, und in der zweiten Zeile las sich „neu" wie ein neuer
+  Gedanke. Jetzt bricht er nach „neu –", wo der Satz auch atmet.
+
 ## 2.88.21 – September 2026
 
 ### Behoben

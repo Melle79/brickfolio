@@ -1074,7 +1074,13 @@ body.update-pending .topbar { top: var(--update-bar-h, 46px); }
 /* `text-wrap: balance` verteilt kurze, mittige Texte auf gleich lange
    Zeilen, statt das letzte Wort allein stehen zu lassen – „bitte kurz /
    warten." sah aus wie ein Versehen. Wo der Browser es nicht kennt,
-   bleibt es beim gewohnten Umbruch. */
+   bleibt es beim gewohnten Umbruch.
+
+   Nach Länge zu teilen heißt aber nicht, sinnvoll zu teilen: Es brach
+   „Die App startet gleich / neu – bitte kurz warten." und riss damit das
+   trennbare Verb auseinander. Wo eine Stelle nicht brechen darf, steht in
+   der Vorlage ein geschütztes Leerzeichen; `balance` sucht sich dann die
+   nächstbeste. */
 .update-lock-box h2 {
   margin: 14px 0 6px; font-size: 21px; text-wrap: balance;
 }
