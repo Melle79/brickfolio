@@ -45,6 +45,34 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.15 – September 2026
+
+### Geändert
+- 🔍 **„Bilder holen" schärft die alten mit.** Bisher holte es nur, was ganz
+  fehlte; die vor 2.88.0 abgelegten 400er blieben liegen und wurden erst
+  scharf, wenn jemand den Artikel öffnete. Bei 780 Figuren dauert das seine
+  Zeit. Sie gelten jetzt als offen und laufen in denselben Häppchen mit,
+  samt Fortschrittsanzeige.
+
+  **Richtigstellung:** In 2.88.3 und 2.88.13 stand, ein Sammellauf ginge
+  gegen dasselbe BrickLink-Tageskontingent wie die Preise. Das ist falsch.
+  Bilder kommen von den CDNs (`img.bricklink.com`, `cdn.rebrickable.com`),
+  das Tageslimit von 5000 gilt für `api.bricklink.com`. Mit diesem falschen
+  Argument war die bessere Lösung verworfen worden.
+
+- 🪟 **Interesse, Melden und das Gespräch sehen aus wie der Rest.** Der
+  Steckbrief hatte die ruhigere Sprache bekommen, der Dialog auch – diese
+  drei blieben zurück und fielen nebeneinander auf. Sie sind gleich gebaut,
+  also tragen sie jetzt dasselbe Kleid: weiche Felder, Abstand zum Rand,
+  gleich breite Knöpfe.
+
+- 🐞 **Ein wiederkehrender Fehler behält beides**, den ersten und den
+  jüngsten Text. Gleichartige Meldungen werden zusammengefasst und behielten
+  bisher nur den ersten; nach einer Behebung erhöhte ein Wiedersehen bloß
+  den Zähler, und man sah dem Eintrag nicht an, ob er von vor oder nach der
+  Änderung stammte. Genau daran ist am 23.09.2026 eine Runde
+  verlorengegangen.
+
 ## 2.88.14 – September 2026
 
 ### Behoben
@@ -65,9 +93,11 @@ Wesentliche für alle.
 
 ### Geändert
 - 🔍 **Zu klein abgelegte Bilder holen sich selbst nach**, sobald jemand die
-  Figur oder das Set aufruft. Kein Sammellauf: Das ginge gegen dasselbe
-  BrickLink-Tageskontingent wie die Preise, für Bilder, die vielleicht nie
-  jemand ansieht. Wer durch die Sammlung blättert, löst nichts aus.
+  Figur oder das Set aufruft. Wer durch die Sammlung blättert, löst nichts
+  aus.
+
+  *(Hier stand zunächst, ein Sammellauf ginge gegen dasselbe
+  BrickLink-Tageskontingent wie die Preise. Das war falsch – siehe 2.88.15.)*
 
 - 🧹 **Die Fehlersuche-Abschnitte sind raus** – sowohl die Überstands-
   Messung, die eigens für die Jagd unten gebaut wurde, als auch das
@@ -232,11 +262,12 @@ Wesentliche für alle.
   volle Breite scharf bleibt – schon abgelegte Bilder blieben aber klein.
 
   Nachgeholt wird jetzt genau dann, wenn jemand die Figur oder das Set
-  **aufruft**: beim vollen Bild, nicht beim Daumennagel im Raster. Ein
-  Sammellauf über alle Bilder käme nicht in Frage – er ginge gegen dasselbe
-  Tageskontingent bei BrickLink wie die Preise, und zwar für Bilder, die
-  vielleicht nie jemand ansieht. Wer durch 800 Karten blättert, löst nichts
-  aus.
+  **aufruft**: beim vollen Bild, nicht beim Daumennagel im Raster. Wer durch
+  800 Karten blättert, löst nichts aus – sonst stünden bei jedem Blick in
+  die Sammlung Hunderte Abrufe an.
+
+  *(Hier stand zunächst, ein Sammellauf ginge gegen dasselbe
+  BrickLink-Tageskontingent wie die Preise. Das war falsch – siehe 2.88.15.)*
 
   Der Abruf läuft im Hintergrund; das Fenster wartet nicht darauf. Beim
   ersten Öffnen steht noch das alte Bild, ab dem zweiten das scharfe. Die

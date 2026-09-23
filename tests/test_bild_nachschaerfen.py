@@ -5,11 +5,18 @@ eine Briefmarke von 72 Pixeln zeigte. Seit es mit dem Bild über die volle
 Breite aufmacht, sind 400 zu wenig; schon abgelegte Bilder blieben aber
 klein.
 
-Ein Sammellauf über alle Bilder käme nicht in Frage: Er ginge gegen
-dasselbe Tageskontingent bei BrickLink wie die Preise, und zwar für Bilder,
-die vielleicht nie jemand ansieht. Nachgeholt wird deshalb genau dann, wenn
-jemand die Figur oder das Set **aufruft** – also beim vollen Bild, nicht
-beim Daumennagel im Raster. Wer durch 800 Karten blättert, löst nichts aus.
+Nachgeholt wird, wenn jemand die Figur oder das Set **aufruft** – also beim
+vollen Bild, nicht beim Daumennagel im Raster. Wer durch 800 Karten
+blättert, löst nichts aus; sonst stünden bei jedem Blick in die Sammlung
+Hunderte Abrufe an.
+
+**Richtigstellung zum Tageskontingent (2.88.15):** Bis 2.88.14 stand hier
+und im Changelog, ein Sammellauf ginge gegen dasselbe BrickLink-Kontingent
+wie die Preise. Das stimmt nicht – Bilder kommen von den CDNs
+(`img.bricklink.com`, `cdn.rebrickable.com`), das Tageslimit von 5000 gilt
+für `api.bricklink.com`. Mit dem falschen Argument war die bessere Lösung
+verworfen worden: „Bilder holen" in den Einstellungen zählt die zu kleinen
+jetzt mit.
 """
 import io
 import time
@@ -91,8 +98,8 @@ def test_der_daumennagel_stoesst_nichts_an(client, altes_bild, monkeypatch):
 
 
 def test_ein_grosses_bild_wird_nicht_noch_einmal_geholt(client, monkeypatch):
-    """Sonst holte jedes Öffnen dasselbe Bild erneut – jedes Mal gegen das
-    Tageskontingent."""
+    """Sonst holte jedes Öffnen dasselbe Bild erneut – ein Abruf beim CDN
+    für nichts, und das bei jedem Blick in den Steckbrief."""
     pfad = Path(main._katalog_dir()) / main._katalog_name(ADRESSE)
     pfad.write_bytes(_bild(main.BILD_KANTE))
     geholt = []
@@ -116,3 +123,40 @@ def test_die_alten_daumennaegel_verschwinden(client, altes_bild, monkeypatch):
             break
         time.sleep(0.05)
     assert not daumen.exists()
+
+
+def test_bilder_holen_schaerft_die_alten_mit(client, altes_bild, monkeypatch):
+    """„Bilder holen" holte nur, was ganz fehlte.
+
+    Die alten 400er blieben liegen und wurden erst scharf, wenn jemand den
+    Artikel öffnete – bei 780 Figuren dauert das seine Zeit. Seit 2.88.15
+    gelten sie als offen und werden mitgeholt.
+    """
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, img_url,"
+            " quantity, condition, added_by, added_at)"
+            " VALUES ('sw0402', 'minifig', 'Test', ?, 1, 'used', 1, ?)",
+            (ADRESSE, int(time.time())))
+    assert client.get("/api/images/status").json()["pending"] == 1
+
+    monkeypatch.setattr(main.integrations, "fetch_catalog_image",
+                        lambda url, hosts: _bild(800))
+    r = client.post("/api/images/fetch", params={"limit": 5})
+    assert r.status_code == 200 and r.json()["fetched"] == 1
+    with Image.open(altes_bild) as b:
+        assert max(b.size) == 800
+    assert client.get("/api/images/status").json()["pending"] == 0
+
+
+def test_ein_grosses_bild_gilt_nicht_als_offen(client, monkeypatch):
+    """Sonst liefe der Lauf endlos über dieselben Bilder."""
+    pfad = Path(main._katalog_dir()) / main._katalog_name(ADRESSE)
+    pfad.write_bytes(_bild(main.BILD_KANTE))
+    with core.db() as conn:
+        conn.execute(
+            "INSERT INTO collection (item_id, item_type, name, img_url,"
+            " quantity, condition, added_by, added_at)"
+            " VALUES ('sw0402', 'minifig', 'Test', ?, 1, 'used', 1, ?)",
+            (ADRESSE, int(time.time())))
+    assert client.get("/api/images/status").json()["pending"] == 0

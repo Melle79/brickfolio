@@ -2286,26 +2286,49 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    Kasten in der Luft. */
 #app-dialog .card-modal { max-width: 420px; }
 
-/* Ein Dialog fragt etwas – er soll ruhig aussehen, nicht wie ein
-   Formular aus dem Baukasten. Dieselbe Sprache wie im Steckbrief:
-   weiche Konturen, eine Fläche, Abstand zum Rand. */
-#app-dialog .modal-inner { padding: 18px 16px 16px; }
-#app-dialog h3 { font-size: 17px; }
-#app-dialog .search-hint { margin: 0 0 12px; line-height: 1.45; }
-#app-dialog label {
+/* Ein Fenster, das etwas fragt, soll ruhig aussehen – nicht wie ein
+   Formular aus dem Baukasten. Dieselbe Sprache wie im Steckbrief: weiche
+   Konturen, eine Fläche, Abstand zum Rand.
+   
+   **Gilt für alle vier.** Der Steckbrief hatte sie am 23.09.2026 bekommen,
+   der Dialog kurz darauf – Interesse, Melden und das Gespräch blieben
+   zurück und fielen nebeneinander auf. Sie sind gleich gebaut
+   (Überschrift, Beschriftung, Textfeld, zwei Knöpfe), also bekommen sie
+   auch dasselbe Kleid. */
+#app-dialog .modal-inner,
+#interest-overlay .modal-inner,
+#report-overlay .modal-inner,
+#trade-overlay .modal-inner { padding: 18px 16px 16px; }
+#app-dialog h3, #report-overlay h3 { font-size: 17px; }
+#app-dialog .search-hint,
+#interest-overlay .search-hint,
+#report-overlay .search-hint { margin: 0 0 12px; line-height: 1.45; }
+#app-dialog label,
+#interest-overlay label:not(.share-toggle),
+#report-overlay label:not(.share-toggle) {
   display: block; margin: 12px 0 4px;
   font-size: .82rem; font-weight: 700; color: var(--muted);
 }
-#app-dialog input, #app-dialog select {
+#app-dialog input, #app-dialog select,
+#interest-overlay textarea,
+#report-overlay textarea,
+#trade-overlay textarea {
   width: 100%; border: 1.5px solid var(--line); border-radius: 12px;
   background: var(--field); padding: 11px 12px; font: inherit;
 }
-#app-dialog input:focus, #app-dialog select:focus {
+#app-dialog input:focus, #app-dialog select:focus,
+#interest-overlay textarea:focus,
+#report-overlay textarea:focus,
+#trade-overlay textarea:focus {
   outline: none; border-color: var(--blue); background: var(--card);
 }
 #app-dialog .feld-fehlt { border-color: var(--red); }
-#app-dialog .btn-grid { margin-top: 18px; gap: 8px; }
-#app-dialog .mini-btn {
+#app-dialog .btn-grid,
+#interest-overlay .btn-grid,
+#report-overlay .btn-grid { margin-top: 18px; gap: 8px; }
+#app-dialog .mini-btn,
+#interest-overlay .btn-grid > .mini-btn,
+#report-overlay .btn-grid > .mini-btn {
   flex: 1; min-height: 44px; border-width: 1.5px; border-radius: 12px;
   font-size: 14.5px;
 }

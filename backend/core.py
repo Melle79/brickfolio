@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.88.14"
+APP_VERSION = "2.88.15"
 
 
 def hash_password(password: str) -> str:
@@ -525,7 +525,16 @@ def init_db():
                 count INTEGER NOT NULL DEFAULT 1,
                 first_at INTEGER NOT NULL,
                 last_at INTEGER NOT NULL,
-                issue_url TEXT
+                issue_url TEXT,
+                -- **Auch der jüngste Text, nicht nur der erste.**
+                -- Gleichartige Fehler werden zusammengefasst und behielten
+                -- bisher den Detailtext des *ersten* Auftretens. Nach einer
+                -- Behebung erhöhte ein Wiedersehen damit nur den Zähler –
+                -- und man sah dem Eintrag nicht an, ob er von vor oder nach
+                -- der Änderung stammte. Genau daran ist am 23.09.2026 eine
+                -- Runde verlorengegangen.
+                last_detail TEXT,
+                last_version TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_error_last ON error_log(last_at);
             -- Hinweise, die stehen bleiben, bis sie jemand wegklickt –
@@ -960,6 +969,12 @@ def init_db():
                 conn.execute(f"ALTER TABLE users ADD COLUMN {spalte} TEXT")
         if "totp_last" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN totp_last INTEGER")
+        # Der jüngste Detailtext eines wiederkehrenden Fehlers – siehe die
+        # Anmerkung am Tabellenkopf.
+        ecols = {r[1] for r in conn.execute("PRAGMA table_info(error_log)")}
+        for spalte in ("last_detail", "last_version"):
+            if spalte not in ecols:
+                conn.execute(f"ALTER TABLE error_log ADD COLUMN {spalte} TEXT")
         # Zähler für gültige Sitzungen. Ein Sitzungs-Token ist so lange gut,
         # wie sein Zählerstand zu dem des Kontos passt. Ein Passwortwechsel
         # zählt hoch – damit enden alle bisherigen Sitzungen sofort, statt bis

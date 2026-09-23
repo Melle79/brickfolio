@@ -9849,10 +9849,16 @@ function renderErrors() {
         <strong>${esc(e.message)}</strong>
         <div class="sub">${e.count}× · zuletzt ${errorWhen(e.last_at)}
           · v${esc(e.app_version || "?")}${
+            e.last_version && e.last_version !== e.app_version
+              ? " → v" + esc(e.last_version) : ""}${
             e.context ? " · " + esc(e.context) : ""}</div>
         ${fremdfehlerZeile(e)}
         ${e.detail ? `<details class="help" style="margin-top:6px">
           <summary>Details</summary>
+          ${e.last_detail && e.last_detail !== e.detail ? `
+          <div class="sub">Zuletzt (v${esc(e.last_version || "?")}):</div>
+          <pre class="update-cmd" style="white-space:pre-wrap">${esc(e.last_detail)}</pre>
+          <div class="sub" style="margin-top:6px">Beim ersten Mal (v${esc(e.app_version || "?")}):</div>` : ""}
           <pre class="update-cmd" style="white-space:pre-wrap">${esc(e.detail)}</pre>
         </details>` : ""}
         ${e.issue_url || data.can_report ? `<div class="fig-actions">

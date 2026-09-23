@@ -948,8 +948,16 @@ def report_error(body: ErrorReportBody, user: dict = Depends(current_user),
         row = conn.execute("SELECT id FROM error_log WHERE fingerprint = ?",
                            (fp,)).fetchone()
         if row:
-            conn.execute("UPDATE error_log SET count = count + 1, last_at = ? "
-                         "WHERE id = ?", (now, row["id"]))
+            # **Der jüngste Text kommt dazu, der erste bleibt.** Beides ist
+            # nützlich: Der erste zeigt, womit es anfing, der jüngste, ob es
+            # nach einer Behebung noch auftritt. Bis 2.88.14 gab es nur den
+            # ersten – und ein Eintrag mit alter Fassungsnummer ließ offen,
+            # ob er von vor oder nach der Änderung stammte.
+            conn.execute(
+                "UPDATE error_log SET count = count + 1, last_at = ?, "
+                "last_detail = ?, last_version = ? WHERE id = ?",
+                (now, (body.detail or "")[:4000],
+                 body.app_version or core.APP_VERSION, row["id"]))
         else:
             conn.execute(
                 "INSERT INTO error_log (fingerprint, message, detail, context, "
@@ -5072,10 +5080,14 @@ def _uploads_dir() -> str:
 # Retina-Schirm damit 750 echte Bildpunkte; am Rechner bis zu 1280. Ein auf
 # 400 verkleinertes Bild wird dort hochgerechnet und sieht ausgefranst aus.
 #
-# Bereits abgelegte Bilder bleiben bei 400 – neu geholt wird nur, was noch
-# fehlt oder was über „Bild erneuern" im Popup angefordert wird. Ein
-# Sammellauf über alle Bilder käme nicht in Frage: Er ginge gegen dasselbe
-# Tageskontingent bei BrickLink wie die Preise.
+# Bereits abgelegte 400er werden von selbst ersetzt: beim Aufrufen eines
+# Artikels (`_bild_nachschaerfen`) und im Rutsch über „Bilder holen" in den
+# Einstellungen, das sie seit 2.88.15 als offen zählt.
+#
+# **Das kostet kein BrickLink-Kontingent.** Bilder kommen von den CDNs
+# (`img.bricklink.com`, `cdn.rebrickable.com`); das Tageslimit von 5000
+# gilt für `api.bricklink.com`. Bis 2.88.14 stand hier das Gegenteil – und
+# dieses falsche Argument hatte den Sammellauf verhindert.
 BILD_KANTE = 800
 
 
@@ -5208,11 +5220,13 @@ def _bild_nachschaerfen(url: str, pfad: str) -> None:
     mit dem Bild über die volle Breite aufmacht, sind 400 zu wenig. Schon
     abgelegte Bilder blieben aber klein.
 
-    **Warum kein Sammellauf.** Er ginge gegen dasselbe Tageskontingent bei
-    BrickLink wie die Preise, und zwar für Bilder, die vielleicht nie jemand
-    ansieht. Nachgeholt wird deshalb genau dann, wenn jemand die Figur oder
-    das Set *aufruft* – also beim vollen Bild, nicht beim Daumennagel im
-    Raster. Beim Blättern durch 800 Karten passiert nichts.
+    **Beim Aufrufen, nicht beim Blättern.** Nachgeholt wird beim vollen
+    Bild – das fragt nur der Steckbrief an –, nicht beim Daumennagel im
+    Raster. Sonst stünden bei jedem Blick in die Sammlung Hunderte Abrufe
+    an, für Bilder, die man nur im Vorbeigehen sieht.
+
+    Wer es im Rutsch will, nimmt „Bilder holen" in den Einstellungen; das
+    zählt die zu kleinen seit 2.88.15 mit.
 
     Der Aufrufer bekommt diesmal noch das alte Bild; das neue liegt beim
     nächsten Öffnen da. Ein Abruf im Vordergrund hätte das Fenster
@@ -5233,25 +5247,41 @@ def _bild_nachschaerfen(url: str, pfad: str) -> None:
 
     def lauf():
         try:
-            roh = integrations.fetch_catalog_image(url, integrations.BILD_HOSTS)
-            gross = integrations.prepare_image(roh, max_side=BILD_KANTE)
-            temp = pfad + f".{os.getpid()}.neu"
-            with open(temp, "wb") as f:
-                f.write(gross)
-            os.replace(temp, pfad)
-            # Die abgeleiteten Daumennägel stammen noch vom kleinen Bild.
-            for kante in DAUMEN_GROESSEN:
-                try:
-                    os.remove(f"{pfad}.{kante}.jpg")
-                except OSError:
-                    pass
-        except Exception:
-            pass                  # Ein Aussetzer darf nichts kaputtmachen
+            _bild_ersetzen(url, pfad)
         finally:
             with _schaerfen_sperre:
                 _schaerfen_laeuft.discard(url)
 
     threading.Thread(target=lauf, daemon=True).start()
+
+
+def _bild_ersetzen(url: str, pfad: str) -> bool:
+    """Holt das Bild neu und ersetzt die abgelegte Fassung.
+
+    Von zwei Seiten benutzt: vom Nachschärfen beim Aufrufen eines Artikels
+    (im Hintergrund) und von „Bilder holen" in den Einstellungen (in
+    Häppchen). Ein Aussetzer beim CDN darf nichts kaputtmachen – dann bleibt
+    schlicht das alte Bild liegen.
+    """
+    try:
+        roh = integrations.fetch_catalog_image(url, integrations.BILD_HOSTS)
+        gross = integrations.prepare_image(roh, max_side=BILD_KANTE)
+        # Erst vollständig schreiben, dann umbenennen: Ein abgebrochener
+        # Abruf hinterlässt sonst eine halbe Datei, die für immer als
+        # „fertig" gilt.
+        temp = pfad + f".{os.getpid()}.neu"
+        with open(temp, "wb") as f:
+            f.write(gross)
+        os.replace(temp, pfad)
+        # Die abgeleiteten Daumennägel stammen noch vom kleinen Bild.
+        for kante in DAUMEN_GROESSEN:
+            try:
+                os.remove(f"{pfad}.{kante}.jpg")
+            except OSError:
+                pass
+        return True
+    except Exception:
+        return False
 
 
 @app.get("/catalog")
@@ -5288,6 +5318,38 @@ def serve_katalogbild(u: str, s: int = 0):
 _BILD_QUELLEN = ("collection", "wanted", "shopping_items")
 
 
+def _bild_zu_klein(pfad: str) -> bool:
+    """Liegt das Bild noch in der alten, kleinen Fassung?
+
+    Bis 2.87.1 wurde mit 400 Pixeln abgelegt – genug, solange das Popup eine
+    Briefmarke von 72 Pixeln zeigte. Seit es mit dem Bild über die volle
+    Breite aufmacht, sind es auf einem Retina-Telefon 750 echte Bildpunkte
+    und mehr; ein 400er wird dort hochgerechnet und franst aus.
+    """
+    try:
+        from PIL import Image
+        with Image.open(pfad) as bild:
+            return max(bild.size) < BILD_KANTE
+    except Exception:
+        return False              # unlesbar? Dann lieber nichts anfassen
+
+
+def _bild_fehlt_oder_zu_klein(url: str) -> bool:
+    """Gilt dieses Bild als offen?
+
+    **Zu klein zählt seit 2.88.15 mit.** „Bilder holen" holte nur, was ganz
+    fehlte; die alten 400er blieben liegen und wurden erst scharf, wenn
+    jemand den Artikel öffnete. Bei 780 Figuren dauert das seine Zeit.
+
+    Das kostet **kein** BrickLink-Kontingent: Bilder kommen von den CDNs
+    (`img.bricklink.com`, `cdn.rebrickable.com`), das Tageslimit von 5000
+    gilt für `api.bricklink.com`. Diese Verwechslung stand bis 2.88.14 im
+    Changelog und hat eine bessere Lösung verhindert.
+    """
+    pfad = _katalog_bild(url, holen=False)
+    return not pfad or _bild_zu_klein(pfad)
+
+
 def _bild_urls(conn, nur_offene: bool = True, limit: int | None = None) -> list:
     urls, gesehen = [], set()
     for tabelle in _BILD_QUELLEN:
@@ -5300,7 +5362,7 @@ def _bild_urls(conn, nur_offene: bool = True, limit: int | None = None) -> list:
             if u in gesehen:
                 continue
             gesehen.add(u)
-            if nur_offene and _katalog_bild(u, holen=False):
+            if nur_offene and not _bild_fehlt_oder_zu_klein(u):
                 continue
             urls.append(u)
             if limit and len(urls) >= limit:
@@ -5377,7 +5439,17 @@ def bilder_holen(limit: int = 25, user: dict = Depends(admin_user)):
     nachgetragen = _bildadressen_nachtragen(limit)
     with core.db() as conn:
         urls = _bild_urls(conn, limit=limit)
-    geholt = sum(1 for u in urls if _katalog_bild(u))
+    # **Fehlend und zu klein gehen verschiedene Wege.** `_katalog_bild`
+    # holt nur, was gar nicht da ist – ein zu klein abgelegtes Bild gäbe es
+    # kommentarlos zurück, und der Lauf meldete „geholt", ohne etwas zu tun.
+    geholt = 0
+    for u in urls:
+        vorhanden = _katalog_bild(u, holen=False)
+        if vorhanden:
+            if _bild_ersetzen(u, vorhanden):
+                geholt += 1
+        elif _katalog_bild(u):
+            geholt += 1
     with core.db() as conn:
         offen = len(_bild_urls(conn)) + len(_ohne_bild(conn))
     return {"ok": True, "fetched": geholt, "tried": len(urls),
