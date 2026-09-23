@@ -1872,6 +1872,9 @@ function showTab(name) {
   // genau dieser Fläche, und eine Fläche der Größe null liefert nichts.
   neuladenNachholen();
   if (name !== "scan") {
+    // **Auch die Kamera.** Sie liefe sonst hinter einer anderen Ansicht
+    // weiter, zöge Strom und ließe die Leuchte am Gerät an.
+    kameraSchliessen();
     arbeitBildFreigeben();
     // Die Reihum-Fläche ist mit rund 4 MB kein Riese, blieb aber liegen,
     // sobald „Weitersuchen" angeboten wurde – und dann durch alle
@@ -2915,6 +2918,105 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
   }
   spur(`verkleinert auf ${bw}×${bh}`);
   return new File([blob], "scan.jpg", { type: "image/jpeg" });
+}
+
+/* ── Die Kamera in der App ──────────────────────────────────────────────
+
+   **Warum nicht der Systemdialog.** `capture="environment"` öffnet die
+   Kamera des Geräts – dort gibt es keinen Weg zur Mediathek. Lässt man
+   `capture` weg, kommt erst eine Auswahlliste, und die Kamera kostet einen
+   Tipp mehr. Gewollt war: Antippen zeigt das Livebild, und die Mediathek
+   liegt *darin* daneben.
+
+   **Voraussetzung ist HTTPS.** `getUserMedia` gibt es nur im sicheren
+   Kontext. Über die Cloudflare-Adresse ist das gegeben; wer eine Instanz
+   im Heimnetz über `http://…` aufruft, bekommt die Schnittstelle gar nicht
+   erst zu sehen – der Browser fragt nicht einmal. Dort (und bei
+   verweigerter Freigabe) springt der Dateidialog ein, also genau das
+   Verhalten von vorher. Nichts wird schlechter, nur besser.
+
+   Das aufgenommene Bild geht denselben Weg wie eine gewählte Datei:
+   `handlePhoto()`. Die Kamera ist eine zweite Tür, kein zweiter Ablauf. */
+let kameraStrom = null;
+
+function kameraSchliessen() {
+  const sicht = $("kamera");
+  if (sicht) sicht.hidden = true;
+  const v = $("kamera-bild");
+  if (v) v.srcObject = null;
+  if (kameraStrom) {
+    kameraStrom.getTracks().forEach((t) => t.stop());
+    kameraStrom = null;
+  }
+}
+
+async function kameraOeffnen() {
+  const sicht = $("kamera");
+  const video = $("kamera-bild");
+  const mediaOk = navigator.mediaDevices
+    && typeof navigator.mediaDevices.getUserMedia === "function";
+  if (!sicht || !video || !mediaOk) { $("file-input").click(); return; }
+  try {
+    kameraStrom = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 }, height: { ideal: 1920 },
+      },
+      audio: false,
+    });
+  } catch (_) {
+    // Kein Zugriff – abgelehnt, keine Kamera, oder unsicherer Kontext.
+    // Der gewohnte Weg bleibt offen, ohne Fehlermeldung über uns selbst.
+    $("file-input").click();
+    return;
+  }
+  video.srcObject = kameraStrom;
+  sicht.hidden = false;
+  try { await video.play(); } catch (_) { /* iOS spielt von selbst */ }
+  lichtKnopfPruefen();
+}
+
+/* Licht nur zeigen, wo es das Gerät kann. Ein Knopf, der nichts tut, ist
+   schlimmer als keiner – und `torch` beherrscht längst nicht jedes Gerät. */
+function lichtKnopfPruefen() {
+  const knopf = $("kamera-licht");
+  if (!knopf) return;
+  knopf.hidden = true;
+  knopf.setAttribute("aria-pressed", "false");
+  const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
+  if (!spur || typeof spur.getCapabilities !== "function") return;
+  let kann = false;
+  try { kann = !!spur.getCapabilities().torch; } catch (_) { kann = false; }
+  knopf.hidden = !kann;
+}
+
+async function kameraLicht() {
+  const knopf = $("kamera-licht");
+  const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
+  if (!knopf || !spur) return;
+  const an = knopf.getAttribute("aria-pressed") === "true";
+  try {
+    await spur.applyConstraints({ advanced: [{ torch: !an }] });
+    knopf.setAttribute("aria-pressed", String(!an));
+  } catch (_) { knopf.hidden = true; }
+}
+
+/* Ein Einzelbild aus dem Videostrom. `videoWidth` statt der angezeigten
+   Größe: Gezeigt wird beschnitten (`object-fit: cover`), aufgenommen wird
+   das ganze Bild – sonst fehlte der Erkennung genau der Rand, an dem die
+   Figur oft steht. */
+function kameraAusloesen() {
+  const video = $("kamera-bild");
+  if (!video || !video.videoWidth) return;
+  const tafel = document.createElement("canvas");
+  tafel.width = video.videoWidth;
+  tafel.height = video.videoHeight;
+  tafel.getContext("2d").drawImage(video, 0, 0);
+  tafel.toBlob((brocken) => {
+    kameraSchliessen();
+    if (!brocken) return;
+    handlePhoto(new File([brocken], "scan.jpg", { type: "image/jpeg" }));
+  }, "image/jpeg", 0.92);
 }
 
 async function handlePhoto(file) {
@@ -11984,7 +12086,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Nach dem Tippen einer neuen Adresse gleich nachsehen, was dort liegt –
   // sonst zeigt die Liste die Modelle des alten Servers.
   $("ollama-url").addEventListener("change", modelleLaden);
-  $("btn-camera").addEventListener("click", () => $("file-input").click());
+  $("btn-camera").addEventListener("click", kameraOeffnen);
+  $("kamera-ausloeser").addEventListener("click", kameraAusloesen);
+  $("kamera-abbrechen").addEventListener("click", kameraSchliessen);
+  // Escape am Rechner – dort kann die Kamera ebenfalls aufgehen.
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && !$("kamera").hidden) kameraSchliessen();
+  });
+  $("kamera-licht").addEventListener("click", kameraLicht);
+  // Aus der Kamera heraus in die Mediathek: derselbe Dateidialog wie am
+  // Rechner. Die Kamera geht dabei zu – sonst liefe sie hinter dem
+  // Systemdialog weiter und zöge Strom.
+  $("kamera-galerie").addEventListener("click", () => {
+    kameraSchliessen();
+    $("file-input").click();
+  });
   $("btn-manual-toggle").addEventListener("click", () => {
     const f = $("manual-form");
     f.hidden = !f.hidden;

@@ -271,6 +271,37 @@
       <input id="file-input" type="file" accept="image/*" hidden>
     </div>
 
+    <!-- **Die Kamera in der App statt des Systemdialogs.**
+
+         Ein `<input type="file" capture>` öffnet die Kamera des Systems –
+         dort gibt es keinen Weg zur Mediathek. Ohne `capture` kommt erst
+         eine Auswahlliste, und die Kamera kostet einen Tipp mehr. Beides
+         war nicht gewollt: Antippen soll die Kamera zeigen, und *dort*
+         soll die Mediathek danebenliegen.
+
+         Braucht HTTPS – über die Cloudflare-Adresse gegeben. Wo die
+         Schnittstelle fehlt oder die Freigabe verweigert wird, springt
+         der Dateidialog ein (siehe `kameraOeffnen`). -->
+    <div id="kamera" class="kamera" hidden>
+      <video id="kamera-bild" playsinline muted autoplay></video>
+      <div class="kamera-kopf">
+        <button class="kamera-rund" id="kamera-abbrechen"
+                aria-label="Kamera schließen">✕</button>
+        <button class="kamera-rund" id="kamera-licht" hidden
+                aria-pressed="false" aria-label="Licht einschalten">🔦</button>
+      </div>
+      <div class="kamera-sucher" aria-hidden="true">
+        <i></i><i></i><i></i><i></i>
+      </div>
+      <div class="kamera-leiste">
+        <button class="kamera-rund" id="kamera-galerie"
+                aria-label="Bild aus der Mediathek wählen">🖼</button>
+        <button class="kamera-ausloeser" id="kamera-ausloeser"
+                aria-label="Foto aufnehmen"></button>
+        <span class="kamera-rund kamera-platzhalter" aria-hidden="true"></span>
+      </div>
+    </div>
+
     <div id="scan-preview" class="scan-preview" hidden>
       <div class="scan-bild">
         <img id="preview-img" alt="Aufgenommenes Foto">

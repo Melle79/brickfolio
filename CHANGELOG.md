@@ -45,6 +45,27 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.1 – September 2026
+
+### Neu
+- 📷 **Die Kamera geht jetzt in der App auf.** Antippen zeigt das Livebild
+  mit Auslöser, Sucher-Ecken und – das war der Punkt – einem Knopf zur
+  **Fotomediathek gleich daneben**. Mit 2.88.0 kam an dieser Stelle noch
+  die Auswahlliste des Systems: Sie bot die Mediathek zwar an, kostete aber
+  jedes Foto einen Tipp mehr und sah nicht nach der App aus. Ein Licht
+  erscheint oben rechts, wo das Gerät es kann.
+
+  **Zweigleisig, und das ist wichtig:** Der Kamerazugriff im Browser
+  (`getUserMedia`) gibt es nur über HTTPS. Über die Cloudflare-Adresse ist
+  das gegeben. Wer eine Instanz im Heimnetz über `http://` aufruft, bekommt
+  weiter den Dateidialog – genau wie vorher. Dasselbe gilt, wenn die
+  Freigabe für die Kamera abgelehnt wird. Es wird also nirgends schlechter,
+  nur an der einen Stelle besser.
+
+  Ein `<input type="file" capture>` war dafür übrigens nie geeignet: Es
+  reicht nur an das Betriebssystem weiter, und in dessen Kamera gibt es
+  keinen Weg zur Mediathek.
+
 ## 2.88.0 – September 2026
 
 ### Geändert

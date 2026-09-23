@@ -2648,3 +2648,63 @@ html.ohne-blur * {
 .hist-tip-tag {
   font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums;
 }
+
+/* ── Kameraansicht ──────────────────────────────────────────────────────
+   Eigener Aufnahme-Bildschirm statt des Systemdialogs: Antippen zeigt das
+   Livebild, und die Mediathek liegt daneben statt dahinter.
+
+   Schwarz und randlos, weil das Bild die Fläche braucht – das ist die
+   einzige Stelle der App, die bewusst aus dem Design ausbricht. */
+.kamera {
+  position: fixed; inset: 0; z-index: 120; background: #000;
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+.kamera video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; background: #000;
+}
+
+.kamera-kopf {
+  position: absolute; left: 0; right: 0;
+  top: calc(env(safe-area-inset-top) + 10px);
+  display: flex; justify-content: space-between; padding: 0 14px; z-index: 2;
+}
+.kamera-rund {
+  width: 42px; height: 42px; border-radius: 50%; flex: none;
+  border: 0; background: rgba(0, 0, 0, .45); color: #fff;
+  font-size: 17px; line-height: 1; cursor: pointer;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.kamera-rund[aria-pressed="true"] { background: var(--yellow); color: var(--ink); }
+.kamera-platzhalter { background: none; pointer-events: none; }
+
+/* Der Sucher sagt, wohin die Figur gehört – vier Ecken, kein Rahmen: Ein
+   geschlossener Kasten sähe aus, als müsse man genau hineintreffen. */
+.kamera-sucher {
+  position: absolute; top: 50%; left: 50%; z-index: 1;
+  width: 64%; max-width: 320px; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+.kamera-sucher i {
+  position: absolute; width: 30px; height: 30px;
+  border: 3px solid rgba(255, 255, 255, .85);
+}
+.kamera-sucher i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+.kamera-sucher i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
+.kamera-sucher i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
+.kamera-sucher i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+
+.kamera-leiste {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 26px calc(env(safe-area-inset-bottom) + 22px);
+  background: linear-gradient(to top, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0));
+}
+/* Der Auslöser ist der einzige Knopf, der groß sein darf. */
+.kamera-ausloeser {
+  width: 72px; height: 72px; border-radius: 50%; flex: none;
+  background: #fff; border: 4px solid rgba(255, 255, 255, .55);
+  background-clip: padding-box; cursor: pointer;
+  transition: transform .06s;
+}
+.kamera-ausloeser:active { transform: scale(.92); }
