@@ -1184,6 +1184,23 @@ sudo bash update.sh</pre>
           </label>
           <p class="search-hint" id="diag-aus-stand"></p>
         </details>
+
+        <!-- **Nachmessen statt nachstellen.** Ob sich eine Seite seitlich
+             schieben lässt, hängt an den eigenen Daten und am eigenen
+             Browser: Am 23.09.2026 stand die Sammlung auf Svens iPhone über
+             den Rand, in der Nachbildung bei vier Bildschirmbreiten und 800
+             Einträgen aber nie. Dieser Knopf misst dort, wo es auftritt. -->
+        <details class="help" id="diag-ueberstand">
+          <summary>📐 Fehlersuche: Was steht über den Rand?</summary>
+          <p class="search-hint">Lässt sich eine Ansicht seitlich schieben,
+            ist irgendein Element breiter als das Fenster. Öffne zuerst die
+            betroffene Ansicht, komm dann hierher zurück und miss nach – das
+            Ergebnis nennt das Element beim Namen.</p>
+          <div class="detail-row">
+            <button class="mini-btn" id="diag-messen">📐 Jetzt nachmessen</button>
+          </div>
+          <pre class="diag-ausgabe" id="diag-ueberstand-stand" hidden></pre>
+        </details>
         <p class="search-hint" id="diag-summary"></p>
         <div id="diag-chart"></div>
         <div class="detail-row btn-grid" style="margin-top:8px">

@@ -45,6 +45,22 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.4 – September 2026
+
+### Neu
+- 📐 **„Was steht über den Rand?" in der Fehlersuche.** Lässt sich eine
+  Ansicht seitlich schieben, ist irgendein Element breiter als das Fenster
+  – welches, hängt an den eigenen Daten und am eigenen Browser. Der Knopf
+  misst dort, wo es auftritt, und nennt das Element beim Namen, dazu seine
+  Breite und den Weg nach oben: Ein überstehendes Kind sagt wenig, solange
+  man nicht weiß, welcher Kasten es nicht halten konnte.
+
+  Anlass war das seitliche Schieben in der Sammlung: In der Nachbildung
+  stand es bei vier Bildschirmbreiten, allen drei Ansichten, allen
+  Sortierungen und 800 Einträgen nie über – auf dem Gerät schon. Drei
+  Anläufe gingen so ins Leere. Zu finden unter **Mehr → Einstellungen →
+  📐 Fehlersuche**.
+
 ## 2.88.3 – September 2026
 
 ### Geändert

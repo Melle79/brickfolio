@@ -12279,6 +12279,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     toast(tr("Zu diesem Artikel gibt es kein Bild."));
   });
 
+  const messKnopf = $("diag-messen");
+  if (messKnopf) messKnopf.addEventListener("click", ueberstandMessen);
+
   if ("serviceWorker" in navigator && !ausLesen().includes("sw")) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
@@ -12819,6 +12822,67 @@ function jedipediaVerdrahten() {
    angeschaltetem Baustein an. */
 const AUS_KEY = "bf_aus";
 const AUS_BAUSTEINE = ["cv", "sticky", "blur", "sw"];
+
+/* Was steht über den rechten Rand hinaus?
+
+   **Gemessen wird dort, wo es auftritt.** Ob sich eine Ansicht seitlich
+   schieben lässt, hängt an den eigenen Daten und am eigenen Browser: Am
+   23.09.2026 stand die Sammlung auf Svens iPhone über, in der Nachbildung
+   bei vier Bildschirmbreiten und 800 Einträgen aber nie. Drei Anläufe
+   gingen ins Leere, bevor dieser Knopf kam.
+
+   Gemeldet wird der **äußerste** Übeltäter zuerst, dazu seine Eltern: Ein
+   überstehendes Kind sagt wenig, solange man nicht weiß, welcher Kasten es
+   nicht halten konnte. Der Weg nach oben nennt genau den. */
+function ueberstandMessen() {
+  const ziel = $("diag-ueberstand-stand");
+  if (!ziel) return;
+  const breite = document.documentElement.clientWidth;
+  const rolle = document.documentElement.scrollWidth;
+  const zeilen = [
+    `Fenster ${breite} · Inhalt ${rolle} · Überstand ${rolle - breite} px`,
+  ];
+  if (rolle <= breite + 1) {
+    zeilen.push("", "Hier steht nichts über. Die Ansicht, die sich schieben",
+      "lässt, muss beim Messen offen sein – zuerst dorthin, dann hierher.");
+    ziel.textContent = zeilen.join("\n");
+    ziel.hidden = false;
+    return;
+  }
+  const treffer = [];
+  document.querySelectorAll("body *").forEach((el) => {
+    const k = el.getBoundingClientRect();
+    if (k.width && k.right > breite + 1) {
+      treffer.push({ el, rechts: Math.round(k.right), breit: Math.round(k.width) });
+    }
+  });
+  treffer.sort((a, b) => b.rechts - a.rechts);
+  const nenne = (el) => {
+    const kl = (el.getAttribute("class") || "").trim().split(/\s+/)
+      .filter(Boolean).slice(0, 3).join(".");
+    return el.tagName.toLowerCase() + (el.id ? "#" + el.id : "")
+      + (kl ? "." + kl : "");
+  };
+  zeilen.push("", "Am weitesten draußen:");
+  treffer.slice(0, 5).forEach((t) => {
+    zeilen.push(`  ${nenne(t.el)} – bis ${t.rechts}, breit ${t.breit}`);
+  });
+  // Der Weg nach oben: Welcher Kasten hätte es halten müssen?
+  if (treffer.length) {
+    zeilen.push("", "Darüber:");
+    let el = treffer[0].el.parentElement;
+    for (let i = 0; i < 6 && el && el !== document.body; i++) {
+      const k = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      zeilen.push(`  ${nenne(el)} – breit ${Math.round(k.width)}`
+        + `, overflow-x ${s.overflowX}`
+        + (s.display.includes("grid") ? `, Spalten ${s.gridTemplateColumns}` : ""));
+      el = el.parentElement;
+    }
+  }
+  ziel.textContent = zeilen.join("\n");
+  ziel.hidden = false;
+}
 
 function ausLesen() {
   try {
