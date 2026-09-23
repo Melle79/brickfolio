@@ -45,6 +45,25 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.3 – September 2026
+
+### Geändert
+- 🔍 **Zu klein abgelegte Bilder holen sich selbst nach.** Mit 2.88.0 stieg
+  die Ablagegröße von 400 auf 800 Pixel, damit das Bild im Popup über die
+  volle Breite scharf bleibt – schon abgelegte Bilder blieben aber klein.
+
+  Nachgeholt wird jetzt genau dann, wenn jemand die Figur oder das Set
+  **aufruft**: beim vollen Bild, nicht beim Daumennagel im Raster. Ein
+  Sammellauf über alle Bilder käme nicht in Frage – er ginge gegen dasselbe
+  Tageskontingent bei BrickLink wie die Preise, und zwar für Bilder, die
+  vielleicht nie jemand ansieht. Wer durch 800 Karten blättert, löst nichts
+  aus.
+
+  Der Abruf läuft im Hintergrund; das Fenster wartet nicht darauf. Beim
+  ersten Öffnen steht noch das alte Bild, ab dem zweiten das scharfe. Die
+  daraus abgeleiteten Daumennägel werden mitgelöscht, sonst bliebe die
+  Sammlung ausgefranst.
+
 ## 2.88.2 – September 2026
 
 ### Behoben

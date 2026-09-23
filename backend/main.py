@@ -5194,6 +5194,66 @@ def _daumennagel(pfad: str, kante: int) -> str | None:
         return None
 
 
+# Welche Bilder gerade nachgeholt werden – damit ein zweiter Aufruf nicht
+# denselben Abruf ein zweites Mal startet.
+_schaerfen_laeuft: set[str] = set()
+_schaerfen_sperre = threading.Lock()
+
+
+def _bild_nachschaerfen(url: str, pfad: str) -> None:
+    """Ein zu klein abgelegtes Bild im Hintergrund noch einmal holen.
+
+    **Warum überhaupt.** Bis 2.87.1 wurde mit 400 Pixeln abgelegt – das
+    reichte, solange das Popup eine Briefmarke von 72 Pixeln zeigte. Seit es
+    mit dem Bild über die volle Breite aufmacht, sind 400 zu wenig. Schon
+    abgelegte Bilder blieben aber klein.
+
+    **Warum kein Sammellauf.** Er ginge gegen dasselbe Tageskontingent bei
+    BrickLink wie die Preise, und zwar für Bilder, die vielleicht nie jemand
+    ansieht. Nachgeholt wird deshalb genau dann, wenn jemand die Figur oder
+    das Set *aufruft* – also beim vollen Bild, nicht beim Daumennagel im
+    Raster. Beim Blättern durch 800 Karten passiert nichts.
+
+    Der Aufrufer bekommt diesmal noch das alte Bild; das neue liegt beim
+    nächsten Öffnen da. Ein Abruf im Vordergrund hätte das Fenster
+    aufgehalten, für einen Unterschied, den man erst beim zweiten Hinsehen
+    bemerkt.
+    """
+    try:
+        from PIL import Image          # nur hier gebraucht
+        with Image.open(pfad) as bild:
+            if max(bild.size) >= BILD_KANTE:
+                return
+    except Exception:
+        return
+    with _schaerfen_sperre:
+        if url in _schaerfen_laeuft:
+            return
+        _schaerfen_laeuft.add(url)
+
+    def lauf():
+        try:
+            roh = integrations.fetch_catalog_image(url, integrations.BILD_HOSTS)
+            gross = integrations.prepare_image(roh, max_side=BILD_KANTE)
+            temp = pfad + f".{os.getpid()}.neu"
+            with open(temp, "wb") as f:
+                f.write(gross)
+            os.replace(temp, pfad)
+            # Die abgeleiteten Daumennägel stammen noch vom kleinen Bild.
+            for kante in DAUMEN_GROESSEN:
+                try:
+                    os.remove(f"{pfad}.{kante}.jpg")
+                except OSError:
+                    pass
+        except Exception:
+            pass                  # Ein Aussetzer darf nichts kaputtmachen
+        finally:
+            with _schaerfen_sperre:
+                _schaerfen_laeuft.discard(url)
+
+    threading.Thread(target=lauf, daemon=True).start()
+
+
 @app.get("/catalog")
 def serve_katalogbild(u: str, s: int = 0):
     """Katalogbild ausliefern – aus dem eigenen Speicher.
@@ -5214,6 +5274,10 @@ def serve_katalogbild(u: str, s: int = 0):
         raise HTTPException(404, "Bild nicht verfügbar")
     if s:
         pfad = _daumennagel(pfad, s) or pfad
+    else:
+        # Das volle Bild fragt nur das Detail-Popup an. Genau dort lohnt es,
+        # ein zu klein abgelegtes einmal nachzuholen.
+        _bild_nachschaerfen(u, pfad)
     return FileResponse(pfad, media_type="image/jpeg",
                         headers={"Cache-Control": "public, max-age=31536000"})
 
