@@ -45,6 +45,30 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.2 – September 2026
+
+### Behoben
+- ↔️ **Die Sammlung ließ sich seitlich schieben.** Die Karten standen in
+  der rechten Spalte über den Bildschirmrand hinaus, und die ganze Seite
+  wurde dadurch breiter als das Fenster.
+
+  Ursache war eine Zeile, die harmlos aussieht:
+  `contain-intrinsic-size: auto 236px`. Gemeint war die Höhe, die der
+  Browser für noch nicht gezeichnete Karten annehmen soll – **ein
+  einzelner Wert gilt aber für beide Achsen**. Karten außerhalb des
+  Sichtfelds meldeten damit auch 236 Pixel *Breite*. Weil Rasterfelder von
+  Haus aus `min-width: auto` haben, konnte `1fr` nicht darunter: Die zwei
+  Spalten rechneten 260 statt 197 Pixel und standen 126 Pixel über.
+
+  Sichtbar war das nur bei vielen Einträgen – wo der Browser nichts
+  überspringt, gibt es auch keine Ersatzgröße. Mit sieben Karten in der
+  Probe war nie etwas zu sehen, mit 780 sofort. Die Zeile steht seit
+  2.73.0 (29.08.2026) im Stylesheet.
+
+  Jetzt gilt die Ersatzgröße nur noch für die Höhe. Zusätzlich dürfen
+  Karten ihre Spalte nicht mehr aufblähen (`min-width: 0`) – falls ein
+  Browser die genauere Schreibweise nicht kennt.
+
 ## 2.88.1 – September 2026
 
 ### Neu

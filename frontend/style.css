@@ -425,8 +425,32 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
    Also steht die Zeile wieder da, wo sie hingehört – sie spart dem
    Browser echte Arbeit, und der Fehler ist woanders. Wer sie das nächste
    Mal verdächtigt: Der Versuch ist gelaufen, das Ergebnis war negativ. */
-#collection-list .card { content-visibility: auto; contain-intrinsic-size: auto 104px; }
-#collection-list.grid-mode .card { contain-intrinsic-size: auto 236px; }
+/* **Zwei Werte, nicht einer.** `contain-intrinsic-size: auto 236px` sieht
+   nach „236 Pixel hoch" aus – ein einzelner Wert gilt aber für **beide**
+   Achsen. Karten außerhalb des Sichtfelds meldeten damit auch 236 px
+   *Breite*, und weil Rasterfelder `min-width: auto` haben, konnte `1fr`
+   nicht darunter: Die zwei Spalten rechneten 260 px statt 197 und standen
+   126 px über den Rand. Die Seite ließ sich seitlich schieben.
+
+   Sichtbar wurde das erst bei vielen Einträgen – wo nichts übersprungen
+   wird, gibt es auch keine Ersatzgröße. Bei Sven mit 780 Figuren fiel es
+   auf, in einer Probe mit sieben nie (23.09.2026).
+
+   `none` in der ersten Spalte heißt: für die Breite keine Ersatzgröße. Die
+   kommt ohnehin vom Raster. */
+#collection-list .card {
+  content-visibility: auto;
+  contain-intrinsic-size: none auto 104px;
+}
+#collection-list.grid-mode .card { contain-intrinsic-size: none auto 236px; }
+#collection-list.kompakt-mode .card { contain-intrinsic-size: none auto 132px; }
+
+/* Gürtel und Hosenträger: Selbst wenn ein Browser die Zwei-Wert-Schreibweise
+   nicht kennt und auf die alte zurückfällt, darf eine Karte ihre Spalte
+   nicht aufblähen. `min-width: auto` ist die Voreinstellung für
+   Rasterfelder – und genau die war hier das Einfallstor. */
+.results.grid-mode > .card,
+#collection-list .theme-body > .card { min-width: 0; }
 /* Die Marke, an der der nächste Block hängt. Muss sichtbar sein, damit der
    Beobachter sie überhaupt bemerkt. */
 .nachschub-marke { height: 1px; grid-column: 1 / -1; }
@@ -2310,9 +2334,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 8px; align-items: start;
 }
-#collection-list.kompakt-mode .card {
-  padding: 6px; contain-intrinsic-size: auto 132px;
-}
+#collection-list.kompakt-mode .card { padding: 6px; }
 #collection-list.kompakt-mode .card-head {
   flex-direction: column; align-items: stretch; gap: 4px; text-align: center;
 }
