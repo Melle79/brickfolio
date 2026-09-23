@@ -45,6 +45,22 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.7 – September 2026
+
+### Geändert
+- 📐 **Der Überstands-Befund geht an den Server** und landet in der
+  Fehlerliste – mit Zeit, Fassung und Gerät. Ihn in den Einstellungen zu
+  suchen und abzufotografieren kostete jedes Mal eine Runde, und man sah
+  ihm nicht an, ob er von heute oder von gestern war. Der Text in den
+  Einstellungen trägt jetzt ebenfalls Zeitpunkt und Fassung.
+
+- 📐 **Neu in der Messung: „Scrollt innen über".** Steht kein einziges
+  Element über, ist das Dokument aber breiter, steckt die Ursache in etwas,
+  das in keiner Elementliste auftaucht – ein `::before`/`::after`, ein Rand,
+  eine Tabelle. Sichtbar wird sie trotzdem: Jeder Kasten, der sie enthält,
+  meldet ein größeres `scrollWidth` als `clientWidth`. Die Messung nennt
+  jetzt den **innersten** davon, und das ist der Ort.
+
 ## 2.88.6 – September 2026
 
 ### Behoben

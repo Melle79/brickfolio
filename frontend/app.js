@@ -12858,9 +12858,20 @@ function ueberstandWachen() {
     .find((v) => !v.hidden) || {}).id || "?";
   if (ueberstandGeprueft.has(sicht)) return;
   ueberstandGeprueft.add(sicht);
+  const bericht = ueberstandBericht(sicht);
   try {
-    localStorage.setItem(UEBERSTAND_KEY, ueberstandBericht(sicht));
+    localStorage.setItem(UEBERSTAND_KEY, bericht);
   } catch (_) { /* privater Modus – dann hilft nur der Knopf */ }
+  // **Und ab damit zum Server.** Ein Befund, den jemand erst in den
+  // Einstellungen suchen und abfotografieren muss, kostet jedes Mal eine
+  // Runde – und man sieht ihm nicht an, ob er von heute oder von gestern
+  // ist. Als Eintrag in der Fehlerliste trägt er Zeit, Fassung und Gerät
+  // von selbst und steht dort, wo ohnehin nachgesehen wird.
+  //
+  // `reportError` sendet je Sitzung nur einmal je Meldung und schluckt
+  // eigene Fehler – melden darf nie selbst stören.
+  reportError("Seite ist breiter als das Fenster (" + sicht + ")",
+    bericht, "überstand");
 }
 
 /* Was steht über den rechten Rand hinaus?
@@ -12901,6 +12912,8 @@ function ueberstandBericht(woher) {
   const zeilen = [
     `${woher}: Fenster ${breite} · Inhalt ${rolle}`
     + ` · Überstand ${rolle - breite} px`,
+    `gemessen ${new Date().toLocaleString(dateLocale())}`
+    + ` · Fassung ${state.appVersion || "?"}`,
   ];
   // **Zwei Fallen, beide am 23.09.2026 zugeschnappt.** Der erste Anlauf fand
   // bei 11 px Überstand *kein einziges* Element:
@@ -12949,6 +12962,31 @@ function ueberstandBericht(woher) {
       + (t.rand ? `, Rand ${t.rand}` : "")
       + (t.links < 0 ? `, links ${t.links}` : ""));
   });
+  // **Wer scrollt intern über?** Wenn kein einziges Element übersteht, das
+   // Dokument aber breiter ist, steckt die Ursache in etwas, das in keiner
+   // Elementliste auftaucht – ein `::before`/`::after`, ein Rand, eine
+   // Tabelle. Sichtbar wird sie trotzdem: Jeder Kasten, der sie enthält,
+   // meldet ein größeres `scrollWidth` als `clientWidth`. Der **innerste**
+   // davon ist der Ort.
+  const innen = [];
+  document.querySelectorAll("html, body, body *").forEach((el) => {
+    if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0) {
+      let tiefe = 0;
+      for (let p = el; p; p = p.parentElement) tiefe++;
+      innen.push({ el, tiefe,
+        ueber: el.scrollWidth - el.clientWidth,
+        innenBreit: el.clientWidth, rollBreit: el.scrollWidth });
+    }
+  });
+  if (innen.length) {
+    innen.sort((a, b) => b.tiefe - a.tiefe);
+    zeilen.push("", "Scrollt innen über (innerste zuerst):");
+    innen.slice(0, 6).forEach((t) => {
+      zeilen.push(`  ${nenne(t.el)} – innen ${t.innenBreit},`
+        + ` Inhalt ${t.rollBreit} (+${t.ueber})`);
+    });
+  }
+
   // Ein Element, das nach **links** hinausragt, macht das Dokument in
   // manchen Browsern ebenfalls breiter – und fällt bei einer Suche nach
   // rechts nie auf.
