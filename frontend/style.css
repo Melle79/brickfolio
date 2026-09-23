@@ -595,8 +595,30 @@ code {
   font-weight: 700; cursor: pointer;
 }
 .share-toggle input { width: 18px; height: 18px; flex: none; }
-.tab-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.tab-row .mini-btn.sel { background: var(--yellow); border-color: var(--ink); }
+/* **Eine Wahl, nicht mehrere Befehle.** Wünsche/Einkaufen/Archiv/Katalog,
+   die Katalogfilter und die Reiter der Tauschbörse sind dasselbe
+   Bedienteil: Genau eines gilt. Als einzeln umrandete Knöpfe – einer davon
+   gelb – sahen sie aus wie eine Reihe von Aktionen.
+
+   Dieselbe Form wie „Gebraucht/Neu" im Steckbrief und die Blätter darin.
+   Gemeinsam umgestellt, nicht einzeln: Eine halb umgestellte Fläche sieht
+   schlechter aus als eine ganz alte (23.09.2026). */
+.tab-row {
+  display: flex; gap: 3px; flex-wrap: nowrap; padding: 3px;
+  margin-bottom: 12px;
+  background: var(--track); border-radius: 999px;
+}
+.tab-row .mini-btn {
+  flex: 1; min-width: 0; border: 0; background: transparent;
+  border-radius: 999px; min-height: 40px; padding: 8px 6px;
+  font-size: 13.5px; font-weight: 800; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tab-row .mini-btn:hover { color: var(--ink); }
+.tab-row .mini-btn.sel {
+  background: var(--yellow); color: var(--ink);
+  box-shadow: 0 1px 3px rgba(29, 29, 27, .2);
+}
 .trade-msgs {
   display: flex; flex-direction: column; gap: 8px; margin: 12px 0;
   max-height: 46vh; overflow-y: auto; padding-right: 4px;
@@ -2436,58 +2458,19 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    verdecken. */
 .kat-kopf {
   display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
-  /* **Dieselbe Vorsorge wie bei `.select-wrap`.** Safari rechnet die
-     Textbreite der `<option>`-Einträge in den Überlauf ein, obwohl die
-     Liste nie gezeichnet wird – in der Sammlung schob das die ganze Seite
-     auf (23.09.2026). Hier steht dasselbe Auswahlfeld in derselben
-     Bauweise; abgeschnitten wird nichts Sichtbares. */
+  /* **Vorsorge, kein Aussehen.** Hier steht dasselbe Auswahlfeld in
+     derselben Bauweise, an der Safari die Sammlung seitlich aufschob:
+     Es rechnet die Textbreite der `<option>`-Einträge in den Überlauf
+     ein, obwohl die Liste nie gezeichnet wird (23.09.2026). Sichtbar
+     abgeschnitten wird nichts. */
   overflow: hidden;
 }
-/* Suchfeld und Themenwahl in der ruhigen Fassung – dieselbe wie in den
-   Fenstern: weiche Kontur, Fläche statt Kasten, Rand erst beim Hineingehen. */
-.kat-kopf select, .kat-kopf input {
-  flex: 1; min-width: 0;
-  border: 1.5px solid var(--line); border-radius: 12px;
-  background: var(--field); padding: 11px 12px; margin-top: 0;
-}
-.kat-kopf select:focus, .kat-kopf input:focus {
-  outline: none; border-color: var(--blue); background: var(--card);
-}
-/* Figuren/Sets als ein Bedienteil, nicht als zwei Befehle. Ohne
-   `flex: none` drückt das Auswahlfeld daneben die beiden Knöpfe
-   untereinander – auf 375 px sofort sichtbar. */
-.kat-kopf .seg {
-  display: flex; gap: 3px; flex: none; padding: 3px;
-  background: var(--track); border-radius: 999px;
-}
-.kat-kopf .seg .mini-btn {
-  white-space: nowrap; border: 0; background: transparent;
-  border-radius: 999px; min-height: 34px; padding: 4px 14px;
-  font-size: 13px; color: var(--muted);
-}
-.kat-kopf .seg .mini-btn.sel {
-  background: var(--yellow); color: var(--ink);
-  box-shadow: 0 1px 3px rgba(29, 29, 27, .2);
-}
+.kat-kopf select, .kat-kopf input { flex: 1; min-width: 0; }
+/* Figuren/Sets nebeneinander. Ohne `flex: none` drückt das Auswahlfeld
+   daneben die beiden Knöpfe untereinander – auf 375 px sofort sichtbar. */
+.kat-kopf .seg { display: flex; gap: 6px; flex: none; }
+.kat-kopf .seg .mini-btn { white-space: nowrap; }
 
-/* **Die vier Filter sind eine Wahl, keine vier Befehle.** Als einzeln
-   umrandete Knöpfe – einer davon gelb – sahen sie aus wie vier Aktionen.
-   Ein Schiebeschalter sagt, dass genau eine davon gilt. Dieselbe Form wie
-   „Gebraucht/Neu" im Steckbrief. */
-#kat-filter {
-  display: flex; flex-wrap: nowrap; gap: 3px; padding: 3px;
-  background: var(--track); border-radius: 999px; margin-bottom: 12px;
-}
-#kat-filter .mini-btn {
-  flex: 1; min-width: 0; border: 0; background: transparent;
-  border-radius: 999px; min-height: 38px; padding: 6px 4px;
-  font-size: 13px; font-weight: 800; color: var(--muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-#kat-filter .mini-btn.sel {
-  background: var(--yellow); color: var(--ink);
-  box-shadow: 0 1px 3px rgba(29, 29, 27, .2);
-}
 .kat-zahl {
   font-variant-numeric: tabular-nums; color: var(--muted);
   font-size: .85rem; white-space: nowrap;
@@ -2505,11 +2488,13 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kat-zeile {
   display: flex; align-items: center; gap: 10px;
   padding: 6px 4px; border-bottom: 1px solid var(--line);
-  cursor: pointer;
+  cursor: pointer; border-radius: 10px;
+  transition: background .12s;
 }
+.kat-zeile:hover { background: var(--track); }
 .kat-zeile .kat-bild {
-  width: 44px; height: 44px; flex: none; border-radius: 6px;
-  background: #fff; object-fit: contain;
+  width: 44px; height: 44px; flex: none; border-radius: 8px;
+  background: #fff; border: 1px solid var(--line); object-fit: contain;
 }
 .kat-text { flex: 1; min-width: 0; }
 .kat-name {
@@ -2522,17 +2507,31 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
      und bei 1.663 Einträgen ist das ein halber Kilometer Scrollweg. */
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.kat-marken { display: flex; gap: 2px; flex: none; }
-/* Große Flächen: Die Marken sind die eigentlichen Knöpfe dieser Ansicht,
-   und sie werden im Gehen getippt. */
+.kat-marken { display: flex; gap: 4px; flex: none; }
+/* **Die eigentlichen Knöpfe dieser Ansicht** – sie werden im Gehen
+   getippt, oft hunderte Male hintereinander.
+   
+   Zwei Dinge geändert (23.09.2026): Die Trefferfläche war 35 px, jetzt
+   sind es 44 – das Maß, das überall sonst in der App gilt. Und bei 22 %
+   Deckkraft waren die ausgeschalteten Marken kaum zu sehen; wer eine Liste
+   durchgeht, muss auf einen Blick erkennen, wo noch nichts steht. */
 .kat-marke {
-  background: none; border: 0; padding: 8px 10px; cursor: pointer;
-  font-size: 1.15rem; line-height: 1; opacity: .22;
-  color: var(--muted);
+  width: 44px; height: 44px; flex: none; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; border-radius: 50%; cursor: pointer;
+  font-size: 1.15rem; line-height: 1; opacity: .32;
+  color: var(--muted); transition: background .12s, opacity .12s;
 }
+.kat-marke:hover { opacity: .7; background: var(--track); }
+/* Gesetzt: nicht nur farbig, sondern auf einer eigenen Fläche. Beim
+   Überfliegen einer langen Liste zählt der Fleck, nicht das Zeichen. */
 .kat-marke.an { opacity: 1; }
-.kat-marke[data-marke="habe"].an { color: #2ecc9b; }
-.kat-marke[data-marke="wunsch"].an { color: #e8576f; }
+.kat-marke[data-marke="habe"].an {
+  color: #1aa87a; background: rgba(46, 204, 155, .16);
+}
+.kat-marke[data-marke="wunsch"].an {
+  color: #d63652; background: rgba(232, 87, 111, .14);
+}
 .kat-anzahl {
   font-size: .7rem; font-weight: 700; color: #2ecc9b;
   align-self: flex-start; margin-left: -4px;

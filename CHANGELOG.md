@@ -45,6 +45,27 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.19 – September 2026
+
+### Geändert
+- 🎚 **Alle Reiterreihen sind jetzt Schiebeschalter.**
+  Wünsche/Einkaufen/Archiv/Katalog, die Katalogfilter und die Reiter der
+  Tauschbörse sind dasselbe Bedienteil: Genau eines gilt. Als einzeln
+  umrandete Knöpfe – einer davon gelb – sahen sie aus wie eine Reihe von
+  Aktionen.
+
+  Mit 2.88.17 war nur die untere Hälfte umgestellt, und das Ergebnis sah
+  schlechter aus als vorher: zwei Sprachen übereinander. Eine halb
+  umgestellte Fläche ist schlimmer als eine ganz alte.
+
+- ✔️ **Die Marken im Katalog sind zu treffen und zu sehen.** „Hab ich" und
+  „Merken" hatten eine Trefferfläche von 35 Pixeln – jetzt 44, das Maß, das
+  überall sonst gilt. Ausgeschaltet standen sie bei 22 % Deckkraft und
+  waren kaum zu erkennen; wer eine Liste von 1.600 Einträgen durchgeht,
+  muss auf einen Blick sehen, wo noch nichts steht. Gesetzt liegen sie
+  jetzt auf einer getönten Fläche: Beim Überfliegen zählt der Fleck, nicht
+  das Zeichen.
+
 ## 2.88.18 – September 2026
 
 ### Behoben
