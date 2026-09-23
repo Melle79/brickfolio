@@ -975,7 +975,24 @@ code {
   line-height: 1.25;
 }
 
-.select-wrap { position: relative; flex: 2; min-width: 0; display: flex; }
+/* **`overflow: hidden` ist hier die eigentliche Bremse.**
+   Gemessen auf Svens iPhone: Der Rahmen ist 98 px breit, sein Inhalt meldet
+   175 – und das Auswahlfeld darin nur 94. Die Differenz kommt von den
+   `<option>`-Einträgen: Safari rechnet deren Textbreite („Wert (hoch →
+   niedrig)") in den Überlauf ein, obwohl sie nie gezeichnet werden. Von
+   hier wanderte sie weiter in die Filterleiste (+27) und bis zur Seite
+   (+11), die sich dadurch seitlich schieben ließ.
+
+   Chromium rechnet sie nicht mit – deshalb war in der Nachbildung bei vier
+   Bildschirmbreiten und 800 Einträgen nie etwas zu sehen (23.09.2026).
+
+   Abgeschnitten wird dabei nichts Sichtbares: Das Feld klippt seinen
+   eigenen Text ohnehin, und die aufgeklappte Liste zeichnet das
+   Betriebssystem außerhalb des Kastens. */
+.select-wrap {
+  position: relative; flex: 2; min-width: 0; display: flex;
+  overflow: hidden;
+}
 .select-wrap svg {
   position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
   color: var(--muted); pointer-events: none;

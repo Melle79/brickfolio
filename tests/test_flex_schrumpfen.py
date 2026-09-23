@@ -47,3 +47,20 @@ def test_die_rahmen_selbst_duerfen_auch_schrumpfen():
     eigene Mindestgröße mit."""
     for auswahl in (".select-wrap", ".search-wrap"):
         assert "min-width: 0" in _regel(auswahl), auswahl
+
+
+def test_der_auswahlrahmen_klippt():
+    """Die eigentliche Bremse – und die letzte Ursache des seitlichen
+    Schiebens.
+
+    Gemessen auf dem Gerät: Rahmen 98 px, Inhalt 175 px, das Auswahlfeld
+    darin nur 94. Die Differenz kommt von den `<option>`-Einträgen –
+    Safari rechnet deren Textbreite in den Überlauf ein, obwohl sie nie
+    gezeichnet werden. Von dort wanderte sie in die Filterleiste (+27) und
+    bis zur Seite (+11). Chromium rechnet sie nicht mit; deshalb war in der
+    Nachbildung nie etwas zu sehen.
+
+    Sichtbar abgeschnitten wird nichts: Das Feld klippt seinen eigenen Text
+    ohnehin, und die aufgeklappte Liste zeichnet das Betriebssystem
+    außerhalb des Kastens."""
+    assert "overflow: hidden" in _regel(".select-wrap")

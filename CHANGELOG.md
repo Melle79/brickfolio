@@ -45,6 +45,25 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.11 – September 2026
+
+### Behoben
+- ↔️ **Das seitliche Schieben in der Sammlung – die Ursache.** Gemessen auf
+  dem Gerät: Der Rahmen um das Sortierfeld ist 98 Pixel breit, sein Inhalt
+  meldet 175 – und das Auswahlfeld darin nur 94. Die Differenz kommt von
+  den `<option>`-Einträgen: Safari rechnet deren Textbreite („Wert (hoch →
+  niedrig)") in den Überlauf ein, obwohl sie nie gezeichnet werden. Von
+  dort wanderte sie weiter in die Filterleiste (+27) und bis zur Seite
+  (+11).
+
+  Der Rahmen schneidet jetzt ab. Sichtbar verschwindet dadurch nichts: Das
+  Feld klippt seinen eigenen Text ohnehin, und die aufgeklappte Liste
+  zeichnet das Betriebssystem außerhalb des Kastens.
+
+  Chromium rechnet die Optionen nicht mit – deshalb war in der Nachbildung
+  bei vier Bildschirmbreiten, allen Ansichten und 800 Einträgen nie etwas
+  zu sehen. Gefunden hat es die Messung auf dem Gerät selbst.
+
 ## 2.88.10 – September 2026
 
 ### Behoben
