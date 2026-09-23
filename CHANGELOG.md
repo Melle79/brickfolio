@@ -53,6 +53,20 @@
   auseinander, und in der zweiten Zeile las sich „neu" wie ein neuer
   Gedanke. Jetzt bricht er nach „neu –", wo der Satz auch atmet.
 
+### Dokumentation
+- 📖 **Handbuch und README beschreiben den Steckbrief, wie er heute
+  aussieht.** Dort standen noch die vier Abschnitte von 2.69.0 und ein
+  Themenfeld mit Stift, den es bei Katalogartikeln nicht mehr gibt. Neu
+  beschrieben sind der Kopf (Bild über die volle Breite, Marken, die drei
+  Kacheln) und die Reiter Exemplar / Preise / Mehr.
+- 📖 **Die Kamera in der App steht jetzt im Handbuch** (Abschnitt 4.1):
+  Livebild beim Antippen, Mediathek darin daneben, Licht nur wo das Gerät
+  es kann – und der Hinweis, dass es über `http://` beim Dateidialog
+  bleibt, weil das Livebild eine gesicherte Verbindung braucht.
+- 📖 **Zeitspannen und Ablesen am Preisverlauf** sind beschrieben, samt dem
+  Punkt, der leicht Fragen aufwirft: Die Spannen filtern im Browser und
+  kosten keinen Abruf.
+
 ## 2.88.21 – September 2026
 
 ### Behoben
@@ -75,6 +89,18 @@
   „Hab ich" und „Merken" im Katalog – 44 statt 35 Pixel, das Maß, das
   überall sonst gilt. Und die unsichtbare Vorsorge im Katalogkopf gegen das
   seitliche Verschieben.
+
+## 2.88.19 – September 2026
+
+### Geändert
+- ↩️ **Zurückgenommen mit 2.88.20** – hier nur der Vollständigkeit halber,
+  weil 2.88.20 darauf verweist: Die Schiebeschalter aus 2.88.17 waren auf
+  alle Reiterreihen ausgeweitet worden (Wünsche/Einkaufen/Archiv/Katalog,
+  Katalogfilter, Tauschbörse). Zwei Formensprachen übereinander sahen
+  schlechter aus als eine, aber die richtige war die alte.
+
+  Geblieben ist die Trefferfläche der Marken „Hab ich" und „Merken" im
+  Katalog: 44 statt 35 Pixel, das Maß, das überall sonst gilt.
 
 ## 2.88.18 – September 2026
 

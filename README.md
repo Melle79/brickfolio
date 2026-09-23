@@ -152,8 +152,11 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🖥 **Reagiert auf die Bildschirmbreite**: auf dem Handy Tab-Leiste unten, am
   Rechner Seitenleiste links mit breiterem Raster (vier bis fünf Karten pro
   Reihe) – dieselbe App, nur besser auf die Fläche verteilt
-- ✨ **Moderne Darstellung**: Artikel öffnen sich als aufgeräumtes Popup, in
-  der Sammlung schimmert das Produktbild als dezenter Kartenhintergrund
+- ✨ **Moderne Darstellung**: Artikel öffnen sich als Fenster, das mit dem
+  **Bild über die volle Breite** aufmacht; darunter Name, Marken und – für
+  Händler – drei Kacheln (Bezahlt, Wert, Gewinn). Der Rest liegt auf drei
+  Reitern (Exemplar, Preise, Mehr), statt untereinander zu stehen. In der
+  Sammlung schimmert das Produktbild als dezenter Kartenhintergrund
 - 📲 Als PWA installierbar – auf dem Handy bietet die Scan-Seite das Ablegen
   **auf dem Startbildschirm** an (auf Android per Knopf, auf dem iPhone mit
   Anleitung) und blendet den Hinweis aus, sobald es liegt. Offline-Shell,

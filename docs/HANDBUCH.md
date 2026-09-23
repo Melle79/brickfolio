@@ -833,6 +833,19 @@ die Scan-Fläche ziehen oder einen **Screenshot mit Strg/Cmd+V** einfügen.
 Die App zeigt eine Kandidatenliste mit Trefferwahrscheinlichkeit, Bild,
 Nummer und – je nach Datenlage – Jahr, Ø-Preisen und Besitz-Hinweisen.
 
+**Die Kamera geht in der App auf** (ab 2.88.1): Antippen zeigt sofort das
+Livebild, und **die Mediathek liegt darin daneben** – ein schon
+vorhandenes Foto ist also derselbe Weg, nicht ein anderer. Kann das Gerät
+es, steht dort auch ein **Licht**; ein Knopf, der nichts täte, erscheint
+gar nicht erst.
+
+> **Über `http://` bleibt es beim alten Weg.** Das Livebild braucht eine
+> gesicherte Verbindung – über die Cloudflare-Adresse ist das gegeben, beim
+> direkten Aufruf einer Instanz im Heimnetz nicht. Dort (und wenn du den
+> Zugriff ablehnst) öffnet sich wie bisher der Dateidialog des Geräts, aus
+> dem heraus man ebenfalls fotografieren kann. Es geht also nichts
+> verloren, es kommt nur etwas dazu.
+
 **Tipps für gute Trefferquoten:** Einfarbiger Hintergrund, Figur von vorn,
 keine spiegelnden Verpackungen. Bei Sets funktioniert das Boxbild oder das
 aufgebaute Modell.
@@ -1189,26 +1202,40 @@ Fenster über der Liste, auf dem Handy fast bildschirmfüllend. Schließen
 per **✕**, Klick daneben oder **Esc**; Änderungen sind sofort gespeichert
 und stehen nach dem Schließen auch in der Liste.
 
-**Der Steckbrief ist in vier Abschnitte geteilt** (ab 2.69.0), weil er über
-die Zeit auf zehn Blöcke angewachsen war:
+**Oben der Kopf, darunter drei Reiter** (ab 2.88.0). Vorher standen vier
+Abschnitte untereinander (ab 2.69.0), und man scrollte an allem vorbei, was
+man gerade nicht suchte.
 
-| Abschnitt | Inhalt |
+**Der Kopf** beantwortet, was man beim Öffnen wissen will, ohne dass man
+etwas anklickt:
+
+- **Das Bild über die volle Breite**, auf weißem Grund – so liegt es auch
+  bei BrickLink, und freigestellte Figuren stehen nicht auf einer
+  getönten Fläche.
+- **Name, Nummer und Zustand**, darunter die Marken (Thema, Jahr,
+  Tauschbörse).
+- **Drei Kacheln** *(Sammlerprofi)*: **Bezahlt**, **Wert**, **Gewinn**.
+  Bezahlt trägt ein kleines ✏️ – der Kaufpreis ist das Einzige im Kopf,
+  das man ändert. Ohne Händlerrolle entfällt die Reihe.
+
+**Die drei Reiter** teilen den Rest nach der Frage, die man hat:
+
+| Reiter | Inhalt |
 |---|---|
-| **Mein Exemplar** | Anzahl, Zustand, Kaufpreis, Tauschbörse |
-| **Einordnung** | Notizen (und das Themenfeld, falls nötig) |
-| **Nachschlagen** | Preisverlauf, BrickLink, enthaltene Teile/Figuren |
-| **Marktpreise** | die Ø-Preise samt ↻ |
+| **Exemplar** | Anzahl, Zustand, Kaufpreis, Tauschbörse |
+| **Preise** | die Ø-Preise samt ↻ und der Preisverlauf |
+| **Mehr** | BrickLink, enthaltene Teile/Figuren, Notizen |
 
-Beschriftung steht links, Inhalt rechts – nur die Notizen bekommen die
-volle Breite. Ein Abschnitt ohne Inhalt wird gar nicht gezeichnet: Ohne
-BrickLink-Zugang steht keine Überschrift „Marktpreise" über einer leeren
-Fläche.
+Ein Reiter ohne Inhalt wird gar nicht gezeichnet, und bleibt nur einer
+übrig, verschwindet die Reiterreihe mit: Ohne BrickLink-Zugang steht keine
+leere Überschrift „Marktpreise" über einer leeren Fläche.
 
-**Das Thema steht oben im Kopf**, gleich unter Nummer und Zustand – es
-gehört zur Figur, nicht zu dem, was du mit ihr machst. Einen **✏️** gibt es
-dort nur, wo die App das Thema nicht aus der Nummer ableiten kann: bei
-eigenen Figuren, Teilen und unbekannten Kürzeln. `sw1213` ist Star Wars, da
-gibt es nichts zu entscheiden.
+**Das Thema steht im Kopf als Marke** – es gehört zur Figur, nicht zu dem,
+was du mit ihr machst, und ist deshalb **nicht bearbeitbar**. Ein **✏️**
+gibt es nur bei selbst angelegten Einträgen (`fig-…`, `manuell-…`); ohne
+ihn stünden die für immer ohne Thema. Alles aus dem Katalog bringt sein
+Thema mit: `sw1213` ist Star Wars, und bei Sets und Teilen kommt es über
+BrickLink – da gibt es nichts zu entscheiden.
 
 Im Popup zeigt sich:
 
@@ -1226,6 +1253,11 @@ Im Popup zeigt sich:
 - **Preise**: aktuelle Ø-Werte (neu/gebraucht); das **↻** am Preisblock
   „Marktpreise" holt sie sofort neu, der **Preisverlauf** zeigt sie als
   Chart (blau = neu, grün = gebraucht) mit Link zur BrickLink-Preisseite.
+  Darüber stehen die **Zeitspannen 1M / 3M / 1J / Alles** – sie blenden nur
+  aus, was schon da ist, und kosten deshalb keinen Abruf. Ein **Tipp auf
+  die Kurve** zeigt Datum und beide Preise der Stelle; am Finger bleibt der
+  Wert stehen, bis man erneut tippt oder die Spanne wechselt (am Zeiger
+  verschwindet er beim Wegfahren, denn dort liest man im Vorbeifahren).
 - **Bild antippen** öffnet die Großansicht. Der Hinweis „Wischen zum
   Blättern" erscheint nur, wenn es wirklich mehr als ein Bild gibt – in
   aller Regel also erst, wenn du ein eigenes Foto dazugehängt hast.
@@ -2175,7 +2207,9 @@ Tagen beisammen. Bei 9.000 Artikeln sind es noch 2.180 am Tag.
 **einer pro 20 Stunden** je Artikel. Die Wertentwicklungs-Kurve im
 Statistik-Tab entsteht aus genau diesen Punkten. Ein manueller Abruf
 innerhalb dieser 20 Stunden aktualisiert den jüngsten Punkt, statt einen
-neuen anzulegen (das Chart bleibt sauber).
+neuen anzulegen (das Chart bleibt sauber). Die Zeitspannen über der Kurve
+(1M / 3M / 1J / Alles) filtern im Browser aus den bereits geladenen
+Punkten – ein Wechsel fragt den Server nicht noch einmal.
 
 **Preis-Protokoll.** Unter **Mehr → 📈 Preis-Protokoll** *(Sammlerprofi)*
 listet die App die jüngsten Preis-Aktualisierungen quer über alle Artikel
