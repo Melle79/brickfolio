@@ -45,6 +45,101 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.0 – September 2026
+
+### Geändert
+- 🖼 **Das Detail-Popup macht mit dem Bild auf.** Es war eine Briefmarke von
+  72 Pixeln neben dem Namen; jetzt steht das Bild über die volle Breite auf
+  weißem Grund. Weiß ist bewusst fest und kommt nicht aus dem Design: Fast
+  alle Katalogbilder bringen selbst einen weißen Grund mit, und auf Hellgrau
+  bekam jedes von ihnen einen sichtbaren Kasten. Auch die Bilder in der
+  Sammlung stehen jetzt auf Weiß.
+
+- 💶 **Drei Kacheln statt fünf gleich lauter Zeilen.** Bezahlt, Wert und
+  Gewinn stehen zuoberst, direkt unter dem Namen. Vorher standen sie als
+  Zeilen zwischen „Anzahl" und „Zustand" – gleich laut wie die Bedienung,
+  obwohl fast immer eine dieser drei Zahlen der Grund ist, das Fenster
+  überhaupt zu öffnen. Kaufpreis ändern und „weiterer Kauf" sitzen als
+  kleine Symbole in der Ecke ihrer Kachel.
+
+- 🗂 **Der Rest liegt auf drei Blättern:** Exemplar, Preise, Mehr. Beim
+  Umbau am 29.08.2026 war Zuklappen verworfen worden, weil es „bei jedem
+  Öffnen einen Tipper kostet". Das gilt weiter – nur ist es erledigt: Die
+  drei Zahlen stehen **über** den Reitern und kosten keinen. Ein Blatt ohne
+  Inhalt bekommt keinen Reiter, und bleibt nur eines übrig, entfällt die
+  Leiste ganz.
+
+- 📓 **Die Notiz gehört jetzt zum Exemplar**, nicht mehr unter „Einordnung".
+  Sie beschreibt *dieses* Stück – woher es kam, was ihm fehlt –, nicht seine
+  Einsortierung. Und sie lag zuletzt so weit unten, dass sie beim Durchsehen
+  übersehen wurde.
+
+- 🎞 **Die Fenster fahren auf, statt zu erscheinen.** In der App bewegt sich
+  sonst alles – der Startbildschirm baut sich auf, die Ladeanzeige hüpft –,
+  nur die meistgeöffneten Fenster sprangen herein. Das war der größte Teil
+  ihres alten Eindrucks. Der Schließen-Knopf hat dabei seinen schwarzen
+  Kasten verloren: Umrandet war er das Kräftigste im ganzen Fenster,
+  ausgerechnet für die Nebensache.
+
+- 🧱 **Vier Noppen auf dem Aufnahme-Knopf.** Zwei einfarbige waren der
+  letzte Rest der alten Handschrift; inzwischen sind es überall vier bunte
+  Steine – im Logo, im Startbildschirm, in der Ladeanzeige. Sie sind unten
+  geschlossen, damit jede als eigener Stein *auf* dem Knopf steht,
+  unabhängig von dessen Farbe.
+
+- ✍️ **Die Aufschrift des Aufnahme-Knopfes folgt dem Gerät.** Am Telefon
+  „Figur oder Set fotografieren", am Rechner „Bild hierher ziehen oder
+  auswählen". Entschieden wird über `hover` – ehrlicher als die
+  Fensterbreite, denn ein schmales Browserfenster am Rechner bedient man
+  weiter mit der Maus.
+
+- 🏷 **Kein Stift mehr am Thema von Sets.** Er erschien nur, wo das Thema
+  nicht feststand – bei Sets lieferte die Ableitung aber grundsätzlich
+  nichts, weil sie nur Figurennummern kennt. Deshalb stand dort immer einer
+  für etwas, das längst über BrickLink gefunden war. Bei selbst angelegten
+  Einträgen und bei Teilen bleibt er: Ein Grundstein hat kein Thema, und
+  was dort landet, kann danebenliegen.
+
+### Neu
+- 🖼 **Bilder aus der Fotomediathek.** Am Datei-Feld stand
+  `capture="environment"` – das *erzwang* die Kamera, ein Foto, das man
+  schon hatte, war schlicht nicht scanbar. Jetzt fragt das Telefon selbst:
+  Mediathek, Foto aufnehmen, Datei. Der Preis ist ein Tipp mehr auf dem Weg
+  zur Kamera.
+
+- 📅 **Zeitspannen am Preisverlauf** – 1M, 3M, 1J, Alles. Das kostet keine
+  einzige BrickLink-Abfrage: Die Punkte liegen längst vollständig mit
+  Zeitstempel vor, gefiltert wird im Browser. Angeboten wird nur, was etwas
+  zeigt – bei einem Stück von letzter Woche zeichnete „1J" dieselbe Kurve
+  wie „1M".
+
+- 🔎 **Ablesen im Preisverlauf.** Beim Berühren erscheint eine Linie in der
+  Spalte, die Punkte werden hervorgehoben, und darunter stehen Datum und
+  beide Preise. Getroffen werden muss die **Spalte**, nicht der Punkt: Auf
+  dem Telefon liegen sie dicht beieinander, und der Finger verdeckt genau
+  den, den man treffen will.
+
+### Behoben
+- 🔍 **Das große Bild war ausgefranst.** Zwei Ursachen: Das Popup holte die
+  Daumennagel-Fassung, und abgelegt wurde ohnehin nur mit 400 Pixeln
+  („reicht für Karte und Popup" – das stimmte, solange es eine Briefmarke
+  war). Jetzt 800 Pixel und die volle Fassung. Bereits abgelegte Bilder
+  bleiben bei 400, bis sie über „Bild erneuern" neu geholt werden; ein
+  Sammellauf ginge gegen dasselbe Tageskontingent wie die Preise.
+
+- 🪟 **Dialogfenster standen links statt mittig**, und ihr Schließen-Knopf
+  schwebte rechts daneben in der Luft. Die Breitenbegrenzung saß am Inhalt
+  statt am Fenster. Gleichzeitig haben die Dialoge die ruhigere Sprache
+  bekommen: weiche Felder, gleich breite Knöpfe, Abstand zum Rand.
+
+- 🏷 **Ein Klick auf den Themen-Stift ließ das Thema verschwinden.** Er
+  blendet die Zeile aus und ein Feld ein – das lag seit den Blättern auf
+  „Mehr" und war damit unsichtbar. Das Feld steht jetzt direkt neben der
+  Zeile im Kopf.
+
+- 📏 **Preiszeilen brachen mitten in der Klammer um.** „(717,74 € –" stand
+  am Ende der einen, „959,66 €)" am Anfang der nächsten Zeile.
+
 ## 2.87.1 – September 2026
 
 ### Geändert

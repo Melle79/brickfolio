@@ -316,14 +316,29 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .brick-button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(29,29,27,.3); }
 .brick-button strong { font-size: 19px; }
 .brick-button small { font-size: 13px; opacity: .85; font-weight: 600; }
+/* **Vier Noppen, nicht zwei – und in den Farben des Logos.**
+   Zwei Noppen in der Farbe des Knopfes waren die Handschrift von damals.
+   Inzwischen sind es vier bunte Steine: im Logo, im Startbildschirm, in der
+   Ladeanzeige und beim Herunterziehen zum Aktualisieren. Zwei einfarbige
+   oben drauf waren der letzte Rest der alten Sprache.
+
+   Maße und Farben stammen von `.logo-studs` und `.spinner-welle`; wer dort
+   etwas ändert, soll es hier wiederfinden. */
 .brick-studs {
   position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 26px;
+  display: flex; gap: 10px;
 }
+/* **Unten geschlossen.** Ohne die untere Kante lief die rote Noppe in den
+   roten Knopf über – sie sah aus wie eine Lücke mit Umriss, während Gelb,
+   Blau und Grün klar dastanden. Mit geschlossener Kontur ist jede Noppe
+   ein eigener Stein *auf* dem Knopf, unabhängig von dessen Farbe. */
 .brick-studs i {
-  width: 44px; height: 14px; border-radius: 6px 6px 3px 3px;
-  background: var(--red); border: 2px solid var(--ink); border-bottom: none;
+  width: 30px; height: 14px; border-radius: 6px 6px 3px 3px;
+  background: var(--yellow); border: 2px solid var(--ink);
 }
+.brick-studs i:nth-child(2) { background: var(--red); }
+.brick-studs i:nth-child(3) { background: var(--blue); }
+.brick-studs i:nth-child(4) { background: var(--green); }
 
 .scan-preview { margin-top: 18px; text-align: center; }
 .scan-preview img {
@@ -416,9 +431,14 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
    Beobachter sie überhaupt bemerkt. */
 .nachschub-marke { height: 1px; grid-column: 1 / -1; }
 .card-head { display: flex; gap: 12px; align-items: center; }
+/* **Weiß hinter den Bildern, nicht der Platzhalter-Ton.** Fast alle
+   Katalogbilder bringen selbst einen weißen Grund mit; auf hellgrau bekam
+   jedes von ihnen einen sichtbaren Kasten. Bewusst fest und nicht aus dem
+   Design genommen: In den dunklen Designs sähe ein dunkler Grund hinter
+   einem weißen Bild genauso aus wie vorher. */
 .card-img {
   width: 72px; height: 72px; flex: none; object-fit: contain;
-  background: var(--img-bg); border-radius: 10px; border: 1px solid var(--line);
+  background: #FFFFFF; border-radius: 10px; border: 1px solid var(--line);
 }
 .card-title { flex: 1; min-width: 0; }
 .card-title strong { display: block; font-size: 15px; line-height: 1.3; }
@@ -788,7 +808,10 @@ code {
      dunkel, sonst erbt sie im Dunkeldesign Weiß und verschwindet. */
   color: #1D1D1B;
 }
-.price-range { color: var(--muted); }
+/* `nowrap`: Sonst bricht die Zeile mitten in der Klammer um – auf dem
+   Telefon stand „(717,74 € –" am Ende der einen und „959,66 €)" am Anfang
+   der nächsten Zeile. Umbrechen darf sie, aber zwischen den Angaben. */
+.price-range { color: var(--muted); white-space: nowrap; }
 .price-flag { cursor: help; font-size: 1.05em; margin-left: 2px; }
 .price-note { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
 /* Die Spur unter dem Verlauf: kurze Zeilen, bewusst unauffällig –
@@ -1307,6 +1330,21 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .scan-drop-hint { opacity: .8; margin-top: 4px; }
 @media (hover: none) { .scan-drop-hint { display: none; } }
 
+/* **Die Aufschrift folgt dem Gerät.** `hover` ist dafür das ehrlichere
+   Merkmal als die Fensterbreite: Ein schmales Browserfenster am Rechner
+   kann man weiter mit der Maus bedienen, ein breites Telefon nicht.
+   Dasselbe Signal entscheidet eine Zeile höher schon über den
+   Ziehen-Hinweis.
+
+   Voreingestellt ist die Finger-Fassung: Wo ein Browser `hover` nicht
+   beantwortet, steht lieber „fotografieren" als eine Anleitung zum Ziehen,
+   die dort niemand ausführen kann. */
+.wenn-zeiger { display: none; }
+@media (hover: hover) {
+  .wenn-finger { display: none; }
+  .wenn-zeiger { display: block; }
+}
+
 /* Sammlung: Ansichts-Umschalter Liste/Raster */
 .viewtoggle {
   flex: none; display: inline-flex; align-items: center; gap: 7px;
@@ -1547,20 +1585,221 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   width: 100%; max-height: 92vh; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-/* Im Popup wie im Raster: Kopf-Mengensteuerung aus, „Anzahl"-Zeile an –
-   so bleibt oben rechts Platz für den Schließen-Knopf. */
-.card-modal .modal-inner .card-head { padding-right: 36px; }
-.card-modal .modal-inner .card-head > .qty { display: none; }
 .card-modal .modal-inner .qty-edit {
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px; margin-bottom: 12px; padding-bottom: 12px;
   border-bottom: 1.5px dashed var(--line);
 }
+
+/* ── Der Auftritt ───────────────────────────────────────────────────────
+   Die Fenster erschienen schlagartig. Das war der größte Teil ihres alten
+   Eindrucks: In der App bewegt sich sonst alles – der Startbildschirm baut
+   sich auf, die Ladeanzeige hüpft –, nur das meistgeöffnete Fenster sprang
+   herein. */
+.card-modal-overlay { animation: bf-schleier .18s ease-out; }
+.card-modal-overlay > .card-modal { animation: bf-fenster-auf .2s cubic-bezier(.2, .9, .3, 1.2); }
+@keyframes bf-schleier { from { opacity: 0; } }
+@keyframes bf-fenster-auf {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-modal-overlay, .card-modal-overlay > .card-modal { animation: none; }
+}
+
+/* Schließen ohne Kasten. Umrandet war er das Kräftigste im ganzen Fenster –
+   ausgerechnet für die Nebensache. Über dem Bild braucht er trotzdem eine
+   eigene Fläche, sonst verschwindet er auf hellen Motiven. */
 .card-modal-close {
-  position: absolute; top: 8px; right: 8px; z-index: 3;
-  width: 34px; height: 34px; border-radius: 10px;
-  border: 2px solid var(--ink); background: var(--surface); color: var(--ink);
-  font-weight: 900; font-size: 15px; cursor: pointer; line-height: 1;
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .92);
+  color: var(--ink); box-shadow: 0 2px 6px rgba(29, 29, 27, .18);
+  font-weight: 800; font-size: 15px; cursor: pointer; line-height: 1;
+  transition: background .15s;
+}
+.card-modal-close:hover { background: #fff; }
+
+/* ── Das Bild über die ganze Breite ─────────────────────────────────────
+   Es war eine Briefmarke neben dem Namen. Jetzt macht das Fenster damit
+   auf: `contain`, damit nichts verzerrt oder beschnitten wird – breite
+   Setbilder füllen die Kante, hohe Figuren stehen mittig. */
+.card-modal.steckbrief .modal-inner { padding: 0; overflow-x: hidden; }
+.card-modal.steckbrief .modal-inner .card-head {
+  display: block; padding: 0;
+}
+/* **Weiß, nicht der Platzhalter-Ton.** Fast alle Katalogbilder kommen mit
+   weißem Grund; auf hellgrau bekam jedes Bild einen sichtbaren Kasten.
+   Bewusst fest und nicht aus dem Design: In den dunklen Designs sähe ein
+   dunkler Grund hinter einem weißen Bild genauso aus wie vorher. */
+.sb-buehne {
+  position: relative;
+  height: 210px; background: #FFFFFF;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+}
+.sb-buehne .card-img-wrap { width: 100%; height: 100%; }
+.sb-buehne .card-img {
+  width: 100%; height: 100%; object-fit: contain; padding: 10px;
+  border: 0; border-radius: 0; background: transparent;
+}
+.sb-buehne .img-reload-btn { top: auto; bottom: 10px; right: 10px; }
+
+
+.card-modal.steckbrief .modal-inner .card-title { padding: 12px 14px 0; }
+/* **Nur wo die Kachel steht.** Sie zeigt „Gebraucht · Ø 773,84 €" – den
+   Zustand sagt schon der Schalter, den Preis die große Zahl. Ohne Kachel
+   (kein Händlerkonto) ist diese Zeile die einzige Preisangabe und bleibt. */
+.card-modal.steckbrief .card-head:has(.sb-kacheln) [data-sub] { display: none; }
+.card-modal.steckbrief .modal-inner .card-title strong { font-size: 19px; }
+
+/* ── Wert und Kaufpreis ─────────────────────────────────────────────────
+   Die Zahl, wegen der das Fenster aufgeht, war eine Zeile unter vier
+   gleich lauten. */
+/* ── Drei Kacheln: Bezahlt, Wert, Gewinn ────────────────────────────────
+   Die Zahlen, wegen derer das Fenster aufgeht. Sie standen als Zeilen
+   zwischen „Anzahl" und „Zustand", gleich laut wie die Bedienung.
+
+   `auto-fit` statt drei festen Spalten: Ohne Kaufpreis oder ohne
+   Marktpreis liefert `profitLine()` nichts, dann rückt die eine Kachel
+   auf die volle Breite. */
+.sb-kacheln {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 1px; margin: 12px 14px 0;
+  background: var(--line); border: 1px solid var(--line);
+  border-radius: 14px; overflow: hidden;
+}
+/* Der Behälter trägt nur die Verdrahtung – im Raster stehen die Kacheln. */
+.sb-profit { display: contents; }
+.sb-kachel {
+  position: relative; background: var(--field);
+  padding: 9px 10px 10px; text-align: center; min-width: 0;
+}
+/* Die zwei kleinen Befehle stehen **in** der Aufschrift, nicht darüber:
+   Als schwebende Ecke oben rechts lagen sie auf dem Wort „Bezahlt". */
+.sb-kachel-label {
+  display: flex; align-items: center; justify-content: center; gap: 1px;
+  font-size: .64rem; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.sb-kachel-zahl {
+  display: block; margin-top: 3px; font-size: 17px; font-weight: 900;
+  white-space: nowrap;
+}
+.sb-kachel-zahl.profit-pos { color: var(--green); }
+.sb-kachel-zahl.profit-neg { color: var(--red); }
+
+/* Die zwei seltenen Befehle sitzen klein in der Ecke ihrer Kachel, statt
+   so laut zu sein wie die Zahl, um die es geht. */
+.sb-mini {
+  flex: none; width: 20px; height: 20px; border: 0; border-radius: 6px; padding: 0;
+  background: transparent; color: var(--muted); cursor: pointer;
+  font-size: 11px; font-weight: 800; line-height: 1;
+}
+.sb-mini:hover { background: var(--track); color: var(--ink); }
+.sb-kachel-label .kauf-plus {
+  margin: 0; width: 20px; height: 20px; border: 0; border-radius: 6px;
+  background: transparent; font-size: 12px;
+}
+
+/* Das Feld sieht aus wie die Zahl daneben, bis man hineingeht. Der Stift
+   an der Kachel ist die sichtbare Einladung. */
+.sb-geld { display: inline-flex; align-items: baseline; justify-content: center; }
+.sb-geld .paid-input {
+  flex: none; border: 1.5px solid transparent; border-radius: 8px;
+  background: transparent; width: 4.6em; text-align: right;
+  padding: 0 2px; font: inherit; font-weight: 900; color: var(--ink);
+  transition: border-color .15s, background .15s;
+}
+.sb-geld .paid-input:hover { border-color: var(--line); }
+.sb-geld .paid-input:focus {
+  outline: none; border-color: var(--blue); background: var(--card);
+}
+.sb-geld .paid-suffix { font-weight: 900; }
+/* Der Herkunfts-Marker sagt, *woher* der Kaufpreis kommt (von Hand oder
+   errechnet). Er ist ebenfalls ein Stift – neben dem Bearbeiten-Symbol
+   wären es zwei. Also klein: Auskunft, keine Einladung. */
+.sb-geld [data-paid-src] { font-size: .62em; opacity: .5; margin-left: 3px; }
+
+/* ── Zeitspannen am Verlauf ─────────────────────────────────────────────
+   Gefiltert wird im Browser; die Punkte liegen alle vor. */
+.sb-spannen { display: flex; gap: 4px; margin: 0 0 8px; }
+.sb-spannen button {
+  flex: 1; border: 0; background: var(--track); cursor: pointer;
+  padding: 5px 0; border-radius: 8px;
+  font: inherit; font-size: 11.5px; font-weight: 800; color: var(--muted);
+}
+.sb-spannen button[aria-pressed="true"] {
+  background: var(--yellow); color: var(--ink);
+}
+
+/* ── Zustand als Schiebeschalter ────────────────────────────────────────
+   Zwei umrandete Knöpfe nebeneinander, einer gelb, lasen sich wie zwei
+   Befehle. Es ist aber eine Wahl zwischen zwei Zuständen. */
+.sb-zustand {
+  display: flex; gap: 3px; padding: 3px; justify-self: end;
+  background: var(--track); border-radius: 999px;
+}
+.sb-zustand button {
+  border: 0; background: transparent; cursor: pointer;
+  padding: 7px 10px; border-radius: 999px;
+  font: inherit; font-size: 13.5px; font-weight: 800; color: var(--muted);
+}
+.sb-zustand button.sel {
+  background: var(--yellow); color: var(--ink);
+  box-shadow: 0 1px 3px rgba(29, 29, 27, .2);
+}
+
+/* ── Reiter ─────────────────────────────────────────────────────────────
+   Der Körper liegt auf drei Blättern statt in einer langen Rolle. Die
+   Leiste klebt unter dem Kopf, damit man beim Blättern umschalten kann,
+   ohne erst zurückzurollen. */
+.sb-reiter {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; gap: 4px; padding: 10px 0 0;
+  background: var(--card); border-bottom: 1px solid var(--line);
+}
+.sb-reiter button {
+  flex: 1; border: 0; background: transparent; cursor: pointer;
+  padding: 8px 4px 10px; margin-bottom: -1px;
+  font: inherit; font-size: 13px; font-weight: 800; color: var(--muted);
+  border-bottom: 2.5px solid transparent;
+}
+.sb-reiter button[aria-selected="true"] {
+  color: var(--ink); border-bottom-color: var(--yellow);
+}
+/* **Hier steht bewusst keine `display`-Regel.** Umgeschaltet wird über
+   `hidden`; eine eigene Regel würde es überstimmen, und die Blätter lägen
+   stumm übereinander. */
+.sb-blatt { padding-top: 4px; }
+
+/* Der Auffrischen-Knopf saß in der Überschrift „Marktpreise". Die gibt es
+   auf dem Preis-Blatt nicht mehr – der Reiter sagt es schon. */
+.sb-preisblatt { position: relative; padding-top: 6px; }
+.sb-preisblatt > .icon-btn { position: absolute; top: 0; right: 0; z-index: 1; }
+
+/* ── Abschnitte als Flächen ─────────────────────────────────────────────
+   Die Überschrift bleibt; neu ist, dass der Abschnitt darunter eine eigene
+   Fläche bekommt, statt nur von einer Haarlinie angekündigt zu werden. */
+.card-modal.steckbrief .card-details { padding: 0 14px 14px; }
+.card-modal.steckbrief .sb-teil { margin-top: 18px; }
+.card-modal.steckbrief .sb-titel { border-bottom: 0; padding: 0 2px 4px; }
+.card-modal.steckbrief .sb-blatt > .price-result,
+.card-modal.steckbrief .sb-preisblatt > .price-result,
+.card-modal.steckbrief .sb-blatt > .share-toggle,
+.card-modal.steckbrief .sb-blatt > textarea,
+.card-modal.steckbrief .sb-teil > .price-result,
+.card-modal.steckbrief .sb-teil > .detail-row,
+.card-modal.steckbrief .sb-teil > .share-toggle,
+.card-modal.steckbrief .sb-teil > textarea,
+.card-modal.steckbrief .sb-teil > .set-figs:not(:empty) {
+  background: var(--field); border: 1px solid var(--line);
+  border-radius: 14px; padding: 10px 12px;
+}
+.card-modal.steckbrief .sb-teil > textarea { width: 100%; }
+.card-modal.steckbrief .sb-teil > .detail-row + .detail-row { margin-top: 8px; }
+.card-modal.steckbrief .meta {
+  text-align: center; margin-top: 16px; padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 
 /* ======================================================================
@@ -1892,9 +2131,12 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   box-shadow: 0 4px 14px rgba(87, 199, 251, .22),
               inset 0 1px 0 rgba(255, 255, 255, .35);
 }
-[data-theme="nova"] .brick-studs i {
-  background: var(--yellow); border-color: var(--yellow-dark);
-}
+/* **Die Farben bleiben, nur die Kontur folgt dem Design.** Bis 23.09.2026
+   färbte Nova die Noppen gelb, damit sie zum gelben Knopf passen – das
+   ergab Sinn, solange sie die Fortsetzung des Steins waren. Vier bunte
+   Noppen sind aber das Zeichen der App, dasselbe wie im Logo; einfarbig
+   wären sie hier wieder nur ein Dach. */
+[data-theme="nova"] .brick-studs i { border-color: var(--yellow-dark); }
 /* Der Untertitel steht auf hellem Grund – die Standard-Deckkraft wäre dort
    zu blass zum Lesen. */
 [data-theme="nova"] .brick-button small { opacity: .72; }
@@ -1987,7 +2229,36 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kauf-weg:hover { color: var(--red); }
 
 /* ---------- App-Dialog (statt prompt) ---------- */
-#app-dialog .modal-inner { max-width: 420px; }
+/* **Die Breite gehört ans Fenster, nicht an seinen Inhalt.** Vorher war
+   nur der weiße Kasten auf 420 px begrenzt, der Rahmen darum blieb 640 px
+   breit: Der Dialog stand dadurch links statt mittig, und der
+   Schließen-Knopf – der am Rahmen hängt – schwebte rechts **neben** dem
+   Kasten in der Luft. */
+#app-dialog .card-modal { max-width: 420px; }
+
+/* Ein Dialog fragt etwas – er soll ruhig aussehen, nicht wie ein
+   Formular aus dem Baukasten. Dieselbe Sprache wie im Steckbrief:
+   weiche Konturen, eine Fläche, Abstand zum Rand. */
+#app-dialog .modal-inner { padding: 18px 16px 16px; }
+#app-dialog h3 { font-size: 17px; }
+#app-dialog .search-hint { margin: 0 0 12px; line-height: 1.45; }
+#app-dialog label {
+  display: block; margin: 12px 0 4px;
+  font-size: .82rem; font-weight: 700; color: var(--muted);
+}
+#app-dialog input, #app-dialog select {
+  width: 100%; border: 1.5px solid var(--line); border-radius: 12px;
+  background: var(--field); padding: 11px 12px; font: inherit;
+}
+#app-dialog input:focus, #app-dialog select:focus {
+  outline: none; border-color: var(--blue); background: var(--card);
+}
+#app-dialog .feld-fehlt { border-color: var(--red); }
+#app-dialog .btn-grid { margin-top: 18px; gap: 8px; }
+#app-dialog .mini-btn {
+  flex: 1; min-height: 44px; border-width: 1.5px; border-radius: 12px;
+  font-size: 14.5px;
+}
 #app-dialog label { margin-top: 10px; }
 #app-dialog input { width: 100%; }
 #app-dialog .btn-grid { margin-top: 14px; }
@@ -2321,4 +2592,59 @@ html.ohne-sticky .stats-side { position: static !important; }
 html.ohne-blur * {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+}
+
+/* Die Notiz stand auf dem Exemplar-Blatt mit drei Zeilen da und schnitt den
+   letzten Satz ab. Auf einem eigenen Blatt ist Platz. */
+.card-modal.steckbrief .sb-blatt textarea[data-notes] { min-height: 108px; }
+
+/* **Ein Bedienteil, keine drei Kästen.** Im Raster steht die Menge allein
+   auf einer Karte und darf laut sein; im Popup steht sie in einer Zeile
+   neben „Zustand" und „Notizen" und war dort das Kräftigste im Fenster –
+   ein rot umrandeter Papierkorb, eine Zahl, ein gelb umrandetes Plus. */
+.card-modal.steckbrief .card-details .qty {
+  /* `justify-self`, weil die Zeile ein Raster ist: Ohne das dehnt sich die
+     Pille über die ganze zweite Spalte, und die Knöpfe stehen weit
+     auseinander mit einer Leerfläche dazwischen. */
+  justify-self: end;
+  display: inline-flex; align-items: center; gap: 0; margin: 0;
+  background: var(--card); border: 1.5px solid var(--line);
+  border-radius: 999px; padding: 2px; overflow: hidden;
+}
+.card-modal.steckbrief .card-details .qty button {
+  width: 32px; height: 30px; min-height: 0; padding: 0;
+  border: 0; border-radius: 999px; background: transparent;
+  font-size: 15px; font-weight: 900;
+}
+.card-modal.steckbrief .card-details .qty button[data-qty="1"] { background: var(--yellow); }
+.card-modal.steckbrief .card-details .qty button[data-qty="1"]:hover { background: var(--yellow-dark); }
+.card-modal.steckbrief .card-details .qty .qty-del { color: var(--red); }
+.card-modal.steckbrief .card-details .qty .qty-del:hover { background: var(--track); }
+.card-modal.steckbrief .card-details .qty > span {
+  min-width: 26px; text-align: center; font-weight: 800; font-size: 14px;
+}
+
+/* ── Ablesen im Preisverlauf ────────────────────────────────────────────
+   Ein Fadenkreuz statt eines Tooltips am Punkt: Auf dem Telefon liegen die
+   Punkte dicht beieinander, und der Finger verdeckt genau den, den man
+   treffen will. */
+.history-svg { touch-action: pan-y; cursor: crosshair; }
+.hist-pick-line {
+  stroke: var(--chart-pick); stroke-width: 1.5; stroke-dasharray: 3 3;
+}
+.hist-pick-dot { stroke: var(--chart-bg); stroke-width: 2; }
+/* SVG kennt `hidden` nicht von sich aus – ohne diese Regel bliebe das
+   Fadenkreuz sichtbar, sobald es einmal gezeichnet wurde. */
+.history-svg [hidden] { display: none; }
+
+/* Das Ablesefeld steht **über** dem Diagramm, nicht daneben: Daneben wäre
+   auf 375 px kein Platz, und unter dem Finger läge es im Schatten. */
+.hist-tip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+  margin: 6px 0 0; padding: 6px 10px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  font-size: 12.5px; font-weight: 700;
+}
+.hist-tip-tag {
+  font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums;
 }

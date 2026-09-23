@@ -1639,9 +1639,23 @@ function profitLine(it) {
   const cls = diff >= 0 ? "profit-pos" : "profit-neg";
   // **Ohne das Wort „Wert".** Es steht seit 2.70.0 als Beschriftung links
   // daneben; hier noch einmal hieße „Wert  Wert 11,31 €".
-  return esc(fmtEur(value)) + " · "
-    + `<span class="${cls}">`
-    + `${diff >= 0 ? "+" : "−"}${fmtEur(Math.abs(diff))}</span>`;
+  // **Zwei Kacheln, kein Satz.** Bis 2.87.1 stand hier „773,84 € · +500,84 €"
+  // in einer Zeile zwischen vier gleich lauten Zeilen. Seit dem Umbau auf
+  // das große Bild stehen Wert und Gewinn als eigene Kacheln neben dem
+  // Kaufpreis – die drei Zahlen, wegen derer man das Fenster öffnet.
+  //
+  // Die Kacheln entstehen **hier** und nicht im Aufbau, weil die
+  // Verdrahtung an drei Stellen `[data-profit]` neu befüllt, wenn sich
+  // Kaufpreis oder Menge ändern. Dieses Element steht auf `display:
+  // contents`, damit die zwei Kacheln im Raster daneben landen.
+  return `<div class="sb-kachel">
+      <span class="sb-kachel-label">${esc(tr("Wert"))}</span>
+      <span class="sb-kachel-zahl">${esc(fmtEur(value))}</span>
+    </div>
+    <div class="sb-kachel">
+      <span class="sb-kachel-label">${esc(tr("Gewinn"))}</span>
+      <span class="sb-kachel-zahl ${cls}">${diff >= 0 ? "+" : "−"}${esc(fmtEur(Math.abs(diff)))}</span>
+    </div>`;
 }
 
 const TRASH_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" `
@@ -1661,6 +1675,21 @@ const TRASH_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" `
    Teilen und unbekannten Kürzeln – 159 der 910 – weiß die App es nicht;
    dort bleibt der Stift die einzige Möglichkeit, und ohne Thema steht dort
    eine Einladung statt einer leeren Zeile. */
+/* Das Thema im Kopf – und der Weg, es zu setzen, gleich daneben.
+
+   **Kein Stift, wo das Thema feststeht.** `sw1213` ist Star Wars, da gibt
+   es nichts zu entscheiden; seit 23.09.2026 zählen auch Sets und Teile aus
+   dem Katalog dazu (`theme_auto`), denn deren Thema kommt automatisch über
+   BrickLink. Vorher stand an jedem Set ein Stift für etwas, das schon
+   richtig war.
+
+   Übrig bleiben selbst angelegte Einträge (`fig-`, `manuell-`) – 159 von
+   910 (29.08.2026). Ohne den Stift stünden die für immer ohne Thema.
+
+   **Das Feld steht hier und nicht mehr unter „Einordnung".** Dort lag es
+   seit dem Umbau auf einem anderen Blatt: Der Stift blendete die Zeile aus
+   und ein Feld ein, das man nicht sehen konnte – es sah aus, als wäre das
+   Thema verschwunden. */
 function themaKopfzeile(it) {
   const fest = !!it.theme_auto;
   if (fest && !it.theme) return "";
@@ -1668,9 +1697,16 @@ function themaKopfzeile(it) {
   const stift = fest ? "" : `<button class="thema-stift" data-thema-aendern
       title="${esc(tr("Thema ändern"))}"
       aria-label="${esc(tr("Thema ändern"))}">✏️</button>`;
+  const feld = fest ? "" : `
+    <div class="detail-row sb-thema-feld" data-thema-feld hidden>
+      <input data-theme list="themen-liste" class="fix-input"
+        placeholder="${esc(tr("z. B. Star Wars – leer = Ohne Thema"))}"
+        value="${esc(it.theme || "")}" maxlength="60">
+      <button class="mini-btn add" data-theme-save>${esc(tr("Setzen"))}</button>
+    </div>`;
   return `<div class="sub sub-thema${it.theme ? "" : " ohne"}" data-thema-fest>
       <span class="thema-wert" data-thema-wert>${wert}</span>${stift}
-    </div>`;
+    </div>${feld}`;
 }
 
 function collSubId(it) {
@@ -3784,6 +3820,45 @@ function steckbriefTeil(titel, inhalt, extra = "") {
         </section>`;
 }
 
+/* Die Kacheln im Kopf des Popups: Kaufpreis, Wert, Gewinn.
+
+   **Warum sie nicht in der Zeilenliste stehen.** Der Steckbrief hatte sie
+   als Zeilen unter „Mein Exemplar" – Beschriftung links, Inhalt rechts,
+   gleich laut wie „Anzahl" und „Zustand". Wonach man das Fenster öffnet,
+   ist aber fast immer eine dieser drei Zahlen, und man musste dafür an
+   Bild und Namen vorbeiblättern.
+
+   Nur bei Händlern: Ohne Kaufpreis gibt es weder Gewinn noch etwas zu
+   vergleichen, und der Durchschnittspreis steht ohnehin in der Unterzeile
+   (`collSubMeta`), die dann auch sichtbar bleibt.
+
+   Wert und Gewinn kommen aus `profitLine()`, weil die Verdrahtung an drei
+   Stellen `[data-profit]` neu befüllt, sobald sich Kaufpreis oder Menge
+   ändern. Fehlt eine der beiden Angaben, liefert sie "" – dann steht die
+   Kaufpreis-Kachel allein, und das Raster rückt nach. */
+function steckbriefKopfzahlen(item) {
+  if (!(state.user && state.user.is_dealer)) return "";
+  return `
+        <div class="paid-block sb-kacheln">
+          <div class="sb-kachel">
+            <span class="sb-kachel-label">${esc(tr("Bezahlt"))}
+              <button class="sb-mini" data-paid-edit
+                title="${esc(tr("Kaufpreis bearbeiten"))}"
+                aria-label="${esc(tr("Kaufpreis bearbeiten"))}">✎</button>
+              <button class="sb-mini kauf-plus" data-kauf-neu
+                title="Weiterer Kauf" aria-label="Weiterer Kauf">＋</button>
+            </span>
+            <span class="sb-kachel-zahl sb-geld">
+              <input data-paid class="paid-input" inputmode="decimal"
+                placeholder="0,00" value="${fmtPaidInput(item.paid_price)}">
+              <span class="paid-suffix" data-cur>${esc(curSymbol())}<span data-paid-src>${item.paid_price != null ? paidSrcIcon(item) : ""}</span></span>
+            </span>
+          </div>
+          <span class="sb-profit" data-profit>${profitLine(item)}</span>
+        </div>
+        <div class="kaufbuch" data-kaufbuch hidden></div>`;
+}
+
 function collCardDetails(it) {
   const needsBlNo = /^(fig-|manuell-|custom-)/.test(it.item_id);
 
@@ -3793,6 +3868,9 @@ function collCardDetails(it) {
   // fünf Zeilen Höhe (29.08.2026).
   //
   // Nur die Notizen bleiben gestapelt: Ein Textfeld braucht die Breite.
+  // **Bezahlt und Wert stehen oben in den Kacheln**, seit das Popup mit
+  // dem Bild aufmacht – hier stünden sie doppelt. Anzahl und Zustand
+  // bleiben Zeilen: Sie sind Bedienung, keine Kennzahl.
   const meins = `
         <div class="sb-zeile">
           <span class="sb-label">${esc(tr("Anzahl"))}</span>
@@ -3804,48 +3882,23 @@ function collCardDetails(it) {
         </div>
         <div class="sb-zeile">
           <span class="sb-label">${esc(tr("Zustand"))}</span>
-          <div class="detail-row">
-            <button class="mini-btn cond ${it.condition === "used" ? "sel" : ""}" data-cond="used">Gebraucht</button>
-            <button class="mini-btn cond ${it.condition === "new" ? "sel" : ""}" data-cond="new">Neu</button>
+          <div class="sb-zustand" role="group">
+            <button class="cond ${it.condition === "used" ? "sel" : ""}" data-cond="used">${esc(tr("Gebraucht"))}</button>
+            <button class="cond ${it.condition === "new" ? "sel" : ""}" data-cond="new">${esc(tr("Neu"))}</button>
           </div>
         </div>
-        ${state.user && state.user.is_dealer ? `
-        <div class="paid-block">
-          <div class="sb-zeile paid-row">
-            <span class="sb-label">${esc(tr("Bezahlt"))}</span>
-            <div class="detail-row">
-              <input data-paid class="paid-input" inputmode="decimal"
-                placeholder="0,00" value="${fmtPaidInput(it.paid_price)}">
-              <span class="paid-suffix" data-cur>${esc(curSymbol())} <span data-paid-src>${it.paid_price != null ? paidSrcIcon(it) : ""}</span></span>
-              <button class="kauf-plus" data-kauf-neu
-                title="Weiterer Kauf">＋</button>
-            </div>
-          </div>
-          <div class="kaufbuch" data-kaufbuch hidden></div>
-          <div class="sb-zeile">
-            <span class="sb-label">${esc(tr("Wert"))}</span>
-            <div class="sub profit-line" data-profit>${profitLine(it)}</div>
-          </div>
-        </div>` : ""}
         ${state.hubConnected ? `
         <label class="share-toggle">
           <input type="checkbox" data-share ${it.shared ? "checked" : ""}>
           🤝 In der Tauschbörse anbieten
-        </label>` : ""}`;
-
-  // **Das Thema steht oben im Kopf, nicht hier.** Es gehört zur Figur,
-  // nicht zu dem, was man mit ihr macht – und seit der Katalogliste folgt
-  // es bei den allermeisten aus der Nummer. Das Eingabefeld bleibt hier
-  // unten, es taucht ja nur auf, wenn wirklich etwas zu setzen ist.
-  const einordnung = `
-        <div class="detail-row" data-thema-feld hidden>
-          <input data-theme list="themen-liste" class="fix-input"
-            placeholder="${esc(tr("z. B. Star Wars – leer = Ohne Thema"))}"
-            value="${esc(it.theme || "")}" maxlength="60">
-          <button class="mini-btn add" data-theme-save>${esc(tr("Setzen"))}</button>
-        </div>
+        </label>` : ""}
         <label>Notizen <span class="notes-status" data-notes-status aria-live="polite"></span></label>
-        <textarea data-notes placeholder="z. B. Zustand, Herkunft, Set …">${esc(it.notes)}</textarea>
+        <textarea data-notes placeholder="z. B. Zustand, Herkunft, Set …">${esc(it.notes)}</textarea>`;
+
+  // **Das Thema steht oben im Kopf und wird nicht mehr gesetzt** – es kommt
+  // aus dem Katalog. Hier bleibt, was man wirklich einmal richtigstellt:
+  // die BrickLink-Nummer bei selbst angelegten Artikeln.
+  const einordnung = `
         ${needsBlNo && state.bricklinkLookup ? `
         <label>BrickLink-Nr. setzen (für Preise & exakte Variante)</label>
         <div class="detail-row">
@@ -3879,19 +3932,54 @@ function collCardDetails(it) {
         <div class="price-result" data-price-out></div>
         <div class="price-history" data-history></div>`;
   const hatPreise = state.bricklinkPrices && !needsBlNo;
+  // **Ohne Überschrift.** „MARKTPREISE" über einem Blatt, dessen Reiter
+  // „Preise" heißt, sagt dasselbe zweimal. Der Auffrischen-Knopf, der
+  // vorher in dieser Überschrift saß, steht jetzt oben rechts im Blatt.
+  // Ohne Zugang bleibt das Blatt leer – dann darf es auch keinen Reiter
+  // geben. Die Felder stehen trotzdem im Dokument (siehe unten), sonst
+  // schriebe die Verdrahtung ins Leere.
   const preise = hatPreise
-    ? steckbriefTeil("Marktpreise", preisfelder,
-        `<button class="icon-btn" data-price
-           title="${esc(tr("Preise jetzt aktualisieren"))}"
-           aria-label="${esc(tr("Preise jetzt aktualisieren"))}">↻</button>`)
-    : preisfelder;
+    ? `<div class="sb-preisblatt">
+        <button class="icon-btn" data-price
+          title="${esc(tr("Preise jetzt aktualisieren"))}"
+          aria-label="${esc(tr("Preise jetzt aktualisieren"))}">↻</button>
+        ${preisfelder}
+      </div>`
+    : "";
+
+  // **Drei Blätter statt einer langen Rolle.**
+  //
+  // Beim Umbau am 29.08.2026 war Zuklappen bewusst verworfen worden, weil
+  // es „bei jedem Öffnen einen Tipper kostet". Das gilt weiter – deshalb
+  // liegen die Preise auf dem **ersten** Blatt: Wonach man fast immer
+  // sucht, kostet keinen Tipper. Was seltener gebraucht wird, liegt
+  // daneben, statt das Fenster auf über tausend Bildpunkte zu strecken.
+  //
+  // Ein Blatt ohne Inhalt bekommt keinen Reiter – dieselbe Regel wie bei
+  // den Abschnitten. Bleibt nur eines übrig, entfällt die Reiterleiste
+  // ganz: Ein einzelner Reiter ist keine Wahl, nur eine Überschrift.
+  const blaetter = [
+    ["exemplar", tr("Exemplar"), steckbriefTeil("Mein Exemplar", meins)],
+    ["preise", tr("Preise"), preise],
+    ["mehr", tr("Mehr"), steckbriefTeil("Nachschlagen", nachschlagen)
+      + steckbriefTeil("Einordnung", einordnung)],
+  ].filter(([, , inhalt]) => inhalt.trim());
+
+  const reiter = blaetter.length > 1 ? `
+        <div class="sb-reiter" role="tablist">
+          ${blaetter.map(([schluessel, name], i) => `
+          <button role="tab" data-blatt="${schluessel}"
+            aria-selected="${i === 0}">${esc(name)}</button>`).join("")}
+        </div>` : "";
 
   return `
       <div class="card-details" hidden>
-        ${steckbriefTeil("Mein Exemplar", meins)}
-        ${steckbriefTeil("Einordnung", einordnung)}
-        ${steckbriefTeil("Nachschlagen", nachschlagen)}
-        ${preise}
+        ${reiter}
+        ${blaetter.map(([schluessel, , inhalt], i) => `
+        <div class="sb-blatt" data-blatt-inhalt="${schluessel}"${i ? " hidden" : ""}>
+          ${inhalt}
+        </div>`).join("")}
+        ${hatPreise ? "" : `<div hidden>${preisfelder}</div>`}
         <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString(dateLocale())}</div>
       </div>`;
 }
@@ -4850,15 +4938,16 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
   overlay.className = "card-modal-overlay";
   overlay.id = "card-modal";
   overlay.innerHTML = `
-    <div class="card-modal">
+    <div class="card-modal steckbrief">
       <button class="card-modal-close" aria-label="Schließen">✕</button>
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-head">
-          <div class="card-img-wrap">
-            <img class="card-img" src="${imgSrc(item.img_url, true)}" data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
-            ${state.bricklinkLookup && !/^(fig-|manuell-|custom-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
+          <div class="sb-buehne">
+            <div class="card-img-wrap">
+              <img class="card-img sb-bild" src="${imgSrc(item.img_url)}" data-gid="${esc(item.item_id)}" data-gtype="${esc(item.item_type || "minifig")}" alt="">
+              ${state.bricklinkLookup && !/^(fig-|manuell-|custom-)/.test(item.item_id) ? `<button class="img-reload-btn" data-img-reload title="${item.img_url ? "Bild erneuern" : "Bild nachladen"}" aria-label="Bild erneuern">↻</button>` : ""}
+            </div>
           </div>
-          <span class="qty-badge" data-qty-val>${item.quantity}</span>
           <div class="card-title">
             <strong>${esc(item.name)}${
               jedipediaLink(item.item_id, item.name)}</strong>
@@ -4868,11 +4957,7 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
             ${setFigsText(item) ? `<div class="sub sub-figs">${esc(setFigsText(item))}</div>` : ""}
             ${(item.in_sets || item.item_type === "minifig") ? `<div class="sub in-sets" data-fig-sets hidden></div>` : ""}
           </div>
-          <div class="qty">
-            <button data-qty="-1" class="${item.quantity <= 1 ? "qty-del" : ""}" aria-label="${esc(item.quantity <= 1 ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"))}">${item.quantity <= 1 ? TRASH_SVG : "−"}</button>
-            <span data-qty-val>${item.quantity}</span>
-            <button data-qty="1" aria-label="Anzahl erhöhen">＋</button>
-          </div>
+          ${steckbriefKopfzahlen(item)}
         </div>
         ${collCardDetails(item)}
       </div>
@@ -5230,7 +5315,26 @@ function kaufStandUebernehmen(card, item, r) {
 function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
   const details = card.querySelector(".card-details");
 
-  details.querySelectorAll("[data-cond]").forEach((btn) => {
+  // Die Reiter. Umgeschaltet wird über `hidden` – **und nur darüber**:
+  // Eine eigene `display`-Regel auf `.sb-blatt` würde `hidden` überstimmen
+  // und die Blätter stumm übereinanderlegen.
+  details.querySelectorAll("[data-blatt]").forEach((reiter) => {
+    reiter.addEventListener("click", () => {
+      details.querySelectorAll("[data-blatt]").forEach((r) =>
+        r.setAttribute("aria-selected", String(r === reiter)));
+      details.querySelectorAll("[data-blatt-inhalt]").forEach((blatt) => {
+        blatt.hidden = blatt.dataset.blattInhalt !== reiter.dataset.blatt;
+      });
+      // Der Kopf bleibt stehen, der Körper fängt oben an – sonst landet
+      // man auf dem neuen Blatt mitten im Text.
+      const rolle = card.closest(".modal-inner");
+      if (rolle) rolle.scrollTop = Math.min(rolle.scrollTop, details.offsetTop);
+    });
+  });
+
+  // Über `card`, nicht über `details`: Der Zustandsschalter steht seit dem
+  // Umbau im Kopf des Popups.
+  card.querySelectorAll("[data-cond]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const cond = btn.dataset.cond;
       if (cond === item.condition) return;
@@ -5254,6 +5358,8 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     });
   });
 
+  // Die Mengensteuerung liegt im Kopf über dem Bild; im Detailblock
+  // steht keine mehr. `wireQty` deckt beides ab, es sucht nur.
   wireQty(details);
 
   // Kaufpreis speichert sich beim Verlassen des Feldes (oder mit Enter),
@@ -5283,6 +5389,13 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
         card.querySelector("[data-profit]").innerHTML = profitLine(item);
       } catch (e) { toast(e.message); }
     };
+    // Das Symbol an der Kachel ist die sichtbare Einladung – das Feld
+    // selbst sieht aus wie Text, damit die Kachel ruhig bleibt.
+    const stift = card.querySelector("[data-paid-edit]");
+    if (stift) stift.addEventListener("click", () => {
+      paidEl.focus();
+      paidEl.select();
+    });
     paidEl.addEventListener("blur", savePaid);
     paidEl.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") { ev.preventDefault(); paidEl.blur(); }
@@ -5430,10 +5543,7 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
     themaEl.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") { ev.preventDefault(); setzen(); }
     });
-  }
-
-  // Notizen speichern sich von selbst – kurz nach dem Tippen und beim
-  // Verlassen des Feldes; kein eigener Knopf mehr nötig.
+  }  // Verlassen des Feldes; kein eigener Knopf mehr nötig.
   const notesEl = card.querySelector("[data-notes]");
   if (notesEl) {
     const status = card.querySelector("[data-notes-status]");
@@ -5539,17 +5649,146 @@ async function loadEntryPrice(card, item, refresh) {
   }
 }
 
+/* Zeitspannen für den Verlauf. 0 heißt „alles, was aufgezeichnet ist".
+
+   **Kostet keine einzige BrickLink-Abfrage.** Die Punkte liegen längst
+   vollständig vor – `/history` liefert bis zu 400 Stück mit Zeitstempel –,
+   gefiltert wird im Browser. Deshalb gingen die Spannen jetzt rein, wo im
+   Entwurf noch stand, sie bräuchten Daten, die es nicht gibt. */
+const VERLAUF_SPANNEN = [["1M", 30], ["3M", 90], ["1J", 365], ["Alles", 0]];
+
 async function loadPriceHistory(card, item) {
   const box = card.querySelector("[data-history]");
   if (!box) return;
   try {
     const data = await api(`/history/${encodeURIComponent(item.item_type)}/${encodeURIComponent(item.item_id)}`);
     const pts = (data.points || []).filter((p) => p.price_new || p.price_used);
-    box.innerHTML = pts.length >= 2 ? historyChart(pts)
-      : (pts.length === 1
-         ? `<div class="price-note">Preisverlauf: Aufzeichnung gestartet – Chart erscheint, sobald weitere Datenpunkte vorliegen.</div>`
-         : "");
+    if (pts.length >= 2) { zeichneVerlauf(box, pts, 0); return; }
+    box.innerHTML = pts.length === 1
+      ? `<div class="price-note">Preisverlauf: Aufzeichnung gestartet – Chart erscheint, sobald weitere Datenpunkte vorliegen.</div>`
+      : "";
   } catch (_) { box.innerHTML = ""; }
+}
+
+/* Zeichnet den Verlauf in der gewählten Spanne und die Leiste darüber.
+
+   **Angeboten wird nur, was auch etwas zeigt.** Die App zeichnet erst seit
+   der Erfassung auf; bei einem Stück von letzter Woche hätte „1J" dieselbe
+   Kurve wie „1M" und „3M" – drei Knöpfe, die nichts tun. Eine Spanne mit
+   weniger als zwei Punkten fällt deshalb weg, und bleibt nur eine übrig,
+   entfällt die Leiste ganz.
+
+   Voreinstellung ist „Alles" – das ist genau das Bild, das der Verlauf
+   vorher ohne Leiste zeigte. Wer näher hinsehen will, schaltet um. */
+function zeichneVerlauf(box, pts, tage) {
+  const grenze = (t) => Date.now() / 1000 - t * 86400;
+  const inSpanne = (t) => (t ? pts.filter((p) => p.ts >= grenze(t)) : pts);
+  const moeglich = VERLAUF_SPANNEN.filter(([, t]) => inSpanne(t).length >= 2);
+  const gezeigt = inSpanne(tage);
+  const leiste = moeglich.length > 1 ? `<div class="sb-spannen">${
+    moeglich.map(([name, t]) => `<button data-spanne="${t}"`
+      + ` aria-pressed="${t === tage}">${esc(tr(name))}</button>`).join("")
+  }</div>` : "";
+  const gezeichnet = gezeigt.length >= 2 ? gezeigt : pts;
+  box.innerHTML = leiste + historyChart(gezeichnet);
+  box.querySelectorAll("[data-spanne]").forEach((b) => {
+    b.addEventListener("click", () =>
+      zeichneVerlauf(box, pts, Number(b.dataset.spanne)));
+  });
+  verlaufAblesen(box, gezeichnet);
+}
+
+/* Preis und Datum ablesen, wo der Finger steht.
+
+   **Ein Fadenkreuz, kein Tooltip am Punkt.** Auf dem Telefon liegen die
+   Punkte dicht beieinander und der Finger verdeckt sie; getroffen werden
+   muss deshalb die *Spalte*, nicht der Punkt. Gesucht wird der nächste
+   Zeitpunkt zur Fingerposition – so zeigt auch ein Tippen zwischen zwei
+   Punkten etwas an, statt nichts.
+
+   Gezeigt werden beide Kurven zum selben Datum: „Neu 856,60 € ·
+   Gebraucht 773,84 €". Nur eine von beiden abzulesen hieße, die
+   interessantere Frage offenzulassen.
+
+   Die Umrechnung kommt aus den Attributen, die `historyChart()`
+   mitgibt – nicht aus einer zweiten Rechnung über dieselben Punkte. */
+function verlaufAblesen(box, pts) {
+  const svg = box.querySelector(".history-svg");
+  const tip = box.querySelector("[data-hist-tip]");
+  const pick = svg && svg.querySelector(".hist-pick");
+  if (!svg || !tip || !pick) return;
+  const m = svg.dataset;
+  const [W, H, padX, padT, padB] = ["w", "h", "padx", "padt", "padb"]
+    .map((k) => Number(m[k]));
+  const [t0, t1, lo, hi] = ["t0", "t1", "lo", "hi"].map((k) => Number(m[k]));
+  const xVon = (ts) => padX + ((ts - t0) / Math.max(1, t1 - t0)) * (W - 2 * padX);
+  const yVon = (v) => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
+  const linie = pick.querySelector(".hist-pick-line");
+  const punkte = {
+    price_new: pick.querySelector('[data-pick="price_new"]'),
+    price_used: pick.querySelector('[data-pick="price_used"]'),
+  };
+
+  // **`hidden` ist eine Eigenschaft von HTML-Elementen, nicht von SVG.**
+  // `kreis.hidden = false` setzt dort nur eine wirkungslose JS-Eigenschaft;
+  // das Attribut im Dokument bleibt stehen, und die Regel
+  // `.history-svg [hidden]` hält das Fadenkreuz weiter verborgen. Im
+  // Quelltext sah alles richtig aus – sichtbar wurde es erst im laufenden
+  // Browser. Deshalb hier ausdrücklich über das Attribut.
+  const sichtbar = (el, an) => {
+    if (an) el.removeAttribute("hidden");
+    else el.setAttribute("hidden", "");
+  };
+
+  const zeigen = (ev) => {
+    const kasten = svg.getBoundingClientRect();
+    if (!kasten.width) return;
+    // Zeigerposition in die Koordinaten des Diagramms umrechnen.
+    const sx = (ev.clientX - kasten.left) / kasten.width * W;
+    let naechster = pts[0];
+    pts.forEach((p) => {
+      if (Math.abs(xVon(p.ts) - sx) < Math.abs(xVon(naechster.ts) - sx)) {
+        naechster = p;
+      }
+    });
+    const px = xVon(naechster.ts);
+    linie.setAttribute("x1", px.toFixed(1));
+    linie.setAttribute("x2", px.toFixed(1));
+    ["price_new", "price_used"].forEach((k) => {
+      const wert = naechster[k];
+      punkte[k].setAttribute("cx", px.toFixed(1));
+      punkte[k].setAttribute("cy", wert ? yVon(wert).toFixed(1) : "-99");
+      sichtbar(punkte[k], !!wert);
+    });
+    sichtbar(pick, true);
+    const teile = [];
+    if (naechster.price_new) {
+      teile.push(`<b style="color:var(--chart-new)">${esc(tr("Neu"))}</b> `
+        + esc(fmtEur(naechster.price_new)));
+    }
+    if (naechster.price_used) {
+      teile.push(`<b style="color:var(--chart-used)">${esc(tr("Gebraucht"))}</b> `
+        + esc(fmtEur(naechster.price_used)));
+    }
+    tip.innerHTML = `<span class="hist-tip-tag">${esc(
+      new Date(naechster.ts * 1000).toLocaleDateString(dateLocale(),
+        { day: "2-digit", month: "2-digit", year: "numeric" }))}</span>`
+      + teile.join(" · ");
+    tip.hidden = false;
+  };
+
+  const weg = () => { sichtbar(pick, false); tip.hidden = true; };
+  svg.addEventListener("pointerdown", zeigen);
+  svg.addEventListener("pointermove", (ev) => {
+    // Am Finger nur, solange er aufliegt – sonst spränge das Fadenkreuz
+    // beim bloßen Darüberwischen mit.
+    if (ev.pointerType === "mouse" || ev.buttons) zeigen(ev);
+  });
+  svg.addEventListener("pointerleave", weg);
+  svg.addEventListener("pointercancel", weg);
+  svg.addEventListener("pointerup", (ev) => {
+    if (ev.pointerType !== "mouse") weg();
+  });
 }
 
 function historyChart(pts) {
@@ -5587,8 +5826,16 @@ function historyChart(pts) {
   const uid = "h" + Math.random().toString(36).slice(2, 8);
   const band = (key, farbe) => flaeche(key)
     ? `<polygon points="${flaeche(key)}" fill="url(#${uid}-${key})"/>` : "";
+  // Die Maßstäbe reisen als Attribute mit. Die Verdrahtung für das
+  // Antippen braucht dieselbe Umrechnung; sie ein zweites Mal aus `pts`
+  // herzuleiten hieße, zwei Rechnungen im Gleichschritt zu halten – und
+  // `lo`/`hi` sind hier oben bereits angepasst, falls alle Werte gleich
+  // sind.
+  const masse = `data-w="${w}" data-h="${h}" data-padx="${padX}"`
+    + ` data-padt="${padT}" data-padb="${padB}"`
+    + ` data-t0="${t0}" data-t1="${t1}" data-lo="${lo}" data-hi="${hi}"`;
   return `
-  <svg viewBox="0 0 ${w} ${h}" class="history-svg" role="img" aria-label="${esc(tr("Preisverlauf"))}">
+  <svg viewBox="0 0 ${w} ${h}" class="history-svg" ${masse} role="img" aria-label="${esc(tr("Preisverlauf"))}">
     <defs>
       <linearGradient id="${uid}-price_new" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="var(--chart-new)" stop-opacity=".34"/>
@@ -5609,11 +5856,19 @@ function historyChart(pts) {
     <polyline points="${line("price_used")}" fill="none" stroke="var(--chart-used)"
               stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots("price_new", "var(--chart-new)")}${dots("price_used", "var(--chart-used)")}
+    <g class="hist-pick" hidden>
+      <line class="hist-pick-line" y1="${padT}" y2="${h - padB}"/>
+      <circle class="hist-pick-dot" data-pick="price_new" r="5"
+              fill="var(--chart-new)"/>
+      <circle class="hist-pick-dot" data-pick="price_used" r="5"
+              fill="var(--chart-used)"/>
+    </g>
     <text x="${padX}" y="${h - 6}" class="hist-label">${dFmt(t0)}</text>
     <text x="${w - padX}" y="${h - 6}" text-anchor="end" class="hist-label">${dFmt(t1)}</text>
     <text x="${padX}" y="${padT + 2}" class="hist-label">${fmtEur(hi)}</text>
     <text x="${padX}" y="${h - padB - 4}" class="hist-label">${fmtEur(lo)}</text>
   </svg>
+  <div class="hist-tip" data-hist-tip hidden></div>
   <div class="price-note"><span class="hist-dot" style="background:var(--chart-new)"></span> Neu
     &nbsp;<span class="hist-dot" style="background:var(--chart-used)"></span> Gebraucht
     · eigene Aufzeichnung seit Erfassung</div>`;
@@ -7760,6 +8015,13 @@ function totalChart(pts) {
     <polyline points="${line}" fill="none" stroke="var(--chart-new)"
               stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
     ${pts.map((p) => `<circle cx="${x(p.ts).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3" fill="var(--chart-new)" stroke="var(--chart-bg)" stroke-width="1.6"/>`).join("")}
+    <g class="hist-pick" hidden>
+      <line class="hist-pick-line" y1="${padT}" y2="${h - padB}"/>
+      <circle class="hist-pick-dot" data-pick="price_new" r="5"
+              fill="var(--chart-new)"/>
+      <circle class="hist-pick-dot" data-pick="price_used" r="5"
+              fill="var(--chart-used)"/>
+    </g>
     <text x="${padX}" y="${h - 6}" class="hist-label">${dFmt(t0)}</text>
     <text x="${w - padX}" y="${h - 6}" text-anchor="end" class="hist-label">${dFmt(t1)}</text>
     <text x="${padX}" y="${padT + 2}" class="hist-label">${fmtEur(hi)}</text>

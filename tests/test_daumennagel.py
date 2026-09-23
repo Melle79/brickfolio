@@ -100,10 +100,28 @@ def test_alle_karten_holen_klein():
     **Anfang** der Klassenliste.
     """
     quelle = js()
-    stellen = re.findall(r'<img class="card-img[^"]*" src="\$\{([^}]*)\}', quelle)
+    stellen = re.findall(r'<img class="card-img([^"]*)" src="\$\{([^}]*)\}', quelle)
     assert len(stellen) >= 10, f"zu wenige Kartenbilder gefunden: {len(stellen)}"
-    ohne = [s for s in stellen if "imgSrc(" in s and "true" not in s]
+    ohne = [s for k, s in stellen
+            if "sb-bild" not in k and "imgSrc(" in s and "true" not in s]
     assert not ohne, f"holen noch die volle Fassung: {ohne}"
+
+
+def test_nur_das_eine_bild_im_popup_holt_die_volle_fassung():
+    """**Eine** ausgewiesene Ausnahme, und nur diese.
+
+    Seit dem Umbau (23.09.2026) macht das Detail-Popup mit einem Bild über
+    die volle Breite auf. Ein Daumennagel von 160 px sah dort ausgefranst
+    aus – Sven hat es sofort gesehen. Die Last, gegen die diese Datei
+    wacht, entsteht hier nicht: Es ist ein einziges Bild, und zwar nur,
+    solange das Fenster offen ist – nicht 130 gleichzeitig in einer Liste.
+
+    Die Ausnahme hängt an der Klasse `sb-bild`. Taucht sie ein zweites Mal
+    auf, ist es keine Ausnahme mehr."""
+    quelle = js()
+    hero = re.findall(r'<img class="card-img sb-bild" src="\$\{([^}]*)\}', quelle)
+    assert len(hero) == 1, f"erwartet genau ein Hero-Bild, gefunden: {hero}"
+    assert "true" not in hero[0], "das große Bild holt den Daumennagel"
 
 
 def test_die_grossansicht_nimmt_die_volle_fassung():

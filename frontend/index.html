@@ -248,13 +248,27 @@
     </div>
     <div class="scan-hero">
       <button id="btn-camera" class="brick-button" data-scan-drop>
-        <span class="brick-studs"><i></i><i></i></span>
+        <span class="brick-studs"><i></i><i></i><i></i><i></i></span>
         <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <strong>Figur oder Set fotografieren</strong>
+        <!-- **Zwei Aufschriften, eine je Gerät.** Am Telefon fotografiert
+             man, am Rechner zieht man ein Bild herein oder wählt eine Datei
+             – „fotografieren" war dort seit jeher die falsche Ansage, und
+             der Hinweis darauf stand klein darunter als Fußnote.
+             Umgeschaltet wird über `hover`, dasselbe Signal, das den
+             Ziehen-Hinweis schon vorher am Telefon verborgen hat. -->
+        <strong class="wenn-finger">Figur oder Set fotografieren</strong>
+        <strong class="wenn-zeiger">Bild hierher ziehen oder auswählen</strong>
         <small>Vor neutralem Hintergrund, gut beleuchtet</small>
-        <small class="scan-drop-hint">am Rechner: Bild hierher ziehen oder einfügen (Strg/Cmd+V)</small>
+        <small class="scan-drop-hint">oder mit Strg/Cmd+V aus der Zwischenablage einfügen</small>
       </button>
-      <input id="file-input" type="file" accept="image/*" capture="environment" hidden>
+      <!-- **Ohne `capture`.** Das Attribut erzwang die Kamera: Wer ein Foto
+           schon in der Mediathek hatte, kam nicht daran. Ohne das Attribut
+           fragt das Telefon selbst – Mediathek, Foto aufnehmen, Datei.
+
+           Der Preis ist ein Tipp mehr auf dem Weg zur Kamera. Bewusst so
+           entschieden (23.09.2026): Ein Bild, das man schon hat, war vorher
+           gar nicht scanbar. -->
+      <input id="file-input" type="file" accept="image/*" hidden>
     </div>
 
     <div id="scan-preview" class="scan-preview" hidden>
@@ -1552,7 +1566,7 @@ sudo bash update.sh</pre>
 <!-- Vorschlagsliste für das Thema einer Karte: gefüllt aus den Themen, die in
      der Sammlung schon vorkommen. So tippt niemand „Star wars“ neben
      „Star Wars“. -->
-<datalist id="themen-liste"></datalist>
 
+<datalist id="themen-liste"></datalist>
 </body>
 </html>

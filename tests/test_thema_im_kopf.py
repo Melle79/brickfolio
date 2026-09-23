@@ -71,15 +71,22 @@ def test_ohne_thema_steht_eine_einladung_da():
     assert "if (fest && !it.theme) return \"\";" in f
 
 
-def test_die_zeile_steht_im_kopf_nicht_in_der_einordnung():
+def test_zeile_und_feld_stehen_beide_im_kopf():
+    """Seit dem Umbau auf die Blätter (23.09.2026) gehören sie zusammen.
+
+    Vorher lag das Eingabefeld unter »Einordnung«. Mit den Reitern landete
+    das auf dem Blatt »Mehr« – der Stift blendete also die Zeile aus und ein
+    Feld ein, das man gar nicht sehen konnte. Es sah aus, als sei das Thema
+    verschwunden."""
     js = APP_JS.read_text()
+    kopf = _fn("themaKopfzeile")
+    assert "data-thema-wert" in kopf
+    assert "data-theme" in kopf and "data-theme-save" in kopf
     m = re.search(r"function collCardDetails\(it\) \{.*?\n\}\n", js, re.S)
     assert m
     einordnung = m.group(0)[m.group(0).index("const einordnung ="):]
     einordnung = einordnung[:einordnung.index("const nachschlagen")]
-    # Das Eingabefeld bleibt unten, die Anzeige nicht.
-    assert "data-theme" in einordnung
-    assert "data-thema-wert" not in einordnung
+    assert "data-theme" not in einordnung
     assert "themaKopfzeile(item)" in js
 
 

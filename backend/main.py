@@ -5065,7 +5065,18 @@ def _uploads_dir() -> str:
 # Bewusst eng gehalten: nur Artikel, die wirklich in der Sammlung stehen,
 # nur verkleinert, kein Abzug des Katalogs.
 
-BILD_KANTE = 400              # Pixel je Seite – reicht für Karte und Popup
+# **800, nicht mehr 400.** Der alte Wert stand da mit dem Vermerk „reicht
+# für Karte und Popup" – und das stimmte, solange das Popup eine Briefmarke
+# von 72 px neben dem Namen zeigte. Seit es mit dem Bild über die volle
+# Breite aufmacht, sind es auf dem Telefon 375 Punkte und auf einem
+# Retina-Schirm damit 750 echte Bildpunkte; am Rechner bis zu 1280. Ein auf
+# 400 verkleinertes Bild wird dort hochgerechnet und sieht ausgefranst aus.
+#
+# Bereits abgelegte Bilder bleiben bei 400 – neu geholt wird nur, was noch
+# fehlt oder was über „Bild erneuern" im Popup angefordert wird. Ein
+# Sammellauf über alle Bilder käme nicht in Frage: Er ginge gegen dasselbe
+# Tageskontingent bei BrickLink wie die Preise.
+BILD_KANTE = 800
 
 
 def _katalog_dir() -> str:
@@ -5816,14 +5827,30 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
             d["net_value"] = (round((unit or 0)
                                     * max(0, d["quantity"] - in_sets), 2)
                               if unit else None)
-            # **Folgt das Thema aus der Nummer?** `sw1213` ist Star Wars,
-            # da gibt es nichts zu bearbeiten – und an 910 Einträgen
-            # nachgesehen (29.08.2026) hat auch nie jemand etwas anderes
-            # gesetzt. Bei eigenen Figuren, Teilen und unbekannten Kürzeln
-            # (159 der 910) weiß die App es dagegen nicht; dort bleibt der
-            # Stift die einzige Möglichkeit.
-            d["theme_auto"] = bool(themes.for_item(d["item_id"],
-                                                   d["item_type"]))
+            # **Steht das Thema fest?** `sw1213` ist Star Wars, da gibt es
+            # nichts zu bearbeiten – und an 910 Einträgen nachgesehen
+            # (29.08.2026) hat auch nie jemand etwas anderes gesetzt.
+            #
+            # **Sets zählen seit 23.09.2026 mit.** `for_item()` beantwortet
+            # nur Minifiguren und eigene Figuren; für Sets liefert es immer
+            # `None`. Dadurch stand an **jedem** Set ein Stift, obwohl das
+            # Thema längst automatisch gefunden wurde – über die Kategorie
+            # bei BrickLink oder über die enthaltenen Figuren
+            # (`_theme_nachschlagen`).
+            #
+            # **Teile bleiben außen vor**, so schlüssig es klänge: Ihre
+            # Kategorie bei BrickLink beschreibt die *Form* („Brick,
+            # Modified"), nicht das Thema. Ein Grundstein wie `3001` hat
+            # keines, und was dort landet, kann daneben liegen – dann ist
+            # der Stift der einzige Weg zurück.
+            #
+            # Ebenso wenig zählen selbst angelegte Einträge (`fig-`,
+            # `manuell-`): Sie stehen in keinem Katalog. Zusammen waren das
+            # 159 der 910 Einträge (29.08.2026).
+            d["theme_auto"] = (
+                bool(themes.for_item(d["item_id"], d["item_type"]))
+                or ((d["item_type"] or "").lower() == "set"
+                    and not str(d["item_id"]).startswith(("fig-", "manuell-"))))
             items.append(d)
     return {"items": items, "stats": stats}
 
