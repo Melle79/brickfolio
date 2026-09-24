@@ -844,19 +844,18 @@ mit zwei Fingern** geht auch – stufenlos. Wo das Gerät es kann, zoomt der
 Sensor selbst; sonst wird der Ausschnitt verkleinert. Beides hilft der
 Erkennung, denn sie bekommt die Figur groß statt klein im Bild.
 
-Welche Stufen erscheinen, hängt am Gerät: Mit Gerätezoom sind es **1× /
-2× / 5×** (die Rastpunkte moderner Telefone; ohne Teleobjektiv fällt die 5
-weg), ohne ihn **1× / 2× / 3×**. Die Zahlen benennen die **Vergrößerung
-gegenüber dem, was du beim Öffnen siehst** – nicht das Objektiv. Welches
-Glas dafür genommen wird, entscheidet das Telefon.
+Die Stufen sind **1× / 2× / 3×**; was der gemeldete Zoombereich des
+Geräts nicht hergibt, erscheint nicht. Die Zahl benennt die
+**Vergrößerung gegenüber dem, was du beim Öffnen siehst** – mehr nicht.
 
-> **Die Rastpunkte selbst verrät das Telefon nicht.** Der Browser bekommt
-> nur einen durchgehenden Bereich (`min`, `max`, `step`); die
-> Umschaltpunkte zwischen Ultraweitwinkel, Weitwinkel und Tele kennt nur
-> das Betriebssystem intern. Aus `max` ist der optische Endpunkt auch
-> nicht ablesbar, weil dort der digitale Zoom mitzählt – beim iPhone bis
-> 25×. Darum eine feste Leiter, gefiltert nach dem, was der Bereich
-> hergibt.
+> **Ob dahinter Glas oder Rechnung steckt, weiß die App nicht.** Die
+> Schnittstelle meldet nur einen durchgehenden Bereich (`min`, `max`,
+> `step`), in dem der digitale Zoom mitzählt – beim iPhone bis 25×. Welcher
+> Faktor noch optisch ist und wo das Umschalten zwischen Ultraweitwinkel,
+> Weitwinkel und Tele liegt, steht nirgends; das kennt nur das
+> Betriebssystem intern. Darum benennen die Stufen keine Objektive: Ein
+> „5×" träfe auf einem Pro-Modell einen Rastpunkt und auf einem anderen
+> gar nichts.
 
 > **Aufgenommen wird, was der Sucher zeigt.** Das klingt
 > selbstverständlich, war es bis 2.88.22 aber nicht: Das Livebild ist

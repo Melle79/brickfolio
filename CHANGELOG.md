@@ -45,6 +45,27 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.27 – September 2026
+
+### Geändert
+- 🎚 **Die Zoomstufen versprechen nichts mehr über Objektive.** In 2.88.26
+  hießen sie 1× / 2× / 5×, weil moderne iPhones dort einrasten. Das war
+  eine Zusage, die die App nicht halten kann: Auf einem Modell **ohne
+  Teleobjektiv** wäre die 5 rein gerechnet. Und umgekehrt genauso – auf
+  einem Gerät *mit* 5×-Tele ist ein 3× eine Zwischenstufe. **Es gibt keine
+  Leiter, die überall auf Rastpunkte trifft.**
+
+  Der Grund liegt tiefer: Die Schnittstelle **unterscheidet Optik und
+  Rechnung nicht**. Sie meldet einen durchgehenden Bereich, in dem der
+  digitale Zoom mitzählt (beim iPhone bis 25×); welcher Faktor mit Glas
+  entsteht, steht nirgends. Was sich nicht unterscheiden lässt, darf die
+  Oberfläche auch nicht andeuten.
+
+  Also wieder eine gleichmäßige Leiter **1× / 2× / 3×**, die nur sagt, wie
+  viel näher es wird – und die Kneifgeste für alles dazwischen und
+  darüber. Gefiltert wird weiterhin: Was der gemeldete Bereich nicht
+  hergibt, erscheint nicht.
+
 ## 2.88.26 – September 2026
 
 ### Geändert

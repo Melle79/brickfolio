@@ -141,31 +141,49 @@ def test_digitalzoom_faellt_zurueck_wenn_das_stellen_scheitert():
     assert "kameraNativ = null;" in f
 
 
-def test_die_optischen_stufen_folgen_der_kamera():
-    """**1×, 2×, 5× – nicht 1, 2, 3.**
+def test_die_leiste_behauptet_nichts_ueber_objektive():
+    """**Kein fester Zahlensatz kann ehrlich sein.**
 
-    Ein iPhone 16 Pro Max hat genau diese drei Rastpunkte; ein 3× gibt es
-    dort *nicht*, das läge zwischen zwei Objektiven und wäre gerechnet.
-    Sven hat am 24.09.2026 genau darauf hingewiesen. Wo ein Gerät den
-    Bereich nicht hergibt (kein Teleobjektiv), fällt die 5 von selbst weg –
-    darum die Leiter filtern und nicht kürzen.
+    Kurzzeitig stand hier 1/2/5, weil moderne iPhones dort einrasten. Sven
+    hat es am 24.09.2026 zerlegt: Auf einem Modell ohne Teleobjektiv wäre
+    die 5 rein gerechnet. Und umgekehrt gilt dasselbe – auf einem Gerät
+    *mit* 5×-Tele ist ein 3× eine Zwischenstufe. Es gibt keine Leiter, die
+    überall auf Rastpunkte trifft.
+
+    Entscheidend ist der Grund: **Die Schnittstelle unterscheidet Optik und
+    Rechnung nicht.** Gemeldet wird ein durchgehender Bereich, in dem der
+    digitale Zoom mitzählt. Was sich nicht unterscheiden lässt, darf die
+    Oberfläche nicht andeuten – also eine gleichmäßige Leiter, die nur
+    sagt, wie viel näher es wird.
     """
-    assert "const KAMERA_STUFEN_OPTISCH = [1, 2, 5];" in js()
+    assert "const KAMERA_STUFEN = [1, 2, 3];" in js()
+    assert "KAMERA_STUFEN_OPTISCH" not in js(), "das war das Versprechen"
+    assert "5]" not in _fn("kameraZoomStufen")
+
+
+def test_dieselbe_leiter_fuer_beide_wege():
+    """Sie sagt ja nichts über den Weg aus – also gibt es auch keinen
+    Grund, sie je nach Weg anders zu bauen."""
     f = _fn("kameraZoomStufen")
-    assert "KAMERA_STUFEN_OPTISCH.filter" in f
+    assert f.count("KAMERA_STUFEN") == 2
 
 
-def test_digital_bleibt_flacher():
-    """Digital wird nur beschnitten: Bei 5× blieben von 599 Pixeln noch
-    120 – dafür gibt es keine Rastpunkte, nur Matsch."""
-    assert "const KAMERA_STUFEN_DIGITAL = [1, 2, 3];" in js()
-    assert "KAMERA_STUFEN_DIGITAL" in _fn("kameraZoomStufen")
+def test_was_der_bereich_nicht_hergibt_erscheint_nicht():
+    """Keine Behauptung über Objektive heißt nicht: keine Prüfung. Eine
+    Stufe, die das Gerät nicht stellen kann, bliebe wirkungslos."""
+    f = _fn("kameraZoomStufen")
+    assert "kameraNativ.max / kameraNativ.basis" in f
+    assert ".filter((s) => s <= max + 0.01)" in f
 
 
 def test_der_zwischenwert_sucht_seine_stufe():
-    """Mit ungleichen Abständen taugt `Math.floor` nicht mehr: Bei 3,4×
-    käme 3 heraus, und die gibt es in 1/2/5 nicht – keine Stufe trüge den
-    Wert, die Leiste zeigte weiter „2×"."""
+    """Die Stufe unter einem Kneifwert wird gesucht, nicht gerechnet.
+
+    `Math.floor` setzt lückenlose Stufen voraus. Das stimmt bei 1/2/3
+    zufällig – aber nur zufällig: Fiele die 3 einmal weg, weil der Bereich
+    sie nicht hergibt, käme für 3,4× wieder eine Stufe heraus, die es
+    nicht gibt, und die Leiste zeigte stur „2×".
+    """
     f = _fn("kameraZoomAnzeigen")
     assert "Math.floor" not in f
     assert "filter((s) => s <= kameraZoom + 0.05).pop()" in f

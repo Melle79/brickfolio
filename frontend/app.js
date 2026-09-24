@@ -2944,21 +2944,25 @@ let kameraZoom = 1;        // was der Nutzer gewählt hat, als Faktor
 let kameraNativ = null;    // {min, max}, wenn das Gerät wirklich zoomen kann
 let kameraNachlauf = null; // Frist, nach der der Strom wirklich endet
 
-/* **Zwei Leitern, weil zwei verschiedene Dinge.**
+/* **Die Zahl sagt, wie viel näher – nicht, mit welchem Objektiv.**
 
-   *Optisch* soll die Leiter den Rastpunkten der Kamera entsprechen. Moderne
-   iPhones haben 1×, 2× und 5× – ein iPhone 16 Pro Max etwa hat **kein**
-   3×, das läge zwischen zwei Objektiven und wäre gerechnet. Darum 1/2/5:
-   Wo das Gerät den Bereich nicht hergibt (kein Teleobjektiv), fällt die
-   5 von selbst weg.
+   Hier stand kurzzeitig 1/2/5, weil moderne iPhones dort einrasten. Das
+   war ein Versprechen, das die App nicht halten kann: Auf einem Modell
+   ohne Teleobjektiv wäre die 5 rein gerechnet, und selbst auf einem mit
+   5×-Tele ist ein 3× eine Zwischenstufe. **Die Schnittstelle verrät
+   nirgends, welcher Faktor mit Glas und welcher mit Rechnung entsteht** –
+   sie meldet nur einen durchgehenden Bereich (`min`, `max`, `step`), in
+   dem der digitale Zoom mitzählt (beim iPhone bis 25×).
 
-   *Digital* wird nur beschnitten, und das kostet. Bei 5× bliebe von einem
-   Sucherausschnitt von 599 Pixeln noch 120 übrig – dafür gibt es keine
-   Rastpunkte, nur Matsch. Deshalb dort nicht über 3.
+   Was sich nicht unterscheiden lässt, darf die Leiste auch nicht
+   behaupten. Also eine gleichmäßige Leiter, die nichts über Objektive
+   sagt, und die Kneifgeste für alles dazwischen und darüber. Gefiltert
+   wird trotzdem: Was der gemeldete Bereich nicht hergibt, erscheint
+   nicht.
 
-   Alles dazwischen erreicht die Kneifgeste ohnehin. */
-const KAMERA_STUFEN_OPTISCH = [1, 2, 5];
-const KAMERA_STUFEN_DIGITAL = [1, 2, 3];
+   Warum nicht weiter als 3: Ohne Gerätezoom wird nur beschnitten, und bei
+   5× blieben von einem Sucherausschnitt von 599 Pixeln noch 120 übrig. */
+const KAMERA_STUFEN = [1, 2, 3];
 
 /* **Warum der Strom nicht sofort endet.**
 
@@ -3090,9 +3094,9 @@ async function kameraLicht() {
    das, was man gerade sieht. Bezugspunkt ist darum, was die Spur beim
    Öffnen meldet: Was man sieht, ist 1×. */
 function kameraZoomStufen() {
-  if (!kameraNativ) return KAMERA_STUFEN_DIGITAL.slice();
+  if (!kameraNativ) return KAMERA_STUFEN.slice();
   const max = kameraNativ.max / kameraNativ.basis;
-  return KAMERA_STUFEN_OPTISCH.filter((s) => s <= max + 0.01);
+  return KAMERA_STUFEN.filter((s) => s <= max + 0.01);
 }
 
 function kameraZoomPruefen() {
