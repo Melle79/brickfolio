@@ -2460,28 +2460,85 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: .85rem; white-space: nowrap;
 }
 .kat-rahmen { display: flex; gap: 4px; align-items: flex-start; }
+/* Die Liste lag als einzige Fläche der App nackt auf dem Grau. Dieselbe
+   Karte wie überall sonst gibt den Zeilen einen Rand, gegen den sie stehen
+   – und die weißen Bildchen wirken nicht mehr wie Löcher darin.
+
+   **Kein `overflow: hidden`.** Das machte aus der Liste einen eigenen
+   Scrollbereich, und die Blocküberschriften (`position: sticky`) klebten
+   dann an ihr statt am Bildschirmrand. Stattdessen nimmt die letzte Zeile
+   ihren Trennstrich zurück, damit er nicht durch die runde Ecke läuft. */
 .kat-liste { flex: 1; min-width: 0; }
+/* Die Artikel stehen auf einer Karte, die Blocknummer dazwischen auf der
+   grauen Fläche – sie gliedert, sie gehört nicht zu den Artikeln.
+
+   **Keine eigene Polsterung.** Mit 10 px innen schrumpfte das Namensfeld
+   von 162 auf 138 px, und der Gewinn aus dem zweizeiligen Namen fiel von
+   57 % auf 50 % zurück. Stattdessen laufen die Trennstriche durch, und der
+   Abstand steht in der Zeile.
+
+   **Kein `overflow: hidden`.** Das machte aus der Karte einen eigenen
+   Scrollbereich, und die Blocknummern (`position: sticky`) klebten dann an
+   ihr statt am Bildschirmrand. Die letzte Zeile nimmt darum ihren
+   Trennstrich zurück, damit er nicht durch die runde Ecke läuft. */
+.kat-gruppe {
+  background: var(--card); border: 2px solid var(--ink);
+  border-radius: var(--radius); margin-bottom: 10px;
+}
+.kat-gruppe .kat-zeile { padding-left: 8px; padding-right: 8px; }
+.kat-gruppe .kat-zeile:last-child { border-bottom: 0; }
+.kat-gruppe:empty { display: none; }
 
 .kat-block {
   position: sticky; z-index: 2;
   top: calc(env(safe-area-inset-top) + 55px);
   background: var(--plate); color: var(--muted);
   font-size: .75rem; letter-spacing: .12em; font-weight: 600;
-  padding: 6px 4px; border-bottom: 1px solid var(--line);
+  /* Draußen auf der grauen Fläche braucht sie keinen Trennstrich mehr –
+     die Karte darunter setzt sich selbst ab. */
+  padding: 8px 4px 5px;
 }
 .kat-zeile {
   display: flex; align-items: center; gap: 10px;
   padding: 6px 4px; border-bottom: 1px solid var(--line);
   cursor: pointer;
 }
+.kat-bildfeld { position: relative; flex: none; line-height: 0; }
 .kat-zeile .kat-bild {
   width: 44px; height: 44px; flex: none; border-radius: 6px;
   background: #fff; object-fit: contain;
 }
+/* Nur eine Anzeige, kein Knopf: Gemerkt wird im Popup der Figur. Der helle
+   Ring setzt es gegen das Bild ab, das selbst weiß ist.
+
+   Gelb mit dunklem Stern – dasselbe Paar, mit dem die App überall „gewählt"
+   zeigt, und derselbe Stern wie im Reiter „Wünsche". */
+.kat-wunsch {
+  position: absolute; right: -4px; bottom: -4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--yellow); color: var(--ink);
+  font-size: 11px; line-height: 18px; text-align: center;
+  box-shadow: 0 0 0 2px var(--card);
+}
 .kat-text { flex: 1; min-width: 0; }
+/* **Zwei Zeilen, nicht eine.**
+
+   BrickLink-Namen tragen die Identität vorn und das Unterscheidungsmerkmal
+   hinten: „… Dark Gray Hips" gegen „… Dark Bluish Gray Hips", „… Short Red
+   Stripes" gegen „… Long Red Stripes". Einzeilig fiel genau der hintere
+   Teil weg – am 24.09.2026 auf dem Telefon nachgemessen: **74 % aller
+   Namen abgeschnitten, und 14 Zeilenpaare sahen gleich aus.** Man konnte
+   Varianten nicht auseinanderhalten.
+
+   In der Mitte zu kürzen half kaum (14 → 13): Die Namen teilen sich Kopf
+   *und* Schwanz. Die Breite war das Problem, und zwei Zeilen sind der
+   billigere Weg dorthin als mehr Platz – 23 % ganz lesbar werden 57 %, und
+   die Zeile wächst nur von 57 auf 61 Pixel. */
 .kat-name {
   font-size: .92rem; font-weight: 600;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; line-clamp: 2;
+  overflow: hidden;
 }
 .kat-nr {
   font-size: .78rem; color: var(--muted);

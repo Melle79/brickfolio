@@ -45,6 +45,50 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.28 – September 2026
+
+### Geändert
+- 📚 **Die Artikel im Katalog sind endlich auseinanderzuhalten.** Der Name
+  stand einzeilig in 162 Pixeln – nachgemessen an 80 Zeilen auf einem
+  Telefon: **74 % abgeschnitten, und 14 Zeilenpaare sahen gleich aus.**
+  BrickLink-Namen tragen die Identität vorn und das Unterscheidungsmerkmal
+  hinten, also fiel genau der Teil weg, der zählt:
+
+  ```
+  Luke Skywalker - Pilot Suit, … Dark Gray Hips, Yellow Head
+  Luke Skywalker - Pilot Suit, … Dark Bluish Gray Hips, Yellow Head
+            beide sichtbar als →  „Luke Skywalker - Pilot Suit"
+  ```
+
+  In der Mitte zu kürzen half kaum (14 → 13 gleiche Paare) – die Namen
+  teilen sich Kopf *und* Schwanz. Es half nur Platz:
+
+  | | ganz lesbar |
+  |---|---|
+  | vorher | 23 % |
+  | Name darf umbrechen (zwei Zeilen) | 57 % |
+  | + Merkknopf raus, Namensfeld 196 px | **75 %** |
+
+- ⭐ **Gemerkt wird jetzt im Steckbrief**, nicht mehr am Zeilenende. Dass
+  eine Figur auf der Wunschliste steht, zeigt ein kleiner **Stern am
+  Bild** – derselbe wie im Reiter „Wünsche"; der Katalog war die einzige
+  Stelle mit einem Herz. Der Stern ist nur eine Anzeige, ein Tipp darauf
+  öffnet den Steckbrief. „Hab ich" bleibt, wo es war: Das braucht man im
+  Vorbeigehen.
+
+- 🗂 **Die Artikel stehen auf weißen Karten**, je Hunderterblock eine, und
+  die Blocknummer liegt dazwischen auf der grauen Fläche. Sie gliedert, sie
+  ist kein Artikel. Bisher lag die ganze Liste ohne eigene Fläche auf dem
+  Grau, und die weißen Bildchen wirkten darin wie Löcher.
+
+### Behoben
+- 🔌 **„Merken" im Steckbrief hätte lautlos aufgehört zu wirken.** Es
+  schaltete nicht selbst, sondern suchte den passenden Knopf in der
+  Katalogzeile und klickte ihn. Mit dem Herz wäre dieser Knopf verschwunden
+  – und die Prüfung `if (knopf)` hätte den Fall kommentarlos verschluckt:
+  keine Wirkung, keine Fehlermeldung. Beide Wege schalten jetzt über die
+  Daten, und ein Fehlschlag nimmt die Anzeige wieder zurück.
+
 ## 2.88.27 – September 2026
 
 ### Geändert

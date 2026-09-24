@@ -1539,8 +1539,24 @@ zwar in *jeder* langen Liste, nicht nur hier.
 | Ihr tippt auf … | … dann passiert |
 |---|---|
 | **✔** | die Figur wandert in deine Sammlung (Stück 1, gebraucht) |
-| **♥** | die Figur kommt auf die Wunschliste |
-| **den Namen** | ein Steckbrief mit großem Bild und denselben zwei Knöpfen |
+| **irgendwo sonst in der Zeile** | ein Steckbrief mit großem Bild, und darin **✔ Hab ich** und **★ Merken** |
+
+> **Das Merken ist seit 2.88.28 nur noch im Steckbrief** (vorher stand ein
+> ♥ am Zeilenende). Der Grund ist Platz: Der Knopf kostete 46 Pixel, und
+> die brauchte der **Name**. BrickLink-Namen tragen das
+> Unterscheidungsmerkmal hinten – „… Short Red Stripes" gegen „… Long Red
+> Stripes" –, und genau das fiel weg: Nachgemessen waren **74 % aller
+> Namen abgeschnitten** und 14 Zeilenpaare sahen gleich aus. Zusammen mit
+> dem zweizeiligen Namen sind jetzt **drei Viertel vollständig lesbar**
+> statt einem knappen Viertel. Gemerkt wird selten, angesehen ständig.
+>
+> Dass eine Figur gemerkt ist, zeigt ein kleiner **★ am Bild** – derselbe
+> Stern wie im Reiter „Wünsche". Er ist nur eine Anzeige; ein Tipp darauf
+> öffnet den Steckbrief.
+
+**Die Artikel stehen auf weißen Karten**, je Hunderterblock eine. Die
+Blocknummer liegt dazwischen auf der grauen Fläche: Sie gliedert, sie ist
+kein Artikel.
 
 Der Haken lässt sich auch wieder ausschalten – aber **nur, wenn nichts
 daran hängt.** Hast du die Figur mehrfach, oder steht eine Notiz oder ein

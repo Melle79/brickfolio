@@ -4840,6 +4840,27 @@ function katBilderBeobachten() {
   }, { rootMargin: "300px 0px" });
 }
 
+/* **Das Merken sitzt am Bild, nicht am Zeilenende.**
+
+   Dort stand ein zweiter 44-px-Knopf. Er kostete den Namen 46 Pixel – und
+   der Name ist das, woran man die Figur erkennt; bei BrickLink-Namen
+   entscheidet oft das letzte Wort („Short Red Stripes" gegen „Long Red
+   Stripes"). Gemerkt wird ohnehin selten, angesehen ständig.
+
+   Also ein kleines Zeichen am Daumennagel, das nur *anzeigt*. Auf die
+   Merkliste kommt die Figur über ihr Popup – ein Tipp mehr für den
+   seltenen Fall, dafür breiter für den häufigen.
+
+   **Ein Stern, kein Herz.** Der Katalog war die einzige Stelle mit einem
+   Herz; die Wunschliste trägt einen Stern im Reiter, und beim Scannen
+   heißt es „☆ Merken". Zwei Zeichen für dieselbe Liste sind eins zu viel. */
+function katStern(wunsch) {
+  return wunsch
+    ? `<span class="kat-wunsch" role="img"
+         aria-label="${esc(tr("Steht auf der Wunschliste"))}">\u2605</span>`
+    : "";
+}
+
 function katZeile(e) {
   const bild = imgSrc(e.img_url, true);
   const jahr = e.jahr ? String(e.jahr) : "";
@@ -4850,8 +4871,11 @@ function katZeile(e) {
   // freizugeben; geladen wird nur, was wirklich in die Nähe kommt.
   const ohneNamen = !e.name || e.name === e.item_no;
   return `<div class="kat-zeile" data-nr="${esc(e.item_no)}">
-    <img class="kat-bild" src="${IMG_PLACEHOLDER}" data-src="${bild}"
-         alt="" decoding="async">
+    <span class="kat-bildfeld">
+      <img class="kat-bild" src="${IMG_PLACEHOLDER}" data-src="${bild}"
+           alt="" decoding="async">
+      ${katStern(e.wunsch)}
+    </span>
     <div class="kat-text">
       <div class="kat-name${ohneNamen ? " kat-namenlos" : ""}">${
         esc(ohneNamen ? e.item_no : e.name)}</div>
@@ -4864,9 +4888,6 @@ function katZeile(e) {
       <button class="kat-marke${e.besitz ? " an" : ""}" data-marke="habe"
         aria-label="${esc(tr(e.besitz ? "Hab ich" : "Als vorhanden merken"))}"
         aria-pressed="${e.besitz ? "true" : "false"}">✔</button>
-      <button class="kat-marke${e.wunsch ? " an" : ""}" data-marke="wunsch"
-        aria-label="${esc(tr(e.wunsch ? "Steht auf der Wunschliste" : "Auf die Wunschliste"))}"
-        aria-pressed="${e.wunsch ? "true" : "false"}">♥</button>
     </div>
   </div>`;
 }
@@ -4880,18 +4901,34 @@ function katNachschub() {
   const marke = liste.querySelector(".kat-mehr");
   if (marke) marke.remove();
   const bis = Math.min(katStand.gezeigt + KAT_BLOCK, katStand.eintraege.length);
+  // **Die Blocknummer steht zwischen den Karten, nicht in einer.** Sie
+  // gehört zur Gliederung, nicht zu den Artikeln – auf der grauen Fläche
+  // gelesen trennt sie, innerhalb der weißen Karte wäre sie eine Zeile
+  // wie jede andere. Also bekommt jeder Block seine eigene Karte.
   let html = "";
+  const spuelen = () => {
+    if (!html) return;
+    let gruppe = liste.lastElementChild;
+    if (!gruppe || !gruppe.classList.contains("kat-gruppe")) {
+      liste.insertAdjacentHTML("beforeend", '<div class="kat-gruppe"></div>');
+      gruppe = liste.lastElementChild;
+    }
+    gruppe.insertAdjacentHTML("beforeend", html);
+    html = "";
+  };
   for (let i = katStand.gezeigt; i < bis; i++) {
     const e = katStand.eintraege[i];
     if (e.block && e.block !== katStand.letzterBlock) {
+      spuelen();                       // die vorige Karte schließen
       katStand.letzterBlock = e.block;
-      html += `<div class="kat-block" data-block="${esc(e.block)}">`
-        + esc(e.block) + `</div>`;
+      liste.insertAdjacentHTML("beforeend",
+        `<div class="kat-block" data-block="${esc(e.block)}">`
+        + esc(e.block) + `</div><div class="kat-gruppe"></div>`);
     }
     html += katZeile(e);
   }
   katStand.gezeigt = bis;
-  liste.insertAdjacentHTML("beforeend", html);
+  spuelen();
   if (bis < katStand.eintraege.length) {
     liste.insertAdjacentHTML("beforeend", '<div class="kat-mehr"></div>');
   }
@@ -5119,14 +5156,49 @@ async function katListeLaden() {
 /* Eine Marke umlegen. Die Zeile wird sofort umgestellt und bei einem
    Fehlschlag zurückgedreht – wer im Gehen zwanzig Figuren abhakt, wartet
    nicht zwanzigmal auf den Server. */
-async function katMarkeUmlegen(zeile, knopf) {
-  const nr = zeile.dataset.nr;
-  const marke = knopf.dataset.marke;
+/* Die Zeile neu beschriften – aus dem Eintrag, nicht aus dem Knopf. */
+function katZeileZeichnen(nr) {
+  const zeile = $("kat-liste").querySelector(
+    `.kat-zeile[data-nr="${CSS.escape(nr)}"]`);
+  const e = katStand.eintraege.find((x) => x.item_no === nr);
+  if (!zeile || !e) return;
+  const habe = zeile.querySelector('.kat-marke[data-marke="habe"]');
+  if (habe) {
+    habe.classList.toggle("an", !!e.besitz);
+    habe.setAttribute("aria-pressed", e.besitz ? "true" : "false");
+  }
+  const zahl = zeile.querySelector(".kat-anzahl");
+  if (e.besitz > 1) {
+    if (zahl) zahl.textContent = e.besitz + "\u00D7";
+    else zeile.querySelector(".kat-marken").insertAdjacentHTML("beforebegin",
+      `<span class="kat-anzahl">${e.besitz}\u00D7</span>`);
+  } else if (zahl) { zahl.remove(); }
+  const feld = zeile.querySelector(".kat-bildfeld");
+  const stern = zeile.querySelector(".kat-wunsch");
+  if (e.wunsch && !stern && feld) feld.insertAdjacentHTML("beforeend", katStern(true));
+  else if (!e.wunsch && stern) stern.remove();
+}
+
+/* **Aus den Daten schalten, nicht über einen Knopf.**
+
+   Bis 2.88.27 nahm diese Funktion den Knopf aus der Zeile entgegen und las
+   Marke und Zustand an ihm ab. Das Popup hatte deshalb keinen eigenen Weg:
+   Es suchte den passenden Knopf in der Liste und klickte ihn. Als das Herz
+   aus der Zeile verschwand, wäre „Merken" im Popup damit **stillschweigend
+   wirkungslos** geworden – der Knopf, den es klicken wollte, gab es nicht
+   mehr, und `if (knopf)` hätte den Fall kommentarlos verschluckt. */
+async function katMarkeUmlegen(nr, marke, an) {
   const eintrag = katStand.eintraege.find((e) => e.item_no === nr);
-  if (!eintrag) return;
-  const an = !knopf.classList.contains("an");
-  knopf.classList.toggle("an", an);
-  knopf.setAttribute("aria-pressed", an ? "true" : "false");
+  if (!eintrag) return false;
+  const vorher = { besitz: eintrag.besitz, wunsch: eintrag.wunsch };
+  // Erst zeigen, dann fragen: Am Telefon hängt der Abruf sonst sichtbar.
+  if (marke === "habe") eintrag.besitz = an ? (eintrag.besitz || 0) + 1 : 0;
+  else eintrag.wunsch = an;
+  katZeileZeichnen(nr);
+  const zurueck = () => {
+    Object.assign(eintrag, vorher);
+    katZeileZeichnen(nr);
+  };
   try {
     // `api` hängt `/api` selbst davor und macht aus dem Rumpf JSON –
     // beides hier noch einmal zu tun ergibt `/api/api/…` und doppelt
@@ -5136,22 +5208,17 @@ async function katMarkeUmlegen(zeile, knopf) {
       body: { item_no: nr, item_type: katStand.art, marke, an },
     });
     if (d.ok === false) {
-      knopf.classList.toggle("an", !an);
-      knopf.setAttribute("aria-pressed", !an ? "true" : "false");
+      zurueck();
       toast(tr(d.grund === "mehr_dahinter"
         ? "Da hängt mehr dran – bitte in der Sammlung entfernen."
         : "Ging nicht."));
-      return;
+      return false;
     }
-    if (marke === "habe") eintrag.besitz = an ? (eintrag.besitz || 0) + 1 : 0;
-    else eintrag.wunsch = an;
-    const zahl = zeile.querySelector(".kat-anzahl");
-    if (zahl && eintrag.besitz < 2) zahl.remove();
-    else if (zahl) zahl.textContent = eintrag.besitz + "×";
+    return true;
   } catch (err) {
-    knopf.classList.toggle("an", !an);
-    knopf.setAttribute("aria-pressed", !an ? "true" : "false");
+    zurueck();
     toast(tr("Ging nicht."));
+    return false;
   }
 }
 
@@ -5201,7 +5268,11 @@ function katVerdrahten() {
     const knopf = ev.target.closest(".kat-marke");
     const zeile = ev.target.closest(".kat-zeile");
     if (!zeile) return;
-    if (knopf) { katMarkeUmlegen(zeile, knopf); return; }
+    if (knopf) {
+      katMarkeUmlegen(zeile.dataset.nr, knopf.dataset.marke,
+                      !knopf.classList.contains("an"));
+      return;
+    }
     const e = katStand.eintraege.find((x) => x.item_no === zeile.dataset.nr);
     if (e) katDetail(e);
   });
@@ -5233,7 +5304,7 @@ function katDetail(e) {
         <button class="mini-btn${e.besitz ? " sel" : ""}" data-mmarke="habe">
           ${esc(e.besitz ? "✔ " + tr("Hab ich") : tr("Hab ich"))}</button>
         <button class="mini-btn${e.wunsch ? " sel" : ""}" data-mmarke="wunsch">
-          ${esc(e.wunsch ? "♥ " + tr("Gemerkt") : tr("Merken"))}</button>
+          ${esc(e.wunsch ? "\u2605 " + tr("Gemerkt") : tr("Merken"))}</button>
       </div>
       <a class="kat-modal-link" href="${bl}" target="_blank" rel="noopener">
         ${esc(tr("Bei BrickLink ansehen"))}</a>
@@ -5246,13 +5317,11 @@ function katDetail(e) {
   document.addEventListener("keydown", taste);
   overlay.querySelectorAll("[data-mmarke]").forEach((b) => {
     b.addEventListener("click", async () => {
-      // Über die Zeile in der Liste gehen, damit beide Anzeigen dieselbe
-      // Wahrheit zeigen – und nicht die Liste eine andere als das Popup.
-      const zeile = $("kat-liste").querySelector(
-        `.kat-zeile[data-nr="${CSS.escape(e.item_no)}"]`);
-      const knopf = zeile && zeile.querySelector(
-        `.kat-marke[data-marke="${b.dataset.mmarke}"]`);
-      if (knopf) await katMarkeUmlegen(zeile, knopf);
+      // **Der einzige Weg auf die Merkliste.** In der Zeile steht dafür
+      // kein Knopf mehr, nur noch das Herz am Bild als Anzeige.
+      const marke = b.dataset.mmarke;
+      const an = !(marke === "habe" ? e.besitz : e.wunsch);
+      await katMarkeUmlegen(e.item_no, marke, an);
       zu();
     });
   });
