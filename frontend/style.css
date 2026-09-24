@@ -531,6 +531,51 @@ code {
 .badge-type { background: var(--info-bg); color: var(--blue); border: 1.5px solid var(--blue); margin-left: 6px; }
 
 .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+/* Scan-Ergebnis: eine breite Hauptsache, die Nebensachen als Zeichen.
+
+   Vier gleich große Knöpfe brachen jede Beschriftung um („＋ Zur /
+   Sammlung"). Der breite Knopf trägt jetzt, was man fast immer will;
+   Merken und Liste stehen als Zeichen daneben, wie die Marken in der
+   Katalogliste. Der Foto-Knopf kommt nur bei schon vorhandenen Artikeln
+   dazu und nimmt sich dann eine eigene Zeile. */
+.scan-tasten { flex-wrap: wrap; }
+.scan-tasten .add { flex: 1; min-width: 150px; }
+.scan-tasten .zeichen {
+  flex: none; width: 46px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; line-height: 1;
+}
+.scan-tasten .zeichen.an { background: var(--yellow); }
+.scan-tasten [data-foto] { flex-basis: 100%; }
+/* Der Zustands-Schritt nach „＋ Zur Sammlung". Bezahlt und Abbrechen teilen
+   sich eine Zeile, darunter die beiden Zustände – ein Tipp nimmt auf. */
+.zust-reihe {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-top: 10px;
+}
+.zust-reihe .paid-input { flex: 1 1 130px; margin: 0; }
+/* Ein Verweis, kein Knopf – aber mit derselben Trefferfläche wie überall:
+   44 Pixel, sonst trifft man ihn am Telefon nicht. */
+.zust-abbruch {
+  margin-left: auto; min-height: 44px; padding: 0 8px;
+  display: inline-flex; align-items: center;
+  border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 800;
+  color: var(--muted); text-decoration: underline;
+}
+.zust-titel {
+  flex-basis: 100%; margin-bottom: -2px;
+  font-size: 12.5px; font-weight: 700; color: var(--muted);
+}
+.zust-wahl { flex-basis: 100%; display: flex; gap: 8px; }
+.zust-wahl .mini-btn { flex: 1; }
+
+/* Der Weg nach draußen ist kein Knopf – so hält es der Steckbrief auch. */
+.karte-weiter { display: flex; justify-content: flex-end; padding: 6px 2px 0; }
+.karte-weiter a {
+  font-size: 12.5px; font-weight: 800; color: var(--blue);
+  text-decoration: underline;
+}
 .mini-btn {
   flex: 1; padding: 9px 8px; font-size: 14px; font-weight: 900;
   border: 2px solid var(--ink); border-radius: 9px; cursor: pointer;

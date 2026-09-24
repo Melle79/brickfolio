@@ -45,6 +45,31 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.35 – September 2026
+
+### Geändert
+- 🎯 **Die Trefferkarte im Scan hat eine Hauptsache.** Vorher standen dort
+  vier gleich große Knöpfe mit demselben kräftigen Rahmen – obwohl sie sehr
+  unterschiedlich wichtig sind: „Zur Sammlung" will man fast immer, „Liste"
+  fast nie, und BrickLink führt aus der App heraus. Weil sie nicht
+  nebeneinander passten, brach jede Beschriftung um („＋ Zur / Sammlung").
+
+  Jetzt derselbe Aufbau wie in der Katalogliste und im Steckbrief: **ein
+  breiter Knopf** für die Sammlung, **Merken und Liste als Zeichen**
+  daneben, **BrickLink als Verweis** darunter. Nach dem Merken füllt sich
+  der Stern und das Zeichen wird gelb, statt dass „⭐ Gemerkt" den kleinen
+  Knopf sprengt.
+
+- ⚖️ **Der Zustands-Schritt ist ruhiger.** Ein Tipp auf „Gebraucht" oder
+  „Neu" nimmt die Figur weiter sofort auf – das ist der schnellste Weg in
+  die Sammlung, ein Zwischenschritt wäre ein Verlust. Geändert hat sich die
+  Gewichtung: „Abbrechen" war so groß wie das Hinzufügen selbst. Jetzt teilen
+  sich „Bezahlt" und „Abbrechen" eine Zeile, und Abbrechen ist ein Verweis –
+  mit derselben Trefferfläche von 44 Pixeln wie jeder Knopf. **324 → 266 px.**
+
+  Der Hinweis „wird sofort gespeichert" stand vorher ohne Übersetzung im
+  Markup; auf Englisch stand dort Deutsch.
+
 ## 2.88.34 – September 2026
 
 ### Behoben

@@ -643,7 +643,17 @@ function wireWantButtons(box, items, vorbereiten = null) {
         if (res.exists) toast("Steht schon auf der Wunschliste ⭐");
         else if (res.owned > 0) toast(tr("Gemerkt ⭐ (hast du schon {n}×)", { n: res.owned }));
         else toast("Auf die Wunschliste gesetzt ⭐");
-        btn.textContent = tr("⭐ Gemerkt");
+        // Ein Knopf, der nur ein Zeichen trägt, bekommt keins: „⭐ Gemerkt"
+        // sprengte die 46 Pixel. Der gefüllte Stern und die Tönung sagen
+        // dasselbe, und der Zuruf hat es ohnehin schon gesagt.
+        if (btn.classList.contains("zeichen")) {
+          btn.textContent = "\u2605";
+          btn.classList.add("an");
+          btn.title = tr("Gemerkt");
+          btn.setAttribute("aria-label", tr("Gemerkt"));
+        } else {
+          btn.textContent = tr("⭐ Gemerkt");
+        }
       } catch (e) {
         toast(e.message);
       } finally {
@@ -3925,13 +3935,25 @@ function renderScanResults(items) {
           <span class="badge badge-owned" data-owned hidden></span>
         </div>
       </div>
-      <div class="card-actions">
+      <!-- **Eine Hauptsache, der Rest leiser.** Vorher standen hier vier
+           gleich große Knöpfe mit demselben kräftigen Rahmen – „Zur
+           Sammlung" will man fast immer, „Liste" fast nie, und BrickLink
+           führt aus der App heraus. Sie passten nicht nebeneinander, also
+           brach jede Beschriftung um: „＋ Zur / Sammlung", „☆ / Merken".
+
+           Jetzt derselbe Aufbau wie in der Katalogliste und im Steckbrief:
+           ein breiter Knopf, die Nebensachen als Zeichen, der Weg nach
+           draußen als Verweis. -->
+      <div class="card-actions scan-tasten">
         <button class="mini-btn add" data-add="${i}">＋ Zur Sammlung</button>
-        <button class="mini-btn" data-want="${i}">☆ Merken</button>
-        ${state.user && state.user.is_dealer ? `<button class="mini-btn" data-cart="${i}">🛒 Liste</button>` : ""}
+        <button class="mini-btn zeichen" data-want="${i}"
+          title="${esc(tr("Merken"))}" aria-label="${esc(tr("Merken"))}">☆</button>
+        ${state.user && state.user.is_dealer ? `<button class="mini-btn zeichen" data-cart="${i}"
+          title="${esc(tr("Auf eine Liste"))}" aria-label="${esc(tr("Auf eine Liste"))}">🛒</button>` : ""}
         ${lastScanFile ? `<button class="mini-btn" data-foto="${i}" hidden>📷 Nur Foto dazu</button>` : ""}
-        ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
       </div>
+      ${it.bricklink_url ? `<div class="karte-weiter"><a href="${esc(it.bricklink_url)}"
+        target="_blank" rel="noopener">${esc(tr("Bei BrickLink ansehen"))} ↗</a></div>` : ""}
     </div>`;
   }).join("");
 
@@ -4002,15 +4024,23 @@ function renderScanResults(items) {
       const actions = card.querySelector(".card-actions");
       actions.hidden = true;
       const row = document.createElement("div");
-      row.className = "card-actions btn-grid";
+      // **Dieselbe Bedienung, ruhiger.** Ein Tipp auf den Zustand nimmt die
+      // Figur weiter sofort auf – das ist der schnellste Weg in die
+      // Sammlung, und ein Zwischenschritt wäre ein echter Verlust. Geändert
+      // hat sich die Gewichtung: „Abbrechen" war so groß wie das
+      // Hinzufügen selbst, der Hinweis stand als Satz in Klammern darüber.
+      // Jetzt teilen sich Bezahlt und Abbrechen eine Zeile (324 → 266 px).
+      row.className = "zust-reihe";
       row.setAttribute("data-cond-row", "");
       row.innerHTML = `
         <input data-add-paid class="paid-input" inputmode="decimal"
-          placeholder="${esc(tr("Bezahlt {cur} (optional)", { cur: curSymbol() }))}" style="grid-column:1/-1">
-        <span class="buy-label" style="grid-column:1/-1">Zustand wählen (wird sofort gespeichert):</span>
-        <button class="mini-btn add" data-c="used">Gebraucht</button>
-        <button class="mini-btn add" data-c="new">Neu</button>
-        <button class="mini-btn" data-cancel style="grid-column:1/-1">Abbrechen</button>`;
+          placeholder="${esc(tr("Bezahlt {cur} (optional)", { cur: curSymbol() }))}">
+        <button class="zust-abbruch" data-cancel>${esc(tr("Abbrechen"))}</button>
+        <span class="zust-titel">${esc(tr("Zustand – wird sofort gespeichert"))}</span>
+        <span class="zust-wahl">
+          <button class="mini-btn add" data-c="used">${esc(tr("Gebraucht"))}</button>
+          <button class="mini-btn add" data-c="new">${esc(tr("Neu"))}</button>
+        </span>`;
       actions.after(row);
       row.querySelector("[data-cancel]").addEventListener("click", () => {
         row.remove();
