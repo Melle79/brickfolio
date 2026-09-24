@@ -370,11 +370,31 @@ function esc(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+/* Der Platzhalter – die vier Steine des Ladezeichens als stehendes Bild.
+
+   **Vorher war es die alte Handschrift:** ein flächiger gelber Stein mit
+   3 px schwarzer Kontur. Die App zeichnet Steine längst anders – weiche
+   Ecken, keine Kontur, eine dunklere Unterkante als Tiefe (siehe
+   `.spinner-welle i` und `.logo-studs i`). Dieselben vier Farben in
+   derselben Reihenfolge wie dort: Gelb, Rot, Blau, Grün.
+
+   **Die Farben stehen fest im Bild**, nicht als CSS-Variablen: Eine
+   `data:`-Adresse kennt die Seite nicht, aus der sie stammt. Das gilt auch
+   für den alten Platzhalter und für die weiße Fläche hinter den Bildern –
+   und es stört nicht, weil beide auf ebendieser weißen Fläche liegen.
+
+   Er erscheint an zwei Stellen: solange ein Bild lädt, und dauerhaft dort,
+   wo es keines gibt (eigene Figuren ohne Foto). */
 const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
-     <rect x="12" y="26" width="48" height="30" rx="5" fill="#FFCF00" stroke="#1D1D1B" stroke-width="3"/>
-     <rect x="20" y="16" width="12" height="10" rx="3" fill="#FFCF00" stroke="#1D1D1B" stroke-width="3"/>
-     <rect x="40" y="16" width="12" height="10" rx="3" fill="#FFCF00" stroke="#1D1D1B" stroke-width="3"/>
+     <rect x="9"  y="29" width="24" height="11" rx="4" fill="#FFCF00"/>
+     <rect x="9"  y="36" width="24" height="4"  rx="2" fill="#E0B400"/>
+     <rect x="39" y="29" width="24" height="11" rx="4" fill="#D01012"/>
+     <rect x="39" y="36" width="24" height="4"  rx="2" fill="#A50D0F"/>
+     <rect x="9"  y="44" width="24" height="11" rx="4" fill="#0057A6"/>
+     <rect x="9"  y="51" width="24" height="4"  rx="2" fill="#003F7A"/>
+     <rect x="39" y="44" width="24" height="11" rx="4" fill="#00963E"/>
+     <rect x="39" y="51" width="24" height="4"  rx="2" fill="#00702E"/>
    </svg>`);
 
 /* Woher ein Bild kommt.

@@ -45,6 +45,17 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.29 – September 2026
+
+### Geändert
+- 🧱 **Der Platzhalter für fehlende Bilder trägt die heutige Handschrift.**
+  Er war als Einziger noch im alten Stil: ein flächiger gelber Stein mit
+  3 px schwarzer Kontur. Die App zeichnet Steine längst anders – weiche
+  Ecken, keine Kontur, eine dunklere Unterkante als Tiefe. Jetzt sind es
+  die **vier Steine des Ladezeichens**, in denselben Farben und derselben
+  Reihenfolge: Gelb, Rot, Blau, Grün. Er steht an sechs Stellen und liest
+  sich noch bei 28 Pixeln.
+
 ## 2.88.28 – September 2026
 
 ### Geändert

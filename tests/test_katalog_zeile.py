@@ -183,3 +183,28 @@ def test_die_zeile_wird_aus_dem_eintrag_beschriftet():
     f = _fn("katZeileZeichnen")
     for teil in ("kat-marke", "kat-anzahl", "kat-wunsch"):
         assert teil in f, "%s bliebe sonst stehen" % teil
+
+
+# ---------------------------------------------------- der Platzhalter
+
+def test_der_platzhalter_traegt_die_heutige_handschrift():
+    """**Keine schwarze Kontur mehr.** Die App zeichnet Steine mit weichen
+    Ecken und einer dunkleren Unterkante als Tiefe (`.spinner-welle i`,
+    `.logo-studs i`); der Platzhalter war als Einziger noch flächiges Gelb
+    mit 3 px Rand.
+    """
+    m = re.search(r"const IMG_PLACEHOLDER = .*?\)\;", js(), re.S)
+    assert m
+    f = m.group(0)
+    assert "stroke=" not in f, "die Kontur war die alte Handschrift"
+    for farbe in ("#FFCF00", "#D01012", "#0057A6", "#00963E"):
+        assert farbe in f, "%s fehlt – es sind dieselben vier wie im Ladezeichen" % farbe
+    for tiefe in ("#E0B400", "#A50D0F", "#003F7A", "#00702E"):
+        assert tiefe in f, "ohne die dunkle Unterkante fehlt die Tiefe"
+
+
+def test_es_gibt_nur_einen_platzhalter():
+    """Er hängt an sechs Stellen; zwei Zeichnungen liefen sofort
+    auseinander."""
+    assert js().count("const IMG_PLACEHOLDER") == 1
+    assert js().count("IMG_PLACEHOLDER") >= 6
