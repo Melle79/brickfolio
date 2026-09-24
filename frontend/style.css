@@ -12,6 +12,9 @@
   --plate: #E9EBEE;
   --card: #FFFFFF;
   --line: #D4D7DC;
+  /* Haarfeine Kante um die Noppen im Kopf – nötig, weil die Kopfleiste
+     gelb ist wie die erste Noppe. Siehe `header .logo-studs.small i`. */
+  --noppen-kante: rgba(29, 29, 27, .35);
   --muted: #6B6E73;
   --radius: 14px;
   --shadow: 0 3px 0 rgba(29, 29, 27, .18);
@@ -1139,11 +1142,30 @@ body.update-pending .topbar { top: var(--update-bar-h, 46px); }
   font-size: 13px; letter-spacing: 3px; text-indent: 3px;
   margin: 0; line-height: 1;
 }
-header .logo-studs.small i { width: 14px; height: 7px; }
+/* **Die Marke sieht im Kopf aus wie überall sonst.**
 
-header .logo-studs.small i:first-child {
-  background: var(--surface); box-shadow: inset 0 -2px 0 var(--line);
+   Hier stand eine Ausnahme: Die erste Noppe war weiß (`--surface`), weil
+   Gelb auf der gelben Kopfleiste unsichtbar wäre. Das stimmte – kostete
+   aber die Farbfolge, an der man die Marke erkennt. Sven ist es am
+   24.09.2026 aufgefallen: „überall ist das Logo mit links einer gelben
+   Noppe – nur im Programm selber nicht."
+
+   Statt die Farbe zu ändern, bekommen alle vier eine haarfeine Kante. Sie
+   trägt die gelbe Noppe gegen den gelben Grund und lässt die anderen drei,
+   wie sie sind. Alle vier, nicht nur die erste: Ein Ring um genau eine
+   Noppe fiele von Nahem auf.
+
+   Die Tiefe steckt in `--noppen-tiefe`, damit hier nicht viermal fast
+   dieselbe Regel steht. */
+header .logo-studs.small i {
+  width: 14px; height: 7px;
+  --noppen-tiefe: var(--yellow-dark);
+  box-shadow: inset 0 -2px 0 var(--noppen-tiefe),
+              0 0 0 1px var(--noppen-kante);
 }
+header .logo-studs.small i:nth-child(2) { --noppen-tiefe: #A50D0F; }
+header .logo-studs.small i:nth-child(3) { --noppen-tiefe: #003F7A; }
+header .logo-studs.small i:nth-child(4) { --noppen-tiefe: #00702E; }
 
 @media print {
   #print-area table { table-layout: fixed; }
@@ -1553,9 +1575,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 [data-theme="galaxy"] .topbar h1 { color: var(--yellow); }
 [data-theme="galaxy"] .topbar .whoami { color: var(--muted); }
-[data-theme="galaxy"] header .logo-studs.small i:first-child {
-  background: #C7D0E4; box-shadow: inset 0 -2px 0 var(--line);
-}
+/* Dunkle Kopfleiste: Gelb ist dort bestens zu sehen, die Kante
+   erübrigt sich. Die blaugraue Ausnahme war mitkopiert. */
+[data-theme="galaxy"] { --noppen-kante: transparent; }
 [data-theme="galaxy"] .tabbar { background: #0C1322; border-top: 3px solid var(--line); }
 [data-theme="galaxy"] .tab.active { color: var(--yellow); }
 [data-theme="galaxy"] .tab.active svg { stroke: var(--yellow); }
@@ -2045,9 +2067,9 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 [data-theme="nova"] .topbar h1 { color: #fff; }
 [data-theme="nova"] .topbar .whoami { color: var(--muted); }
-[data-theme="nova"] header .logo-studs.small i:first-child {
-  background: #C7D0E4; box-shadow: inset 0 -2px 0 var(--line);
-}
+/* Dunkle Kopfleiste: Gelb ist dort bestens zu sehen, die Kante
+   erübrigt sich. Die blaugraue Ausnahme war mitkopiert. */
+[data-theme="nova"] { --noppen-kante: transparent; }
 [data-theme="nova"] .tabbar {
   background: rgba(11, 16, 28, .72);
   border-top: 1px solid rgba(255, 255, 255, .1);

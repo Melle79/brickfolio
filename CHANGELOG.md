@@ -45,6 +45,25 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.31 – September 2026
+
+### Geändert
+- 🟡 **Die Marke im Kopf sieht aus wie überall sonst.** Die erste Noppe war
+  dort weiß – als Einzige in der ganzen App. Der Grund war handfest: Die
+  Kopfleiste ist gelb, eine gelbe Noppe darauf wäre unsichtbar. Der Preis
+  war die Farbfolge, an der man die Marke erkennt.
+
+  Statt die Farbe zu ändern, tragen jetzt **alle vier eine haarfeine
+  Kante**. Sie hält die gelbe Noppe gegen den gelben Grund und lässt die
+  anderen drei, wie sie sind – alle vier, weil ein Ring um genau eine von
+  Nahem auffiele.
+
+- 🌙 **In den dunklen Themen fällt die Ausnahme ganz weg.** Dort ist die
+  Kopfleiste dunkel; die Noppe ist auch ohne Kante bestens zu sehen. Das
+  Blaugrau, das da stand, war nur mitkopiert. In Nova nimmt die erste Noppe
+  jetzt die Akzentfarbe des Themas an – dort ist das ein Blau, und das ist
+  Absicht des Themas, nicht ein verlorenes Gelb.
+
 ## 2.88.30 – September 2026
 
 ### Behoben

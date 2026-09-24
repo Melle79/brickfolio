@@ -246,3 +246,38 @@ def test_jeder_lauf_hat_seinen_eigenen_beobachter():
 def test_ein_voriger_lauf_wird_beendet():
     f = _fn("kartenNachschub")
     assert f.index("nachschubBeenden();") < f.index("let gezeigt = 0;")
+
+
+# ---------------------------------------------------- die Marke im Kopf
+
+def test_die_erste_noppe_ist_wieder_gelb():
+    """**„Überall ist das Logo mit links einer gelben Noppe – nur im
+    Programm selber nicht."** (24.09.2026)
+
+    Im Kopf stand eine Ausnahme: Die erste Noppe war weiß (`--surface`),
+    weil Gelb auf der gelben Kopfleiste unsichtbar wäre. Der Grund stimmte,
+    der Preis war die Farbfolge, an der man die Marke erkennt.
+    """
+    assert "header .logo-studs.small i:first-child" not in css(), (
+        "das war die Ausnahme")
+    r = _regel("header .logo-studs.small i")
+    assert "--noppen-kante" in r, "ohne Kante wäre Gelb auf Gelb unsichtbar"
+
+
+def test_die_kante_liegt_um_alle_vier():
+    """Ein Ring um genau eine Noppe fiele von Nahem auf."""
+    r = _regel("header .logo-studs.small i")
+    assert "0 0 0 1px var(--noppen-kante)" in r
+    # die Farben der Unterkante je Noppe, aber nur als Variable
+    for i, farbe in ((2, "#A50D0F"), (3, "#003F7A"), (4, "#00702E")):
+        zeile = "header .logo-studs.small i:nth-child(%d) { --noppen-tiefe: %s; }" % (i, farbe)
+        assert zeile in css(), zeile
+
+
+def test_dunkle_themen_brauchen_keine_kante():
+    """Dort ist die Kopfleiste dunkel – Gelb ist bestens zu sehen. Die
+    blaugraue Ausnahme stand da nur, weil sie mitkopiert worden war."""
+    for thema in ("galaxy", "nova"):
+        assert '[data-theme="%s"] { --noppen-kante: transparent; }' % thema in css()
+        assert '[data-theme="%s"] header .logo-studs.small i:first-child' % thema \
+            not in css()
