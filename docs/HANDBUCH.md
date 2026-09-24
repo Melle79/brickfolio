@@ -1100,8 +1100,12 @@ Kaufpreis und die Notizen funktionieren normal.
 Beim Tippen des Namens schlägt die App parallel Katalogtreffer vor; passt
 einer, übernimmt ein Tipp Nummer und Bild.
 
-*(Profi)* **„🛒 Auf eine Liste"** legt den Eintrag direkt auf eine
-Einkaufsliste – auch für Eigenbauten, die in keinem Katalog stehen.
+**So sieht das Formular aus** (ab 2.88.36): **Typ** und **Zustand** wählst
+du mit Pillen wie im Steckbrief, die **Anzahl** mit Plus und Minus. Unten
+steht ein breiter grüner Knopf **„＋ Zur Sammlung"** – derselbe wie auf der
+Trefferkarte im Scan –, daneben **☆** für die Wunschliste und *(Profi)*
+**🛒**, das den Eintrag direkt auf eine Einkaufsliste legt, auch für
+Eigenbauten, die in keinem Katalog stehen.
 
 ### 4.5 Eigene Figuren (Custom)
 
@@ -1110,9 +1114,10 @@ Eigenbauten gedacht:
 
 - Die **Nummer vergibt die App fortlaufend** (`custom-001`, `-002`, …),
   überschreibbar, wenn du ein eigenes Schema führst.
-- **Eigenes Bild**: hochladen – oder, wenn beim Scannen nichts erkannt
-  wurde, mit **„📷 Foto vom Scan verwenden"** direkt das eben gemachte
-  Foto nehmen. Auf der Scan-Seite gibt es dafür auch den Knopf
+- **Eigenes Bild**: **„🖼 Bild wählen"** – oder, wenn beim Scannen nichts
+  erkannt wurde, **„📷 Vom Scan"** für das eben gemachte Foto. Ist ein Bild
+  da, steht es als kleine Vorschau davor; das **✕** daran nimmt es wieder
+  weg. Auf der Scan-Seite gibt es dafür auch den Knopf
   **„🎨 Eigene Figur mit diesem Foto"**.
 - Custom-Figuren werden **nicht** bei BrickLink gesucht; Preise und
   Katalogbilder gibt es dafür nicht.

@@ -45,6 +45,42 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.36 – September 2026
+
+### Behoben
+- 🌫 **Nach jedem Scan wurde die ganze Seite grau.** Der grüne „hier
+  geschaut"-Rahmen auf dem Foto dunkelt mit einem riesigen Schatten das Foto
+  um sich herum ab. Der Behälter schnitt aber nicht ab – seit **v1.78.0
+  (31.07.)** lief der Schatten über die **ganze Seite**. Alles wurde um 28 %
+  dunkler; nur was eine Ebene höher liegt – Kopfleiste, Trefferkarte – blieb
+  hell. Das sah aus wie ein grauer Hintergrund, der nach dem Foto auftaucht.
+
+  Der Behälter schneidet jetzt ab. Damit das Foto seinen eigenen
+  Schlagschatten nicht verliert, trägt diesen jetzt der Behälter – dessen
+  eigener Schatten wird vom Abschneiden nicht erfasst.
+
+### Geändert
+- 📏 **Der Zustands-Schritt steht in einer Zeile**, so breit wie die
+  Knopfreihe, die er ersetzt: `[Bezahlt €] [Gebraucht] [Neu] [✕]`. In
+  2.88.35 zog sich das Feld auf breiten Karten noch über 650 Pixel. Jetzt
+  teilen sich die beiden Zustände den Platz, Feld und ✕ bleiben fest – die
+  Karte springt beim Umschalten nicht. **Abbrechen ist ein rotes ✕**, in
+  derselben Sprache wie „Letztes Exemplar löschen" in der Sammlung.
+
+- 📝 **„Manuell erfassen" mit eigenen Bauteilen.** Das rohe „Datei
+  auswählen | Keine Datei ausgewählt" des Systems ist weg: Das Bild ist eine
+  Kachel mit Vorschau und ✕, daneben „Bild wählen" und „Vom Scan" in
+  gleicher Größe. **Typ und Zustand sind Pillen** wie im Steckbrief statt
+  Systemauswahl, die **Anzahl hat Plus und Minus**, und unten stehen die
+  Knöpfe wie auf der Trefferkarte – ein breiter grüner, ☆ und 🛒 als
+  Zeichen. Dabei ist auch „Zur Sammlung" endlich überall **grün**; im
+  Formular war es gelb.
+
+  Die alten Auswahlfelder bleiben unsichtbar als Quelle der Wahrheit
+  stehen: `m-type` wird an elf Stellen gelesen – keine davon musste
+  angefasst werden. Wo der Code den Wert direkt setzt, zeichnen sich die
+  Pillen nach; ein Test hält fest, dass kein Setzen ohne das dazukommt.
+
 ## 2.88.35 – September 2026
 
 ### Geändert

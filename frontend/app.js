@@ -4024,23 +4024,27 @@ function renderScanResults(items) {
       const actions = card.querySelector(".card-actions");
       actions.hidden = true;
       const row = document.createElement("div");
-      // **Dieselbe Bedienung, ruhiger.** Ein Tipp auf den Zustand nimmt die
-      // Figur weiter sofort auf – das ist der schnellste Weg in die
-      // Sammlung, und ein Zwischenschritt wäre ein echter Verlust. Geändert
-      // hat sich die Gewichtung: „Abbrechen" war so groß wie das
-      // Hinzufügen selbst, der Hinweis stand als Satz in Klammern darüber.
-      // Jetzt teilen sich Bezahlt und Abbrechen eine Zeile (324 → 266 px).
+      // **Eine Zeile.** Ein Tipp auf den Zustand nimmt die Figur sofort auf –
+      // das ist der schnellste Weg in die Sammlung. Vorher standen hier ein
+      // Feld über die volle Breite, ein Satz in Klammern, zwei große grüne
+      // Knöpfe und ein „Abbrechen" so groß wie das Hinzufügen selbst. Auch
+      // der erste Umbau (2.88.35) war Sven noch „zu mächtig": Auf der
+      // breiten Karte zog sich das Feld über 650 Pixel. Jetzt steht alles
+      // in einer Reihe, Abbrechen als rotes ✕ dahinter – dieselbe Sprache
+      // wie der Löschen-Knopf in der Sammlung. Dass der Tipp sofort
+      // speichert, sagt der Hinweis am Knopf.
       row.className = "zust-reihe";
       row.setAttribute("data-cond-row", "");
       row.innerHTML = `
         <input data-add-paid class="paid-input" inputmode="decimal"
-          placeholder="${esc(tr("Bezahlt {cur} (optional)", { cur: curSymbol() }))}">
-        <button class="zust-abbruch" data-cancel>${esc(tr("Abbrechen"))}</button>
-        <span class="zust-titel">${esc(tr("Zustand – wird sofort gespeichert"))}</span>
-        <span class="zust-wahl">
-          <button class="mini-btn add" data-c="used">${esc(tr("Gebraucht"))}</button>
-          <button class="mini-btn add" data-c="new">${esc(tr("Neu"))}</button>
-        </span>`;
+          placeholder="${esc(tr("Bezahlt {cur}", { cur: curSymbol() }))}"
+          aria-label="${esc(tr("Bezahlt {cur} (optional)", { cur: curSymbol() }))}">
+        <button class="mini-btn add" data-c="used"
+          title="${esc(tr("Als gebraucht aufnehmen"))}">${esc(tr("Gebraucht"))}</button>
+        <button class="mini-btn add" data-c="new"
+          title="${esc(tr("Als neu aufnehmen"))}">${esc(tr("Neu"))}</button>
+        <button class="mini-btn zust-abbruch" data-cancel
+          title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>`;
       actions.after(row);
       row.querySelector("[data-cancel]").addEventListener("click", () => {
         row.remove();
@@ -6458,6 +6462,7 @@ function entwurfHolen() {
   ENTWURF_FELDER.forEach((id) => { const e = $(id); if (e && d[id]) e.value = d[id]; });
   if (d.typ && $("m-type")) $("m-type").value = d.typ;
   if (d.zustand && $("m-cond")) $("m-cond").value = d.zustand;
+  erfWahlZeichnen();
   if (d.custom && $("m-custom") && !$("m-custom").checked) {
     $("m-custom").checked = true;
     applyCustomMode();
@@ -6851,11 +6856,60 @@ function renderSuggestions(items, meta = {}) {
   });
 }
 
+/* ── Pillen und Plus/Minus im Formular „Manuell erfassen" ─────────────
+
+   **Die Systemauswahl bleibt die Quelle der Wahrheit.** `m-type` wird an
+   elf Stellen gelesen und an zwei gesetzt, `m-cond` an sechs Stellen
+   gelesen. Statt alle umzubauen, stehen die beiden `<select>` unsichtbar
+   im Formular; die Pillen schreiben hinein und lösen `change` aus, so dass
+   der Lauscher an `m-type` (Suche neu starten) weiter greift.
+
+   **Andersherum feuert nichts.** Setzt der Code den Wert direkt – beim
+   Wiederherstellen eines Entwurfs, beim Übernehmen eines Vorschlags –,
+   kommt kein Ereignis. Darum steht dort jeweils `erfWahlZeichnen()`, und
+   ein Test hält fest, dass kein neues Setzen ohne den Aufruf dazukommt. */
+function erfWahlZeichnen() {
+  document.querySelectorAll(".erf-wahl[data-fuer]").forEach((gruppe) => {
+    const quelle = $(gruppe.dataset.fuer);
+    if (!quelle) return;
+    gruppe.querySelectorAll("[data-wert]").forEach((b) => {
+      const an = b.dataset.wert === quelle.value;
+      b.classList.toggle("sel", an);
+      b.setAttribute("aria-checked", String(an));
+    });
+  });
+}
+
+function erfassenVerdrahten() {
+  document.querySelectorAll(".erf-wahl[data-fuer]").forEach((gruppe) => {
+    gruppe.addEventListener("click", (ev) => {
+      const b = ev.target.closest("[data-wert]");
+      const quelle = $(gruppe.dataset.fuer);
+      if (!b || !quelle || quelle.value === b.dataset.wert) return;
+      quelle.value = b.dataset.wert;
+      quelle.dispatchEvent(new Event("change", { bubbles: true }));
+      erfWahlZeichnen();
+    });
+  });
+  document.querySelectorAll(".erf-stepper [data-schritt]").forEach((b) => {
+    b.addEventListener("click", () => {
+      const feld = $("m-qty");
+      const n = (parseInt(feld.value, 10) || 1) + Number(b.dataset.schritt);
+      feld.value = String(Math.min(999, Math.max(1, n)));
+      // Der Entwurf lauscht auf `input` – sonst ginge die Anzahl verloren,
+      // wenn der Tab zwischendurch wegfällt.
+      feld.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
+  erfWahlZeichnen();
+}
+
 /* Vorschlag ins manuelle Formular übernehmen (Karte oder Detail-Popup). */
 function takeSuggestion(it) {
   $("m-name").value = it.name;
   $("m-id").value = it.item_id;
   if (it.item_type) $("m-type").value = it.item_type;
+  erfWahlZeichnen();
   manualSelection = { item_id: it.item_id, img_url: it.img_url || "",
                       bricklink_url: it.bricklink_url || "",
                       year: it.year || 0 };
@@ -12556,6 +12610,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e) e.addEventListener("change", entwurfSichern);
   });
   $("btn-manual-list").addEventListener("click", pickListForManual);
+  erfassenVerdrahten();
   $("btn-manual-add").addEventListener("click", addManual);
   $("btn-manual-want").addEventListener("click", addManualWanted);
   $("m-custom").addEventListener("change", applyCustomMode);

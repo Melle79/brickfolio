@@ -341,25 +341,29 @@
 
     <button id="btn-scan-custom" class="btn btn-outline" hidden>🎨 Eigene Figur mit diesem Foto</button>
     <button id="btn-manual-toggle" class="btn btn-outline">✏️ Manuell erfassen</button>
-    <div id="manual-form" class="settings-card" hidden>
+    <!-- „Manuell erfassen" – seit 2.88.36 mit eigenen Bauteilen statt
+         Systemauswahl. Die alten Felder `m-type`, `m-cond` und `m-qty`
+         bleiben die Quelle der Wahrheit: `m-type` wird an elf Stellen
+         gelesen und an zwei gesetzt. Die Pillen schreiben hinein, statt die
+         elf Stellen umzubauen (siehe `erfWahlZeichnen`). -->
+    <div id="manual-form" class="settings-card erfassen" hidden>
       <h3>Manuell erfassen</h3>
-      <div class="name-type-row">
-        <div class="nt-name">
-          <label for="m-name">Name *</label>
-          <span class="search-wrap">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
-            <input id="m-name" placeholder="z. B. Battle Droid, Tan">
-            <button type="button" class="search-clear" data-clear="m-name" aria-label="Eingabe leeren">×</button>
-          </span>
-        </div>
-        <div class="nt-type">
-          <label for="m-type">Typ</label>
-          <select id="m-type">
-            <option value="minifig" selected>Minifigur</option>
-            <option value="part">Einzelteil</option>
-            <option value="set">Set</option>
-          </select>
-        </div>
+      <label for="m-name">Name *</label>
+      <span class="search-wrap">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input id="m-name" placeholder="z. B. Battle Droid, Tan">
+        <button type="button" class="search-clear" data-clear="m-name" aria-label="Eingabe leeren">×</button>
+      </span>
+      <span class="erf-label" id="m-type-label">Typ</span>
+      <select id="m-type" hidden aria-hidden="true" tabindex="-1">
+        <option value="minifig" selected>Minifigur</option>
+        <option value="part">Einzelteil</option>
+        <option value="set">Set</option>
+      </select>
+      <div class="erf-wahl" data-fuer="m-type" role="radiogroup" aria-labelledby="m-type-label">
+        <button type="button" role="radio" data-wert="minifig">Minifigur</button>
+        <button type="button" role="radio" data-wert="part">Einzelteil</button>
+        <button type="button" role="radio" data-wert="set">Set</button>
       </div>
       <p id="m-search-hint" class="search-hint" hidden></p>
       <div id="m-suggestions" class="results suggestions"></div>
@@ -370,32 +374,59 @@
       <label for="m-id" id="m-id-label">BrickLink-Nr. (optional)</label>
       <input id="m-id" placeholder="z. B. sw0001a" autocapitalize="none">
       <div id="m-custom-box" hidden>
-        <label for="m-img">Eigenes Bild (optional)</label>
-        <input id="m-img" type="file" accept="image/*">
-        <button type="button" class="mini-btn" id="m-img-from-scan" hidden>📷 Foto vom Scan verwenden</button>
-        <div id="m-img-preview" class="custom-preview" hidden>
-          <img id="m-img-thumb" alt="Vorschau">
-          <button type="button" class="mini-btn" id="m-img-clear">Bild entfernen</button>
+        <span class="erf-label">Eigenes Bild (optional)</span>
+        <!-- Das Dateifeld des Systems („Datei auswählen | Keine Datei
+             ausgewählt") ist unsichtbar; geöffnet wird es über das Label
+             daneben, das wie ein Knopf aussieht. -->
+        <input id="m-img" type="file" accept="image/*" class="unsichtbar">
+        <div class="erf-bild">
+          <div id="m-img-preview" class="erf-bild-vorschau" hidden>
+            <img id="m-img-thumb" alt="Vorschau">
+            <button type="button" id="m-img-clear" class="erf-bild-weg"
+                    aria-label="Bild entfernen" title="Bild entfernen">✕</button>
+          </div>
+          <label for="m-img" class="mini-btn erf-bild-knopf">🖼 Bild wählen</label>
+          <button type="button" class="mini-btn erf-bild-knopf" id="m-img-from-scan" hidden>📷 Vom Scan</button>
         </div>
         <p class="search-hint">Die Nummer vergibt die App fortlaufend
           (custom-001, -002 …) – du kannst sie aber überschreiben, wenn du ein
           eigenes Schema führst. Custom-Figuren werden nicht bei BrickLink
           gesucht – Preise und Katalogbilder gibt es dafür nicht.</p>
       </div>
-      <label for="m-qty">Anzahl</label>
-      <input id="m-qty" type="number" min="1" max="999" value="1" inputmode="numeric">
-      <label for="m-cond">Zustand</label>
-      <select id="m-cond">
-        <option value="used" selected>Gebraucht</option>
-        <option value="new">Neu</option>
-      </select>
+      <div class="erf-paar">
+        <div class="erf-anzahl">
+          <label for="m-qty">Anzahl</label>
+          <div class="erf-stepper">
+            <button type="button" data-schritt="-1" aria-label="Eins weniger">−</button>
+            <input id="m-qty" type="number" min="1" max="999" value="1" inputmode="numeric">
+            <button type="button" data-schritt="1" aria-label="Eins mehr">+</button>
+          </div>
+        </div>
+        <div class="erf-zustand">
+          <span class="erf-label" id="m-cond-label">Zustand</span>
+          <select id="m-cond" hidden aria-hidden="true" tabindex="-1">
+            <option value="used" selected>Gebraucht</option>
+            <option value="new">Neu</option>
+          </select>
+          <div class="erf-wahl" data-fuer="m-cond" role="radiogroup" aria-labelledby="m-cond-label">
+            <button type="button" role="radio" data-wert="used">Gebraucht</button>
+            <button type="button" role="radio" data-wert="new">Neu</button>
+          </div>
+        </div>
+      </div>
       <label for="m-paid">Bezahlt € (optional)</label>
       <input id="m-paid" inputmode="decimal" placeholder="z. B. 4,50">
       <label for="m-notes">Notizen</label>
       <textarea id="m-notes" placeholder="z. B. Herkunft, Set, Besonderheiten"></textarea>
-      <button id="btn-manual-add" class="btn btn-primary">Zur Sammlung hinzufügen</button>
-      <button id="btn-manual-want" class="btn btn-outline">☆ Auf die Wunschliste</button>
-      <button id="btn-manual-list" class="btn btn-outline" hidden>🛒 Auf eine Liste</button>
+      <!-- Wie auf der Trefferkarte im Scan: ein breiter Knopf, der Rest als
+           Zeichen. Vorher war „Zur Sammlung" hier gelb und dort grün. -->
+      <div class="erf-aktionen">
+        <button id="btn-manual-add" class="mini-btn add">＋ Zur Sammlung</button>
+        <button id="btn-manual-want" class="mini-btn zeichen"
+                title="Auf die Wunschliste" aria-label="Auf die Wunschliste">☆</button>
+        <button id="btn-manual-list" class="mini-btn zeichen" hidden
+                title="Auf eine Liste" aria-label="Auf eine Liste">🛒</button>
+      </div>
       <div id="manual-list-pick" class="detail-row btn-grid" hidden></div>
       <p id="manual-error" class="error" hidden></p>
     </div>

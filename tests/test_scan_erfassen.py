@@ -73,17 +73,42 @@ def test_der_zustand_nimmt_mit_einem_tipp_auf():
     assert "Hinzufügen" not in f[f.index("zust-reihe"):f.index("zust-reihe") + 900]
 
 
-def test_abbrechen_ist_ein_verweis_mit_voller_trefferflaeche():
+def test_abbrechen_ist_ein_rotes_kreuz():
+    """„und abrechen vielleicht als roten Knopf mit X" (24.09.2026) – in
+    derselben Sprache wie der Löschen-Knopf der Sammlung, mit 44 Pixeln."""
     f = _scan()
-    assert 'class="zust-abbruch" data-cancel' in f
-    m = re.search(r"\.zust-abbruch \{([^}]*)\}", css(), re.S)
-    assert m and "min-height: 44px" in m.group(1), (
-        "ein Verweis darf kleiner aussehen, aber nicht kleiner zu treffen sein")
+    assert 'class="mini-btn zust-abbruch" data-cancel' in f
+    assert 'aria-label="${esc(tr("Abbrechen"))}">✕</button>' in f
+    m = re.search(r"\.zust-reihe \.zust-abbruch \{([^}]*)\}", css(), re.S)
+    assert m
+    r = m.group(1)
+    assert "var(--red)" in r and "width: 44px" in r
+    # die Höhe gilt für die ganze Reihe – Feld, Zustände und ✕ gleich hoch
+    assert ".zust-reihe > * { min-height: 44px; }" in css()
 
 
-def test_der_hinweis_wird_uebersetzt():
-    """Der alte Satz stand ohne `tr()` im Markup und fehlte in en.json –
-    auf Englisch stand dort weiter Deutsch."""
-    assert 'tr("Zustand – wird sofort gespeichert")' in _scan()
-    assert '"Zustand – wird sofort gespeichert"' in (
-        FRONTEND / "i18n" / "en.json").read_text(encoding="utf-8")
+def test_der_zustand_steht_in_einer_zeile():
+    """**„Das würde auch alles auf eine Zeile passen."** (24.09.2026)
+
+    Der erste Umbau (2.88.35) hatte noch eine eigene Zeile für den Hinweis
+    und zwei Knöpfe über die volle Breite; das Feld zog sich auf der breiten
+    Karte über 650 Pixel. Jetzt: feste Feldbreite, Knöpfe in ihrer
+    natürlichen Größe, keine Extrazeile.
+    """
+    f = _scan()
+    assert "zust-titel" not in f and "zust-wahl" not in f
+    r = re.search(r"\.zust-reihe \.paid-input \{([^}]*)\}", css(), re.S)
+    assert r and "flex: 0 1 120px" in r.group(1), "wachsen darf es nicht"
+    k = re.search(r"\.zust-reihe \.mini-btn\.add \{([^}]*)\}", css(), re.S)
+    assert k and "flex: 1 1 0" in k.group(1), (
+        "die beiden Zustände füllen die Breite – sonst klebt alles links")
+
+
+def test_sofort_speichern_steht_am_knopf():
+    """Der Hinweis hat keine eigene Zeile mehr – er steht als Erklärung am
+    Knopf, übersetzt."""
+    f = _scan()
+    assert 'title="${esc(tr("Als gebraucht aufnehmen"))}"' in f
+    assert 'title="${esc(tr("Als neu aufnehmen"))}"' in f
+    en = (FRONTEND / "i18n" / "en.json").read_text(encoding="utf-8")
+    assert '"Als gebraucht aufnehmen"' in en and '"Als neu aufnehmen"' in en
