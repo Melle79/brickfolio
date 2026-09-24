@@ -3971,7 +3971,14 @@ function renderScanResults(items) {
     });
   });
 
-  enrichSuggestions(items, meta.detailVon || 0);
+  // **Kein `meta` hier.** Die Scan-Ergebnisse kommen in einem Stück, es gibt
+  // keine zweite Seite – anders als bei den Suchvorschlägen, wo `detailVon`
+  // sagt, ab welchem Treffer die teuren Abrufe ansetzen. Bis 2.88.33 stand
+  // hier trotzdem `meta.detailVon`, kopiert aus `renderSuggestions`
+  // (2.86.5). `meta` gibt es in dieser Funktion nicht, und die Ausnahme flog
+  // **vor** dem Verdrahten der Knöpfe: Die Karte stand da, „＋ Zur Sammlung"
+  // tat nichts, und es gab nicht einmal eine Fehlermeldung.
+  enrichSuggestions(items);
   wireWantButtons(box, items, eigenbildAnhaengen);
   wireCartButtons(box, items, eigenbildAnhaengen);
 

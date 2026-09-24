@@ -45,6 +45,36 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.34 – September 2026
+
+### Behoben
+- 🚨 **Aus dem Scan liess sich nichts mehr aufnehmen.** „＋ Zur Sammlung",
+  „☆ Merken" und „🛒 Liste" taten **gar nichts** – keine Reaktion, keine
+  Fehlermeldung, nichts im Protokoll. Betroffen seit **2.86.5 (22.09.)**,
+  also zwei Tage.
+
+  Dieselbe Zeile wie in 2.88.32, nur an der zweiten Stelle: `2.86.5` setzte
+  `enrichSuggestions(items, meta.detailVon || 0)` in **zwei** Funktionen –
+  in eine, die ein `meta` hat, und in die Scan-Ansicht, die keines hat. Dort
+  flog die Ausnahme genau **zwischen** dem Zeichnen der Karte und dem
+  Verdrahten der Knöpfe:
+
+  ```
+  enrichSuggestions(items, meta.detailVon || 0);   ← hier knallt es
+  wireWantButtons(…);  wireCartButtons(…);          ← kommt nie an
+  …forEach([data-add])                              ← kommt nie an
+  ```
+
+  Die Karte stand also vollständig da und sah richtig aus – sie war nur
+  taub. Die Scan-Ergebnisse brauchen kein `meta`: Sie kommen in einem Stück,
+  es gibt keine zweite Seite.
+
+- 🛡 **Ein Wächter gegen genau diese Art Fehler.** Beide Zeilen sahen
+  richtig aus – ein Test auf den Wortlaut hätte nichts gefunden. Der neue
+  prüft den **Geltungsbereich**: Keine Funktion darf ein `meta` benutzen,
+  das sie nicht hat. Kommentare und Zeichenketten bleiben dabei außen vor,
+  sonst zählt jedes `<meta>` in einer Vorlage mit.
+
 ## 2.88.33 – September 2026
 
 ### Dokumentation
