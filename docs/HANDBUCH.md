@@ -839,6 +839,31 @@ vorhandenes Foto ist also derselbe Weg, nicht ein anderer. Kann das Gerät
 es, steht dort auch ein **Licht**; ein Knopf, der nichts täte, erscheint
 gar nicht erst.
 
+**Zoom** (ab 2.88.23): über dem Auslöser stehen **1× / 2× / 3×**, und
+**Kneifen mit zwei Fingern** geht auch – stufenlos. Wo das Gerät es kann,
+zoomt der Sensor selbst; sonst wird der Ausschnitt verkleinert. Beides
+hilft der Erkennung, denn sie bekommt die Figur groß statt klein im Bild.
+
+> **Aufgenommen wird, was der Sucher zeigt.** Das klingt
+> selbstverständlich, war es bis 2.88.22 aber nicht: Das Livebild ist
+> beschnitten (es füllt den Bildschirm), das Foto nahm trotzdem das ganze
+> Sensorbild. Auf einem hochkanten Telefon sieht man davon nur **26 % der
+> Breite** – die eingerahmte Figur landete also auf einem Viertel im Foto,
+> und Brickognize rechnet alles auf 1024 Pixel herunter. Jetzt wird der
+> Sucherausschnitt genommen, plus ein Fünftel Sicherheitsrand. Schon ohne
+> Zoom kommt die Figur damit **fast doppelt so groß** bei der Erkennung an,
+> mit 3× rund viereinhalbmal so groß.
+
+> **Warum das Telefon jedes Mal nach der Kamera fragt.** Das ist iOS, nicht
+> Brickfolio: Für eine Web-App vom Startbildschirm merkt sich Safari die
+> Kamerafreigabe **nicht über den App-Start hinaus** (WebKit-Fehler
+> 215884). Einmal je Start wird also gefragt, und keine Einstellung in der
+> App ändert daran etwas. Was seit 2.88.23 wegfällt, ist das *wiederholte*
+> Fragen: Der Kamerastrom bleibt nach dem Auslösen eine halbe Minute
+> stehen, sodass die nächste Figur ohne neue Rückfrage drankommt. Wechselt
+> man den Tab oder geht die App in den Hintergrund, endet er sofort – die
+> Kameraanzeige des Geräts soll nicht ohne Grund leuchten.
+
 > **Über `http://` bleibt es beim alten Weg.** Das Livebild braucht eine
 > gesicherte Verbindung – über die Cloudflare-Adresse ist das gegeben, beim
 > direkten Aufruf einer Instanz im Heimnetz nicht. Dort (und wenn du den

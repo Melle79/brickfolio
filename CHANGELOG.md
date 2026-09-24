@@ -45,6 +45,39 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.23 – September 2026
+
+### Neu
+- 🔍 **Zoom in der Kamera.** Über dem Auslöser stehen **1× / 2× / 3×**, und
+  Kneifen mit zwei Fingern geht auch – stufenlos. Wo das Gerät es kann,
+  zoomt der Sensor selbst (echte Details); sonst wird der Ausschnitt
+  verkleinert. Die Stufen erscheinen nur, wo es etwas zu wählen gibt.
+
+### Behoben
+- 📷 **Aufgenommen wurde viel mehr, als der Sucher zeigte.** Das Livebild
+  füllt den Bildschirm und ist dafür beschnitten – auf einem hochkanten
+  Telefon sieht man **26 % der Bildbreite**. Das Foto nahm trotzdem das
+  ganze Sensorbild. Wer eine Figur einrahmte, bekam sie also auf ein
+  Viertel geschrumpft, und die Erkennung rechnet jedes Bild auf 1024 Pixel
+  herunter.
+
+  Der alte Grund dafür war, dass sonst der Rand fehle, an dem die Figur oft
+  steht. Der Gedanke stimmt, die Größenordnung nicht: 74 % sind kein Rand.
+  Jetzt wird der Sucherausschnitt genommen, **plus ein Fünftel
+  Sicherheitsrand**. Nachgemessen: Die Figur kommt ohne Zoom mit **171
+  statt 96 Pixeln** bei der Erkennung an, mit 3× mit **427**.
+
+- 🔓 **Nicht mehr bei jedem Foto nach der Kamera fragen.** Bisher endete
+  der Kamerastrom beim Schließen sofort; das nächste Foto fragte neu. Wer
+  fünf Figuren hintereinander scannte, wurde fünfmal gefragt. Der Strom
+  bleibt jetzt eine halbe Minute stehen – beim Tabwechsel und im
+  Hintergrund endet er sofort, damit die Kameraanzeige des Geräts nicht
+  ohne Grund leuchtet.
+
+  **Das Fragen beim App-Start bleibt.** Für eine Web-App vom
+  Startbildschirm merkt sich iOS die Kamerafreigabe nicht über den Start
+  hinaus (WebKit-Fehler 215884) – daran kann keine App etwas ändern.
+
 ## 2.88.22 – September 2026
 
 ### Behoben

@@ -1872,9 +1872,11 @@ function showTab(name) {
   // genau dieser Fläche, und eine Fläche der Größe null liefert nichts.
   neuladenNachholen();
   if (name !== "scan") {
-    // **Auch die Kamera.** Sie liefe sonst hinter einer anderen Ansicht
-    // weiter, zöge Strom und ließe die Leuchte am Gerät an.
-    kameraSchliessen();
+    // **Auch die Kamera – und zwar sofort.** Sie liefe sonst hinter einer
+    // anderen Ansicht weiter, zöge Strom und ließe die Leuchte am Gerät
+    // an. Der Nachlauf aus `kameraSchliessen` gilt hier ausdrücklich
+    // nicht: Wer in die Sammlung wechselt, fotografiert gerade nicht.
+    kameraSchliessen(true);
     arbeitBildFreigeben();
     // Die Reihum-Fläche ist mit rund 4 MB kein Riese, blieb aber liegen,
     // sobald „Weitersuchen" angeboten wurde – und dann durch alle
@@ -2938,16 +2940,57 @@ async function verkleinern(file, maxSeite = SCAN_KANTE) {
    Das aufgenommene Bild geht denselben Weg wie eine gewählte Datei:
    `handlePhoto()`. Die Kamera ist eine zweite Tür, kein zweiter Ablauf. */
 let kameraStrom = null;
+let kameraZoom = 1;        // was der Nutzer gewählt hat, als Faktor
+let kameraNativ = null;    // {min, max}, wenn das Gerät wirklich zoomen kann
+let kameraNachlauf = null; // Frist, nach der der Strom wirklich endet
 
-function kameraSchliessen() {
-  const sicht = $("kamera");
-  if (sicht) sicht.hidden = true;
-  const v = $("kamera-bild");
-  if (v) v.srcObject = null;
+const KAMERA_ZOOM_MAX = 3;
+
+/* **Warum der Strom nicht sofort endet.**
+
+   iOS merkt sich die Kamerafreigabe für einen Web-App-Start *nicht* – das
+   ist WebKits Verhalten, nicht unseres, und keine Zeile JavaScript ändert
+   daran etwas (WebKit-Fehler 215884). Einmal je Start muss also gefragt
+   werden.
+
+   Was wir verhindern können, ist **mehrfaches** Fragen im selben Start:
+   Bis 2.88.22 endete der Strom beim Schließen sofort, und das nächste Foto
+   rief `getUserMedia` erneut auf – auf iOS oft mit neuer Rückfrage. Wer
+   fünf Figuren hintereinander scannt, wurde fünfmal gefragt.
+
+   Der Strom bleibt darum eine halbe Minute stehen. So lange leuchtet die
+   Kameraanzeige des Geräts weiter – deshalb nicht länger, und deshalb
+   endet er sofort, sobald die App in den Hintergrund geht. */
+const KAMERA_NACHLAUF_MS = 30000;
+
+function kameraStromBeenden() {
+  clearTimeout(kameraNachlauf);
+  kameraNachlauf = null;
   if (kameraStrom) {
     kameraStrom.getTracks().forEach((t) => t.stop());
     kameraStrom = null;
   }
+  kameraNativ = null;
+}
+
+function kameraLebt() {
+  const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
+  return !!spur && spur.readyState === "live";
+}
+
+/* `sofort` beendet den Strom ohne Nachlauf. Das gilt überall dort, wo man
+   die Kamera nicht gleich wieder braucht: beim Wechsel in einen anderen
+   Tab und beim Griff in die Mediathek. Der Nachlauf ist für den einen
+   Fall gedacht, in dem er etwas bringt – noch eine Figur, gleich danach. */
+function kameraSchliessen(sofort) {
+  const sicht = $("kamera");
+  if (sicht) sicht.hidden = true;
+  const v = $("kamera-bild");
+  if (v) { v.srcObject = null; v.style.transform = ""; }
+  kameraZoom = 1;
+  clearTimeout(kameraNachlauf);
+  if (sofort === true) { kameraStromBeenden(); return; }
+  kameraNachlauf = setTimeout(kameraStromBeenden, KAMERA_NACHLAUF_MS);
 }
 
 async function kameraOeffnen() {
@@ -2956,24 +2999,34 @@ async function kameraOeffnen() {
   const mediaOk = navigator.mediaDevices
     && typeof navigator.mediaDevices.getUserMedia === "function";
   if (!sicht || !video || !mediaOk) { $("file-input").click(); return; }
-  try {
-    kameraStrom = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 1920 }, height: { ideal: 1920 },
-      },
-      audio: false,
-    });
-  } catch (_) {
-    // Kein Zugriff – abgelehnt, keine Kamera, oder unsicherer Kontext.
-    // Der gewohnte Weg bleibt offen, ohne Fehlermeldung über uns selbst.
-    $("file-input").click();
-    return;
+  clearTimeout(kameraNachlauf);
+  kameraNachlauf = null;
+  // Läuft der Strom vom letzten Mal noch, kein zweites `getUserMedia` –
+  // genau daran hängt die wiederholte Rückfrage auf iOS.
+  if (!kameraLebt()) {
+    try {
+      kameraStrom = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 }, height: { ideal: 1920 },
+        },
+        audio: false,
+      });
+    } catch (_) {
+      // Kein Zugriff – abgelehnt, keine Kamera, oder unsicherer Kontext.
+      // Der gewohnte Weg bleibt offen, ohne Fehlermeldung über uns selbst.
+      kameraStrom = null;
+      $("file-input").click();
+      return;
+    }
   }
   video.srcObject = kameraStrom;
+  video.style.transform = "";
+  kameraZoom = 1;
   sicht.hidden = false;
   try { await video.play(); } catch (_) { /* iOS spielt von selbst */ }
   lichtKnopfPruefen();
+  kameraZoomPruefen();
 }
 
 /* Licht nur zeigen, wo es das Gerät kann. Ein Knopf, der nichts tut, ist
@@ -3001,17 +3054,159 @@ async function kameraLicht() {
   } catch (_) { knopf.hidden = true; }
 }
 
-/* Ein Einzelbild aus dem Videostrom. `videoWidth` statt der angezeigten
-   Größe: Gezeigt wird beschnitten (`object-fit: cover`), aufgenommen wird
-   das ganze Bild – sonst fehlte der Erkennung genau der Rand, an dem die
-   Figur oft steht. */
+/* ── Zoom ───────────────────────────────────────────────────────────────
+
+   **Zwei Wege, ein Knopf.** Kann das Gerät wirklich zoomen (`zoom` in den
+   Fähigkeiten der Spur), zoomt der Sensor – das bringt echte Details.
+   Sonst wird der Ausschnitt verkleinert: Die Vorschau vergrößert per CSS,
+   und `kameraAusloesen` schneidet passend zu. Das erfindet keine Details,
+   schickt der Erkennung aber die Figur groß im Bild statt klein im Eck –
+   und Brickognize rechnet ohnehin auf 1024 Pixel herunter.
+
+   **Die Einheit ist nicht überall dieselbe.** Manche Geräte zählen den
+   Zoom als Faktor (min 1), andere in Prozent (min 100). `min * stufe`
+   trifft beides – ein fest verdrahtetes `zoom: 2` wäre auf dem zweiten
+   Gerät ein Herauszoomen auf 2 %. */
+function kameraZoomStufen() {
+  if (!kameraNativ) return [1, 2, 3];
+  const max = Math.min(KAMERA_ZOOM_MAX, kameraNativ.max / kameraNativ.min);
+  return [1, 2, 3].filter((s) => s <= max + 0.01);
+}
+
+function kameraZoomPruefen() {
+  kameraNativ = null;
+  const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
+  if (spur && typeof spur.getCapabilities === "function") {
+    let f = null;
+    try { f = spur.getCapabilities().zoom; } catch (_) { f = null; }
+    if (f && typeof f.min === "number" && f.max > f.min) {
+      kameraNativ = { min: f.min, max: f.max };
+    }
+  }
+  const leiste = $("kamera-zoom");
+  if (!leiste) return;
+  const stufen = kameraZoomStufen();
+  // Eine Reihe mit nur „1×" wäre ein Bedienteil ohne Bedienung.
+  leiste.hidden = stufen.length < 2;
+  leiste.innerHTML = stufen.map((s) => `
+    <button type="button" class="kamera-stufe" data-zoom="${s}"
+      aria-pressed="${s === kameraZoom}">${s}×</button>`).join("");
+}
+
+/* Zwischenwerte aus der Kneifgeste stehen auf der Stufe darunter: Bei 1,6×
+   zeigt die „1" den Wert an und gilt als gewählt. Ohne das stünde in der
+   Leiste „1×", während das Bild schon anderthalbfach vergrößert ist – die
+   Anzeige widerspräche dem, was man sieht. */
+function kameraZoomAnzeigen() {
+  document.querySelectorAll("#kamera-zoom .kamera-stufe").forEach((b) => {
+    const s = Number(b.dataset.zoom);
+    const genau = Math.abs(s - kameraZoom) < 0.05;
+    const traegt = genau || s === Math.floor(kameraZoom);
+    b.setAttribute("aria-pressed", String(traegt));
+    b.textContent = (genau || !traegt
+      ? s : kameraZoom.toFixed(1).replace(".", ",")) + "×";
+  });
+}
+
+async function kameraZoomSetzen(stufe) {
+  const stufen = kameraZoomStufen();
+  kameraZoom = Math.max(1, Math.min(stufen[stufen.length - 1] || 1, stufe));
+  if (kameraNativ) {
+    const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
+    const ziel = Math.min(kameraNativ.max, kameraNativ.min * kameraZoom);
+    try {
+      await spur.applyConstraints({ advanced: [{ zoom: ziel }] });
+    } catch (_) {
+      // Die Fähigkeit war da, das Stellen ging trotzdem nicht – dann eben
+      // digital, statt einen Knopf anzubieten, der nichts tut.
+      kameraNativ = null;
+    }
+  }
+  const video = $("kamera-bild");
+  if (video) {
+    video.style.transform = kameraNativ ? "" : `scale(${kameraZoom})`;
+  }
+  kameraZoomAnzeigen();
+}
+
+/* Kneifen zum Zoomen – auf einem Kamerabild probiert das jeder zuerst.
+   Zwei Finger, das Verhältnis der Abstände; die Stufenknöpfe bleiben für
+   alle, die lieber tippen. */
+const kameraFinger = new Map();
+let kameraKniffStart = 0;
+let kameraKniffZoom = 1;
+
+function kameraAbstand() {
+  const p = [...kameraFinger.values()];
+  return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+}
+
+function kameraZeigerAn(e) {
+  kameraFinger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (kameraFinger.size === 2) {
+    kameraKniffStart = kameraAbstand();
+    kameraKniffZoom = kameraZoom;
+  }
+}
+
+function kameraZeigerBewegt(e) {
+  if (!kameraFinger.has(e.pointerId)) return;
+  kameraFinger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (kameraFinger.size !== 2 || !kameraKniffStart) return;
+  e.preventDefault();
+  kameraZoomSetzen(kameraKniffZoom * (kameraAbstand() / kameraKniffStart));
+}
+
+function kameraZeigerAb(e) {
+  kameraFinger.delete(e.pointerId);
+  if (kameraFinger.size < 2) kameraKniffStart = 0;
+}
+
+/* Welcher Teil des Sensorbildes aufgenommen wird.
+
+   **Der Sucher zeigt viel weniger, als die Kamera liefert.** Das Video
+   steht auf `object-fit: cover`: Ein 1920×1080-Bild in einem hochkanten
+   Telefonfenster (375×812) zeigt davon **499 Pixel Breite – 26 %**.
+   Nachgemessen am 24.09.2026, mit einem Canvas als Ersatzkamera.
+
+   Bis 2.88.22 nahm `kameraAusloesen` trotzdem das **ganze** Bild auf, mit
+   der Begründung, sonst fehle der Rand, an dem die Figur oft steht. Der
+   Gedanke stimmt, die Größenordnung nicht: 74 % sind kein Rand. Wer eine
+   Figur im Sucher einrahmt, bekam sie im Foto auf ein Viertel der Breite
+   geschrumpft – und Brickognize rechnet jedes Bild auf 1024 Pixel
+   herunter, also kam dort ein Viertel der Figur an.
+
+   Jetzt wird aufgenommen, **was der Sucher zeigt, plus ein Fünftel
+   Sicherheitsrand** – damit bleibt der alte Einwand berücksichtigt, ohne
+   dass die Figur in einem Meer aus Unsichtbarem untergeht.
+
+   `zoom` verkleinert den Ausschnitt zusätzlich. Bei echtem Gerätezoom ist
+   er 1: Dann zoomt der Sensor selbst, und im Bild steht die Figur bereits
+   groß. */
+const KAMERA_RAND = 1.2;
+
+function kameraAusschnitt(video, zoom) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const kasten = video.getBoundingClientRect();
+  const cw = kasten.width || vw, ch = kasten.height || vh;
+  const deckung = Math.max(cw / vw, ch / vh);   // object-fit: cover
+  const teiler = Math.max(1, zoom || 1);
+  const sw = Math.min(vw, (cw / deckung) * KAMERA_RAND / teiler);
+  const sh = Math.min(vh, (ch / deckung) * KAMERA_RAND / teiler);
+  return { sx: (vw - sw) / 2, sy: (vh - sh) / 2, sw, sh };
+}
+
 function kameraAusloesen() {
   const video = $("kamera-bild");
   if (!video || !video.videoWidth) return;
+  // Beim Gerätezoom hat der Sensor die Arbeit schon getan – dann darf der
+  // Ausschnitt nicht ein zweites Mal verkleinert werden.
+  const a = kameraAusschnitt(video, kameraNativ ? 1 : kameraZoom);
   const tafel = document.createElement("canvas");
-  tafel.width = video.videoWidth;
-  tafel.height = video.videoHeight;
-  tafel.getContext("2d").drawImage(video, 0, 0);
+  tafel.width = Math.max(1, Math.round(a.sw));
+  tafel.height = Math.max(1, Math.round(a.sh));
+  tafel.getContext("2d").drawImage(video, a.sx, a.sy, a.sw, a.sh,
+                                  0, 0, tafel.width, tafel.height);
   tafel.toBlob((brocken) => {
     kameraSchliessen();
     if (!brocken) return;
@@ -12118,8 +12313,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Rechner. Die Kamera geht dabei zu – sonst liefe sie hinter dem
   // Systemdialog weiter und zöge Strom.
   $("kamera-galerie").addEventListener("click", () => {
-    kameraSchliessen();
+    kameraSchliessen(true);
     $("file-input").click();
+  });
+  $("kamera-zoom").addEventListener("click", (e) => {
+    const knopf = e.target.closest("[data-zoom]");
+    if (knopf) kameraZoomSetzen(Number(knopf.dataset.zoom));
+  });
+  const kamerasicht = $("kamera");
+  kamerasicht.addEventListener("pointerdown", kameraZeigerAn);
+  kamerasicht.addEventListener("pointermove", kameraZeigerBewegt);
+  kamerasicht.addEventListener("pointerup", kameraZeigerAb);
+  kamerasicht.addEventListener("pointercancel", kameraZeigerAb);
+  // Im Hintergrund hat niemand etwas von einer laufenden Kamera – nur die
+  // Anzeige am Gerät leuchtet weiter. Also sofort aus, nicht erst nach der
+  // halben Minute Nachlauf.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) kameraStromBeenden();
   });
   $("btn-manual-toggle").addEventListener("click", () => {
     const f = $("manual-form");

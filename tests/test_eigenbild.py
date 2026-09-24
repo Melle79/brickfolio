@@ -276,9 +276,21 @@ def test_ansichtswechsel_raeumt_auf():
     """
     quelle = js()
     anfang = quelle.index("function showTab(")
-    koerper = quelle[anfang:anfang + 1600]
-    bedingung = koerper.index('name !== "scan"')
-    danach = koerper[bedingung:bedingung + 500]
+    bedingung = quelle.index('if (name !== "scan") {', anfang)
+    # **Den Block zaehlen, nicht schaetzen.** Hier stand ein Ausschnitt
+    # fester Laenge (500 Zeichen). Am 24.09.2026 schob ein laengerer
+    # Kommentar im selben Block `reihumAufraeumen()` darueber hinaus, und
+    # der Test schlug fehl, obwohl die geprüfte Absicht unberührt war.
+    tiefe, ende = 0, bedingung
+    for i in range(bedingung, len(quelle)):
+        if quelle[i] == "{":
+            tiefe += 1
+        elif quelle[i] == "}":
+            tiefe -= 1
+            if tiefe == 0:
+                ende = i
+                break
+    danach = quelle[bedingung:ende]
     assert "arbeitBildFreigeben()" in danach
     assert "reihumAufraeumen()" in danach
     # Nicht mitten in einer laufenden Suche: Die Schleife zeichnet aus

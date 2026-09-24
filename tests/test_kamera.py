@@ -63,25 +63,48 @@ def test_das_aufgenommene_bild_geht_denselben_weg():
     """Die Kamera ist eine zweite Tür, kein zweiter Ablauf."""
     f = _fn("kameraAusloesen")
     assert "handlePhoto(" in f
-    # Aus dem Videostrom, nicht aus der angezeigten (beschnittenen) Größe:
-    # `object-fit: cover` schneidet den Rand ab, an dem die Figur oft steht.
+
+
+def test_gerechnet_wird_in_sensorpixeln():
+    """Nicht in der angezeigten Größe – die ist eine CSS-Zahl.
+
+    Der Ausschnitt steht seit 2.88.23 in `kameraAusschnitt`: Er nimmt den
+    Teil, den der Sucher zeigt (`object-fit: cover`), plus Sicherheitsrand.
+    Bis dahin nahm `kameraAusloesen` das ganze Sensorbild – bei einem
+    hochkanten Telefon sind das 74 % Bild, die niemand gesehen hat. Warum
+    das die Erkennung kostet, steht in `test_kamera_zoom.py`.
+    """
+    f = _fn("kameraAusschnitt")
     assert "video.videoWidth" in f and "video.videoHeight" in f
 
 
 def test_schliessen_haelt_die_kamera_wirklich_an():
     """Ohne `stop()` je Spur läuft sie weiter – die Leuchte am Gerät bleibt
-    an, und der Strom geht mit."""
+    an, und der Strom geht mit.
+
+    Seit 2.88.23 geschieht das mit Frist statt sofort: iOS fragt sonst bei
+    *jedem* Foto neu nach der Freigabe. Beendet wird trotzdem – nur eben in
+    `kameraStromBeenden`, und `kameraSchliessen` bestellt es.
+    """
+    assert "getTracks().forEach((t) => t.stop())" in _fn("kameraStromBeenden")
     f = _fn("kameraSchliessen")
-    assert "getTracks().forEach((t) => t.stop())" in f
     assert "srcObject = null" in f
+    assert "kameraStromBeenden" in f
 
 
-def test_der_ansichtswechsel_schliesst_sie_mit():
-    """Sonst liefe sie hinter der Sammlung weiter."""
+def test_wer_die_kamera_verlaesst_haelt_sie_sofort_an():
+    """Die Frist gilt nur fuer „gleich noch eine Figur".
+
+    Beim Tabwechsel und beim Griff in die Mediathek fotografiert niemand
+    mehr – dort leuchtete die Kameraanzeige sonst eine halbe Minute ohne
+    Grund weiter. Ersetzt `test_der_ansichtswechsel_schliesst_sie_mit`,
+    der dieselbe Stelle prüfte, aber nur auf „überhaupt geschlossen".
+    """
+    assert "kameraSchliessen(true)" in js()
     m = re.search(r"function showTab\(name\) \{.*?\n\}\n", js(), re.S)
     assert m
     verlassen = m.group(0)[m.group(0).index('if (name !== "scan") {'):]
-    assert "kameraSchliessen()" in verlassen
+    assert "kameraSchliessen(true)" in verlassen
 
 
 def test_das_livebild_laeuft_auf_ios_ueberhaupt():

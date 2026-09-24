@@ -2755,10 +2755,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kamera {
   position: fixed; inset: 0; z-index: 120; background: #000;
   display: flex; flex-direction: column; justify-content: flex-end;
+  /* Das digital gezoomte Video ragt über den Rand – hier abschneiden,
+     nicht erst am Fensterrand. Und `touch-action` abschalten, sonst zoomt
+     die Kneifgeste die Seite statt des Bildes. */
+  overflow: hidden; touch-action: none;
 }
 .kamera video {
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; background: #000;
+  transform-origin: center; will-change: transform;
 }
 
 .kamera-kopf {
@@ -2790,6 +2795,23 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kamera-sucher i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
 .kamera-sucher i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
 .kamera-sucher i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+
+/* Die Zoomstufen sitzen über der Leiste, wie an einer Telefonkamera –
+   dieselbe dunkle, runde Sprache wie Licht und Mediathek daneben. */
+.kamera-zoom {
+  position: relative; z-index: 2; align-self: center;
+  display: flex; gap: 6px; margin-bottom: 14px; padding: 5px;
+  border-radius: 999px; background: rgba(0, 0, 0, .45);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.kamera-stufe {
+  min-width: 44px; height: 38px; padding: 0 10px; flex: none;
+  border: 0; border-radius: 999px; background: none; color: #fff;
+  font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.kamera-stufe[aria-pressed="true"] {
+  background: var(--yellow); color: var(--ink);
+}
 
 .kamera-leiste {
   position: relative; z-index: 2;
