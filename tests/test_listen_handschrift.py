@@ -80,3 +80,32 @@ def test_liste_loeschen_ist_ein_rotes_zeichen():
     assert 'class="mini-btn zust-abbruch loesch" data-l-del' in q
     assert '<button class="mini-btn danger" data-l-del>Liste löschen</button>' not in q
     assert ".liste-fuss .zust-abbruch {" in css()
+
+
+# ---------------------------------------------------- fehlende Set-Figuren
+
+def test_fehlende_figuren_ohne_knopfzeile():
+    """Zwei gleich große Knöpfe je Figur und bei gemerkten ein gelbes Schild –
+    bei 40 fehlenden Figuren viel Höhe für wenig."""
+    q = js()
+    i = q.index("data-mf-row=")
+    teil = q[i:i + 2600]
+    assert "fig-actions" not in teil
+    assert 'class="mini-btn link"' not in teil
+    assert "badge-wanted" not in teil
+    assert 'class="mini-btn mf-stern" data-mf-want=' in teil
+    assert 'class="mf-stern an"' in teil
+    assert 'class="mf-verweis"' in teil
+
+
+def test_fehlende_figuren_der_fuss_hat_eine_hauptsache():
+    assert 'class="mf-fuss"' in js()
+    assert ".mf-fuss .add { flex: 1 1 220px; }" in css()
+
+
+def test_der_sternknopf_schlaegt_die_grundregel():
+    """Der Block steht vor `.mini-btn { flex: 1 }`; einstufig verlor er und
+    der Knopf wurde 209 px breit."""
+    assert ".mf-zeile .mf-stern {" in css()
+    i_stern = css().index(".mf-zeile .mf-stern {")
+    assert "flex: none" in css()[i_stern:i_stern + 120]

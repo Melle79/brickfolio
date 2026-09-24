@@ -652,6 +652,30 @@ code {
 }
 .liste-fuss .zust-abbruch:active { background: var(--red); color: #fff; }
 
+/* Fehlende Set-Figuren: der Stern als Zeichen rechts an der Zeile, statt
+   einer Knopfzeile je Figur. Gefüllt (★) heißt: steht schon auf der
+   Wunschliste – dasselbe Gelb wie ein gedrückter Zeichen-Knopf. */
+/* Zweistufig mit Absicht: Dieser Block steht im Stylesheet vor der
+   Grundregel `.mini-btn { flex: 1 }`, und bei gleichem Gewicht gewinnt die
+   spätere – einstufig wurde der Stern-Knopf 209 px breit (nachgemessen). */
+.mf-zeile .mf-stern {
+  flex: none; align-self: center; width: 44px; height: 44px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; line-height: 1;
+}
+span.mf-stern.an {
+  border: 2px solid var(--ink); border-radius: 9px;
+  background: var(--yellow); color: var(--ink);
+}
+.mf-verweis {
+  color: var(--blue); font-weight: 800; text-decoration: underline;
+  white-space: nowrap;
+}
+.mf-fuss { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.mf-fuss .mini-btn { min-height: 44px; }
+.mf-fuss .add { flex: 1 1 220px; }
+.mf-fuss .mini-btn:not(.add) { flex: 0 0 auto; padding: 0 16px; }
+
 /* Der Weg nach draußen ist kein Knopf – so hält es der Steckbrief auch. */
 .karte-weiter {
   display: flex; justify-content: flex-end; gap: 14px; flex-wrap: wrap;

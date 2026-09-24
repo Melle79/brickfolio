@@ -45,6 +45,31 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.38 – September 2026
+
+### Geändert
+- 🧩 **Fehlende Set-Figuren ohne Knopfzeile.** Je Figur standen zwei gleich
+  große Knöpfe, „☆ Merken" und „BrickLink ↗", bei gemerkten Figuren dazu ein
+  gelbes Schild – bei 40 fehlenden Figuren viel Höhe für wenig. Jetzt wie im
+  Katalog: **der Stern als Zeichen rechts an der Zeile**, gefüllt und gelb,
+  wenn die Figur schon auf der Wunschliste steht; BrickLink als Verweis in
+  der Nummernzeile. Im Fuß ist „☆ Alle auf die Wunschliste" die breite
+  Hauptsache, CSV und Drucken stehen daneben.
+
+### Behoben
+- 🔄 **Ein Neustart erzeugte Fehlerberichte.** Beim Ausrollen ist die
+  Instanz ein paar Sekunden weg; Cloudflared antwortet dann mit seiner
+  eigenen HTML-Seite, und die Hintergrundabfragen (Tauschbörse jede Minute,
+  Update-Wache) laufen genau hinein. So kam am 24.09. ein „502 bei POST
+  /api/hub/trades/sync" an – das Tunnelprotokoll zeigte 17 Sekunden
+  Neustart und mittendrin genau diese Anfrage.
+
+  Verschwiegen wird so ein Fehler trotzdem nicht: Die App fragt nach 20
+  Sekunden `/api/laufzeit`, seit wann der Server läuft. Ist er um den Fehler
+  herum frisch gestartet, war es der Neustart; läuft er schon länger, war es
+  ein echter Ausfall, und der wird gemeldet. Fehler der App selbst gehen wie
+  bisher sofort ins Protokoll.
+
 ## 2.88.37 – September 2026
 
 ### Geändert

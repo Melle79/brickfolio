@@ -345,12 +345,45 @@ function serverfehlerMelden(path, options, code, text, roh) {
   if (code < 500 || path.startsWith("/errors")) return;
   const art = (options && options.method) || "GET";
   const anfang = String(roh || "").replace(/\s+/g, " ").trim().slice(0, 300);
-  reportError(tr("{code} bei {weg}", { code, weg: art + " /api" + path }),
+  const melden = () => reportError(
+    tr("{code} bei {weg}", { code, weg: art + " /api" + path }),
     (text ? text + "\n\n" : "")
     + (anfang ? tr("Antwort begann mit:") + " " + anfang
        : tr("Die Antwort war leer.")),
     "api " + code);
+  if (![502, 503, 504].includes(code) || !anfang.startsWith("<")) {
+    melden();
+    return;
+  }
+  // **Ein Zwischenserver-Fehler während eines Neustarts ist kein Fehler.**
+  // Beim Ausrollen ist der Behälter ein paar Sekunden weg, Cloudflared
+  // antwortet mit seiner eigenen HTML-Seite – und die Hintergrundabfragen
+  // (Tauschbörse jede Minute, Update-Wache) laufen genau hinein. Am
+  // 24.09.2026 kam so ein „502 bei POST /api/hub/trades/sync" als Bericht
+  // an; das Tunnelprotokoll zeigte 17 Sekunden Neustart und mittendrin
+  // genau diese eine Anfrage.
+  //
+  // Nicht verschwiegen wird er deshalb aber: Ein echter Tunnelausfall bei
+  // laufendem Server soll auffallen. Also kurz warten und nachfragen, seit
+  // wann der Server läuft (`/api/laufzeit` braucht keine Anmeldung). Ist er
+  // um den Fehler herum frisch gestartet, war es der Neustart.
+  const zeitpunkt = Date.now();
+  setTimeout(async () => {
+    try {
+      const r = await fetch("/api/laufzeit", { cache: "no-store" });
+      const lz = await r.json();
+      if (lz && lz.started_at
+          && lz.started_at * 1000 >= zeitpunkt - NEUSTART_SPIELRAUM_MS) return;
+    } catch (_) { /* immer noch weg – dann gilt der Fehler */ }
+    melden();
+  }, NEUSTART_PRUEFEN_MS);
 }
+/* Wie lange nach einem Zwischenserver-Fehler nachgefragt wird, und wie
+   weit ein Neustart davor liegen darf – ein Update dauert rund eine Minute
+   (Bauen, dann 17 Sekunden Neustart), die Uhren von Gerät und Server
+   gehen nicht auf die Sekunde gleich. */
+const NEUSTART_PRUEFEN_MS = 20000;
+const NEUSTART_SPIELRAUM_MS = 120000;
 
 /* ---------------------------------------------------------------- UI-Helfer */
 let toastTimer;
@@ -8878,28 +8911,34 @@ function renderMissingFigs(data) {
     </div>` : ""}
     <div class="set-figs">
       ${data.items.map((it, i) => `
-      <div class="fig-row tappbar" data-mf-row="${i}" data-info="minifig|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
+      <!-- **Keine Knopfzeile je Figur** (seit 2.88.38). Dort standen zwei
+           gleich große Knöpfe, „☆ Merken" und „BrickLink ↗", bei gemerkten
+           Figuren dazu ein gelbes Schild – bei 40 fehlenden Figuren viel
+           Höhe für wenig. Jetzt wie im Katalog: der Stern als Zeichen rechts
+           (gefüllt, wenn gemerkt), BrickLink als Verweis in der Nummernzeile. -->
+      <div class="fig-row tappbar mf-zeile" data-mf-row="${i}" data-info="minifig|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
         <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="minifig" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
-          <div class="sub">${esc(it.item_id)} · <b>${it.missing}× fehlt</b>${
+          <div class="sub">${esc(it.item_id)} · <b>${esc(tr("{n}× fehlt", { n: it.missing }))}</b>${
             it.owned > 0 ? " " + esc(tr("({n} von {max} da)",
               { n: it.owned, max: it.needed })) : ""}${
-            it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}` : ""}</div>
-          <div class="sub in-sets">📦 für: ${missingSetLinks(it.sets)}</div>
+            it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}` : ""}${
+            it.bricklink_url ? ` · <a class="mf-verweis" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}</div>
+          <div class="sub in-sets">${esc(tr("📦 für:"))} ${missingSetLinks(it.sets)}</div>
           ${it.on_lists && it.on_lists.length ? `<span class="badge badge-list">🛒 ${it.on_lists_qty}× auf ${it.on_lists.length === 1 ? `»${esc(it.on_lists[0])}«` : `${it.on_lists.length} Listen`}</span>` : ""}
-          ${it.wanted ? `<span class="badge badge-wanted">⭐ auf der Wunschliste</span>` : ""}
-          <div class="fig-actions">
-            ${it.wanted ? "" : `<button class="mini-btn" data-mf-want="${i}">☆ Merken</button>`}
-            <a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>
-          </div>
         </div>
+        ${it.wanted
+          ? `<span class="mf-stern an" role="img" title="${esc(tr("Steht auf der Wunschliste"))}"
+               aria-label="${esc(tr("Steht auf der Wunschliste"))}">★</span>`
+          : `<button class="mini-btn mf-stern" data-mf-want="${i}"
+               title="${esc(tr("Auf die Wunschliste"))}" aria-label="${esc(tr("Auf die Wunschliste"))}">☆</button>`}
       </div>`).join("")}
     </div>
-    <div class="card-actions btn-grid" style="margin-top:8px">
-      <button class="mini-btn add" id="btn-mf-want-all">☆ Alle auf die Wunschliste</button>
-      <button class="mini-btn" id="btn-mf-csv">Als CSV</button>
-      <button class="mini-btn" id="btn-mf-print">Drucken</button>
+    <div class="mf-fuss">
+      <button class="mini-btn add" id="btn-mf-want-all">${esc(tr("☆ Alle auf die Wunschliste"))}</button>
+      <button class="mini-btn" id="btn-mf-csv">${esc(tr("Als CSV"))}</button>
+      <button class="mini-btn" id="btn-mf-print">${esc(tr("Drucken"))}</button>
     </div>
   </div>`;
 

@@ -1188,5 +1188,10 @@
  "Einkaufspreis speichern": "Save purchase price",
  "Von der Liste nehmen": "Remove from the list",
  "↩︎ Rückgängig": "↩︎ Undo",
- "↩︎ Reaktivieren": "↩︎ Reactivate"
+ "↩︎ Reaktivieren": "↩︎ Reactivate",
+ "{n}× fehlt": "{n}× missing",
+ "📦 für:": "📦 for:",
+ "☆ Alle auf die Wunschliste": "☆ All to the wishlist",
+ "Als CSV": "As CSV",
+ "Drucken": "Print"
 }
