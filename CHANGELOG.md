@@ -45,6 +45,18 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.33 – September 2026
+
+### Dokumentation
+- 📖 **Das englische Handbuch war seit 2.87.0 stehen geblieben.** Nachgezogen
+  sind die Kamera in der App (Livebild, Mediathek daneben, Zoom, der
+  Sucherausschnitt und warum das Telefon jedes Mal nach der Freigabe fragt)
+  und der Steckbrief mit Kopf und drei Reitern, samt Zeitspannen und
+  Ablesen am Preisverlauf.
+
+  Ein Kapitel zum Katalog-Durchblättern gibt es dort nicht – `MANUAL.md` ist
+  eine gekürzte Fassung, kein Spiegel von `HANDBUCH.md`.
+
 ## 2.88.32 – September 2026
 
 ### Behoben

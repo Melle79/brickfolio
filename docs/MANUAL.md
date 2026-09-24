@@ -547,6 +547,42 @@ and ownership hints.
 **Tips for good hit rates:** a plain background, the figure from the front, no
 reflective packaging. For sets the box image or the built model works.
 
+**The camera opens inside the app** (from 2.88.1): tapping shows the live
+picture straight away, and **the photo library sits right there beside it** –
+an existing photo is the same route, not a different one. Where the device
+supports it there is a **light** as well; a button that would do nothing never
+appears.
+
+**Zoom** (from 2.88.23): the steps **1× / 2× / 3×** sit above the shutter, and
+**pinching with two fingers** works too. Where the device offers it the sensor
+zooms itself; otherwise the frame is cropped. The number says how much closer,
+not which lens – whether glass or arithmetic gets you there is the phone's
+decision, and the app cannot tell.
+
+> **What the viewfinder shows is what gets taken.** That sounds obvious but
+> was not true until 2.88.22: the live picture fills the screen and is cropped
+> for it, while the photo took the **whole sensor frame**. On a phone held
+> upright you only see **26 % of the width** – so the figure you framed ended
+> up a quarter of the size, and the recogniser scales everything down to 1024
+> pixels anyway. Now the viewfinder crop is taken, plus a fifth as a safety
+> margin: the figure arrives at the recogniser **almost twice as large**
+> without any zoom, and about four and a half times with 3×.
+
+> **Over `http://` the old route stays.** The live picture needs a secure
+> connection – it is there over the Cloudflare address, not when you open an
+> instance directly on your home network. There (and if you decline access)
+> the device's file dialog opens as before, and you can take a photo from it
+> too. Nothing is lost, something is added.
+
+> **Why the phone asks for the camera every time.** That is iOS, not
+> Brickfolio: for a web app on the home screen Safari does **not** remember
+> the camera permission across app starts (WebKit bug 215884). So it asks once
+> per start, and no setting in the app changes that. What went away in 2.88.23
+> is the *repeated* asking: the camera stream stays alive for half a minute
+> after the shutter, so the next figure needs no fresh prompt. Switch tabs or
+> send the app to the background and it stops at once – the device's camera
+> indicator should not be lit for nothing.
+
 > **What happens to the photo.** It is scaled down to 1200 pixels **in the
 > browser** before anything else happens – and already while being decoded. A
 > 12-megapixel photo takes 46 MB fully decoded, this way only 4. About 90 KB
@@ -848,8 +884,35 @@ are always **the same height**, even when a name wraps.
 
 Tapping a card opens the details as a **popup** – a centred window above the
 list, nearly full screen on a phone. Close it with **✕**, a click beside it or
-**Esc**; changes are saved immediately and show up in the list once closed. The
-popup shows:
+**Esc**; changes are saved immediately and show up in the list once closed.
+
+**A head on top, three tabs below** (from 2.88.0). Before that four sections
+sat one under the other, and you scrolled past everything you were not looking
+for.
+
+**The head** answers what you want to know on opening, without a single tap:
+the **image across the full width** on white, then name, number and condition,
+then the tags (theme, year, trading). For dealers there are **three tiles**:
+**paid**, **value**, **profit** – paid carries a small ✏️, it is the only thing
+in the head you edit.
+
+**The three tabs** split the rest by the question you have:
+
+| Tab | Content |
+|---|---|
+| **Copy** | quantity, condition, purchase price, trading |
+| **Prices** | the averages with ↻ and the price history |
+| **More** | BrickLink, contained parts/figures, notes |
+
+A tab with no content is not drawn at all, and if only one is left the tab row
+goes with it.
+
+**The theme sits in the head as a tag** – it belongs to the figure, not to
+what you do with it, and is therefore **not editable**. A **✏️** appears only
+on entries you created yourself (`fig-…`, `manuell-…`); without it those would
+stay themeless forever. Everything from the catalogue brings its own theme.
+
+The popup shows:
 
 - **Quantity** (± stepper) and **condition** (used/new) – changes take effect
   immediately, without closing the card. **New and used are separate
@@ -864,6 +927,11 @@ popup shows:
 - **Prices**: current averages (new/used); the **↻** on the "market prices"
   block fetches them again immediately, and the **price history** shows them as
   a chart (blue = new, green = used) with a link to the BrickLink price page.
+  Above it sit the ranges **1M / 3M / 1Y / All** – they only hide what is
+  already there and therefore cost no request. **Tapping the curve** shows the
+  date and both prices at that point; on a finger the reading stays until you
+  tap again or switch range (under a pointer it disappears as you move away,
+  because there you read in passing).
 - **Tapping the image** opens the large view.
 - **Deleting** via the **bin next to the quantity** (it appears as soon as only
   one is left) – with a confirmation.
