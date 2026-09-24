@@ -36,7 +36,7 @@ def _scan() -> str:
 
 def test_eine_hauptsache_zwei_zeichen():
     f = _scan()
-    assert '<button class="mini-btn add" data-add="${i}">＋ Zur Sammlung</button>' in f
+    assert '<button class="mini-btn add" data-add="${i}">${esc(tr("＋ Zur Sammlung"))}</button>' in f
     assert 'class="mini-btn zeichen" data-want=' in f
     assert 'class="mini-btn zeichen" data-cart=' in f
 
@@ -112,3 +112,74 @@ def test_sofort_speichern_steht_am_knopf():
     assert 'title="${esc(tr("Als neu aufnehmen"))}"' in f
     en = (FRONTEND / "i18n" / "en.json").read_text(encoding="utf-8")
     assert '"Als gebraucht aufnehmen"' in en and '"Als neu aufnehmen"' in en
+
+
+# ---------------------------------------------------- die zweite Stelle
+
+def test_auch_die_figurenliste_im_set_hat_das_rote_kreuz():
+    """Im Steckbrief eines Sets lässt sich jede enthaltene Figur aufnehmen –
+    mit demselben Zustands-Schritt. Dort war das ✕ noch schwarz, als
+    einzige Stelle der App."""
+    m = re.search(r"function wireFigActions\(out, figs\) \{.*?\n\}\n", js(), re.S)
+    assert m
+    f = m.group(0)
+    assert 'class="mini-btn zust-abbruch" data-fcx' in f
+    assert ".fig-actions .zust-abbruch {" in css()
+
+
+# ---------------------------------------------------- Übersetzung
+
+def test_trefferkarte_und_zurufe_laufen_durch_die_uebersetzung():
+    """„＋ Zur Sammlung", „83 % sicher" und der Zuruf nach dem Aufnehmen
+    standen als deutscher Text im Markup – auf Englisch las man dort
+    Deutsch. Der Zuruf wurde sogar aus Teilen zusammengesetzt."""
+    q = js()
+    assert "% sicher</span>" not in q and "% sicher`" not in q
+    assert "`Zur Sammlung hinzugefügt ✔ (" not in q
+    assert ': "Zur Sammlung hinzugefügt ✔");' not in q
+    en = (FRONTEND / "i18n" / "en.json").read_text(encoding="utf-8")
+    for k in ('"{n} % sicher"', '"Zur Sammlung hinzugefügt ✔ ({zustand})"',
+              '"＋ Zur Sammlung"'):
+        assert k in en, k
+
+
+# ---------------------------------------------------- auf eine Liste legen
+
+def _cart() -> str:
+    m = re.search(r"function wireCartButtons\(.*?\n\}\n", js(), re.S)
+    assert m
+    return m.group(0)
+
+
+def test_liste_zustand_ist_eine_pille():
+    """Zwei umrandete Knöpfe, einer gelb, lasen sich wie zwei Befehle – es ist
+    aber eine Wahl. Dieselbe Pille wie im Formular."""
+    f = _cart()
+    assert 'class="erf-wahl" role="radiogroup"' in f
+    assert "cond-mini" not in f
+
+
+def test_liste_abbrechen_ist_ein_rotes_kreuz():
+    f = _cart()
+    assert 'class="mini-btn zust-abbruch" data-cl-cancel' in f
+    assert 'class="mini-btn zust-abbruch" data-cl-back' in f, (
+        "ohne Listen bricht der Nebenknopf ab")
+    assert 'class="mini-btn liste-zurueck" data-cl-back' in f, (
+        "mit Listen führt er zurück zur Wahl")
+
+
+def test_formular_listen_sind_nicht_mehr_gruen():
+    """Vorher war jede Liste ein grüner Knopf – bei fünf Listen fünf grüne."""
+    m = re.search(r"async function pickListForManual\(\) \{.*?\n\}\n", js(), re.S)
+    assert m
+    f = m.group(0)
+    assert 'class="mini-btn add" data-ml=' not in f
+    assert 'class="mini-btn zust-abbruch" data-ml-cancel' in f
+
+
+def test_listentexte_werden_uebersetzt():
+    q = _cart()
+    for t in ('tr("Auf welche Liste?")', 'tr("Neue Einkaufsliste")',
+              'tr("Anlegen & drauflegen")', 'tr("＋ Neue Liste")'):
+        assert t in q, t
+    assert "`Flohmarkt ${today}`" not in js()

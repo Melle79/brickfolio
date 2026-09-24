@@ -1172,5 +1172,21 @@
  "📷 Vom Scan": "📷 From the scan",
  "Eins weniger": "One less",
  "Eins mehr": "One more",
- "＋ Zur Sammlung": "＋ To the collection"
+ "＋ Zur Sammlung": "＋ To the collection",
+ "Zur Sammlung hinzugefügt ✔ ({zustand})": "Added to the collection ✔ ({zustand})",
+ "{n} % sicher": "{n}% match",
+ "Auf welche Liste?": "Which list?",
+ "Neue Einkaufsliste": "New shopping list",
+ "Anlegen & drauflegen": "Create & add",
+ "＋ Neue Liste": "＋ New list",
+ "Flohmarkt {datum}": "Flea market {datum}",
+ "Einkauf {cur}": "Bought {cur}",
+ "Preis {cur}": "Price {cur}",
+ "leer = BrickLink-Ø": "empty = BrickLink average",
+ "Preis {cur} – leer = BrickLink-Ø": "Price {cur} – empty = BrickLink average",
+ "In die Sammlung übernommen ✔ ({zustand})": "Moved to the collection ✔ ({zustand})",
+ "Einkaufspreis speichern": "Save purchase price",
+ "Von der Liste nehmen": "Remove from the list",
+ "↩︎ Rückgängig": "↩︎ Undo",
+ "↩︎ Reaktivieren": "↩︎ Reactivate"
 }

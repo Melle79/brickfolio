@@ -45,6 +45,35 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.37 – September 2026
+
+### Geändert
+- 🧾 **Wunschliste, Einkaufsliste und „Auf eine Liste legen" sprechen
+  dieselbe Sprache wie der Scan.** Überall dasselbe Muster: eine breite
+  Hauptsache, Löschen und Abbrechen als rotes Zeichen, die Wege nach
+  draußen als Verweise, eine Wahl als Pille.
+  - **Wunschliste:** `[✔ Gekauft!] [🗑]` statt vier gleich großer Knöpfe
+    im Raster; Preisverlauf und BrickLink als Verweise darunter. „Gekauft
+    als" ist die Zeile `[Preis €] [Gebraucht] [Neu] [✕]` – „leer =
+    BrickLink-Ø" steht als Erklärung am Feld statt als eigene Zeile.
+  - **Einkaufsliste:** Einkaufspreis mit kleinem ✓ und daneben der Zustand
+    als Pille – vorher zwei umrandete Zustandsknöpfe, einer gelb, und ein
+    grüner ✓-Balken über die volle Breite. Im Fuß `[Gesamtangebot]
+    [Archivieren] [🗑]` statt „Liste löschen" über die volle Breite.
+  - **Auf eine Liste legen** (Trefferkarte, Suchtreffer, Formular):
+    Einkaufspreis und Zustand in einer Zeile, die Listen als ruhige Knöpfe
+    – im Formular war jede Liste ein grüner –, unten `[＋ Neue Liste] [✕]`
+    bzw. `‹`, wenn es zurück zur Listenwahl geht.
+  - **Figurenliste im Set-Steckbrief:** Das ✕ im Zustands-Schritt war dort
+    noch schwarz, als einzige Stelle der App.
+
+### Behoben
+- 🌐 **Texte, die an der Übersetzung vorbeiliefen.** „＋ Zur Sammlung",
+  „83 % sicher", „Auf welche Liste?", „Flohmarkt 24.09." und die Zurufe
+  nach dem Aufnehmen standen als deutscher Text im Markup; zwei Zurufe
+  wurden sogar aus deutschen Teilen zusammengesetzt. Wer die App auf
+  Englisch nutzt, las dort Deutsch.
+
 ## 2.88.36 – September 2026
 
 ### Behoben

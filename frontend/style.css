@@ -592,8 +592,71 @@ code {
 }
 .zust-reihe .zust-abbruch:active { background: var(--red); color: #fff; }
 
+/* ---------- Auf eine Liste legen (seit 2.88.37) ----------
+   Dieselbe Sprache wie der Zustands-Schritt. Oben Einkaufspreis und
+   Zustand in einer Zeile (der Zustand als Pille – hier eine Wahl, kein
+   Befehl), darunter die Listen als ruhige Knöpfe, unten die Aktion und
+   ein rotes ✕ bzw. „‹", wenn es zurück zur Listenwahl geht. Gilt für die
+   Trefferkarte, die Suchtreffer und das „🛒" im Formular. */
+.liste-reihe { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.liste-kopf { display: flex; gap: 8px; align-items: stretch; }
+.liste-kopf input {
+  flex: 0 1 140px; min-width: 96px; min-height: 44px; margin: 0; padding: 0 10px;
+}
+.liste-kopf .erf-wahl { flex: 1; }
+.liste-titel { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+.liste-wahl { display: flex; flex-wrap: wrap; gap: 8px; }
+.liste-wahl .mini-btn { flex: 1 1 auto; min-height: 44px; }
+.liste-reihe > input { margin: 0; min-height: 44px; }
+.liste-aktion { display: flex; gap: 8px; }
+.liste-aktion .mini-btn { flex: 1; min-height: 44px; }
+.liste-aktion .zust-abbruch, .liste-aktion .liste-zurueck {
+  flex: none; width: 44px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
+}
+.liste-aktion .liste-zurueck { font-size: 22px; }
+.liste-aktion .zust-abbruch {
+  background: var(--surface); border-color: var(--red); color: var(--red);
+}
+.liste-aktion .zust-abbruch:active { background: var(--red); color: #fff; }
+
+/* Löschen als rotes Zeichen (🗑) – auf der Wunschliste neben „Gekauft",
+   im Fuß einer Einkaufsliste neben „Archivieren". Beide fragen nach. */
+.scan-tasten .loesch {
+  background: var(--surface); border-color: var(--red); color: var(--red);
+}
+.scan-tasten .loesch:active { background: var(--red); color: #fff; }
+
+/* Ein Artikel auf der Einkaufsliste: Einkaufspreis mit kleinem ✓, daneben
+   der Zustand als Pille – in der Höhe dieser kompakten Liste (38 px). */
+.liste-artikel { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.liste-artikel .paid-input {
+  flex: 0 1 104px; min-width: 76px; min-height: 38px; margin: 0; padding: 0 8px;
+}
+.liste-artikel .liste-speichern {
+  flex: none; width: 38px; min-height: 38px; padding: 0; font-size: 16px;
+}
+.liste-artikel .erf-wahl { flex: 1 1 150px; padding: 2px; }
+.liste-artikel .erf-wahl button { min-height: 32px; padding: 4px 6px; font-size: 13px; }
+
+/* Fuß einer Einkaufsliste: die Aktionen teilen sich die Breite, Löschen
+   steht als rotes 🗑 am Ende. Vorher „Liste löschen" über die volle Breite. */
+.liste-fuss { display: flex; gap: 8px; margin-top: 8px; }
+.liste-fuss .mini-btn { flex: 1; min-height: 44px; }
+.liste-fuss .zust-abbruch {
+  flex: none; width: 44px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface); border-color: var(--red); color: var(--red);
+  font-size: 16px; line-height: 1;
+}
+.liste-fuss .zust-abbruch:active { background: var(--red); color: #fff; }
+
 /* Der Weg nach draußen ist kein Knopf – so hält es der Steckbrief auch. */
-.karte-weiter { display: flex; justify-content: flex-end; padding: 6px 2px 0; }
+.karte-weiter {
+  display: flex; justify-content: flex-end; gap: 14px; flex-wrap: wrap;
+  padding: 6px 2px 0;
+}
 .karte-weiter a {
   font-size: 12.5px; font-weight: 800; color: var(--blue);
   text-decoration: underline;
@@ -1194,6 +1257,15 @@ code {
 .fig-info strong { font-size: 14px; line-height: 1.3; display: block; }
 .fig-actions { display: flex; gap: 6px; margin-top: 6px; }
 .fig-actions .mini-btn { min-height: 38px; font-size: 13px; padding: 5px 8px; flex: 1; }
+/* Derselbe rote Abbrechen-Knopf wie auf der Trefferkarte im Scan – hier in
+   der Höhe dieser kompakteren Liste (38 statt 44 px), als Quadrat. */
+.fig-actions .zust-abbruch {
+  flex: none; width: 38px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface); border-color: var(--red); color: var(--red);
+  font-size: 15px; line-height: 1;
+}
+.fig-actions .zust-abbruch:active { background: var(--red); color: #fff; }
 
 /* ---------- Update: Ankündigung und Sperre ---------- */
 .update-bar {

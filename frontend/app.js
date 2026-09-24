@@ -702,12 +702,18 @@ function renderWanted(items) {
         <button class="mini-btn add" data-wfix-btn>Setzen</button>
         ${it.img_url ? `<button class="mini-btn" data-wfix-auto>🔍 Auto</button>` : ""}
       </div>` : ""}
-      <div class="card-actions btn-grid">
-        <button class="mini-btn add" data-buy>✔ Gekauft!</button>
-        ${priceGuideUrl(it) ? `<a class="mini-btn link" href="${esc(priceGuideUrl(it))}" target="_blank" rel="noopener">Preisverlauf ↗</a>` : ""}
-        ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
-        <button class="mini-btn danger" data-del>Löschen</button>
+      <!-- Wie die Trefferkarte im Scan: eine Hauptsache, Löschen als rotes
+           Zeichen (es fragt nach), die Wege nach draußen als Verweise. Vorher
+           vier gleich große Knöpfe im Raster. -->
+      <div class="card-actions scan-tasten">
+        <button class="mini-btn add" data-buy>${esc(tr("✔ Gekauft!"))}</button>
+        <button class="mini-btn zeichen loesch" data-del
+          title="${esc(tr("Löschen"))}" aria-label="${esc(tr("Löschen"))}">🗑</button>
       </div>
+      ${priceGuideUrl(it) || it.bricklink_url ? `<div class="karte-weiter">
+        ${priceGuideUrl(it) ? `<a href="${esc(priceGuideUrl(it))}" target="_blank" rel="noopener">${esc(tr("Preisverlauf"))} ↗</a>` : ""}
+        ${it.bricklink_url ? `<a href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">${esc(tr("Bei BrickLink ansehen"))} ↗</a>` : ""}
+      </div>` : ""}
     </div>`;
   }).join("");
 
@@ -794,17 +800,21 @@ function renderWanted(items) {
     card.querySelector("[data-buy]").addEventListener("click", () => {
       const actions = card.querySelector(".card-actions");
       const dealer = state.user && state.user.is_dealer;
+      // Dieselbe Zeile wie der Zustands-Schritt im Scan:
+      // [Preis €] [Gebraucht] [Neu] [✕] – ein Tipp auf den Zustand übernimmt.
+      // „leer = BrickLink-Ø" steht als Erklärung am Feld statt als eigene Zeile.
+      actions.className = "zust-reihe";
       actions.innerHTML = `
-        <span class="buy-label">Gekauft als:</span>
-        ${dealer ? `<span class="paid-row buy-paid">
-          <span class="paid-label">Preis</span>
-          <input data-buy-paid class="paid-input" inputmode="decimal" placeholder="0,00">
-          <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
-          <span class="sub">leer = BrickLink-Ø</span>
-        </span>` : ""}
-        <button class="mini-btn add" data-buy-cond="used">Gebraucht</button>
-        <button class="mini-btn add" data-buy-cond="new">Neu</button>
-        <button class="mini-btn" data-buy-cancel>Abbrechen</button>`;
+        ${dealer ? `<input data-buy-paid class="paid-input" inputmode="decimal"
+          placeholder="${esc(tr("Preis {cur}", { cur: curSymbol() }))}"
+          title="${esc(tr("leer = BrickLink-Ø"))}"
+          aria-label="${esc(tr("Preis {cur} – leer = BrickLink-Ø", { cur: curSymbol() }))}">` : ""}
+        <button class="mini-btn add" data-buy-cond="used"
+          title="${esc(tr("Als gebraucht aufnehmen"))}">${esc(tr("Gebraucht"))}</button>
+        <button class="mini-btn add" data-buy-cond="new"
+          title="${esc(tr("Als neu aufnehmen"))}">${esc(tr("Neu"))}</button>
+        <button class="mini-btn zust-abbruch" data-buy-cancel
+          title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>`;
       actions.querySelectorAll("[data-buy-cond]").forEach((b) => {
         b.addEventListener("click", async () => {
           const paidEl = actions.querySelector("[data-buy-paid]");
@@ -822,7 +832,8 @@ function renderWanted(items) {
               body: { condition: b.dataset.buyCond, paid_price: paid } });
             toast(res.merged
               ? "In der Sammlung: Anzahl erhöht ✔"
-              : `In die Sammlung übernommen ✔ (${b.dataset.buyCond === "new" ? tr("Neu") : tr("Gebraucht")})`);
+              : tr("In die Sammlung übernommen ✔ ({zustand})",
+                  { zustand: b.dataset.buyCond === "new" ? tr("Neu") : tr("Gebraucht") }));
             await askSetFigures(item, b.dataset.buyCond);
             loadWanted();
           } catch (e) {
@@ -1590,10 +1601,16 @@ function wireFigActions(out, figs) {
       const f = figs[Number(btn.dataset.figAdd)];
       const area = btn.closest("[data-fig-actions]");
       const orig = area.innerHTML;
+      // Derselbe Schritt wie auf der Trefferkarte im Scan: Ein Tipp auf den
+      // Zustand nimmt auf, Abbrechen ist ein rotes ✕ (seit 2.88.37 – vorher
+      // ein schwarzes, als einzige Stelle der App).
       area.innerHTML = `
-        <button class="mini-btn add" data-fc="used">Gebraucht</button>
-        <button class="mini-btn add" data-fc="new">Neu</button>
-        <button class="mini-btn" data-fcx>✕</button>`;
+        <button class="mini-btn add" data-fc="used"
+          title="${esc(tr("Als gebraucht aufnehmen"))}">${esc(tr("Gebraucht"))}</button>
+        <button class="mini-btn add" data-fc="new"
+          title="${esc(tr("Als neu aufnehmen"))}">${esc(tr("Neu"))}</button>
+        <button class="mini-btn zust-abbruch" data-fcx
+          title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>`;
       area.querySelector("[data-fcx]").addEventListener("click", () => {
         area.innerHTML = orig;
         wireFigActions(out, figs);
@@ -1609,7 +1626,8 @@ function wireFigActions(out, figs) {
             }});
             toast(res.merged
               ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
-              : `Zur Sammlung hinzugefügt ✔ (${b.dataset.fc === "new" ? tr("Neu") : tr("Gebraucht")})`);
+              : tr("Zur Sammlung hinzugefügt ✔ ({zustand})",
+                  { zustand: b.dataset.fc === "new" ? tr("Neu") : tr("Gebraucht") }));
             area.innerHTML = orig;
             wireFigActions(out, figs);
             markFigOwnership(out, figs);
@@ -3931,7 +3949,7 @@ function renderScanResults(items) {
         <div class="card-title">
           <strong>${esc(it.name)}</strong>
           <div class="sub" data-sug-sub>${esc(base)}</div>
-          <span class="badge ${scoreCls}">${it.score} % sicher</span><span class="badge badge-type">${esc(it.item_type)}</span>
+          <span class="badge ${scoreCls}">${esc(tr("{n} % sicher", { n: it.score }))}</span><span class="badge badge-type">${esc(it.item_type)}</span>
           <span class="badge badge-owned" data-owned hidden></span>
         </div>
       </div>
@@ -3945,12 +3963,12 @@ function renderScanResults(items) {
            ein breiter Knopf, die Nebensachen als Zeichen, der Weg nach
            draußen als Verweis. -->
       <div class="card-actions scan-tasten">
-        <button class="mini-btn add" data-add="${i}">＋ Zur Sammlung</button>
+        <button class="mini-btn add" data-add="${i}">${esc(tr("＋ Zur Sammlung"))}</button>
         <button class="mini-btn zeichen" data-want="${i}"
           title="${esc(tr("Merken"))}" aria-label="${esc(tr("Merken"))}">☆</button>
         ${state.user && state.user.is_dealer ? `<button class="mini-btn zeichen" data-cart="${i}"
           title="${esc(tr("Auf eine Liste"))}" aria-label="${esc(tr("Auf eine Liste"))}">🛒</button>` : ""}
-        ${lastScanFile ? `<button class="mini-btn" data-foto="${i}" hidden>📷 Nur Foto dazu</button>` : ""}
+        ${lastScanFile ? `<button class="mini-btn" data-foto="${i}" hidden>${esc(tr("📷 Nur Foto dazu"))}</button>` : ""}
       </div>
       ${it.bricklink_url ? `<div class="karte-weiter"><a href="${esc(it.bricklink_url)}"
         target="_blank" rel="noopener">${esc(tr("Bei BrickLink ansehen"))} ↗</a></div>` : ""}
@@ -4074,7 +4092,8 @@ function renderScanResults(items) {
             }});
             toast(res.merged
               ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
-              : `Zur Sammlung hinzugefügt ✔ (${b.dataset.c === "new" ? tr("Neu") : tr("Gebraucht")})`);
+              : tr("Zur Sammlung hinzugefügt ✔ ({zustand})",
+                  { zustand: b.dataset.c === "new" ? tr("Neu") : tr("Gebraucht") }));
             row.remove();
             await askSetFigures(it, b.dataset.c);
             actions.hidden = false;
@@ -7090,7 +7109,7 @@ async function loadSuggestDetail(inner, pit, orig) {
 
   if (meta) {
     const bits = [pit.item_id];
-    if (pit._score) bits.push(`${pit._score} % sicher`);
+    if (pit._score) bits.push(tr("{n} % sicher", { n: pit._score }));
     if (pit.year > 0) bits.push(String(pit.year));
     meta.textContent = bits.join(" · ");
   }
@@ -7144,7 +7163,7 @@ async function resolveBricklinkNo(it) {
     }
     hint.textContent = tr("BrickLink-Treffer – bitte die exakte Variante wählen ")
       + "(Bild antippen für Großansicht):";
-    renderSuggestions(candidates.map((c) => ({ ...c, sub: `${c.score} % sicher` })));
+    renderSuggestions(candidates.map((c) => ({ ...c, sub: tr("{n} % sicher", { n: c.score }) })));
   } catch (e) {
     // **Nicht jeder Fehler hier ist ein Netzwerkfehler.** Dieser Block hat
     // den `detailVon`-Fehler von 2.86.5 bis 2.88.31 versteckt: Aus einem
@@ -7221,7 +7240,7 @@ async function addManual() {
     }});
     toast(res.merged
       ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)", { n: res.quantity })
-      : "Zur Sammlung hinzugefügt ✔");
+      : tr("Zur Sammlung hinzugefügt ✔"));
     entwurfLoeschen();
     $("m-name").value = ""; $("m-id").value = "";
     $("m-qty").value = "1"; $("m-notes").value = ""; $("m-paid").value = "";
@@ -7670,11 +7689,17 @@ async function pickListForManual() {
     lists = (await api("/lists")).lists || [];
   } catch (e) { toast(e.message); return; }
 
+  // Wie auf der Trefferkarte: die Listen als ruhige Knöpfe (vorher je Liste
+  // ein grüner), unten „＋ Neue Liste" und ein rotes ✕.
   box.hidden = false;
-  box.innerHTML = lists.map((l) =>
-    `<button class="mini-btn add" data-ml="${l.id}">${esc(l.name)}</button>`).join("")
-    + `<button class="mini-btn" data-ml-new>➕ Neue Liste</button>`
-    + `<button class="mini-btn" data-ml-cancel>Abbrechen</button>`;
+  box.innerHTML = `<span class="liste-titel">${esc(tr("Auf welche Liste?"))}</span>`
+    + `<div class="liste-wahl">${lists.map((l) =>
+        `<button class="mini-btn" data-ml="${l.id}">${esc(l.name)}</button>`).join("")}</div>`
+    + `<div class="liste-aktion">
+        <button class="mini-btn" data-ml-new>${esc(tr("＋ Neue Liste"))}</button>
+        <button class="mini-btn zust-abbruch" data-ml-cancel
+          title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>
+      </div>`;
 
   box.querySelectorAll("[data-ml]").forEach((btn) => {
     btn.addEventListener("click", () => addManualToList(Number(btn.dataset.ml)));
@@ -7688,7 +7713,7 @@ async function pickListForManual() {
     const d = await appDialog({
       titel: tr("Neue Liste"),
       felder: [{ name: "name", label: tr("Name der neuen Liste"),
-                 wert: `Flohmarkt ${today}`, pflicht: true, max: 80 }],
+                 wert: tr("Flohmarkt {datum}", { datum: today }), pflicht: true, max: 80 }],
       ok: tr("Anlegen"),
     });
     const name = d && d.name;
@@ -7833,12 +7858,13 @@ function renderLists(lists) {
         ${listeOffen(l.id) ? l.items.map((it) => listItemRow(it, dealer)).join("") : ""}
         ${!l.items.length ? `<div class="price-note">Noch leer – beim Scannen oder Suchen auf 🛒 tippen.</div>` : ""}
       </div>
-      ${dealer ? `<div class="card-actions btn-grid" style="margin-top:8px">
-        ${!state.showArchive && l.stats.open > 0 ? `<button class="mini-btn add" data-l-offer>💰 Gesamtangebot</button>` : ""}
+      ${dealer ? `<div class="liste-fuss">
+        ${!state.showArchive && l.stats.open > 0 ? `<button class="mini-btn add" data-l-offer>${esc(tr("💰 Gesamtangebot"))}</button>` : ""}
         ${state.showArchive
-          ? `<button class="mini-btn" data-l-restore>↩︎ Reaktivieren</button>`
-          : `<button class="mini-btn" data-l-archive>📦 Archivieren</button>`}
-        <button class="mini-btn danger" data-l-del>Liste löschen</button>
+          ? `<button class="mini-btn" data-l-restore>${esc(tr("↩︎ Reaktivieren"))}</button>`
+          : `<button class="mini-btn" data-l-archive>${esc(tr("📦 Archivieren"))}</button>`}
+        <button class="mini-btn zust-abbruch loesch" data-l-del
+          title="${esc(tr("Liste löschen"))}" aria-label="${esc(tr("Liste löschen"))}">🗑</button>
       </div>` : ""}
     </div>`).join("");
 
@@ -8166,20 +8192,28 @@ function listItemRow(it, dealer) {
       <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${prices ? " · " + prices : ""}${it.paid_price != null ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(it.paid_price) })) : ""}</div>
       ${doneInfo}
       ${!it.done && dealer ? `
-      <div class="fig-actions" style="margin-top:6px">
-        <button class="mini-btn cond-mini ${it.condition !== "new" ? "sel" : ""}" data-ic="used" data-icid="${it.id}">Gebraucht</button>
-        <button class="mini-btn cond-mini ${it.condition === "new" ? "sel" : ""}" data-ic="new" data-icid="${it.id}">Neu</button>
-      </div>
-      <div class="paid-row" style="margin-top:6px">
-        <span class="paid-label">Einkauf</span>
-        <input data-ip="${it.id}" class="paid-input" inputmode="decimal" placeholder="0,00" value="${it.paid_price != null ? fmtPaidInput(it.paid_price) : ""}">
-        <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
-        <button class="mini-btn add" data-ip-save="${it.id}" style="flex:1;min-height:38px">✓</button>
+      <!-- Einkaufspreis mit kleinem ✓ und daneben der Zustand als Pille.
+           Vorher: zwei umrandete Zustandsknöpfe, einer gelb, und ein grüner
+           ✓-Balken über die volle Breite. -->
+      <div class="liste-artikel">
+        <input data-ip="${it.id}" class="paid-input" inputmode="decimal"
+          placeholder="${esc(tr("Einkauf {cur}", { cur: curSymbol() }))}"
+          aria-label="${esc(tr("Einkauf {cur} (optional)", { cur: curSymbol() }))}"
+          value="${it.paid_price != null ? fmtPaidInput(it.paid_price) : ""}">
+        <button class="mini-btn add liste-speichern" data-ip-save="${it.id}"
+          title="${esc(tr("Einkaufspreis speichern"))}" aria-label="${esc(tr("Einkaufspreis speichern"))}">✓</button>
+        <div class="erf-wahl" role="radiogroup" aria-label="${esc(tr("Zustand"))}">
+          <button type="button" role="radio" class="${it.condition !== "new" ? "sel" : ""}"
+            aria-checked="${it.condition !== "new"}" data-ic="used" data-icid="${it.id}">${esc(tr("Gebraucht"))}</button>
+          <button type="button" role="radio" class="${it.condition === "new" ? "sel" : ""}"
+            aria-checked="${it.condition === "new"}" data-ic="new" data-icid="${it.id}">${esc(tr("Neu"))}</button>
+        </div>
       </div>` : ""}
       <div class="fig-actions">
-        ${!it.done ? `<button class="mini-btn add" data-i-recv="${it.id}">✔ Da! Ab in die Sammlung</button>` : ""}
-        ${!it.done && dealer ? `<button class="mini-btn danger" data-i-del="${it.id}">✕</button>` : ""}
-        ${it.done && dealer ? `<button class="mini-btn" data-i-undo="${it.id}">↩︎ Rückgängig</button>` : ""}
+        ${!it.done ? `<button class="mini-btn add" data-i-recv="${it.id}">${esc(tr("✔ Da! Ab in die Sammlung"))}</button>` : ""}
+        ${!it.done && dealer ? `<button class="mini-btn zust-abbruch" data-i-del="${it.id}"
+          title="${esc(tr("Von der Liste nehmen"))}" aria-label="${esc(tr("Von der Liste nehmen"))}">✕</button>` : ""}
+        ${it.done && dealer ? `<button class="mini-btn" data-i-undo="${it.id}">${esc(tr("↩︎ Rückgängig"))}</button>` : ""}
       </div>
     </div>
   </div>`;
@@ -8220,7 +8254,13 @@ function wireCartButtons(box, items, vorbereiten = null) {
       const actions = card.querySelector(".card-actions");
       actions.hidden = true;
       const row = document.createElement("div");
-      row.className = "card-actions btn-grid";
+      // **Dieselbe Sprache wie der Zustands-Schritt** (seit 2.88.37): oben
+      // Einkaufspreis und Zustand in einer Zeile, der Zustand als Pille wie
+      // im Formular – er ist hier eine Wahl, kein Befehl. Darunter die
+      // Listen als ruhige Knöpfe, unten die Aktion und ein rotes ✕. Vorher:
+      // zwei umrandete Zustandsknöpfe, einer gelb, und ein „Abbrechen" über
+      // die volle Breite.
+      row.className = "liste-reihe";
       row.setAttribute("data-cart-row", "");
       actions.after(row);
 
@@ -8229,7 +8269,8 @@ function wireCartButtons(box, items, vorbereiten = null) {
       let priceVal = "";
       const priceField = () => `
         <input data-cl-price inputmode="decimal" value="${esc(priceVal)}"
-          placeholder="${esc(tr("Einkauf {cur} (optional)", { cur: curSymbol() }))}" style="grid-column:1/-1">`;
+          placeholder="${esc(tr("Einkauf {cur}", { cur: curSymbol() }))}"
+          aria-label="${esc(tr("Einkauf {cur} (optional)", { cur: curSymbol() }))}">`;
       const wirePriceField = () => {
         const inp = row.querySelector("[data-cl-price]");
         if (inp) inp.addEventListener("input", () => {
@@ -8244,8 +8285,13 @@ function wireCartButtons(box, items, vorbereiten = null) {
         return Math.round(n * 100) / 100;
       };
       const condChips = () => `
-        <button class="mini-btn cond-mini ${cond !== "new" ? "sel" : ""}" data-cc="used">Gebraucht</button>
-        <button class="mini-btn cond-mini ${cond === "new" ? "sel" : ""}" data-cc="new">Neu</button>`;
+        <div class="erf-wahl" role="radiogroup" aria-label="${esc(tr("Zustand"))}">
+          <button type="button" role="radio" data-cc="used" class="${cond !== "new" ? "sel" : ""}"
+            aria-checked="${cond !== "new"}">${esc(tr("Gebraucht"))}</button>
+          <button type="button" role="radio" data-cc="new" class="${cond === "new" ? "sel" : ""}"
+            aria-checked="${cond === "new"}">${esc(tr("Neu"))}</button>
+        </div>`;
+      const kopf = () => `<div class="liste-kopf">${priceField()}${condChips()}</div>`;
       const wireCondChips = (rerender) => {
         row.querySelectorAll("[data-cc]").forEach((c) => {
           c.addEventListener("click", () => {
@@ -8259,13 +8305,22 @@ function wireCartButtons(box, items, vorbereiten = null) {
       const renderNew = () => {
         const today = new Date().toLocaleDateString(dateLocale(),
           { day: "2-digit", month: "2-digit" });
+        // Gibt es schon Listen, führt der Nebenknopf zurück zur Wahl („‹");
+        // sonst bricht er ab (rotes ✕).
+        const neben = lists.length
+          ? `<button class="mini-btn liste-zurueck" data-cl-back
+               title="${esc(tr("Zurück"))}" aria-label="${esc(tr("Zurück"))}">‹</button>`
+          : `<button class="mini-btn zust-abbruch" data-cl-back
+               title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>`;
         row.innerHTML = `
-          ${condChips()}${priceField()}
-          <span class="buy-label">Neue Einkaufsliste anlegen:</span>
-          <input data-cl-name maxlength="120" style="grid-column:1/-1"
-            value="Flohmarkt ${today}">
-          <button class="mini-btn add" data-cl-create>Anlegen &amp; drauflegen</button>
-          <button class="mini-btn" data-cl-back>${lists.length ? "Zurück" : "Abbrechen"}</button>`;
+          ${kopf()}
+          <span class="liste-titel">${esc(tr("Neue Einkaufsliste"))}</span>
+          <input data-cl-name maxlength="120"
+            value="${esc(tr("Flohmarkt {datum}", { datum: today }))}">
+          <div class="liste-aktion">
+            <button class="mini-btn add" data-cl-create>${esc(tr("Anlegen & drauflegen"))}</button>
+            ${neben}
+          </div>`;
         const input = row.querySelector("[data-cl-name]");
         input.focus();
         input.select();
@@ -8302,11 +8357,15 @@ function wireCartButtons(box, items, vorbereiten = null) {
       };
 
       const renderChooser = () => {
-        row.innerHTML = condChips() + priceField()
-          + `<span class="buy-label">Auf welche Liste?</span>`
-          + lists.map((l) => `<button class="mini-btn" data-cl="${l.id}">${esc(l.name)}</button>`).join("")
-          + `<button class="mini-btn add" data-cl-new>＋ Neue Liste</button>`
-          + `<button class="mini-btn" data-cl-cancel>Abbrechen</button>`;
+        row.innerHTML = kopf()
+          + `<span class="liste-titel">${esc(tr("Auf welche Liste?"))}</span>`
+          + `<div class="liste-wahl">${lists.map((l) =>
+              `<button class="mini-btn" data-cl="${l.id}">${esc(l.name)}</button>`).join("")}</div>`
+          + `<div class="liste-aktion">
+              <button class="mini-btn" data-cl-new>${esc(tr("＋ Neue Liste"))}</button>
+              <button class="mini-btn zust-abbruch" data-cl-cancel
+                title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>
+            </div>`;
         row.querySelector("[data-cl-cancel]").addEventListener("click",
           close);
         row.querySelector("[data-cl-new]").addEventListener("click",
