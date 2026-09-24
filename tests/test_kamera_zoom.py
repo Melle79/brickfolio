@@ -173,3 +173,51 @@ def test_der_nachlauf_ist_kurz():
     m = re.search(r"const KAMERA_NACHLAUF_MS = (\d+);", js())
     assert m and int(m.group(1)) <= 60000, (
         "je länger, desto länger leuchtet die Kameraanzeige")
+
+
+# ---------------------------------------------------- die Objektive
+
+def test_die_objektive_kommen_aus_enumeratedevices():
+    """**Der Gerätezoom ist auf dem iPhone nicht zu haben** – WebKit gibt
+    `zoom` in den Fähigkeiten nicht heraus, und alle Browser dort benutzen
+    dieselbe Maschine. Die Objektive schon: Seit iOS 16.3 stehen die
+    Rückkameras einzeln in `enumerateDevices()`, mit eigener `deviceId`.
+    """
+    f = _fn("kameraLinsenPruefen")
+    assert "enumerateDevices()" in f
+    assert 'g.kind === "videoinput"' in f
+
+
+def test_nach_objektivnamen_wird_nicht_gesucht():
+    """Sie kommen vom Betriebssystem und sind übersetzt – ein
+    `label.includes("Tele")` ginge in der ersten fremden Sprache schief."""
+    f = _fn("kameraLinsenPruefen")
+    for wort in ("Tele", "Wide", "Weit", "Ultra", "Back", "Rück"):
+        assert wort not in f, "Namensraten statt Auswahl anbieten"
+
+
+def test_ohne_namen_keine_leiste():
+    """Vor der Freigabe sind die Namen leer – nummerierte Knöpfe hülfen
+    niemandem."""
+    assert "&& g.label" in _fn("kameraLinsenPruefen")
+
+
+def test_keine_leiste_bei_nur_einem_objektiv():
+    assert "kameraLinsen.length < 2" in _fn("kameraLinsenPruefen")
+
+
+def test_der_alte_strom_stirbt_erst_nach_dem_neuen():
+    """Andersherum stünde ein schwarzes Bild dazwischen – und misslingt das
+    Öffnen, wäre die laufende Kamera für nichts weggeworfen."""
+    f = _fn("kameraLinseWaehlen")
+    neu = f.index("kameraStrom = neu")
+    assert "alt.getTracks().forEach((t) => t.stop())" in f[neu:], (
+        "der alte Strom endet nach der Übernahme, nicht davor")
+    assert f.index("getUserMedia") < neu
+
+
+def test_ein_objektivwechsel_setzt_den_zoom_zurueck():
+    """Ein anderes Objektiv hat einen anderen Bildwinkel – der alte Faktor
+    hieße dort etwas anderes."""
+    f = _fn("kameraLinseWaehlen")
+    assert "kameraZoom = 1" in f and "kameraZoomPruefen()" in f

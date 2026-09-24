@@ -45,6 +45,28 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.24 – September 2026
+
+### Neu
+- 🔭 **Die Objektive des Telefons stehen zur Wahl.** Über den Zoomstufen
+  liegt jetzt eine Reihe mit den Kameras, die das Gerät hergibt –
+  Weitwinkel, Ultraweitwinkel, Teleobjektiv. Wer eines davon wählt,
+  bekommt **echte Optik** statt eines Ausschnitts.
+
+  **Warum das nicht der Zoomregler tut:** Auf dem iPhone gibt es die
+  Zoom-Schnittstelle nicht. WebKit reicht `zoom` in den Fähigkeiten einer
+  Videospur nicht heraus, und weil alle Browser auf dem iPhone dieselbe
+  Maschine benutzen, hilft auch kein anderer. Was es seit iOS 16.3 gibt:
+  Die Rückkameras stehen **einzeln** in der Geräteliste. Über diesen Weg
+  läuft die Wahl.
+
+  Die Namen kommen vom Betriebssystem und sind übersetzt – darum werden
+  sie angezeigt und nicht durchsucht. Welches Objektiv wofür taugt, weiß
+  die App nicht: **Ein Teleobjektiv stellt oft erst ab einem halben Meter
+  scharf** und ist für eine Figur auf dem Tisch womöglich das falsche.
+  Also wählen lassen, nicht raten. Wo es nur eine Kamera gibt, bleibt die
+  Reihe weg.
+
 ## 2.88.23 – September 2026
 
 ### Neu

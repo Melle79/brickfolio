@@ -844,6 +844,21 @@ gar nicht erst.
 zoomt der Sensor selbst; sonst wird der Ausschnitt verkleinert. Beides
 hilft der Erkennung, denn sie bekommt die Figur groß statt klein im Bild.
 
+**Objektivwahl** (ab 2.88.24): Darüber liegt, wo es mehr als eine Kamera
+gibt, eine Reihe mit deren Namen – Weitwinkel, Ultraweitwinkel,
+Teleobjektiv. Das ist **echte Optik**, kein Ausschnitt.
+
+> **Auf dem iPhone geht es nur so.** Die Zoom-Schnittstelle gibt es dort
+> nicht: WebKit reicht `zoom` in den Fähigkeiten einer Videospur nicht
+> heraus, und alle Browser auf dem iPhone benutzen dieselbe Maschine. Seit
+> iOS 16.3 stehen dafür die Rückkameras einzeln in der Geräteliste, und
+> genau die zeigt diese Reihe. Die Namen stammen vom Betriebssystem.
+>
+> Welches Objektiv sich lohnt, muss man ausprobieren: **Ein Teleobjektiv
+> stellt oft erst ab einem halben Meter scharf** und ist für eine Figur auf
+> dem Tisch womöglich das falsche – der Ultraweitwinkel kommt dafür am
+> nächsten heran. Die App entscheidet das nicht für dich.
+
 > **Aufgenommen wird, was der Sucher zeigt.** Das klingt
 > selbstverständlich, war es bis 2.88.22 aber nicht: Das Livebild ist
 > beschnitten (es füllt den Bildschirm), das Foto nahm trotzdem das ganze
