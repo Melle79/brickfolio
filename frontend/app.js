@@ -8116,10 +8116,11 @@ function renderLists(lists) {
           mc.setAttribute("data-recv-row", "");
           mc.style.flexWrap = "wrap";
           mc.innerHTML = `
-            <span class="buy-label">Schon ${owned}× in der Sammlung:</span>
-            <button class="mini-btn add" data-rm="add">＋ Zusätzlich</button>
-            <button class="mini-btn" data-rm="replace">Überschreiben</button>
-            <button class="mini-btn" data-rm-cancel>✕</button>`;
+            <span class="liste-titel" style="flex-basis:100%">${esc(tr("Schon {n}× in der Sammlung:", { n: owned }))}</span>
+            <button class="mini-btn add" data-rm="add">${esc(tr("＋ Zusätzlich"))}</button>
+            <button class="mini-btn" data-rm="replace">${esc(tr("Überschreiben"))}</button>
+            <button class="mini-btn zust-abbruch" data-rm-cancel
+              title="${esc(tr("Abbrechen"))}" aria-label="${esc(tr("Abbrechen"))}">✕</button>`;
           actions.after(mc);
           mc.querySelector("[data-rm-cancel]").addEventListener(
             "click", () => { mc.remove(); actions.hidden = false; });
@@ -8148,42 +8149,23 @@ function renderLists(lists) {
           }
         };
 
-        if (dealer2) {
-          // Profi: Einkaufspreis bestätigen (Zustand ist bereits gewählt)
-          actions.hidden = true;
-          const chooser = document.createElement("div");
-          chooser.className = "fig-actions";
-          chooser.setAttribute("data-recv-row", "");
-          chooser.style.flexWrap = "wrap";
-          chooser.innerHTML = `
-            <span class="paid-row buy-paid" style="flex-basis:100%">
-              <span class="paid-label">Preis</span>
-              <input data-recv-paid class="paid-input" inputmode="decimal" placeholder="0,00" value="${listItem && listItem.paid_price != null ? fmtPaidInput(listItem.paid_price) : ""}">
-              <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
-              <span class="sub">leer = BrickLink-Ø</span></span>
-            <button class="mini-btn add" data-rc-go>✔ ${condLabel} übernehmen</button>
-            <button class="mini-btn" data-rc-cancel>✕</button>`;
-          actions.after(chooser);
-          chooser.querySelector("[data-rc-cancel]").addEventListener("click",
-            () => { chooser.remove(); actions.hidden = false; });
-          chooser.querySelector("[data-rc-go]").addEventListener("click",
-            async () => {
-              const paidEl = chooser.querySelector("[data-recv-paid]");
-              let paid = null;
-              if (paidEl && paidEl.value.trim() !== "") {
-                paid = Number(paidEl.value.trim().replace(",", "."));
-                if (!isFinite(paid) || paid < 0) {
-                  toast("Bitte einen gültigen Preis eingeben");
-                  return;
-                }
-              }
-              chooser.remove();
-              await doReceive(paid);
-            });
-        } else {
-          // Kein Profi: direkt mit dem angegebenen Zustand verbuchen
-          doReceive(null);
+        // **Kein zweiter Schritt mehr.** Für Profis öffnete der Knopf hier
+        // eine eigene Zeile mit „Preis [..] € – leer = BrickLink-Ø" und
+        // „✔ Gebraucht übernehmen" – dabei stehen Einkaufspreis und Zustand
+        // direkt darüber in derselben Karte. Sven am 24.09.2026: „warum
+        // doppelt?". Genommen wird jetzt, was dort steht – auch ein Preis,
+        // der noch nicht mit ✓ gespeichert ist, denn den sieht man ja.
+        // Leer heißt wie bisher: BrickLink-Durchschnitt.
+        let paid = null;
+        const feld = dealer2 ? row.querySelector("[data-ip]") : null;
+        if (feld && feld.value.trim() !== "") {
+          paid = Number(feld.value.trim().replace(",", "."));
+          if (!isFinite(paid) || paid < 0) {
+            toast("Bitte einen gültigen Preis eingeben");
+            return;
+          }
         }
+        doReceive(paid);
       });
     });
     card.querySelectorAll("[data-i-undo]").forEach((btn) => {
@@ -8231,7 +8213,8 @@ function listItemRow(it, dealer) {
       <div class="liste-artikel">
         <input data-ip="${it.id}" class="paid-input" inputmode="decimal"
           placeholder="${esc(tr("Einkauf {cur}", { cur: curSymbol() }))}"
-          aria-label="${esc(tr("Einkauf {cur} (optional)", { cur: curSymbol() }))}"
+          title="${esc(tr("leer = BrickLink-Ø"))}"
+          aria-label="${esc(tr("Einkauf {cur} – leer = BrickLink-Ø", { cur: curSymbol() }))}"
           value="${it.paid_price != null ? fmtPaidInput(it.paid_price) : ""}">
         <button class="mini-btn add liste-speichern" data-ip-save="${it.id}"
           title="${esc(tr("Einkaufspreis speichern"))}" aria-label="${esc(tr("Einkaufspreis speichern"))}">✓</button>

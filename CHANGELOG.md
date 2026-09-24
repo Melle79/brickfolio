@@ -45,6 +45,21 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.39 – September 2026
+
+### Behoben
+- ✅ **„✔ Da! Ab in die Sammlung" fragt nicht mehr alles noch einmal ab.**
+  Für Profis öffnete der Knopf eine eigene Zeile mit „Preis [..] € – leer =
+  BrickLink-Ø" und „✔ Gebraucht übernehmen" – dabei stehen Einkaufspreis und
+  Zustand direkt darüber in derselben Karte. Jetzt nimmt ein Tipp, was dort
+  steht: den Zustand aus der Pille, den Preis aus dem Einkaufsfeld (auch
+  wenn er noch nicht mit ✓ gespeichert ist – man sieht ihn ja). Leer heißt
+  wie bisher: BrickLink-Durchschnitt; das steht jetzt als Erklärung am Feld.
+
+  Gefragt wird nur noch, wenn es wirklich etwas zu entscheiden gibt: Steht
+  die Figur schon in diesem Zustand in der Sammlung, heißt es „zusätzlich
+  oder überschreiben?" – mit rotem ✕ wie überall.
+
 ## 2.88.38 – September 2026
 
 ### Geändert

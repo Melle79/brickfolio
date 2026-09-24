@@ -109,3 +109,24 @@ def test_der_sternknopf_schlaegt_die_grundregel():
     assert ".mf-zeile .mf-stern {" in css()
     i_stern = css().index(".mf-zeile .mf-stern {")
     assert "flex: none" in css()[i_stern:i_stern + 120]
+
+
+def test_da_ab_in_die_sammlung_fragt_nicht_doppelt():
+    """„warum doppelt?" (24.09.2026) – der Knopf öffnete für Profis eine
+    eigene Zeile mit Preisfeld und „✔ Gebraucht übernehmen", obwohl Preis
+    und Zustand direkt darüber stehen."""
+    q = js()
+    assert "data-recv-paid" not in q, "das zweite Preisfeld"
+    assert "data-rc-go" not in q, "„… übernehmen\""
+    n = q.index('card.querySelectorAll("[data-i-recv]")')
+    teil = q[n:n + 4500]
+    assert 'row.querySelector("[data-ip]")' in teil, (
+        "der Preis kommt aus dem Einkaufsfeld der Zeile")
+
+
+def test_die_echte_rueckfrage_bleibt():
+    """Ist der Artikel schon in der Sammlung, muss gefragt werden:
+    zusätzlich oder überschreiben. Das ist keine Doppelung."""
+    q = js()
+    assert 'data-rm="add"' in q and 'data-rm="replace"' in q
+    assert 'class="mini-btn zust-abbruch" data-rm-cancel' in q

@@ -1193,5 +1193,9 @@
  "📦 für:": "📦 for:",
  "☆ Alle auf die Wunschliste": "☆ All to the wishlist",
  "Als CSV": "As CSV",
- "Drucken": "Print"
+ "Drucken": "Print",
+ "Schon {n}× in der Sammlung:": "Already {n}× in the collection:",
+ "＋ Zusätzlich": "＋ In addition",
+ "Überschreiben": "Overwrite",
+ "Einkauf {cur} – leer = BrickLink-Ø": "Bought {cur} – empty = BrickLink average"
 }
