@@ -2944,7 +2944,21 @@ let kameraZoom = 1;        // was der Nutzer gewählt hat, als Faktor
 let kameraNativ = null;    // {min, max}, wenn das Gerät wirklich zoomen kann
 let kameraNachlauf = null; // Frist, nach der der Strom wirklich endet
 
-const KAMERA_ZOOM_MAX = 3;
+/* **Zwei Leitern, weil zwei verschiedene Dinge.**
+
+   *Optisch* soll die Leiter den Rastpunkten der Kamera entsprechen. Moderne
+   iPhones haben 1×, 2× und 5× – ein iPhone 16 Pro Max etwa hat **kein**
+   3×, das läge zwischen zwei Objektiven und wäre gerechnet. Darum 1/2/5:
+   Wo das Gerät den Bereich nicht hergibt (kein Teleobjektiv), fällt die
+   5 von selbst weg.
+
+   *Digital* wird nur beschnitten, und das kostet. Bei 5× bliebe von einem
+   Sucherausschnitt von 599 Pixeln noch 120 übrig – dafür gibt es keine
+   Rastpunkte, nur Matsch. Deshalb dort nicht über 3.
+
+   Alles dazwischen erreicht die Kneifgeste ohnehin. */
+const KAMERA_STUFEN_OPTISCH = [1, 2, 5];
+const KAMERA_STUFEN_DIGITAL = [1, 2, 3];
 
 /* **Warum der Strom nicht sofort endet.**
 
@@ -3076,9 +3090,9 @@ async function kameraLicht() {
    das, was man gerade sieht. Bezugspunkt ist darum, was die Spur beim
    Öffnen meldet: Was man sieht, ist 1×. */
 function kameraZoomStufen() {
-  if (!kameraNativ) return [1, 2, 3];
-  const max = Math.min(KAMERA_ZOOM_MAX, kameraNativ.max / kameraNativ.basis);
-  return [1, 2, 3].filter((s) => s <= max + 0.01);
+  if (!kameraNativ) return KAMERA_STUFEN_DIGITAL.slice();
+  const max = kameraNativ.max / kameraNativ.basis;
+  return KAMERA_STUFEN_OPTISCH.filter((s) => s <= max + 0.01);
 }
 
 function kameraZoomPruefen() {
@@ -3111,12 +3125,21 @@ function kameraZoomPruefen() {
 /* Zwischenwerte aus der Kneifgeste stehen auf der Stufe darunter: Bei 1,6×
    zeigt die „1" den Wert an und gilt als gewählt. Ohne das stünde in der
    Leiste „1×", während das Bild schon anderthalbfach vergrößert ist – die
-   Anzeige widerspräche dem, was man sieht. */
+   Anzeige widerspräche dem, was man sieht.
+
+   **Welche Stufe „darunter" ist, muss gesucht werden.** Hier stand
+   `Math.floor(kameraZoom)` – das setzt voraus, dass die Stufen 1, 2, 3
+   heißen. Seit sie den Rastpunkten der Kamera folgen (1, 2, 5), stimmt das
+   nicht mehr: Bei 3,4× käme 3 heraus, und die gibt es dort gar nicht –
+   keine Stufe trüge den Wert, die Leiste zeigte weiter „2×". */
 function kameraZoomAnzeigen() {
-  document.querySelectorAll("#kamera-zoom .kamera-stufe").forEach((b) => {
+  const knoepfe = [...document.querySelectorAll("#kamera-zoom .kamera-stufe")];
+  const werte = knoepfe.map((b) => Number(b.dataset.zoom));
+  const darunter = werte.filter((s) => s <= kameraZoom + 0.05).pop();
+  knoepfe.forEach((b) => {
     const s = Number(b.dataset.zoom);
     const genau = Math.abs(s - kameraZoom) < 0.05;
-    const traegt = genau || s === Math.floor(kameraZoom);
+    const traegt = genau || s === darunter;
     b.setAttribute("aria-pressed", String(traegt));
     b.textContent = (genau || !traegt
       ? s : kameraZoom.toFixed(1).replace(".", ",")) + "×";

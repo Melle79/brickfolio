@@ -45,6 +45,35 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.26 – September 2026
+
+### Geändert
+- 🔍 **Die Zoomstufen heißen jetzt 1× / 2× / 5×.** Vorher 1/2/3 – eine
+  Zahlenreihe, die kein Telefon so hat. Ein iPhone 16 Pro Max rastet bei
+  1×, 2× und 5× ein; ein 3× gibt es dort **nicht**, das läge zwischen zwei
+  Objektiven und wäre gerechnet.
+
+  Wo ein Gerät den Bereich nicht hergibt – kein Teleobjektiv –, fällt die 5
+  von selbst weg. Und wo es den Gerätezoom gar nicht gibt, bleibt es bei
+  1/2/3: Digital wird nur beschnitten, und bei 5× blieben von einem
+  Sucherausschnitt von 599 Pixeln noch 120 übrig.
+
+  **Die Zahlen benennen die Vergrößerung, nicht das Objektiv** – so wie
+  Apples Beschriftung auch. Welches Glas dafür zum Einsatz kommt,
+  entscheidet iOS.
+
+  > **Warum eine feste Leiter und keine abgefragte:** Das Telefon gibt
+  > seine Rastpunkte nicht heraus. Der Browser bekommt nur `{min, max,
+  > step}`, also einen durchgehenden Bereich; die Umschaltpunkte kennt nur
+  > AVFoundation intern. Aus `max` lässt sich der optische Endpunkt auch
+  > nicht ablesen, weil dort der digitale Zoom mitzählt (bis 25×).
+
+### Behoben
+- 🔢 **Ein Zwischenwert aus der Kneifgeste fand seine Stufe nicht mehr.**
+  Welche Stufe ihn anzeigt, wurde mit `Math.floor` bestimmt – das setzt
+  die Reihe 1, 2, 3 voraus. Bei 1/2/5 käme für 3,4× eine 3 heraus, die es
+  nicht gibt: Keine Stufe trüge den Wert, die Leiste zeigte weiter „2×".
+
 ## 2.88.25 – September 2026
 
 ### Geändert

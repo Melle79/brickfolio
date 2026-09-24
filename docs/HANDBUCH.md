@@ -839,10 +839,24 @@ vorhandenes Foto ist also derselbe Weg, nicht ein anderer. Kann das Gerät
 es, steht dort auch ein **Licht**; ein Knopf, der nichts täte, erscheint
 gar nicht erst.
 
-**Zoom** (ab 2.88.23): über dem Auslöser stehen **1× / 2× / 3×**, und
-**Kneifen mit zwei Fingern** geht auch – stufenlos. Wo das Gerät es kann,
-zoomt der Sensor selbst; sonst wird der Ausschnitt verkleinert. Beides
-hilft der Erkennung, denn sie bekommt die Figur groß statt klein im Bild.
+**Zoom** (ab 2.88.23): über dem Auslöser stehen die Stufen, und **Kneifen
+mit zwei Fingern** geht auch – stufenlos. Wo das Gerät es kann, zoomt der
+Sensor selbst; sonst wird der Ausschnitt verkleinert. Beides hilft der
+Erkennung, denn sie bekommt die Figur groß statt klein im Bild.
+
+Welche Stufen erscheinen, hängt am Gerät: Mit Gerätezoom sind es **1× /
+2× / 5×** (die Rastpunkte moderner Telefone; ohne Teleobjektiv fällt die 5
+weg), ohne ihn **1× / 2× / 3×**. Die Zahlen benennen die **Vergrößerung
+gegenüber dem, was du beim Öffnen siehst** – nicht das Objektiv. Welches
+Glas dafür genommen wird, entscheidet das Telefon.
+
+> **Die Rastpunkte selbst verrät das Telefon nicht.** Der Browser bekommt
+> nur einen durchgehenden Bereich (`min`, `max`, `step`); die
+> Umschaltpunkte zwischen Ultraweitwinkel, Weitwinkel und Tele kennt nur
+> das Betriebssystem intern. Aus `max` ist der optische Endpunkt auch
+> nicht ablesbar, weil dort der digitale Zoom mitzählt – beim iPhone bis
+> 25×. Darum eine feste Leiter, gefiltert nach dem, was der Bereich
+> hergibt.
 
 > **Aufgenommen wird, was der Sucher zeigt.** Das klingt
 > selbstverständlich, war es bis 2.88.22 aber nicht: Das Livebild ist
