@@ -4588,12 +4588,32 @@ function nachschubBeenden() {
 }
 
 function kartenNachschub(list, items) {
+  // **Ein voriger Lauf endet hier, nicht irgendwann.** Beide Aufrufer tun
+  // das zwar schon – aber wenn es einer vergisst, hängen zwei Läufe an
+  // derselben Liste, und der ältere legt beim Aufräumen den jüngeren still.
+  nachschubBeenden();
+
   let gezeigt = 0;
   const marke = document.createElement("div");
   marke.className = "nachschub-marke";
   list.appendChild(marke);
+  // **Der Beobachter gehört diesem Lauf**, nicht der Datei. Vorher stand er
+  // nur in `nachschubBeobachter`, und `fertig()` beendete über
+  // `nachschubBeenden()` immer den *aktuellen* – nach einem Neuzeichnen also
+  // den des neuen Laufs. Die Liste hörte dann lautlos auf nachzuladen.
+  let beobachter = null;
 
   const block = () => {
+    // **Die Marke kann weg sein, während der Beobachter noch meldet.**
+    // `renderCollection` beendet den Nachschub und leert danach die Liste –
+    // eine bereits eingereihte Meldung des Beobachters läuft trotzdem noch
+    // durch. Dann zeigt `marke` ins Leere, und `insertBefore` wirft
+    // `NotFoundError`. Am 24.09.2026 aus der App gemeldet und nachgestellt:
+    // Marke entfernen, `nachschubLaden()` rufen – derselbe Fehler.
+    //
+    // Ohne diese Prüfung kämen obendrein Karten aus dem *alten* Bestand in
+    // die neue Liste, denn `items` und `gezeigt` gehören noch zum alten Lauf.
+    if (marke.parentNode !== list) { fertig(); return; }
     const teil = items.slice(gezeigt, gezeigt + KARTEN_BLOCK);
     if (!teil.length) { fertig(); return; }
     const huelle = document.createElement("div");
@@ -4620,23 +4640,33 @@ function kartenNachschub(list, items) {
     // Neu anmelden erzwingt eine frische Meldung; liegt die Marke immer
     // noch im Blick, folgt der nächste Block. Das endet von selbst, sobald
     // sie verdrängt ist oder die Liste zu Ende geht.
-    if (nachschubBeobachter) {
-      nachschubBeobachter.unobserve(marke);
-      nachschubBeobachter.observe(marke);
+    if (beobachter) {
+      beobachter.unobserve(marke);
+      beobachter.observe(marke);
     }
   };
 
-  const fertig = () => { nachschubBeenden(); marke.remove(); };
+  const fertig = () => {
+    if (beobachter) { beobachter.disconnect(); beobachter = null; }
+    // Die Verweise in der Datei nur zurücknehmen, wenn sie noch diesem Lauf
+    // gehören – sonst entzieht ein alter Lauf dem neuen den Boden.
+    if (nachschubLaden === block) {
+      nachschubLaden = null;
+      nachschubBeobachter = null;
+    }
+    marke.remove();
+  };
 
   // `nachschub` gehört zur Liste, nicht zum Fenster: In der Rasteransicht
   // liegt die Marke sonst neben den Karten statt darunter.
-  nachschubBeobachter = new IntersectionObserver((eintraege) => {
+  beobachter = new IntersectionObserver((eintraege) => {
     if (eintraege.some((e) => e.isIntersecting)) block();
   }, { rootMargin: "1200px 0px" });
+  nachschubBeobachter = beobachter;   // damit `nachschubBeenden` ihn erreicht
 
   nachschubLaden = block;
   block();                       // der erste Block sofort
-  if (nachschubBeobachter) nachschubBeobachter.observe(marke);
+  if (beobachter) beobachter.observe(marke);
 }
 
 /* Sorgt dafür, dass ein bestimmter Eintrag wirklich im Dokument steht –

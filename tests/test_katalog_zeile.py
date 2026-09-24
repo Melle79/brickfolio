@@ -208,3 +208,41 @@ def test_es_gibt_nur_einen_platzhalter():
     auseinander."""
     assert js().count("const IMG_PLACEHOLDER") == 1
     assert js().count("IMG_PLACEHOLDER") >= 6
+
+
+# ---------------------------------------------------- der Nachschub
+
+def test_der_nachschub_haelt_an_wenn_die_marke_weg_ist():
+    """**Aus der App gemeldet (24.09.2026, 2.88.27):** `NotFoundError:
+    Failed to execute 'insertBefore' … not a child of this node`, aus dem
+    IntersectionObserver heraus.
+
+    `renderCollection` beendet den Nachschub und leert danach die Liste –
+    eine bereits eingereihte Meldung des Beobachters läuft trotzdem noch
+    durch. Dann zeigt die Marke ins Leere. Nachgestellt: Marke entfernen,
+    `nachschubLaden()` rufen – derselbe Fehler, Wort für Wort.
+
+    Ohne die Prüfung kämen obendrein Karten aus dem *alten* Bestand in die
+    neue Liste, denn `items` und `gezeigt` gehören noch zum alten Lauf.
+    """
+    f = _fn("kartenNachschub")
+    i_pruefung = f.index("marke.parentNode !== list")
+    i_einfuegen = f.index("list.insertBefore(c, marke)")
+    assert i_pruefung < i_einfuegen, "die Prüfung muss davor stehen"
+
+
+def test_jeder_lauf_hat_seinen_eigenen_beobachter():
+    """**Der stillere Fehler an derselben Stelle.** `fertig()` beendete über
+    `nachschubBeenden()` immer den *aktuellen* Beobachter – nach einem
+    Neuzeichnen also den des neuen Laufs. Die Liste hörte dann lautlos auf
+    nachzuladen, ohne Fehlermeldung.
+    """
+    f = _fn("kartenNachschub")
+    assert "let beobachter = null;" in f
+    assert "if (nachschubLaden === block) {" in f, (
+        "die Verweise nur zurücknehmen, wenn sie noch diesem Lauf gehören")
+
+
+def test_ein_voriger_lauf_wird_beendet():
+    f = _fn("kartenNachschub")
+    assert f.index("nachschubBeenden();") < f.index("let gezeigt = 0;")

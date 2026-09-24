@@ -426,9 +426,11 @@ def test_der_nachschub_fasst_nach_solange_die_marke_sichtbar_ist():
     sind 60 Karten fünf Reihen, die Marke blieb stehen, und es kam nie ein
     zweites Ereignis. Der Bildschirm blieb halb leer (29.08.2026)."""
     quelle = _app_js()
-    i = quelle.index("nachschubBeobachter.unobserve(marke)")
+    # Seit 2.88.30 gehört der Beobachter dem einzelnen Lauf und heißt
+    # darum `beobachter`, nicht mehr `nachschubBeobachter`.
+    i = quelle.index("beobachter.unobserve(marke)")
     block = quelle[i - 400:i + 120]
-    assert "nachschubBeobachter.observe(marke)" in block
+    assert "beobachter.observe(marke)" in block
     # Es muss zuerst geprüft werden, ob überhaupt noch etwas fehlt –
     # sonst liefe es nach dem letzten Block weiter.
     assert "fertig(); return;" in quelle

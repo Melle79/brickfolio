@@ -45,6 +45,30 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.30 – September 2026
+
+### Behoben
+- 🧩 **Absturz beim Nachladen der Sammlung** (aus der App gemeldet,
+  24.09.2026): `NotFoundError: Failed to execute 'insertBefore' … not a
+  child of this node`, aus dem Beobachter heraus.
+
+  Die Sammlung lädt blockweise nach und fügt die Karten vor einer
+  unsichtbaren Marke ein. Zeichnet sich die Liste neu – Suche, Filter,
+  Sortierung –, wird der Nachschub beendet und die Liste geleert; eine
+  beim Beobachter **bereits eingereihte Meldung** läuft aber trotzdem noch
+  durch. Dann zeigt die Marke ins Leere. Nachgestellt und Wort für Wort
+  derselbe Fehler; der Nachschub hält jetzt an, wenn die Marke nicht mehr
+  zur Liste gehört.
+
+  Nebenbei hätte das auch Karten aus dem **alten** Bestand in die neue
+  Liste gesetzt, denn Daten und Zählstand gehörten noch zum vorigen Lauf.
+
+- 🔇 **Und der stillere Fehler an derselben Stelle:** Der Beobachter lag in
+  einer Variablen der Datei, nicht beim einzelnen Lauf. Räumte ein alter
+  Lauf auf, beendete er damit den Beobachter des **neuen** – die Liste
+  hörte lautlos auf nachzuladen, ohne Fehlermeldung. Jeder Lauf hat jetzt
+  seinen eigenen.
+
 ## 2.88.29 – September 2026
 
 ### Geändert
