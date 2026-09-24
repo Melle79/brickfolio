@@ -45,6 +45,29 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.25 – September 2026
+
+### Geändert
+- ↩️ **Die Objektivwahl aus 2.88.24 ist wieder raus.** Am Gerät sah man,
+  warum: iOS bietet dort gar keine einzelnen Objektive an, sondern seine
+  virtuellen Kombi-Kameras („Rückseitige Triple-Kamera", „Rückseitige
+  Dual-Weitwinkelkamera") – und die Frontkamera gleich mit. Viel Auswahl,
+  wenig Gewinn. Die Zoomstufen genügen.
+
+### Behoben
+- 🔍 **„1×" hätte am iPhone heraus gezoomt.** Der Gerätezoom wurde gegen
+  den *kleinsten* Wert gerechnet, den die Kamera meldet. Bei einer
+  Rückseite, die intern zwischen Ultraweitwinkel, Weitwinkel und Tele
+  umschaltet, gehört dieser kleinste Wert zum **Ultraweitwinkel** – die
+  Ansicht beim Öffnen liegt darüber. „1×" hätte also ein weiteres Bild
+  gezeigt als das, was man gerade sieht, und „2×" wäre kaum mehr als
+  normal gewesen.
+
+  Bezugspunkt ist jetzt, was die Kamera beim Öffnen meldet: **Was du
+  siehst, ist 1×.** Nachgemessen an einer Attrappe mit dem Verhalten einer
+  Triple-Kamera (Bereich 1–15, Ausgangslage 2): 2× stellt 4, 3× stellt 6,
+  und zurück auf 1× stellt wieder 2. Rein optisch, ohne Ausschnitt.
+
 ## 2.88.24 – September 2026
 
 ### Neu

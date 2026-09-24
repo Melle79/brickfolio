@@ -3027,7 +3027,6 @@ async function kameraOeffnen() {
   try { await video.play(); } catch (_) { /* iOS spielt von selbst */ }
   lichtKnopfPruefen();
   kameraZoomPruefen();
-  kameraLinsenPruefen();
 }
 
 /* Licht nur zeigen, wo es das Gerät kann. Ein Knopf, der nichts tut, ist
@@ -3065,12 +3064,20 @@ async function kameraLicht() {
    und Brickognize rechnet ohnehin auf 1024 Pixel herunter.
 
    **Die Einheit ist nicht überall dieselbe.** Manche Geräte zählen den
-   Zoom als Faktor (min 1), andere in Prozent (min 100). `min * stufe`
-   trifft beides – ein fest verdrahtetes `zoom: 2` wäre auf dem zweiten
-   Gerät ein Herauszoomen auf 2 %. */
+   Zoom als Faktor (min 1), andere in Prozent (min 100). Ein fest
+   verdrahtetes `zoom: 2` wäre auf dem zweiten Gerät ein Herauszoomen auf
+   2 %.
+
+   **Und der kleinste Wert ist nicht die Ausgangslage.** Ein iPhone bietet
+   die Rückseite als *eine* Kamera an, die intern zwischen Ultraweitwinkel,
+   Weitwinkel und Tele umschaltet. Deren kleinster Zoomwert gehört zum
+   Ultraweitwinkel – die Ansicht beim Öffnen liegt darüber. Gegen `min`
+   gerechnet hätte „1×" also **heraus**gezoomt, auf ein weiteres Bild als
+   das, was man gerade sieht. Bezugspunkt ist darum, was die Spur beim
+   Öffnen meldet: Was man sieht, ist 1×. */
 function kameraZoomStufen() {
   if (!kameraNativ) return [1, 2, 3];
-  const max = Math.min(KAMERA_ZOOM_MAX, kameraNativ.max / kameraNativ.min);
+  const max = Math.min(KAMERA_ZOOM_MAX, kameraNativ.max / kameraNativ.basis);
   return [1, 2, 3].filter((s) => s <= max + 0.01);
 }
 
@@ -3081,7 +3088,14 @@ function kameraZoomPruefen() {
     let f = null;
     try { f = spur.getCapabilities().zoom; } catch (_) { f = null; }
     if (f && typeof f.min === "number" && f.max > f.min) {
-      kameraNativ = { min: f.min, max: f.max };
+      // Der Bezugspunkt ist die Ansicht beim Öffnen, nicht `f.min` –
+      // siehe oben. Meldet die Spur keinen Wert, bleibt nur `min`.
+      let jetzt = null;
+      try {
+        jetzt = spur.getSettings ? spur.getSettings().zoom : null;
+      } catch (_) { jetzt = null; }
+      const basis = typeof jetzt === "number" && jetzt > 0 ? jetzt : f.min;
+      if (f.max > basis) kameraNativ = { basis, max: f.max };
     }
   }
   const leiste = $("kamera-zoom");
@@ -3114,7 +3128,7 @@ async function kameraZoomSetzen(stufe) {
   kameraZoom = Math.max(1, Math.min(stufen[stufen.length - 1] || 1, stufe));
   if (kameraNativ) {
     const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
-    const ziel = Math.min(kameraNativ.max, kameraNativ.min * kameraZoom);
+    const ziel = Math.min(kameraNativ.max, kameraNativ.basis * kameraZoom);
     try {
       await spur.applyConstraints({ advanced: [{ zoom: ziel }] });
     } catch (_) {
@@ -3128,84 +3142,6 @@ async function kameraZoomSetzen(stufe) {
     video.style.transform = kameraNativ ? "" : `scale(${kameraZoom})`;
   }
   kameraZoomAnzeigen();
-}
-
-/* ── Objektivwahl ───────────────────────────────────────────────────────
-
-   **Der Zoom des Geräts ist auf dem iPhone nicht zu haben.** WebKit gibt
-   `zoom` in `getCapabilities()` nicht heraus – kein Browser auf dem iPhone
-   kann daran vorbei, sie benutzen alle dieselbe Maschine. Dort bleibt nur
-   der digitale Weg.
-
-   **Die Objektive schon.** Seit iOS 16.3 listet `enumerateDevices()` die
-   Rückkameras einzeln auf, mit eigener `deviceId`: Weitwinkel,
-   Ultraweitwinkel, Teleobjektiv. Wer eines davon gezielt öffnet, bekommt
-   echte Optik statt eines Ausschnitts.
-
-   **Die Namen kommen vom Gerät und sind übersetzt.** Genau deshalb wird
-   hier nicht nach ihnen gesucht – ein `label.includes("Tele")` ginge in
-   der ersten fremden Sprache schief. Angezeigt werden sie trotzdem: Was
-   das Betriebssystem eine Kamera nennt, versteht der Mensch davor besser
-   als jede Umschreibung von uns. Welches Objektiv wofür taugt, weiß die
-   App nicht – **das Teleobjektiv stellt oft erst ab einem halben Meter
-   scharf**, taugt für eine Figur auf dem Tisch also womöglich gar nicht.
-   Also wählen lassen, nicht raten. */
-let kameraLinsen = [];
-let kameraLinseId = null;
-
-async function kameraLinsenPruefen() {
-  const leiste = $("kamera-linsen");
-  if (!leiste) return;
-  leiste.hidden = true;
-  leiste.innerHTML = "";
-  if (!navigator.mediaDevices
-      || typeof navigator.mediaDevices.enumerateDevices !== "function") return;
-  const spur = kameraStrom && kameraStrom.getVideoTracks()[0];
-  const jetzt = spur && typeof spur.getSettings === "function"
-    ? spur.getSettings().deviceId : null;
-  if (jetzt) kameraLinseId = jetzt;
-  let liste;
-  try { liste = await navigator.mediaDevices.enumerateDevices(); }
-  catch (_) { return; }
-  // Ohne erteilte Freigabe sind die Namen leer – dann gäbe es nur
-  // nummerierte Knöpfe, und das hilft niemandem.
-  kameraLinsen = liste.filter((g) => g.kind === "videoinput" && g.label);
-  if (kameraLinsen.length < 2) return;
-  leiste.hidden = false;
-  leiste.innerHTML = kameraLinsen.map((g) => `
-    <button type="button" class="kamera-linse" data-linse="${esc(g.deviceId)}"
-      aria-pressed="${g.deviceId === kameraLinseId}">${esc(g.label)}</button>`
-  ).join("");
-}
-
-async function kameraLinseWaehlen(id) {
-  if (!id || id === kameraLinseId) return;
-  let neu;
-  try {
-    neu = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: { exact: id },
-               width: { ideal: 1920 }, height: { ideal: 1920 } },
-      audio: false,
-    });
-  } catch (_) {
-    return;                       // das Objektiv gab es doch nicht her
-  }
-  // Erst der neue Strom, dann den alten beenden: Andersherum steht
-  // zwischendurch ein schwarzes Bild, und misslingt das Öffnen, hätte man
-  // die laufende Kamera für nichts weggeworfen.
-  const alt = kameraStrom;
-  kameraStrom = neu;
-  if (alt) alt.getTracks().forEach((t) => t.stop());
-  kameraLinseId = id;
-  const video = $("kamera-bild");
-  if (video) { video.srcObject = neu; try { await video.play(); } catch (_) {} }
-  kameraZoom = 1;
-  if (video) video.style.transform = "";
-  lichtKnopfPruefen();
-  kameraZoomPruefen();
-  document.querySelectorAll("#kamera-linsen .kamera-linse").forEach((b) => {
-    b.setAttribute("aria-pressed", String(b.dataset.linse === id));
-  });
 }
 
 /* Kneifen zum Zoomen – auf einem Kamerabild probiert das jeder zuerst.
@@ -12398,10 +12334,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("kamera-zoom").addEventListener("click", (e) => {
     const knopf = e.target.closest("[data-zoom]");
     if (knopf) kameraZoomSetzen(Number(knopf.dataset.zoom));
-  });
-  $("kamera-linsen").addEventListener("click", (e) => {
-    const knopf = e.target.closest("[data-linse]");
-    if (knopf) kameraLinseWaehlen(knopf.dataset.linse);
   });
   const kamerasicht = $("kamera");
   kamerasicht.addEventListener("pointerdown", kameraZeigerAn);

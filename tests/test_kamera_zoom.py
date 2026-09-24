@@ -104,8 +104,35 @@ def test_die_einheit_wird_nicht_geraten():
     (min 1), andere in Prozent (min 100). Ein festes `zoom: 2` wäre auf dem
     zweiten Gerät ein Herauszoomen auf 2 %."""
     f = _fn("kameraZoomSetzen")
-    assert "kameraNativ.min * kameraZoom" in f
+    assert "kameraNativ.basis * kameraZoom" in f
     assert "Math.min(kameraNativ.max," in f
+
+
+def test_bezugspunkt_ist_die_ansicht_beim_oeffnen():
+    """**Der kleinste Zoomwert ist nicht die Ausgangslage.**
+
+    Ein iPhone bietet die Rueckseite als *eine* Kamera an, die intern
+    zwischen Ultraweitwinkel, Weitwinkel und Tele umschaltet – am
+    24.09.2026 im Bildschirmfoto belegt: „Rückseitige Triple-Kamera".
+    Deren kleinster Zoomwert gehoert zum Ultraweitwinkel, die Ansicht beim
+    Oeffnen liegt darueber. Gegen `min` gerechnet haette „1×" also
+    **heraus**gezoomt – ein weiteres Bild als das, was man gerade sieht.
+    """
+    f = _fn("kameraZoomPruefen")
+    assert "getSettings().zoom" in f
+    assert "kameraNativ = { basis," in f
+    assert "kameraNativ = { min:" not in f
+
+
+def test_ohne_gemeldeten_wert_bleibt_der_kleinste():
+    f = _fn("kameraZoomPruefen")
+    assert "jetzt : f.min" in f
+
+
+def test_keine_stufen_wenn_die_ausgangslage_schon_das_ende_ist():
+    """Steht die Kamera beim Oeffnen bereits am Anschlag, gibt es nichts
+    zu zoomen – eine Leiste, die nichts bewirkt, ist schlimmer als keine."""
+    assert "if (f.max > basis)" in _fn("kameraZoomPruefen")
 
 
 def test_digitalzoom_faellt_zurueck_wenn_das_stellen_scheitert():
@@ -120,8 +147,10 @@ def test_keine_leiste_mit_nur_einer_stufe():
 
 
 def test_die_stufen_bleiben_im_bereich_des_geraets():
+    """Und zwar gemessen an der Ausgangslage, nicht am kleinsten Wert –
+    sonst zaehlte die Strecke mit, die unterhalb der Ansicht liegt."""
     f = _fn("kameraZoomStufen")
-    assert "kameraNativ.max / kameraNativ.min" in f
+    assert "kameraNativ.max / kameraNativ.basis" in f
 
 
 def test_kneifen_zoomt_das_bild_nicht_die_seite():
@@ -173,51 +202,3 @@ def test_der_nachlauf_ist_kurz():
     m = re.search(r"const KAMERA_NACHLAUF_MS = (\d+);", js())
     assert m and int(m.group(1)) <= 60000, (
         "je länger, desto länger leuchtet die Kameraanzeige")
-
-
-# ---------------------------------------------------- die Objektive
-
-def test_die_objektive_kommen_aus_enumeratedevices():
-    """**Der Gerätezoom ist auf dem iPhone nicht zu haben** – WebKit gibt
-    `zoom` in den Fähigkeiten nicht heraus, und alle Browser dort benutzen
-    dieselbe Maschine. Die Objektive schon: Seit iOS 16.3 stehen die
-    Rückkameras einzeln in `enumerateDevices()`, mit eigener `deviceId`.
-    """
-    f = _fn("kameraLinsenPruefen")
-    assert "enumerateDevices()" in f
-    assert 'g.kind === "videoinput"' in f
-
-
-def test_nach_objektivnamen_wird_nicht_gesucht():
-    """Sie kommen vom Betriebssystem und sind übersetzt – ein
-    `label.includes("Tele")` ginge in der ersten fremden Sprache schief."""
-    f = _fn("kameraLinsenPruefen")
-    for wort in ("Tele", "Wide", "Weit", "Ultra", "Back", "Rück"):
-        assert wort not in f, "Namensraten statt Auswahl anbieten"
-
-
-def test_ohne_namen_keine_leiste():
-    """Vor der Freigabe sind die Namen leer – nummerierte Knöpfe hülfen
-    niemandem."""
-    assert "&& g.label" in _fn("kameraLinsenPruefen")
-
-
-def test_keine_leiste_bei_nur_einem_objektiv():
-    assert "kameraLinsen.length < 2" in _fn("kameraLinsenPruefen")
-
-
-def test_der_alte_strom_stirbt_erst_nach_dem_neuen():
-    """Andersherum stünde ein schwarzes Bild dazwischen – und misslingt das
-    Öffnen, wäre die laufende Kamera für nichts weggeworfen."""
-    f = _fn("kameraLinseWaehlen")
-    neu = f.index("kameraStrom = neu")
-    assert "alt.getTracks().forEach((t) => t.stop())" in f[neu:], (
-        "der alte Strom endet nach der Übernahme, nicht davor")
-    assert f.index("getUserMedia") < neu
-
-
-def test_ein_objektivwechsel_setzt_den_zoom_zurueck():
-    """Ein anderes Objektiv hat einen anderen Bildwinkel – der alte Faktor
-    hieße dort etwas anderes."""
-    f = _fn("kameraLinseWaehlen")
-    assert "kameraZoom = 1" in f and "kameraZoomPruefen()" in f

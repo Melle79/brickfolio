@@ -293,12 +293,8 @@
       <div class="kamera-sucher" aria-hidden="true">
         <i></i><i></i><i></i><i></i>
       </div>
-      <!-- Beide Reihen baut die App aus dem, was das Gerät hergibt, und
-           beide bleiben verborgen, wo es nichts zu wählen gibt. Die
-           Objektive kommen aus `enumerateDevices` (seit iOS 16.3 stehen
-           dort die Rückkameras einzeln), die Stufen aus `kameraZoomPruefen`. -->
-      <div class="kamera-linsen" id="kamera-linsen" role="group"
-           aria-label="Objektiv" hidden></div>
+      <!-- Die Stufen baut `kameraZoomPruefen` – welche es gibt, hängt am
+           Gerät, und eine Reihe mit nur „1×" bliebe verborgen. -->
       <div class="kamera-zoom" id="kamera-zoom" role="group"
            aria-label="Zoom" hidden></div>
       <div class="kamera-leiste">

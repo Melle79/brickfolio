@@ -2796,27 +2796,6 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .kamera-sucher i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
 .kamera-sucher i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
 
-/* Die Objektivnamen kommen vom Betriebssystem und sind mitunter lang
-   („Rück-Ultraweitwinkelkamera"). Darum eine Reihe, die man schieben kann,
-   statt eines Umbruchs quer über das Bild. */
-.kamera-linsen {
-  position: relative; z-index: 2; align-self: center; max-width: 100%;
-  display: flex; gap: 6px; margin-bottom: 10px; padding: 5px;
-  border-radius: 999px; background: rgba(0, 0, 0, .45);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  overflow-x: auto; scrollbar-width: none;
-}
-.kamera-linsen::-webkit-scrollbar { display: none; }
-.kamera-linse {
-  height: 34px; padding: 0 14px; flex: none; max-width: 46vw;
-  border: 0; border-radius: 999px; background: none; color: #fff;
-  font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.kamera-linse[aria-pressed="true"] {
-  background: rgba(255, 255, 255, .92); color: var(--ink);
-}
-
 /* Die Zoomstufen sitzen über der Leiste, wie an einer Telefonkamera –
    dieselbe dunkle, runde Sprache wie Licht und Mediathek daneben. */
 .kamera-zoom {
