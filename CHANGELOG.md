@@ -45,6 +45,22 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.40 – September 2026
+
+### Behoben
+- 🧾 **Käufe von der Einkaufsliste stehen jetzt im Kaufbuch.** „✔ Da! Ab in
+  die Sammlung" schrieb den Preis direkt an den Eintrag, aber keinen Posten
+  ins Kaufbuch – und der bezahlte Betrag ist die Summe dieser Posten. Kam
+  danach ein weiteres Exemplar mit Preis dazu, wurde die Summe aus dem Buch
+  neu gerechnet, und der Listenkauf fiel heraus: 5 € von der Liste plus 2 €
+  gescannt ergaben 2 €. Beim nächsten Neustart zog die App fehlende Posten
+  zwar nach, bis dahin aber stimmte die Summe nicht. Aufgefallen beim Test
+  einer frisch aufgesetzten Instanz.
+
+  Dabei auch behoben: „zusätzlich" **mittelte** den alten und den neuen
+  Preis, statt sie zu addieren, und „überschreiben" ließ die alten Posten im
+  Buch stehen. Im Kaufbuch steht als Herkunft jetzt der Name der Liste.
+
 ## 2.88.39 – September 2026
 
 ### Behoben

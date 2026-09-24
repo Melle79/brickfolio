@@ -8236,36 +8236,48 @@ def receive_list_item(item_id: int, body: ReceiveBody,
             # Schon vorhanden: Frontend soll nachfragen
             return {"ok": False, "need_mode": True,
                     "owned": row["quantity"]}
+        # **Jeder Kauf gehört ins Kaufbuch** – `paid_price` ist nur die Summe
+        # daraus. Hier wurde der Preis bisher direkt in die Zeile
+        # geschrieben: Kam danach ein zweites Exemplar mit Preis dazu, rechnete
+        # `_kaufsumme_nachziehen` die Summe aus dem Buch neu, und der Kauf
+        # von der Liste war weg (5 € + 2 € ergaben 2 €, gefunden in der
+        # Testinstanz am 24.09.2026). „Zusätzlich" mittelte obendrein die
+        # beiden Preise, statt sie zu addieren. Als Quelle steht der
+        # Listenname im Buch – genau dafür ist das Feld da („Flohmarkt").
+        quelle = (list_name or "Einkaufsliste") if manual else "geschätzt"
         if row and body.mode == "replace":
+            conn.execute("DELETE FROM purchases WHERE entry_id = ?",
+                         (row["id"],))
             conn.execute(
                 "UPDATE collection SET quantity = ?, condition = ?, "
                 "name = ?, img_url = ?, bricklink_url = ?, "
                 "year = COALESCE(?, year), "
                 "price_new = COALESCE(?, price_new), "
                 "price_used = COALESCE(?, price_used), "
-                "paid_price = ?, paid_source = ?, paid_at = ? WHERE id = ?",
+                "paid_source = ? WHERE id = ?",
                 (it["qty"], body.condition, it["name"], it["img_url"],
                  it["bricklink_url"], it["year"], it["price_new"],
-                 it["price_used"], paid_val,
+                 it["price_used"],
                  ("manual" if manual else "auto") if paid_val is not None
-                 else None,
-                 now if paid_val is not None else None, row["id"]))
-        elif row:   # mode == "add": Menge erhöhen, Einkaufspreis mitteln
+                 else None, row["id"]))
+            ziel = row["id"]
+            if paid_val is not None:
+                _kauf_buchen(conn, ziel, it["qty"], paid_val, quelle, now)
+            else:
+                _kaufsumme_nachziehen(conn, ziel)
+        elif row:   # mode == "add": Menge erhöhen, Kauf dazubuchen
             conn.execute("UPDATE collection SET quantity = quantity + ? "
                          "WHERE id = ?", (it["qty"], row["id"]))
+            ziel = row["id"]
             if paid_val is not None:
-                if row["paid_price"] is None:
-                    new_paid = paid_val
-                else:
-                    new_paid = round((row["paid_price"] + paid_val) / 2, 2)
                 conn.execute(
-                    "UPDATE collection SET paid_price = ?, "
+                    "UPDATE collection SET "
                     "paid_source = CASE WHEN ? THEN 'manual' "
-                    "ELSE COALESCE(paid_source, 'auto') END, "
-                    "paid_at = ? WHERE id = ?",
-                    (new_paid, int(manual), now, row["id"]))
+                    "ELSE COALESCE(paid_source, 'auto') END WHERE id = ?",
+                    (int(manual), ziel))
+                _kauf_buchen(conn, ziel, it["qty"], paid_val, quelle, now)
         else:
-            conn.execute(
+            cur_neu = conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, img_url, "
                 "bricklink_url, quantity, condition, notes, year, price_new, "
                 "price_used, price_updated_at, price_data, price_region, "
@@ -8281,19 +8293,22 @@ def receive_list_item(item_id: int, body: ReceiveBody,
                  ("manual" if manual else "auto") if paid_val is not None
                  else None,
                  now if paid_val is not None else None, user["id"], now))
+            # Die Zeilennummer **vor** dem Buchen merken: Danach zeigte
+            # `last_insert_rowid()` auf den Kaufbuch-Posten.
+            ziel = cur_neu.lastrowid
+            if paid_val is not None:
+                _kauf_buchen(conn, ziel, it["qty"], paid_val, quelle, now)
         # Listenname in die Notizen der betroffenen Sammlung-Zeile übernehmen
         if note_line:
-            target_id = row["id"] if row else conn.execute(
-                "SELECT last_insert_rowid() AS id").fetchone()["id"]
             cur = conn.execute("SELECT notes FROM collection WHERE id = ?",
-                               (target_id,)).fetchone()
+                               (ziel,)).fetchone()
             notes = (cur["notes"] if cur else "") or ""
             marker = f"Von Liste »{list_name}«"
             if marker not in notes:
                 merged_notes = (notes + ("\n" if notes else "")
                                 + note_line).strip()[:1000]
                 conn.execute("UPDATE collection SET notes = ? WHERE id = ?",
-                             (merged_notes, target_id))
+                             (merged_notes, ziel))
         conn.execute("UPDATE shopping_items SET done = 1, done_at = ?, "
                      "done_by = ? WHERE id = ?", (now, user["id"], item_id))
         list_id = it["list_id"]
@@ -8427,6 +8442,25 @@ def _kauf_buchen(conn, entry_id: int, quantity: int, betrag: float | None,
     """
     stueck = max(1, int(quantity or 1))
     einzel = None if betrag is None else round(float(betrag) / stueck, 4)
+    # **Eine Summe ohne Buch erst ins Buch holen.** Sonst rechnet
+    # `_kaufsumme_nachziehen` gleich nur noch den neuen Posten zusammen, und
+    # der alte Betrag ist weg. Den Bestand überführt `init_db` beim Start;
+    # was seitdem ohne Posten dazukam, fängt das hier. Die Menge ist schon
+    # erhöht – übrig bleibt, was vorher da war. Ist das nichts, wurde die
+    # Zeile eben erst angelegt und die Summe *ist* dieser Kauf.
+    alt = conn.execute(
+        "SELECT quantity, paid_price, paid_source, paid_at FROM collection "
+        "WHERE id = ? AND paid_price IS NOT NULL AND NOT EXISTS "
+        "(SELECT 1 FROM purchases WHERE entry_id = ?)",
+        (entry_id, entry_id)).fetchone()
+    if alt and (alt["quantity"] or 0) - stueck > 0:
+        vorher = alt["quantity"] - stueck
+        conn.execute(
+            "INSERT INTO purchases (entry_id, quantity, unit_price, source, "
+            "bought_at, note, created_at) VALUES (?, ?, ?, ?, ?, '', ?)",
+            (entry_id, vorher, round(alt["paid_price"] / vorher, 4),
+             "geschätzt" if alt["paid_source"] == "auto" else "",
+             alt["paid_at"], int(time.time())))
     conn.execute(
         "INSERT INTO purchases (entry_id, quantity, unit_price, source, "
         "bought_at, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
