@@ -6746,7 +6746,12 @@ async function loadMoreSuggestions() {
   }
 }
 
-function renderSuggestions(items, meta) {
+/* `meta` ist freiwillig: Drei der vier Aufrufer haben keines – die
+   BrickLink-Nummernsuche, der zweite Nummernweg und die Scan-Kandidaten.
+   Bis 2.88.31 stand hier trotzdem `meta.detailVon` ohne Absicherung, und
+   jeder dieser drei Wege endete in `Cannot read properties of undefined`.
+   Seit 2.86.5 drin, am 24.09.2026 aus der App gemeldet. */
+function renderSuggestions(items, meta = {}) {
   const box = $("m-suggestions");
   if (!items.length) {
     box.innerHTML = "";
@@ -7050,6 +7055,14 @@ async function resolveBricklinkNo(it) {
       + "(Bild antippen für Großansicht):";
     renderSuggestions(candidates.map((c) => ({ ...c, sub: `${c.score} % sicher` })));
   } catch (e) {
+    // **Nicht jeder Fehler hier ist ein Netzwerkfehler.** Dieser Block hat
+    // den `detailVon`-Fehler von 2.86.5 bis 2.88.31 versteckt: Aus einem
+    // Programmfehler wurde ein Hinweis an den Benutzer („Cannot read
+    // properties of undefined – der Eintrag behält die Rebrickable-Nummer"),
+    // und gemeldet wurde nichts. Ein `TypeError` gehört ins Protokoll.
+    if (e instanceof TypeError || e instanceof ReferenceError) {
+      reportError(e.message, e.stack, "BrickLink-Nummer nachschlagen");
+    }
     hint.textContent = e.message + " – der Eintrag behält die Rebrickable-Nummer.";
   }
 }

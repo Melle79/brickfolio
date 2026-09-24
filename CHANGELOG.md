@@ -45,6 +45,28 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.32 – September 2026
+
+### Behoben
+- 🔢 **Die Suche nach einer BrickLink-Nummer brach ab** (aus der App
+  gemeldet, 24.09.2026): `Cannot read properties of undefined (reading
+  'detailVon')`. Fand BrickLink zu einer eingetippten Nummer etwas, stürzte
+  das Zeichnen der Trefferliste ab – die Treffer waren da, zu sehen war
+  nichts.
+
+  Die Zeichenfunktion nimmt die Treffer und freiwillig ein paar Angaben zur
+  Seitenzahl. Drei der vier Aufrufer haben diese Angaben nicht; im Rumpf war
+  eine Stelle darauf vorbereitet, eine zweite nicht. **Seit 2.86.5 drin.**
+
+- 🙈 **Warum es drei Monate niemand bemerkt hat.** Der dritte dieser Wege –
+  die Nummernsuche beim manuellen Erfassen – steht in einem Fangblock, der
+  *jede* Ausnahme in einen Hinweistext verwandelt. Dort stand dann „Cannot
+  read properties of undefined – der Eintrag behält die Rebrickable-Nummer",
+  und das liest sich wie eine Meldung des Dienstes. Gemeldet wurde nichts.
+
+  Ein `TypeError` ist kein Netzwerkfehler: Solche Ausnahmen gehen jetzt auch
+  dort ins Fehlerprotokoll, statt nur als Text dazustehen.
+
 ## 2.88.31 – September 2026
 
 ### Geändert
