@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.90.5 – September 2026
+
+### Behoben
+- 🔁 **Ein Neustart beim Ausrollen ging manchmal als Fehler in die Liste.**
+  Nach einem 502 fragte die App genau einmal nach 20 Sekunden, ob der
+  Server frisch gestartet ist. Dauerte der Austausch länger, lief die
+  Nachfrage ins Leere, und „502 bei GET /api/update/status“ landete als
+  Fehler im Bericht. Jetzt fragt sie bis zu zwei Minuten lang nach.
+  Gemeldet wird nur, wenn der Server schon lange läuft oder nach zwei
+  Minuten immer noch weg ist.
+
 ## 2.90.4 – September 2026
 
 ### Behoben

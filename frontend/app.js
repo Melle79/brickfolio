@@ -367,23 +367,40 @@ function serverfehlerMelden(path, options, code, text, roh) {
   // laufendem Server soll auffallen. Also kurz warten und nachfragen, seit
   // wann der Server läuft (`/api/laufzeit` braucht keine Anmeldung). Ist er
   // um den Fehler herum frisch gestartet, war es der Neustart.
+  //
+  // **Mehrmals nachfragen, nicht einmal.** Bis 2.90.4 kam nach 20 Sekunden
+  // genau eine Nachfrage – am 25.09.2026 stand der neue Behälter da noch
+  // auf „Created“, die Nachfrage lief ins Leere, und ein Neustart ging als
+  // Fehler raus. Jetzt wird gewartet, bis der Server antwortet: frisch
+  // gestartet → kein Fehler; läuft er schon lange → melden; nach gut zwei
+  // Minuten immer noch weg → ein echter Ausfall, melden.
   const zeitpunkt = Date.now();
-  setTimeout(async () => {
+  const nachsehen = async (versuch) => {
     try {
       const r = await fetch("/api/laufzeit", { cache: "no-store" });
       const lz = await r.json();
-      if (lz && lz.started_at
-          && lz.started_at * 1000 >= zeitpunkt - NEUSTART_SPIELRAUM_MS) return;
-    } catch (_) { /* immer noch weg – dann gilt der Fehler */ }
-    melden();
-  }, NEUSTART_PRUEFEN_MS);
+      if (lz && lz.started_at) {
+        if (lz.started_at * 1000 >= zeitpunkt - NEUSTART_SPIELRAUM_MS) return;
+        melden();                // läuft schon lange – der Fehler war echt
+        return;
+      }
+    } catch (_) { /* noch weg – weiter warten */ }
+    if (versuch < NEUSTART_VERSUCHE) {
+      setTimeout(() => nachsehen(versuch + 1), NEUSTART_PRUEFEN_MS);
+    } else {
+      melden();
+    }
+  };
+  setTimeout(() => nachsehen(1), NEUSTART_PRUEFEN_MS);
 }
-/* Wie lange nach einem Zwischenserver-Fehler nachgefragt wird, und wie
-   weit ein Neustart davor liegen darf – ein Update dauert rund eine Minute
-   (Bauen, dann 17 Sekunden Neustart), die Uhren von Gerät und Server
-   gehen nicht auf die Sekunde gleich. */
+/* Wie oft und in welchem Abstand nach einem Zwischenserver-Fehler
+   nachgefragt wird (6 × 20 s = zwei Minuten), und wie weit ein Neustart
+   davor liegen darf – ein Update dauert rund eine Minute (Bauen, dann der
+   Neustart), die Uhren von Gerät und Server gehen nicht auf die Sekunde
+   gleich. */
 const NEUSTART_PRUEFEN_MS = 20000;
-const NEUSTART_SPIELRAUM_MS = 120000;
+const NEUSTART_VERSUCHE = 6;
+const NEUSTART_SPIELRAUM_MS = 180000;
 
 /* ---------------------------------------------------------------- UI-Helfer */
 let toastTimer;

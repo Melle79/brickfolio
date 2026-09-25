@@ -47,8 +47,20 @@ def test_ein_frischer_neustart_schluckt_den_bericht():
 
 def test_bleibt_der_server_weg_wird_gemeldet():
     f = _fn()
-    teil = f.split("setTimeout", 1)[1]
-    assert "catch (_)" in teil and teil.rstrip().count("melden();") >= 1
+    assert "catch (_)" in f
+    # Nach dem letzten Versuch wird gemeldet – ein echter Ausfall.
+    assert "if (versuch < NEUSTART_VERSUCHE)" in f
+    assert f.count("melden();") >= 3
+
+
+def test_es_wird_mehrmals_nachgefragt():
+    """Am 25.09.2026 war der neue Behälter nach 20 Sekunden noch nicht da –
+    eine einzige Nachfrage lief ins Leere und meldete einen Neustart als
+    Fehler. Jetzt über zwei Minuten verteilt."""
+    q = (FRONTEND / "app.js").read_text(encoding="utf-8")
+    versuche = int(re.search(r"const NEUSTART_VERSUCHE = (\d+);", q).group(1))
+    abstand = int(re.search(r"const NEUSTART_PRUEFEN_MS = (\d+);", q).group(1))
+    assert versuche * abstand >= 120000
 
 
 def test_laufzeit_liefert_den_startzeitpunkt():
