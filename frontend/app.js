@@ -9559,8 +9559,38 @@ function applyTheme(name) {
 /* ----------------------------------------------- Standard-Sortierung (Profil) */
 let sortCardWired = false;
 
+/* Sortierungen nach Kaufpreis und Gewinn – nur für Sammlerprofis, die die
+   Kaufpreise auch sehen. Eingefügt statt versteckt: `hidden` an einem
+   <option> übergeht Safari. */
+const PROFI_SORTIERUNGEN = [
+  ["paid_desc", "Bezahlt (hoch → niedrig)"],
+  ["profit_desc", "Gewinn (hoch → niedrig)"],
+  ["profit_asc", "Gewinn (niedrig → hoch)"],
+];
+
+function profiSortierungen() {
+  const profi = !!(state.user && state.user.is_dealer);
+  ["sort", "sort-pref"].forEach((id) => {
+    const sel = $(id);
+    if (!sel) return;
+    sel.querySelectorAll("[data-profi]").forEach((o) => o.remove());
+    if (!profi) {
+      if (!sel.value) sel.value = "added";
+      return;
+    }
+    PROFI_SORTIERUNGEN.forEach(([wert, text]) => {
+      const o = document.createElement("option");
+      o.value = wert;
+      o.textContent = tr(text);
+      o.dataset.profi = "1";
+      sel.appendChild(o);
+    });
+  });
+}
+
 /* Gespeicherte Sortierung auf die Sammlungs-Ansicht anwenden. */
 function applySortPref() {
+  profiSortierungen();
   const pref = state.user && state.user.sortPref;
   const sel = $("sort");
   if (sel && pref && [...sel.options].some((o) => o.value === pref)) {

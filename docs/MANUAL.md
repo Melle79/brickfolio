@@ -926,6 +926,12 @@ overwrites one that is already there.
 next time, on another device too. The default can be set under *More →
 Collection sort order*.
 
+**"Value" is the market value per piece** according to BrickLink, not the
+purchase price. Collector-Pros get three more sort orders: **Paid (high →
+low)**, **Profit (high → low)** and **Profit (low → high)**. Profit means the
+value of the whole row minus what was paid, so the last one shows losses
+first. Entries without a purchase price come last.
+
 The **view switch** next to the filters (icon plus label on wide screens)
 toggles between **list view** and **grid** (several figures per row, compact,
 with a quantity badge in the corner); the button shows which view you are

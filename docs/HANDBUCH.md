@@ -1286,6 +1286,12 @@ einsortiert ist. Ein von Hand gesetztes Thema bleibt stehen; die Automatik
 nächsten Öffnen wieder, auch auf einem anderen Gerät. Der Standard lässt
 sich unter *Mehr → Sortierung der Sammlung* festlegen.
 
+**„Wert“ ist der Marktwert je Stück** laut BrickLink, nicht der Kaufpreis.
+Sammlerprofis haben drei Sortierungen mehr: **Bezahlt (hoch → niedrig)**,
+**Gewinn (hoch → niedrig)** und **Gewinn (niedrig → hoch)**. Gewinn heißt
+Wert der ganzen Zeile minus bezahlt, die letzte Sortierung zeigt also die
+Verluste zuerst. Einträge ohne Kaufpreis stehen dabei am Ende.
+
 Über den **Ansichts-Umschalter** rechts neben den Filtern (Symbol plus
 Beschriftung auf breiten Schirmen) wechselt man zwischen **Listenansicht**
 und **Raster** (mehrere Figuren pro Reihe, kompakt, mit Mengen-Badge in der

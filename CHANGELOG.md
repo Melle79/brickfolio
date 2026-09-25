@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.90.7 – September 2026
+
+### Neu
+- ↕️ **Nach Kaufpreis und Gewinn sortieren** (nur Sammlerprofis):
+  „Bezahlt (hoch → niedrig)“, „Gewinn (hoch → niedrig)“ und „Gewinn
+  (niedrig → hoch)“ – letztere zeigt die Verluste zuerst. „Wert“ bleibt der
+  Marktwert. Einträge ohne Kaufpreis stehen am Ende. Für alle anderen
+  bleiben die Sortierungen unsichtbar und greifen auch nicht, denn schon
+  die Reihenfolge verriete, was bezahlt wurde.
+
 ## 2.90.6 – September 2026
 
 ### Behoben

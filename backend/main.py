@@ -5733,7 +5733,11 @@ def refresh_themes(limit: int = 25, user: dict = Depends(current_user)):
 
 # Erlaubte Sortierungen der Sammlung (Reihenfolge wie in der Oberfläche)
 COLLECTION_SORTS = ("added", "year_desc", "year_asc", "name", "number",
-                    "value_desc", "value_asc", "theme")
+                    "value_desc", "value_asc", "theme",
+                    "paid_desc", "profit_desc", "profit_asc")
+# Nach Kaufpreis und Gewinn sortiert nur, wer Kaufpreise überhaupt sieht:
+# Für alle anderen verriete schon die Reihenfolge, was bezahlt wurde.
+PROFI_SORTS = ("paid_desc", "profit_desc", "profit_asc")
 
 
 class SortPrefBody(BaseModel):
@@ -5745,6 +5749,8 @@ def set_sort_pref(body: SortPrefBody, user: dict = Depends(current_user)):
     """Bevorzugte Sortierung der Sammlung – je Benutzer gespeichert."""
     if body.sort not in COLLECTION_SORTS:
         raise HTTPException(400, "Unbekannte Sortierung")
+    if body.sort in PROFI_SORTS and not user["is_dealer"]:
+        raise HTTPException(403, "Nur für Sammlerprofis")
     with core.db() as conn:
         conn.execute("UPDATE users SET sort_pref = ? WHERE id = ?",
                      (body.sort, user["id"]))
@@ -6132,7 +6138,20 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
         # Ohne erkanntes Thema ans Ende, innerhalb des Themas nach Name
         "theme": ("CASE WHEN c.theme IS NULL OR c.theme = '' THEN 1 ELSE 0 END, "
                   "c.theme COLLATE NOCASE ASC, c.name COLLATE NOCASE ASC"),
+        # Ohne Kaufpreis ans Ende – „nicht erfasst“ ist nicht „gratis“.
+        "paid_desc": ("CASE WHEN c.paid_price IS NULL THEN 1 ELSE 0 END, "
+                      "c.paid_price DESC, c.name COLLATE NOCASE"),
+        # Gewinn wie auf der Karte: Wert der ganzen Zeile minus bezahlt.
+        # Fehlt eins von beidem, lässt sich nichts rechnen – ans Ende.
+        "profit_desc": (f"CASE WHEN c.paid_price IS NULL OR {_unit_value} IS NULL "
+                        f"THEN 1 ELSE 0 END, ({_unit_value} * c.quantity "
+                        "- c.paid_price) DESC, c.name COLLATE NOCASE"),
+        "profit_asc": (f"CASE WHEN c.paid_price IS NULL OR {_unit_value} IS NULL "
+                       f"THEN 1 ELSE 0 END, ({_unit_value} * c.quantity "
+                       "- c.paid_price) ASC, c.name COLLATE NOCASE"),
     }
+    if sort in PROFI_SORTS and not user["is_dealer"]:
+        sort = "added"
     sql += " ORDER BY " + orders.get(sort, orders["added"])
     value_expr = ("CASE WHEN condition = 'new' "
                   "THEN COALESCE(price_new, price_used) "
