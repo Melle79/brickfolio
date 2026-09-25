@@ -387,14 +387,20 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                 kind = "angebot" if t.get("kind") == "angebot" else "anfrage"
                 conn.execute(
                     "INSERT INTO trades (id, direction, other_id, other_name, "
-                    "item_id, item_name, status, created_at, updated_at, kind) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "item_id, item_name, status, created_at, updated_at, kind, "
+                    "shipped_at, arrived_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     "ON CONFLICT(id) DO UPDATE SET status = excluded.status, "
                     "updated_at = excluded.updated_at, "
-                    "other_name = excluded.other_name, kind = excluded.kind",
+                    "other_name = excluded.other_name, kind = excluded.kind, "
+                    # Ein älterer Hub kennt die Schritte nicht – dann bleibt,
+                    # was hier schon stand.
+                    "shipped_at = COALESCE(excluded.shipped_at, shipped_at), "
+                    "arrived_at = COALESCE(excluded.arrived_at, arrived_at)",
                     (t["id"], "out" if mine else "in", other_id, other_name,
                      t["item_id"], t["item_name"], t["status"],
-                     t["created_at"], t["updated_at"], kind))
+                     t["created_at"], t["updated_at"], kind,
+                     t.get("shipped_at"), t.get("arrived_at")))
                 # Nur bei eigenen Anfragen sagt der Hub etwas darüber, ob das
                 # Angebot noch steht – bei eingehenden ist es mein eigenes,
                 # und bei einem Angebot biete ja ich selbst an.
@@ -652,6 +658,57 @@ def hub_trade_status(trade_id: str, body: TradeStatusBody,
         raise HTTPException(502, "Hub nicht erreichbar")
 
 
+class TradeProgressBody(BaseModel):
+    step: str = Field(pattern="^(shipped|arrived)$")
+    # Geht als ganz normale Nachricht ins Gespräch – so erfährt das
+    # Gegenüber davon wie von jeder anderen Nachricht, samt Hinweis.
+    text: str = Field(default="", max_length=2000)
+
+
+@router.post("/api/hub/trades/{trade_id}/progress")
+def hub_trade_progress(trade_id: str, body: TradeProgressBody,
+                       user: dict = Depends(current_user)):
+    """Zwischen Zusage und Sammlung: verschickt, dann angekommen.
+
+    Bis 2.89 ging es von „angenommen“ direkt ans Übernehmen und Austragen –
+    ob das Päckchen unterwegs oder schon da war, stand nirgends. Verschickt
+    meldet, wer abgibt; angekommen, wer bekommt. Erst danach wird gebucht.
+    """
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    with core.db() as conn:
+        t = conn.execute("SELECT * FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+    if not t:
+        raise HTTPException(404, "Vorgang nicht gefunden")
+    if t["status"] != "accepted":
+        raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
+    kommt = _kommt_zu_mir(t)
+    if body.step == "shipped" and kommt:
+        raise HTTPException(400, "Verschicken kann nur, wer abgibt.")
+    if body.step == "arrived" and not kommt:
+        raise HTTPException(400, "Die Ankunft bestätigt, wer den Artikel "
+                                 "bekommt.")
+    try:
+        hub.trade_progress(trade_id, body.step)
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+    spalte = "shipped_at" if body.step == "shipped" else "arrived_at"
+    jetzt = int(time.time())
+    with core.db() as conn:
+        conn.execute(f"UPDATE trades SET {spalte} = COALESCE({spalte}, ?) "
+                     "WHERE id = ?", (jetzt, trade_id))
+    if body.text.strip():
+        try:
+            hub_send_message(trade_id, TradeMessageBody(text=body.text.strip()),
+                             user)
+        except HTTPException:
+            pass        # der Schritt steht; die Nachricht ist nur Beiwerk
+    return {"ok": True, "step": body.step}
+
+
 class TradeTakeBody(BaseModel):
     ziel: str = Field(default="sammlung", pattern="^(sammlung|liste)$")
     list_id: int | None = Field(default=None, ge=1)
@@ -689,6 +746,9 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
         raise HTTPException(400, "Das ist ein eigener Artikel, der weggeht.")
     if t["status"] != "accepted":
         raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
+    if not t["arrived_at"]:
+        raise HTTPException(400, "Erst bestätigen, dass der Artikel "
+                                 "angekommen ist.")
 
     art = t["item_type"] or _art_raten(t["item_id"])
     with core.db() as conn:
@@ -781,6 +841,8 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
             raise HTTPException(400, "Dieser Artikel kommt zu dir.")
         if t["status"] != "accepted":
             raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
+        if not t["shipped_at"]:
+            raise HTTPException(400, "Erst als verschickt markieren.")
         wo = "SELECT * FROM collection WHERE item_id = ?"
         werte = [t["item_id"]]
         if body.condition:

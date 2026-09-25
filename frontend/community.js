@@ -241,7 +241,8 @@ async function loadTrades(quiet = false) {
     // Beim Hintergrund-Nachladen nur zeichnen, wenn sich wirklich etwas
     // geändert hat – sonst flackert die Liste im Takt.
     const sig = JSON.stringify(trades.map((t) =>
-      [t.id, t.status, t.unread, t.updated_at, t.last_body, t.taken_at]));
+      [t.id, t.status, t.unread, t.updated_at, t.last_body, t.taken_at,
+        t.shipped_at, t.arrived_at]));
     if (quiet && sig === tradesSig) return;
     tradesSig = sig;
     if (!trades.length) {
@@ -261,8 +262,7 @@ async function loadTrades(quiet = false) {
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
             ${t.status === "accepted" && !t.taken_at
-    ? `<span class="badge badge-wanted">${tauschKommt(t)
-      ? tr("noch nicht verbucht") : tr("noch nicht ausgetragen")}</span>` : ""}
+    ? `<span class="badge badge-wanted">${esc(tauschStand(t))}</span>` : ""}
           </div>
         </div>
       </div>`).join("");
@@ -272,6 +272,16 @@ async function loadTrades(quiet = false) {
   } catch (e) {
     box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
   }
+}
+
+/* Was als Nächstes ansteht – als Kennzeichen in der Gesprächsliste. */
+function tauschStand(t) {
+  if (tauschKommt(t)) {
+    if (t.arrived_at) return tr("noch nicht verbucht");
+    return t.shipped_at ? tr("📦 unterwegs") : tr("wartet auf Versand");
+  }
+  return t.shipped_at ? tr("noch nicht ausgetragen")
+    : tr("noch nicht verschickt");
 }
 
 function tradeStatusText(s) {
@@ -412,6 +422,7 @@ async function renderTrade(quiet = false) {
     // Nur neu zeichnen, wenn sich etwas geändert hat: sonst springt beim
     // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
     const sig = JSON.stringify([trade.status, trade.item_gone, trade.taken_at,
+      trade.shipped_at, trade.arrived_at,
       messages.map((m) => [m.id, m.delivered])]);
     if (quiet && sig === tradeSig) return;
     const box = $("trade-msgs");
@@ -431,26 +442,38 @@ async function renderTrade(quiet = false) {
     const entscheiden = trade.direction === "in" && trade.status === "open";
     $("trade-accept").hidden = !entscheiden;
     $("trade-decline").hidden = !entscheiden;
-    // Zugesagt heisst noch nicht verbucht: Solange der Tausch angenommen ist
-    // und der Artikel zu mir kommt, steht hier der Weg in die Sammlung.
+    // Zugesagt heißt noch nicht da: Zwischen Annehmen und Buchen stehen
+    // „verschickt“ (wer abgibt) und „angekommen“ (wer bekommt). Der Knopf
+    // zeigt immer den nächsten eigenen Schritt.
     offenerTausch = trade;
     const zugesagt = trade.status === "accepted";
-    const kommt = zugesagt && tauschKommt(trade);
-    const geht = zugesagt && !tauschKommt(trade);
-    $("trade-take-row").hidden = !(kommt || geht);
-    if (kommt || geht) {
+    $("trade-schritte").hidden = !zugesagt;
+    $("trade-take-row").hidden = !zugesagt;
+    if (zugesagt) {
+      $("trade-schritte").innerHTML = tauschSchritte(trade);
+      const kommt = tauschKommt(trade);
       const knopf = $("trade-take");
-      const wann = trade.taken_at
-        ? new Date(trade.taken_at * 1000).toLocaleDateString(dateLocale()) : "";
-      knopf.textContent = trade.taken_at
-        ? (kommt
+      const wann = datumKurz(trade.taken_at);
+      let text;
+      let farbe = "add";
+      if (trade.taken_at) {
+        text = kommt
           ? tr("✔ Verbucht am {datum} · noch einmal buchen", { datum: wann })
           : tr("✔ Ausgetragen am {datum} · noch einmal austragen",
-            { datum: wann }))
-        : (kommt ? tr("📥 In die Sammlung übernehmen")
-          : tr("📤 Aus der Sammlung austragen"));
-      knopf.classList.toggle("add", kommt && !trade.taken_at);
-      knopf.classList.toggle("danger", geht && !trade.taken_at);
+            { datum: wann });
+        farbe = "";
+      } else if (kommt) {
+        text = trade.arrived_at ? tr("📥 In die Sammlung übernehmen")
+          : tr("📬 Ist angekommen");
+      } else if (!trade.shipped_at) {
+        text = tr("📦 Verschickt / übergeben");
+      } else {
+        text = tr("📤 Aus der Sammlung austragen");
+        farbe = "danger";
+      }
+      knopf.textContent = text;
+      knopf.classList.toggle("add", farbe === "add");
+      knopf.classList.toggle("danger", farbe === "danger");
     }
   zeigeSicherheitsnummer(trade.other_id);
     box.innerHTML = messages.map((m) => `
@@ -463,6 +486,71 @@ async function renderTrade(quiet = false) {
     if (!quiet || atBottom) box.scrollTop = box.scrollHeight;
     refreshUnread();
   } catch (e) { if (!quiet) toast(e.message); }
+}
+
+function datumKurz(ts) {
+  return ts ? new Date(ts * 1000).toLocaleDateString(dateLocale(),
+    { day: "numeric", month: "numeric" }) : "";
+}
+
+/* Die Schritte als Leiste – in der Reihenfolge, in der sie für mich
+   kommen: Wer bekommt, bucht nach der Ankunft; wer abgibt, trägt nach dem
+   Verschicken aus und erfährt danach, dass es angekommen ist. */
+function tauschSchritte(t) {
+  const kommt = tauschKommt(t);
+  const gebucht = { an: !!t.taken_at, wann: t.taken_at,
+    text: kommt ? tr("📥 Übernommen") : tr("📤 Ausgetragen") };
+  const angekommen = { an: !!t.arrived_at, wann: t.arrived_at,
+    text: tr("📬 Angekommen") };
+  const schritte = [
+    { an: true, text: tr("✔ Angenommen") },
+    { an: !!t.shipped_at, wann: t.shipped_at, text: tr("📦 Verschickt") },
+  ].concat(kommt ? [angekommen, gebucht] : [gebucht, angekommen]);
+  return schritte.map((s) => `<span class="trade-schritt${s.an ? " an" : ""}">`
+    + `${esc(s.text)}${s.wann ? ` <small>${esc(datumKurz(s.wann))}</small>` : ""}`
+    + "</span>").join('<span class="trade-pfeil">→</span>');
+}
+
+/* Verschickt oder angekommen melden. Dazu geht eine Nachricht ins
+   Gespräch – vorbelegt, aber änderbar, etwa für eine Sendungsnummer. So
+   erfährt das Gegenüber davon wie von jeder anderen Nachricht. */
+async function tauschSchrittMelden(step) {
+  const t = offenerTausch;
+  if (!t) return false;
+  const verschickt = step === "shipped";
+  const d = await appDialog({
+    titel: verschickt ? tr("Verschickt oder übergeben?")
+      : tr("Ist es angekommen?"),
+    text: verschickt
+      ? tr("{wer} bekommt dazu eine Nachricht – gern mit Sendungsnummer.",
+        { wer: t.other_name || "?" })
+      : tr("{was} ist bei dir? {wer} bekommt dazu eine Nachricht.",
+        { was: t.item_name || t.item_id, wer: t.other_name || "?" }),
+    felder: [{ name: "nachricht", label: tr("Nachricht"), typ: "text",
+      wert: verschickt ? tr("📦 Ist verschickt!")
+        : tr("📬 Ist angekommen – danke!") }],
+    ok: verschickt ? tr("Verschickt") : tr("Angekommen"),
+  });
+  if (!d) return false;
+  try {
+    await api(`/hub/trades/${openTradeId}/progress`, { method: "POST",
+      body: { step, text: (d.nachricht || "").trim() } });
+  } catch (e) { toast(e.message); return false; }
+  await renderTrade();
+  return true;
+}
+
+/* Der Knopf unter dem Verlauf: immer der nächste eigene Schritt. */
+async function tauschWeiter() {
+  const t = offenerTausch;
+  if (!t || t.status !== "accepted") return;
+  if (tauschKommt(t)) {
+    if (!t.arrived_at && !(await tauschSchrittMelden("arrived"))) return;
+    tauschUebernehmen();
+  } else {
+    if (!t.shipped_at && !(await tauschSchrittMelden("shipped"))) return;
+    tauschAbgeben();
+  }
 }
 
 function closeTrade() {
@@ -635,22 +723,17 @@ function wireHubViewOnce() {
       // sonst steht man vor einem Chat, in dem es nichts mehr zu sagen gibt.
       if (status === "declined") { toast("Abgelehnt"); closeTrade(); }
       else {
-        toast("Angenommen ✔");
+        // Gebucht wird erst nach „verschickt“ bzw. „angekommen“ – beim
+        // Annehmen ist das Stück ja noch nicht unterwegs.
+        toast(offenerTausch && !tauschKommt(offenerTausch)
+          ? tr("Angenommen ✔ – als Nächstes verschicken")
+          : tr("Angenommen ✔"));
         await renderTrade();
-        // Zusage steht – jetzt gleich fragen, wohin der Artikel soll. Ohne
-        // das passierte auf „Annehmen" sichtbar gar nichts.
-        if (status === "accepted" && offenerTausch) {
-          if (tauschKommt(offenerTausch)) await tauschUebernehmen();
-          else await tauschAbgeben();
-        }
       }
     } catch (e) { toast(e.message); }
   };
   $("trade-accept").addEventListener("click", () => setStatus("accepted"));
-  $("trade-take").addEventListener("click", () => {
-    if (offenerTausch && !tauschKommt(offenerTausch)) tauschAbgeben();
-    else tauschUebernehmen();
-  });
+  $("trade-take").addEventListener("click", tauschWeiter);
   $("trade-decline").addEventListener("click", () => setStatus("declined"));
   $("trade-report").addEventListener("click", openReport);
   $("trade-delete").addEventListener("click", async () => {

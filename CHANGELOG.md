@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.89.3 – September 2026
+
+### Neu
+- 📦 **Verschickt → angekommen → übernehmen.** Nach dem Annehmen ging es
+  bisher direkt ans Buchen, ob das Päckchen schon unterwegs oder da war,
+  stand nirgends. Jetzt führt das Gespräch durch Schritte, sichtbar als
+  Leiste: Wer abgibt, meldet **„verschickt / übergeben"** (mit einer
+  vorbelegten Nachricht, gern samt Sendungsnummer) und trägt danach aus.
+  Wer bekommt, bestätigt **„angekommen"** und übernimmt dann in die
+  Sammlung. Gebucht wird erst nach dem eigenen Schritt. Von Hand zu Hand
+  geht die Ankunft auch ohne „verschickt". In der Gesprächsliste steht, was
+  ansteht. Braucht Hub 1.15.0; ältere App-Fassungen merken davon nichts.
+
+## Hub 1.15.0 – September 2026
+
+### Neu
+- **Tauschschritte** `shipped_at` und `arrived_at` samt
+  `POST /v1/trades/:id/progress` (`step`: `shipped` oder `arrived`).
+  „Verschickt" darf nur die abgebende Seite melden, „angekommen" nur die
+  bekommende, beides nur bei angenommenem Tausch. Der Status bleibt
+  `accepted`.
+
 ## 2.89.2 – September 2026
 
 ### Behoben
@@ -24,10 +46,6 @@
   andere Richtung: Die Adresse ist **nicht für BrickLink**, sondern für
   **Dritte, die deine Instanz benutzen**. Sie soll angezeigt werden, nicht
   gesendet. Steht jetzt so dort – und in beiden Handbüchern.
-
-## 2.89.1 – September 2026
-
-### Behoben
 - 💬 Ein neues Gespräch zeigte bis zum ersten Abgleich „an ?" statt des
   Namens, und eine nie zugestellte Nachricht in einem gelöschten Gespräch
   stand ewig auf „unterwegs …".

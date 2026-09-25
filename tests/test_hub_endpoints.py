@@ -645,3 +645,24 @@ def test_sync_keeps_older_trades_when_the_list_is_cut_off(client, monkeypatch):
     with core.db() as conn:
         assert conn.execute("SELECT status FROM trades WHERE id = 'trd_a'"
                             ).fetchone()[0] != "removed"
+
+
+def test_sync_takes_over_the_steps(client, monkeypatch):
+    """Verschickt/angekommen meldet die jeweils andere Seite – der Abgleich
+    bringt es her. Ein älterer Hub ohne die Felder löscht nichts."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    base = {"id": "trd_a", "from_member": "mem_me", "to_member": "mem_x",
+            "to_name": "X", "from_name": "Ich", "item_id": "sw1",
+            "item_name": "A", "status": "accepted", "created_at": 1,
+            "updated_at": 2, "unread": 0, "item_available": 1}
+    monkeypatch.setattr(hub, "trades", lambda: [dict(base, shipped_at=100)])
+    client.post("/api/hub/trades/sync")
+    t = client.get("/api/hub/trades").json()["trades"][0]
+    assert t["shipped_at"] == 100 and t["arrived_at"] is None
+    monkeypatch.setattr(hub, "trades", lambda: [base])     # alter Hub
+    client.post("/api/hub/trades/sync")
+    assert client.get("/api/hub/trades").json()["trades"][0]["shipped_at"] == 100

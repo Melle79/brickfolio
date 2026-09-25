@@ -1652,16 +1652,29 @@ area above the history say **"no longer offered"**.
 
 ### 12.6 Accepted – what now?
 
-"Accept" is only the promise inside the conversation. To make something happen
-in your holdings, there is a button in the conversation right below the
-history – which one depends on the direction:
+"Accept" is only the promise inside the conversation. After that the
+conversation leads through **four steps**, shown as a bar above the button:
 
-| Direction | Button |
-|---|---|
-| The item comes **to you** (your request – or someone offers you what you're looking for) | **📥 Add to my collection** |
-| The item **leaves** (someone's request to you – or you offered it yourself with "🤝 Offer") | **📤 Remove from my collection** (red) |
+**✔ Accepted → 📦 Sent → 📬 Arrived → 📥 Added**
 
-Right after accepting, the matching window opens on its own.
+Whoever gives the item away sees **📤 Removed** instead of "Added", and before
+"Arrived". The button below the history always shows your **own** next step:
+
+| You … | Button | What happens |
+|---|---|---|
+| give (someone's request to you – or you offered with "🤝 Offer") | **📦 Sent / handed over** | A window with a prefilled message ("📦 It's on its way!"), ideally with a tracking number. Then removing opens right away. |
+| | **📤 Remove from my collection** (red) | in case you skipped removing just now |
+| receive (your request – or someone offers you what you're looking for) | **📬 It arrived** | Message "📬 It arrived – thank you!", then adding opens right away |
+| | **📥 Add to my collection** | in case you skipped adding just now |
+
+The message goes into the conversation like any other, so the other side gets
+the usual notice. **Booking only comes after your own step:** removing only
+after "sent", adding only after "arrived". For a **hand-to-hand** swap, the
+giving side reports "handed over", and the arrival can be confirmed without a
+prior "sent".
+
+The conversation list says what's next: *waiting to be sent*, *📦 on its way*,
+*not booked yet* – or on the giving side *not sent yet*, *not removed yet*.
 
 #### What comes in: adding
 

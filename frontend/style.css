@@ -3226,6 +3226,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   white-space: nowrap; }
 button.cm-chip { cursor: pointer; min-height: 30px; }
 .cm-chip.an { background: var(--yellow); color: #1D1D1B; }
+/* Tauschschritte: angenommen → verschickt → angekommen → gebucht */
+.trade-schritte { display: flex; flex-wrap: wrap; align-items: center;
+  gap: 4px 2px; margin: 10px 0 2px; }
+.trade-schritt { font-size: 12px; font-weight: 800; padding: 4px 9px;
+  border-radius: 999px; background: var(--track); color: var(--muted);
+  white-space: nowrap; }
+.trade-schritt.an { background: var(--yellow); color: #1D1D1B; }
+.trade-schritt small { font-weight: 700; opacity: .75; }
+.trade-pfeil { color: var(--muted); font-size: 12px; padding: 0 2px; }
 .cm-chip.jetzt { outline: 2px solid var(--ink); color: var(--ink); }
 .cm-chip.mehr { background: var(--card); border: 1.5px dashed var(--line); }
 .cm-zahlen { display: flex; gap: 8px; margin-top: 10px; }

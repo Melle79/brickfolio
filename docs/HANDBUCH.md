@@ -2240,16 +2240,31 @@ Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
 
 ### 12.6 Angenommen – und dann?
 
-„Annehmen" ist zunächst nur die Zusage im Gespräch. Damit sich auch in deinen
-Beständen etwas tut, steht im Gespräch direkt unter dem Verlauf ein Knopf –
-welcher, hängt von der Richtung ab:
+„Annehmen" ist zunächst nur die Zusage im Gespräch. Danach führt das
+Gespräch durch **vier Schritte**, sichtbar als Leiste über dem Knopf:
 
-| Richtung | Knopf |
-|---|---|
-| Der Artikel kommt **zu dir** (deine Anfrage – oder jemand bietet dir an, was du suchst) | **📥 In die Sammlung übernehmen** |
-| Der Artikel geht **weg** (Anfrage an dich – oder du hast mit „🤝 Anbieten" selbst angeboten) | **📤 Aus der Sammlung austragen** (rot) |
+**✔ Angenommen → 📦 Verschickt → 📬 Angekommen → 📥 Übernommen**
 
-Gleich nach dem Annehmen geht das passende Fenster von selbst auf.
+Wer abgibt, sieht statt „Übernommen" **📤 Ausgetragen**, und zwar vor
+„Angekommen". Der Knopf unter dem Verlauf zeigt immer den nächsten
+**eigenen** Schritt:
+
+| Du … | Knopf | Was passiert |
+|---|---|---|
+| gibst ab (Anfrage an dich – oder du hast mit „🤝 Anbieten" angeboten) | **📦 Verschickt / übergeben** | Ein Fenster mit vorbelegter Nachricht („📦 Ist verschickt!"), gern um eine Sendungsnummer ergänzt. Danach geht gleich das Austragen auf. |
+| | **📤 Aus der Sammlung austragen** (rot) | falls du das Austragen eben übersprungen hast |
+| bekommst (deine Anfrage – oder jemand bietet dir an, was du suchst) | **📬 Ist angekommen** | Nachricht „📬 Ist angekommen – danke!", danach gleich das Übernehmen |
+| | **📥 In die Sammlung übernehmen** | falls du das Übernehmen eben übersprungen hast |
+
+Die Nachricht geht ganz normal ins Gespräch, das Gegenüber bekommt also den
+üblichen Hinweis. **Gebucht wird erst nach dem eigenen Schritt:** Austragen
+geht erst nach „verschickt", Übernehmen erst nach „angekommen". Beim Tausch
+**von Hand zu Hand** meldet die abgebende Seite „übergeben", und die Ankunft
+lässt sich auch ohne vorheriges „verschickt" bestätigen.
+
+In der Gesprächsliste steht, was ansteht: *wartet auf Versand*, *📦
+unterwegs*, *noch nicht verbucht* – oder auf der abgebenden Seite *noch
+nicht verschickt*, *noch nicht ausgetragen*.
 
 #### Was reinkommt: übernehmen
 

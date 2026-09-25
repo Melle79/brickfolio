@@ -295,6 +295,12 @@ def set_trade_status(trade_id: str, status: str) -> dict:
                    body={"status": status})
 
 
+def trade_progress(trade_id: str, step: str) -> dict:
+    """„shipped“ (wer abgibt) oder „arrived“ (wer bekommt) – ab Hub 1.15.0."""
+    return _authed("POST", f"/v1/trades/{trade_id}/progress",
+                   body={"step": step})
+
+
 def delete_trade(trade_id: str) -> dict:
     return _authed("DELETE", f"/v1/trades/{trade_id}")
 

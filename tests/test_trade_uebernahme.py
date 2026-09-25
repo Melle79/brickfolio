@@ -40,16 +40,19 @@ def client(tmp_path, monkeypatch):
 
 def _trade(tid="trd_1", direction="out", status="accepted", item_id="sw1213",
            name="Yoda", item_type="minifig", img="https://x.test/y.jpg",
-           condition="used"):
+           condition="used", unterwegs=True):
+    """Standard: angenommen, verschickt und angekommen – bereit zum Buchen.
+    `unterwegs=False` lässt die Zwischenschritte (seit 2.89.3) offen."""
     now = int(time.time())
+    schritt = now if unterwegs else None
     with core.db() as conn:
         conn.execute(
             "INSERT INTO trades (id, direction, other_id, other_name, item_id,"
             " item_name, status, created_at, updated_at, item_type, img_url,"
-            " bricklink_url, condition) VALUES (?, ?, 'm_bruno', 'Bruno', ?, ?,"
-            " ?, ?, ?, ?, ?, '', ?)",
+            " bricklink_url, condition, shipped_at, arrived_at) VALUES "
+            "(?, ?, 'm_bruno', 'Bruno', ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?)",
             (tid, direction, item_id, name, status, now, now, item_type, img,
-             condition))
+             condition, schritt, schritt))
     return tid
 
 
@@ -406,3 +409,93 @@ def test_offers_are_only_refreshed_for_those_who_published(monkeypatch):
     community.angebote_nachziehen_im_hintergrund()
     time.sleep(0.2)
     assert gesendet == []
+
+
+
+# ------------------------------------------------- verschickt → angekommen
+# Seit 2.89.3: Zwischen Annehmen und Buchen liegen zwei Schritte. Verschickt
+# meldet, wer abgibt; angekommen, wer bekommt. Gebucht wird erst danach.
+
+def _hub_an(monkeypatch):
+    import community
+    import hub
+    gemeldet, nachrichten = [], []
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "trade_progress",
+                        lambda tid, step: gemeldet.append(step) or {"ok": True})
+    monkeypatch.setattr(community, "_fremder_schluessel", lambda m: "k")
+    monkeypatch.setattr(community.crypto_box, "seal", lambda k, t: t)
+    monkeypatch.setattr(hub, "send_message",
+                        lambda tid, box: nachrichten.append(box) or {"message_id": 9})
+    return gemeldet, nachrichten
+
+
+def test_take_waits_for_the_arrival(client):
+    _trade(unterwegs=False)
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert r.status_code == 400 and "angekommen" in r.text
+    assert not _sammlung()
+
+
+def test_give_waits_until_it_was_sent(client):
+    _trade(direction="in", unterwegs=False)
+    _sammlung_anlegen(client, qty=2)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 400 and "verschickt" in r.text
+    assert _sammlung()[0]["quantity"] == 2
+
+
+def test_giver_reports_sent_with_a_message(client, monkeypatch):
+    gemeldet, nachrichten = _hub_an(monkeypatch)
+    _trade(direction="in", unterwegs=False)       # Anfrage an mich: ich gebe
+    r = client.post("/api/hub/trades/trd_1/progress",
+                    json={"step": "shipped", "text": "📦 Ist verschickt!"})
+    assert r.status_code == 200, r.text
+    assert gemeldet == ["shipped"] and nachrichten == ["📦 Ist verschickt!"]
+    t = client.get("/api/hub/trades/trd_1").json()["trade"]
+    assert t["shipped_at"] and not t["arrived_at"]
+
+
+def test_receiver_cannot_report_sent(client, monkeypatch):
+    gemeldet, _ = _hub_an(monkeypatch)
+    _trade(direction="out", unterwegs=False)      # meine Anfrage: ich bekomme
+    r = client.post("/api/hub/trades/trd_1/progress", json={"step": "shipped"})
+    assert r.status_code == 400 and gemeldet == []
+
+
+def test_giver_cannot_report_arrival(client, monkeypatch):
+    gemeldet, _ = _hub_an(monkeypatch)
+    _trade(direction="in", unterwegs=False)
+    r = client.post("/api/hub/trades/trd_1/progress", json={"step": "arrived"})
+    assert r.status_code == 400 and gemeldet == []
+
+
+def test_arrival_works_without_shipping(client, monkeypatch):
+    """Von Hand zu Hand wird nichts verschickt – die Ankunft geht trotzdem."""
+    gemeldet, nachrichten = _hub_an(monkeypatch)
+    _trade(direction="out", unterwegs=False)
+    r = client.post("/api/hub/trades/trd_1/progress", json={"step": "arrived"})
+    assert r.status_code == 200 and gemeldet == ["arrived"]
+    assert nachrichten == []                      # ohne Text keine Nachricht
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert r.status_code == 200, r.text
+
+
+def test_steps_need_an_accepted_trade(client, monkeypatch):
+    gemeldet, _ = _hub_an(monkeypatch)
+    _trade(direction="in", status="open", unterwegs=False)
+    r = client.post("/api/hub/trades/trd_1/progress", json={"step": "shipped"})
+    assert r.status_code == 400 and gemeldet == []
+
+
+def test_offer_roles_are_the_other_way_round(client, monkeypatch):
+    """Beim Angebot verschickt der Absender und der Empfänger bestätigt."""
+    gemeldet, _ = _hub_an(monkeypatch)
+    _trade(direction="out", unterwegs=False)
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET kind = 'angebot'")
+    assert client.post("/api/hub/trades/trd_1/progress",
+                       json={"step": "arrived"}).status_code == 400
+    assert client.post("/api/hub/trades/trd_1/progress",
+                       json={"step": "shipped"}).status_code == 200
+    assert gemeldet == ["shipped"]
