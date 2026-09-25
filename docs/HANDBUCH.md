@@ -212,6 +212,13 @@ Unter **Mehr → API-Schlüssel** (nur für Admins sichtbar):
    ausfüllen – das erlaubt Zugriff von beliebiger Adresse.
 3. Die vier Werte – *Consumer Key*, *Consumer Secret*, *Token*,
    *Token Secret* – in die vier Felder der App kopieren und speichern.
+4. Darunter steht **Kontaktadresse des Betreibers**. BrickLinks
+   Nutzungsbedingungen verlangen eine sichtbare Kontaktadresse in der
+   Anwendung – gemeint ist **deine**: Den Zugang oben hast du selbst
+   registriert, damit bist du gegenüber BrickLink der Betreiber dieser
+   Instanz, nicht das Projekt. Die Adresse erscheint unter
+   **Mehr → Rechtliches**, zusammen mit dem Hinweis, den BrickLink im
+   Wortlaut vorschreibt. Ohne BrickLink-Zugang bleibt das Feld ohne Wirkung.
 
 **Rebrickable** – liefert die Suche nach Namen:
 

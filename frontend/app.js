@@ -2663,6 +2663,8 @@ function showApp() {
     state.bricklinkLookup = c.bricklink_lookup;
     state.ownerName = c.owner_name || "";
     applyOwnerName(state.ownerName);
+    state.betreiberKontakt = c.betreiber_kontakt || "";
+    rechtlichesAktualisieren();
     setCurrency(c.currency);
     state.hubConnected = !!c.hub_connected;
     state.kiSuche = !!c.ki_suche;
@@ -7433,7 +7435,48 @@ async function loadApiKeys() {
           + (info.from_env ? " " + tr("(aus docker-compose)") : "")
         : tr("nicht gesetzt");
     }
+    // Die Kontaktadresse ist kein Geheimnis und wird darum im Klartext
+    // gezeigt: Sie steht ohnehin sichtbar unter »Rechtliches«, und ein
+    // maskiertes Feld liesse sich nicht mehr leeren.
+    $("k-kontakt").value = state.betreiberKontakt || "";
+    kontaktHinweis();
   } catch (e) { toast(e.message); }
+}
+
+/** Warnt, sobald BrickLink eingerichtet ist, aber niemand erreichbar.
+ *
+ * BrickLinks Bedingungen verlangen die Adresse nur von dem, der die API
+ * auch benutzt - ohne Zugangsdaten ist das Feld schlicht unnoetig. */
+function kontaktHinweis() {
+  const zeile = $("kontakt-fehlt");
+  if (!zeile) return;
+  zeile.hidden = !(state.bricklinkPrices && !(state.betreiberKontakt || "").trim());
+}
+
+/** Traegt den Pflichthinweis und den Betreiber unter »Rechtliches« ein. */
+function rechtlichesAktualisieren() {
+  const block = $("bricklink-rechtliches");
+  if (block) block.hidden = !state.bricklinkPrices;
+  const zeile = $("betreiber-zeile");
+  const wert = (state.betreiberKontakt || "").trim();
+  if (zeile) {
+    zeile.hidden = !wert;
+    if (wert) {
+      const ziel = $("betreiber-kontakt");
+      ziel.textContent = "";
+      // Als Verweis nur, wenn es wirklich eine Adresse ist - sonst
+      // entstuende ein toter mailto:-Link aus einem Freitext.
+      if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(wert)) {
+        const a = document.createElement("a");
+        a.href = "mailto:" + wert;
+        a.textContent = wert;
+        ziel.appendChild(a);
+      } else {
+        ziel.textContent = wert;
+      }
+    }
+  }
+  kontaktHinweis();
 }
 
 async function saveApiKeys() {
@@ -7442,16 +7485,31 @@ async function saveApiKeys() {
     const value = $(id).value.trim();
     if (value) body[name] = value;
   }
-  if (!Object.keys(body).length) {
+  // Die Kontaktadresse geht einen eigenen Weg: Sie ist kein Geheimnis und
+  // steht deshalb nicht in `/settings`. Ein leeres Feld heisst hier
+  // »loeschen« und nicht »unveraendert« - anders als bei den Schluesseln.
+  const kontakt = $("k-kontakt").value.trim();
+  const kontaktNeu = kontakt !== (state.betreiberKontakt || "");
+  if (!Object.keys(body).length && !kontaktNeu) {
     toast("Keine Änderungen eingegeben");
     return;
   }
   try {
-    const res = await api("/settings", { method: "PUT", body });
-    state.bricklinkPrices = res.flags.bricklink_prices;
-    state.bricklinkLookup = res.flags.bricklink_lookup;
-    state.catalogSearch = res.flags.catalog_search;
-    toast(tr("Gespeichert ({n} Schlüssel) ✔", { n: res.changed }));
+    let geaendert = 0;
+    if (Object.keys(body).length) {
+      const res = await api("/settings", { method: "PUT", body });
+      state.bricklinkPrices = res.flags.bricklink_prices;
+      state.bricklinkLookup = res.flags.bricklink_lookup;
+      state.catalogSearch = res.flags.catalog_search;
+      geaendert = res.changed;
+    }
+    if (kontaktNeu) {
+      const res = await api("/settings/betreiber_kontakt",
+                            { method: "POST", body: { kontakt } });
+      state.betreiberKontakt = res.kontakt;
+    }
+    rechtlichesAktualisieren();
+    toast(tr("Gespeichert ({n} Schlüssel) ✔", { n: geaendert }));
     loadApiKeys();
   } catch (e) { toast(e.message); }
 }

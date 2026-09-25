@@ -970,6 +970,19 @@
       <input id="k-bt" autocapitalize="none" autocomplete="off" spellcheck="false">
       <label for="k-bts">BrickLink Token Secret</label>
       <input id="k-bts" autocapitalize="none" autocomplete="off" spellcheck="false">
+      <label for="k-kontakt">Kontaktadresse des Betreibers</label>
+      <input id="k-kontakt" type="email" autocapitalize="none" autocomplete="off"
+             spellcheck="false" inputmode="email" placeholder="z. B. du@example.org">
+      <p class="search-hint">BrickLinks Nutzungsbedingungen verlangen eine
+        sichtbare Kontaktadresse in der Anwendung. Gemeint ist
+        <b>deine</b>: Die Zugangsdaten oben hast du selbst registriert, damit
+        bist du gegenüber BrickLink der Betreiber dieser Instanz – nicht das
+        Projekt. Die Adresse erscheint unten unter <b>Rechtliches</b>. Anders
+        als die Schlüssel wird dieses Feld <b>nicht</b> maskiert: Was hier
+        steht, wird beim Speichern genau so übernommen, und leeren heißt
+        löschen.</p>
+      <p class="search-hint warn" id="kontakt-fehlt" hidden>⚠️ BrickLink ist
+        eingerichtet, aber es steht keine Kontaktadresse da.</p>
       <div class="detail-row">
         <button id="btn-save-keys" class="mini-btn add">Speichern</button>
         <button id="btn-test-keys" class="mini-btn">Verbindung testen</button>
@@ -1347,6 +1360,17 @@ sudo bash update.sh</pre>
         liegt als feste Liste bei; im Betrieb fragt Brickfolio dort nichts.
         Die Artikel stehen unter der GNU-FDL 1.3 und gehören ihren
         Autoren.</p>
+      <div id="bricklink-rechtliches" hidden>
+        <p class="search-hint"><b>BrickLink.</b> Diese Instanz holt Preise und
+          Set-Inhalte über die BrickLink-API. Deren Nutzungsbedingungen
+          verlangen den folgenden Hinweis im Wortlaut:</p>
+        <p class="search-hint" lang="en">The term &lsquo;BrickLink&rsquo; is a
+          trademark of the LEGO Group BrickLink. This application uses the
+          BrickLink API but is not endorsed or certified by LEGO BrickLink,
+          Inc.</p>
+        <p class="search-hint" id="betreiber-zeile" hidden><b>Betreiber dieser
+          Instanz:</b> <span id="betreiber-kontakt"></span></p>
+      </div>
       <p class="search-hint"><b>LEGO®</b> ist eine Marke der LEGO Gruppe, die
         dieses Projekt weder sponsert noch autorisiert oder unterstützt.
         BrickLink, Rebrickable und Brickognize sind Marken ihrer jeweiligen

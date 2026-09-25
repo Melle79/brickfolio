@@ -3052,6 +3052,7 @@ def config(user: dict = Depends(current_user)):
                                               "jedipedia") == "1",
             "offer_percent": _offer_percent(),
             "owner_name": _owner_name(),
+            "betreiber_kontakt": core.get_setting("betreiber_kontakt") or "",
             "currency": integrations.currency(),
             "price_region": integrations.price_region(),
             "ki_suche": integrations.ollama_enabled(),
@@ -3062,6 +3063,32 @@ def config(user: dict = Depends(current_user)):
             # nicht erst nach, und das Wörterbuch kam nie zum Zug.
             "such_uebersetzung": True,
             "hub_connected": hub.enabled()}
+
+
+class BetreiberKontaktBody(BaseModel):
+    kontakt: str = Field(default="", max_length=200)
+
+
+@app.post("/api/settings/betreiber_kontakt")
+def set_betreiber_kontakt(body: BetreiberKontaktBody,
+                          user: dict = Depends(admin_user)):
+    """Kontaktadresse des Betreibers dieser Instanz.
+
+    BrickLinks API-Bedingungen verlangen eine sichtbar hinterlegte
+    Kontaktadresse in der Anwendung („a prominently displayed email address
+    on Your Application for third parties to contact You").
+
+    **Gemeint ist die des Betreibers, nicht die des Projekts.** Die
+    API-Zugangsdaten registriert jede Instanz selbst; damit ist auch jeder
+    Betreiber selbst der „Developer" im Sinne dieser Bedingungen. Eine feste
+    Projektadresse hier einzutragen wäre also nicht nur nutzlos, sondern
+    falsch.
+
+    Leer ist ein gültiger Zustand: Wer ohne BrickLink-Zugang arbeitet,
+    braucht die Angabe nicht.
+    """
+    core.set_setting("betreiber_kontakt", body.kontakt.strip())
+    return {"ok": True, "kontakt": body.kontakt.strip()}
 
 
 class OfferPercentBody(BaseModel):

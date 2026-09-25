@@ -204,6 +204,13 @@ Under **More → API keys** (only visible to admins):
    address.
 3. Copy the four values – *Consumer Key*, *Consumer Secret*, *Token*,
    *Token Secret* – into the four fields in the app and save.
+4. Below that is **Operator's contact address**. BrickLink's terms of use
+   require a visible contact address in the application – they mean
+   **yours**: you registered the access above yourself, which makes you, not
+   the project, the operator of this instance as far as BrickLink is
+   concerned. The address appears under **More → Legal**, together with the
+   notice BrickLink prescribes verbatim. Without BrickLink credentials the
+   field has no effect.
 
 **Rebrickable** – provides search by name:
 

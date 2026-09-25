@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.89.0 – September 2026
+
+BrickLinks Nutzungsbedingungen einmal gelesen statt überflogen – und dabei
+drei Stellen gefunden, an denen Brickfolio sie nicht erfüllte.
+
+### Neu
+- 🔑 **Kontaktadresse des Betreibers** unter *Mehr → API-Schlüssel*.
+  BrickLink verlangt eine sichtbare Kontaktadresse in der Anwendung.
+  Gemeint ist die des **Betreibers**: Die Zugangsdaten registriert jede
+  Instanz selbst, damit ist auch jeder Betreiber selbst der „Developer" im
+  Sinne dieser Bedingungen – eine feste Projektadresse wäre dort schlicht
+  falsch. Das Feld ist nicht maskiert, leeren heißt löschen, und ohne
+  BrickLink-Zugang bleibt es ohne Wirkung.
+- ⚖️ **Der vorgeschriebene BrickLink-Hinweis** steht jetzt unter
+  *Mehr → Rechtliches* – im Wortlaut, wie verlangt, und auf Englisch auch
+  in der deutschen Oberfläche. Er erscheint nur, wenn diese Instanz die
+  API überhaupt benutzt. Ein Test vergleicht ihn Zeichen für Zeichen und
+  ein zweiter stellt sicher, dass der Übersetzungslauf ihn nicht anfasst.
+
+### Behoben
+- 📄 **„Ein kostenloses Konto genügt" stimmte nicht.** Die Store-API steht
+  nur Verkäufern offen: Im BrickLink-Konto muss einmal ein Shop eröffnet
+  sein, der aber leer bleiben darf. Das Handbuch sagte es längst, die
+  Projektseite nicht – dort stand es an drei Stellen falsch.
+
+### Intern
+- Die neue Einstellung ist als personenbezogen eingestuft und wird aus
+  Fehlerberichten entfernt. Sichtbar in der eigenen Instanz heißt nicht
+  sichtbar in einem öffentlichen Issue.
+
 ## 2.88.56 – September 2026
 
 Gefunden beim Durchspielen von vier Tauschgesprächen zwischen zwei
