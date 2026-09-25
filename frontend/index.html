@@ -504,16 +504,19 @@
     <!-- Einkaufslisten -->
     <section id="listpane-shop" hidden>
       <div id="lists-admin" hidden>
-        <div class="detail-row">
-          <input id="new-list-name" placeholder="Neue Einkaufsliste, z. B. Flohmarkt 12.7." maxlength="120">
-          <button id="btn-new-list" class="mini-btn add">Anlegen</button>
-        </div>
-        <div class="detail-row" style="margin:8px 0 4px">
+        <!-- Die beiden Auswertungen stehen oben, das Anlegen direkt über den
+             Listen: So gehört die neue Liste sichtbar zu denen darunter.
+             Die aufklappenden Kästen folgen ihren Knöpfen. -->
+        <div class="detail-row" style="margin:0 0 4px">
           <button id="btn-duplicates" class="mini-btn">📋 Verkaufsliste (Doppelte)</button>
           <button id="btn-missing-figs" class="mini-btn">🧩 Fehlende Set-Figuren</button>
         </div>
         <div id="duplicates-box" hidden></div>
         <div id="missing-figs-box" hidden></div>
+        <div class="detail-row" style="margin-top:8px">
+          <input id="new-list-name" placeholder="Neue Einkaufsliste, z. B. Flohmarkt 12.7." maxlength="120">
+          <button id="btn-new-list" class="mini-btn add">Anlegen</button>
+        </div>
       </div>
       <div id="lists-container" class="results"></div>
       <p id="lists-empty" class="empty" hidden>Keine Einkaufslisten vorhanden.</p>
