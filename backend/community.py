@@ -122,6 +122,9 @@ def hub_disconnect(user: dict = Depends(admin_user)):
 class ShareBody(BaseModel):
     shared: bool
     qty: int | None = Field(default=None, ge=1, le=9999)
+    # Tausch, Verkauf oder beides. Ohne Angabe bleibt, was schon eingestellt
+    # war (anfangs: Tausch).
+    deal: str | None = Field(default=None, pattern="^(tausch|verkauf|beides)$")
 
 
 @router.post("/api/collection/{entry_id}/share")
@@ -141,13 +144,19 @@ def set_shared(entry_id: int, body: ShareBody,
                      "WHERE id = ?",
                      (1 if body.shared else 0,
                       qty if body.shared else None, entry_id))
-    return {"ok": True, "shared": body.shared, "qty": qty}
+        if body.deal and body.shared:
+            conn.execute("UPDATE collection SET share_deal = ? WHERE id = ?",
+                         ("" if body.deal == "tausch" else body.deal,
+                          entry_id))
+    return {"ok": True, "shared": body.shared, "qty": qty,
+            "deal": body.deal}
 
 
 def _shared_rows(conn):
     return conn.execute(
         "SELECT id, item_id, item_type, name, img_url, bricklink_url, "
-        "condition, quantity, share_qty FROM collection WHERE shared = 1 "
+        "condition, quantity, share_qty, share_deal FROM collection "
+        "WHERE shared = 1 "
         "ORDER BY name COLLATE NOCASE").fetchall()
 
 
@@ -160,7 +169,8 @@ def share_status(user: dict = Depends(current_user)):
     chosen = [{"id": r["id"], "item_id": r["item_id"], "name": r["name"],
                "item_type": r["item_type"], "img_url": r["img_url"],
                "condition": r["condition"], "quantity": r["quantity"],
-               "share_qty": r["share_qty"] or r["quantity"]} for r in rows]
+               "share_qty": r["share_qty"] or r["quantity"],
+               "deal": r["share_deal"] or "tausch"} for r in rows]
 
     published, stale, live = [], [], None
     if hub.enabled():
@@ -248,6 +258,7 @@ def hub_publish(user: dict = Depends(admin_user)):
             "bricklink_url": r["bricklink_url"], "condition": r["condition"],
             # Nur so viele anbieten, wie ausgewählt (Standard: alle)
             "qty": min(r["share_qty"] or r["quantity"], r["quantity"]),
+            "deal": r["share_deal"] or "tausch",
         })
     try:
         res = hub.publish(offers)
@@ -967,7 +978,7 @@ def entdecken(user: dict = Depends(current_user)):
             "item_id": o["item_id"], "item_type": o.get("item_type"),
             "name": o["name"], "img_url": o.get("img_url"),
             "img_data": o.get("img_data"), "condition": o.get("condition"),
-            "qty": o.get("qty") or 1}
+            "qty": o.get("qty") or 1, "deal": o.get("deal") or "tausch"}
            for o in angebote
            if (o["item_id"], o.get("item_type") or "minifig") in gesucht]
 

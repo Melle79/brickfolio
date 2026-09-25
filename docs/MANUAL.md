@@ -270,7 +270,7 @@ display name, change password and sign out.
 
 **💬 Unread messages.** If something is waiting in the trade network, a mark
 with the number of unread messages appears to the left – visible from every
-tab. Tapping it goes straight to *Trade → Conversations*. If nothing is
+tab. Tapping it goes straight to *Trade → Messages*. If nothing is
 open, there is no mark either. When the app opens, Brickfolio asks the hub
 once so the number is right immediately instead of after the next cycle.
 
@@ -1591,7 +1591,7 @@ request more from the hub admin. A code works once.
 
 ### 12.4 What I offer
 
-Under **📤 Selection** in the **Trade** tab is what goes into the network:
+Under **📤 I offer** in the **Trade** tab is what goes into the network:
 
 - You pick individual items in the **collection**: open a card → "🤝 Offer it
   in the trading network".
@@ -1603,7 +1603,12 @@ Under **📤 Selection** in the **Trade** tab is what goes into the network:
   sits in the hub but is no longer selected here is reported at the top – it
   disappears the next time you publish.
 
-The selection only becomes visible through **"📤 Publish the selection"**
+- For every item you choose **what for** it is offered: **🔄 Trade**,
+  **💶 Sale** or **both**. Everything starts as trade. The other side sees the
+  kind on the card, **🔎 Offers** can be filtered by it, and for a pure sale
+  the request suggests buying instead of swapping.
+
+The selection only becomes visible through **"📤 Offer in the network"**
 (admin). Until then nothing changes in the network. Custom figures travel with
 a downscaled thumbnail so the other side does not just see a placeholder.
 
@@ -1615,7 +1620,7 @@ message you can overwrite. If a conversation about that offer is already
 running, the chat opens directly instead – the card says so too ("requested ·
 open").
 
-Under **💬 Conversations** are all the chats. In an open chat new messages
+Under **💬 Messages** are all the chats. In an open chat new messages
 arrive **on their own**, without "fetch". Your own messages say "on its way …"
 or "delivered ✓".
 

@@ -232,7 +232,7 @@ let tradesSig = "";
 async function loadTrades(quiet = false) {
   const box = $("hub-trades");
   if (!quiet) {
-    box.innerHTML = brickLoading("Vorgänge werden geladen …");
+    box.innerHTML = brickLoading("Nachrichten werden geladen …");
     await syncTrades();
   }
   try {
@@ -245,7 +245,7 @@ async function loadTrades(quiet = false) {
     if (quiet && sig === tradesSig) return;
     tradesSig = sig;
     if (!trades.length) {
-      box.innerHTML = `<p class="search-hint">${esc(tr("Noch keine Vorgänge. "
+      box.innerHTML = `<p class="search-hint">${esc(tr("Noch keine Nachrichten. "
         + "Melde bei einem Angebot „Interesse“ an – daraus wird ein "
         + "Gespräch."))}</p>`;
       return;
@@ -497,8 +497,15 @@ async function loadShareView() {
           </div>
           <button class="mini-btn" data-unshare="${it.id}">Entfernen</button>
         </div>
+        <div class="cm-art-zeile">
+          <div class="erf-wahl cm-art" data-art="${it.id}" role="radiogroup" aria-label="${esc(tr("Angeboten zum"))}">
+            ${["tausch", "verkauf", "beides"].map((w) =>
+              `<button type="button" role="radio" data-wert="${w}" class="${(it.deal || "tausch") === w ? "sel" : ""}"
+                aria-checked="${(it.deal || "tausch") === w}">${esc(cmArtName(w))}</button>`).join("")}
+          </div>
+        </div>
         ${it.quantity > 1 ? `
-        <label class="share-qty">Zum Tausch anbieten:
+        <label class="share-qty">${esc(tr("Menge:"))}
           <select data-shareqty="${it.id}">
             ${Array.from({ length: it.quantity }, (_, n) => n + 1).map((n) =>
               `<option value="${n}"${n === it.share_qty ? " selected" : ""}>${n}×</option>`).join("")}
@@ -513,6 +520,22 @@ async function loadShareView() {
             body: { shared: false } });
           loadShareView();
         } catch (e) { toast(e.message); }
+      });
+    });
+    box.querySelectorAll("[data-art]").forEach((gruppe) => {
+      gruppe.querySelectorAll("button").forEach((b) => {
+        b.addEventListener("click", async () => {
+          if (b.classList.contains("sel")) return;
+          try {
+            await api(`/collection/${gruppe.dataset.art}/share`, { method: "POST",
+              body: { shared: true, deal: b.dataset.wert } });
+            gruppe.querySelectorAll("button").forEach((x) => {
+              x.classList.toggle("sel", x === b);
+              x.setAttribute("aria-checked", String(x === b));
+            });
+            toast(tr("Gemerkt – gilt ab dem nächsten „Im Netzwerk anbieten“"));
+          } catch (e) { toast(e.message); }
+        });
       });
     });
     box.querySelectorAll("[data-shareqty]").forEach((sel) => {
@@ -650,6 +673,14 @@ function wireHubViewOnce() {
   });
 
   $("hub-refresh-offers").addEventListener("click", () => loadHubOffers());
+  document.querySelectorAll("[data-art-filter]").forEach((b) => {
+    b.addEventListener("click", () => {
+      hubArtFilter = b.dataset.artFilter;
+      document.querySelectorAll("[data-art-filter]").forEach((x) =>
+        x.classList.toggle("an", x === b));
+      loadHubOffers();
+    });
+  });
   // Suche im Netzwerk – kurz abwarten, damit nicht jeder Tastendruck fragt
   let hubSearchTimer;
   $("hub-search").addEventListener("input", () => {
@@ -742,9 +773,11 @@ function openInterest(o, text = "") {
   $("interest-sub").textContent = o.id_ + " · " + tr("von {name}", { name: o.who });
   $("interest-img").src = o.img || IMG_PLACEHOLDER;
   // Vorschlag steht im Feld – anpassbar, nicht in einem Systemfenster
-  $("interest-text").value = text ||
-    tr("Hallo {name}, hättest du Interesse, den {was} zu tauschen?",
-      { name: o.who, was: o.n });
+  $("interest-text").value = text || (o.art === "verkauf"
+    ? tr("Hallo {name}, ich würde dir den {was} gern abkaufen – was stellst du dir vor?",
+      { name: o.who, was: o.n })
+    : tr("Hallo {name}, hättest du Interesse, den {was} zu tauschen?",
+      { name: o.who, was: o.n }));
   $("interest-overlay").hidden = false;
   document.body.style.overflow = "hidden";
   const ta = $("interest-text");
@@ -772,7 +805,7 @@ async function sendInterest() {
       item_type: o.typ || "", img_url: o.bild || "",
       bricklink_url: o.bl || "", condition: o.zustand || "" } });
     closeInterest();
-    toast("Angefragt – das Gespräch steht unter Vorgänge 💬");
+    toast("Angefragt – das Gespräch steht unter Nachrichten 💬");
     showHubTab("trades");
     openTrade(res.trade_id);
   } catch (e) { toast(e.message); } finally { btn.disabled = false; }
@@ -828,13 +861,14 @@ async function loadHubOffers() {
       api("/hub/offers" + (q ? `?q=${encodeURIComponent(q)}` : "")),
       api("/hub/trades").catch(() => ({ trades: [] })),
     ]);
-    const { offers } = offerRes;
+    const offers = offerRes.offers.filter((o) => cmArtPasst(o.deal));
     tradeByOffer = new Map((tradeRes.trades || []).map((t) =>
       [offerKey(t.other_id, t.item_id), t]));
     if (seq !== hubSearchSeq) return;
     if (!offers.length) {
       box.innerHTML = `<p class="search-hint">${q
         ? `Nichts gefunden zu „${esc(q)}".`
+        : hubArtFilter ? esc(tr("Keine Angebote dieser Art."))
         : "Noch keine Angebote von anderen im Netzwerk."}</p>`;
       return;
     }
@@ -848,6 +882,7 @@ async function loadHubOffers() {
             <strong>${esc(o.name)}</strong>
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
             <span class="badge badge-owned">von <button type="button" class="cm-name" data-profil="${esc(o.member_id)}">${esc(o.display_name)}</button></span>
+            <span class="badge cm-art-schild">${esc(cmArtName(o.deal))}</span>
             ${t ? `<span class="badge badge-wanted">💬 angefragt · ${tradeStatusText(t.status)}${t.unread ? ` · ${t.unread} neu` : ""}</span>` : ""}
           </div>
         </div>
@@ -865,7 +900,7 @@ async function loadHubOffers() {
                      who: o.display_name, img: o.img_data || o.img_url,
                      id_: o.item_id, typ: o.item_type || "",
                      bild: o.img_url || "", bl: o.bricklink_url || "",
-                     zustand: o.condition || "" };
+                     zustand: o.condition || "", art: o.deal || "tausch" };
       card.addEventListener("click", (ev) => {
         if (ev.target.closest("a, .card-img")) return;
         const wer = ev.target.closest("[data-profil]");
@@ -927,6 +962,21 @@ async function communityThemenLaden() {
   return communityThemen;
 }
 
+/* Tausch, Verkauf oder beides. Fehlt die Angabe (ältere Instanzen), ist es
+   ein Tausch – so war jedes Angebot gemeint, bevor es die Wahl gab. */
+function cmArtName(art) {
+  if (art === "verkauf") return tr("💶 Verkauf");
+  if (art === "beides") return tr("🔄 Tausch · 💶 Verkauf");
+  return tr("🔄 Tausch");
+}
+
+let hubArtFilter = "";               // "" | "tausch" | "verkauf"
+
+function cmArtPasst(art) {
+  const a = art || "tausch";
+  return !hubArtFilter || a === hubArtFilter || a === "beides";
+}
+
 function cmName(id, name) {
   return `<button type="button" class="cm-name" data-profil="${esc(id)}">${esc(name || "?")}</button>`;
 }
@@ -964,7 +1014,7 @@ async function loadEntdecken() {
       teile.push(`<div class="cm-karte">
         <img src="${cmBild(h)}" alt="" loading="lazy">
         <div class="cm-mitte"><strong>${esc(h.name)}</strong>
-          <div class="sub">${esc(h.item_id)}${cmZustand(h.condition)} · ${esc(tr("von"))} ${cmName(h.member_id, h.display_name)}</div></div>
+          <div class="sub">${esc(h.item_id)}${cmZustand(h.condition)} · ${esc(cmArtName(h.deal))} · ${esc(tr("von"))} ${cmName(h.member_id, h.display_name)}</div></div>
         <button class="mini-btn add" data-cm-hat="${i}">${lauf ? "💬 " + esc(tr("Gespräch")) : "💬 " + esc(tr("Anfragen"))}</button>
       </div>`);
     });
@@ -1014,7 +1064,7 @@ async function loadEntdecken() {
       const h = d.hat[Number(b.dataset.cmHat)];
       openOffer({ m: h.member_id, i: h.item_id, n: h.name, who: h.display_name,
         img: h.img_data || h.img_url, id_: h.item_id, typ: h.item_type || "",
-        bild: h.img_url || "", bl: "", zustand: h.condition || "" });
+        bild: h.img_url || "", bl: "", zustand: h.condition || "", art: h.deal || "tausch" });
     });
   });
   box.querySelectorAll("[data-cm-sucht]").forEach((b) => {
@@ -1066,7 +1116,7 @@ async function openProfil(memberId) {
     zahlen.push(`<div class="cm-zahl"><b>≈ ${p.collection_count}</b><span>${esc(tr("Figuren"))}</span></div>`);
   }
   const bilder = (liste, markiere) => `<div class="cm-bilder">${liste.map((x, i) =>
-    `<button type="button" class="cm-bild${markiere(x) ? " an" : ""}" data-i="${i}" title="${esc(x.name)} (${esc(x.item_id)})">
+    `<button type="button" class="cm-bild${markiere(x) ? " an" : ""}" data-i="${i}" title="${esc(x.name)} (${esc(x.item_id)})${x.deal ? " · " + esc(cmArtName(x.deal)) : ""}">
       <img src="${cmBild(x)}" alt="" loading="lazy"></button>`).join("")}</div>`;
   const angebote = p.offers || [];
   const wuensche = p.wants || [];
@@ -1100,7 +1150,7 @@ async function openProfil(memberId) {
           closeProfil();
           openOffer({ m: p.member_id, i: x.item_id, n: x.name, who: p.display_name,
             img: x.img_data || x.img_url, id_: x.item_id, typ: x.item_type || "",
-            bild: x.img_url || "", bl: "", zustand: x.condition || "" });
+            bild: x.img_url || "", bl: "", zustand: x.condition || "", art: x.deal || "tausch" });
         } else if (x.hier_abgebbar > 0) {
           closeProfil();
           cmAnbieten({ ...x, member_id: p.member_id, display_name: p.display_name });

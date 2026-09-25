@@ -3254,3 +3254,8 @@ button.cm-chip { cursor: pointer; min-height: 30px; }
 .planer-box h1 { font-size: 26px; }
 .planer-chips { justify-content: center; margin: 0 0 12px; }
 #meinprofil-felder textarea, #planer-inhalt textarea { width: 100%; }
+/* Tausch, Verkauf oder beides – je Angebot unter „Ich biete an" */
+.cm-art-zeile { margin-top: 8px; }
+.cm-art button { font-size: 12.5px; }
+.cm-art-schild { background: var(--track); color: var(--ink); }
+.cm-art-filter { margin: 8px 0 2px; }

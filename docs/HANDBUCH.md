@@ -283,7 +283,7 @@ Abmelden.
 
 **💬 Ungelesene Nachrichten.** Wartet im Tausch-Netzwerk etwas, erscheint
 links daneben ein Zeichen mit der Zahl der ungelesenen Nachrichten – von
-jedem Tab aus zu sehen. Ein Tipp darauf führt direkt zu *Tausch → Vorgänge*. Ist nichts offen, ist auch kein Zeichen da. Beim Öffnen der App
+jedem Tab aus zu sehen. Ein Tipp darauf führt direkt zu *Tausch → Nachrichten*. Ist nichts offen, ist auch kein Zeichen da. Beim Öffnen der App
 fragt Brickfolio einmal beim Hub nach, damit die Zahl gleich stimmt und
 nicht erst nach dem nächsten Takt.
 
@@ -2175,7 +2175,7 @@ kann beim Hub-Admin mehr anfragen. Der Code gilt einmal.
 
 ### 12.4 Was ich anbiete
 
-Unter **📤 Auswahl** im Tab **Tausch** steht, was ins Netzwerk geht:
+Unter **📤 Ich biete an** im Tab **Tausch** steht, was ins Netzwerk geht:
 
 - Einzelne Artikel wählst du in der **Sammlung** aus: Karte öffnen →
   „🤝 In der Tauschbörse anbieten".
@@ -2187,7 +2187,13 @@ Unter **📤 Auswahl** im Tab **Tausch** steht, was ins Netzwerk geht:
   wartet. Was im Hub steht, hier aber nicht mehr ausgewählt ist, wird oben
   gemeldet – es verschwindet beim nächsten Veröffentlichen.
 
-Sichtbar wird die Auswahl erst durch **„📤 Auswahl veröffentlichen"**
+- An jedem Artikel wählst du, **wozu** er angeboten wird: **🔄 Tausch**,
+  **💶 Verkauf** oder **beides**. Anfangs steht alles auf Tausch. Beim
+  Gegenüber steht die Art an der Karte, unter **🔎 Angebote** lässt sich
+  danach filtern, und bei reinem Verkauf schlägt die Anfrage einen
+  Kauf statt eines Tauschs vor.
+
+Sichtbar wird die Auswahl erst durch **„📤 Im Netzwerk anbieten"**
 (Admin). Bis dahin ändert sich im Netzwerk nichts. Custom-Figuren reisen
 mit einem verkleinerten Vorschaubild mit, damit beim Gegenüber kein
 Platzhalter steht.
@@ -2200,7 +2206,7 @@ einer vorgeschlagenen Nachricht, die du überschreiben kannst. Läuft zu dem
 Angebot schon ein Gespräch, geht stattdessen direkt der Chat auf – an der
 Karte steht das auch dran („angefragt · offen").
 
-Unter **💬 Vorgänge** liegen alle Gespräche. Im offenen Chat kommen
+Unter **💬 Nachrichten** liegen alle Gespräche. Im offenen Chat kommen
 neue Nachrichten **von selbst** an, ohne „Abrufen". An eigenen Nachrichten
 steht „unterwegs …" bzw. „zugestellt ✓".
 

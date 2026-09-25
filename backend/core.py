@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.88.53"
+APP_VERSION = "2.88.54"
 
 
 def hash_password(password: str) -> str:
@@ -892,6 +892,10 @@ def init_db():
         # Wie viele Exemplare biete ich an? NULL = alle vorhandenen.
         if ccols and "share_qty" not in ccols:
             conn.execute("ALTER TABLE collection ADD COLUMN share_qty INTEGER")
+        # Zum Tausch, zum Verkauf oder beides? NULL = Tausch – so war jedes
+        # Angebot gemeint, bevor es die Wahl gab.
+        if ccols and "share_deal" not in ccols:
+            conn.execute("ALTER TABLE collection ADD COLUMN share_deal TEXT")
 
         tcols = {r["name"] for r in
                  conn.execute("PRAGMA table_info(trades)").fetchall()}

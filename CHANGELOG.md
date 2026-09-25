@@ -1,5 +1,12 @@
 # Changelog
 
+## Hub 1.13.0 – September 2026
+
+### Neu
+- 💶 **Angebote tragen ihre Art**: Tausch, Verkauf oder beides (neue Spalte
+  `offers.deal`). Fehlt sie – bei älteren App-Fassungen –, gilt das Angebot
+  als Tausch.
+
 ## Hub 1.12.0 – September 2026
 
 ### Neu
@@ -57,6 +64,19 @@
   das wäre ein Modellwechsel ein stilles Umschreiben aller Zeilen, und
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
+
+## 2.88.54 – September 2026
+
+### Neu
+- 💶 **Zum Tausch, zum Verkauf oder beides.** Unter „Ich biete an" wählst du
+  je Artikel, wozu er angeboten wird; anfangs steht alles auf Tausch. Beim
+  Gegenüber steht die Art an der Karte, unter „Angebote" lässt sich danach
+  filtern, und bei reinem Verkauf schlägt die Anfrage einen Kauf vor statt
+  eines Tauschs. Braucht Hub 1.13.0.
+
+### Geändert
+- Die Reiter im Tausch-Tab heißen jetzt **„💬 Nachrichten"** und **„📤 Ich
+  biete an"**, der Knopf zum Veröffentlichen **„📤 Im Netzwerk anbieten"**.
 
 ## 2.88.53 – September 2026
 

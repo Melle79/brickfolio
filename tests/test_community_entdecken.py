@@ -134,3 +134,25 @@ def test_trennen_zieht_eine_gezeigte_wunschliste_zurueck(api, monkeypatch):
     api.post("/api/hub/disconnect")
     assert api.gesendet["profile"][-1]["wants_public"] is False
     assert core.get_setting("hub_wuensche_zeigen") in ("", None)
+
+
+def test_angebotsart_geht_mit_beim_veroeffentlichen(api, monkeypatch):
+    """Tausch, Verkauf oder beides – ohne Angabe bleibt es ein Tausch."""
+    sammlung("sw0188", 2)
+    with core.db() as conn:
+        eid = conn.execute("SELECT id FROM collection").fetchone()["id"]
+    assert api.post(f"/api/collection/{eid}/share",
+                    json={"shared": True}).status_code == 200
+    gesendet = []
+    monkeypatch.setattr(hub, "publish", lambda o: gesendet.append(o) or {"count": len(o)})
+    api.post("/api/hub/publish")
+    assert gesendet[-1][0]["deal"] == "tausch"
+    api.post(f"/api/collection/{eid}/share", json={"shared": True, "deal": "verkauf"})
+    api.post("/api/hub/publish")
+    assert gesendet[-1][0]["deal"] == "verkauf"
+    # Nur die Menge ändern lässt die Art stehen
+    api.post(f"/api/collection/{eid}/share", json={"shared": True, "qty": 1})
+    api.post("/api/hub/publish")
+    assert gesendet[-1][0]["deal"] == "verkauf"
+    assert api.post(f"/api/collection/{eid}/share",
+                    json={"shared": True, "deal": "geschenkt"}).status_code == 422

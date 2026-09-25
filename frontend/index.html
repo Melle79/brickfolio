@@ -601,8 +601,8 @@
     <div class="tab-row" id="hub-subtabs">
       <button class="mini-btn sel" data-hubtab="entdecken">🧭 Entdecken</button>
       <button class="mini-btn" data-hubtab="offers">🔎 Angebote</button>
-      <button class="mini-btn" data-hubtab="trades">💬 Vorgänge <span id="hub-unread" class="badge badge-wanted" hidden></span></button>
-      <button class="mini-btn" data-hubtab="share">📤 Auswahl</button>
+      <button class="mini-btn" data-hubtab="trades">💬 Nachrichten <span id="hub-unread" class="badge badge-wanted" hidden></span></button>
+      <button class="mini-btn" data-hubtab="share">📤 Ich biete an</button>
     </div>
     <!-- Entdecken: ausgerechnet auf dieser Instanz (community.js) -->
     <section id="hubpane-entdecken">
@@ -616,6 +616,11 @@
         <input id="hub-search" class="search" type="search" placeholder="Im Netzwerk suchen – Name oder Nummer" aria-label="Angebote durchsuchen">
         <button type="button" class="search-clear" data-clear="hub-search" aria-label="Suche leeren">×</button>
       </span>
+      <div class="cm-chips cm-art-filter" role="group" aria-label="Art des Angebots">
+        <button type="button" class="cm-chip an" data-art-filter="">Alle</button>
+        <button type="button" class="cm-chip" data-art-filter="tausch">🔄 Tausch</button>
+        <button type="button" class="cm-chip" data-art-filter="verkauf">💶 Verkauf</button>
+      </div>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="hub-refresh-offers">🔄 Aktualisieren</button>
         <button class="mini-btn" id="hub-make-invite">✉️ Freund einladen</button>
@@ -625,7 +630,7 @@
       <div id="hub-offers" class="results"></div>
     </section>
 
-    <!-- Vorgänge -->
+    <!-- Nachrichten (Vorgänge) -->
     <section id="hubpane-trades" hidden>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="hub-sync">🔄 Nachrichten abrufen</button>
@@ -637,7 +642,7 @@
     <section id="hubpane-share" hidden>
       <p class="search-hint" id="hub-share-info"></p>
       <div class="detail-row btn-grid">
-        <button class="mini-btn add" id="hub-publish" hidden>📤 Auswahl veröffentlichen</button>
+        <button class="mini-btn add" id="hub-publish" hidden>📤 Im Netzwerk anbieten</button>
         <button class="mini-btn" id="hub-share-dupes">➕ Abgebbare übernehmen</button>
         <button class="mini-btn" id="hub-share-clear">Auswahl leeren</button>
       </div>
