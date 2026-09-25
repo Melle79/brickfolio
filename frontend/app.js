@@ -5986,7 +5986,12 @@ async function kopieren(text, erfolg) {
 
 /* Betrag aus einem Feld lesen – Komma wie Punkt. */
 function betragLesen(text) {
-  const n = Number(String(text || "").replace(",", ".").trim());
+  // Leer heißt „keine Angabe“, nicht „null Euro“: `Number("")` ist 0, und
+  // so landete ein leer gelassenes „Bezahlt (optional)“ als 0 € im Kaufbuch
+  // – samt falschem Gewinn (gefunden am 25.09.2026 beim Tausch-Übernehmen).
+  const roh = String(text == null ? "" : text).replace(",", ".").trim();
+  if (!roh) return null;
+  const n = Number(roh);
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 

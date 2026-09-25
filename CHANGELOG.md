@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.90.6 – September 2026
+
+### Behoben
+- 📒 **Ein leer gelassenes „Bezahlt (optional)“ wurde als 0 € gebucht.**
+  Beim Übernehmen eines Tauschs landete damit „0 € bezahlt“ im Kaufbuch
+  statt „kein Preis“, und der Gewinn der Zeile stimmte nicht. Leer heißt
+  jetzt wieder: keine Angabe.
+
 ## 2.90.5 – September 2026
 
 ### Behoben
