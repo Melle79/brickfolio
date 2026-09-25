@@ -175,3 +175,12 @@ def test_gemerkter_artikel_hat_von_vornherein_einen_vollen_stern():
     teil = q[n:q.index("let gallery", n)]
     assert 'card.querySelector(".zeichen[data-want]")' in teil
     assert 'stern.classList.add("an")' in teil
+
+
+def test_wunschliste_frischt_sich_auf_wie_die_einkaufslisten():
+    """Was der Live-Scanner merkte oder von der Wunschliste nahm, erschien
+    erst nach dem Neuladen – verglichen wurden nur die Einkaufslisten."""
+    q = js()
+    n = q.index("async function standPruefen")
+    teil = q[n:n + 2500]
+    assert 'jetzt.lists + "#" + (jetzt.wanted || "")' in teil

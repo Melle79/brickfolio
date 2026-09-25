@@ -2209,9 +2209,17 @@ async function standPruefen() {
     return;                       // Server kurz weg – beim nächsten Mal
   }
   // Statistik hängt an der Sammlung, Listen an ihrem eigenen Abschnitt.
+  //
+  // **Die Wunschliste zählt auf dem Listen-Tab mit.** Sie steht im selben
+  // Tab, verglichen wurden aber nur die Einkaufslisten: Was der Live-Scanner
+  // auf eine Liste legte, erschien sofort, was er merkte oder wieder von der
+  // Wunschliste nahm, erst nach dem nächsten Neuladen (25.09.2026). Der
+  // Server liefert ihren Fingerabdruck längst mit.
   const schluessel = name === "lists" ? "lists"
     : name === "stats" ? "collection" : "collection";
-  const wert = jetzt[schluessel];
+  const wert = name === "lists"
+    ? jetzt.lists + "#" + (jetzt.wanted || "")
+    : jetzt[schluessel];
   // `letzterStand && …` gäbe **null** zurück, wenn noch nichts gemerkt ist –
   // und `null !== undefined` ist wahr. Damit galt jeder erste Blick nach
   // einem Ansichtswechsel als Änderung, und die gerade frisch geladene

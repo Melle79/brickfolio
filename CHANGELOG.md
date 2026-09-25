@@ -45,6 +45,16 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.44 – September 2026
+
+### Behoben
+- ⭐ **Die Wunschliste frischt sich auf wie die Einkaufslisten.** Was ein
+  anderes Gerät oder der Live-Scanner auf eine Einkaufsliste legte, erschien
+  nach wenigen Sekunden von selbst – was er merkte oder wieder von der
+  Wunschliste nahm, erst nach dem nächsten Neuladen. Die App verglich auf
+  dem Listen-Tab nur den Stand der Einkaufslisten; jetzt zählt die
+  Wunschliste mit.
+
 ## 2.88.43 – September 2026
 
 ### Geändert
