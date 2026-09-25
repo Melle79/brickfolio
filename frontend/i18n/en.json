@@ -1229,5 +1229,12 @@
  "🔄 Tausch · 💶 Verkauf": "🔄 Trade · 💶 Sale",
  "🔄 Tausch": "🔄 Trade",
  "Angeboten – das Gespräch steht unter Nachrichten 💬": "Offered – the conversation is under Messages 💬",
- "für {name}": "for {name}"
+ "für {name}": "for {name}",
+ "vom Gegenüber gelöscht": "deleted by the other side",
+ "von der Wunschliste genommen": "removed from the wishlist",
+ "⚠ Das Gegenüber hat dieses Gespräch gelöscht – antworten geht nicht mehr.": "⚠ The other side deleted this conversation – replying is no longer possible.",
+ "offen": "open",
+ "angenommen ✔": "accepted ✔",
+ "abgelehnt": "declined",
+ "abgeschlossen": "closed"
 }

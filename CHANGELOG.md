@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.88.56 – September 2026
+
+Gefunden beim Durchspielen von vier Tauschgesprächen zwischen zwei
+Testinstanzen und einer echten.
+
+### Behoben
+- 🧹 **Nach einem Tausch blieb Veraltetes stehen.**
+  - Wer ein Stück übernahm, behielt es auf der Wunschliste. Das Netzwerk
+    zeigte deshalb weiter an, wer es hätte, und anderen, dass man es sucht.
+    Jetzt verschwindet der Wunsch beim Übernehmen in die Sammlung (auf eine
+    Einkaufsliste bleibt er stehen).
+  - Wer ein Stück austrug, bot es im Netzwerk weiter in alter Stückzahl an,
+    bis von Hand neu veröffentlicht wurde. Jetzt zieht die App die Angebote
+    im Hintergrund nach – aber nur, wer schon einmal veröffentlicht hat.
+- 🖼 **Ein erhaltenes Angebot kam ohne Bild in die Sammlung.** Der Hub
+  liefert dem Empfänger kein Bild mit. Jetzt kommt es von der Wunschliste
+  oder als Standardbild von BrickLink.
+- 👻 **Vom Gegenüber gelöschte Gespräche standen ewig als „offen" da.**
+  Antworten liefen ins Leere. Jetzt heißen sie „vom Gegenüber gelöscht",
+  bleiben lesbar, und das Eingabefeld verschwindet.
+- **Annehmen und Ablehnen** standen auch beim Fragenden, der so seine eigene
+  Anfrage „annehmen" konnte. Jetzt sieht die Knöpfe nur, wer gefragt wurde,
+  und nur, solange das Gespräch offen ist.
+
 ## 2.88.55 – September 2026
 
 ### Behoben

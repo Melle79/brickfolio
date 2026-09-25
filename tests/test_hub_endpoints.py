@@ -603,3 +603,45 @@ def test_annehmen_ist_admin_sache(client, monkeypatch):
     kid.headers["Authorization"] = "Bearer " + core.create_token(uid, "kind", False)
     assert kid.post("/api/hub/key/accept",
                     json={"member_id": "mem_1"}).status_code == 403
+
+
+def test_sync_marks_trades_the_other_side_deleted(client, monkeypatch):
+    """Löscht das Gegenüber ein Gespräch, stand es hier bis 2.88.55 ewig als
+    „offen“ – Antworten liefen ins Leere. Der Verlauf bleibt lesbar."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "fetch_messages",
+                        lambda tid: {"messages": [], "sent": []})
+    base = {"id": "trd_a", "from_member": "mem_x", "to_member": "mem_me",
+            "to_name": "Ich", "from_name": "X", "item_id": "sw1",
+            "item_name": "A", "status": "open", "created_at": 1,
+            "updated_at": 1, "unread": 0}
+    monkeypatch.setattr(hub, "trades", lambda: [base])
+    client.post("/api/hub/trades/sync")
+    monkeypatch.setattr(hub, "trades", lambda: [])
+    client.post("/api/hub/trades/sync")
+    t = client.get("/api/hub/trades").json()["trades"]
+    assert len(t) == 1 and t[0]["status"] == "removed"
+
+
+def test_sync_keeps_older_trades_when_the_list_is_cut_off(client, monkeypatch):
+    """Der Hub schickt höchstens 200 – was darüber hinausgeht, ist nicht
+    gelöscht, nur nicht dabei."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    _trade()
+    voll = [{"id": f"trd_{i}", "from_member": "mem_x", "to_member": "mem_me",
+             "to_name": "Ich", "from_name": "X", "item_id": "sw1",
+             "item_name": "A", "status": "open", "created_at": 1,
+             "updated_at": 1, "unread": 0} for i in range(200)]
+    monkeypatch.setattr(hub, "trades", lambda: voll)
+    client.post("/api/hub/trades/sync")
+    with core.db() as conn:
+        assert conn.execute("SELECT status FROM trades WHERE id = 'trd_a'"
+                            ).fetchone()[0] != "removed"

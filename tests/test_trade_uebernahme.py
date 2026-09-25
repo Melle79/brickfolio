@@ -171,7 +171,8 @@ def test_foreign_image_paths_are_not_taken_over(client):
     """`/uploads/…` zeigt auf die fremde Instanz – hier wäre es ein toter Link."""
     _trade(img="/uploads/fremd.jpg")
     client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
-    assert _sammlung()[0]["img_url"] == ""
+    # Seit 2.88.56 tritt an seine Stelle das Standardbild von BrickLink.
+    assert not _sammlung()[0]["img_url"].startswith("/uploads")
 
 
 # ---------------------------------------------- Gegenstück: austragen (give)
@@ -327,3 +328,80 @@ def test_candidates_are_empty_when_nothing_matches(client):
     _trade(direction="in")
     assert client.get("/api/hub/trades/trd_1/candidates").json()["candidates"] \
         == []
+
+
+# ------------------------------------------------- Nach dem Tausch (2.88.56)
+# Beim Durchspielen mit zwei Testinstanzen am 25.09.2026 blieb nach einem
+# erfolgreichen Tausch einiges stehen, das nicht mehr stimmte.
+
+def _wunsch(client, item_id="sw1213", img="https://x.test/wunsch.png"):
+    r = client.post("/api/wanted", json={
+        "item_id": item_id, "item_type": "minifig", "name": "Yoda",
+        "img_url": img})
+    assert r.status_code == 200, r.text
+
+
+def _wuensche():
+    with core.db() as conn:
+        return [r["item_id"] for r in conn.execute("SELECT item_id FROM wanted")]
+
+
+def test_take_into_collection_clears_the_wish(client):
+    _trade()
+    _wunsch(client)
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert r.json()["wunsch_erledigt"] is True
+    assert _wuensche() == []
+
+
+def test_take_onto_a_list_keeps_the_wish(client):
+    """Auf eine Einkaufsliste heißt: zum Weiterverkaufen – der eigene Wunsch
+    ist damit nicht erfüllt."""
+    _trade()
+    _wunsch(client)
+    lid = client.post("/api/lists", json={"name": "Flohmarkt"}).json()["id"]
+    r = client.post("/api/hub/trades/trd_1/take",
+                    json={"ziel": "liste", "list_id": lid})
+    assert r.status_code == 200, r.text
+    assert r.json()["wunsch_erledigt"] is False
+    assert _wuensche() == ["sw1213"]
+
+
+def test_received_offer_without_picture_takes_the_wish_picture(client):
+    """Wer ein Angebot bekommt, erfährt vom Hub kein Bild."""
+    _trade(direction="in", img="")
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET kind = 'angebot'")
+    _wunsch(client)
+    client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert _sammlung()[0]["img_url"] == "https://x.test/wunsch.png"
+
+
+def test_without_any_picture_the_bricklink_picture_is_used(client):
+    _trade(img="")
+    client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert _sammlung()[0]["img_url"].endswith("/ItemImage/MN/0/sw1213.png")
+
+
+def test_give_refreshes_published_offers(client, monkeypatch):
+    import community
+    angestossen = []
+    monkeypatch.setattr(community, "angebote_nachziehen_im_hintergrund",
+                        lambda: angestossen.append(1))
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=2)
+    client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert angestossen == [1]
+
+
+def test_offers_are_only_refreshed_for_those_who_published(monkeypatch):
+    import community
+    import hub
+    gesendet = []
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(community, "_angebote_senden",
+                        lambda: gesendet.append(1))
+    monkeypatch.setattr(hub, "last_publish", lambda: None)
+    community.angebote_nachziehen_im_hintergrund()
+    time.sleep(0.2)
+    assert gesendet == []

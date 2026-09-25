@@ -2251,7 +2251,14 @@ die Anzahl erhöht statt eine zweite Zeile anzulegen. In den Notizen steht
 „Tausch mit …", damit später nachvollziehbar bleibt, woher das Stück kam.
 Bild, Nummer und Art kommen aus dem Angebot; bei Vorgängen von vor Version
 1.85.0 wird die Art aus der Nummer geraten (reine Ziffern = Set) und lässt
-sich auf der Karte ändern.
+sich auf der Karte ändern. Fehlt das Bild – etwa wenn dir jemand etwas
+angeboten hat –, kommt es von deiner Wunschliste oder als Standardbild von
+BrickLink.
+
+**Die Wunschliste räumt sich mit auf.** Stand der Artikel auf deiner
+Wunschliste, verschwindet er dort beim Übernehmen in die Sammlung – er ist
+ja gefunden. Beim Übernehmen auf eine Einkaufsliste bleibt der Wunsch
+stehen.
 
 **Erst zusagen, später buchen.** Gebucht wird nur auf Knopfdruck – zwischen
 Zusage und Karton in der Hand liegen beim Tauschen gern ein paar Tage, und
@@ -2271,6 +2278,15 @@ samt Kaufbuch – genau wie beim Austragen über die Karte.
 Von allein passiert das nie: Ohne Klick auf **Austragen** im App-Fenster
 bleibt die Sammlung, wie sie ist. In der Vorgangsliste steht so lange
 **„noch nicht ausgetragen"**.
+
+Hast du schon einmal veröffentlicht, zieht die App deine Angebote nach dem
+Austragen von selbst nach: Das Netzwerk sieht gleich die neue Stückzahl,
+und was ganz weg ist, verschwindet dort.
+
+**Annehmen und Ablehnen** kann nur, wer gefragt wurde, und nur, solange das
+Gespräch offen ist. **Löscht das Gegenüber ein Gespräch**, bleibt es bei dir
+lesbar, steht aber als „vom Gegenüber gelöscht" da; antworten geht dann
+nicht mehr.
 
 ### 12.7 Melden
 

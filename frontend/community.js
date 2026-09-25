@@ -275,8 +275,9 @@ async function loadTrades(quiet = false) {
 }
 
 function tradeStatusText(s) {
-  return { open: "offen", accepted: "angenommen ✔",
-           declined: "abgelehnt", closed: "abgeschlossen" }[s] || s;
+  return tr({ open: "offen", accepted: "angenommen ✔",
+           declined: "abgelehnt", closed: "abgeschlossen",
+           removed: "vom Gegenüber gelöscht" }[s] || s);
 }
 
 async function openTrade(id) {
@@ -389,11 +390,12 @@ async function tauschUebernehmen() {
         paid_price: betragLesen(d.preis),
       } });
     const e = res.ergebnis || {};
-    toast(aufListe
+    toast((aufListe
       ? (e.merged ? tr("Schon auf der Liste – Anzahl erhöht (jetzt {n}×)",
         { n: e.qty }) : tr("Auf die Liste gesetzt 🛒"))
       : (e.merged ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)",
-        { n: e.quantity }) : tr("Zur Sammlung hinzugefügt ✔")));
+        { n: e.quantity }) : tr("Zur Sammlung hinzugefügt ✔")))
+      + (res.wunsch_erledigt ? " · " + tr("von der Wunschliste genommen") : ""));
     renderTrade();
   } catch (e) { toast(e.message); }
 }
@@ -419,7 +421,16 @@ async function renderTrade(quiet = false) {
     $("trade-sub").textContent =
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
-    $("trade-gone").hidden = !trade.item_gone;
+    const entfernt = trade.status === "removed";
+    $("trade-gone").hidden = !trade.item_gone || entfernt;
+    $("trade-removed").hidden = !entfernt;
+    $("trade-write-row").hidden = entfernt;
+    // Annehmen oder ablehnen kann nur, wer gefragt wurde – und nur, solange
+    // noch nichts entschieden ist. Bis 2.88.55 standen beide Knöpfe auch
+    // beim Fragenden, der so seine eigene Anfrage „annehmen“ konnte.
+    const entscheiden = trade.direction === "in" && trade.status === "open";
+    $("trade-accept").hidden = !entscheiden;
+    $("trade-decline").hidden = !entscheiden;
     // Zugesagt heisst noch nicht verbucht: Solange der Tausch angenommen ist
     // und der Artikel zu mir kommt, steht hier der Weg in die Sammlung.
     offenerTausch = trade;

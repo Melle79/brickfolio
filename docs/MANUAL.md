@@ -1663,7 +1663,13 @@ The entry is created like any other: if the number already exists, the quantity
 goes up instead of a second row appearing. The notes say "Tausch mit …" so you
 can still tell later where the piece came from. Picture, number and type come
 from the offer; for trades from before version 1.85.0 the type is guessed from
-the number (digits only = set) and can be changed on the card.
+the number (digits only = set) and can be changed on the card. If there is no
+picture – for instance when someone offered you something – it comes from your
+wishlist or as BrickLink's standard picture.
+
+**The wishlist tidies up too.** If the item was on your wishlist, it leaves the
+wishlist when you add it to your collection – it's found, after all. When you
+put it on a shopping list instead, the wish stays.
 
 **Promise now, book later.** Booking only happens on the button – between the
 promise and the box in your hands there are often a few days, and the price
@@ -1683,6 +1689,15 @@ exactly as when removing it via the card.
 It never happens on its own: without a click on **Remove** in the app window
 your collection stays as it is. Until then the trade says **"not removed yet"**
 in the list.
+
+If you have published before, the app refreshes your offers on its own after
+removing: the network sees the new quantity right away, and whatever is gone
+disappears there.
+
+**Accepting and declining** is only for the one who was asked, and only while
+the conversation is open. **If the other side deletes a conversation**, it
+stays readable for you but is marked "deleted by the other side"; replying is
+no longer possible.
 
 ### 12.7 Reporting
 

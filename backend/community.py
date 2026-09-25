@@ -32,8 +32,9 @@ import crypto_box
 import hub
 import integrations
 from main import (AddItemBody, ListItemBody, UpdateItemBody,
-                  _duplicate_items, _uploads_dir, add_item, add_list_item,
-                  admin_user, current_user, update_item)
+                  _duplicate_items, _uploads_dir, _wuensche_geaendert,
+                  add_item, add_list_item, admin_user, current_user,
+                  update_item)
 
 router = APIRouter()
 
@@ -240,10 +241,8 @@ def _offer_thumb(img_url: str) -> str | None:
     return data if len(data) <= THUMB_MAX_CHARS else None
 
 
-@router.post("/api/hub/publish")
-def hub_publish(user: dict = Depends(admin_user)):
-    if not hub.enabled():
-        raise HTTPException(400, "Kein Hub verbunden")
+def _angebote_senden() -> dict:
+    """Die geteilten Zeilen als Angebote an den Hub – ersetzt die alten."""
     with core.db() as conn:
         rows = _shared_rows(conn)
     offers = []
@@ -260,9 +259,36 @@ def hub_publish(user: dict = Depends(admin_user)):
             "qty": min(r["share_qty"] or r["quantity"], r["quantity"]),
             "deal": r["share_deal"] or "tausch",
         })
+    return hub.publish(offers) or {"count": len(offers)}
+
+
+def angebote_nachziehen_im_hintergrund() -> None:
+    """Nach einem Tausch stimmen die veröffentlichten Stückzahlen nicht mehr.
+
+    Bis 2.88.55 stand ein weggetauschtes Stück weiter im Netzwerk, bis man
+    von Hand neu veröffentlichte – beim Gegenüber also als Angebot, das es
+    nicht mehr gab. Nachgezogen wird nur, wer schon einmal veröffentlicht
+    hat; wer das nie wollte, dem schickt auch ein Tausch nichts.
+    """
+    if not hub.enabled() or not hub.last_publish():
+        return
+    import threading
+
+    def lauf():
+        try:
+            _angebote_senden()
+        except Exception:
+            pass                  # beim nächsten Veröffentlichen klappt es
+    threading.Thread(target=lauf, daemon=True).start()
+
+
+@router.post("/api/hub/publish")
+def hub_publish(user: dict = Depends(admin_user)):
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
     try:
-        res = hub.publish(offers)
-        return {"ok": True, "count": res.get("count", len(offers))}
+        res = _angebote_senden()
+        return {"ok": True, "count": res.get("count", 0)}
     except hub.HubError as e:
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:
@@ -376,6 +402,19 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                     weg = kind == "anfrage" and not t["item_available"]
                     conn.execute("UPDATE trades SET item_gone = ? WHERE id = ?",
                                  (1 if weg else 0, t["id"]))
+            # Was der Hub nicht mehr kennt, hat das Gegenüber gelöscht. Der
+            # Verlauf bleibt hier lesbar, aber antworten geht nicht mehr –
+            # bis 2.88.55 stand so ein Gespräch ewig als „offen“ da.
+            # Nur wenn die Liste vollständig ist (der Hub schickt höchstens
+            # 200), sonst hielte man ältere für gelöscht.
+            if len(remote) < 200:
+                da = {t["id"] for t in remote}
+                for r in conn.execute(
+                        "SELECT id FROM trades WHERE status != 'removed'"
+                        ).fetchall():
+                    if r["id"] not in da:
+                        conn.execute("UPDATE trades SET status = 'removed' "
+                                     "WHERE id = ?", (r["id"],))
         for t in remote:
             if t.get("unread") or t["id"] == focus:
                 new_msgs += _sync_trade(t["id"])
@@ -647,9 +686,23 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
         raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
 
     art = t["item_type"] or _art_raten(t["item_id"])
-    name = t["item_name"] or t["item_id"]
+    with core.db() as conn:
+        wunsch = conn.execute(
+            "SELECT id, name, img_url, bricklink_url FROM wanted "
+            "WHERE item_id = ? AND item_type = ?",
+            (t["item_id"], art)).fetchone()
+    name = t["item_name"] or (wunsch["name"] if wunsch else "") or t["item_id"]
     bild = t["img_url"] if t["img_url"].startswith(("http://", "https://")) \
         else ""
+    # Wer ein Angebot bekommt, erfährt vom Hub nur Nummer und Name – ohne
+    # Bild stünde das Stück dann nackt in der Sammlung. Die Wunschliste hat
+    # meist eins, sonst das Standardbild von BrickLink.
+    if not bild and wunsch and wunsch["img_url"].startswith(
+            ("http://", "https://")):
+        bild = wunsch["img_url"]
+    if not bild and art == "minifig":
+        bild = integrations.minifig_bild(t["item_id"])
+    bl_url = t["bricklink_url"] or (wunsch["bricklink_url"] if wunsch else "")
     if body.ziel == "liste":
         if not user["is_dealer"]:
             raise HTTPException(403, "Listen gibt es nur für Sammlerprofis")
@@ -657,20 +710,27 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
             raise HTTPException(400, "Keine Liste ausgewählt")
         ergebnis = add_list_item(body.list_id, ListItemBody(
             item_id=t["item_id"], item_type=art, name=name, img_url=bild,
-            bricklink_url=t["bricklink_url"], qty=min(99, body.quantity),
+            bricklink_url=bl_url, qty=min(99, body.quantity),
             condition=body.condition, paid_price=body.paid_price), user)
     else:
         ergebnis = add_item(AddItemBody(
             item_id=t["item_id"], item_type=art, name=name, img_url=bild,
-            bricklink_url=t["bricklink_url"], quantity=body.quantity,
+            bricklink_url=bl_url, quantity=body.quantity,
             condition=body.condition, paid_price=body.paid_price,
             paid_source="manual" if body.paid_price is not None else None,
             notes=f"Tausch mit {t['other_name'] or t['other_id']}"), user)
+    # Ertauscht heißt: gefunden. Der Wunsch bleibt sonst stehen, und das
+    # Netzwerk zeigt weiter an, wer das Stück hätte.
+    wunsch_weg = bool(wunsch) and body.ziel == "sammlung"
     with core.db() as conn:
         conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
                      (int(time.time()), trade_id))
+        if wunsch_weg:
+            conn.execute("DELETE FROM wanted WHERE id = ?", (wunsch["id"],))
+    if wunsch_weg:
+        _wuensche_geaendert()
     return {"ok": True, "ziel": body.ziel, "item_type": art,
-            "ergebnis": ergebnis}
+            "ergebnis": ergebnis, "wunsch_erledigt": wunsch_weg}
 
 
 class TradeGiveBody(BaseModel):
@@ -735,6 +795,7 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
     with core.db() as conn:
         conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
                      (int(time.time()), trade_id))
+    angebote_nachziehen_im_hintergrund()
     return {"ok": True, "rest": rest, "geloescht": rest == 0,
             "condition": row["condition"], "ergebnis": ergebnis}
 
