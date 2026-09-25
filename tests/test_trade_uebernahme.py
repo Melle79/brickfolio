@@ -566,3 +566,54 @@ def test_offer_sends_the_own_condition(client, monkeypatch):
     client.post("/api/hub/trades", json={"to": "m_bruno", "item_id": "sw1213",
                 "item_name": "Yoda", "text": "Hallo", "kind": "angebot"})
     assert gesendet["condition"] == "new"
+
+
+# ------------------------------------------------- Kaufbuch beim Austragen
+# Bis 2.90 sank nur die Stückzahl – „10,37 € für 5 Stück“ bei 4 in der
+# Sammlung. Jetzt gehen die weggegebenen Stücke im Buch mit.
+
+def _posten():
+    with core.db() as conn:
+        return [(r["quantity"], r["unit_price"]) for r in conn.execute(
+            "SELECT quantity, unit_price FROM purchases ORDER BY bought_at, id")]
+
+
+def _bezahlt():
+    with core.db() as conn:
+        return conn.execute("SELECT paid_price FROM collection").fetchone()[0]
+
+
+def test_give_takes_the_bought_pieces_along(client):
+    _trade(direction="in")
+    client.post("/api/collection", json={
+        "item_id": "sw1213", "item_type": "minifig", "name": "Yoda",
+        "quantity": 5, "condition": "used", "paid_price": 10.0})
+    client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert _posten() == [(4, 2.0)]
+    assert _bezahlt() == 8.0
+
+
+def test_give_takes_the_newest_purchase_first(client):
+    """Weg geht der Doppelte – meist das zuletzt gekaufte Stück."""
+    _trade(direction="in")
+    client.post("/api/collection", json={
+        "item_id": "sw1213", "item_type": "minifig", "name": "Yoda",
+        "quantity": 1, "condition": "used", "paid_price": 3.0})
+    with core.db() as conn:
+        conn.execute("UPDATE purchases SET bought_at = 100")
+    client.post("/api/collection", json={
+        "item_id": "sw1213", "item_type": "minifig", "name": "Yoda",
+        "quantity": 2, "condition": "used", "paid_price": 10.0})
+    client.post("/api/hub/trades/trd_1/give", json={"quantity": 2})
+    assert _posten() == [(1, 3.0)]
+    assert _bezahlt() == 3.0
+
+
+def test_give_without_ledger_shrinks_the_sum(client):
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=4)
+    with core.db() as conn:
+        conn.execute("UPDATE collection SET paid_price = 20.0")
+        conn.execute("DELETE FROM purchases")
+    client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert _bezahlt() == 15.0

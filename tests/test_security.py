@@ -296,6 +296,10 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # die Quelle ist das Hub-Profil
         "hub_wuensche_stand",   # Prüfsumme der zuletzt gezeigten Liste, damit
                                 # nur bei Änderungen gesendet wird
+        "hub_pause",            # letzte Pause wegen Inaktivität (von/bis) –
+                                # zwei Zeitstempel vom Hub
+        "hub_pause_gemeldet",   # bis wohin der Hinweis schon hinterlegt ist
+        "hub_inaktiv_tage",     # Pausenfrist des Hubs, nur zur Anzeige
         "katalog_quelle",       # Adresse der veröffentlichten Datei. Kein
                                 # Zugang: Sie ist öffentlich, und genau
                                 # deshalb steht kein BrickLink-Inhalt darin

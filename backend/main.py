@@ -7966,6 +7966,48 @@ def _kaufsumme_nachziehen(conn, entry_id: int) -> None:
                  "WHERE id = ?", (row["summe"], row["zuletzt"], entry_id))
 
 
+def _kaufbuch_abgang(conn, entry_id: int, stueck: int) -> None:
+    """Stücke gehen weg (Tausch, Verkauf) – das Kaufbuch geht mit.
+
+    Bis 2.90 sank beim Austragen nur die Stückzahl: Bei einer R2-D2 standen
+    danach „10,37 € für 5 Stück“ im Buch, aber nur noch 4 in der Sammlung,
+    und Einkauf wie Gewinn der Zeile stimmten nicht mehr (gefunden am
+    25.09.2026 beim Durchspielen von Tauschen).
+
+    Abgebucht wird **vom jüngsten Posten her**: Was man abgibt, ist fast
+    immer ein Doppelter, und der ist meist das zuletzt dazugekommene Stück.
+    Das zuerst gekaufte bleibt mit seinem Preis in der Sammlung. Ohne Buch,
+    aber mit Summe, schrumpft die Summe anteilig.
+    """
+    rest = max(0, int(stueck or 0))
+    if not rest:
+        return
+    posten = conn.execute(
+        "SELECT id, quantity FROM purchases WHERE entry_id = ? "
+        "ORDER BY bought_at DESC, id DESC", (entry_id,)).fetchall()
+    if not posten:
+        z = conn.execute("SELECT quantity, paid_price FROM collection "
+                         "WHERE id = ?", (entry_id,)).fetchone()
+        # `quantity` ist hier schon die neue Menge – vorher waren es `rest` mehr.
+        if z and z["paid_price"] is not None and z["quantity"]:
+            vorher = z["quantity"] + rest
+            conn.execute("UPDATE collection SET paid_price = ? WHERE id = ?",
+                         (round(z["paid_price"] * z["quantity"] / vorher, 2),
+                          entry_id))
+        return
+    for k in posten:
+        if not rest:
+            break
+        weg = min(rest, k["quantity"])
+        if weg >= k["quantity"]:
+            conn.execute("DELETE FROM purchases WHERE id = ?", (k["id"],))
+        else:
+            conn.execute("UPDATE purchases SET quantity = quantity - ? "
+                         "WHERE id = ?", (weg, k["id"]))
+        rest -= weg
+    _kaufsumme_nachziehen(conn, entry_id)
+
+
 def _maybe_fetch_prices_async(entry_id: int, item_id: str,
                               table: str = "collection"):
     """Preise für einen neuen/korrigierten Eintrag im Hintergrund holen."""

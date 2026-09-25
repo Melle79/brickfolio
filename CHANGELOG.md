@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.90.1 – September 2026
+
+### Neu
+- 🚪 **Abmelden heißt jetzt auch abmelden.** Bisher vergaß beim Trennen nur
+  die eigene Instanz die Verbindung. Im Hub blieben Angebote und Wünsche
+  stehen, andere fragten bei jemandem an, der nie antworten würde. Jetzt
+  meldet sich die App beim Hub ab, der nimmt alles heraus, und in der
+  Verwaltung steht „abgemeldet am …". Der Knopf heißt „Aus dem Netzwerk
+  abmelden", und die Rückfrage sagt, was passiert.
+- ⏸ **Pause bei Inaktivität.** Wer länger nicht im Netzwerk war (Standard
+  30 Tage), dessen Angebote und Wünsche blendet der Hub aus, bis er
+  wiederkommt. Dann sind sie von selbst zurück, und die App sagt, von wann
+  bis wann sie pausiert waren – als Hinweis und zwei Wochen lang im
+  Tausch-Tab.
+
+### Behoben
+- 📒 **Austragen nach einem Tausch ließ das Kaufbuch stehen.** Es sank nur
+  die Stückzahl, und bei einer Figur standen danach „10,37 € für 5 Stück"
+  bei nur noch 4 in der Sammlung. Einkauf und Gewinn der Zeile stimmten
+  nicht mehr. Jetzt gehen die weggegebenen Stücke im Buch mit hinaus, vom
+  jüngsten Kauf her, denn abgegeben wird meist der zuletzt dazugekommene
+  Doppelte.
+
+Braucht Hub 1.17.0.
+
+## Hub 1.17.0 – September 2026
+
+### Neu
+- `POST /v1/leave`: Das Mitglied bekommt `status = 'left'` und `left_at`,
+  Angebote und Wünsche werden gelöscht, der Token gilt nicht mehr. Der Name
+  ist danach wieder frei.
+- **Pause bei Inaktivität:** `hub_settings.inaktiv_tage` (Standard 30, 0 =
+  aus, über `GET/PUT /v1/admin/settings`). Angebote und Wünsche von
+  Mitgliedern, deren letzter Besuch länger zurückliegt, fehlen in
+  `/v1/offers` und `/v1/wants`, ihr Profil trägt `pausiert`. Kommt jemand
+  zurück, hält der Hub `pause_von`/`pause_bis` fest, und `/v1/me` meldet sie
+  zusammen mit `inaktiv_tage`.
+- Verwaltung: `/v1/admin/overview` zählt `paused` und `left`,
+  `/v1/admin/members` liefert `left_at`, `paused_since`, `pause_von` und
+  `pause_bis`.
+
 ## 2.90.0 – September 2026
 
 ### Neu

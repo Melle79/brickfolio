@@ -1769,10 +1769,27 @@ means:
   reconnecting; messages that arrived while you were blocked are delivered
   afterwards.
 
-Hence the advice on the notice: **do not disconnect.** Disconnecting releases
-the account, and the way back gets more awkward.
+Hence the advice on the notice: **do not leave the network.** Leaving releases
+the account, and the only way back is a new invitation.
 
-### 12.9 Administration
+### 12.9 Leaving and pausing
+
+**Leaving** (*More → Trading network → Leave the network*, instance admins
+only): the app tells the hub. Your offers and wishes disappear from the network
+at once, and the hub administration lists you as "left on …". The only way
+back is a new invitation; your display name is free again then. If the hub
+can't be reached while leaving, the app disconnects anyway and tells you the
+hub doesn't know about it – your offers then disappear there with the pause.
+
+**Pause after inactivity:** if you haven't been in the network for a while
+(30 days by default, set by the hub admin), the hub hides your offers and
+wishes – nobody should send requests to someone who isn't looking in. The next
+time you open the app the pause ends on its own. The Trade tab then shows for
+two weeks when it ran, and a notice appears among the messages. It's a good
+moment to check whether your offers are still right. Your own profile and your
+conversations are not affected.
+
+### 12.10 Administration
 
 Managing members, deciding invitation requests, looking at reports, tidying up
 offers – that does **not** happen in the app but in a separate admin console.

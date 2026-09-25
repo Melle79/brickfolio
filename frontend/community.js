@@ -67,15 +67,34 @@ function wireHubConnectOnce() {
   });
 
   $("hub-disconnect").addEventListener("click", async () => {
-    if (!confirm(tr("Verbindung zum Hub trennen? Deine Angebote bleiben "
-      + "dort, bis du sie ersetzt."))) return;
+    if (!confirm(tr("Aus dem Tausch-Netzwerk abmelden? Deine Angebote und "
+      + "Wünsche werden dort herausgenommen. Zum Wiederkommen brauchst du "
+      + "eine neue Einladung."))) return;
     try {
-      await api("/hub/disconnect", { method: "POST" });
+      const r = await api("/hub/disconnect", { method: "POST" });
       renderHubStatus({ connected: false });
       state.hubConnected = false;
       updateHubTab();
+      toast(r.hub_informiert === false
+        ? tr("Getrennt – der Hub war nicht erreichbar. Deine Angebote "
+          + "verschwinden dort erst mit der Pause wegen Inaktivität.")
+        : tr("Abgemeldet – deine Angebote sind aus dem Netzwerk genommen."));
     } catch (e) { toast(e.message); }
   });
+}
+
+/* Waren die eigenen Angebote pausiert, weil man länger nicht da war? Das
+   sagt der Hub erst beim Zurückkommen – hier steht es dann zwei Wochen. */
+function zeigePause(s) {
+  const el = $("hub-pause");
+  const p = s && s.pause;
+  el.hidden = !p;
+  if (!p) return;
+  const datum = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale());
+  el.textContent = tr("⏸ Deine Angebote waren vom {von} bis {bis} pausiert, "
+    + "weil du länger als {tage} Tage nicht im Netzwerk warst. Jetzt sind "
+    + "sie wieder sichtbar – schau am besten, ob noch alles stimmt.",
+  { von: datum(p.von), bis: datum(p.bis), tage: s.inaktiv_tage || 30 });
 }
 
 /* ------------------------------------------------ Tausch-Hub: Nutzung (Tab) */
@@ -97,6 +116,7 @@ async function loadHubView() {
     hubIch = { member_id: s.member_id, display_name: s.display_name };
     $("hub-ich-avatar").textContent = avatarText(s.display_name);
     $("hub-blocked").hidden = !s.blocked;
+    zeigePause(s);
     const lp = s.last_publish;
     const lpEl = $("hub-last-publish");
     lpEl.hidden = !lp;

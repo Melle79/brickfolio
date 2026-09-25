@@ -82,7 +82,8 @@ def disconnect():
     for k in ("hub_token", "hub_member_id", "hub_display_name",
               "hub_is_admin", "hub_last_publish", "hub_blocked",
               "hub_key_sent", "hub_wuensche_zeigen", "hub_wuensche_stand",
-              "hub_sammlung_zeigen"):
+              "hub_sammlung_zeigen", "hub_pause", "hub_pause_gemeldet",
+              "hub_inaktiv_tage"):
         core.set_setting(k, "")
 
 
@@ -192,7 +193,31 @@ def refresh():
     core.set_setting("hub_display_name", me.get("display_name", ""))
     core.set_setting("hub_is_admin", "1" if me.get("is_admin") else "0")
     _remember_instance(me)      # Instanzen von vor der Kennung holen sie hier
+    # Pause wegen Inaktivität (ab Hub 1.17.0): von wann bis wann die eigenen
+    # Angebote ausgeblendet waren, und nach wie vielen Tagen das passiert.
+    core.set_setting("hub_pause", json.dumps(me["pause"])
+                     if me.get("pause") else "")
+    if me.get("inaktiv_tage") is not None:
+        core.set_setting("hub_inaktiv_tage", str(me["inaktiv_tage"]))
     return me
+
+
+def leave() -> dict:
+    """Aus dem Netzwerk abmelden (ab Hub 1.17.0).
+
+    Der Hub nimmt Angebote und Wünsche heraus und führt das Mitglied als
+    abgemeldet. Bis dahin vergaß nur die Instanz ihre Verbindung – im Hub
+    blieben die Angebote stehen, und andere fragten ins Leere.
+    """
+    return _authed("POST", "/v1/leave", timeout=8)
+
+
+def pause() -> dict | None:
+    raw = core.get_setting("hub_pause")
+    try:
+        return json.loads(raw) if raw else None
+    except ValueError:
+        return None
 
 
 

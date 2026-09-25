@@ -2364,10 +2364,29 @@ Hinweis. Was das bedeutet:
   ohne neu zu verbinden; in der Sperrzeit eingegangene Nachrichten werden
   nachgeliefert.
 
-Deshalb der Rat auf dem Hinweis: **nicht die Verbindung trennen.** Trennen
-löst das Konto, und der Weg zurück wird umständlicher.
+Deshalb der Rat auf dem Hinweis: **nicht abmelden.** Abmelden löst das
+Konto, und zurück geht es nur mit einer neuen Einladung.
 
-### 12.9 Verwaltung
+### 12.9 Abmelden und Pause
+
+**Abmelden** (*Mehr → Tausch-Netzwerk → Aus dem Netzwerk abmelden*, nur
+Admins der Instanz): Die App sagt dem Hub Bescheid. Deine Angebote und
+Wünsche verschwinden sofort aus dem Netzwerk, in der Hub-Verwaltung stehst
+du als „abgemeldet am …". Zurück geht es nur mit einer neuen Einladung, dein
+Anzeigename ist dann wieder frei. Ist der Hub beim Abmelden nicht
+erreichbar, trennt die App trotzdem und sagt dir, dass der Hub nichts davon
+weiß. Deine Angebote verschwinden dort dann mit der Pause.
+
+**Pause bei Inaktivität:** Wer eine Weile nicht im Netzwerk war (Standard 30
+Tage, der Hub-Admin stellt das ein), dessen Angebote und Wünsche blendet
+der Hub aus. Es soll niemand bei jemandem anfragen, der gerade gar nicht
+reinschaut. Beim nächsten Öffnen der App ist die Pause von selbst vorbei.
+Im Tausch-Tab steht dann zwei Wochen lang, von wann bis wann sie ging,
+dazu kommt ein Hinweis unter den Mitteilungen. Schau dann am besten, ob
+deine Angebote noch stimmen. Dein eigenes Profil und deine Gespräche
+berührt die Pause nicht.
+
+### 12.10 Verwaltung
 
 Mitglieder verwalten, Einladungsanfragen entscheiden, Meldungen ansehen,
 Angebote aufräumen – das läuft **nicht** in der App, sondern in einer

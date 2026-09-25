@@ -32,7 +32,8 @@ import crypto_box
 import hub
 import integrations
 from main import (AddItemBody, ListItemBody, UpdateItemBody,
-                  _duplicate_items, _uploads_dir, _wuensche_geaendert,
+                  _duplicate_items, _kaufbuch_abgang, _uploads_dir,
+                  _wuensche_geaendert,
                   add_item, add_list_item, admin_user, current_user,
                   update_item)
 
@@ -65,10 +66,42 @@ def _hub_status(refresh: bool = False) -> dict:
         except Exception:
             pass                        # Cache bleibt, wenn der Hub grad klemmt
     c = hub.config()
+    pause = hub.pause() if hub.enabled() else None
+    if pause and pause.get("bis"):
+        _pause_melden(pause)
+        # Nur die jüngste Pause zeigen, und nur zwei Wochen lang – danach
+        # ist sie Geschichte.
+        if pause["bis"] < time.time() - 14 * 86400:
+            pause = None
+    tage = core.get_setting("hub_inaktiv_tage")
     return {"connected": hub.enabled(), "url": c["url"],
             "member_id": c["member_id"], "display_name": c["display_name"],
             "is_admin": c["is_admin"], "last_publish": hub.last_publish(),
-            "blocked": hub.blocked()}
+            "blocked": hub.blocked(), "pause": pause,
+            "inaktiv_tage": int(tage) if tage and tage.isdigit() else None}
+
+
+def _pause_melden(pause: dict) -> None:
+    """Einmal je Pause einen Hinweis hinterlegen.
+
+    Während der Pause meldet sich die Instanz ja nicht – sonst gäbe es keine.
+    Erfahren kann sie es also erst beim Zurückkommen, und genau dann soll
+    es auch jemand lesen: Die Angebote sind wieder sichtbar, stammen aber
+    womöglich von vor Wochen.
+    """
+    bis = int(pause.get("bis") or 0)
+    if not bis or bis <= int(core.get_setting("hub_pause_gemeldet") or 0):
+        return
+    core.set_setting("hub_pause_gemeldet", str(bis))
+    try:
+        from main import _notify
+        _notify("hub_pause", "⏸ Deine Angebote waren pausiert",
+                "Du warst eine Weile nicht im Tausch-Netzwerk, deshalb hat der "
+                "Hub deine Angebote und Wünsche ausgeblendet. Jetzt sind sie "
+                "wieder sichtbar – schau am besten, ob noch alles stimmt.",
+                item_type="system", item_id=f"pause-{bis}")
+    except Exception:
+        pass
 
 
 @router.get("/api/hub")
@@ -102,22 +135,36 @@ def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
 
 @router.post("/api/hub/disconnect")
 def hub_disconnect(user: dict = Depends(admin_user)):
-    # Eine gezeigte Wunschliste nicht im Hub zurücklassen: Das Mitglied
-    # bleibt dort bestehen, wer sich trennt, will aber nicht weiter zeigen,
-    # was er sucht. Best-effort – ein Hub, der gerade klemmt, soll das
-    # Trennen nicht verhindern.
-    if core.get_setting("hub_wuensche_zeigen") == "1":
-        try:
-            p = hub.profile()
-            hub.put_profile({"about": p.get("about", ""),
-                             "region": p.get("region", ""),
-                             "themes": p.get("themes") or [],
-                             "wants_public": False,
-                             "show_collection": bool(p.get("show_collection"))})
-        except Exception:
-            pass
+    """Aus dem Netzwerk abmelden – und das dem Hub auch sagen.
+
+    Bis 2.90 vergaß nur die Instanz ihre Verbindung: Im Hub blieben
+    Angebote und gezeigte Wünsche stehen, andere fragten bei jemandem an,
+    der nie antworten würde, und in der Verwaltung sah das Mitglied aus wie
+    jedes andere. Jetzt meldet sich die Instanz ab; der Hub nimmt alles
+    heraus und führt das Mitglied als „abgemeldet“.
+
+    Klemmt der Hub gerade, wird trotzdem getrennt – festhalten lässt sich
+    niemand. Die Antwort sagt dann, dass der Hub nichts davon weiß; die
+    Angebote verschwinden dort spätestens mit der Pause wegen Inaktivität.
+    """
+    informiert = False
+    try:
+        hub.leave()
+        informiert = True
+    except Exception:
+        # Ein Hub vor 1.17.0 kennt das Abmelden nicht – dann wenigstens die
+        # gezeigte Wunschliste zurückziehen, wie bisher.
+        if core.get_setting("hub_wuensche_zeigen") == "1":
+            try:
+                p = hub.profile()
+                hub.put_profile({
+                    "about": p.get("about", ""), "region": p.get("region", ""),
+                    "themes": p.get("themes") or [], "wants_public": False,
+                    "show_collection": bool(p.get("show_collection"))})
+            except Exception:
+                pass
     hub.disconnect()
-    return {"connected": False}
+    return {"connected": False, "hub_informiert": informiert}
 
 
 class ShareBody(BaseModel):
@@ -925,6 +972,10 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
     rest = row["quantity"] - body.quantity
     ergebnis = update_item(row["id"], UpdateItemBody(quantity=rest), user)
     with core.db() as conn:
+        if rest > 0:
+            # Bleibt etwas übrig, nimmt das Kaufbuch die weggegebenen Stücke
+            # mit hinaus; ist nichts übrig, ging es mit der Zeile ohnehin.
+            _kaufbuch_abgang(conn, row["id"], body.quantity)
         conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
                      (int(time.time()), trade_id))
     angebote_nachziehen_im_hintergrund()

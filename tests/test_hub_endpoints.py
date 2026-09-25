@@ -698,3 +698,50 @@ def test_sync_reports_bookings_the_hub_does_not_know(client, monkeypatch):
                                                      taken_at=9)])
     client.post("/api/hub/trades/sync")
     assert gemeldet == []
+
+
+# ------------------------------------------------- Abmelden und Pause (2.90.1)
+
+def test_disconnect_tells_the_hub(client, monkeypatch):
+    """Bis 2.90 blieben die Angebote nach dem Trennen im Hub stehen."""
+    core.set_setting("hub_token", "t")
+    gerufen = []
+    monkeypatch.setattr(hub, "leave", lambda: gerufen.append(1) or {"ok": True})
+    r = client.post("/api/hub/disconnect").json()
+    assert gerufen == [1] and r["hub_informiert"] is True
+    assert hub.enabled() is False
+
+
+def test_disconnect_works_even_when_the_hub_is_away(client, monkeypatch):
+    core.set_setting("hub_token", "t")
+
+    def weg():
+        raise hub.HubError(502, "weg")
+    monkeypatch.setattr(hub, "leave", weg)
+    r = client.post("/api/hub/disconnect").json()
+    assert r["hub_informiert"] is False and hub.enabled() is False
+
+
+def test_pause_is_reported_once(client, monkeypatch):
+    """Die Pause erfährt die Instanz erst beim Zurückkommen – dann einmal
+    ein Hinweis, und zwei Wochen lang steht sie im Status."""
+    jetzt = int(time.time())
+    core.set_setting("hub_token", "t")
+    monkeypatch.setattr(hub, "refresh", lambda: core.set_setting(
+        "hub_pause", '{"von": %d, "bis": %d}' % (jetzt - 9 * 86400, jetzt))
+        or core.set_setting("hub_inaktiv_tage", "30"))
+    monkeypatch.setattr(community, "_ensure_key_published", lambda: None)
+    s = client.get("/api/hub?refresh=1").json()
+    assert s["pause"]["bis"] == jetzt and s["inaktiv_tage"] == 30
+    client.get("/api/hub?refresh=1")
+    with core.db() as conn:
+        hinweise = conn.execute("SELECT COUNT(*) FROM notifications "
+                                "WHERE kind = 'hub_pause'").fetchone()[0]
+    assert hinweise == 1
+
+
+def test_old_pause_is_no_longer_shown(client, monkeypatch):
+    alt = int(time.time()) - 20 * 86400
+    core.set_setting("hub_token", "t")
+    core.set_setting("hub_pause", '{"von": %d, "bis": %d}' % (alt - 86400, alt))
+    assert client.get("/api/hub").json()["pause"] is None
