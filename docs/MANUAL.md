@@ -270,7 +270,7 @@ display name, change password and sign out.
 
 **💬 Unread messages.** If something is waiting in the trade network, a mark
 with the number of unread messages appears to the left – visible from every
-tab. Tapping it goes straight to *Trade → My conversations*. If nothing is
+tab. Tapping it goes straight to *Trade → Conversations*. If nothing is
 open, there is no mark either. When the app opens, Brickfolio asks the hub
 once so the number is right immediately instead of after the next cycle.
 
@@ -1515,9 +1515,10 @@ connection the tab simply is not there.
 
 The go-between is a small **hub**. Important to understand:
 
-- The hub holds **only the published offers** and the conversation data. Your
-  collection, prices, notes and shopping lists **never** leave your own
-  instance.
+- The hub holds **only the published offers** and the conversation data –
+  plus, **if you fill it in**, your profile and, **if you switch it on**, your
+  wishlist (12.3). Your collection, prices, notes and shopping lists **never**
+  leave your own instance.
 - **Messages are end-to-end encrypted.** The hub cannot read them; it only
   keeps them until the other side collects them, then deletes them. The
   readable history lives on the instances involved – even long after the hub
@@ -1551,14 +1552,46 @@ asks for the same thing.
 The display name is unique network-wide and at least four characters long. It
 can only be changed by the hub admin.
 
+**Right after joining** a setup planner walks you through the rest in six
+steps: about you, favourite themes, what others see, what you offer. Every
+step can be skipped ("Set up later"); each one is saved as you go, and
+everything can be changed later under **My profile**.
+
+### 12.3 Discover and profiles
+
+The **Trade** tab opens with **🧭 Discover**. Three sections, all worked out on
+your own instance:
+
+- **⭐ Has what you are looking for** – other people's offers that are on your
+  wishlist. Your wishlist does **not** leave the instance for this: it is
+  compared here with the offers from the hub.
+- **🔄 Looking for what you have spare** – members whose shown wishlist
+  contains something you have twice or offer. "🤝 Offer" opens a conversation
+  with a matching suggestion.
+- **🧩 A good match** – members with the same favourite themes.
+
+**Profiles.** Tapping a name – in Discover or on any offer – opens the profile:
+about, area, favourite themes, the **trade record** (offers and completed
+trades, counted by the hub) and, if shared, the rounded collection size.
+Below it, what the member offers and – if shown – is looking for; whatever is
+on your wishlist or spare with you is outlined in yellow.
+
+**My profile** (at the top of the tab) is entirely optional; whatever stays
+empty doesn't appear. Two switches start **off**:
+
+- **Show my wishlist in the network** – others then see what you are looking
+  for (number, name, picture), and "Looking for what you have spare" works for
+  them with you too. The list follows every change. Turning it off makes the
+  hub delete it at once; so does disconnecting from the network.
+- **Show collection size** – as a rounded number, e.g. "≈ 950 minifigures".
+
 **Inviting others** is allowed for every connected member: "✉️ Invite a
 friend" in the Trade tab. Everyone has a quota of **three** invitations and can
 request more from the hub admin. A code works once.
 
-### 12.3 What I offer
+### 12.4 What I offer
 
-The **Trade** tab has three areas. Under **📤 My selection** is what goes into
-the network:
+Under **📤 Selection** in the **Trade** tab is what goes into the network:
 
 - You pick individual items in the **collection**: open a card → "🤝 Offer it
   in the trading network".
@@ -1574,7 +1607,7 @@ The selection only becomes visible through **"📤 Publish the selection"**
 (admin). Until then nothing changes in the network. Custom figures travel with
 a downscaled thumbnail so the other side does not just see a placeholder.
 
-### 12.4 Offers and conversations
+### 12.5 Offers and conversations
 
 Under **🔎 Offers** you find the other members' items, with a search field over
 name and number. Tapping a card opens the request window with a suggested
@@ -1582,7 +1615,7 @@ message you can overwrite. If a conversation about that offer is already
 running, the chat opens directly instead – the card says so too ("requested ·
 open").
 
-Under **💬 My conversations** are all the chats. In an open chat new messages
+Under **💬 Conversations** are all the chats. In an open chat new messages
 arrive **on their own**, without "fetch". Your own messages say "on its way …"
 or "delivered ✓".
 
@@ -1596,7 +1629,7 @@ The conversation also has:
 If the other side takes an item out of the network, the conversation and the
 area above the history say **"no longer offered"**.
 
-### 12.5 Accepted – what now?
+### 12.6 Accepted – what now?
 
 "Accept" is only the promise inside the conversation. To make something happen
 in your holdings, there is a button in the conversation right below the
@@ -1645,14 +1678,14 @@ It never happens on its own: without a click on **Remove** in the app window
 your collection stays as it is. Until then the trade says **"not removed yet"**
 in the list.
 
-### 12.6 Reporting
+### 12.7 Reporting
 
 If something goes wrong, "⚑ Report" sends a report to the hub admin. The
 tick **"Include the conversation"** is the only way a history ever becomes
 readable: your instance decrypts it and discloses it voluntarily. Without the
 tick the admin only sees your reason. There is no back door in the hub.
 
-### 12.7 When access has been blocked
+### 12.8 When access has been blocked
 
 A hub admin can block access. The Trade tab then shows a clear notice. What it
 means:
@@ -1667,7 +1700,7 @@ means:
 Hence the advice on the notice: **do not disconnect.** Disconnecting releases
 the account, and the way back gets more awkward.
 
-### 12.8 Administration
+### 12.9 Administration
 
 Managing members, deciding invitation requests, looking at reports, tidying up
 offers – that does **not** happen in the app but in a separate admin console.

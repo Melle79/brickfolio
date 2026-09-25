@@ -292,6 +292,10 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
         "extern_mit_access",    # wurde, mit bzw. ohne Cloudflare Access –
         "extern_ohne_access",   # Zeitstempel, kein Zugang, keine Adresse
         "extern_weg",           # „cloudflare" oder „proxy"
+        "hub_wuensche_zeigen",  # Merker „Wunschliste im Netzwerk zeigen" –
+                                # die Quelle ist das Hub-Profil
+        "hub_wuensche_stand",   # Prüfsumme der zuletzt gezeigten Liste, damit
+                                # nur bei Änderungen gesendet wird
         "katalog_quelle",       # Adresse der veröffentlichten Datei. Kein
                                 # Zugang: Sie ist öffentlich, und genau
                                 # deshalb steht kein BrickLink-Inhalt darin

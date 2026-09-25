@@ -61,6 +61,8 @@ function wireHubConnectOnce() {
     try {
       afterConnect(await api("/hub/connect", { method: "POST",
         body: { invite_code, display_name } }), "Dem Netzwerk beigetreten 🤝");
+      // Direkt danach durch die Einstellungen führen – überspringbar.
+      communityPlanerStarten();
     } catch (e) { err.textContent = e.message; err.hidden = false; }
   });
 
@@ -92,6 +94,8 @@ async function loadHubView() {
     const s = await api("/hub?refresh=1");
     $("hub-view-who").textContent = s.display_name
       ? tr("Angemeldet als {name}", { name: s.display_name }) : "";
+    hubIch = { member_id: s.member_id, display_name: s.display_name };
+    $("hub-ich-avatar").textContent = avatarText(s.display_name);
     $("hub-blocked").hidden = !s.blocked;
     const lp = s.last_publish;
     const lpEl = $("hub-last-publish");
@@ -106,18 +110,19 @@ async function loadHubView() {
 }
 
 /* ------------------------------------------- Vorgänge, Chat, Melden (E2E) */
-let hubTab = "offers";
+let hubTab = "entdecken";
 let openTradeId = null;
 
 function showHubTab(name) {
   hubTab = name;
-  ["offers", "trades", "share"].forEach((t) => {
+  ["entdecken", "offers", "trades", "share"].forEach((t) => {
     $("hubpane-" + t).hidden = t !== name;
   });
   document.querySelectorAll("[data-hubtab]").forEach((b) =>
     b.classList.toggle("sel", b.dataset.hubtab === name));
   // Angebote beim Zurückwechseln neu laden – sonst stünde dort noch der
   // Stand von vorhin, ohne die inzwischen gestarteten Gespräche.
+  if (name === "entdecken") loadEntdecken();
   if (name === "offers") loadHubOffers();
   if (name === "trades") loadTrades();
   if (name === "share") loadShareView();
@@ -532,6 +537,16 @@ function wireHubViewOnce() {
   document.querySelectorAll("[data-hubtab]").forEach((b) => {
     b.addEventListener("click", () => showHubTab(b.dataset.hubtab));
   });
+  $("hub-mein-profil").addEventListener("click", openMeinProfil);
+  $("profil-close").addEventListener("click", closeProfil);
+  $("profil-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("profil-overlay")) closeProfil();
+  });
+  $("meinprofil-close").addEventListener("click", closeMeinProfil);
+  $("meinprofil-overlay").addEventListener("click", (ev) => {
+    if (ev.target === $("meinprofil-overlay")) closeMeinProfil();
+  });
+  $("meinprofil-speichern").addEventListener("click", meinProfilSpeichern);
   $("hub-sync").addEventListener("click", async () => {
     await syncTrades(false);
     loadTrades();
@@ -721,13 +736,13 @@ async function openOffer(o) {
   openInterest(o);
 }
 
-function openInterest(o) {
+function openInterest(o, text = "") {
   interestOffer = o;
   $("interest-name").textContent = o.n;
   $("interest-sub").textContent = o.id_ + " · " + tr("von {name}", { name: o.who });
   $("interest-img").src = o.img || IMG_PLACEHOLDER;
   // Vorschlag steht im Feld – anpassbar, nicht in einem Systemfenster
-  $("interest-text").value =
+  $("interest-text").value = text ||
     tr("Hallo {name}, hättest du Interesse, den {was} zu tauschen?",
       { name: o.who, was: o.n });
   $("interest-overlay").hidden = false;
@@ -757,7 +772,7 @@ async function sendInterest() {
       item_type: o.typ || "", img_url: o.bild || "",
       bricklink_url: o.bl || "", condition: o.zustand || "" } });
     closeInterest();
-    toast("Angefragt – das Gespräch steht unter Meine Vorgänge 💬");
+    toast("Angefragt – das Gespräch steht unter Vorgänge 💬");
     showHubTab("trades");
     openTrade(res.trade_id);
   } catch (e) { toast(e.message); } finally { btn.disabled = false; }
@@ -832,7 +847,7 @@ async function loadHubOffers() {
           <div class="card-title">
             <strong>${esc(o.name)}</strong>
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
-            <span class="badge badge-owned">von ${esc(o.display_name)}</span>
+            <span class="badge badge-owned">von <button type="button" class="cm-name" data-profil="${esc(o.member_id)}">${esc(o.display_name)}</button></span>
             ${t ? `<span class="badge badge-wanted">💬 angefragt · ${tradeStatusText(t.status)}${t.unread ? ` · ${t.unread} neu` : ""}</span>` : ""}
           </div>
         </div>
@@ -853,6 +868,8 @@ async function loadHubOffers() {
                      zustand: o.condition || "" };
       card.addEventListener("click", (ev) => {
         if (ev.target.closest("a, .card-img")) return;
+        const wer = ev.target.closest("[data-profil]");
+        if (wer) { openProfil(wer.dataset.profil); return; }
         openOffer(data);
       });
     });
@@ -860,3 +877,492 @@ async function loadHubOffers() {
     box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
   }
 }
+
+
+/* ----------------------------------------- Community: Entdecken und Profile
+
+   **Ausgerechnet wird auf dieser Instanz.** `/api/hub/entdecken` vergleicht
+   die eigene Wunschliste mit den Angeboten im Hub und das eigene Abgebbare
+   mit den gezeigten Wunschlisten der anderen. Die eigene Wunschliste geht
+   dafür nicht hinaus – erst, wenn jemand „Wunschliste zeigen" einschaltet.
+
+   Alles hier ist optional: Ohne Beitritt per Einladung ist der Tab gar
+   nicht da, und jedes Profilfeld darf leer bleiben. */
+
+const THEMEN_ERSATZ = ["Star Wars", "City", "Super Heroes", "Ninjago",
+  "Harry Potter", "Castle", "Collectible Minifigures", "Friends", "Town",
+  "Space", "Pirates", "Jurassic World", "Disney", "Creator"];
+let communityThemen = null;          // aus dem Katalog, einmal je Sitzung
+let hubIch = null;                   // { member_id, display_name }
+let meinProfil = null;               // zuletzt geladenes eigenes Profil
+
+function avatarText(name) {
+  return ((name || "").trim().charAt(0) || "?").toUpperCase();
+}
+
+function cmBild(x) { return x.img_data ? x.img_data : imgSrc(x.img_url, true); }
+
+/* So rundet auch der Hub – die Vorschau zeigt, was andere sehen werden. */
+function cmGerundet(n) {
+  const z = Math.max(0, Math.floor(Number(n) || 0));
+  if (z < 10) return z;
+  if (z < 100) return Math.round(z / 10) * 10;
+  if (z < 1000) return Math.round(z / 50) * 50;
+  return Math.round(z / 100) * 100;
+}
+
+async function communityThemenLaden() {
+  if (communityThemen) return communityThemen;
+  try {
+    const d = await api("/katalog/liste/themen");
+    const liste = (d.themen || []).map((t) =>
+      ({ name: t.thema, besitz: t.besitz || 0, anzahl: t.anzahl || 0 }));
+    communityThemen = liste.length ? liste
+      : THEMEN_ERSATZ.map((n) => ({ name: n, besitz: 0, anzahl: 0 }));
+  } catch (_) {
+    communityThemen = THEMEN_ERSATZ.map((n) => ({ name: n, besitz: 0, anzahl: 0 }));
+  }
+  // Was man selbst am meisten hat, zuerst – das sind die naheliegenden.
+  communityThemen.sort((a, b) => (b.besitz - a.besitz) || (b.anzahl - a.anzahl));
+  return communityThemen;
+}
+
+function cmName(id, name) {
+  return `<button type="button" class="cm-name" data-profil="${esc(id)}">${esc(name || "?")}</button>`;
+}
+
+function cmZustand(c) {
+  return c ? " · " + (c === "new" ? tr("Neu") : tr("Gebraucht")) : "";
+}
+
+async function loadEntdecken() {
+  const box = $("hub-entdecken");
+  box.innerHTML = brickLoading(tr("Suche Passendes im Netzwerk …"));
+  let d, laufend = new Map();
+  try {
+    const [e, t] = await Promise.all([
+      api("/hub/entdecken"),
+      api("/hub/trades").catch(() => ({ trades: [] })),
+    ]);
+    d = e;
+    laufend = new Map((t.trades || []).map((x) => [offerKey(x.other_id, x.item_id), x]));
+  } catch (e) {
+    box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+    return;
+  }
+  const teile = [];
+
+  teile.push(`<div class="cm-abschnitt">⭐ ${esc(tr("Hat, was du suchst"))}
+    <small>${d.hat.length ? esc(tr("{n} Treffer", { n: d.hat.length })) : ""}</small></div>`);
+  if (!d.wuensche_anzahl) {
+    teile.push(`<div class="cm-leer">${esc(tr("Deine Wunschliste ist leer. Merk dir Figuren mit ☆ – dann sucht Entdecken im Netzwerk danach."))}</div>`);
+  } else if (!d.hat.length) {
+    teile.push(`<div class="cm-leer">${esc(tr("Gerade bietet niemand etwas von deiner Wunschliste an."))}</div>`);
+  } else {
+    d.hat.forEach((h, i) => {
+      const lauf = laufend.get(offerKey(h.member_id, h.item_id));
+      teile.push(`<div class="cm-karte">
+        <img src="${cmBild(h)}" alt="" loading="lazy">
+        <div class="cm-mitte"><strong>${esc(h.name)}</strong>
+          <div class="sub">${esc(h.item_id)}${cmZustand(h.condition)} · ${esc(tr("von"))} ${cmName(h.member_id, h.display_name)}</div></div>
+        <button class="mini-btn add" data-cm-hat="${i}">${lauf ? "💬 " + esc(tr("Gespräch")) : "💬 " + esc(tr("Anfragen"))}</button>
+      </div>`);
+    });
+  }
+
+  teile.push(`<div class="cm-abschnitt">🔄 ${esc(tr("Sucht, was du übrig hast"))}
+    <small>${d.sucht.length ? esc(tr("{n} Treffer", { n: d.sucht.length })) : ""}</small></div>`);
+  d.sucht.forEach((w, i) => {
+    teile.push(`<div class="cm-karte">
+      <img src="${cmBild(w)}" alt="" loading="lazy">
+      <div class="cm-mitte"><strong>${esc(w.name)}</strong>
+        <div class="sub">${esc(w.item_id)} · ${esc(tr("du hast {n}× übrig", { n: w.hier_abgebbar }))} · ${esc(tr("sucht"))} ${cmName(w.member_id, w.display_name)}</div></div>
+      <button class="mini-btn" data-cm-sucht="${i}">🤝 ${esc(tr("Anbieten"))}</button>
+    </div>`);
+  });
+  if (!d.sucht.length) {
+    teile.push(`<div class="cm-leer">${esc(tr("Niemand, der seine Wunschliste zeigt, sucht gerade etwas, das du übrig hast."))}</div>`);
+  }
+  if (!d.wuensche_zeigen) {
+    teile.push(`<div class="cm-leer">${esc(tr("Nur wer seine Wunschliste zeigt, taucht hier auf. Deine ist nicht sichtbar."))}
+      <button type="button" class="link-btn" data-cm-profil-bearbeiten>${esc(tr("Mein Profil"))}</button></div>`);
+  }
+
+  teile.push(`<div class="cm-abschnitt">🧩 ${esc(tr("Passt zu dir"))} <small>${esc(tr("gleiche Lieblingsthemen"))}</small></div>`);
+  if (!d.meine_themen.length) {
+    teile.push(`<div class="cm-leer">${esc(tr("Trag Lieblingsthemen ein, dann zeigt Entdecken, wer zu dir passt."))}
+      <button type="button" class="link-btn" data-cm-profil-bearbeiten>${esc(tr("Mein Profil"))}</button></div>`);
+  } else if (!d.passt.length) {
+    teile.push(`<div class="cm-leer">${esc(tr("Noch niemand mit denselben Lieblingsthemen."))}</div>`);
+  } else {
+    d.passt.forEach((p) => {
+      const zeile = [p.gemeinsam.join(" · ")];
+      if (p.region) zeile.push(p.region);
+      zeile.push(tr("{n} Angebote", { n: p.offers || 0 }));
+      teile.push(`<div class="cm-karte">
+        <span class="cm-avatar klein">${esc(avatarText(p.display_name))}</span>
+        <div class="cm-mitte">${cmName(p.member_id, p.display_name)}
+          <div class="sub">${esc(zeile.join(" · "))}</div></div>
+        <button class="mini-btn" data-profil="${esc(p.member_id)}">${esc(tr("Profil"))}</button>
+      </div>`);
+    });
+  }
+  box.innerHTML = teile.join("");
+
+  box.querySelectorAll("[data-cm-hat]").forEach((b) => {
+    b.addEventListener("click", () => {
+      const h = d.hat[Number(b.dataset.cmHat)];
+      openOffer({ m: h.member_id, i: h.item_id, n: h.name, who: h.display_name,
+        img: h.img_data || h.img_url, id_: h.item_id, typ: h.item_type || "",
+        bild: h.img_url || "", bl: "", zustand: h.condition || "" });
+    });
+  });
+  box.querySelectorAll("[data-cm-sucht]").forEach((b) => {
+    b.addEventListener("click", () => cmAnbieten(d.sucht[Number(b.dataset.cmSucht)]));
+  });
+  box.querySelectorAll("[data-profil]").forEach((b) => {
+    b.addEventListener("click", () => openProfil(b.dataset.profil));
+  });
+  box.querySelectorAll("[data-cm-profil-bearbeiten]").forEach((b) => {
+    b.addEventListener("click", openMeinProfil);
+  });
+}
+
+/* Jemandem etwas anbieten, das er sucht: dasselbe Gespräch wie bei einer
+   Anfrage, nur mit passendem Vorschlag im Feld. */
+function cmAnbieten(w) {
+  openInterest({ m: w.member_id, i: w.item_id, n: w.name, who: w.display_name,
+    img: w.img_url, id_: w.item_id, typ: w.item_type || "", bild: w.img_url || "",
+    bl: "", zustand: "" },
+  tr("Hallo {name}, du suchst den {was} – ich hätte einen abzugeben. Interesse?",
+    { name: w.display_name, was: w.name }));
+}
+
+/* ------------------------------------------------------------ Profil ansehen */
+
+function closeProfil() {
+  $("profil-overlay").hidden = true;
+  document.body.style.overflow = "";
+}
+
+async function openProfil(memberId) {
+  const box = $("profil-inhalt");
+  box.innerHTML = brickLoading(tr("Profil wird geladen …"));
+  $("profil-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  let p;
+  try { p = await api("/hub/profil/" + encodeURIComponent(memberId)); }
+  catch (e) { box.innerHTML = `<p class="error">${esc(e.message)}</p>`; return; }
+  const eigen = hubIch && p.member_id === hubIch.member_id;
+  const seit = p.created_at ? new Date(p.created_at * 1000)
+    .toLocaleDateString(dateLocale(), { month: "long", year: "numeric" }) : "";
+  const unterzeile = [seit ? tr("Mitglied seit {wann}", { wann: seit }) : ""];
+  if (p.region) unterzeile.push("📍 " + p.region);
+  const zahlen = [
+    `<div class="cm-zahl"><b>${p.stats ? p.stats.offers : 0}</b><span>${esc(tr("Angebote"))}</span></div>`,
+    `<div class="cm-zahl"><b>${p.stats ? p.stats.trades : 0}</b><span>${esc(tr("Tausche"))}</span></div>`,
+  ];
+  if (p.collection_count != null) {
+    zahlen.push(`<div class="cm-zahl"><b>≈ ${p.collection_count}</b><span>${esc(tr("Figuren"))}</span></div>`);
+  }
+  const bilder = (liste, markiere) => `<div class="cm-bilder">${liste.map((x, i) =>
+    `<button type="button" class="cm-bild${markiere(x) ? " an" : ""}" data-i="${i}" title="${esc(x.name)} (${esc(x.item_id)})">
+      <img src="${cmBild(x)}" alt="" loading="lazy"></button>`).join("")}</div>`;
+  const angebote = p.offers || [];
+  const wuensche = p.wants || [];
+  const passend = wuensche.filter((w) => w.hier_abgebbar > 0);
+  box.innerHTML = `
+    <div class="cm-kopf"><span class="cm-avatar">${esc(avatarText(p.display_name))}</span>
+      <div><h3>${esc(p.display_name)}</h3>
+        <div class="sub">${esc(unterzeile.filter(Boolean).join(" · "))}</div></div></div>
+    ${p.about ? `<p class="cm-ueber">${esc(p.about)}</p>` : ""}
+    ${p.themes && p.themes.length ? `<div class="cm-chips">${p.themes.map((t) =>
+      `<span class="cm-chip an">${esc(t)}</span>`).join("")}</div>` : ""}
+    <div class="cm-zahlen">${zahlen.join("")}</div>
+    ${angebote.length ? `<div class="cm-abschnitt">📤 ${esc(tr("Bietet an"))}</div>
+      ${bilder(angebote, (o) => o.auf_wunschliste)}
+      ${angebote.some((o) => o.auf_wunschliste) ? `<p class="search-hint">⭐ ${esc(tr("gelb umrandet: steht auf deiner Wunschliste"))}</p>` : ""}` : ""}
+    ${wuensche.length ? `<div class="cm-abschnitt">⭐ ${esc(tr("Sucht"))}</div>
+      ${bilder(wuensche, (w) => w.hier_abgebbar > 0)}
+      ${passend.length ? `<p class="search-hint">🔄 ${esc(tr("{n} davon hast du übrig", { n: passend.length }))}</p>
+        <div class="card-actions scan-tasten cm-anbieten">${passend.slice(0, 3).map((w, i) =>
+          `<button class="mini-btn add" data-cm-biete="${i}">🤝 ${esc(tr("{nr} anbieten", { nr: w.item_id }))}</button>`).join("")}</div>` : ""}` : ""}
+    ${eigen ? `<div class="card-actions scan-tasten" style="margin-top:12px">
+      <button class="mini-btn" data-cm-profil-bearbeiten>✏️ ${esc(tr("Bearbeiten"))}</button></div>` : ""}`;
+
+  box.querySelectorAll(".cm-bilder").forEach((reihe, r) => {
+    const liste = r === 0 && angebote.length ? angebote : wuensche;
+    reihe.querySelectorAll(".cm-bild").forEach((b) => {
+      const x = liste[Number(b.dataset.i)];
+      b.addEventListener("click", () => {
+        if (eigen) return;
+        if (liste === angebote) {
+          closeProfil();
+          openOffer({ m: p.member_id, i: x.item_id, n: x.name, who: p.display_name,
+            img: x.img_data || x.img_url, id_: x.item_id, typ: x.item_type || "",
+            bild: x.img_url || "", bl: "", zustand: x.condition || "" });
+        } else if (x.hier_abgebbar > 0) {
+          closeProfil();
+          cmAnbieten({ ...x, member_id: p.member_id, display_name: p.display_name });
+        }
+      });
+    });
+  });
+  box.querySelectorAll("[data-cm-biete]").forEach((b) => {
+    b.addEventListener("click", () => {
+      const w = passend[Number(b.dataset.cmBiete)];
+      closeProfil();
+      cmAnbieten({ ...w, member_id: p.member_id, display_name: p.display_name });
+    });
+  });
+  box.querySelectorAll("[data-cm-profil-bearbeiten]").forEach((b) => {
+    b.addEventListener("click", () => { closeProfil(); openMeinProfil(); });
+  });
+}
+
+/* ------------------------------------------------------------- Mein Profil */
+
+/* Die Felder, aus denen Profil-Fenster und Planer ihre Schritte bauen.
+   `teile` wählt aus: about, region, themen, sichtbar. */
+function cmFelder(p, themen, teile, alleThemen = false) {
+  const gewaehlt = new Set((p.themes || []).map((t) => t.toLowerCase()));
+  const html = [];
+  if (teile.includes("about")) {
+    html.push(`<label for="cm-about">${esc(tr("Über mich"))}</label>
+      <textarea id="cm-about" maxlength="280" rows="3"
+        placeholder="${esc(tr("z. B. was du sammelst und wie du am liebsten tauschst"))}">${esc(p.about || "")}</textarea>`);
+  }
+  if (teile.includes("region")) {
+    html.push(`<label for="cm-region">${esc(tr("Gegend"))}</label>
+      <input id="cm-region" maxlength="60" value="${esc(p.region || "")}"
+        placeholder="${esc(tr("z. B. Raum München – keine Adresse"))}">`);
+  }
+  if (teile.includes("themen")) {
+    // Erst die eigenen Hauptthemen und alles schon Gewählte, der Rest auf Tipp.
+    const vorn = themen.filter((t, i) => i < 12 || gewaehlt.has(t.name.toLowerCase()));
+    const zeigen = alleThemen ? themen : vorn;
+    html.push(`<label>${esc(tr("Lieblingsthemen"))}</label>
+      <div class="cm-chips" id="cm-themen">${zeigen.map((t) =>
+        `<button type="button" class="cm-chip${gewaehlt.has(t.name.toLowerCase()) ? " an" : ""}"
+          data-thema="${esc(t.name)}">${esc(t.name)}</button>`).join("")}
+        ${!alleThemen && themen.length > zeigen.length
+          ? `<button type="button" class="cm-chip mehr" id="cm-themen-mehr">＋ ${esc(tr("weitere"))}</button>` : ""}</div>`);
+  }
+  if (teile.includes("sichtbar")) {
+    const fig = p.figuren_hier || 0;
+    html.push(`<div class="cm-abschnitt">🔒 ${esc(tr("Was andere sehen"))}</div>
+      <label class="cm-schalter-zeile"><input type="checkbox" class="cm-schalter" id="cm-wuensche"${p.wants_public ? " checked" : ""}>
+        <span><b>${esc(tr("Meine Wunschliste im Netzwerk zeigen"))}</b>
+        <small>${esc(tr("Dann sehen andere, was du suchst – und dir wird angezeigt, wer deine Doppelten sucht. Nur Nummer, Name und Bild."))}</small></span></label>
+      <label class="cm-schalter-zeile"><input type="checkbox" class="cm-schalter" id="cm-sammlung"${p.show_collection ? " checked" : ""}>
+        <span><b>${esc(tr("Sammlungsgröße zeigen"))}</b>
+        <small>${esc(tr("Gerundet – bei dir wären das „≈ {n} Figuren“.", { n: cmGerundet(fig) }))}</small></span></label>`);
+  }
+  return html.join("");
+}
+
+/* Liest aus, was gerade in den Feldern steht – und lässt weg, was es im
+   aktuellen Schritt nicht gibt (dann gilt der bisherige Stand). */
+function cmFelderLesen(p) {
+  const neu = { about: p.about || "", region: p.region || "",
+    themes: p.themes || [], wants_public: !!p.wants_public,
+    show_collection: !!p.show_collection };
+  if ($("cm-about")) neu.about = $("cm-about").value.trim();
+  if ($("cm-region")) neu.region = $("cm-region").value.trim();
+  if ($("cm-themen")) {
+    neu.themes = [...document.querySelectorAll("#cm-themen .cm-chip.an")]
+      .map((b) => b.dataset.thema);
+  }
+  if ($("cm-wuensche")) neu.wants_public = $("cm-wuensche").checked;
+  if ($("cm-sammlung")) neu.show_collection = $("cm-sammlung").checked;
+  return neu;
+}
+
+function cmThemenVerdrahten(wurzel, p, themen, neuZeichnen) {
+  wurzel.querySelectorAll("#cm-themen .cm-chip[data-thema]").forEach((b) => {
+    b.addEventListener("click", () => b.classList.toggle("an"));
+  });
+  const mehr = wurzel.querySelector("#cm-themen-mehr");
+  if (mehr) {
+    mehr.addEventListener("click", () => {
+      // Gewähltes behalten, dann mit allen Themen neu zeichnen.
+      p.themes = [...wurzel.querySelectorAll("#cm-themen .cm-chip.an")]
+        .map((x) => x.dataset.thema);
+      neuZeichnen(true);
+    });
+  }
+}
+
+function closeMeinProfil() {
+  $("meinprofil-overlay").hidden = true;
+  document.body.style.overflow = "";
+}
+
+async function openMeinProfil() {
+  const box = $("meinprofil-felder");
+  $("meinprofil-fehler").hidden = true;
+  box.innerHTML = brickLoading(tr("Profil wird geladen …"));
+  $("meinprofil-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  try {
+    const [p, themen] = await Promise.all([api("/hub/profil"), communityThemenLaden()]);
+    meinProfil = p;
+    const zeichnen = (alle = false) => {
+      box.innerHTML = cmFelder(meinProfil, themen,
+        ["about", "region", "themen", "sichtbar"], alle);
+      cmThemenVerdrahten(box, meinProfil, themen, zeichnen);
+    };
+    zeichnen();
+  } catch (e) {
+    box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+  }
+}
+
+async function meinProfilSpeichern() {
+  if (!meinProfil) return;
+  const b = $("meinprofil-speichern");
+  b.disabled = true;
+  try {
+    meinProfil = await api("/hub/profil", { method: "PUT",
+      body: cmFelderLesen(meinProfil) });
+    closeMeinProfil();
+    toast(tr("Profil gespeichert ✔"));
+    if (hubTab === "entdecken" && !$("view-hub").hidden) loadEntdecken();
+  } catch (e) {
+    $("meinprofil-fehler").textContent = e.message;
+    $("meinprofil-fehler").hidden = false;
+  } finally { b.disabled = false; }
+}
+
+/* ------------------------------------------- Einrichtungsplaner (Beitritt)
+
+   Startet direkt nach dem Beitritt per Einladung. „Beitreten" ist dann
+   schon erledigt; die übrigen fünf Schritte sind alle überspringbar und
+   später unter „Mein Profil" änderbar. Gespeichert wird nach jedem Schritt –
+   wer mittendrin aufhört, verliert nichts. */
+const PLANER_SCHRITTE = [
+  { key: "beitreten", titel: "Beitreten" },
+  { key: "ueber", titel: "Über dich" },
+  { key: "themen", titel: "Themen" },
+  { key: "sichtbar", titel: "Sichtbarkeit" },
+  { key: "angebote", titel: "Angebote" },
+  { key: "los", titel: "Los" },
+];
+let planerSchritt = 1;
+let planerProfil = null;
+let planerThemen = [];
+let planerWired = false;
+
+async function communityPlanerStarten() {
+  planerSchritt = 1;
+  $("planer-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  if (!planerWired) {
+    planerWired = true;
+    $("planer-weiter").addEventListener("click", () => planerWeiter(true));
+    $("planer-ueberspringen").addEventListener("click", () => planerWeiter(false));
+    $("planer-zurueck").addEventListener("click", () => {
+      if (planerSchritt > 1) { planerSchritt -= 1; planerZeigen(); }
+    });
+    $("planer-spaeter").addEventListener("click", planerSchliessen);
+  }
+  $("planer-inhalt").innerHTML = brickLoading(tr("Einen Moment …"));
+  try {
+    [planerProfil, planerThemen] = await Promise.all([
+      api("/hub/profil"), communityThemenLaden()]);
+  } catch (e) {
+    // Ein Hub ohne Profile (vor 1.12.0): dann gibt es hier nichts einzurichten.
+    planerSchliessen();
+    toast(e.message);
+    return;
+  }
+  planerZeigen();
+}
+
+function planerSchliessen() {
+  $("planer-overlay").hidden = true;
+  document.body.style.overflow = "";
+}
+
+function planerZeigen() {
+  const s = PLANER_SCHRITTE[planerSchritt];
+  $("planer-schritt").textContent = tr("Schritt {n} von {max}",
+    { n: planerSchritt + 1, max: PLANER_SCHRITTE.length });
+  $("planer-leiste").innerHTML = PLANER_SCHRITTE.map((x, i) =>
+    `<span class="cm-chip${i < planerSchritt ? " an" : ""}${i === planerSchritt ? " jetzt" : ""}">${i < planerSchritt ? "✔ " : ""}${esc(tr(x.titel))}</span>`).join("");
+  $("planer-fehler").hidden = true;
+  $("planer-zurueck").hidden = planerSchritt <= 1;
+  const letzter = s.key === "los";
+  $("planer-ueberspringen").hidden = letzter;
+  $("planer-weiter").textContent = letzter ? tr("Zum Entdecken") : tr("Weiter");
+  const box = $("planer-inhalt");
+  if (s.key === "ueber") {
+    box.innerHTML = `<h3>👤 ${esc(tr("Über dich"))}</h3>
+      <p class="search-hint">${esc(tr("Ein paar Worte für die anderen im Netzwerk – beides darf leer bleiben."))}</p>
+      ${cmFelder(planerProfil, planerThemen, ["about", "region"])}`;
+  } else if (s.key === "themen") {
+    const zeichnen = (alle = false) => {
+      box.innerHTML = `<h3>🧩 ${esc(tr("Lieblingsthemen"))}</h3>
+        <p class="search-hint">${esc(tr("Vorne stehen die Themen, von denen du am meisten hast. Damit findet Entdecken, wer zu dir passt."))}</p>
+        ${cmFelder(planerProfil, planerThemen, ["themen"], alle)}`;
+      cmThemenVerdrahten(box, planerProfil, planerThemen, zeichnen);
+    };
+    zeichnen();
+  } else if (s.key === "sichtbar") {
+    box.innerHTML = `<h3>🔒 ${esc(tr("Was andere sehen"))}</h3>
+      <p class="search-hint">${esc(tr("Beides ist aus, solange du es nicht einschaltest. Deine Sammlung selbst sieht niemand – nur, was du ausdrücklich teilst."))}</p>
+      ${cmFelder(planerProfil, planerThemen, ["sichtbar"]).replace(/<div class="cm-abschnitt">.*?<\/div>/, "")}`;
+  } else if (s.key === "angebote") {
+    const admin = state.user && state.user.is_admin;
+    box.innerHTML = `<h3>📤 ${esc(tr("Was du anbietest"))}</h3>
+      <p class="search-hint">${esc(tr("Andere sehen nur, was du ausdrücklich anbietest. Am schnellsten geht das mit deinen Doppelten."))}</p>
+      ${admin ? `<div class="card-actions scan-tasten"><button class="mini-btn add" id="planer-doppelte">➕ ${esc(tr("Doppelte übernehmen und veröffentlichen"))}</button></div>
+        <p class="search-hint" id="planer-doppelte-out" hidden></p>`
+        : `<p class="search-hint">${esc(tr("Veröffentlichen darf auf dieser Instanz nur ein Admin."))}</p>`}
+      <p class="search-hint">${esc(tr("Einzelne Artikel wählst du später in der Sammlung aus: Karte öffnen → „🤝 In der Tauschbörse anbieten“."))}</p>`;
+    const k = $("planer-doppelte");
+    if (k) {
+      k.addEventListener("click", async () => {
+        k.disabled = true;
+        const out = $("planer-doppelte-out");
+        try {
+          const r = await api("/share/from_duplicates", { method: "POST" });
+          const v = await api("/hub/publish", { method: "POST" });
+          out.textContent = tr("Übernommen: {n} · im Netzwerk angeboten: {m} 📤",
+            { n: r.added, m: v.count });
+        } catch (e) { out.textContent = e.message; k.disabled = false; }
+        out.hidden = false;
+      });
+    }
+  } else {
+    box.innerHTML = `<h3>🎉 ${esc(tr("Fertig"))}</h3>
+      <p class="search-hint">${esc(tr("Unter 🧭 Entdecken siehst du jetzt, wer hat, was du suchst – und wer zu dir passt. Ändern kannst du alles unter „Mein Profil“."))}</p>`;
+  }
+}
+
+async function planerWeiter(uebernehmen) {
+  const s = PLANER_SCHRITTE[planerSchritt];
+  if (s.key === "los") {
+    planerSchliessen();
+    showTab("hub");
+    showHubTab("entdecken");
+    return;
+  }
+  if (uebernehmen && ["ueber", "themen", "sichtbar"].includes(s.key)) {
+    const b = $("planer-weiter");
+    b.disabled = true;
+    try {
+      planerProfil = await api("/hub/profil", { method: "PUT",
+        body: cmFelderLesen(planerProfil) });
+    } catch (e) {
+      $("planer-fehler").textContent = e.message;
+      $("planer-fehler").hidden = false;
+      b.disabled = false;
+      return;
+    }
+    b.disabled = false;
+  }
+  planerSchritt += 1;
+  planerZeigen();
+}
+

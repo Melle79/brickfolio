@@ -81,7 +81,8 @@ def _store(token, me):
 def disconnect():
     for k in ("hub_token", "hub_member_id", "hub_display_name",
               "hub_is_admin", "hub_last_publish", "hub_blocked",
-              "hub_key_sent"):
+              "hub_key_sent", "hub_wuensche_zeigen", "hub_wuensche_stand",
+              "hub_sammlung_zeigen"):
         core.set_setting(k, "")
 
 
@@ -213,6 +214,33 @@ def offers(params: dict | None = None) -> list:
 
 def members() -> list:
     return _authed("GET", "/v1/members").get("members", [])
+
+
+# ------------------------------------------------- Community (Hub 1.12.0)
+# Ein Hub vor 1.12.0 kennt diese Wege nicht und antwortet mit 404 – die
+# Aufrufer in `community.py` machen daraus einen verständlichen Hinweis.
+
+def profile(member_id: str = "") -> dict:
+    """Das eigene Profil (ohne Kennung) oder das eines anderen Mitglieds."""
+    return _authed("GET", f"/v1/profile/{member_id}" if member_id
+                   else "/v1/profile")
+
+
+def put_profile(daten: dict) -> dict:
+    return _authed("PUT", "/v1/profile", body=daten)
+
+
+def profiles() -> list:
+    return _authed("GET", "/v1/profiles").get("profiles", [])
+
+
+def put_wants(wants: list) -> dict:
+    return _authed("PUT", "/v1/wants", body={"wants": wants})
+
+
+def wants() -> list:
+    """Die gezeigten Wunschlisten der **anderen** Mitglieder."""
+    return _authed("GET", "/v1/wants").get("wants", [])
 
 
 def create_invite(note: str = "", expires_in_days: int = 0) -> dict:

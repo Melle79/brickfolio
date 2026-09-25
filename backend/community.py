@@ -101,6 +101,20 @@ def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
 
 @router.post("/api/hub/disconnect")
 def hub_disconnect(user: dict = Depends(admin_user)):
+    # Eine gezeigte Wunschliste nicht im Hub zurücklassen: Das Mitglied
+    # bleibt dort bestehen, wer sich trennt, will aber nicht weiter zeigen,
+    # was er sucht. Best-effort – ein Hub, der gerade klemmt, soll das
+    # Trennen nicht verhindern.
+    if core.get_setting("hub_wuensche_zeigen") == "1":
+        try:
+            p = hub.profile()
+            hub.put_profile({"about": p.get("about", ""),
+                             "region": p.get("region", ""),
+                             "themes": p.get("themes") or [],
+                             "wants_public": False,
+                             "show_collection": bool(p.get("show_collection"))})
+        except Exception:
+            pass
     hub.disconnect()
     return {"connected": False}
 
@@ -770,3 +784,217 @@ def hub_invite(body: HubInviteBody, user: dict = Depends(current_user)):
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
+
+
+# ------------------------------------------------ Community: Profile, Entdecken
+#
+# **Das Entdecken rechnet diese Instanz aus, nicht der Hub.** Der Hub liefert
+# nur die Listen: Angebote aller, die gezeigten Wunschlisten und die Profile.
+# Welche davon zur eigenen Wunschliste und zu den eigenen Doppelten passen,
+# steht nur hier fest – die eigene Wunschliste verlässt die Instanz dafür
+# nicht. Gezeigt wird sie erst, wenn jemand „Wunschliste zeigen" einschaltet.
+#
+# Die Schalter stehen im Hub-Profil; hier liegt nur ein Merker davon
+# (`hub_wuensche_zeigen`), damit nicht jede Änderung an der Wunschliste
+# erst beim Hub nachfragen muss.
+
+WUENSCHE_MAX = 1000                  # so viele nimmt der Hub je Mitglied
+
+
+def _hub_fehler(e: Exception):
+    """Aus einem Hub-Fehler die passende Antwort machen."""
+    if isinstance(e, hub.HubError):
+        if e.status == 404 and "unbekannter Endpunkt" in (e.message or ""):
+            raise HTTPException(501, "Der Hub kennt Profile noch nicht – "
+                                     "er muss erst aktualisiert werden.")
+        raise HTTPException(502, f"Hub: {e.message}")
+    raise HTTPException(502, "Hub nicht erreichbar")
+
+
+def _verbunden():
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+
+
+def _eigene_wuensche() -> list:
+    with core.db() as conn:
+        rows = conn.execute(
+            "SELECT item_id, item_type, name, img_url FROM wanted "
+            "ORDER BY name COLLATE NOCASE").fetchall()
+    return [dict(r) for r in rows]
+
+
+def wuensche_nachziehen(erzwingen: bool = False) -> int | None:
+    """Die eigene Wunschliste zum Hub bringen – nur, wenn sie gezeigt wird.
+
+    Gibt die Zahl der gezeigten Wünsche zurück, oder None, wenn nichts zu tun
+    war. Schickt nur, wenn sich seit dem letzten Mal etwas geändert hat.
+    """
+    if not hub.enabled() or core.get_setting("hub_wuensche_zeigen") != "1":
+        return None
+    liste = [{"item_id": w["item_id"], "item_type": w["item_type"],
+              "name": w["name"], "img_url": w["img_url"] or ""}
+             for w in _eigene_wuensche()][:WUENSCHE_MAX]
+    import hashlib
+    import json as _json
+    stand = hashlib.sha256(_json.dumps(liste, sort_keys=True)
+                           .encode()).hexdigest()
+    if not erzwingen and core.get_setting("hub_wuensche_stand") == stand:
+        return None
+    hub.put_wants(liste)
+    core.set_setting("hub_wuensche_stand", stand)
+    return len(liste)
+
+
+def wuensche_nachziehen_im_hintergrund() -> None:
+    """Nach einer Änderung an der Wunschliste – ohne die Antwort aufzuhalten."""
+    if not hub.enabled() or core.get_setting("hub_wuensche_zeigen") != "1":
+        return
+    import threading
+
+    def lauf():
+        try:
+            wuensche_nachziehen()
+        except Exception:
+            pass                  # beim nächsten Entdecken klappt es wieder
+    threading.Thread(target=lauf, daemon=True).start()
+
+
+def _sammlung_figuren() -> int:
+    with core.db() as conn:
+        r = conn.execute("SELECT COALESCE(SUM(quantity), 0) AS n FROM "
+                         "collection WHERE item_type = 'minifig'").fetchone()
+    return int(r["n"] or 0)
+
+
+def _abgebbar() -> dict:
+    """Was diese Instanz abgeben kann: Doppelte und ausdrücklich Geteiltes.
+    Schlüssel (Nummer, Typ) → Menge."""
+    frei = {}
+    for d in _duplicate_items()["items"]:
+        schluessel = (d["item_id"], d["item_type"])
+        frei[schluessel] = frei.get(schluessel, 0) + (d["surplus"] or 0)
+    with core.db() as conn:
+        for r in _shared_rows(conn):
+            schluessel = (r["item_id"], r["item_type"])
+            frei.setdefault(schluessel,
+                            r["share_qty"] or r["quantity"] or 1)
+    return frei
+
+
+class ProfilBody(BaseModel):
+    about: str = Field(default="", max_length=280)
+    region: str = Field(default="", max_length=60)
+    themes: list[str] = Field(default_factory=list, max_length=20)
+    wants_public: bool = False
+    show_collection: bool = False
+
+
+@router.get("/api/hub/profil")
+def eigenes_profil(user: dict = Depends(current_user)):
+    _verbunden()
+    try:
+        p = hub.profile()
+    except Exception as e:
+        _hub_fehler(e)
+    # Den Merker nachführen – der Hub ist die Quelle.
+    core.set_setting("hub_wuensche_zeigen", "1" if p.get("wants_public")
+                     else "")
+    p["figuren_hier"] = _sammlung_figuren()
+    return p
+
+
+@router.put("/api/hub/profil")
+def profil_speichern(body: ProfilBody, user: dict = Depends(current_user)):
+    _verbunden()
+    daten = body.model_dump()
+    daten["themes"] = [t.strip()[:40] for t in body.themes if t.strip()]
+    if body.show_collection:
+        daten["collection_count"] = _sammlung_figuren()
+    try:
+        p = hub.put_profile(daten)
+    except Exception as e:
+        _hub_fehler(e)
+    core.set_setting("hub_wuensche_zeigen", "1" if body.wants_public else "")
+    if body.wants_public:
+        try:
+            wuensche_nachziehen(erzwingen=True)
+        except Exception:
+            pass                  # das Profil steht; die Liste folgt später
+    else:
+        core.set_setting("hub_wuensche_stand", "")
+    p["figuren_hier"] = _sammlung_figuren()
+    return p
+
+
+@router.get("/api/hub/profil/{member_id}")
+def fremdes_profil(member_id: str, user: dict = Depends(current_user)):
+    """Profil eines Mitglieds – dazu, was davon hier zusammenpasst."""
+    _verbunden()
+    try:
+        p = hub.profile(member_id)
+    except Exception as e:
+        _hub_fehler(e)
+    frei = _abgebbar()
+    gesucht = {(w["item_id"], w["item_type"]) for w in _eigene_wuensche()}
+    for w in p.get("wants") or []:
+        w["hier_abgebbar"] = frei.get((w["item_id"],
+                                       w.get("item_type") or "minifig"), 0)
+    for o in p.get("offers") or []:
+        o["auf_wunschliste"] = (o["item_id"], o.get("item_type") or "minifig") \
+            in gesucht
+    return p
+
+
+@router.get("/api/hub/entdecken")
+def entdecken(user: dict = Depends(current_user)):
+    """Wer hat, was ich suche – wer sucht, was ich abgeben kann – wer passt."""
+    _verbunden()
+    try:
+        wuensche_nachziehen()
+    except Exception:
+        pass                      # Entdecken geht auch ohne frischen Stand
+    try:
+        angebote = hub.offers()
+        profile = hub.profiles()
+        fremde_wuensche = hub.wants()
+    except Exception as e:
+        _hub_fehler(e)
+
+    meine = _eigene_wuensche()
+    gesucht = {(w["item_id"], w["item_type"]) for w in meine}
+    hat = [{"member_id": o["member_id"], "display_name": o.get("display_name"),
+            "item_id": o["item_id"], "item_type": o.get("item_type"),
+            "name": o["name"], "img_url": o.get("img_url"),
+            "img_data": o.get("img_data"), "condition": o.get("condition"),
+            "qty": o.get("qty") or 1}
+           for o in angebote
+           if (o["item_id"], o.get("item_type") or "minifig") in gesucht]
+
+    frei = _abgebbar()
+    sucht = [{"member_id": w["member_id"], "display_name": w["display_name"],
+              "item_id": w["item_id"], "item_type": w.get("item_type"),
+              "name": w["name"], "img_url": w.get("img_url"),
+              "hier_abgebbar": frei[(w["item_id"],
+                                     w.get("item_type") or "minifig")]}
+             for w in fremde_wuensche
+             if (w["item_id"], w.get("item_type") or "minifig") in frei]
+
+    ich = next((p for p in profile if p.get("eigen")), {})
+    meine_themen = {t.lower() for t in ich.get("themes") or []}
+    passt = []
+    for p in profile:
+        if p.get("eigen"):
+            continue
+        gemeinsam = [t for t in p.get("themes") or []
+                     if t.lower() in meine_themen]
+        if gemeinsam:
+            passt.append({**p, "gemeinsam": gemeinsam})
+    passt.sort(key=lambda p: (-len(p["gemeinsam"]), -(p.get("offers") or 0),
+                              (p.get("display_name") or "").lower()))
+
+    return {"hat": hat, "sucht": sucht, "passt": passt,
+            "wuensche_zeigen": core.get_setting("hub_wuensche_zeigen") == "1",
+            "meine_themen": ich.get("themes") or [],
+            "wuensche_anzahl": len(meine),
+            "profil_leer": not (ich.get("themes") or ich.get("region"))}

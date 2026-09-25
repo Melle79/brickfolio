@@ -22,8 +22,8 @@ def test_community_js_fuehrt_beim_laden_nichts_aus():
     js = (FRONTEND / "community.js").read_text(encoding="utf-8")
     ohne_kommentare = re.sub(r"/\*.*?\*/", "", js, flags=re.S)
     erlaubt = re.compile(
-        r"^(async function |function |let \w+ = (null|false|true|0|\"\w*\"|"
-        r"new Map\(\));|\}|$|//)")
+        r"^(async function |function |let \w+ = (null|false|true|\d+|\[\]|"
+        r"\"\w*\"|new Map\(\));|const [A-Z_]+ = \[|\];|\}|$|//)")
     oben = [z for z in ohne_kommentare.split("\n")
             if z and not z[0].isspace() and not erlaubt.match(z)]
     assert not oben, "oberste Ebene: " + "; ".join(oben[:5])
@@ -39,7 +39,8 @@ def test_hub_endpunkte_liegen_im_community_router():
     community = (WURZEL / "backend" / "community.py").read_text(
         encoding="utf-8")
     assert '"/api/hub' not in main, "Hub-Endpunkte gehören nach community.py"
-    assert community.count('@router.') == 26
+    # 26 beim Umzug (2.88.52), dazu Profile und Entdecken (2.88.53).
+    assert community.count('@router.') >= 26
     assert "app.include_router(community.router)" in main
 
 

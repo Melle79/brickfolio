@@ -1,5 +1,18 @@
 # Changelog
 
+## Hub 1.12.0 – September 2026
+
+### Neu
+- 🧭 **Profile und freiwillig gezeigte Wunschlisten.** Zwei neue Tabellen
+  (`member_profiles`, `wants`) und sechs Endpunkte: eigenes Profil lesen und
+  speichern, fremdes Profil samt Tauschbilanz, Profilliste, eigene Wünsche
+  ersetzen, gezeigte Wünsche der anderen. Wünsche nimmt der Hub nur an,
+  solange „Wunschliste zeigen" gesetzt ist; beim Abschalten löscht er sie
+  sofort. Die Sammlungsgröße speichert er gerundet und zeigt sie nur, wenn
+  sie freigegeben ist. Beim Löschen eines Mitglieds gehen Profil und
+  Wünsche mit.
+- Ältere App-Fassungen fragen diese Wege nicht an und merken nichts davon.
+
 ## Hub 1.11.0 – September 2026
 
 ### Geändert
@@ -44,6 +57,34 @@
   das wäre ein Modellwechsel ein stilles Umschreiben aller Zeilen, und
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
+
+## 2.88.53 – September 2026
+
+### Neu
+- 🧭 **Entdecken im Tausch-Netzwerk.** Der Tausch-Tab öffnet mit einem neuen
+  Reiter und drei Abschnitten, alle auf der eigenen Instanz ausgerechnet:
+  **„Hat, was du suchst"** (Angebote anderer, die auf deiner Wunschliste
+  stehen – deine Wunschliste verlässt dafür die Instanz nicht), **„Sucht, was
+  du übrig hast"** (gezeigte Wunschlisten anderer gegen deine Doppelten und
+  Angebote, mit „🤝 Anbieten") und **„Passt zu dir"** (gleiche
+  Lieblingsthemen).
+- 👤 **Profile.** Ein Tipp auf einen Namen öffnet das Profil: Über mich,
+  Gegend, Lieblingsthemen, Tauschbilanz, freiwillig die gerundete
+  Sammlungsgröße, dazu was das Mitglied anbietet und – falls gezeigt – sucht.
+  Was davon zu dir passt, ist gelb umrandet.
+- ✏️ **Mein Profil** oben im Tab, ganz freiwillig. Zwei Schalter stehen
+  anfangs auf aus: **„Meine Wunschliste im Netzwerk zeigen"** (wird bei jeder
+  Änderung nachgezogen, beim Abschalten oder Trennen im Hub gelöscht) und
+  **„Sammlungsgröße zeigen"**.
+- 🤝 **Einrichtungsplaner nach dem Beitritt.** Sechs Schritte – Beitreten,
+  Über dich, Themen, Sichtbarkeit, Angebote, Los –, jeder überspringbar,
+  gespeichert nach jedem Schritt.
+- Beitreten geht weiterhin nur mit Einladung, und ohne Beitritt bleibt der
+  Tab verborgen.
+
+### Geändert
+- Die Reiter heißen kürzer: „💬 Vorgänge" und „📤 Auswahl", damit vier
+  nebeneinander aufs Telefon passen.
 
 ## 2.88.52 – September 2026
 

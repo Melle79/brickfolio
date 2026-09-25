@@ -6835,6 +6835,16 @@ def get_wanted(user: dict = Depends(current_user)):
     return {"items": items, "stats": dict(stats)}
 
 
+def _wuensche_geaendert() -> None:
+    """Zeigt diese Instanz ihre Wunschliste im Tausch-Netzwerk, zieht sie
+    nach – im Hintergrund, und nur dann. Sonst passiert hier nichts."""
+    try:
+        import community
+        community.wuensche_nachziehen_im_hintergrund()
+    except Exception:
+        pass
+
+
 @app.post("/api/wanted")
 def add_wanted(body: WantedBody, user: dict = Depends(current_user)):
     body.item_id, body.name = _bricklink_nummer(
@@ -6858,6 +6868,7 @@ def add_wanted(body: WantedBody, user: dict = Depends(current_user)):
              user["id"], int(time.time())))
         new_id = cur.lastrowid
     _maybe_fetch_prices_async(new_id, body.item_id, table="wanted")
+    _wuensche_geaendert()
     return {"ok": True, "exists": False,
             "owned": owned["quantity"] if owned else 0}
 
@@ -6936,6 +6947,7 @@ def delete_wanted(wanted_id: int, user: dict = Depends(current_user)):
         if cur.rowcount == 0:
             raise HTTPException(404, "Eintrag nicht gefunden")
     fotos = _fotos_aufraeumen(row["item_type"], row["item_id"]) if row else 0
+    _wuensche_geaendert()
     return {"ok": True, "photos_removed": fotos}
 
 
@@ -6985,6 +6997,7 @@ def acquire_wanted(wanted_id: int, body: AcquireBody,
                 _kauf_buchen(conn, cur_neu.lastrowid, 1, paid_val,
                              "manual" if manual else "geschätzt", now)
         conn.execute("DELETE FROM wanted WHERE id = ?", (wanted_id,))
+    _wuensche_geaendert()
     return {"ok": True, "merged": bool(row)}
 
 

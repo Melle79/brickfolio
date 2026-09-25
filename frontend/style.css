@@ -3178,3 +3178,79 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 }
 .kamera-ausloeser:active { transform: scale(.92); }
 
+
+/* ------------------------------------------ Community: Entdecken, Profile
+   Vorsilbe `cm-`, damit nichts mit den übrigen Bauteilen zusammenstößt. */
+.hub-ich { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; flex-wrap: wrap; }
+.hub-ich .sub { margin: 0; }
+/* Vier Reiter nebeneinander, auch am Telefon: Sie teilen sich die Breite
+   nach Inhalt, und auf schmalen Schirmen wird die Schrift kleiner. */
+#hub-subtabs { display: flex; flex-wrap: nowrap; gap: 4px; }
+#hub-subtabs .mini-btn { flex: 1 1 auto; min-width: 0; padding: 8px 4px;
+  font-size: 13px; white-space: nowrap; }
+@media (max-width: 440px) {
+  #hub-subtabs .mini-btn { font-size: 11.5px; padding: 8px 2px; }
+}
+.cm-avatar, .avatar.klein {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--yellow);
+  border: 2px solid var(--ink); color: #1D1D1B; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 24px;
+}
+.cm-avatar.klein, .avatar.klein { width: 34px; height: 34px; font-size: 15px; }
+.cm-name { background: none; border: 0; padding: 0; font: inherit; font-weight: 800;
+  color: var(--blue); text-decoration: underline; cursor: pointer; }
+.badge .cm-name { color: inherit; }
+.cm-abschnitt { font-weight: 900; font-size: 15px; margin: 16px 0 6px;
+  display: flex; align-items: baseline; gap: 6px; }
+.cm-abschnitt small { font-weight: 700; color: var(--muted); font-size: 12px; }
+.cm-karte { display: flex; gap: 10px; align-items: center; background: var(--card);
+  border: 2px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; }
+.cm-karte img { width: 46px; height: 46px; object-fit: contain; background: #fff;
+  border-radius: 8px; flex: none; }
+.cm-mitte { flex: 1; min-width: 0; }
+.cm-mitte strong { display: block; font-size: 13.5px; line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-mitte .sub { font-size: 12px; margin: 0; }
+.cm-karte .mini-btn { flex: none; min-height: 36px; padding: 4px 10px; font-size: 12.5px; }
+.cm-leer { font-size: 12.5px; color: var(--muted); background: var(--card);
+  border: 1.5px dashed var(--line); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+.cm-leer .link-btn { margin-left: 4px; }
+.cm-kopf { display: flex; gap: 12px; align-items: center; }
+.cm-kopf h3 { margin: 0; font-size: 19px; }
+.cm-kopf .sub { margin: 2px 0 0; font-size: 13px; }
+.cm-ueber { font-size: 13.5px; margin: 10px 0 0; white-space: pre-line; }
+.cm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cm-chip { font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px;
+  background: var(--track); color: var(--muted); border: 0; font-family: inherit;
+  white-space: nowrap; }
+button.cm-chip { cursor: pointer; min-height: 30px; }
+.cm-chip.an { background: var(--yellow); color: #1D1D1B; }
+.cm-chip.jetzt { outline: 2px solid var(--ink); color: var(--ink); }
+.cm-chip.mehr { background: var(--card); border: 1.5px dashed var(--line); }
+.cm-zahlen { display: flex; gap: 8px; margin-top: 10px; }
+.cm-zahl { flex: 1; background: var(--card); border: 2px solid var(--ink); border-radius: 12px;
+  text-align: center; padding: 8px 4px; }
+.cm-zahl b { display: block; font-size: 19px; }
+.cm-zahl span { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.cm-bilder { display: flex; gap: 6px; flex-wrap: wrap; }
+.cm-bild { padding: 0; border: 1.5px solid var(--line); border-radius: 8px; background: #fff;
+  width: 52px; height: 52px; cursor: pointer; }
+.cm-bild.an { border: 3px solid var(--yellow); }
+.cm-bild img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; }
+.cm-anbieten { flex-wrap: wrap; margin-top: 8px; }
+.cm-schalter-zeile { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 0;
+  font-size: 13px; color: var(--ink); cursor: pointer; font-weight: 400; }
+.cm-schalter-zeile small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.cm-schalter { appearance: none; -webkit-appearance: none; width: 40px; height: 24px;
+  border-radius: 999px; background: var(--track); position: relative; flex: none;
+  margin: 1px 0 0; cursor: pointer; transition: background .15s; }
+.cm-schalter::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px;
+  height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3);
+  transition: left .15s; }
+.cm-schalter:checked { background: var(--green); }
+.cm-schalter:checked::after { left: 19px; }
+.planer-box { margin: 0 auto; max-width: 440px; }
+.planer-box h1 { font-size: 26px; }
+.planer-chips { justify-content: center; margin: 0 0 12px; }
+#meinprofil-felder textarea, #planer-inhalt textarea { width: 100%; }

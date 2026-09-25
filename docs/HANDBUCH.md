@@ -283,8 +283,7 @@ Abmelden.
 
 **💬 Ungelesene Nachrichten.** Wartet im Tausch-Netzwerk etwas, erscheint
 links daneben ein Zeichen mit der Zahl der ungelesenen Nachrichten – von
-jedem Tab aus zu sehen. Ein Tipp darauf führt direkt zu *Tausch → Meine
-Vorgänge*. Ist nichts offen, ist auch kein Zeichen da. Beim Öffnen der App
+jedem Tab aus zu sehen. Ein Tipp darauf führt direkt zu *Tausch → Vorgänge*. Ist nichts offen, ist auch kein Zeichen da. Beim Öffnen der App
 fragt Brickfolio einmal beim Hub nach, damit die Zahl gleich stimmt und
 nicht erst nach dem nächsten Takt.
 
@@ -2097,8 +2096,9 @@ Nachrichten dazu. Alles freiwillig; ohne Verbindung fehlt der Tab schlicht.
 Vermittelt wird über einen kleinen **Hub**. Wichtig für das Verständnis:
 
 - Im Hub liegen **nur die veröffentlichten Angebote** und die
-  Vorgangsdaten. Deine Sammlung, Preise, Notizen und Einkaufslisten
-  verlassen die eigene Instanz **nicht**.
+  Vorgangsdaten – dazu, **wenn du es einträgst**, dein Profil und, **wenn du
+  es einschaltest**, deine Wunschliste (12.3). Deine Sammlung, Preise,
+  Notizen und Einkaufslisten verlassen die eigene Instanz **nicht**.
 - **Nachrichten sind Ende-zu-Ende verschlüsselt.** Der Hub kann sie nicht
   lesen; er bewahrt sie nur auf, bis die Gegenseite sie abholt, und löscht
   sie dann. Der lesbare Verlauf lebt auf den beteiligten Instanzen weiter –
@@ -2134,14 +2134,48 @@ beim allerersten Start (2.3) fragt dasselbe ab.
 Der Anzeigename ist netzwerkweit eindeutig und mindestens vier Zeichen
 lang. Ändern lässt er sich nur über den Hub-Admin.
 
+**Direkt nach dem Beitritt** führt ein Einrichtungsplaner in sechs Schritten
+durch den Rest: Über dich, Lieblingsthemen, was andere sehen, was du
+anbietest. Jeder Schritt ist überspringbar („Später einrichten"), gespeichert
+wird nach jedem – alles lässt sich später unter **Mein Profil** ändern.
+
+### 12.3 Entdecken und Profile
+
+Der Tab **Tausch** öffnet mit **🧭 Entdecken**. Drei Abschnitte, alle auf
+deiner eigenen Instanz ausgerechnet:
+
+- **⭐ Hat, was du suchst** – Angebote anderer, die auf deiner Wunschliste
+  stehen. Dafür verlässt deine Wunschliste die Instanz **nicht**: Sie wird
+  hier mit den Angeboten aus dem Hub verglichen.
+- **🔄 Sucht, was du übrig hast** – Mitglieder, deren gezeigte Wunschliste
+  etwas enthält, das du doppelt hast oder anbietest. „🤝 Anbieten" öffnet ein
+  Gespräch mit passendem Vorschlag.
+- **🧩 Passt zu dir** – Mitglieder mit denselben Lieblingsthemen.
+
+**Profile.** Ein Tipp auf einen Namen – im Entdecken wie an jedem Angebot –
+öffnet das Profil: Über mich, Gegend, Lieblingsthemen, die **Tauschbilanz**
+(Angebote und abgeschlossene Tausche, gezählt vom Hub) und, falls
+freigegeben, die gerundete Sammlungsgröße. Darunter, was das Mitglied
+anbietet und – falls gezeigt – sucht; was davon auf deiner Wunschliste steht
+oder was du übrig hast, ist gelb umrandet.
+
+**Mein Profil** (oben im Tab) ist ganz freiwillig; was leer bleibt, erscheint
+nicht. Zwei Schalter stehen anfangs auf **aus**:
+
+- **Meine Wunschliste im Netzwerk zeigen** – dann sehen andere, was du
+  suchst (Nummer, Name, Bild), und „Sucht, was du übrig hast" funktioniert
+  bei ihnen auch mit dir. Die Liste wird bei jeder Änderung nachgezogen.
+  Schaltest du ab, löscht der Hub sie sofort; beim Trennen vom Netzwerk
+  ebenso.
+- **Sammlungsgröße zeigen** – als gerundete Zahl, etwa „≈ 950 Figuren".
+
 **Selbst einladen** darf jedes verbundene Mitglied: im Tausch-Tab
 „✉️ Freund einladen". Jeder hat ein Kontingent von **drei** Einladungen und
 kann beim Hub-Admin mehr anfragen. Der Code gilt einmal.
 
-### 12.3 Was ich anbiete
+### 12.4 Was ich anbiete
 
-Der Tab **Tausch** hat drei Bereiche. Unter **📤 Meine Auswahl** steht, was
-ins Netzwerk geht:
+Unter **📤 Auswahl** im Tab **Tausch** steht, was ins Netzwerk geht:
 
 - Einzelne Artikel wählst du in der **Sammlung** aus: Karte öffnen →
   „🤝 In der Tauschbörse anbieten".
@@ -2158,7 +2192,7 @@ Sichtbar wird die Auswahl erst durch **„📤 Auswahl veröffentlichen"**
 mit einem verkleinerten Vorschaubild mit, damit beim Gegenüber kein
 Platzhalter steht.
 
-### 12.4 Angebote und Gespräche
+### 12.5 Angebote und Gespräche
 
 Unter **🔎 Angebote** stehen die Artikel der anderen, mit Suchfeld über
 Name und Nummer. Ein Tipp auf eine Karte öffnet das Anfrage-Fenster mit
@@ -2166,7 +2200,7 @@ einer vorgeschlagenen Nachricht, die du überschreiben kannst. Läuft zu dem
 Angebot schon ein Gespräch, geht stattdessen direkt der Chat auf – an der
 Karte steht das auch dran („angefragt · offen").
 
-Unter **💬 Meine Vorgänge** liegen alle Gespräche. Im offenen Chat kommen
+Unter **💬 Vorgänge** liegen alle Gespräche. Im offenen Chat kommen
 neue Nachrichten **von selbst** an, ohne „Abrufen". An eigenen Nachrichten
 steht „unterwegs …" bzw. „zugestellt ✓".
 
@@ -2180,7 +2214,7 @@ Im Gespräch gibt es außerdem:
 Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
 über dem Verlauf **„nicht mehr angeboten"**.
 
-### 12.5 Angenommen – und dann?
+### 12.6 Angenommen – und dann?
 
 „Annehmen" ist zunächst nur die Zusage im Gespräch. Damit sich auch in deinen
 Beständen etwas tut, steht im Gespräch direkt unter dem Verlauf ein Knopf –
@@ -2230,7 +2264,7 @@ Von allein passiert das nie: Ohne Klick auf **Austragen** im App-Fenster
 bleibt die Sammlung, wie sie ist. In der Vorgangsliste steht so lange
 **„noch nicht ausgetragen"**.
 
-### 12.6 Melden
+### 12.7 Melden
 
 Läuft etwas schief, geht über „⚑ Melden" eine Meldung an den Hub-Admin.
 Der Haken **„Nachrichtenverlauf mitschicken"** ist dabei die einzige
@@ -2238,7 +2272,7 @@ Möglichkeit, wie ein Verlauf jemals lesbar wird: Deine Instanz entschlüsselt
 ihn und legt ihn freiwillig offen. Ohne Haken sieht der Admin nur deine
 Begründung. Eine Hintertür im Hub gibt es nicht.
 
-### 12.7 Wenn der Zugang gesperrt wurde
+### 12.8 Wenn der Zugang gesperrt wurde
 
 Ein Hub-Admin kann Zugänge sperren. Dann steht im Tausch-Tab ein deutlicher
 Hinweis. Was das bedeutet:
@@ -2253,7 +2287,7 @@ Hinweis. Was das bedeutet:
 Deshalb der Rat auf dem Hinweis: **nicht die Verbindung trennen.** Trennen
 löst das Konto, und der Weg zurück wird umständlicher.
 
-### 12.8 Verwaltung
+### 12.9 Verwaltung
 
 Mitglieder verwalten, Einladungsanfragen entscheiden, Meldungen ansehen,
 Angebote aufräumen – das läuft **nicht** in der App, sondern in einer

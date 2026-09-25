@@ -587,7 +587,11 @@
   <!-- Tausch-Netzwerk -->
   <main id="view-hub" class="view" hidden>
     <h2>🤝 Tausch-Netzwerk</h2>
-    <p class="sub" id="hub-view-who"></p>
+    <div class="hub-ich">
+      <span class="avatar klein" id="hub-ich-avatar" aria-hidden="true"></span>
+      <span class="sub" id="hub-view-who"></span>
+      <button type="button" class="link-btn" id="hub-mein-profil">Mein Profil</button>
+    </div>
     <p class="warn-line" id="hub-blocked" hidden>🚫 <b>Zugang gesperrt.</b>
       Ein Hub-Admin hat diese Instanz aus dem Netzwerk genommen. Angebote und
       neue Nachrichten sind bis auf Weiteres nicht möglich; bisherige
@@ -595,10 +599,15 @@
       ohne neues Verbinden weiter – trenne die Verbindung also nicht.</p>
 
     <div class="tab-row" id="hub-subtabs">
-      <button class="mini-btn sel" data-hubtab="offers">🔎 Angebote</button>
-      <button class="mini-btn" data-hubtab="trades">💬 Meine Vorgänge <span id="hub-unread" class="badge badge-wanted" hidden></span></button>
-      <button class="mini-btn" data-hubtab="share">📤 Meine Auswahl</button>
+      <button class="mini-btn sel" data-hubtab="entdecken">🧭 Entdecken</button>
+      <button class="mini-btn" data-hubtab="offers">🔎 Angebote</button>
+      <button class="mini-btn" data-hubtab="trades">💬 Vorgänge <span id="hub-unread" class="badge badge-wanted" hidden></span></button>
+      <button class="mini-btn" data-hubtab="share">📤 Auswahl</button>
     </div>
+    <!-- Entdecken: ausgerechnet auf dieser Instanz (community.js) -->
+    <section id="hubpane-entdecken">
+      <div id="hub-entdecken" class="entdecken"></div>
+    </section>
 
     <!-- Angebote der anderen -->
     <section id="hubpane-offers">
@@ -639,6 +648,52 @@
     </section>
   </main>
 
+  <!-- Profil eines Mitglieds -->
+  <div id="profil-overlay" class="card-modal-overlay" hidden>
+    <div class="card-modal">
+      <button class="card-modal-close" id="profil-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <div id="profil-inhalt"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Mein Profil bearbeiten -->
+  <div id="meinprofil-overlay" class="card-modal-overlay" hidden>
+    <div class="card-modal">
+      <button class="card-modal-close" id="meinprofil-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open" role="dialog" aria-modal="true">
+        <h3 style="margin:0 0 4px">👤 Mein Profil</h3>
+        <p class="search-hint" style="margin:0 0 8px">So sehen dich die anderen im Netzwerk. Alles freiwillig – was leer bleibt, erscheint einfach nicht.</p>
+        <div id="meinprofil-felder"></div>
+        <div class="card-actions scan-tasten" style="margin-top:14px">
+          <button class="mini-btn add" id="meinprofil-speichern">✔ Speichern</button>
+        </div>
+        <p class="error" id="meinprofil-fehler" hidden></p>
+        <p class="search-hint" style="margin-top:8px">Tauschbilanz und „Mitglied seit" zählt der Hub selbst.</p>
+      </div>
+    </div>
+  </div>
+  <!-- Community einrichten – direkt nach dem Beitritt -->
+  <div id="planer-overlay" class="card-modal-overlay" hidden>
+    <div class="card-modal">
+      <div class="wizard-box planer-box" role="dialog" aria-modal="true">
+        <div class="logo">
+          <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
+          <h1>Willkommen im Netzwerk 🤝</h1>
+          <p class="wiz-step-of" id="planer-schritt"></p>
+        </div>
+        <div class="cm-chips planer-chips" id="planer-leiste"></div>
+        <div id="planer-inhalt"></div>
+        <p class="error" id="planer-fehler" hidden></p>
+        <div class="wiz-nav">
+          <button class="btn btn-outline" id="planer-zurueck">Zurück</button>
+          <button class="btn btn-outline" id="planer-ueberspringen">Überspringen</button>
+          <button class="btn btn-primary" id="planer-weiter">Weiter</button>
+        </div>
+        <button class="wiz-quit" id="planer-spaeter">Später einrichten</button>
+      </div>
+    </div>
+  </div>
   <!-- Interesse an einem Angebot anmelden -->
   <div id="interest-overlay" class="card-modal-overlay" hidden>
     <div class="card-modal">
