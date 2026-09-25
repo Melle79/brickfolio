@@ -119,9 +119,24 @@ def test_da_ab_in_die_sammlung_fragt_nicht_doppelt():
     assert "data-recv-paid" not in q, "das zweite Preisfeld"
     assert "data-rc-go" not in q, "„… übernehmen\""
     n = q.index('card.querySelectorAll("[data-i-recv]")')
-    teil = q[n:n + 4500]
+    teil = q[n:q.index('card.querySelectorAll("[data-i-undo]")', n)]
     assert 'row.querySelector("[data-ip]")' in teil, (
         "der Preis kommt aus dem Einkaufsfeld der Zeile")
+
+
+def test_da_ab_in_die_sammlung_bestaetigt_in_der_zeile():
+    """„Bisher verschwindet es einfach ohne Rückmeldung" (25.09.2026): Die
+    Zeile bleibt kurz stehen, grün markiert und mit dem Schild aus der
+    Wunschliste – erst danach räumt die Liste auf."""
+    q = js()
+    n = q.index('card.querySelectorAll("[data-i-recv]")')
+    teil = q[n:q.index('card.querySelectorAll("[data-i-undo]")', n)]
+    assert 'row.classList.add("angekommen")' in teil
+    assert 'class="badge badge-owned"' in teil
+    # Aufgeräumt wird erst nach der Anzeige, nicht sofort.
+    assert teil.index("ANGEKOMMEN_MS") < teil.index("loadLists()")
+    assert "Einkaufspreis gemittelt" not in q, "seit 2.88.40 wird addiert"
+    assert ".fig-row.angekommen {" in css()
 
 
 def test_die_echte_rueckfrage_bleibt():
@@ -130,3 +145,12 @@ def test_die_echte_rueckfrage_bleibt():
     q = js()
     assert 'data-rm="add"' in q and 'data-rm="replace"' in q
     assert 'class="mini-btn zust-abbruch" data-rm-cancel' in q
+
+
+def test_das_jahr_steht_nur_einmal_im_vorschlag():
+    """„sw0815 · 2017 · 2017 · Ø neu …" (25.09.2026): Der eigene Katalog
+    gibt das Jahr als `sub` mit, die Nachreichung hängte es noch einmal an."""
+    q = js()
+    n = q.index("function applySuggestInfo")
+    teil = q[n:q.index("let gallery", n)]
+    assert "schonDa.includes(String(d.year))" in teil

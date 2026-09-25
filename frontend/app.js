@@ -387,6 +387,11 @@ const NEUSTART_SPIELRAUM_MS = 120000;
 
 /* ---------------------------------------------------------------- UI-Helfer */
 let toastTimer;
+/* So lange bleibt ein angekommener Einkaufsartikel grün markiert stehen,
+   bevor die Liste aufräumt – lang genug zum Sehen, kurz genug, um beim
+   Abhaken mehrerer Artikel nicht zu bremsen. */
+const ANGEKOMMEN_MS = 1400;
+
 function toast(msg) {
   const el = $("toast");
   // Hier zentral übersetzen: Die rund 200 Aufrufstellen übergeben den
@@ -988,7 +993,13 @@ function applySuggestInfo(info, withDetail, geprueft) {
     if (withDetail) {
       const sub = card.querySelector("[data-sug-sub]");
       const parts = [];
-      if (d.year > 0) parts.push(String(d.year));
+      // Das Jahr steht schon da, wenn der eigene Katalog es mitgab – er
+      // liefert es als `sub`, und das ist Teil von `sugBase`. Vorher hieß es
+      // dann „sw0815 · 2017 · 2017 · Ø neu …" (gemeldet am 25.09.2026).
+      const schonDa = (card.dataset.sugBase || "").split(" · ");
+      if (d.year > 0 && !schonDa.includes(String(d.year))) {
+        parts.push(String(d.year));
+      }
       if (d.new != null) parts.push(tr("Ø neu") + " " + fmtEur(d.new));
       if (d.used != null) parts.push(tr("Ø gebr.") + " " + fmtEur(d.used));
       // **Leer ist nicht kaputt.** Manche BrickLink-Einträge haben keinen
@@ -8089,20 +8100,41 @@ function renderLists(lists) {
         const cond = listItem && listItem.condition === "new" ? "new" : "used";
         const condLabel = cond === "new" ? tr("Neu") : tr("Gebraucht");
 
-        const send = async (mode, paid) => {
+        const send = async (mode, paid, owned = 0) => {
           const res = await api(`/lists/items/${iid}/receive`,
             { method: "POST", body: { condition: cond,
               paid_price: paid, mode } });
           if (res.need_mode) return res;
+          const name = (listItem && listItem.name) || "";
           toast(res.list_archived
             ? "In die Sammlung ✔ – Liste abgearbeitet, ab ins Archiv 🎉"
             : (mode === "replace" ? "Eintrag überschrieben ✔"
                : (res.merged
-                  ? "Anzahl erhöht, Einkaufspreis gemittelt ✔"
-                  : "In die Sammlung übernommen ✔")));
+                  ? tr("„{name}“: Anzahl erhöht ✔", { name })
+                  : tr("„{name}“ ist in der Sammlung ✔", { name }))));
+          // **Die Bestätigung steht dort, wo man hinschaut.** Vorher
+          // verschwand die Zeile sofort, und die Meldung erschien unten am
+          // Rand – wer auf den Artikel sah, bekam keine Rückmeldung. Jetzt
+          // wird die Zeile kurz grün markiert und trägt das Schild, das
+          // auch die Wunschliste für „schon in der Sammlung" zeigt; erst
+          // danach räumt die Liste auf.
+          const menge = (listItem && listItem.qty) || 1;
+          const schild = document.createElement("div");
+          schild.className = "liste-angekommen";
+          schild.innerHTML = `<span class="badge badge-owned">${esc(owned
+            ? tr("✔ In der Sammlung · jetzt {n}×",
+                 { n: mode === "replace" ? menge : owned + menge })
+            : tr("✔ In der Sammlung · {zustand}", { zustand: condLabel }))}</span>`;
+          row.querySelectorAll("[data-recv-row]").forEach((x) => x.remove());
+          actions.hidden = true;
+          actions.after(schild);
+          row.classList.add("angekommen");
+          const gezeigt = Date.now();
           if (listItem) {
             await askSetFigures(listItem, cond);
           }
+          const rest = ANGEKOMMEN_MS - (Date.now() - gezeigt);
+          if (rest > 0) await new Promise((r) => setTimeout(r, rest));
           loadLists();
           updateListsTab();
           return res;
@@ -8128,7 +8160,7 @@ function renderLists(lists) {
             mb.addEventListener("click", async () => {
               mb.disabled = true;
               try {
-                await send(mb.dataset.rm, paid);
+                await send(mb.dataset.rm, paid, owned);
               } catch (e2) {
                 toast(e2.message);
                 mb.disabled = false;
@@ -8152,8 +8184,8 @@ function renderLists(lists) {
         // **Kein zweiter Schritt mehr.** Für Profis öffnete der Knopf hier
         // eine eigene Zeile mit „Preis [..] € – leer = BrickLink-Ø" und
         // „✔ Gebraucht übernehmen" – dabei stehen Einkaufspreis und Zustand
-        // direkt darüber in derselben Karte. Sven am 24.09.2026: „warum
-        // doppelt?". Genommen wird jetzt, was dort steht – auch ein Preis,
+        // direkt darüber in derselben Karte (Rückmeldung am 24.09.2026:
+        // „warum doppelt?"). Genommen wird jetzt, was dort steht – auch ein Preis,
         // der noch nicht mit ✓ gespeichert ist, denn den sieht man ja.
         // Leer heißt wie bisher: BrickLink-Durchschnitt.
         let paid = null;

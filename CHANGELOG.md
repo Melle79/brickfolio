@@ -45,6 +45,25 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.41 – September 2026
+
+### Geändert
+- ✅ **„Da! Ab in die Sammlung" bestätigt sichtbar.** Bisher verschwand der
+  Artikel einfach aus der Einkaufsliste, und die Meldung erschien unten am
+  Rand – wer auf den Artikel schaute, bekam keine Rückmeldung. Jetzt bleibt
+  die Zeile kurz stehen, links grün markiert und mit dem Schild
+  „✔ In der Sammlung · Gebraucht" (beim Dazulegen „· jetzt 3×"), dasselbe
+  Grün wie „schon in der Sammlung" auf der Wunschliste. Erst danach rückt
+  sie zu den erledigten. Die Meldung unten nennt dazu den Namen.
+
+### Behoben
+- 🗓 **Das Jahr steht in den Suchvorschlägen nur noch einmal.** Beim
+  manuellen Erfassen hieß es „sw0815 · 2017 · 2017 · Ø neu …": Der eigene
+  Katalog gibt das Jahr gleich mit, und die Preisabfrage hängte es ein
+  zweites Mal an.
+- Beim Dazulegen hieß die Meldung noch „Einkaufspreis gemittelt" – seit
+  2.88.40 wird addiert, wie es sich für ein Kaufbuch gehört.
+
 ## 2.88.40 – September 2026
 
 ### Behoben

@@ -107,7 +107,6 @@
  "Anz.": "Qty",
  "Anzahl": "Quantity",
  "Anzahl erhöhen": "Increase the quantity",
- "Anzahl erhöht, Einkaufspreis gemittelt ✔": "Quantity increased, purchase price averaged ✔",
  "Anzahl verringern": "Decrease the quantity",
  "Anzeigename gespeichert ✔": "Display name saved ✔",
  "Anzeigename im Netzwerk": "Display name in the network",
@@ -1197,5 +1196,9 @@
  "Schon {n}× in der Sammlung:": "Already {n}× in the collection:",
  "＋ Zusätzlich": "＋ In addition",
  "Überschreiben": "Overwrite",
- "Einkauf {cur} – leer = BrickLink-Ø": "Bought {cur} – empty = BrickLink average"
+ "Einkauf {cur} – leer = BrickLink-Ø": "Bought {cur} – empty = BrickLink average",
+ "„{name}“: Anzahl erhöht ✔": "“{name}”: quantity increased ✔",
+ "„{name}“ ist in der Sammlung ✔": "“{name}” is in the collection ✔",
+ "✔ In der Sammlung · jetzt {n}×": "✔ In the collection · now {n}×",
+ "✔ In der Sammlung · {zustand}": "✔ In the collection · {zustand}"
 }

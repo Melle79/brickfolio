@@ -652,6 +652,17 @@ code {
 }
 .liste-fuss .zust-abbruch:active { background: var(--red); color: #fff; }
 
+/* „Da! Ab in die Sammlung" hat geklappt: Die Zeile bleibt kurz stehen,
+   grün markiert und mit dem Schild, das die Wunschliste für „schon in der
+   Sammlung" zeigt – erst danach räumt die Liste auf. */
+.fig-row.angekommen {
+  box-shadow: inset 4px 0 0 var(--green);
+  padding-left: 10px;
+  transition: box-shadow .2s, padding-left .2s;
+}
+.liste-angekommen { margin-top: 8px; }
+.liste-angekommen .badge { font-size: 13px; padding: 5px 10px; }
+
 /* Fehlende Set-Figuren: der Stern als Zeichen rechts an der Zeile, statt
    einer Knopfzeile je Figur. Gefüllt (★) heißt: steht schon auf der
    Wunschliste – dasselbe Gelb wie ein gedrückter Zeichen-Knopf. */
