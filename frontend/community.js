@@ -457,7 +457,8 @@ async function renderTrade(quiet = false) {
       <div class="trade-msg${m.mine ? " mine" : ""}">
         ${esc(m.body)}
         <span class="when">${new Date(m.created_at * 1000)
-          .toLocaleString(dateLocale())}${m.mine ? (m.delivered ? " · zugestellt ✓" : " · unterwegs …") : ""}</span>
+          .toLocaleString(dateLocale())}${m.mine ? (m.delivered ? " · zugestellt ✓"
+          : (entfernt ? "" : " · unterwegs …")) : ""}</span>
       </div>`).join("");
     if (!quiet || atBottom) box.scrollTop = box.scrollHeight;
     refreshUnread();
@@ -822,7 +823,7 @@ async function sendInterest() {
       // Artikel damit ohne Nachfragen in die Sammlung buchen.
       item_type: o.typ || "", img_url: o.bild || "",
       bricklink_url: o.bl || "", condition: o.zustand || "",
-      kind: o.kind || "anfrage" } });
+      kind: o.kind || "anfrage", other_name: o.who || "" } });
     closeInterest();
     toast(o.kind === "angebot"
       ? "Angeboten – das Gespräch steht unter Nachrichten 💬"

@@ -30,7 +30,7 @@ drei Stellen gefunden, an denen Brickfolio sie nicht erfüllte.
   Fehlerberichten entfernt. Sichtbar in der eigenen Instanz heißt nicht
   sichtbar in einem öffentlichen Issue.
 
-## 2.88.56 – September 2026
+## 2.88.57 – September 2026
 
 Gefunden beim Durchspielen von vier Tauschgesprächen zwischen zwei
 Testinstanzen und einer echten.
@@ -50,6 +50,9 @@ Testinstanzen und einer echten.
 - 👻 **Vom Gegenüber gelöschte Gespräche standen ewig als „offen" da.**
   Antworten liefen ins Leere. Jetzt heißen sie „vom Gegenüber gelöscht",
   bleiben lesbar, und das Eingabefeld verschwindet.
+- Ein neues Gespräch zeigte bis zum ersten Abgleich „an ?" statt des
+  Namens, und eine nie zugestellte Nachricht in einem gelöschten Gespräch
+  stand ewig auf „unterwegs …".
 - **Annehmen und Ablehnen** standen auch beim Fragenden, der so seine eigene
   Anfrage „annehmen" konnte. Jetzt sieht die Knöpfe nur, wer gefragt wurde,
   und nur, solange das Gespräch offen ist.

@@ -469,6 +469,10 @@ class TradeStartBody(BaseModel):
     # „anfrage“: ich möchte den Artikel des Gegenübers. „angebot“: das
     # Gegenüber sucht ihn, und ich gebe meinen ab.
     kind: str = Field(default="anfrage", pattern="^(anfrage|angebot)$")
+    # Name des Gegenübers, wie er am Angebot stand. Sonst stand bis zum
+    # ersten Abgleich „an ?“ da – und für immer, wenn das Gegenüber das
+    # Gespräch vorher löschte.
+    other_name: str = Field(default="", max_length=80)
 
 
 def _kommt_zu_mir(t) -> bool:
@@ -554,7 +558,8 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
                 "item_id, item_name, status, created_at, updated_at, read_at, "
                 "item_type, img_url, bricklink_url, condition, kind) "
                 "VALUES (?, 'out', ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?)",
-                (tid, body.to, "", body.item_id, body.item_name,
+                (tid, body.to, body.other_name.strip(), body.item_id,
+                 body.item_name,
                  now_ts, now_ts, now_ts,
                  body.item_type if body.item_type in
                  ("minifig", "set", "part") else "",

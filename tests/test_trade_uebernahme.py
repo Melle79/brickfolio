@@ -287,12 +287,13 @@ def test_start_trade_passes_the_kind_to_the_hub(client, monkeypatch):
     monkeypatch.setattr(hub, "create_trade", anlegen)
     r = client.post("/api/hub/trades", json={
         "to": "m_bruno", "item_id": "sw1", "item_name": "A", "text": "Hallo",
-        "kind": "angebot"})
+        "kind": "angebot", "other_name": "Bruno"})
     assert r.status_code == 200, r.text
     assert gesendet["kind"] == "angebot"
     with core.db() as conn:
-        assert conn.execute("SELECT kind FROM trades WHERE id = 'trd_neu'"
-                            ).fetchone()[0] == "angebot"
+        t = conn.execute("SELECT kind, other_name FROM trades "
+                         "WHERE id = 'trd_neu'").fetchone()
+    assert t["kind"] == "angebot" and t["other_name"] == "Bruno"
 
 
 def test_give_rejects_trades_that_are_not_accepted(client):
