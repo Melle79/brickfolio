@@ -818,7 +818,6 @@
  "Zusätzlich zum Passwort ein Einmalcode aus einer Authenticator-App. Empfehlenswert, sobald die App von außen erreichbar ist.": "A one-time code from an authenticator app on top of your password. Recommended as soon as the app is reachable from outside.",
  "Zwei Exemplare": "Two copies",
  "Zwei-Faktor ausgeschaltet": "Two-factor login turned off",
- "Zwei-Faktor ist aktiv 🔐": "Two-factor login is active 🔐",
  "Zwei-Faktor ist bereits aktiv": "Two-factor login is already active",
  "Zwei-Faktor ist nicht aktiv": "Two-factor login is not active",
  "Złoty (zł)": "Złoty (zł)",
@@ -1201,5 +1200,6 @@
  "✔ In der Sammlung · jetzt {n}×": "✔ In the collection · now {n}×",
  "✔ In der Sammlung · {zustand}": "✔ In the collection · {zustand}",
  "✔ Übernehmen": "✔ Use this",
- "Neue Liste, z. B. Flohmarkt": "New list, e.g. flea market"
+ "Neue Liste, z. B. Flohmarkt": "New list, e.g. flea market",
+ "Zwei-Faktor ist aktiv 🔐 – andere Geräte müssen sich neu anmelden": "Two-factor is on 🔐 – other devices need to sign in again"
 }

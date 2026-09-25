@@ -45,6 +45,24 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.47 – September 2026
+
+### Behoben
+- 🔐 **Der QR-Code für die Zwei-Faktor-Anmeldung ließ sich nicht scannen.**
+  Er kam mit fester Größe (265 px) und ohne `viewBox`; die Oberfläche zeigt
+  ihn in 200 px, und ein solches Bild wird dabei nicht verkleinert, sondern
+  abgeschnitten – rechts und unten fehlte ein Drittel. Keine
+  Authenticator-App konnte ihn lesen (gemeldet mit dem Google
+  Authenticator). Jetzt skaliert er, hat den Rand, den die Norm verlangt,
+  und einen weißen Grund im Bild selbst. Nachgeprüft mit der
+  QR-Erkennung von macOS: der alte nicht lesbar, der neue fehlerfrei.
+
+### Geändert
+- 🔐 **Einschalten der Zwei-Faktor-Anmeldung beendet alle anderen
+  Sitzungen.** Ein Gerät, das schon angemeldet war, blieb es bis zu 90 Tage
+  – ohne je nach dem Code gefragt zu werden. Jetzt muss es sich neu
+  anmelden; das Gerät, auf dem man einschaltet, bleibt angemeldet.
+
 ## 2.88.46 – September 2026
 
 ### Geändert

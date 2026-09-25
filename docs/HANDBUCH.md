@@ -798,6 +798,13 @@ Zwei-Faktor-Anmeldung**:
    angezeigt: Danach liegen in der Datenbank nur noch ihre Prüfsummen.
    Ausdrucken oder in den Passwortspeicher legen.
 
+Mit dem Einschalten **enden alle anderen Sitzungen** dieses Kontos: Jedes
+Gerät, das schon angemeldet war, muss sich neu anmelden – jetzt mit Code.
+Das Gerät, auf dem man gerade einschaltet, bleibt angemeldet.
+
+Ein angemeldetes Gerät bleibt es bis zu **90 Tage** (`TOKEN_DAYS`); der Code
+wird beim Anmelden verlangt, nicht bei jedem Öffnen der App.
+
 **Anmelden** läuft danach in zwei Schritten: erst Passwort, dann Code. Wer
 das Telefon nicht zur Hand hat, gibt statt des Codes einen **Rettungscode**
 ein – jeder gilt genau einmal, die App sagt danach, wie viele übrig sind.

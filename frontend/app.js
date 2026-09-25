@@ -2784,6 +2784,12 @@ function wireTfaOnce() {
     try {
       const r = await api("/me/2fa/confirm", { method: "POST",
         body: { code: $("tfa-confirm").value.trim() } });
+      // Das Einschalten beendet alle Sitzungen – auch diese. Der Server legt
+      // deshalb eine frische bei; ohne sie flöge man hier sofort hinaus.
+      if (r.token) {
+        state.token = r.token;
+        localStorage.setItem("bf_token", r.token);
+      }
       $("tfa-confirm").value = "";
       $("tfa-codeliste").textContent = r.recovery_codes.join("\n");
       zeigeTfa("codes");
@@ -2797,7 +2803,7 @@ function wireTfaOnce() {
 
   $("btn-tfa-done").addEventListener("click", () => {
     ladeTfaStatus();
-    toast(tr("Zwei-Faktor ist aktiv 🔐"));
+    toast(tr("Zwei-Faktor ist aktiv 🔐 – andere Geräte müssen sich neu anmelden"));
   });
 
   $("btn-tfa-disable").addEventListener("click", async () => {

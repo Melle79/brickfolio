@@ -509,6 +509,13 @@ Two-factor login**:
    afterwards the database holds nothing but their checksums. Print them or
    put them in your password manager.
 
+Turning it on **ends all other sessions** of the account: every device that
+was already signed in has to sign in again – now with a code. The device you
+are turning it on from stays signed in.
+
+A signed-in device stays signed in for up to **90 days** (`TOKEN_DAYS`); the
+code is asked for when signing in, not every time the app opens.
+
 **Signing in** then happens in two steps: first the password, then the code.
 If you do not have your phone at hand, enter a **recovery code** instead of
 the six digits – each works exactly once, and the app tells you how many are

@@ -716,7 +716,15 @@ def totp_qr(user: dict = Depends(current_user)):
     url = totp.otpauth_url(row["totp_pending"], user["name"],
                            _app_title())
     puffer = io.BytesIO()
-    segno.make(url, error="m").save(puffer, kind="svg", scale=5, border=2)
+    # **Mit viewBox statt fester Größe** (`omitsize`). Die Oberfläche zeigt
+    # den Code in 200 px; ein SVG mit festen 265 px und ohne viewBox wird
+    # dabei nicht verkleinert, sondern **abgeschnitten** – rechts und unten
+    # fehlte ein Drittel, und keine Authenticator-App konnte ihn lesen
+    # (gemeldet am 25.09.2026 mit dem Google Authenticator). Dazu der Rand,
+    # den die Norm verlangt (4 Module), und ein weißer Grund im Bild selbst,
+    # damit es auf keinem dunklen Design dunkel auf dunkel steht.
+    segno.make(url, error="m").save(puffer, kind="svg", scale=5, border=4,
+                                    omitsize=True, light="#fff")
     return Response(puffer.getvalue(), media_type="image/svg+xml",
                     headers={"Cache-Control": "no-store"})
 
@@ -744,9 +752,18 @@ def totp_confirm(body: TotpCodeBody, user: dict = Depends(current_user)):
                      "WHERE id = ?",
                      (schritt, json.dumps([totp.rettungscode_hash(c)
                                            for c in codes]), user["id"]))
+    # **Alle anderen Sitzungen enden.** Wer den zweiten Faktor einschaltet,
+    # will auch, dass ein Gerät, das schon angemeldet ist, ihn braucht –
+    # vorher blieb es bis zu 90 Tage drin. Das eigene Gerät bekommt, wie beim
+    # Passwortwechsel, eine frische Sitzung mit.
+    core.sitzungen_beenden(user["id"])
+    with core.db() as conn:
+        urow = conn.execute("SELECT id, username, is_admin FROM users "
+                            "WHERE id = ?", (user["id"],)).fetchone()
+    token = core.create_token(urow["id"], urow["username"], urow["is_admin"])
     # Die Rettungscodes gehen genau hier einmal hinaus – danach liegen nur
     # noch ihre Hashes in der Datenbank.
-    return {"ok": True, "recovery_codes": codes}
+    return {"ok": True, "recovery_codes": codes, "token": token}
 
 
 class TotpOffBody(BaseModel):

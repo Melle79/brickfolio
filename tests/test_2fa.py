@@ -45,6 +45,9 @@ def einrichten(c):
     r = c.post("/api/me/2fa/confirm",
                json={"code": totp.code_jetzt(s["secret"])})
     assert r.status_code == 200
+    # Das Einschalten beendet alle Sitzungen; weiter geht es mit der
+    # frischen, die der Server beilegt.
+    c.headers["Authorization"] = "Bearer " + r.json()["token"]
     return s["secret"], r.json()["recovery_codes"]
 
 
@@ -66,7 +69,9 @@ def test_einschalten_erst_nach_gueltigem_code(client):
     assert client.post("/api/me/2fa/confirm",
                        json={"code": "000000"}).status_code == 401
     assert client.get("/api/me/2fa").json()["active"] is False
-    client.post("/api/me/2fa/confirm", json={"code": totp.code_jetzt(s["secret"])})
+    r = client.post("/api/me/2fa/confirm",
+                    json={"code": totp.code_jetzt(s["secret"])})
+    client.headers["Authorization"] = "Bearer " + r.json()["token"]
     assert client.get("/api/me/2fa").json()["active"] is True
 
 
@@ -205,3 +210,27 @@ def test_normaler_sitzungstoken_taugt_nicht_als_zwischenmarke(client):
                     json={"challenge": sitzung, "code": "000000"})
     assert r.status_code == 401
     assert "abgelaufen" in r.json()["detail"] or "neu" in r.json()["detail"]
+
+
+def test_einschalten_beendet_die_anderen_sitzungen(client):
+    """Ein Gerät, das schon angemeldet war, blieb es bis zu 90 Tage – auch
+    nachdem der zweite Faktor eingeschaltet war."""
+    anderes_geraet = anmelden(client).json()["token"]
+    einrichten(client)
+    r = client.get("/api/collection",
+                   headers={"Authorization": "Bearer " + anderes_geraet})
+    assert r.status_code == 401, "das andere Gerät muss sich neu anmelden"
+    assert client.get("/api/me/2fa").json()["active"] is True, \
+        "das eigene Gerät bleibt mit der frischen Sitzung angemeldet"
+
+
+def test_qr_code_laesst_sich_skalieren(client):
+    """Das SVG hatte feste 265 px ohne viewBox; die Oberfläche zeigt es in
+    200 px – abgeschnitten, und keine Authenticator-App konnte es lesen."""
+    client.headers["Authorization"] = "Bearer " + anmelden(client).json()["token"]
+    client.post("/api/me/2fa/start", json={"password": "geheim12345"})
+    r = client.get("/api/me/2fa/qr")
+    assert r.status_code == 200
+    kopf = r.text[r.text.index("<svg"):r.text.index(">", r.text.index("<svg"))]
+    assert "viewBox" in kopf
+    assert 'width="' not in kopf and 'height="' not in kopf
