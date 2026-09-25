@@ -361,6 +361,47 @@ def _sync_trade(trade_id: str) -> int:
     return new
 
 
+def _buchung_melden(trade_id: str, kommt: bool) -> str | None:
+    """Dem Hub sagen, dass hier gebucht ist – ausgetragen oder übernommen.
+
+    Haben beide Seiten gebucht, schließt der Hub den Tausch. Geht das gerade
+    nicht, holt es der nächste Abgleich nach; die Buchung selbst steht.
+    Gibt den neuen Status zurück, wenn der Hub ihn nennt.
+    """
+    try:
+        res = hub.trade_progress(trade_id, "taken" if kommt else "given")
+    except (hub.HubError, requests.RequestException):
+        return None
+    status = res.get("status")
+    if status in ("accepted", "closed"):
+        with core.db() as conn:
+            conn.execute("UPDATE trades SET status = ? WHERE id = ?",
+                         (status, trade_id))
+    return status
+
+
+def _buchungen_nachmelden(remote: list, me: str) -> None:
+    """Hier gebucht, dem Hub aber (noch) nicht gemeldet? Dann jetzt.
+
+    Fängt zweierlei auf: eine Meldung, die beim Buchen nicht durchkam, und
+    Tausche, die vor 2.89.4 gebucht wurden – die schließen sich so beim
+    ersten Abgleich von selbst. Ein Hub vor 1.16.0 schickt die Felder gar
+    nicht mit; dann wird auch nichts gemeldet.
+    """
+    with core.db() as conn:
+        lokal = {r["id"]: r for r in conn.execute(
+            "SELECT id, direction, kind, taken_at FROM trades "
+            "WHERE taken_at IS NOT NULL").fetchall()}
+    for t in remote:
+        r = lokal.get(t["id"])
+        if not r or "given_at" not in t or t["status"] not in (
+                "accepted", "closed"):
+            continue
+        kommt = _kommt_zu_mir(r)
+        if not t.get("taken_at" if kommt else "given_at"):
+            _buchung_melden(t["id"], kommt)
+
+
 @router.post("/api/hub/trades/sync")
 def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
     """Vorgänge und neue Nachrichten vom Hub holen.
@@ -388,19 +429,25 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                 conn.execute(
                     "INSERT INTO trades (id, direction, other_id, other_name, "
                     "item_id, item_name, status, created_at, updated_at, kind, "
-                    "shipped_at, arrived_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "shipped_at, arrived_at, condition) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     "ON CONFLICT(id) DO UPDATE SET status = excluded.status, "
                     "updated_at = excluded.updated_at, "
                     "other_name = excluded.other_name, kind = excluded.kind, "
                     # Ein älterer Hub kennt die Schritte nicht – dann bleibt,
                     # was hier schon stand.
                     "shipped_at = COALESCE(excluded.shipped_at, shipped_at), "
-                    "arrived_at = COALESCE(excluded.arrived_at, arrived_at)",
+                    "arrived_at = COALESCE(excluded.arrived_at, arrived_at), "
+                    # Den Zustand kennt die Seite, die angefragt hat, schon
+                    # vom Angebot; nur wo er fehlt, kommt er vom Hub.
+                    "condition = CASE WHEN trades.condition = '' "
+                    "THEN excluded.condition ELSE trades.condition END",
                     (t["id"], "out" if mine else "in", other_id, other_name,
                      t["item_id"], t["item_name"], t["status"],
                      t["created_at"], t["updated_at"], kind,
-                     t.get("shipped_at"), t.get("arrived_at")))
+                     t.get("shipped_at"), t.get("arrived_at"),
+                     t.get("condition") if t.get("condition") in
+                     ("new", "used") else ""))
                 # Nur bei eigenen Anfragen sagt der Hub etwas darüber, ob das
                 # Angebot noch steht – bei eingehenden ist es mein eigenes,
                 # und bei einem Angebot biete ja ich selbst an.
@@ -421,6 +468,7 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                     if r["id"] not in da:
                         conn.execute("UPDATE trades SET status = 'removed' "
                                      "WHERE id = ?", (r["id"],))
+        _buchungen_nachmelden(remote, me)
         for t in remote:
             if t.get("unread") or t["id"] == focus:
                 new_msgs += _sync_trade(t["id"])
@@ -490,6 +538,18 @@ def _kommt_zu_mir(t) -> bool:
     return (t["direction"] == "out") != ((t["kind"] or "anfrage") == "angebot")
 
 
+def _eigener_zustand(item_id: str) -> str:
+    """Welches eigene Stück geht bei einem Angebot weg – neu oder gebraucht?
+
+    Steht die Nummer in beiden Zuständen da, das mit mehr Stück: Abgegeben
+    wird aus dem Überschuss.
+    """
+    with core.db() as conn:
+        r = conn.execute("SELECT condition FROM collection WHERE item_id = ? "
+                         "ORDER BY quantity DESC LIMIT 1", (item_id,)).fetchone()
+    return r["condition"] if r and r["condition"] in ("new", "used") else ""
+
+
 def _fremder_schluessel(member_id: str, name: str = "") -> str:
     """Öffentlichen Schlüssel eines Gegenübers holen – und wiedererkennen.
 
@@ -554,8 +614,12 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
         _ensure_key_published()
         key = _fremder_schluessel(body.to)
         box = crypto_box.seal(key, body.text)
+        zustand = body.condition if body.condition in ("new", "used") \
+            else ""
+        if body.kind == "angebot" and not zustand:
+            zustand = _eigener_zustand(body.item_id)
         res = hub.create_trade(body.to, body.item_id, body.item_name, box,
-                               body.kind)
+                               body.kind, zustand)
         tid = res["trade_id"]
         now_ts = int(time.time())
         with core.db() as conn:
@@ -573,8 +637,7 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
                      ("http://", "https://")) else "",
                  body.bricklink_url if body.bricklink_url.startswith("http")
                  else "",
-                 body.condition if body.condition in ("new", "used") else "",
-                 body.kind))
+                 zustand, body.kind))
             conn.execute(
                 "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
                 "created_at) VALUES (?, ?, 1, ?, ?)",
@@ -744,7 +807,7 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
         raise HTTPException(404, "Vorgang nicht gefunden")
     if not _kommt_zu_mir(t):
         raise HTTPException(400, "Das ist ein eigener Artikel, der weggeht.")
-    if t["status"] != "accepted":
+    if t["status"] not in ("accepted", "closed"):
         raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
     if not t["arrived_at"]:
         raise HTTPException(400, "Erst bestätigen, dass der Artikel "
@@ -794,8 +857,10 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
             conn.execute("DELETE FROM wanted WHERE id = ?", (wunsch["id"],))
     if wunsch_weg:
         _wuensche_geaendert()
+    status = _buchung_melden(trade_id, True) if hub.enabled() else None
     return {"ok": True, "ziel": body.ziel, "item_type": art,
-            "ergebnis": ergebnis, "wunsch_erledigt": wunsch_weg}
+            "ergebnis": ergebnis, "wunsch_erledigt": wunsch_weg,
+            "status": status or t["status"]}
 
 
 class TradeGiveBody(BaseModel):
@@ -839,7 +904,7 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
             raise HTTPException(404, "Vorgang nicht gefunden")
         if _kommt_zu_mir(t):
             raise HTTPException(400, "Dieser Artikel kommt zu dir.")
-        if t["status"] != "accepted":
+        if t["status"] not in ("accepted", "closed"):
             raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
         if not t["shipped_at"]:
             raise HTTPException(400, "Erst als verschickt markieren.")
@@ -863,7 +928,9 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
         conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
                      (int(time.time()), trade_id))
     angebote_nachziehen_im_hintergrund()
+    status = _buchung_melden(trade_id, False) if hub.enabled() else None
     return {"ok": True, "rest": rest, "geloescht": rest == 0,
+            "status": status or t["status"],
             "condition": row["condition"], "ergebnis": ergebnis}
 
 

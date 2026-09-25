@@ -261,7 +261,7 @@ async function loadTrades(quiet = false) {
               ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
-            ${t.status === "accepted" && !t.taken_at
+            ${["accepted", "closed"].includes(t.status) && !t.taken_at
     ? `<span class="badge badge-wanted">${esc(tauschStand(t))}</span>` : ""}
           </div>
         </div>
@@ -332,7 +332,9 @@ async function tauschAbgeben() {
   // getroffen werden, bevor etwas verschwindet.
   if (kandidaten.length > 1) {
     felder.push({ name: "zustand", label: tr("Welches Stück?"),
-      typ: "auswahl", wert: kandidaten[0].condition,
+      typ: "auswahl",
+      wert: (kandidaten.find((k) => k.condition === t.condition)
+        || kandidaten[0]).condition,
       optionen: kandidaten.map((k) => ({ wert: k.condition,
         label: `${k.condition === "new" ? tr("Neu") : tr("Gebraucht")} · `
           + tr("{n}× vorhanden", { n: k.quantity }) })) });
@@ -353,9 +355,10 @@ async function tauschAbgeben() {
         condition: d.zustand || (kandidaten.length === 1
           ? kandidaten[0].condition : null),
       } });
-    toast(res.geloescht
+    toast((res.geloescht
       ? tr("Ausgetragen – der Eintrag ist weg 📤")
-      : tr("Ausgetragen – noch {n}× in der Sammlung", { n: res.rest }));
+      : tr("Ausgetragen – noch {n}× in der Sammlung", { n: res.rest }))
+      + (res.status === "closed" ? " · " + tr("Tausch abgeschlossen 🏁") : ""));
     renderTrade();
   } catch (e) { toast(e.message); }
 }
@@ -405,7 +408,8 @@ async function tauschUebernehmen() {
         { n: e.qty }) : tr("Auf die Liste gesetzt 🛒"))
       : (e.merged ? tr("Schon vorhanden – Anzahl erhöht (jetzt {n}×)",
         { n: e.quantity }) : tr("Zur Sammlung hinzugefügt ✔")))
-      + (res.wunsch_erledigt ? " · " + tr("von der Wunschliste genommen") : ""));
+      + (res.wunsch_erledigt ? " · " + tr("von der Wunschliste genommen") : "")
+      + (res.status === "closed" ? " · " + tr("Tausch abgeschlossen 🏁") : ""));
     renderTrade();
   } catch (e) { toast(e.message); }
 }
@@ -446,7 +450,9 @@ async function renderTrade(quiet = false) {
     // „verschickt“ (wer abgibt) und „angekommen“ (wer bekommt). Der Knopf
     // zeigt immer den nächsten eigenen Schritt.
     offenerTausch = trade;
-    const zugesagt = trade.status === "accepted";
+    // Auch ein abgeschlossener Tausch zeigt seine Schritte – und den Knopf,
+    // falls hier noch gebucht werden soll („noch einmal buchen“).
+    const zugesagt = trade.status === "accepted" || trade.status === "closed";
     $("trade-schritte").hidden = !zugesagt;
     $("trade-take-row").hidden = !zugesagt;
     if (zugesagt) {
@@ -506,6 +512,7 @@ function tauschSchritte(t) {
     { an: true, text: tr("✔ Angenommen") },
     { an: !!t.shipped_at, wann: t.shipped_at, text: tr("📦 Verschickt") },
   ].concat(kommt ? [angekommen, gebucht] : [gebucht, angekommen]);
+  schritte.push({ an: t.status === "closed", text: tr("🏁 Abgeschlossen") });
   return schritte.map((s) => `<span class="trade-schritt${s.an ? " an" : ""}">`
     + `${esc(s.text)}${s.wann ? ` <small>${esc(datumKurz(s.wann))}</small>` : ""}`
     + "</span>").join('<span class="trade-pfeil">→</span>');
@@ -543,7 +550,7 @@ async function tauschSchrittMelden(step) {
 /* Der Knopf unter dem Verlauf: immer der nächste eigene Schritt. */
 async function tauschWeiter() {
   const t = offenerTausch;
-  if (!t || t.status !== "accepted") return;
+  if (!t || !["accepted", "closed"].includes(t.status)) return;
   if (tauschKommt(t)) {
     if (!t.arrived_at && !(await tauschSchrittMelden("arrived"))) return;
     tauschUebernehmen();

@@ -1655,7 +1655,7 @@ area above the history say **"no longer offered"**.
 "Accept" is only the promise inside the conversation. After that the
 conversation leads through **four steps**, shown as a bar above the button:
 
-**✔ Accepted → 📦 Sent → 📬 Arrived → 📥 Added**
+**✔ Accepted → 📦 Sent → 📬 Arrived → 📥 Added → 🏁 Completed**
 
 Whoever gives the item away sees **📤 Removed** instead of "Added", and before
 "Arrived". The button below the history always shows your **own** next step:
@@ -1675,6 +1675,17 @@ prior "sent".
 
 The conversation list says what's next: *waiting to be sent*, *📦 on its way*,
 *not booked yet* – or on the giving side *not sent yet*, *not removed yet*.
+
+A trade is **completed** as soon as **both** sides have booked: one removed, the
+other added. That happens on its own, and the list then says "closed". Whoever
+hasn't booked their own part yet keeps the button for it. Trades booked before
+version 2.89.4 complete at the next sync. With a partner on an older version it
+stays at "accepted".
+
+**New or used?** The adding window suggests the condition of the piece that
+changes hands. For a request it comes from the offer. With "🤝 Offer" the giving
+side sends it along – the condition of its own piece (if it has both new and
+used, the one with more copies).
 
 #### What comes in: adding
 

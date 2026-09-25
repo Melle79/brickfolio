@@ -284,7 +284,7 @@ def test_start_trade_passes_the_kind_to_the_hub(client, monkeypatch):
     monkeypatch.setattr(community, "_fremder_schluessel", lambda m: "k")
     monkeypatch.setattr(community.crypto_box, "seal", lambda k, t: "box")
 
-    def anlegen(to, item_id, item_name, box, kind="anfrage"):
+    def anlegen(to, item_id, item_name, box, kind="anfrage", condition=""):
         gesendet["kind"] = kind
         return {"trade_id": "trd_neu", "message_id": 1}
     monkeypatch.setattr(hub, "create_trade", anlegen)
@@ -499,3 +499,70 @@ def test_offer_roles_are_the_other_way_round(client, monkeypatch):
     assert client.post("/api/hub/trades/trd_1/progress",
                        json={"step": "shipped"}).status_code == 200
     assert gemeldet == ["shipped"]
+
+
+# ------------------------------------------------- abgeschlossen (2.89.4)
+# Beide Seiten melden ihre Buchung an den Hub; stehen beide, schließt er.
+
+def _buchung_hub(monkeypatch, antwort="accepted"):
+    import hub
+    gemeldet = []
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "trade_progress", lambda tid, step:
+                        gemeldet.append(step) or {"ok": True, "status": antwort})
+    return gemeldet
+
+
+def test_take_reports_the_booking(client, monkeypatch):
+    gemeldet = _buchung_hub(monkeypatch, antwort="closed")
+    _trade()
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert gemeldet == ["taken"] and r.json()["status"] == "closed"
+    t = client.get("/api/hub/trades/trd_1").json()["trade"]
+    assert t["status"] == "closed"
+
+
+def test_give_reports_the_booking(client, monkeypatch):
+    gemeldet = _buchung_hub(monkeypatch)
+    _trade(direction="in")
+    _sammlung_anlegen(client, qty=2)
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert gemeldet == ["given"] and r.json()["status"] == "accepted"
+
+
+def test_booking_stays_when_the_hub_is_away(client, monkeypatch):
+    import hub
+
+    def weg(tid, step):
+        raise hub.HubError(502, "weg")
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "trade_progress", weg)
+    _trade()
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert r.status_code == 200 and _sammlung()
+
+
+def test_closed_trade_can_still_be_booked_again(client, monkeypatch):
+    _buchung_hub(monkeypatch, antwort="closed")
+    _trade(status="closed")
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert r.status_code == 200, r.text
+
+
+def test_offer_sends_the_own_condition(client, monkeypatch):
+    """Bei „🤝 Anbieten“ weiß nur die abgebende Seite, ob das Stück neu ist –
+    also schickt sie es mit."""
+    import community
+    import hub
+    gesendet = {}
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(community, "_ensure_key_published", lambda: None)
+    monkeypatch.setattr(community, "_fremder_schluessel", lambda m: "k")
+    monkeypatch.setattr(community.crypto_box, "seal", lambda k, t: "box")
+    monkeypatch.setattr(hub, "create_trade", lambda to, i, n, b, kind="anfrage",
+                        condition="": gesendet.update(condition=condition)
+                        or {"trade_id": "trd_neu", "message_id": 1})
+    _sammlung_anlegen(client, qty=3, condition="new")
+    client.post("/api/hub/trades", json={"to": "m_bruno", "item_id": "sw1213",
+                "item_name": "Yoda", "text": "Hallo", "kind": "angebot"})
+    assert gesendet["condition"] == "new"

@@ -666,3 +666,35 @@ def test_sync_takes_over_the_steps(client, monkeypatch):
     monkeypatch.setattr(hub, "trades", lambda: [base])     # alter Hub
     client.post("/api/hub/trades/sync")
     assert client.get("/api/hub/trades").json()["trades"][0]["shipped_at"] == 100
+
+
+def test_sync_reports_bookings_the_hub_does_not_know(client, monkeypatch):
+    """Vor 2.89.4 gebuchte Tausche schließen sich beim ersten Abgleich."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    gemeldet = []
+    monkeypatch.setattr(hub, "trade_progress", lambda tid, step:
+                        gemeldet.append((tid, step)) or {"status": "closed"})
+    base = {"id": "trd_a", "from_member": "mem_me", "to_member": "mem_x",
+            "to_name": "X", "from_name": "Ich", "item_id": "sw1",
+            "item_name": "A", "status": "accepted", "created_at": 1,
+            "updated_at": 2, "unread": 0, "item_available": 1,
+            "given_at": None, "taken_at": None, "condition": "new"}
+    monkeypatch.setattr(hub, "trades", lambda: [base])
+    client.post("/api/hub/trades/sync")
+    assert gemeldet == []                       # hier noch nicht gebucht
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET taken_at = 5")
+    client.post("/api/hub/trades/sync")
+    assert gemeldet == [("trd_a", "taken")]     # meine Anfrage: ich bekomme
+    t = client.get("/api/hub/trades").json()["trades"][0]
+    assert t["status"] == "closed" and t["condition"] == "new"
+    # Schon gemeldet → kein zweites Mal
+    gemeldet.clear()
+    monkeypatch.setattr(hub, "trades", lambda: [dict(base, status="closed",
+                                                     taken_at=9)])
+    client.post("/api/hub/trades/sync")
+    assert gemeldet == []

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.89.4 – September 2026
+
+### Neu
+- 🏁 **Tausche schließen sich selbst ab.** Bisher blieb ein fertiger Tausch
+  für immer auf „angenommen". Jetzt meldet jede Seite ihre Buchung
+  (ausgetragen bzw. übernommen) an den Hub, und sobald beide gebucht haben,
+  steht er auf „abgeschlossen". Die Schrittleiste endet mit „🏁
+  Abgeschlossen". Wer seinen Teil noch nicht gebucht hat, behält den Knopf.
+  Schon gebuchte Tausche schließen sich beim nächsten Abgleich nach.
+
+### Behoben
+- 🆕 **Bei „🤝 Anbieten" wurde „gebraucht" vorgeschlagen, auch für neue
+  Stücke.** Der Zustand ging nicht mit. Jetzt schickt die abgebende Seite
+  ihn mit, und die bekommende übernimmt ihn als Vorschlag. Beim Austragen
+  ist das Stück im passenden Zustand vorgewählt.
+
+Braucht Hub 1.16.0.
+
+## Hub 1.16.0 – September 2026
+
+### Neu
+- `given_at` und `taken_at` an `trades`: `POST /v1/trades/:id/progress`
+  kennt dafür die Schritte `given` (abgebende Seite) und `taken`
+  (bekommende). Stehen beide, setzt der Hub den Status auf `closed`. Gebucht
+  werden darf auch nach dem Abschluss noch.
+- `trades.condition` (`new`/`used`) – beim Anlegen mitgeschickt, in der
+  Vorgangsliste zurück.
+
 ## 2.89.3 – September 2026
 
 ### Neu

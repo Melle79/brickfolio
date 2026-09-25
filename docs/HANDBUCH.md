@@ -2243,7 +2243,7 @@ Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
 „Annehmen" ist zunächst nur die Zusage im Gespräch. Danach führt das
 Gespräch durch **vier Schritte**, sichtbar als Leiste über dem Knopf:
 
-**✔ Angenommen → 📦 Verschickt → 📬 Angekommen → 📥 Übernommen**
+**✔ Angenommen → 📦 Verschickt → 📬 Angekommen → 📥 Übernommen → 🏁 Abgeschlossen**
 
 Wer abgibt, sieht statt „Übernommen" **📤 Ausgetragen**, und zwar vor
 „Angekommen". Der Knopf unter dem Verlauf zeigt immer den nächsten
@@ -2265,6 +2265,18 @@ lässt sich auch ohne vorheriges „verschickt" bestätigen.
 In der Gesprächsliste steht, was ansteht: *wartet auf Versand*, *📦
 unterwegs*, *noch nicht verbucht* – oder auf der abgebenden Seite *noch
 nicht verschickt*, *noch nicht ausgetragen*.
+
+**Abgeschlossen** ist ein Tausch, sobald **beide** gebucht haben: die eine
+Seite ausgetragen, die andere übernommen. Das stellt sich von selbst ein,
+in der Liste steht dann „abgeschlossen". Wer seinen eigenen Teil noch nicht
+gebucht hat, behält den Knopf dafür. Tausche, die vor Version 2.89.4
+gebucht wurden, schließen sich beim nächsten Abgleich nach. Mit einem
+Gegenüber, das noch eine ältere Fassung hat, bleibt es bei „angenommen".
+
+**Neu oder gebraucht?** Das Übernehmen-Fenster schlägt den Zustand des
+Stücks vor, das die Hand wechselt. Bei einer Anfrage kommt er aus dem
+Angebot. Bei „🤝 Anbieten" schickt ihn die abgebende Seite mit, und zwar den
+Zustand ihres Stücks (bei neu *und* gebraucht den mit mehr Exemplaren).
 
 #### Was reinkommt: übernehmen
 
