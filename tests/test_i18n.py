@@ -108,3 +108,21 @@ def test_markup_bleibt_erhalten(pfad):
         if tags(k) != tags(v):
             fehler.append(k)
     assert not fehler, f"Auszeichnungen weichen ab: {[f[:60] for f in fehler[:3]]}"
+
+
+@pytest.mark.parametrize("pfad", KATALOGE, ids=lambda p: p.name)
+def test_katalog_ist_sortiert_mit_einer_stelle_einrueckung(pfad):
+    """Sortiert und `indent=1`, wie in CLAUDE.md verlangt.
+
+    Am 25.09.2026 arbeiteten zwei Sitzungen gleichzeitig am Katalog: Die eine
+    schrieb mit zwei Stellen Einrückung, die andere hängte neue Schlüssel
+    unsortiert an. Jeder Durchgang drehte das Format der anderen zurück, und
+    für acht neue Texte stand ein Diff mit 2.500 Zeilen da, in dem niemand
+    mehr sah, was sich wirklich geändert hatte.
+    """
+    roh = pfad.read_text(encoding="utf-8")
+    soll = json.dumps(json.loads(roh), ensure_ascii=False, indent=1,
+                      sort_keys=True) + "\n"
+    assert roh == soll, (
+        f"{pfad.name} neu schreiben mit json.dumps(…, ensure_ascii=False, "
+        "indent=1, sort_keys=True) + Zeilenumbruch")
