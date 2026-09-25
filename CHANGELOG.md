@@ -3,6 +3,17 @@
 ## 2.89.1 – September 2026
 
 ### Behoben
+- 📝 **Der Hinweis beim Betreiber-Feld sagte nicht, wofür die Adresse da
+  ist.** Die naheliegende Rückfrage lautet: „Meine Adresse liegt BrickLink
+  doch aus der Registrierung vor, und das Feld wird gar nicht dorthin
+  übertragen – wozu dann?" Beides stimmt, nur geht die Auflage in eine
+  andere Richtung: Die Adresse ist **nicht für BrickLink**, sondern für
+  **Dritte, die deine Instanz benutzen**. Sie soll angezeigt werden, nicht
+  gesendet. Steht jetzt so dort – und in beiden Handbüchern.
+
+## 2.89.1 – September 2026
+
+### Behoben
 - 💬 Ein neues Gespräch zeigte bis zum ersten Abgleich „an ?" statt des
   Namens, und eine nie zugestellte Nachricht in einem gelöschten Gespräch
   stand ewig auf „unterwegs …".

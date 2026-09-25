@@ -214,7 +214,10 @@ Unter **Mehr → API-Schlüssel** (nur für Admins sichtbar):
    *Token Secret* – in die vier Felder der App kopieren und speichern.
 4. Darunter steht **Kontaktadresse des Betreibers**. BrickLinks
    Nutzungsbedingungen verlangen eine sichtbare Kontaktadresse in der
-   Anwendung – gemeint ist **deine**: Den Zugang oben hast du selbst
+   Anwendung. **Nicht für BrickLink** – die kennen dich aus der
+   Registrierung –, sondern damit **Dritte, die deine Instanz benutzen**,
+   dich erreichen können. Das Feld wird deshalb auch nirgendwohin
+   übertragen, es wird nur angezeigt. Gemeint ist **deine** Adresse: Den Zugang oben hast du selbst
    registriert, damit bist du gegenüber BrickLink der Betreiber dieser
    Instanz, nicht das Projekt. Die Adresse erscheint unter
    **Mehr → Rechtliches**, zusammen mit dem Hinweis, den BrickLink im
