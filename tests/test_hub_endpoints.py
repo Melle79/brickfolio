@@ -444,6 +444,32 @@ def test_sync_marks_item_as_gone(client, monkeypatch):
     assert client.get("/api/hub/trades").json()["trades"][0]["item_gone"] == 1
 
 
+def test_sync_never_marks_own_offer_as_gone(client, monkeypatch):
+    """Biete ich jemandem etwas an, das er sucht, steht mein Artikel nicht in
+    seinen Angeboten – das ist kein „nicht mehr angeboten“. So kam es am
+    25.09.2026 mit einer Testinstanz; ein alter Fehlalarm geht beim Abgleich
+    auch wieder weg."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "fetch_messages",
+                        lambda tid: {"messages": [], "sent": []})
+    base = {"id": "trd_a", "from_member": "mem_me", "to_member": "mem_x",
+            "to_name": "X", "from_name": "Ich", "item_id": "sw1",
+            "item_name": "A", "status": "open", "created_at": 1,
+            "updated_at": 1, "unread": 0, "item_available": 0}
+    monkeypatch.setattr(hub, "trades", lambda: [base])
+    client.post("/api/hub/trades/sync")
+    assert client.get("/api/hub/trades").json()["trades"][0]["item_gone"] == 1
+
+    monkeypatch.setattr(hub, "trades", lambda: [dict(base, kind="angebot")])
+    client.post("/api/hub/trades/sync")
+    t = client.get("/api/hub/trades").json()["trades"][0]
+    assert t["kind"] == "angebot" and t["item_gone"] == 0
+
+
 # ------------------------------------------------- sparsamer Abgleich
 
 def test_sync_only_fetches_where_something_waits(client, monkeypatch):

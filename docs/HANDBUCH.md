@@ -2149,7 +2149,9 @@ deiner eigenen Instanz ausgerechnet:
   hier mit den Angeboten aus dem Hub verglichen.
 - **🔄 Sucht, was du übrig hast** – Mitglieder, deren gezeigte Wunschliste
   etwas enthält, das du doppelt hast oder anbietest. „🤝 Anbieten" öffnet ein
-  Gespräch mit passendem Vorschlag.
+  Gespräch mit passendem Vorschlag. Hier gibst *du* etwas ab: Nach dem
+  Annehmen wird der Artikel bei dir ausgetragen und beim Gegenüber
+  übernommen.
 - **🧩 Passt zu dir** – Mitglieder mit denselben Lieblingsthemen.
 
 **Profile.** Ein Tipp auf einen Namen – im Entdecken wie an jedem Angebot –
@@ -2228,8 +2230,8 @@ welcher, hängt von der Richtung ab:
 
 | Richtung | Knopf |
 |---|---|
-| Der Artikel kommt **zu dir** (deine Anfrage) | **📥 In die Sammlung übernehmen** |
-| Der Artikel geht **weg** (Anfrage an dich) | **📤 Aus der Sammlung austragen** (rot) |
+| Der Artikel kommt **zu dir** (deine Anfrage – oder jemand bietet dir an, was du suchst) | **📥 In die Sammlung übernehmen** |
+| Der Artikel geht **weg** (Anfrage an dich – oder du hast mit „🤝 Anbieten" selbst angeboten) | **📤 Aus der Sammlung austragen** (rot) |
 
 Gleich nach dem Annehmen geht das passende Fenster von selbst auf.
 

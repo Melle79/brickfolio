@@ -358,21 +358,24 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                 other_id = t["to_member"] if mine else t["from_member"]
                 other_name = (t.get("to_name") if mine
                               else t.get("from_name")) or "?"
+                kind = "angebot" if t.get("kind") == "angebot" else "anfrage"
                 conn.execute(
                     "INSERT INTO trades (id, direction, other_id, other_name, "
-                    "item_id, item_name, status, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "item_id, item_name, status, created_at, updated_at, kind) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     "ON CONFLICT(id) DO UPDATE SET status = excluded.status, "
                     "updated_at = excluded.updated_at, "
-                    "other_name = excluded.other_name",
+                    "other_name = excluded.other_name, kind = excluded.kind",
                     (t["id"], "out" if mine else "in", other_id, other_name,
                      t["item_id"], t["item_name"], t["status"],
-                     t["created_at"], t["updated_at"]))
-                # Nur bei Anfragen an andere sagt der Hub etwas darüber, ob
-                # das Angebot noch steht – bei eingehenden ist es mein eigenes.
+                     t["created_at"], t["updated_at"], kind))
+                # Nur bei eigenen Anfragen sagt der Hub etwas darüber, ob das
+                # Angebot noch steht – bei eingehenden ist es mein eigenes,
+                # und bei einem Angebot biete ja ich selbst an.
                 if mine and "item_available" in t:
+                    weg = kind == "anfrage" and not t["item_available"]
                     conn.execute("UPDATE trades SET item_gone = ? WHERE id = ?",
-                                 (0 if t["item_available"] else 1, t["id"]))
+                                 (1 if weg else 0, t["id"]))
         for t in remote:
             if t.get("unread") or t["id"] == focus:
                 new_msgs += _sync_trade(t["id"])
@@ -424,6 +427,18 @@ class TradeStartBody(BaseModel):
     img_url: str = Field(default="", max_length=600)
     bricklink_url: str = Field(default="", max_length=600)
     condition: str = Field(default="", max_length=10)
+    # „anfrage“: ich möchte den Artikel des Gegenübers. „angebot“: das
+    # Gegenüber sucht ihn, und ich gebe meinen ab.
+    kind: str = Field(default="anfrage", pattern="^(anfrage|angebot)$")
+
+
+def _kommt_zu_mir(t) -> bool:
+    """Wandert der Artikel dieses Vorgangs zu mir – oder geht er weg?
+
+    Bei einer Anfrage kommt er zum Anfragenden, bei einem Angebot zum
+    Empfänger. Die Richtung des Gesprächs allein sagt es also nicht.
+    """
+    return (t["direction"] == "out") != ((t["kind"] or "anfrage") == "angebot")
 
 
 def _fremder_schluessel(member_id: str, name: str = "") -> str:
@@ -490,15 +505,16 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
         _ensure_key_published()
         key = _fremder_schluessel(body.to)
         box = crypto_box.seal(key, body.text)
-        res = hub.create_trade(body.to, body.item_id, body.item_name, box)
+        res = hub.create_trade(body.to, body.item_id, body.item_name, box,
+                               body.kind)
         tid = res["trade_id"]
         now_ts = int(time.time())
         with core.db() as conn:
             conn.execute(
                 "INSERT INTO trades (id, direction, other_id, other_name, "
                 "item_id, item_name, status, created_at, updated_at, read_at, "
-                "item_type, img_url, bricklink_url, condition) "
-                "VALUES (?, 'out', ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?)",
+                "item_type, img_url, bricklink_url, condition, kind) "
+                "VALUES (?, 'out', ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?)",
                 (tid, body.to, "", body.item_id, body.item_name,
                  now_ts, now_ts, now_ts,
                  body.item_type if body.item_type in
@@ -507,7 +523,8 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
                      ("http://", "https://")) else "",
                  body.bricklink_url if body.bricklink_url.startswith("http")
                  else "",
-                 body.condition if body.condition in ("new", "used") else ""))
+                 body.condition if body.condition in ("new", "used") else "",
+                 body.kind))
             conn.execute(
                 "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
                 "created_at) VALUES (?, ?, 1, ?, ?)",
@@ -624,7 +641,7 @@ def hub_trade_take(trade_id: str, body: TradeTakeBody,
                          (trade_id,)).fetchone()
     if not t:
         raise HTTPException(404, "Vorgang nicht gefunden")
-    if t["direction"] != "out":
+    if not _kommt_zu_mir(t):
         raise HTTPException(400, "Das ist ein eigener Artikel, der weggeht.")
     if t["status"] != "accepted":
         raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")
@@ -695,7 +712,7 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
                          (trade_id,)).fetchone()
         if not t:
             raise HTTPException(404, "Vorgang nicht gefunden")
-        if t["direction"] != "in":
+        if _kommt_zu_mir(t):
             raise HTTPException(400, "Dieser Artikel kommt zu dir.")
         if t["status"] != "accepted":
             raise HTTPException(400, "Der Tausch ist noch nicht angenommen.")

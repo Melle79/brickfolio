@@ -1227,5 +1227,7 @@
  "Hallo {name}, ich würde dir den {was} gern abkaufen – was stellst du dir vor?": "Hi {name}, I'd like to buy the {was} from you – what did you have in mind?",
  "💶 Verkauf": "💶 Sale",
  "🔄 Tausch · 💶 Verkauf": "🔄 Trade · 💶 Sale",
- "🔄 Tausch": "🔄 Trade"
+ "🔄 Tausch": "🔄 Trade",
+ "Angeboten – das Gespräch steht unter Nachrichten 💬": "Offered – the conversation is under Messages 💬",
+ "für {name}": "for {name}"
 }

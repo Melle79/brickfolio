@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.88.55 – September 2026
+
+### Behoben
+- 🤝 **Wer jemandem etwas anbietet, das er sucht**, bekam im Gespräch
+  „⚠ Dieser Artikel wird nicht mehr angeboten" zu sehen: Der Hub suchte den
+  Artikel in den Angeboten des *Gegenübers*, wo er nie stand. Gespräche
+  tragen jetzt ihre Art – Anfrage oder Angebot. Die Warnung gibt es nur
+  noch bei Anfragen, und nach dem Annehmen stimmt auch die Richtung: Wer
+  angeboten hat, trägt aus, wer das Angebot bekommt, übernimmt. Bisher war
+  es genau verkehrt herum. Braucht Hub 1.14.0.
+
+## Hub 1.14.0 – September 2026
+
+### Neu
+- **Vorgänge tragen ihre Art** (`trades.kind`: `anfrage` oder `angebot`).
+  Ältere App-Fassungen schicken nichts, das gilt als Anfrage. Bei einem
+  Angebot meldet der Hub den Artikel immer als verfügbar. Bestehende
+  Vorgänge, deren Empfänger den Artikel sucht und nicht selbst anbietet,
+  stellt die Migration auf „angebot" um.
+
 ## Hub 1.13.0 – September 2026
 
 ### Neu

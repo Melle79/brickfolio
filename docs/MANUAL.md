@@ -1567,7 +1567,8 @@ your own instance:
   compared here with the offers from the hub.
 - **🔄 Looking for what you have spare** – members whose shown wishlist
   contains something you have twice or offer. "🤝 Offer" opens a conversation
-  with a matching suggestion.
+  with a matching suggestion. Here *you* give something away: once accepted,
+  the item is removed on your side and added on the other side.
 - **🧩 A good match** – members with the same favourite themes.
 
 **Profiles.** Tapping a name – in Discover or on any offer – opens the profile:
@@ -1642,8 +1643,8 @@ history – which one depends on the direction:
 
 | Direction | Button |
 |---|---|
-| The item comes **to you** (your request) | **📥 Add to my collection** |
-| The item **leaves** (someone's request to you) | **📤 Remove from my collection** (red) |
+| The item comes **to you** (your request – or someone offers you what you're looking for) | **📥 Add to my collection** |
+| The item **leaves** (someone's request to you – or you offered it yourself with "🤝 Offer") | **📤 Remove from my collection** (red) |
 
 Right after accepting, the matching window opens on its own.
 

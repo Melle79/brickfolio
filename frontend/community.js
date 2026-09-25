@@ -261,7 +261,7 @@ async function loadTrades(quiet = false) {
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
             ${t.status === "accepted" && !t.taken_at
-    ? `<span class="badge badge-wanted">${t.direction === "out"
+    ? `<span class="badge badge-wanted">${tauschKommt(t)
       ? tr("noch nicht verbucht") : tr("noch nicht ausgetragen")}</span>` : ""}
           </div>
         </div>
@@ -398,6 +398,12 @@ async function tauschUebernehmen() {
   } catch (e) { toast(e.message); }
 }
 
+/* Kommt der Artikel zu mir? Bei einer Anfrage zum Anfragenden, bei einem
+   Angebot (das Gegenüber sucht, ich gebe ab) zum Empfänger. */
+function tauschKommt(t) {
+  return (t.direction === "out") !== (t.kind === "angebot");
+}
+
 async function renderTrade(quiet = false) {
   try {
     const { trade, messages } = await api(`/hub/trades/${openTradeId}`);
@@ -418,8 +424,8 @@ async function renderTrade(quiet = false) {
     // und der Artikel zu mir kommt, steht hier der Weg in die Sammlung.
     offenerTausch = trade;
     const zugesagt = trade.status === "accepted";
-    const kommt = zugesagt && trade.direction === "out";
-    const geht = zugesagt && trade.direction === "in";
+    const kommt = zugesagt && tauschKommt(trade);
+    const geht = zugesagt && !tauschKommt(trade);
     $("trade-take-row").hidden = !(kommt || geht);
     if (kommt || geht) {
       const knopf = $("trade-take");
@@ -622,7 +628,7 @@ function wireHubViewOnce() {
         // Zusage steht – jetzt gleich fragen, wohin der Artikel soll. Ohne
         // das passierte auf „Annehmen" sichtbar gar nichts.
         if (status === "accepted" && offenerTausch) {
-          if (offenerTausch.direction === "out") await tauschUebernehmen();
+          if (tauschKommt(offenerTausch)) await tauschUebernehmen();
           else await tauschAbgeben();
         }
       }
@@ -630,7 +636,7 @@ function wireHubViewOnce() {
   };
   $("trade-accept").addEventListener("click", () => setStatus("accepted"));
   $("trade-take").addEventListener("click", () => {
-    if (offenerTausch && offenerTausch.direction === "in") tauschAbgeben();
+    if (offenerTausch && !tauschKommt(offenerTausch)) tauschAbgeben();
     else tauschUebernehmen();
   });
   $("trade-decline").addEventListener("click", () => setStatus("declined"));
@@ -770,7 +776,8 @@ async function openOffer(o) {
 function openInterest(o, text = "") {
   interestOffer = o;
   $("interest-name").textContent = o.n;
-  $("interest-sub").textContent = o.id_ + " · " + tr("von {name}", { name: o.who });
+  $("interest-sub").textContent = o.id_ + " · " + (o.kind === "angebot"
+    ? tr("für {name}", { name: o.who }) : tr("von {name}", { name: o.who }));
   $("interest-img").src = o.img || IMG_PLACEHOLDER;
   // Vorschlag steht im Feld – anpassbar, nicht in einem Systemfenster
   $("interest-text").value = text || (o.art === "verkauf"
@@ -803,9 +810,12 @@ async function sendInterest() {
       // Aus dem Angebot mitgeben: Wird der Tausch angenommen, lässt sich der
       // Artikel damit ohne Nachfragen in die Sammlung buchen.
       item_type: o.typ || "", img_url: o.bild || "",
-      bricklink_url: o.bl || "", condition: o.zustand || "" } });
+      bricklink_url: o.bl || "", condition: o.zustand || "",
+      kind: o.kind || "anfrage" } });
     closeInterest();
-    toast("Angefragt – das Gespräch steht unter Nachrichten 💬");
+    toast(o.kind === "angebot"
+      ? "Angeboten – das Gespräch steht unter Nachrichten 💬"
+      : "Angefragt – das Gespräch steht unter Nachrichten 💬");
     showHubTab("trades");
     openTrade(res.trade_id);
   } catch (e) { toast(e.message); } finally { btn.disabled = false; }
@@ -1083,7 +1093,7 @@ async function loadEntdecken() {
 function cmAnbieten(w) {
   openInterest({ m: w.member_id, i: w.item_id, n: w.name, who: w.display_name,
     img: w.img_url, id_: w.item_id, typ: w.item_type || "", bild: w.img_url || "",
-    bl: "", zustand: "" },
+    bl: "", zustand: "", kind: "angebot" },
   tr("Hallo {name}, du suchst den {was} – ich hätte einen abzugeben. Interesse?",
     { name: w.display_name, was: w.name }));
 }

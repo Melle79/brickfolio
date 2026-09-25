@@ -271,9 +271,11 @@ def member_key(member_id: str) -> dict:
     return _authed("GET", f"/v1/key/{member_id}")
 
 
-def create_trade(to: str, item_id: str, item_name: str, box: str) -> dict:
+def create_trade(to: str, item_id: str, item_name: str, box: str,
+                 kind: str = "anfrage") -> dict:
     return _authed("POST", "/v1/trades", body={
-        "to": to, "item_id": item_id, "item_name": item_name, "box": box})
+        "to": to, "item_id": item_id, "item_name": item_name, "box": box,
+        "kind": kind})
 
 
 def trades() -> list:

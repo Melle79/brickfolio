@@ -242,6 +242,58 @@ def test_give_rejects_outgoing_trades(client):
     assert _sammlung()[0]["quantity"] == 2
 
 
+def _angebot(direction):
+    tid = _trade(direction=direction)
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET kind = 'angebot' WHERE id = ?", (tid,))
+    return tid
+
+
+def test_own_offer_goes_out_instead_of_coming_in(client):
+    """Ich biete jemandem an, was er sucht: Das Gespräch geht von mir aus,
+    der Artikel aber weg – austragen statt übernehmen."""
+    _angebot("out")
+    _sammlung_anlegen(client, qty=2)
+    assert client.post("/api/hub/trades/trd_1/take",
+                       json={"ziel": "sammlung"}).status_code == 400
+    r = client.post("/api/hub/trades/trd_1/give", json={"quantity": 1})
+    assert r.status_code == 200, r.text
+    assert _sammlung()[0]["quantity"] == 1
+
+
+def test_received_offer_comes_in(client):
+    """Gegenstück: Wer das Angebot bekommt, übernimmt den Artikel."""
+    _angebot("in")
+    assert client.post("/api/hub/trades/trd_1/give",
+                       json={"quantity": 1}).status_code == 400
+    r = client.post("/api/hub/trades/trd_1/take", json={"ziel": "sammlung"})
+    assert r.status_code == 200, r.text
+    assert _sammlung()[0]["item_id"] == "sw1213"
+
+
+def test_start_trade_passes_the_kind_to_the_hub(client, monkeypatch):
+    import community
+    import hub
+    gesendet = {}
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(community, "_ensure_key_published", lambda: None)
+    monkeypatch.setattr(community, "_fremder_schluessel", lambda m: "k")
+    monkeypatch.setattr(community.crypto_box, "seal", lambda k, t: "box")
+
+    def anlegen(to, item_id, item_name, box, kind="anfrage"):
+        gesendet["kind"] = kind
+        return {"trade_id": "trd_neu", "message_id": 1}
+    monkeypatch.setattr(hub, "create_trade", anlegen)
+    r = client.post("/api/hub/trades", json={
+        "to": "m_bruno", "item_id": "sw1", "item_name": "A", "text": "Hallo",
+        "kind": "angebot"})
+    assert r.status_code == 200, r.text
+    assert gesendet["kind"] == "angebot"
+    with core.db() as conn:
+        assert conn.execute("SELECT kind FROM trades WHERE id = 'trd_neu'"
+                            ).fetchone()[0] == "angebot"
+
+
 def test_give_rejects_trades_that_are_not_accepted(client):
     _trade(direction="in", status="open")
     _sammlung_anlegen(client)

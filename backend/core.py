@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.88.54"
+APP_VERSION = "2.88.55"
 
 
 def hash_password(password: str) -> str:
@@ -916,6 +916,11 @@ def init_db():
         # Wann wurde der Artikel in die Sammlung bzw. auf eine Liste gebucht?
         if tcols and "taken_at" not in tcols:
             conn.execute("ALTER TABLE trades ADD COLUMN taken_at INTEGER")
+        # Anfrage (ich will deins) oder Angebot (du suchst, ich hab's)? Davon
+        # hängt ab, in welche Richtung der Artikel wandert.
+        if tcols and "kind" not in tcols:
+            conn.execute("ALTER TABLE trades ADD COLUMN kind TEXT NOT NULL "
+                         "DEFAULT 'anfrage'")
         # Thema (Star Wars, City …) für die Sortierung der Sammlung
         for tbl in ("collection", "wanted"):
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}
