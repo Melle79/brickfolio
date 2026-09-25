@@ -1672,9 +1672,13 @@ Einigung den Endpreis eintragen und **„Verteilen"** drücken:
 
 **5. Zu Hause verbuchen.** Wenn die Funde ankommen bzw. sortiert werden,
 tippt **irgendjemand** (auch ohne Profi-Rolle) auf **„✔ Da! Ab in die
-Sammlung"**. Zustand bestätigen (der gespeicherte ist mit ✓ markiert),
-Profis können den Preis nochmal anpassen – vorausgefüllt ist der
-Listen-Einkaufspreis. Verbuchte Artikel werden **ausgegraut** mit Vermerk
+Sammlung"**. Ein Tipp genügt: Genommen wird, was in der Karte steht – der
+Zustand aus der Pille, der Preis aus dem Feld „Einkauf €" (auch wenn er
+noch nicht mit ✓ gespeichert ist); leer heißt BrickLink-Durchschnitt. Die
+Zeile bleibt kurz stehen, grün markiert und mit dem Schild **„✔ In der
+Sammlung · Gebraucht"**, dann rückt sie zu den erledigten. Der Kauf steht
+danach auch im **Kaufbuch** des Sammlungs-Eintrags, mit dem Listennamen als
+Herkunft. Verbuchte Artikel werden **ausgegraut** mit Vermerk
 *„✔ in Sammlung von sammler am 09.07.2026"*. In die **Notizen** des
 Sammlungs-Eintrags schreibt die App automatisch, von welcher Liste der
 Artikel stammt (z. B. *„Von Liste »Flohmarkt Riem« (09.07.2026)"*) –
@@ -1684,8 +1688,8 @@ eine vorhandene Notiz bleibt erhalten, der Hinweis wird angehängt.
 
 Beim Verbuchen eines bereits vorhandenen Artikels fragt die App:
 
-- **＋ Zusätzlich** – Menge erhöht sich; als Kaufpreis wird der
-  **Durchschnitt** aus bisherigem und neuem Preis eingetragen.
+- **＋ Zusätzlich** – Menge erhöht sich; der neue Kauf kommt als eigener
+  Posten ins Kaufbuch, der bezahlte Betrag ist die **Summe** beider.
 - **Überschreiben** – der Sammlung-Eintrag wird komplett ersetzt
   (Anzahl, Zustand, Name, Kaufpreis des Listen-Artikels).
 
@@ -1920,7 +1924,11 @@ Brickfolio sagt selbst Bescheid: Die Karte **Mehr → 🔄 Version & Updates**
 (Admin) vergleicht die installierte Version mit dem neuesten
 GitHub-Release – automatisch beim App-Start und beim Öffnen des Mehr-Tabs
 (serverseitig für 6 Stunden zwischengespeichert), sofort per „Nach
-Updates suchen". Wartet ein Update, erscheinen ein Hinweis-Toast und ein
+Updates suchen". Gefragt wird dabei die **Release-Seite**, nicht die
+GitHub-API: Die erlaubt ohne Anmeldung nur 60 Abfragen je Stunde für den
+ganzen Internetanschluss, und war das aufgebraucht, blieb der Hinweis aus.
+Klappt die Abfrage nicht, versucht die App es erst nach einer halben
+Stunde wieder. Wartet ein Update, erscheinen ein Hinweis-Toast und ein
 gelber Banner mit Link zu den Release-Notes.
 
 > **Ohne Anmeldung nachsehen:** Die laufende Version steht klein unter der

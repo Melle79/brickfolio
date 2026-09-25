@@ -1351,7 +1351,11 @@ and anyone running a NAS backup (Hyper Backup, for instance) should include the
 Brickfolio tells you itself: the card **More → 🔄 Version & updates** (admin)
 compares the installed version against the latest GitHub release –
 automatically at app start and when opening the More tab (cached server-side
-for 6 hours), immediately via "Check for updates". If an update is waiting, a
+for 6 hours), immediately via "Check for updates". It asks the **release
+page**, not the GitHub API: without signing in, the API allows only 60 requests
+per hour for the whole internet connection, and once those were used up the
+notice simply stayed away. If the check fails, the app waits half an hour
+before trying again. If an update is waiting, a
 toast and a yellow banner with a link to the release notes appear.
 
 > **Checking without signing in:** the running version sits in small print
