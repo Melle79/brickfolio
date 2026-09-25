@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.90.4 – September 2026
+
+### Behoben
+- 📬 **Neue Nachrichten erschienen erst nach bis zu einer Minute.**
+  Außerhalb eines Gesprächs sah die App nur einmal pro Minute beim Hub
+  nach. Wer vorher neu lud, sah die Nachricht sofort und hielt das
+  Nachladen für kaputt. Jetzt alle 20 Sekunden (in der Nachrichtenliste
+  alle 15, im offenen Gespräch weiter alle 8) und zusätzlich sofort, wenn
+  man in den Tab oder ins Fenster zurückkommt.
+
 ## 2.90.3 – September 2026
 
 ### Behoben

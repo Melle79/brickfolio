@@ -222,6 +222,7 @@ function setPolling(seconds) {
 
 async function pollTrades() {
   if (document.hidden || !state.hubConnected) return;
+  zuletztGeschaut = Date.now();
   const res = await syncTrades(true, openTradeId || "");
   if (!res) return;
   if (openTradeId) renderTrade(true);
@@ -239,12 +240,37 @@ async function refreshUnread() {
   } catch (_) { /* Zähler ist nice-to-have */ }
 }
 
-/* Takt an die Ansicht anpassen. */
+/* Takt an die Ansicht anpassen.
+
+   Außerhalb der Gespräche waren es bis 2.90.3 volle 60 Sekunden: Eine neue
+   Nachricht tauchte erst nach bis zu einer Minute am Zähler auf, und wer
+   vorher neu lud, hielt das Nachladen für kaputt (gemeldet am 25.09.2026).
+   Jetzt 20 Sekunden – jede Abfrage ist ein einziger Aufruf beim Hub – und
+   dazu sofort, wenn man ins Fenster zurückkommt. */
+let pollHaken = false;
+let zuletztGeschaut = 0;
+
+function sofortNachsehen() {
+  // Fokus und Sichtbarkeit feuern oft beide zugleich – einmal genügt.
+  if (Date.now() - zuletztGeschaut < 5000) return;
+  zuletztGeschaut = Date.now();
+  pollTrades();
+}
+
 function updatePolling() {
   if (!state.hubConnected) { setPolling(0); return; }
+  if (!pollHaken) {
+    pollHaken = true;
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && state.hubConnected) sofortNachsehen();
+    });
+    window.addEventListener("focus", () => {
+      if (state.hubConnected) sofortNachsehen();
+    });
+  }
   if (openTradeId) setPolling(8);                       // Gespräch offen
-  else if (hubTab === "trades" && !$("view-hub").hidden) setPolling(20);
-  else setPolling(60);                                  // nur der Zähler
+  else if (hubTab === "trades" && !$("view-hub").hidden) setPolling(15);
+  else setPolling(20);                                  // nur der Zähler
 }
 
 let tradesSig = "";
