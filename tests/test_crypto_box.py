@@ -26,8 +26,8 @@ def test_public_key_is_stable(alice):
 
 
 def test_roundtrip(alice):
-    box = alice.seal(alice.public_key(), "Hallo Paul!")
-    assert alice.open_box(box) == "Hallo Paul!"
+    box = alice.seal(alice.public_key(), "Hallo Bruno!")
+    assert alice.open_box(box) == "Hallo Bruno!"
 
 
 def test_envelope_reveals_nothing(alice):

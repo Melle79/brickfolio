@@ -8,7 +8,7 @@ Protocol Droid" heißt.
 
 Die Liste hängt bewusst an der App, nicht am Modell: Ein Wechsel des Modells
 nimmt den Wissensstand mit. Ein nachtrainiertes Modell täte das nicht, und
-genau das war Svens Bedingung.
+genau das war die Bedingung.
 """
 import time
 
@@ -34,11 +34,11 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
     integrations._begriff_cache.clear()
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -71,7 +71,7 @@ def _ki_an(client):
 # --------------------------------------------------------------- der Vorfall
 
 def test_eine_eigene_zeile_schlaegt_das_modell(client, monkeypatch):
-    """Genau Svens Fall: „roter c3po" soll R-3PO finden, nicht C-3PO."""
+    """Genau der gemeldete Fall: „roter c3po" soll R-3PO finden, nicht C-3PO."""
     _ki_an(client)
     _ollama(monkeypatch, ["C-3PO", "C-3PO (Red)"])
     assert integrations.suchbegriffe("roter c3po") == ["C-3PO", "C-3PO (Red)"]
@@ -102,10 +102,10 @@ def test_von_hand_gilt_auch_ohne_ki(client):
 
 def test_eine_blosse_modellantwort_landet_nicht_in_der_liste(client,
                                                              monkeypatch):
-    """Sven am 21.08.2026: „was macht das eigentlich für einen sinn, dass er
+    """Rückmeldung vom 21.08.2026: „was macht das eigentlich für einen sinn, dass er
     jede suche jetzt anlegt".
 
-    Er hat recht: Was das Modell sagt, ist noch kein Wissen – erst was damit
+    Das stimmt: Was das Modell sagt, ist noch kein Wissen – erst was damit
     gefunden wurde. Die Liste wird **vor** dem Modell befragt, eine erfundene
     Übersetzung wäre also für immer festgeschrieben. Und sie füllte sich mit
     Anfragen, die nie wiederkehren.
@@ -283,7 +283,7 @@ def test_die_einstellungen_zeigen_nur_die_bilanz():
 # ------------------------------------------- Tippen legt keine Liste an
 
 def test_zwischenstaende_beim_tippen_verschwinden_wieder(client):
-    """Sven am 21.08.2026: „da wird der suchbegriff mit jedem zweiten
+    """Rückmeldung vom 21.08.2026: „da wird der suchbegriff mit jedem zweiten
     tastendruck angelegt".
 
     Ab dem dritten Zeichen löst jeder Tastendruck eine Suche aus, und jede

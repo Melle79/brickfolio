@@ -1,6 +1,6 @@
 """Wie der Abzug in eine Installation kommt.
 
-Erzeugt wird er auf Svens NAS: Ein Dienst klappert BrickLink ab und lässt
+Erzeugt wird er beim Betreiber des Katalogs: Ein Dienst klappert BrickLink ab und lässt
 ein Sehmodell die Katalogfotos beschreiben. Veröffentlicht wird davon
 **nur die Nummer und die eigene Beschreibung** – Name, Jahr, Kategorie und
 Bildadresse bleiben dort, denn das ist BrickLinks Inhalt, und dessen
@@ -29,13 +29,13 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
     main._namen_lauf.update({"aktiv": False, "getan": 0, "stop": False,
                              "fehler": ""})
     monkeypatch.setattr(main, "KATALOG_NAMEN_TAKT", 0)
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -349,7 +349,7 @@ XML_TEIL_UND_SET = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 def test_eine_teiledatei_landet_nicht_im_figurenabzug(client):
-    """Am 24.08.2026 hat Sven `Parts.xml` eingelesen – und 118.000 Steine
+    """Am 24.08.2026 wurde `Parts.xml` eingelesen – und 118.000 Steine
     standen als Minifiguren im Abzug: 137.156 Zeilen statt 19.158. Die
     Artikelart steht in der Datei; sie zu ignorieren war der Fehler.
 

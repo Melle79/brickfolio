@@ -17,10 +17,10 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('finn', 'x', 1, 1, ?)", (now,))
+            " created_at) VALUES ('carla', 'x', 1, 1, ?)", (now,))
         uid = cur.lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "finn", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "carla", True)
     c.uid = uid
     return c
 

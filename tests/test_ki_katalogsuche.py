@@ -1,8 +1,8 @@
 import pathlib
 """„Roter c3po" fand im Katalog nichts, obwohl die KI eingerichtet war.
 
-2.28.0 hat die Übersetzung an die **Sammlungssuche** gehängt. Sven hat sie
-am 20.08.2026 dort ausprobiert, wo man sie zuerst vermutet: im Feld „Name"
+2.28.0 hat die Übersetzung an die **Sammlungssuche** gehängt. Getestet wurde
+sie am 20.08.2026 dort, wo man sie zuerst vermutet: im Feld „Name"
 unter „✏️ Manuell erfassen". Das sucht im **Katalog** (Rebrickable), und
 dort gab es die Übersetzung nicht – die Suche blieb leer, und von außen sah
 das aus, als funktioniere die KI nicht.
@@ -36,12 +36,12 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
     integrations._begriff_cache.clear()
     core.set_setting("rebrickable_key", "test-key")
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -259,7 +259,7 @@ def test_ohne_katalogzugang_sagt_die_oberflaeche_warum():
 
 def test_bei_typ_set_kommt_keine_figur_aus_dem_eigenen_index(client,
                                                              monkeypatch):
-    """Svens Fall vom 21.08.2026: Oben stand „Set", gesucht war die UCS
+    """Der Fall vom 21.08.2026: Oben stand „Set", gesucht war die UCS
     Razor Crest – heraus kam „Clone ARF Trooper Razor", eine Figur.
 
     Der eigene Katalogindex enthält ausschließlich Figuren, wurde aber ohne
@@ -456,7 +456,7 @@ def test_der_kartenhintergrund_nimmt_denselben_daumennagel():
     Die Messung sah davon nichts: Sie zählt `<img>`-Elemente, CSS-
     Hintergründe sind darin unsichtbar. Bei 724 gezählten Bildern lagen
     also bis zu 724 weitere daneben, und zwar die größeren
-    (29.08.2026, von Sven bemerkt).
+    (29.08.2026, im Betrieb bemerkt).
 
     Gleiche Adresse heißt: eine entpackte Bitmap für beides."""
     quelle = _app_js()

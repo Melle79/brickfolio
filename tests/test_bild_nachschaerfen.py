@@ -45,10 +45,10 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 0, ?)", (int(time.time()),))
+            " created_at) VALUES ('anna', 'x', 1, 0, ?)", (int(time.time()),))
         uid = cur.lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 
@@ -170,8 +170,8 @@ def test_eine_kleine_quelle_wird_nicht_ewig_wieder_geholt(client, altes_bild,
     nachgemessen am 23.09.2026: von 100 frisch geholten waren 91 genau 400
     groß. `prepare_image` verkleinert nur, es erfindet keine Pixel. Ohne
     eine Merkdatei hätte jeder Lauf dieselben Bilder wieder und wieder
-    geholt, weil sie hinterher genauso klein sind wie vorher – Sven lief
-    genau in diese Schleife.
+    geholt, weil sie hinterher genauso klein sind wie vorher – eine Instanz
+    lief genau in diese Schleife.
     """
     geholt = []
     monkeypatch.setattr(main.integrations, "fetch_catalog_image",

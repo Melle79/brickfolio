@@ -15,7 +15,7 @@ import main
 from fastapi.testclient import TestClient
 
 
-def _user(is_dealer=1, name="sven"):
+def _user(is_dealer=1, name="anna"):
     now = int(time.time())
     with core.db() as conn:
         cur = conn.execute(
@@ -29,7 +29,7 @@ def _client(tmp_path, monkeypatch, is_dealer=1):
     core.init_db()
     uid = _user(is_dealer)
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 
@@ -46,7 +46,7 @@ def _trade(tid="trd_1", direction="out", status="accepted", item_id="sw1213",
         conn.execute(
             "INSERT INTO trades (id, direction, other_id, other_name, item_id,"
             " item_name, status, created_at, updated_at, item_type, img_url,"
-            " bricklink_url, condition) VALUES (?, ?, 'm_paul', 'Paul', ?, ?,"
+            " bricklink_url, condition) VALUES (?, ?, 'm_bruno', 'Bruno', ?, ?,"
             " ?, ?, ?, ?, ?, '', ?)",
             (tid, direction, item_id, name, status, now, now, item_type, img,
              condition))
@@ -70,7 +70,7 @@ def test_take_puts_item_into_collection(client):
     assert rows[0]["quantity"] == 1
     # Woher das Stück kam, steht in der Notiz – sonst weiß man es in einem
     # halben Jahr nicht mehr.
-    assert "Paul" in rows[0]["notes"]
+    assert "Bruno" in rows[0]["notes"]
 
 
 def test_take_records_quantity_condition_and_price(client):

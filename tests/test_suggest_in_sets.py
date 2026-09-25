@@ -26,7 +26,7 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('sven', 'x', 1, ?)", (now,)).lastrowid
+            " VALUES ('anna', 'x', 1, ?)", (now,)).lastrowid
         for nr, zustand in (("7931-1", "new"), ("75192-1", "used")):
             conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, quantity,"
@@ -36,7 +36,7 @@ def client(tmp_path, monkeypatch):
                 "INSERT INTO set_contents (set_no, fig_no, qty)"
                 " VALUES (?, 'sw0309', 1)", (nr,))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 

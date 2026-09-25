@@ -32,7 +32,7 @@ def ctx(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('sven', 'x', 1, ?)", (now,)).lastrowid
+            " VALUES ('anna', 'x', 1, ?)", (now,)).lastrowid
         _kat(conn, "sw0001a", "Battle Droid")
         _kat(conn, "sw0001b", "Battle Droid")
         _kat(conn, "sw0002", "Boba Fett")
@@ -48,7 +48,7 @@ def ctx(tmp_path, monkeypatch):
             "INSERT INTO wanted (item_id, item_type, name, added_at)"
             " VALUES ('sw0003', 'minifig', 'Darth Maul', ?)", (now,))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 

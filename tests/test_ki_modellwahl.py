@@ -3,7 +3,7 @@
 Der Modellname musste exakt so eingetragen werden, wie Ollama ihn führt –
 `qwen2.5:14b`, nicht `qwen2.5-14b` und nicht `qwen 2.5`. Ein Tippfehler sah
 dabei aus wie ein kaputter Dienst: Die Verbindung stand, nur das Modell gab
-es nicht. Auf Svens Server liegen 14 Stück, darunter `qwen2.5:14b` **und**
+es nicht. Auf einem Server im Betrieb liegen 14 Stück, darunter `qwen2.5:14b` **und**
 `qwen2.5:14b-instruct` – die Verwechslung ist keine Theorie.
 
 Die Liste ist eine Bequemlichkeit, kein Zugangsweg: Schweigt der Dienst,
@@ -33,11 +33,11 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
     integrations._begriff_cache.clear()
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 

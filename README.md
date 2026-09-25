@@ -132,7 +132,7 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 💾 Komplett-**Sicherung** als JSON (herunterladen & wieder einspielen) –
   auf Wunsch **samt eurer eigenen Bilder**, damit nach einem Umzug nichts ins
   Leere zeigt. CSV-Export und druckfertige Listen gibt es dazu
-- 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (Standard „Finn");
+- 🏷 Konfigurierbarer **Anzeigename** in Logo und Titel (standardmäßig leer);
   ideal, wenn mehrere Familienmitglieder je eine eigene Instanz betreiben
 - 🌌 Drei **Designs** zur Auswahl (Mehr → Design): „Klassisch" hell,
   „Galaxie" dunkel mit Sternenhimmel und „Nova" – ein modernes Glas-Design

@@ -13,7 +13,7 @@ import main
 from fastapi.testclient import TestClient
 
 
-def _user(is_admin=1, is_dealer=1, name="sven"):
+def _user(is_admin=1, is_dealer=1, name="anna"):
     now = int(time.time())
     with core.db() as conn:
         cur = conn.execute(
@@ -28,7 +28,7 @@ def client(tmp_path, monkeypatch):
     core.init_db()
     uid = _user()
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 
@@ -40,14 +40,14 @@ def test_status_when_not_connected(client):
 def test_connect_with_token_sets_status(client, monkeypatch):
     def fake_connect(token):
         core.set_setting("hub_token", token)
-        core.set_setting("hub_display_name", "Sven")
+        core.set_setting("hub_display_name", "Anna")
         core.set_setting("hub_is_admin", "1")
-        return {"display_name": "Sven", "is_admin": True}
+        return {"display_name": "Anna", "is_admin": True}
     monkeypatch.setattr(hub, "connect_with_token", fake_connect)
     r = client.post("/api/hub/connect", json={"token": "bft_x"})
     assert r.status_code == 200
     s = client.get("/api/hub").json()
-    assert s["connected"] is True and s["display_name"] == "Sven"
+    assert s["connected"] is True and s["display_name"] == "Anna"
     assert s["is_admin"] is True
 
 
@@ -122,7 +122,7 @@ def test_publish_without_connection_400(client, monkeypatch):
 
 def test_disconnect_clears(client, monkeypatch):
     core.set_setting("hub_token", "t")
-    core.set_setting("hub_display_name", "Sven")
+    core.set_setting("hub_display_name", "Anna")
     client.post("/api/hub/disconnect")
     assert (core.get_setting("hub_token") or "") == ""
     assert hub.enabled() is False
@@ -131,9 +131,9 @@ def test_disconnect_clears(client, monkeypatch):
 def test_hub_management_is_admin_only(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "hub2.db"))
     core.init_db()
-    uid = _user(is_admin=0, is_dealer=1, name="paul")
+    uid = _user(is_admin=0, is_dealer=1, name="bruno")
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "paul", False)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "bruno", False)
     assert c.post("/api/hub/publish").status_code == 403
     assert c.post("/api/hub/connect",
                   json={"url": "https://h", "token": "t"}).status_code == 403
@@ -161,7 +161,7 @@ def test_invite_without_connection_400(client, monkeypatch):
 def test_rename_endpoint_is_gone(client):
     """Umbenennen gehört in die Admin-Konsole, nicht in die App."""
     assert client.post("/api/hub/rename",
-                       json={"display_name": "Sven"}).status_code == 404
+                       json={"display_name": "Anna"}).status_code == 404
 
 
 def test_status_refresh_swallows_hub_errors(client, monkeypatch):
@@ -263,7 +263,7 @@ def test_unblocking_is_noticed_on_next_call(client, monkeypatch):
     core.set_setting("hub_token", "bft_x")
     core.set_setting("hub_blocked", "1")
     monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
-        200, {"display_name": "Paul", "is_admin": False}))
+        200, {"display_name": "Bruno", "is_admin": False}))
     hub.refresh()
     assert hub.blocked() is False
     assert client.get("/api/hub").json()["blocked"] is False
@@ -285,9 +285,9 @@ def test_new_connection_resends_the_key(client, monkeypatch):
     Nachrichten unerreichbar."""
     core.set_setting("hub_key_sent", "alterSchluessel")
     monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
-        201, {"member_id": "mem_neu", "display_name": "Paul",
+        201, {"member_id": "mem_neu", "display_name": "Bruno",
               "token": "bft_neu"}))
-    hub.connect_with_invite("inv_x", "Paul")
+    hub.connect_with_invite("inv_x", "Bruno")
     assert (core.get_setting("hub_key_sent") or "") == ""
 
 
@@ -306,10 +306,10 @@ def test_instance_code_is_kept_but_stays_out_of_the_app(client, monkeypatch):
     """Gemerkt ja, angezeigt nein – in der App wäre die Kennung nur Rätselraten;
     gebraucht wird sie in der Admin-Konsole."""
     monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
-        201, {"member_id": "mem_1", "display_name": "Paul", "token": "bft_1",
+        201, {"member_id": "mem_1", "display_name": "Bruno", "token": "bft_1",
               "instance_code": "BF-ABCD-EFGH-K",
               "instance_secret": "ins_geheim"}))
-    hub.connect_with_invite("inv_x", "Paul")
+    hub.connect_with_invite("inv_x", "Bruno")
     assert core.get_setting("hub_instance_code") == "BF-ABCD-EFGH-K"
     assert "instance_code" not in client.get("/api/hub").json()
 
@@ -323,10 +323,10 @@ def test_instance_claim_travels_with_a_new_join(client, monkeypatch):
 
     def fake(method, url, **kw):
         sent.update(kw.get("json") or {})
-        return _Resp(201, {"member_id": "m", "display_name": "Paul",
+        return _Resp(201, {"member_id": "m", "display_name": "Bruno",
                            "token": "bft_2", "instance_code": "BF-ABCD-EFGH-K"})
     monkeypatch.setattr(hub.requests, "request", fake)
-    hub.connect_with_invite("inv_y", "Paul")
+    hub.connect_with_invite("inv_y", "Bruno")
     assert sent["instance_code"] == "BF-ABCD-EFGH-K"
     assert sent["instance_secret"] == "ins_geheim"
 
@@ -354,7 +354,7 @@ def test_existing_member_gets_the_code_on_refresh(client, monkeypatch):
     """Instanzen von vor der Kennung bekommen sie beim nächsten Abgleich."""
     core.set_setting("hub_token", "bft_x")
     monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
-        200, {"display_name": "Paul", "is_admin": False,
+        200, {"display_name": "Bruno", "is_admin": False,
               "instance_code": "BF-ZZZZ-YYYY-M", "instance_secret": "ins_neu"}))
     hub.refresh()
     assert core.get_setting("hub_instance_code") == "BF-ZZZZ-YYYY-M"
@@ -366,7 +366,7 @@ def test_later_refresh_without_secret_keeps_the_old_one(client, monkeypatch):
     core.set_setting("hub_token", "bft_x")
     core.set_setting("hub_instance_secret", "ins_alt")
     monkeypatch.setattr(hub.requests, "request", lambda *a, **k: _Resp(
-        200, {"display_name": "Paul", "is_admin": False,
+        200, {"display_name": "Bruno", "is_admin": False,
               "instance_code": "BF-ZZZZ-YYYY-M", "instance_secret": None}))
     hub.refresh()
     assert core.get_setting("hub_instance_secret") == "ins_alt"
@@ -517,7 +517,7 @@ def test_erster_schluessel_wird_gemerkt(client, monkeypatch):
     key = _fremdschluessel()
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
-                        lambda mid: {"public_key": key, "display_name": "Paul"})
+                        lambda mid: {"public_key": key, "display_name": "Bruno"})
     assert main._fremder_schluessel("mem_1") == key
     # Zweiter Aufruf mit demselben Schlüssel: unauffällig
     assert main._fremder_schluessel("mem_1") == key
@@ -529,10 +529,10 @@ def test_getauschter_schluessel_stoppt_das_verschicken(client, monkeypatch):
     erst, dann = _fremdschluessel(), _fremdschluessel()
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
-                        lambda mid: {"public_key": erst, "display_name": "Paul"})
+                        lambda mid: {"public_key": erst, "display_name": "Bruno"})
     main._fremder_schluessel("mem_2")
     monkeypatch.setattr(hub, "member_key",
-                        lambda mid: {"public_key": dann, "display_name": "Paul"})
+                        lambda mid: {"public_key": dann, "display_name": "Bruno"})
     with pytest.raises(Exception) as e:
         main._fremder_schluessel("mem_2")
     assert "geändert" in str(e.value.detail)
@@ -542,12 +542,12 @@ def test_nach_bestaetigung_geht_es_weiter(client, monkeypatch):
     erst, dann = _fremdschluessel(), _fremdschluessel()
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
-                        lambda mid: {"public_key": erst, "display_name": "Paul"})
+                        lambda mid: {"public_key": erst, "display_name": "Bruno"})
     main._fremder_schluessel("mem_3")
     assert client.post("/api/hub/key/accept",
                        json={"member_id": "mem_3"}).status_code == 200
     monkeypatch.setattr(hub, "member_key",
-                        lambda mid: {"public_key": dann, "display_name": "Paul"})
+                        lambda mid: {"public_key": dann, "display_name": "Bruno"})
     assert main._fremder_schluessel("mem_3") == dann
 
 
@@ -555,7 +555,7 @@ def test_sicherheitsnummer_ist_kurz_und_stabil(client, monkeypatch):
     key = _fremdschluessel()
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
-                        lambda mid: {"public_key": key, "display_name": "Paul"})
+                        lambda mid: {"public_key": key, "display_name": "Bruno"})
     main._fremder_schluessel("mem_4")
     d = client.get("/api/hub/key/mem_4").json()
     assert d["known"] is True

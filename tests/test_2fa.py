@@ -28,13 +28,13 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin, "
-                     "created_at) VALUES ('sven', ?, 1, ?)",
+                     "created_at) VALUES ('anna', ?, 1, ?)",
                      (core.hash_password("geheim12345"), now))
     return TestClient(main.app)
 
 
 def anmelden(c, pw="geheim12345"):
-    return c.post("/api/login", json={"username": "sven", "password": pw})
+    return c.post("/api/login", json={"username": "anna", "password": pw})
 
 
 def einrichten(c):
@@ -197,7 +197,7 @@ def test_raten_im_zweiten_schritt_wird_gebremst(client):
 
 def test_abgelaufene_zwischenmarke_wird_abgelehnt(client):
     einrichten(client)
-    alt = core.create_token(1, "sven", False, minutes=-1, zweck="2fa")
+    alt = core.create_token(1, "anna", False, minutes=-1, zweck="2fa")
     r = client.post("/api/login/2fa", json={"challenge": alt, "code": "000000"})
     assert r.status_code == 401
 

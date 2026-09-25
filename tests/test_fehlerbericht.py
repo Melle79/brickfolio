@@ -153,9 +153,9 @@ def test_nur_admins_duerfen_den_token_setzen(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('finn', 'x', 0, ?)", (int(time.time()),)).lastrowid
+            " VALUES ('carla', 'x', 0, ?)", (int(time.time()),)).lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "finn", False)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "carla", False)
     assert c.post("/api/settings/crash_token",
                   json={"token": "bfr_x"}).status_code == 403
 
@@ -171,8 +171,8 @@ def test_berichten_darf_jeder(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('finn', 'x', 0, ?)", (int(time.time()),)).lastrowid
+            " VALUES ('carla', 'x', 0, ?)", (int(time.time()),)).lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "finn", False)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "carla", False)
     assert c.post("/api/diag/report",
                   json={"payload": "x"}).status_code == 200

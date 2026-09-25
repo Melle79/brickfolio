@@ -37,11 +37,11 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
     integrations._begriff_cache.clear()
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -85,7 +85,7 @@ def test_alle_woerter_muessen_vorkommen(client):
 
 
 def test_der_aufdruck_ist_durchsuchbar(client):
-    """Svens Ziel vom 21.08.2026: „welche Farbe hat der Torso, der Kopf, die
+    """Das Ziel vom 21.08.2026: „welche Farbe hat der Torso, der Kopf, die
     Haare, der Helm. Welche farbe haben die bedruckungen".
 
     Vorher standen im Index Art und bis zu drei Farben. Damit fand „roter
@@ -113,7 +113,7 @@ def test_ein_anderer_droide_faellt_dabei_heraus(client):
 
 
 def test_bei_typ_set_kommt_keine_figur(client):
-    """Svens Fall vom 21.08.2026: Oben stand „Set", gesucht war die UCS Razor
+    """Der Fall vom 21.08.2026: Oben stand „Set", gesucht war die UCS Razor
     Crest – heraus kam „Clone ARF Trooper Razor", eine Figur. Der Index
     enthält ausschließlich Figuren, wurde aber ohne Rücksicht auf den
     eingestellten Typ befragt."""
@@ -189,7 +189,7 @@ def test_der_stand_sagt_was_angekommen_ist(client):
 
 
 def test_der_eigene_abzug_braucht_kein_rebrickable(client, monkeypatch):
-    """Pauls Instanz am 24.08.2026: BrickLink eingerichtet, 19.158 Figuren
+    """Eine Instanz am 24.08.2026: BrickLink eingerichtet, 19.158 Figuren
     mit Beschreibung im Abzug – und die Suche gab eine leere Liste zurück,
     weil der **Rebrickable**-Schlüssel fehlte. Der Abzug liegt lokal; er
     braucht davon nichts.
@@ -224,7 +224,7 @@ def test_der_eigene_abzug_braucht_kein_rebrickable(client, monkeypatch):
 def test_die_hauptsuche_fragt_zuerst_den_eigenen_abzug(client, monkeypatch):
     """Sie stieg mit einem 501 aus, wenn kein Rebrickable-Schlüssel
     hinterlegt war – der eigene Abzug wurde **gar nicht** befragt. Auf
-    Pauls Instanz lagen dabei 19.158 Figuren mit Namen und Beschreibung,
+    einer Instanz lagen dabei 19.158 Figuren mit Namen und Beschreibung,
     und jede Suche im manuellen Erfassen blieb stumm (24.08.2026)."""
     _zeile("sw0344", "R-3PO Protocol Droid", merkmale="torso red")
     core.set_setting("rebrickable_key", "")
@@ -296,7 +296,7 @@ def test_ohne_farbe_im_begriff_gibt_es_keinen_zweiten_versuch(client, monkeypatc
 
 def test_der_schonende_modus_folgt_dem_benutzer(client):
     """Er lag allein im `localStorage` – und der gehört zur Adresse, nicht
-    zum Gerät. Sven hatte ihn eingeschaltet, und der Renderer stürzte
+    zum Gerät. Er war eingeschaltet, und der Renderer stürzte
     trotzdem ab: Die abgestürzte Sitzung lief über `http://…:8300`, die
     eingeschaltete über HTTPS. Zwei Adressen, zwei Speicher (25.08.2026)."""
     assert client.get("/api/config").json()["schonend"] is None
@@ -526,8 +526,8 @@ def test_die_rangfolge_sieht_alle_treffer_nicht_nur_die_ersten(client):
 #
 # Am 05.09.2026 stand in den Einstellungen „40878 Figuren, 19209
 # beschrieben" – bei einem BrickLink-Figurenkatalog von gut 19.000. Die
-# Zahl war richtig, die Beschriftung nicht: Sven hatte auch die Set-Datei
-# eingelesen, und beide Sorten wurden als „Figuren" zusammengezählt.
+# Zahl war richtig, die Beschriftung nicht: Die Set-Datei war
+# mit eingelesen, und beide Sorten wurden als „Figuren" zusammengezählt.
 
 def test_stand_zaehlt_figuren_und_sets_getrennt(client):
     with core.db() as conn:

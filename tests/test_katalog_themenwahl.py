@@ -33,20 +33,20 @@ def ctx(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('sven', 'x', 1, ?)", (now,)).lastrowid
+            " VALUES ('anna', 'x', 1, ?)", (now,)).lastrowid
         pid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('paul', 'x', 0, ?)", (now,)).lastrowid
+            " VALUES ('bruno', 'x', 0, ?)", (now,)).lastrowid
         for i in range(1, 6):
             _kat(conn, "sw%04d" % i, "Star Wars %d" % i)
         for i in range(1, 4):
             _kat(conn, "cty%04d" % i, "Polizist %d" % i)
         _kat(conn, "fort001", "Battalion Brawler")
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     p = TestClient(main.app)
-    p.headers["Authorization"] = "Bearer " + core.create_token(pid, "paul", False)
-    return {"sven": c, "paul": p, "uid": uid}
+    p.headers["Authorization"] = "Bearer " + core.create_token(pid, "bruno", False)
+    return {"anna": c, "bruno": p, "uid": uid}
 
 
 def _namen(client, alle=0):
@@ -55,29 +55,29 @@ def _namen(client, alle=0):
 
 
 def test_ohne_wahl_ist_alles_da(ctx):
-    assert set(_namen(ctx["sven"])) == {"Star Wars", "City", "Fortnite"}
+    assert set(_namen(ctx["anna"])) == {"Star Wars", "City", "Fortnite"}
 
 
 def test_favorit_steht_oben(ctx):
     """Auch wenn das Thema klein ist – sonst bringt der Stern nichts."""
-    assert _namen(ctx["sven"])[0] == "Star Wars"      # das größte
-    ctx["sven"].post("/api/katalog/themen/wahl",
+    assert _namen(ctx["anna"])[0] == "Star Wars"      # das größte
+    ctx["anna"].post("/api/katalog/themen/wahl",
                      json={"thema": "Fortnite", "fav": True})
-    assert _namen(ctx["sven"])[0] == "Fortnite"       # das kleinste
+    assert _namen(ctx["anna"])[0] == "Fortnite"       # das kleinste
 
 
 def test_ausgeblendetes_fehlt_in_der_auswahl(ctx):
-    ctx["sven"].post("/api/katalog/themen/wahl",
+    ctx["anna"].post("/api/katalog/themen/wahl",
                      json={"thema": "City", "sichtbar": False})
-    assert "City" not in _namen(ctx["sven"])
+    assert "City" not in _namen(ctx["anna"])
     # In der Einstellungsliste steht es weiter – dort will man es ja
     # wieder einschalten können.
-    assert "City" in _namen(ctx["sven"], alle=1)
+    assert "City" in _namen(ctx["anna"], alle=1)
 
 
 def test_stern_ueberlebt_das_ausblenden(ctx):
     """Wer ein Thema wieder einblendet, findet seinen Stern wieder."""
-    c = ctx["sven"]
+    c = ctx["anna"]
     c.post("/api/katalog/themen/wahl", json={"thema": "City", "fav": True})
     c.post("/api/katalog/themen/wahl", json={"thema": "City", "sichtbar": False})
     c.post("/api/katalog/themen/wahl", json={"thema": "City", "sichtbar": True})
@@ -87,15 +87,15 @@ def test_stern_ueberlebt_das_ausblenden(ctx):
 
 
 def test_die_wahl_gehoert_dem_benutzer(ctx):
-    """Pauls Auswahl darf Svens nicht anfassen."""
-    ctx["sven"].post("/api/katalog/themen/wahl",
+    """Brunos Auswahl darf Annas nicht anfassen."""
+    ctx["anna"].post("/api/katalog/themen/wahl",
                      json={"thema": "City", "sichtbar": False})
-    assert "City" not in _namen(ctx["sven"])
-    assert "City" in _namen(ctx["paul"])
+    assert "City" not in _namen(ctx["anna"])
+    assert "City" in _namen(ctx["bruno"])
 
 
 def test_nur_favoriten_raeumt_den_rest_weg(ctx):
-    c = ctx["sven"]
+    c = ctx["anna"]
     c.post("/api/katalog/themen/wahl", json={"thema": "Fortnite", "fav": True})
     d = c.post("/api/katalog/themen/wahl/alle",
                json={"was": "nur_favoriten"}).json()
@@ -105,7 +105,7 @@ def test_nur_favoriten_raeumt_den_rest_weg(ctx):
 
 
 def test_alle_ein_holt_alles_zurueck(ctx):
-    c = ctx["sven"]
+    c = ctx["anna"]
     c.post("/api/katalog/themen/wahl/alle", json={"was": "alle_aus"})
     assert _namen(c) == []
     c.post("/api/katalog/themen/wahl/alle", json={"was": "alle_ein"})
@@ -115,13 +115,13 @@ def test_alle_ein_holt_alles_zurueck(ctx):
 def test_die_einstellungsliste_ist_alphabetisch(ctx):
     """Dort sucht man einen Namen – aus einer Größenfolge springt er nicht
     ins Auge."""
-    namen = _namen(ctx["sven"], alle=1)
+    namen = _namen(ctx["anna"], alle=1)
     assert namen == sorted(namen, key=str.lower)
 
 
 def test_kaputte_gespeicherte_wahl_wirft_nicht(ctx):
     core.set_user_setting(ctx["uid"], main.KATALOG_THEMEN_WAHL, "kein json")
-    assert set(_namen(ctx["sven"])) == {"Star Wars", "City", "Fortnite"}
+    assert set(_namen(ctx["anna"])) == {"Star Wars", "City", "Fortnite"}
 
 
 def test_schnelle_tipper_gehen_nicht_verloren(ctx):
@@ -135,7 +135,7 @@ def test_schnelle_tipper_gehen_nicht_verloren(ctx):
     """
     import threading
 
-    c = ctx["sven"]
+    c = ctx["anna"]
     themen = ["Star Wars", "City", "Fortnite"]
     fehler = []
 

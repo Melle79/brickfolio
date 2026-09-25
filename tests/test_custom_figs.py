@@ -26,10 +26,10 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 1, ?)", (now,))
+            " created_at) VALUES ('anna', 'x', 1, 1, ?)", (now,))
         uid = cur.lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 
@@ -102,7 +102,7 @@ def test_custom_item_can_be_collected(client):
                      files={"file": ("f.png", _png(), "image/png")}).json()
     r = client.post("/api/collection", json={
         "item_id": "custom-eigen-001", "item_type": "minifig",
-        "name": "Sven-Ritter", "img_url": up["url"], "bricklink_url": "",
+        "name": "Eigenbau-Ritter", "img_url": up["url"], "bricklink_url": "",
         "quantity": 1, "condition": "used"})
     assert r.status_code == 200
     row = client.get("/api/collection").json()["items"][0]

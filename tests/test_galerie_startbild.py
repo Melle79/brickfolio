@@ -4,7 +4,7 @@ Beim Scannen speichert die App die Adresse, die der Erkenner liefert – bei
 Brickognize ein kleines Vorschaubild von einer ganz anderen Adresse. Über
 den Schlüssel fiel es nicht mit dem BrickLink-Katalogbild zusammen, und die
 Galerie zeigte „1/2" mit demselben Motiv, das zweite Bild besser als das
-erste. Gemessen an Svens Sammlung am 29.08.2026: 379 von 910 Einträgen
+erste. Gemessen an einer Sammlung im Betrieb am 29.08.2026: 379 von 910 Einträgen
 betroffen, 368 davon Vorschaubilder von Brickognize.
 """
 import re

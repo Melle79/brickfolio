@@ -148,7 +148,7 @@ def _sicherungs_waechter():
 
     Am 30.08.2026 ist genau das eingetreten: Letzter Neustart 29.08. um
     23:33, Sicherung dort übersprungen (die des 29. lag schon), nächster
-    Lauf wäre 30.08. um 11:35 gewesen. Sven spielte um 10:55 zurück – vierzig
+    Lauf wäre 30.08. um 11:35 gewesen. Zurückgespielt wurde um 10:55 – vierzig
     Minuten zu früh, und ein ganzer Tag Arbeit hing an der Sicherheitskopie,
     die das Zurückspielen selbst anlegt.
 
@@ -1669,7 +1669,7 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
             art = ITEM_ARTEN.get((el.findtext("ITEMTYPE") or "").strip().upper())
             # **Figuren und Sets.** Bis 2.65.1 flog alles außer Minifiguren
             # heraus – damals richtig, denn es gab keinen Ort für Sets. Seit
-            # der Katalogliste gibt es einen, und Svens Sets.xml wurde
+            # der Katalogliste gibt es einen, und eine Sets.xml wurde
             # bisher vollständig verworfen.
             if art not in ("minifig", "set"):
                 uebersprungen += 1
@@ -2852,10 +2852,10 @@ def update_status(user: dict = Depends(current_user)):
 def favicon():
     """Das Symbol im Browser-Reiter – aus demselben Erzeuger wie /icon/….
 
-    Bis 2.79.2 lag hier eine feste Datei aus dem Repo, und die trug „FINN".
+    Bis 2.79.2 lag hier eine feste Datei aus dem Repo, und die trug einen festen Vornamen.
     Damit stand auf **jeder** Instanz dieser Name im Reiter, obwohl das
-    App-Symbol längst den eigenen zeigte: Am 20.09.2026 lieferte Pauls
-    Instanz unter `/icon/192.png` ein „PAUL"-Symbol und unter
+    App-Symbol längst den eigenen zeigte: Am 20.09.2026 lieferte eine
+    Instanz unter `/icon/192.png` ihr eigenes Namenssymbol und unter
     `/favicon.ico` dieselbe Datei wie das Repo, Prüfsumme gleich.
 
     Fällt der Erzeuger aus (kein Pillow), bleibt die mitgelieferte Datei –
@@ -2910,7 +2910,7 @@ def set_schonend(body: SchonendBody, user: dict = Depends(current_user)):
     """Den schonenden Bildmodus für **diesen Benutzer** merken.
 
     Er lag bis 2.47.1 allein im `localStorage` – und der gehört zur
-    Adresse, nicht zum Gerät. Sven hatte ihn eingeschaltet, und trotzdem
+    Adresse, nicht zum Gerät. Er war eingeschaltet, und trotzdem
     stürzte der Renderer ab: Die abgestürzte Sitzung lief über
     `http://192.168.0.199:8300`, die eingeschaltete über HTTPS. Zwei
     Adressen, zwei Speicher, und niemand sieht es (25.08.2026).
@@ -3021,7 +3021,7 @@ def _katalogsuche_moeglich() -> bool:
 
     Bis 2.45.0 hing das allein an Rebrickable – und die Oberfläche zeigte
     „Katalogsuche ist nicht eingerichtet", **bevor** sie den Server fragte.
-    Auf Pauls Instanz lagen dabei 19.158 Figuren im eigenen Abzug, und die
+    Auf einer Instanz lagen dabei 19.158 Figuren im eigenen Abzug, und die
     Suche blieb trotzdem stumm (24.08.2026).
 
     Ein eigener Abzug mit Inhalt reicht für Figuren völlig; Rebrickable
@@ -3041,7 +3041,7 @@ def catalog_search(q: str = "", item_type: str = "minifig", page: int = 1,
 
     Der eigene wurde hier lange gar nicht befragt: Die Funktion stieg mit
     einem 501 aus, wenn kein Rebrickable-Schlüssel hinterlegt war. Auf
-    Pauls Instanz lagen dabei 19.158 Figuren mit Namen und Beschreibung –
+    einer Instanz lagen dabei 19.158 Figuren mit Namen und Beschreibung –
     und jede Suche im manuellen Erfassen blieb stumm (24.08.2026).
 
     Die neue Reihenfolge ist auch für alle anderen besser: Der eigene Abzug
@@ -4945,7 +4945,7 @@ def fig_parts(fig_no: str, user: dict = Depends(current_user)):
 # **Die Zahl muss zur Seitengröße der Oberfläche passen.** Bis zum
 # 22.09.2026 standen hier 5 und dort 8: Die Oberfläche setzte acht Karten
 # auf „lade Jahr & Preise …", bekam für fünf etwas und räumte bei den
-# übrigen den Hinweis kommentarlos wieder weg. Sven sah es an „gelber
+# übrigen den Hinweis kommentarlos wieder weg. Sichtbar wurde es an „gelber
 # Umhang" – fünf Karten mit Preis, fünf ohne, obwohl BrickLink für alle
 # etwas hat.
 #
@@ -6240,8 +6240,8 @@ def suggest_collection(q: str = "", item_type: str = "",
     getroffen haben.
 
     **Auch ohne KI.** Bis 2.81.0 stand hier ein `ollama_enabled()`, und der
-    ganze Weg blieb zu, wenn kein Modell eingerichtet war – auf Pauls und
-    Kellos Instanzen also immer. Seit dem mitgelieferten Wörterbuch gibt es
+    ganze Weg blieb zu, wenn kein Modell eingerichtet war – auf zwei
+    Instanzen im Betrieb also immer. Seit dem mitgelieferten Wörterbuch gibt es
     eine zweite Quelle für Übersetzungen, und `suchbegriffe` entscheidet
     selbst, welche greift. Bleibt es dabei ohne Begriffe, ist die Antwort
     leer wie zuvor.
@@ -6337,7 +6337,7 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
     # `return` an dieser Stelle, und das war falsch: Der eigene Abzug
     # braucht Rebrickable nicht – er liegt lokal. Wer keinen Schlüssel
     # hinterlegt hat, bekam trotzdem eine leere Liste, obwohl 19.158
-    # Figuren mit Beschreibung danebenlagen (Pauls Instanz, 24.08.2026).
+    # Figuren mit Beschreibung danebenlagen (auf einer Instanz, 24.08.2026).
     #
     # Gebraucht wird Rebrickable erst weiter unten, wenn der eigene Abzug
     # nichts hergibt. Dort steht die Prüfung jetzt auch.
@@ -8409,8 +8409,8 @@ def _sicherungen_aufraeumen(bdir: str) -> None:
     die neueste Datei und bleibt immer liegen – gelöscht wurde stattdessen
     der älteste Tagesstand.
 
-    Jede Sicherheitskopie kostete so einen Tag Historie, lautlos. Bei Sven
-    waren aus 14 Tagen 12 geworden (30.08.2026).
+    Jede Sicherheitskopie kostete so einen Tag Historie, lautlos. Auf einer
+    Instanz waren aus 14 Tagen 12 geworden (30.08.2026).
 
     Beide Töpfe behalten jetzt je `BACKUP_KEEP` Stände. Was in keines der
     beiden Muster passt, wird **nicht** angefasst: Wer eine Datei von Hand
@@ -8826,7 +8826,7 @@ def manifest():
     """Name der Installation aus der Einstellung, nicht aus einer Datei.
 
     Legt man die App aufs Handy, steht dort der Name aus dem Manifest – bisher
-    fest „Finn's Brickfolio", auch wenn die Instanz längst anders heißt. Das
+    ein fest eingebauter Name, auch wenn die Instanz längst anders heißt. Das
     Manifest wird deshalb erzeugt statt ausgeliefert.
     """
     wer = _owner_name()
@@ -8854,7 +8854,7 @@ _icon_cache: dict = {}
 
 @app.get("/icon/{groesse}.png")
 def icon(groesse: int):
-    """App-Symbol mit dem Namen der Instanz statt eines festen „FINN"."""
+    """App-Symbol mit dem Namen der Instanz statt eines festen Vornamens."""
     if groesse not in (180, 192, 512):
         raise HTTPException(404, "Nicht gefunden")
     wer = _owner_name().upper()[:12]
@@ -8929,8 +8929,8 @@ def index():
         # Fall und liefert dann »Dein Brickfolio«.
         seite = (f.read().replace("__APPVERSION__", core.APP_VERSION)
                  # `quote=False`: Die Marken stehen in Textinhalt, nicht
-                 # in einem Attribut. Sonst würde aus „Sven's Brickfolio"
-                 # im Reiter „Sven&#x27;s Brickfolio".
+                 # in einem Attribut. Sonst würde aus „Anna's Brickfolio"
+                 # im Reiter „Anna&#x27;s Brickfolio".
                  .replace("__APPTITLE__", html.escape(_app_title(), False))
                  .replace("__OWNERUP__",
                           html.escape(_owner_name().upper(), False))

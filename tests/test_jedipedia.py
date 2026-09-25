@@ -37,9 +37,9 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('sven', 'x', 1, ?)", (int(time.time()),)).lastrowid
+            " VALUES ('anna', 'x', 1, ?)", (int(time.time()),)).lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 
@@ -201,7 +201,7 @@ def test_kein_schluessel_traegt_eine_bricklink_beschreibung():
 
 
 def test_die_einheit_bleibt_stehen_die_bemalung_nicht():
-    """Sven am 05.09.2026: Bei »Clone Trooper Commander, 187th Legion« ist
+    """Rückmeldung vom 05.09.2026: Bei »Clone Trooper Commander, 187th Legion« ist
     die 187. Legion der interessantere Verweis. Die Farbe des Kopfes ist
     es nicht."""
     assert jt.begriff("Clone Trooper Commander, 187th Legion (Phase 2)"
@@ -211,7 +211,7 @@ def test_die_einheit_bleibt_stehen_die_bemalung_nicht():
 
 
 def test_bei_einem_namen_geht_die_person_vor_der_einheit():
-    """Svens zweiter Hinweis: »Commander Fox« gibt es, also gehört der
+    """Der zweite Hinweis dazu: »Commander Fox« gibt es, also gehört der
     Verweis zu ihm – nicht zu seiner Garde. Bei einer bloßen Rolle ist es
     umgekehrt, sonst landete jeder Klonkommandant auf derselben Seite."""
     daten = json.loads("{" + TABELLE.read_text().split("{", 1)[1]

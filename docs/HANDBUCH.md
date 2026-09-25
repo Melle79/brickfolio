@@ -529,7 +529,7 @@ Wort zum Suchen. Zu jeder Figur steht darin, was auf dem Bild zu sehen ist,
 Teil für Teil: „torso red black chest panel; cape yellow green dragon with
 red wings".
 
-**Erzeugt wird er nicht hier.** Auf Svens NAS läuft ein Dienst, der
+**Erzeugt wird er nicht hier.** Beim Betreiber des Katalogs läuft ein Dienst, der
 BrickLink abklappert und ein lokales Sehmodell die Katalogfotos beschreiben
 lässt. Das Ergebnis veröffentlicht er als Datei:
 
@@ -1590,7 +1590,7 @@ jedes Thema zwei Schalter:
 
 Der bequemste Weg: ein paar Sterne setzen, dann **★ Nur Favoriten** – das
 blendet alles andere aus. **Alle einblenden** holt sie zurück. Beides gilt
-nur für dich; Paul kann eine ganz andere Auswahl haben als Sven.
+nur für dich; jeder andere Benutzer kann eine ganz andere Auswahl haben.
 
 Der Stern überlebt das Ausblenden: Wer ein Thema wieder einschaltet, findet
 seine Markierung, wo er sie gelassen hat.

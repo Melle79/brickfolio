@@ -24,13 +24,13 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 1, ?)", (now,))
+            " created_at) VALUES ('anna', 'x', 1, 1, ?)", (now,))
         uid = cur.lastrowid
     monkeypatch.setattr(integrations, "recognize",
                         lambda raw: {"items": [], "listing_id": None, "box": None})
     main._scan_zeiten.clear()
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 

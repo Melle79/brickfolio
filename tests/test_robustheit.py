@@ -22,10 +22,10 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -56,7 +56,7 @@ def test_anfrage_senden_erreicht_den_richtigen_vorgang(client, monkeypatch):
     monkeypatch.setattr(main.hub, "enabled", lambda: False)
     r = client.post("/api/hub/trades", json={
         "to": "bf_123", "item_id": "sw0312", "item_name": "TX-20",
-        "text": "Hallo Paul, hättest du Interesse?"})
+        "text": "Hallo Bruno, hättest du Interesse?"})
     # Ohne Hub ist 400 die richtige Antwort – 422 hieße, die Angaben kämen
     # gar nicht erst an der richtigen Stelle an.
     assert r.status_code == 400, r.text

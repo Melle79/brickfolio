@@ -20,7 +20,7 @@ INDEX = Path(__file__).resolve().parents[1] / "frontend" / "index.html"
 def _sicherung(mit_admin=True, extra_user=None):
     users = []
     if mit_admin:
-        users.append({"id": 1, "username": "sven", "password_hash":
+        users.append({"id": 1, "username": "anna", "password_hash":
                       core.hash_password("altes-passwort-123"),
                       "is_admin": 1, "is_dealer": 0,
                       "created_at": int(time.time())})
@@ -67,7 +67,7 @@ def test_danach_ist_die_einrichtung_erledigt(client):
 def test_anmelden_mit_dem_alten_passwort(client):
     """Der eigentliche Zweck: Man kommt mit den Zugangsdaten von vorher rein."""
     client.post("/api/setup/restore", json=_sicherung())
-    r = client.post("/api/login", json={"username": "sven",
+    r = client.post("/api/login", json={"username": "anna",
                                         "password": "altes-passwort-123"})
     assert r.status_code == 200
     assert r.json().get("token")
@@ -80,13 +80,13 @@ def test_keine_benutzernamen_in_der_antwort(client):
     Antwort trägt sie nicht nach draußen und der Bogen zeigt keine an.
     """
     r = client.post("/api/setup/restore", json=_sicherung(
-        extra_user={"id": 2, "username": "paul", "password_hash": "x",
+        extra_user={"id": 2, "username": "bruno", "password_hash": "x",
                     "is_admin": 1, "is_dealer": 0,
                     "created_at": int(time.time())}))
     assert r.status_code == 200
     assert "admins" not in r.json()
     text = r.text.lower()
-    assert "sven" not in text and "paul" not in text
+    assert "anna" not in text and "bruno" not in text
     # Angelegt wurden sie trotzdem – sonst käme niemand mehr hinein.
     with core.db() as conn:
         assert conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"] == 2
@@ -103,7 +103,7 @@ def test_anmeldebogen_nennt_keine_namen():
 
 def test_zu_sobald_ein_benutzer_existiert(client):
     """Sonst könnte jeder Fremde die Instanz jederzeit überschreiben."""
-    client.post("/api/setup", json={"username": "sven",
+    client.post("/api/setup", json={"username": "anna",
                                     "password": "erstes-passwort"})
     r = client.post("/api/setup/restore", json=_sicherung())
     assert r.status_code == 409

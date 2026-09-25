@@ -1,6 +1,6 @@
 """Ein Neustart des Servers darf keine laufende Arbeit wegwerfen.
 
-Am 29.08.2026 im LEGO-Museum: Sven scannte, und die App lud sich mehrmals
+Am 29.08.2026 im LEGO-Museum: Beim Scannen lud sich die App mehrmals
 von selbst neu. Ursache waren elf Update-Läufe an diesem Tag – jeder
 Neustart lässt jede offene Seite neu laden, und das ist auch richtig. Falsch
 war der Zeitpunkt: Foto, erkannte Figuren und gezogene Rahmen sind danach

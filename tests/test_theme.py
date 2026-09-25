@@ -28,10 +28,10 @@ def _client(uid, name, admin):
 def ctx(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "th.db"))
     core.init_db()
-    aid = _user("sven", True)
-    kid = _user("paul", False)
-    return {"admin": _client(aid, "sven", True),
-            "kid": _client(kid, "paul", False)}
+    aid = _user("anna", True)
+    kid = _user("bruno", False)
+    return {"admin": _client(aid, "anna", True),
+            "kid": _client(kid, "bruno", False)}
 
 
 def test_default_is_classic(ctx):
@@ -48,7 +48,7 @@ def test_user_theme_is_saved_and_returned(ctx):
 def test_login_returns_saved_theme(ctx):
     ctx["kid"].post("/api/me/theme", json={"theme": "galaxy"})
     res = TestClient(main.app).post(
-        "/api/login", json={"username": "paul", "password": "pw1234"}).json()
+        "/api/login", json={"username": "bruno", "password": "pw1234"}).json()
     assert res["theme"] == "galaxy"
 
 
@@ -66,7 +66,7 @@ def test_default_theme_is_admin_only(ctx):
 
 def test_default_theme_applies_to_users_without_choice(ctx):
     ctx["admin"].post("/api/settings/default_theme", json={"theme": "galaxy"})
-    # paul hat nichts gewählt -> theme None, default_theme galaxy
+    # bruno hat nichts gewählt -> theme None, default_theme galaxy
     me = ctx["kid"].get("/api/me").json()
     assert me["theme"] is None and me["default_theme"] == "galaxy"
     # ... und der Login-Screen kennt den Standard

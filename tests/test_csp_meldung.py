@@ -1,6 +1,6 @@
 """Was in einer CSP-Meldung landet – und was nicht.
 
-Aus Pauls Instanz kam am 11.08.2026 zweimal „Vom Browser blockiert:
+Aus einer Instanz kam am 11.08.2026 zweimal „Vom Browser blockiert:
 img-src → flat-leaf-5175.cloudflareaccess.com". Kein Defekt: Die Instanz
 steht hinter Cloudflare Access, und ist dessen Sitzung abgelaufen,
 antwortet Access auf jede Anfrage – hier das Symbol der Web-App – mit einer

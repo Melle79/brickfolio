@@ -32,10 +32,10 @@ def _client(uid, name, admin):
 def ctx(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "adm.db"))
     core.init_db()
-    aid = _mkuser("sven", admin=True)
-    pid = _mkuser("paul", admin=False)
-    return {"admin": _client(aid, "sven", True), "aid": aid, "pid": pid,
-            "paul": _client(pid, "paul", False)}
+    aid = _mkuser("anna", admin=True)
+    pid = _mkuser("bruno", admin=False)
+    return {"admin": _client(aid, "anna", True), "aid": aid, "pid": pid,
+            "bruno": _client(pid, "bruno", False)}
 
 
 def _is_admin(uid):
@@ -61,7 +61,7 @@ def test_admin_can_demote_when_another_admin_exists(ctx):
 
 
 def test_last_admin_cannot_be_demoted(ctx):
-    # sven ist der einzige Admin
+    # anna ist der einzige Admin
     r = ctx["admin"].post(f"/api/users/{ctx['aid']}/admin",
                           json={"is_admin": False})
     assert r.status_code == 400
@@ -69,7 +69,7 @@ def test_last_admin_cannot_be_demoted(ctx):
 
 
 def test_non_admin_cannot_change_roles(ctx):
-    r = ctx["paul"].post(f"/api/users/{ctx['aid']}/admin",
+    r = ctx["bruno"].post(f"/api/users/{ctx['aid']}/admin",
                          json={"is_admin": False})
     assert r.status_code == 403
 

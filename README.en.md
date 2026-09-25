@@ -101,7 +101,7 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   roles (admins can appoint further admins), self-service password/name change
 - 💾 Full **backup** as JSON (download & restore), CSV export and print-ready
   lists
-- 🏷 Configurable **display name** in logo and title (default “Finn”); ideal
+- 🏷 Configurable **display name** in logo and title (empty by default); ideal
   when several family members each run their own instance
 - 🌌 Three **themes** to choose from (More → Design): light “Classic”, dark
   “Galaxy” with a starfield, and “Nova” – a modern glass design with a blue
@@ -246,7 +246,7 @@ docker compose up -d --build
 | `BACKUP_KEEP` | no | Keep this many automatic daily backups (default 14, 0 = off) |
 | `REBRICKABLE_KEY` | no | Rebrickable API for name search ([create a key](https://rebrickable.com/api/)) |
 | `GITHUB_REPO` | no | Target repository for issues from the error report (default `Melle79/brickfolio`) |
-| `BRICKFOLIO_NAME` | no | Display name in logo/title (default “Finn”); also settable in-app |
+| `BRICKFOLIO_NAME` | no | Display name in logo/title (empty by default); also settable in-app |
 
 All API keys can alternatively be stored **in the app** (More → API keys,
 admin only) – environment variables serve as a fallback.

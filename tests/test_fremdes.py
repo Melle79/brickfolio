@@ -57,7 +57,7 @@ def test_eigenes_wird_am_element_gekennzeichnet():
     """Was die App selbst nachträglich anhängt, gilt nicht als fremd.
 
     Zuerst stand hier eine Ausnahme für `card-modal`. Sie hielt genau so
-    lange, bis das nächste Element dazukam: Finns Berichte vom 10.08.2026
+    lange, bis das nächste Element dazukam: die Berichte vom 10.08.2026
     meldeten in **jeder** Zeile `<div.ptr>` – die Zieh-Anzeige für
     iOS-als-App, die nach dem Schnappschuss entsteht und stehen bleibt. Ein
     Feld, das immer dasselbe sagt, sieht aus wie eine Antwort und ist keine.
@@ -117,7 +117,7 @@ def test_melden_stoert_nie():
 
 
 def test_es_wird_nur_gemeldet_nie_geblockt():
-    """Es ist Svens Browser. Eine Passwort-Ausfüllhilfe hat dort gute
+    """Es ist der Browser des Anwenders. Eine Passwort-Ausfüllhilfe hat dort gute
     Gründe zu sein – die App entfernt nichts."""
     koerper = block("fremdeSpuren")
     for verboten in (".remove()", "removeChild", "innerHTML ="):

@@ -85,9 +85,9 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 1, ?)", (now,))
+            " created_at) VALUES ('anna', 'x', 1, 1, ?)", (now,))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -153,7 +153,7 @@ def test_von_hand_gepflegtes_schlaegt_die_liste(client):
 # `legs` in 19.188, `yellow` in 13.209 – im Namen dagegen nur 833, 5.801
 # und 1.155 Mal. Wer „gelb" suchte, bekam zwei Drittel des Katalogs.
 #
-# Sven hat die Regel dafür gesetzt: Ein gelber Kopf *ist* gelb, und das
+# Die Regel dafür steht fest: Ein gelber Kopf *ist* gelb, und das
 # soll auch zu finden sein – aber nur, wenn man nach dem gelben **Kopf**
 # fragt, nicht bei „gelb" allein.
 
@@ -187,7 +187,7 @@ def test_ein_einzelnes_breites_wort_zieht_nicht_den_ganzen_katalog(client):
 def test_im_verbund_zaehlt_die_beschreibung_sehr_wohl(client):
     """Der blaue Torso ist zu finden – man muss ihn nur meinen.
 
-    Svens Regel: Die Auskunft aus dem Bild ist richtig und soll bleiben;
+    Die Regel: Die Auskunft aus dem Bild ist richtig und soll bleiben;
     sie darf nur nicht auf ein einzelnes Allerweltswort anspringen.
     """
     _viele_mit_merkmalen()
@@ -328,7 +328,7 @@ def test_ohne_treffer_kommt_das_modell_doch(client, monkeypatch):
 # die Suche alle Wörter verlangt, fand das nichts: `figure` steht in
 # 1.268 von 40.936 Katalogzeilen, fast nur bei Duplo.
 #
-# Gemessen am 22.09.2026 an 79 echten Anfragen aus Svens Instanz plus
+# Gemessen am 22.09.2026 an 79 echten Anfragen aus einer Instanz im Betrieb plus
 # neun Mustern: sieben besser, keine schlechter, 82 unverändert.
 
 def test_gattungswoerter_sind_fuellwoerter():

@@ -7,7 +7,7 @@ einem Eingabefeld der Platzhaltertext. `width: 100%` hilft dagegen nicht:
 Die Mindestgröße gewinnt.
 
 **Warum es hier auffiel.** Safari hält sich strikt daran, Chromium
-schrumpft von selbst. Am 23.09.2026 stand auf Svens iPhone das
+schrumpft von selbst. Am 23.09.2026 stand auf einem iPhone im Betrieb das
 Sortierfeld mit 175 px in einem 98 px breiten Rahmen und schob die
 Sammlung seitlich auf – in der Nachbildung war bei vier Bildschirmbreiten,
 allen Ansichten und 800 Einträgen nie etwas zu sehen. Vier Anläufe gingen

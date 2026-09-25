@@ -8,7 +8,7 @@ passten, brach jede Beschriftung um („＋ Zur / Sammlung").
 
 Jetzt derselbe Aufbau wie in der Katalogliste und im Steckbrief: ein
 breiter Knopf, die Nebensachen als Zeichen, der Weg nach draußen als
-Verweis (24.09.2026, Svens Wahl „D").
+Verweis (24.09.2026, Entwurf „D").
 
 **Der Zustands-Schritt.** Ein Tipp auf den Zustand nimmt weiter sofort
 auf – das ist der schnellste Weg in die Sammlung. Nur „Abbrechen" war so

@@ -27,9 +27,9 @@ def _admin(c):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 1, ?)", (int(time.time()),))
+            " created_at) VALUES ('anna', 'x', 1, 1, ?)", (int(time.time()),))
         uid = cur.lastrowid
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return uid
 
 
@@ -100,7 +100,7 @@ def test_umzug_auf_eine_leere_instanz(tmp_path, monkeypatch):
     assert r.status_code == 200
     assert r.json()["restored"]["uploads"] == 1
 
-    neu.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    neu.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     assert neu.get("/api/collection").json()["items"][0]["img_url"] == url
     assert neu.get(url).content == original         # Datei identisch
 

@@ -39,10 +39,10 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 0, ?)", (int(time.time()),))
+            " created_at) VALUES ('anna', 'x', 1, 0, ?)", (int(time.time()),))
         uid = cur.lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 
@@ -112,7 +112,7 @@ def test_nur_das_eine_bild_im_popup_holt_die_volle_fassung():
 
     Seit dem Umbau (23.09.2026) macht das Detail-Popup mit einem Bild über
     die volle Breite auf. Ein Daumennagel von 160 px sah dort ausgefranst
-    aus – Sven hat es sofort gesehen. Die Last, gegen die diese Datei
+    aus – das fiel sofort auf. Die Last, gegen die diese Datei
     wacht, entsteht hier nicht: Es ist ein einziges Bild, und zwar nur,
     solange das Fenster offen ist – nicht 130 gleichzeitig in einer Liste.
 

@@ -457,10 +457,10 @@ const DAUMEN_KANTE = 160;
    liegt und niemand ein Bildpunkt davon erkennt.
    
    Damit lud jede Karte dasselbe Motiv **zweimal**: den Daumennagel als
-   `<img>` und die volle Fassung als CSS-Hintergrund. Bei Sven standen
+   `<img>` und die volle Fassung als CSS-Hintergrund. Auf einer Instanz standen
    724 Bilder im Dokument – und die Messung sah nur die Hälfte, denn sie
    zählt `<img>`-Elemente; CSS-Hintergründe sind darin unsichtbar
-   (29.08.2026, von Sven bemerkt).
+   (29.08.2026, im Betrieb bemerkt).
    
    Gleiche Adresse heißt jetzt: **eine** entpackte Bitmap für beides. Der
    Browser hält sie einmal und benutzt sie zweimal. */
@@ -1074,7 +1074,7 @@ function openGallery(startUrl, gid, gtype) {
         // Katalogbild zusammen, und die Galerie zeigte zweimal dieselbe
         // Figur – das zweite Bild besser als das erste.
         //
-        // Gemessen an Svens Sammlung (29.08.2026): 379 von 910 Einträgen
+        // Gemessen an einer Sammlung im Betrieb (29.08.2026): 379 von 910 Einträgen
         // betroffen, 368 davon Vorschaubilder von Brickognize.
         //
         // Bleibt die Liste leer – eigene Figuren, oder BrickLink hat kein
@@ -2297,7 +2297,7 @@ function appTitle() {
 
 function applyOwnerName(name) {
   // **Auch der leere Name ist ein Name.** Vorher stand hier ein frühes
-  // `return`: Wer keinen setzte, behielt das „FINN" aus der Vorlage im Logo
+  // `return`: Wer keinen setzte, behielt den festen Vornamen aus der Vorlage im Logo
   // und „'s Brickfolio" im Reiter – auf jeder frischen Installation.
   state.ownerName = name || "";
   document.querySelectorAll(".logo-name").forEach((el) => {
@@ -10576,7 +10576,7 @@ function istFremdfehler(message, filename, lineno) {
    laufen in einer eigenen Welt und bleiben unsichtbar – aber die wenigsten
    Erweiterungen kommen ohne Spuren im Dokument aus.
 
-   Nur gemeldet, nie geblockt: Es ist Svens Browser, und eine
+   Nur gemeldet, nie geblockt: Es ist der Browser des Anwenders, und eine
    Passwort-Ausfüllhilfe hat dort gute Gründe zu sein. */
 let eigeneKinder = null;
 
@@ -10592,7 +10592,7 @@ function eigeneKinderMerken() {
    Overlays, Dialoge und die Zieh-Anzeige entstehen später – und wurden
    deshalb als fremd gemeldet. Aufgefallen an `<div.ptr>`: Die Zieh-Anzeige
    für iOS-als-App entsteht nach dem Schnappschuss und bleibt stehen, stand
-   also in **jeder** Zeile von Finns Berichten. Ein Feld, das immer dasselbe
+   also in **jeder** Zeile der Berichte einer Instanz. Ein Feld, das immer dasselbe
    sagt, beantwortet die Frage nach fremdem Code nicht – es sieht nur aus
    wie eine Antwort.
 
@@ -10990,7 +10990,7 @@ const DIAG_GRUND_KEY = "bf_reload_grund";
 
 /* Steckt der Anwender gerade in einer Arbeit, die ein Neuladen zerstört?
 
-   Am 29.08.2026 im LEGO-Museum: Sven scannte, und die App lud sich mehrmals
+   Am 29.08.2026 im LEGO-Museum: Beim Scannen lud sich die App mehrmals
    von selbst neu. Ursache waren elf Update-Läufe an diesem Tag – jeder
    Neustart des Servers lässt jede offene Seite neu laden, und das ist auch
    richtig so. Falsch war der Zeitpunkt: Ein Foto, die erkannten Figuren und

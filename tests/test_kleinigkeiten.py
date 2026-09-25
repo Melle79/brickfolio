@@ -57,17 +57,17 @@ def test_steuerzeichen_kommen_nicht_durch(ctx):
 
 
 def test_umgebende_leerzeichen_werden_abgeschnitten(ctx):
-    ctx.post("/api/users", json={"username": "  Finn  ", "password": "geheim12"})
+    ctx.post("/api/users", json={"username": "  Carla  ", "password": "geheim12"})
     with core.db() as conn:
         namen = [r[0] for r in conn.execute("SELECT username FROM users")]
-    assert "Finn" in namen, namen
+    assert "Carla" in namen, namen
 
 
 def test_gleicher_name_in_anderer_schreibweise_wird_abgewiesen(ctx):
     assert ctx.post("/api/users",
-                    json={"username": "Finn", "password": "geheim12"}
+                    json={"username": "Carla", "password": "geheim12"}
                     ).status_code == 200
-    r = ctx.post("/api/users", json={"username": "finn", "password": "geheim12"})
+    r = ctx.post("/api/users", json={"username": "carla", "password": "geheim12"})
     assert r.status_code == 409
 
 
@@ -87,7 +87,7 @@ def test_wer_einrichtet_ist_auch_profi(frisch):
     """Vorher blieb er Standard-Benutzer: Kaufpreise, Einkaufslisten und
     Verkaufsliste waren ausgeblendet, und freischalten musste er sich in der
     Benutzerverwaltung selbst."""
-    r = frisch.post("/api/setup", json={"username": "Sven", "password": "geheim12"})
+    r = frisch.post("/api/setup", json={"username": "Anna", "password": "geheim12"})
     assert r.status_code == 200
     assert r.json()["is_dealer"] is True
     with core.db() as conn:
@@ -96,13 +96,13 @@ def test_wer_einrichtet_ist_auch_profi(frisch):
 
 def test_der_zweite_benutzer_ist_es_nicht_automatisch(frisch):
     """Die Profi-Rolle gehört dem Eigner, nicht jedem."""
-    frisch.post("/api/setup", json={"username": "Sven", "password": "geheim12"})
+    frisch.post("/api/setup", json={"username": "Anna", "password": "geheim12"})
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " created_at) VALUES ('Finn', 'x', 0, ?)",
+                     " created_at) VALUES ('Carla', 'x', 0, ?)",
                      (int(time.time()),))
         assert conn.execute(
-            "SELECT COALESCE(is_dealer, 0) FROM users WHERE username = 'Finn'"
+            "SELECT COALESCE(is_dealer, 0) FROM users WHERE username = 'Carla'"
         ).fetchone()[0] == 0
 
 

@@ -229,7 +229,7 @@ MINIFIG_PREFIXES = {
     "wtr": "Kellner",
     "ww": "Wild West",
     "x": "Scala",
-    # Von Sven aus dem BrickLink-Katalog bestätigt (29.08.2026):
+    # Am BrickLink-Katalog bestätigt (29.08.2026):
     "game": "Games",
     # Die Studios-Monster: Frankenstein, Vampir, Werwolf, Mumie, Buckliger.
     "hrf": "Studios",

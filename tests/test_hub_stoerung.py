@@ -1,6 +1,6 @@
 """Warum eine Störung des Hubs im Protokoll der Instanz landen muss.
 
-Am 13.08.2026 meldete Finns Instanz um 10:03 einen 502 bei
+Am 13.08.2026 meldete eine Instanz um 10:03 einen 502 bei
 `POST /api/hub/trades/sync`. Im Fehlerbericht stand davon nur „Fehler 502"
 und der Anfang einer Cloudflare-Fehlerseite. Die App hatte ihre Erklärung
 dabei – „Hub: …" –, aber der Rumpf ihrer Antwort wurde zwischen Instanz und

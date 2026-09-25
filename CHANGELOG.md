@@ -1144,7 +1144,7 @@ Wesentliche für alle.
   ersten Treffer angereichert, seit 2.86.3 konnte man aber bis Treffer 200
   blättern.
 
-  Gemessen an Svens Beispiel „gelber Umhang": vorher fünf Karten mit
+  Gemessen am Beispiel „gelber Umhang": vorher fünf Karten mit
   Preis und fünf ohne, jetzt alle zehn – und nach einem Klick auf
   „Weitere Ergebnisse laden" auch die beiden nächsten.
 
@@ -1162,9 +1162,9 @@ Wesentliche für alle.
 ## 2.86.3 – September 2026
 
 ### Geändert
-- 🔍 **Bei Figuren antwortet nur noch der eigene Katalogabzug.** Sven fiel
-  auf, dass die Trefferliste zwei Quellen mit denselben Figuren mischt –
-  und er hatte recht: `dis080 · Donald Duck - Jester` und
+- 🔍 **Bei Figuren antwortet nur noch der eigene Katalogabzug.** Aufgefallen
+  war, dass die Trefferliste zwei Quellen mit denselben Figuren mischt –
+  und das stimmte: `dis080 · Donald Duck - Jester` und
   `fig-012635 · Donald Duck, Jester` sind dieselbe Figur.
 
   Die Entdoppelung konnte das nicht fangen. Sie vergleicht Nummer plus Typ,
@@ -1216,7 +1216,7 @@ Wesentliche für alle.
   Zusätzlich wärmt der Start es im Hintergrund vor, damit auch der erste
   Lauf nach einem neuen Abzug nicht vor dem Suchfeld stattfindet.
 
-  Gemessen auf Finns Instanz: erster Lauf **5,1 s → 0,2 s**, jeder weitere
+  Gemessen auf einer Instanz: erster Lauf **5,1 s → 0,2 s**, jeder weitere
   war schon vorher 0,2 s.
 
 ## 2.86.1 – September 2026
@@ -1307,8 +1307,8 @@ Wesentliche für alle.
 
 ### Behoben
 - 🏷 **Ohne Anzeigenamen hieß die App „'s Brickfolio" – und das Logo
-  „FINN".** Auf **jeder** frischen Installation, bevor jemand einen Namen
-  setzt. Die Vorlage trug `__OWNER__'s Brickfolio`, und der Server setzte
+  trug einen fremden Vornamen.** Auf **jeder** frischen Installation,
+  bevor jemand einen Namen setzt. Die Vorlage trug `__OWNER__'s Brickfolio`, und der Server setzte
   nur den nackten Namen ein: Das Genitiv-s klebte an einer leeren
   Zeichenkette. Das Logo blieb beim Platzhalter, weil `applyOwnerName` bei
   leerem Namen mit einem frühen `return` ausstieg.
@@ -1316,7 +1316,7 @@ Wesentliche für alle.
   Jetzt setzt der Server denselben `_app_title()` ein, den das Manifest
   längst richtig benutzt („Dein Brickfolio"), der Name kommt ebenfalls von
   dort, und eine leere Namenszeile blendet sich aus. Auch der
-  Einrichtungsassistent nennt nicht mehr „Finn's Brickfolio" als Beispiel,
+  Einrichtungsassistent nennt nicht mehr einen festen Vornamen als Beispiel,
   sondern zeigt den fertigen Titel als Vorschau.
 
 - 🔍 **„Nichts gefunden" stand über zehn sichtbaren Treffern.** Nicht die
@@ -1563,7 +1563,7 @@ Wesentliche für alle.
 ## 2.80.0 – September 2026
 
 ### Behoben
-- 🏷 **Im Browser-Reiter stand auf jeder Instanz „FINN".** Das App-Symbol
+- 🏷 **Im Browser-Reiter stand auf jeder Instanz derselbe feste Name.** Das App-Symbol
   trägt seit 2.2.0 den eigenen Anzeigenamen – das kleine Symbol im Reiter
   aber nicht: `/favicon.ico` reichte eine feste Datei aus dem Repo durch.
 
@@ -1606,7 +1606,7 @@ Wesentliche für alle.
   Figurenkatalog hat gut 19.000 Einträge; die Zahl war mehr als das
   Doppelte. Sie stimmte trotzdem: Wer die Katalogdatei auch für **Sets**
   einliest (der Text daneben rät ausdrücklich dazu), hat beides im Abzug —
-  bei Sven 19.209 Figuren und 21.669 Sets. Nur die Beschriftung zählte
+  auf einer Instanz 19.209 Figuren und 21.669 Sets. Nur die Beschriftung zählte
   alles zusammen und nannte es „Figuren".
 
   Jetzt steht dort, was drin ist: *„19.209 Figuren (19.209 beschrieben) und
@@ -1646,7 +1646,7 @@ Wesentliche für alle.
   `ORDER BY`, also entschied die Zeilennummer. Ein Artikel, dessen Abruf
   dauernd scheitert, behält seinen alten Zeitstempel und hätte sich so in
   jedem Lauf wieder vorgedrängt, während die dahinter nie an die Reihe
-  gekommen wären. Bei Sven ist das (noch) nicht passiert — alle
+  gekommen wären. Im Betrieb ist das (noch) nicht passiert — alle
   Rückstände hatten Preise —, aber die Reihenfolge war Zufall.
 
 ## 2.78.0 – September 2026
@@ -2178,8 +2178,8 @@ Wesentliche für alle.
   Boden. Der bequemste Weg: ein paar Sterne setzen, dann **★ Nur
   Favoriten** – das blendet alles andere aus.
 
-  Die Wahl gehört dem Benutzer, nicht der Instanz: Paul kann eine ganz
-  andere haben als Sven. Und der Stern überlebt das Ausblenden – wer ein
+  Die Wahl gehört dem Benutzer, nicht der Instanz: Jeder kann eine ganz
+  andere haben. Und der Stern überlebt das Ausblenden – wer ein
   Thema wieder einschaltet, findet seine Markierung, wo er sie gelassen
   hat.
 
@@ -2229,7 +2229,7 @@ Wesentliche für alle.
   Tabelle statt einer Ausnahme in der Zuordnung: So sieht man beim Lesen
   sofort, dass es Bereiche gibt, und der nächste Fall ist eine Zeile.
 
-- 🏷️ Drei weitere Kürzel benannt, alle von Sven aus dem BrickLink-Katalog
+- 🏷️ Drei weitere Kürzel benannt, alle am BrickLink-Katalog
   bestätigt: `game` → Games, `hrf` → Studios (Frankenstein, Vampir,
   Werwolf, Mumie) und `cc` → Studios beziehungsweise Coca-Cola.
 
@@ -2998,7 +2998,7 @@ Wesentliche für alle.
 ## 2.26.2 – August 2026
 
 ### Behoben
-- 🔐 **CSP-Meldungen schleppten ein Access-JWT mit.** Aus Pauls Instanz kam
+- 🔐 **CSP-Meldungen schleppten ein Access-JWT mit.** Aus einer Instanz kam
   zweimal „Vom Browser blockiert: img-src →
   flat-leaf-5175.cloudflareaccess.com". Kein Defekt: Die Instanz steht hinter
   Cloudflare Access, und ist dessen Sitzung abgelaufen, antwortet Access auf
@@ -3019,7 +3019,7 @@ Wesentliche für alle.
 ## 2.26.1 – August 2026
 
 ### Behoben
-- 🔍 **Die Fremdsuche meldete die eigene Zieh-Anzeige.** In Finns Berichten
+- 🔍 **Die Fremdsuche meldete die eigene Zieh-Anzeige.** In den Berichten einer Instanz
   vom 10.08.2026 stand in **jeder** Zeile `FREMD: <div.ptr>` – und das war
   die App selbst: die Anzeige für „nach unten ziehen = neu laden", die es
   nur beim Start vom Startbildschirm gibt.
@@ -3794,7 +3794,7 @@ Gefunden beim Durchtesten an einer laufenden Instanz.
 
 ### Behoben
 - 🙈 **Benutzernamen auf dem Anmeldebogen.** Nach dem Einspielen einer
-  Sicherung (2.4.0) stand dort „Jetzt anmelden als: Sven, nerdfan" – gedacht
+  Sicherung (2.4.0) stand dort „Jetzt anmelden als: anna, bruno" – gedacht
   als Hilfe, tatsächlich aber eine Liste aller Admin-Namen auf einer Seite,
   an der noch niemand angemeldet ist. Der Hinweis nennt jetzt keine Namen
   mehr, und auch das Namensfeld bleibt leer
@@ -3861,17 +3861,17 @@ Gefunden beim Durchtesten an einer laufenden Instanz.
 
 ### Geändert
 - 🔤 **Gleicher Name überall.** Fenstertitel und der Name der installierten
-  App schrieben `Svens Brickfolio`, die Überschrift in der App dagegen
-  `Sven's Brickfolio`. Jetzt steht überall dasselbe
+  App schrieben `Annas Brickfolio`, die Überschrift in der App dagegen
+  `Anna's Brickfolio`. Jetzt steht überall dasselbe
 
 ## 2.2.0 – August 2026
 
 ### Behoben
-- 📱 **„Finn's Brickfolio" auf jedem Handy.** Legte man die App auf den
+- 📱 **Derselbe feste Name auf jedem Handy.** Legte man die App auf den
   Startbildschirm, stand dort der fest eingebaute Name – auch auf einer
   Instanz, die längst anders heißt. Manifest, Fenstertitel und der Name für
   iOS kommen jetzt aus dem **Anzeigenamen** unter *Mehr → Anzeigename*
-- 🖼 **Und „FINN" stand im Symbol.** Das App-Symbol wird jetzt erzeugt: die
+- 🖼 **Und der feste Name stand im Symbol.** Das App-Symbol wird jetzt erzeugt: die
   bekannte Zeichnung, darüber der Anzeigename der Instanz. Die Schriftgröße
   richtet sich nach der Länge, damit auch längere Namen hineinpassen
 
@@ -3990,7 +3990,7 @@ Gefunden beim Durchtesten an einer laufenden Instanz.
 
 > **Warum es vorher nicht ging.** Das alte Verfahren maß die Struktur je
 > Bildspalte und schnitt in den Lücken. Bei Figuren, die sich berühren, gibt es
-> keine Lücke – deshalb kam bei Svens Foto in **keinem** Streifen etwas an.
+> keine Lücke – deshalb kam bei einem Testfoto in **keinem** Streifen etwas an.
 > Der Dienst kann dagegen lokalisieren; das war die ganze Zeit da und wurde nur
 > einmal statt mehrfach genutzt.
 
@@ -5752,7 +5752,7 @@ Die Quellsprache braucht keinen Katalog: Bei Deutsch werden **null** Einträge g
 - 🌌 **Zweites Design „Galaxie"**: ein dunkles, weltraum-inspiriertes Aussehen mit Sternenhimmel und leuchtenden Akzenten – umschaltbar unter **Mehr → Design**. „Klassisch" bleibt Standard, die Auswahl gilt pro Gerät und wird gemerkt
 
 ### Behoben
-- 🖨 In den **Druckexporten** (Sammlung, Wunschliste, Verkaufsliste) stand in der Kopfzeile immer „Finn's Brickfolio" – jetzt erscheint dort der eingestellte Anzeigename
+- 🖨 In den **Druckexporten** (Sammlung, Wunschliste, Verkaufsliste) stand in der Kopfzeile immer der fest eingebaute Name – jetzt erscheint dort der eingestellte Anzeigename
 
 ## 1.6.21 – Juli 2026
 
@@ -5849,7 +5849,7 @@ Die Quellsprache braucht keinen Katalog: Bei Deutsch werden **null** Einträge g
 ## 1.6.6 – Juli 2026
 
 ### Neu
-- 🏷 Konfigurierbarer Anzeigename in Logo und Fenstertitel (Mehr → Anzeigename, Admin); Standard bleibt „Finn"
+- 🏷 Konfigurierbarer Anzeigename in Logo und Fenstertitel (Mehr → Anzeigename, Admin); Standard bleibt der bisherige Name
 
 ## 1.6.5 – Juli 2026
 

@@ -1,6 +1,6 @@
 """Bei Figuren antwortet der eigene Abzug allein.
 
-Svens Beobachtung vom 22.09.2026: „das sind zwei verschiedene Quellen mit
+Beobachtung vom 22.09.2026: „das sind zwei verschiedene Quellen mit
 den identischen Ergebnissen". Stimmt – beide kennen dieselben Figuren,
 aber unter verschiedenen Nummern (`dis080` hier, `fig-012635` dort) und
 mit gleichbedeutenden, nicht gleichen Namen („Qui-Gon Jinn (Yellow Head)"
@@ -28,11 +28,11 @@ def client(tmp_path, monkeypatch):
     core.init_db()
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (int(time.time()),))
     core.set_setting("rebrickable_key", "test-key")
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 
@@ -126,7 +126,7 @@ def test_die_oberflaeche_blaettert_aus_dem_vorrat():
 # ── Zwei Grenzen, die zusammenpassen müssen ────────────────────────────
 
 def test_oberflaeche_und_server_reichern_gleich_viele_an():
-    """Svens Fund vom 22.09.2026 an „gelber Umhang": fünf Karten mit Preis,
+    """Der Fund vom 22.09.2026 an „gelber Umhang": fünf Karten mit Preis,
     fünf ohne – obwohl BrickLink für alle etwas hat.
 
     Die Oberfläche schickte acht Nummern zum teuren Abruf, der Server

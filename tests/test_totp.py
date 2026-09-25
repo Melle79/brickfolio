@@ -82,7 +82,7 @@ def test_eingabe_mit_leerzeichen_wird_verstanden():
 
 
 def test_otpauth_url_enthaelt_alles_noetige():
-    url = totp.otpauth_url("ABCDEF", "sven", "Finn's Brickfolio")
+    url = totp.otpauth_url("ABCDEF", "anna", "Anna's Brickfolio")
     assert url.startswith("otpauth://totp/")
     assert "secret=ABCDEF" in url and "issuer=" in url
     assert "period=30" in url and "digits=6" in url

@@ -355,7 +355,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
    Schatten (`0 0 0 9999px`) das Foto um sich herum ab – gemeint war nur
    das Foto. Ohne `overflow: hidden` lief der Schatten seit v1.78.0 über die
    **ganze Seite**: Nach jedem Scan war alles um 28 % dunkler, nur was eine
-   Ebene höher liegt (Kopfleiste, Trefferkarte) blieb hell. Sven hielt es am
+   Ebene höher liegt (Kopfleiste, Trefferkarte) blieb hell. Man hielt es am
    24.09.2026 zuerst für einen grauen Hintergrund des Formulars.
 
    Den Schlagschatten trägt darum jetzt der Behälter statt des Bildes: Sein
@@ -432,7 +432,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 
    **Am 29.08.2026 versuchsweise ausgebaut – und wieder eingebaut.**
 
-   Der Verdacht war: Von 40 Absturz-Dumps auf Svens Rechner sind alle 40
+   Der Verdacht war: Von 40 Absturz-Dumps auf einem Rechner im Betrieb sind alle 40
    auf Brickfolio, und `content-visibility` ist das Ungewöhnlichste, was
    diese Seite tut. Ausgebaut in 2.67.0.
 
@@ -450,7 +450,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
    126 px über den Rand. Die Seite ließ sich seitlich schieben.
 
    Sichtbar wurde das erst bei vielen Einträgen – wo nichts übersprungen
-   wird, gibt es auch keine Ersatzgröße. Bei Sven mit 780 Figuren fiel es
+   wird, gibt es auch keine Ersatzgröße. Auf einer Instanz mit 780 Figuren fiel es
    auf, in einer Probe mit sieben nie (23.09.2026).
 
    `none` in der ersten Spalte heißt: für die Breite keine Ersatzgröße. Die
@@ -851,7 +851,7 @@ span.mf-stern.an {
 
 /* ---------- Manuell erfassen (seit 2.88.36) ----------
    Eigene Bauteile statt Systemauswahl: Typ und Zustand als Pillen wie im
-   Steckbrief (Svens Wahl „B"), Anzahl mit Plus/Minus, das Bild als Kachel,
+   Steckbrief (Entwurf „B"), Anzahl mit Plus/Minus, das Bild als Kachel,
    unten die Knöpfe wie auf der Trefferkarte. */
 
 /* Sieht niemand, liest aber die Vorlesefunktion, und die Tastatur erreicht
@@ -1231,7 +1231,7 @@ span.mf-stern.an {
 }
 
 /* **`overflow: hidden` ist hier die eigentliche Bremse.**
-   Gemessen auf Svens iPhone: Der Rahmen ist 98 px breit, sein Inhalt meldet
+   Gemessen auf einem iPhone: Der Rahmen ist 98 px breit, sein Inhalt meldet
    175 – und das Auswahlfeld darin nur 94. Die Differenz kommt von den
    `<option>`-Einträgen: Safari rechnet deren Textbreite („Wert (hoch →
    niedrig)") in den Überlauf ein, obwohl sie nie gezeichnet werden. Von
@@ -1407,8 +1407,8 @@ body.update-pending .topbar { top: var(--update-bar-h, 46px); }
 
    Hier stand eine Ausnahme: Die erste Noppe war weiß (`--surface`), weil
    Gelb auf der gelben Kopfleiste unsichtbar wäre. Das stimmte – kostete
-   aber die Farbfolge, an der man die Marke erkennt. Sven ist es am
-   24.09.2026 aufgefallen: „überall ist das Logo mit links einer gelben
+   aber die Farbfolge, an der man die Marke erkennt. Aufgefallen ist es am
+   24.09.2026: „überall ist das Logo mit links einer gelben
    Noppe – nur im Programm selber nicht."
 
    Statt die Farbe zu ändern, bekommen alle vier eine haarfeine Kante. Sie

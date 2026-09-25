@@ -30,7 +30,7 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " is_dealer, created_at) VALUES ('sven', 'x', 1, 1, ?)",
+                     " is_dealer, created_at) VALUES ('anna', 'x', 1, 1, ?)",
                      (now,))
         # Genau der Fall aus dem Vorfall: englischer Name, deutsche Suche.
         for item_id, name in (("cas315", "Castle Knight with Sword"),
@@ -54,7 +54,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(woerterbuch, "WOERTERBUCH", {})
     integrations._begriff_cache.clear()
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 

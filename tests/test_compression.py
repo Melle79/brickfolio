@@ -16,7 +16,7 @@ def client(tmp_path, monkeypatch):
     now = int(time.time())
     with core.db() as conn:
         conn.execute("INSERT INTO users (username, password_hash, is_admin,"
-                     " created_at) VALUES ('sven', 'x', 1, ?)", (now,))
+                     " created_at) VALUES ('anna', 'x', 1, ?)", (now,))
         for i in range(300):
             conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, img_url, "
@@ -24,7 +24,7 @@ def client(tmp_path, monkeypatch):
                 "(?, 'minifig', ?, '', '', 1, 'used', ?)",
                 (f"sw{i:04d}", f"Figur {i}", now))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(1, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(1, "anna", True)
     return c
 
 

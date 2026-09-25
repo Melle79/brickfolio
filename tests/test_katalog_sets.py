@@ -5,7 +5,7 @@ allein in der BrickLink-Kategorie, und die kommt als Nummer. Deshalb der
 Kategoriebaum.
 
 Und: Bis 2.65.1 warf der Dateiimport alles weg, was keine Minifigur war –
-Svens Sets.xml wurde vollständig verworfen, mit der Meldung, es sei die
+eine Sets.xml wurde vollständig verworfen, mit der Meldung, es sei die
 falsche Datei.
 """
 import time
@@ -26,7 +26,7 @@ def ctx(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('sven', 'x', 1, ?)", (now,)).lastrowid
+            " VALUES ('anna', 'x', 1, ?)", (now,)).lastrowid
         # Ein Baum wie bei BrickLink: „Star Wars" mit Unterkategorien.
         for cid, name, eltern in (("65", "Star Wars", ""),
                                   ("263", "Star Wars Episode 1", "65"),
@@ -45,7 +45,7 @@ def ctx(tmp_path, monkeypatch):
                 (nr, name, main._such_norm(name),
                  core.suchwoerter(name), kat, now))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 

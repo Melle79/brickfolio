@@ -1,6 +1,6 @@
 """Die automatische Sicherung muss verlässlich sein.
 
-Am 30.08.2026 hat Sven eine Sicherung zurückgespielt und dabei einen Tag
+Am 30.08.2026 wurde eine Sicherung zurückgespielt und dabei ein Tag
 Arbeit verloren geglaubt. Drei Fehler kamen zusammen:
 
 1. Die Tagessicherung hing an der Preisschleife, und die schläft zwölf
@@ -50,7 +50,7 @@ def _dateien_anlegen(ordner, namen):
 
 
 def test_eine_sicherheitskopie_kostet_keinen_tagesstand(tmp_path, monkeypatch):
-    """Der Fehler, der Svens Historie von 14 auf 12 Tage schrumpfen ließ.
+    """Der Fehler, der die Historie einer Instanz von 14 auf 12 Tage schrumpfen ließ.
 
     Alphabetisch steht `brickfolio-manuell-…` hinter `brickfolio-2026-…`
     und galt damit als neueste Datei.

@@ -17,7 +17,7 @@ werden. Übersetzt werden muss also ein kleiner, allgemeiner Teil.
 Sprachgebrauchs. **Keine Katalogtexte, keine Titel, keine Beschreibungen** –
 dieselbe Grenze wie im Katalogdienst (eigenes Repo) gilt hier genauso. Die
 Liste ist aus der Worthäufigkeit entstanden, nicht aus Einträgen; sie darf
-deshalb mitreisen. Sven hat das am 21.09.2026 ausdrücklich so entschieden.
+deshalb mitreisen. Das ist am 21.09.2026 ausdrücklich so entschieden worden.
 
 **Wie sie benutzt wird.** Nicht als Übersetzung ganzer Namen, sondern zur
 Erweiterung der *Anfrage*: Aus „roter protokolldroide" wird „red protocol
@@ -1187,7 +1187,7 @@ FUELLWOERTER = {"mit", "und", "der", "die", "das", "den", "dem", "des",
                 # der Hut. Übersetzt stand hier `figure blue hat`, und weil
                 # die Suche alle Wörter verlangt, fand das nichts: `figure`
                 # steht in 1.268 von 40.936 Katalogzeilen, fast nur bei
-                # Duplo. Gemessen an 79 echten Anfragen plus Svens Muster:
+                # Duplo. Gemessen an 79 echten Anfragen plus eigenen Mustern:
                 # fünf besser, eine schlechter, achtzig unverändert
                 # (22.09.2026). Welche Gattung gemeint ist, sagt ohnehin
                 # schon die Typ-Auswahl über dem Feld.

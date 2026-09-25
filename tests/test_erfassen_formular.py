@@ -9,7 +9,7 @@ Ebene höher liegt, Kopfleiste und Trefferkarte, blieb hell. Im Betrieb galt es
 am 24.09.2026 zuerst für einen grauen Hintergrund des Formulars, dann fiel
 auf: „es wird grau, sobald ich ein Foto aufgenommen habe".
 
-**Das Formular** (Svens Wahl „B"): Typ und Zustand als Pillen wie im
+**Das Formular** (Entwurf „B"): Typ und Zustand als Pillen wie im
 Steckbrief, Anzahl mit Plus/Minus, das Bild als Kachel statt des rohen
 „Datei auswählen", unten die Knöpfe wie auf der Trefferkarte.
 """

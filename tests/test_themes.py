@@ -18,10 +18,10 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('sven', 'x', 1, 1, ?)", (now,))
+            " created_at) VALUES ('anna', 'x', 1, 1, ?)", (now,))
         uid = cur.lastrowid
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     c.uid = uid
     return c
 
@@ -113,10 +113,10 @@ def test_sort_pref_is_per_user(client, tmp_path):
     with core.db() as conn:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, is_dealer,"
-            " created_at) VALUES ('paul', 'x', 0, 0, ?)", (now,))
+            " created_at) VALUES ('bruno', 'x', 0, 0, ?)", (now,))
         other = cur.lastrowid
     c2 = TestClient(main.app)
-    c2.headers["Authorization"] = "Bearer " + core.create_token(other, "paul", False)
+    c2.headers["Authorization"] = "Bearer " + core.create_token(other, "bruno", False)
     assert c2.get("/api/me").json()["sort_pref"] is None   # unberührt
 
 

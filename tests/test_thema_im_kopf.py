@@ -35,14 +35,14 @@ def client(tmp_path, monkeypatch):
     with core.db() as conn:
         uid = conn.execute(
             "INSERT INTO users (username, password_hash, is_admin, created_at)"
-            " VALUES ('sven', 'x', 1, ?)", (now,)).lastrowid
+            " VALUES ('anna', 'x', 1, ?)", (now,)).lastrowid
         for nr, art in (("sw0001a", "minifig"), ("custom-001", "minifig"),
                         ("3001", "part")):
             conn.execute(
                 "INSERT INTO collection (item_id, item_type, name, quantity,"
                 " added_at) VALUES (?, ?, ?, 1, ?)", (nr, art, nr, now))
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(uid, "anna", True)
     return c
 
 

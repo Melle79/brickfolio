@@ -29,10 +29,10 @@ def _mkuser(name, admin=False):
 def ctx(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "DB_PATH", str(tmp_path / "del.db"))
     core.init_db()
-    aid = _mkuser("sven", admin=True)
-    pid = _mkuser("paul")
+    aid = _mkuser("anna", admin=True)
+    pid = _mkuser("bruno")
     c = TestClient(main.app)
-    c.headers["Authorization"] = "Bearer " + core.create_token(aid, "sven", True)
+    c.headers["Authorization"] = "Bearer " + core.create_token(aid, "anna", True)
     return {"c": c, "aid": aid, "pid": pid}
 
 

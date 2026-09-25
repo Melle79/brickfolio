@@ -143,7 +143,7 @@ def test_suggest_info_rejects_absurd_amounts(client):
 
 # ── Der Hintergrund-Refresh muss die Sammlung schaffen ────────────────
 #
-# Am 05.09.2026 stand in Svens Preis-Protokoll: „Bei 328 Artikeln ist der
+# Am 05.09.2026 stand im Preis-Protokoll einer Instanz: „Bei 328 Artikeln ist der
 # Preisabruf älter als 7 Tage." Das war kein Fehler, sondern Arithmetik:
 # feste 40 Einträge je Lauf, zwei Läufe am Tag – 80 Preise täglich bei 926
 # Artikeln. Jeder kam nur alle 11,6 Tage dran, also war dauerhaft ein

@@ -1,7 +1,7 @@
 """`content-visibility: auto` steht wieder auf den Sammlungskarten.
 
 Es war am 29.08.2026 versuchsweise ausgebaut: Von 40 Absturz-Dumps auf
-Svens Rechner sind alle 40 auf Brickfolio, und `content-visibility` ist
+einem Rechner im Betrieb sind alle 40 auf Brickfolio, und `content-visibility` ist
 das Ungewöhnlichste, was diese Seite tut.
 
 **Der Versuch ist gelaufen, das Ergebnis war negativ.** Der Bericht zu
