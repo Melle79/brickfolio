@@ -2776,7 +2776,41 @@ async function ladeTfaStatus() {
   try {
     const s = await api("/me/2fa");
     zeigeTfa(s.active ? "an" : "aus", s);
+    zeigeExtern(s.extern, s.active);
   } catch (_) { /* nicht angemeldet o. Ä. */ }
+}
+
+/* Wird die App von außen genutzt – und steht etwas davor? Der Server merkt
+   es sich an den Kopfzeilen der Anfragen (Cloudflare, Access, Proxy); hier
+   steht nur, was daraus folgt. */
+function zeigeExtern(e, aktiv) {
+  const el = $("tfa-extern");
+  if (!el) return;
+  if (!e) { el.hidden = true; return; }
+  const wann = (ts) => {
+    if (!ts) return "";
+    const d = new Date(ts * 1000);
+    const heute = new Date();
+    const gestern = new Date(Date.now() - 86400000);
+    if (d.toDateString() === heute.toDateString()) return tr("heute");
+    if (d.toDateString() === gestern.toDateString()) return tr("gestern");
+    return d.toLocaleDateString(state.lang === "en" ? "en-GB" : "de-DE",
+      { day: "numeric", month: "numeric" });
+  };
+  el.classList.toggle("warn-line", !!e.ohne_access && !aktiv);
+  if (e.ohne_access) {
+    el.textContent = tr("🌐 Von außen genutzt – ohne Zugangsschutz davor "
+      + "(zuletzt {wann}). Vor der App steht nur das Passwort.",
+      { wann: wann(e.ohne_access_zuletzt) })
+      + (aktiv ? "" : " " + tr("Zwei-Faktor wird empfohlen."));
+  } else if (e.mit_access) {
+    el.textContent = tr("🌐 Von außen genutzt, geschützt durch Cloudflare "
+      + "Access (zuletzt {wann}). Zwei-Faktor ist hier eine zusätzliche "
+      + "Stufe – nötig ist sie nicht.", { wann: wann(e.zuletzt) });
+  } else {
+    el.textContent = tr("🏠 In den letzten 30 Tagen nur aus dem Heimnetz genutzt.");
+  }
+  el.hidden = false;
 }
 
 function zeigeTfa(zustand, daten) {
@@ -11548,10 +11582,12 @@ function renderNotifications(items) {
     card.innerHTML = `
       <button class="notice-close" data-close="${n.id}"
               title="Hinweis entfernen" aria-label="Hinweis entfernen">✕</button>
-      <div class="notice-title">🔔 ${esc(n.title)}</div>
-      ${n.body ? `<p class="notice-body">${esc(n.body)}</p>` : ""}
+      <div class="notice-title">🔔 ${esc(tr(n.title))}</div>
+      ${n.body ? `<p class="notice-body">${esc(tr(n.body))}</p>` : ""}
       ${n.kind === "error"
         ? `<button class="btn btn-primary" data-goto-errors>Fehlerbericht öffnen</button>`
+        : n.kind === "sicherheit"
+        ? `<button class="btn btn-primary" data-goto-2fa>${esc(tr("Zwei-Faktor einschalten"))}</button>`
         : n.kind === "dublette" ? `
           <p class="notice-body">${esc(tr("Zusammenführen?"))}</p>
           <div class="notice-wahl">
@@ -11587,6 +11623,9 @@ function renderNotifications(items) {
   });
 
   // Direkt zur Stelle springen, statt den Weg zu beschreiben.
+  box.querySelectorAll("[data-goto-2fa]").forEach((b) => {
+    b.addEventListener("click", () => $("whoami").click());
+  });
   box.querySelectorAll("[data-goto-errors]").forEach((b) => {
     b.addEventListener("click", async () => {
       showTab("settings");

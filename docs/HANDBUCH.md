@@ -808,6 +808,21 @@ Das Gerät, auf dem man gerade einschaltet, bleibt angemeldet.
 Ein angemeldetes Gerät bleibt es bis zu **90 Tage** (`TOKEN_DAYS`); der Code
 wird beim Anmelden verlangt, nicht bei jedem Öffnen der App.
 
+**Brauche ich das?** Im Abschnitt steht, ob die App **von außen genutzt**
+wird – das merkt sie an den Anfragen selbst (Cloudflare, Cloudflare Access,
+Reverse Proxy mit Portfreigabe), nicht durch einen Test von außen:
+
+- *„🏠 In den letzten 30 Tagen nur aus dem Heimnetz genutzt"* – Zwei-Faktor
+  ist eine Zusatzsicherung.
+- *„🌐 Von außen genutzt, geschützt durch Cloudflare Access"* – vor der App
+  steht schon ein zweiter Faktor (der Code per E-Mail), sofern die
+  Access-Richtlinie nur eure Adressen zulässt. Zwei-Faktor in der App ist
+  eine dritte Stufe, nötig ist sie nicht.
+- *„🌐 Von außen genutzt – ohne Zugangsschutz davor"* – vor der App steht nur
+  das Passwort. Dann erscheint für Admins, deren Zwei-Faktor aus ist, auch
+  **einmal** ein Hinweis auf dem Startbildschirm mit „Zwei-Faktor
+  einschalten".
+
 **Anmelden** läuft danach in zwei Schritten: erst Passwort, dann Code. Wer
 das Telefon nicht zur Hand hat, gibt statt des Codes einen **Rettungscode**
 ein – **in dasselbe Feld**, nicht in die Authenticator-App. Auf dem Handy

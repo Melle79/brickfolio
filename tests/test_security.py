@@ -288,6 +288,10 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
         "katalog_geholt_at",    # wann zuletzt geholt wurde
         "katalog_aus",          # „1" heißt: Diese Instanz holt den Abzug
                                 # nicht. Eine Entscheidung, kein Zugang
+        "extern_zuletzt",       # wann die App zuletzt von außen genutzt
+        "extern_mit_access",    # wurde, mit bzw. ohne Cloudflare Access –
+        "extern_ohne_access",   # Zeitstempel, kein Zugang, keine Adresse
+        "extern_weg",           # „cloudflare" oder „proxy"
         "katalog_quelle",       # Adresse der veröffentlichten Datei. Kein
                                 # Zugang: Sie ist öffentlich, und genau
                                 # deshalb steht kein BrickLink-Inhalt darin

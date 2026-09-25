@@ -45,6 +45,26 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.50 – September 2026
+
+### Neu
+- 🌐 **Die App merkt, ob sie von außen genutzt wird – und ob etwas davor
+  steht.** Nicht durch einen Test von außen (dafür kennt sie ihre öffentliche
+  Adresse nicht, und ein Aufruf aus dem eigenen Netz beweist nichts), sondern
+  an den angemeldeten Anfragen selbst: Über Cloudflare kommen eigene
+  Kopfzeilen mit, über Cloudflare Access zusätzlich dessen Anmeldenachweis,
+  über einen Reverse Proxy mit Portfreigabe eine öffentliche Absenderadresse.
+  Im Zwei-Faktor-Abschnitt steht dann „nur aus dem Heimnetz", „von außen,
+  geschützt durch Cloudflare Access" oder „von außen – ohne Zugangsschutz
+  davor".
+- 🔔 **Im letzten Fall ein Hinweis für Admins ohne Zwei-Faktor** – einmal,
+  mit „Zwei-Faktor einschalten". Mit Access davor drängt nichts: Dort steht
+  mit dem Code per E-Mail schon ein zweiter Faktor vor der App.
+
+### Behoben
+- Hinweise auf dem Startbildschirm erscheinen jetzt auch auf Englisch
+  übersetzt, wo es eine Übersetzung gibt.
+
 ## 2.88.49 – September 2026
 
 ### Behoben

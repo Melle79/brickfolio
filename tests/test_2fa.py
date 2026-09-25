@@ -276,3 +276,62 @@ def test_code_feld_holt_fuer_rettungscodes_die_volle_tastatur():
     assert 'id="btn-totp-rettung"' in html
     teil = js[js.index("function totpFeldAls"):js.index("function totpFeldAls") + 500]
     assert 'rettung ? "text" : "numeric"' in teil
+
+
+# ------------------------------------------------ Von außen genutzt?
+def _anfrage(client, **kopf):
+    return client.get("/api/me/2fa", headers=kopf)
+
+
+def test_ohne_kopfzeilen_gilt_es_als_heimnetz(client, monkeypatch):
+    monkeypatch.setattr(main, "_extern_geschrieben", {"mit": 0.0, "ohne": 0.0})
+    client.headers["Authorization"] = "Bearer " + anmelden(client).json()["token"]
+    e = _anfrage(client).json()["extern"]
+    assert e["genutzt"] is False and e["ohne_access"] is False
+
+
+def test_cloudflare_mit_access_gilt_als_geschuetzt(client, monkeypatch):
+    monkeypatch.setattr(main, "_extern_geschrieben", {"mit": 0.0, "ohne": 0.0})
+    client.headers["Authorization"] = "Bearer " + anmelden(client).json()["token"]
+    _anfrage(client, **{"CF-Ray": "abc", "Cf-Access-Jwt-Assertion": "x.y.z"})
+    e = _anfrage(client).json()["extern"]
+    assert e["genutzt"] and e["mit_access"] and not e["ohne_access"]
+    assert e["weg"] == "cloudflare"
+    with core.db() as conn:
+        assert not conn.execute("SELECT 1 FROM notifications WHERE "
+                                "kind = 'sicherheit'").fetchone(), \
+            "mit Access drängt nichts"
+
+
+def test_ohne_access_gibt_einen_hinweis_fuer_admins(client, monkeypatch):
+    monkeypatch.setattr(main, "_extern_geschrieben", {"mit": 0.0, "ohne": 0.0})
+    client.headers["Authorization"] = "Bearer " + anmelden(client).json()["token"]
+    _anfrage(client, **{"CF-Connecting-IP": "203.0.113.7"})
+    e = _anfrage(client).json()["extern"]
+    assert e["ohne_access"] is True
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM notifications WHERE "
+                            "kind = 'sicherheit'").fetchone()[0] == 1
+    # Ein weiterer Aufruf legt keinen zweiten an.
+    main._extern_geschrieben["ohne"] = 0.0
+    _anfrage(client, **{"CF-Connecting-IP": "203.0.113.7"})
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM notifications WHERE "
+                            "kind = 'sicherheit'").fetchone()[0] == 1
+
+
+def test_proxy_nur_mit_oeffentlicher_adresse(client, monkeypatch):
+    monkeypatch.setattr(main, "_extern_geschrieben", {"mit": 0.0, "ohne": 0.0})
+    client.headers["Authorization"] = "Bearer " + anmelden(client).json()["token"]
+    _anfrage(client, **{"X-Forwarded-For": "192.168.0.23"})
+    assert _anfrage(client).json()["extern"]["genutzt"] is False, \
+        "ein Reverse Proxy im Heimnetz ist nicht „von außen“"
+    _anfrage(client, **{"X-Forwarded-For": "93.184.216.34, 10.0.0.1"})
+    e = _anfrage(client).json()["extern"]
+    assert e["genutzt"] and e["weg"] == "proxy" and e["ohne_access"]
+
+
+def test_ohne_anmeldung_wird_nichts_gemerkt(client, monkeypatch):
+    monkeypatch.setattr(main, "_extern_geschrieben", {"mit": 0.0, "ohne": 0.0})
+    client.get("/api/laufzeit", headers={"CF-Ray": "abc"})
+    assert core.get_setting("extern_zuletzt") in (None, "")

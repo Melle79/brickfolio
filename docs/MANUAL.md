@@ -519,6 +519,20 @@ are turning it on from stays signed in.
 A signed-in device stays signed in for up to **90 days** (`TOKEN_DAYS`); the
 code is asked for when signing in, not every time the app opens.
 
+**Do I need it?** The section shows whether the app is **used from outside** –
+it notices this from the requests themselves (Cloudflare, Cloudflare Access,
+a reverse proxy with port forwarding), not by testing from outside:
+
+- *"🏠 Only used from the home network in the last 30 days"* – two-factor is
+  an extra safeguard.
+- *"🌐 Used from outside, protected by Cloudflare Access"* – a second factor
+  (the e-mail code) already stands in front of the app, provided the Access
+  policy only allows your addresses. Two-factor in the app is a third layer,
+  not a necessity.
+- *"🌐 Used from outside – with no access protection in front"* – only the
+  password stands in front of the app. Admins whose two-factor is off then
+  also get a notice on the start screen, **once**, with "Turn on two-factor".
+
 **Signing in** then happens in two steps: first the password, then the code.
 If you do not have your phone at hand, enter a **recovery code** instead of
 the six digits – **in the same field**, not in the authenticator app. On a

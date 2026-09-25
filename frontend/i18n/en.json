@@ -1202,5 +1202,14 @@
  "Neue Liste, z. B. Flohmarkt": "New list, e.g. flea market",
  "Zwei-Faktor ist aktiv 🔐 – andere Geräte müssen sich neu anmelden": "Two-factor is on 🔐 – other devices need to sign in again",
  "z. B. Steinesammler": "e.g. Brick collector",
- "Rettungscode eingeben": "Enter a recovery code"
+ "Rettungscode eingeben": "Enter a recovery code",
+ "heute": "today",
+ "gestern": "yesterday",
+ "🌐 Von außen genutzt – ohne Zugangsschutz davor (zuletzt {wann}). Vor der App steht nur das Passwort.": "🌐 Used from outside – with no access protection in front (last {wann}). Only the password stands in front of the app.",
+ "Zwei-Faktor wird empfohlen.": "Two-factor is recommended.",
+ "🌐 Von außen genutzt, geschützt durch Cloudflare Access (zuletzt {wann}). Zwei-Faktor ist hier eine zusätzliche Stufe – nötig ist sie nicht.": "🌐 Used from outside, protected by Cloudflare Access (last {wann}). Two-factor would be an extra layer here – it is not needed.",
+ "🏠 In den letzten 30 Tagen nur aus dem Heimnetz genutzt.": "🏠 Only used from the home network in the last 30 days.",
+ "Zwei-Faktor einschalten": "Turn on two-factor",
+ "Brickfolio wird von außen genutzt – ohne Zugangsschutz davor": "Brickfolio is used from outside – with no access protection in front",
+ "Vor der App steht nur das Passwort. Mit der Zwei-Faktor-Anmeldung kommt ein Code aus einer Authenticator-App dazu.": "Only the password stands in front of the app. Two-factor login adds a code from an authenticator app."
 }

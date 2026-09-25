@@ -4,6 +4,7 @@ import hashlib
 import collections
 import html
 import io
+import ipaddress
 import json
 import math
 import os
@@ -118,6 +119,111 @@ async def cache_control(request: Request, call_next):
     elif (path == "/" or path.startswith("/static/")
             or path in ("/sw.js", "/manifest.webmanifest")):
         response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+# ------------------------------------------------- Von außen genutzt?
+#
+# **Merken statt Prüfen.** Ob die App von außen *erreichbar* ist, lässt sich
+# von innen nicht zuverlässig ausprobieren: Sie kennt ihre öffentliche
+# Adresse nicht, und ein Aufruf aus dem eigenen Netz an die eigene
+# öffentliche Adresse leitet der Router oft intern um. Ob sie von außen
+# *genutzt* wird, verrät dagegen jede Anfrage: Über Cloudflare kommen
+# `CF-Ray`/`CF-Connecting-IP` mit, über Cloudflare Access zusätzlich dessen
+# Anmeldenachweis (`Cf-Access-Jwt-Assertion`, Cookie `CF_Authorization`);
+# ein eigener Reverse Proxy mit Portfreigabe setzt `X-Forwarded-For` mit
+# einer öffentlichen Adresse. Die Absenderadresse selbst hilft nicht – im
+# Container kommt alles aus dem Docker-Netz, auch der Aufruf vom Sofa.
+#
+# Gezählt werden nur **angemeldete** App-Anfragen: Manifest, Symbole oder
+# eine Ausnahme in der Access-Richtlinie ergäben sonst ein falsches „ohne
+# Schutz". Gefälschte Kopfzeilen aus dem Heimnetz ändern nur die Anzeige.
+EXTERN_FRIST = 30 * 86400           # so lange gilt „von außen genutzt"
+EXTERN_SCHREIBTAKT = 600            # höchstens alle zehn Minuten schreiben
+_extern_geschrieben = {"mit": 0.0, "ohne": 0.0}
+
+
+def _extern_art(request: Request):
+    """(Weg, mit Access) für eine Anfrage von außen – sonst None."""
+    h = request.headers
+    if h.get("cf-ray") or h.get("cf-connecting-ip"):
+        weg = "cloudflare"
+    else:
+        erste = (h.get("x-forwarded-for") or "").split(",")[0].strip()
+        try:
+            if not erste or not ipaddress.ip_address(erste).is_global:
+                return None
+        except ValueError:
+            return None
+        weg = "proxy"
+    access = bool(h.get("cf-access-jwt-assertion")
+                  or request.cookies.get("CF_Authorization"))
+    return weg, access
+
+
+def _extern_merken(weg: str, access: bool) -> None:
+    jetzt = time.time()
+    art = "mit" if access else "ohne"
+    if jetzt - _extern_geschrieben[art] < EXTERN_SCHREIBTAKT:
+        return
+    _extern_geschrieben[art] = jetzt
+    core.set_setting("extern_zuletzt", str(int(jetzt)))
+    core.set_setting("extern_weg", weg)
+    if access:
+        core.set_setting("extern_mit_access", str(int(jetzt)))
+    else:
+        core.set_setting("extern_ohne_access", str(int(jetzt)))
+    if access:
+        return
+    # Das Passwort steht allein vor der App. Einmal sagen, wenn ein Admin
+    # dann ohne zweiten Faktor dasteht – `_notify` legt denselben Hinweis
+    # nie zweimal an, auch nicht nach dem Wegklicken.
+    with core.db() as conn:
+        offen = conn.execute(
+            "SELECT 1 FROM users WHERE is_admin = 1 AND "
+            "(totp_secret IS NULL OR totp_secret = '') LIMIT 1").fetchone()
+    if offen:
+        # Fester Schlüssel statt NULL: Im eindeutigen Index der Tabelle ist
+        # NULL nie gleich NULL – ohne ihn käme der Hinweis immer wieder.
+        _notify("sicherheit",
+                "Brickfolio wird von außen genutzt – ohne Zugangsschutz davor",
+                "Vor der App steht nur das Passwort. Mit der "
+                "Zwei-Faktor-Anmeldung kommt ein Code aus einer "
+                "Authenticator-App dazu.",
+                item_type="system", item_id="extern")
+
+
+def extern_stand() -> dict:
+    """Was die Oberfläche über die Nutzung von außen weiß."""
+    jetzt = time.time()
+
+    def zeit(schluessel):
+        try:
+            return int(core.get_setting(schluessel) or 0)
+        except ValueError:
+            return 0
+    zuletzt = zeit("extern_zuletzt")
+    mit, ohne = zeit("extern_mit_access"), zeit("extern_ohne_access")
+    return {"genutzt": jetzt - zuletzt < EXTERN_FRIST,
+            "zuletzt": zuletzt or None,
+            "weg": core.get_setting("extern_weg") or None,
+            "mit_access": jetzt - mit < EXTERN_FRIST,
+            "ohne_access": jetzt - ohne < EXTERN_FRIST,
+            "ohne_access_zuletzt": ohne or None}
+
+
+@app.middleware("http")
+async def extern_beobachten(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        if request.url.path.startswith("/api/") \
+                and request.headers.get("authorization") \
+                and response.status_code < 400:
+            art = _extern_art(request)
+            if art:
+                _extern_merken(*art)
+    except Exception:
+        pass                      # Beobachten darf nie eine Anfrage stören
     return response
 
 
@@ -670,7 +776,8 @@ def totp_status(user: dict = Depends(current_user)):
     aktiv = bool(row["totp_secret"])
     return {"active": aktiv,
             "recovery_left": len(json.loads(row["totp_recovery"] or "[]"))
-            if aktiv else 0}
+            if aktiv else 0,
+            "extern": extern_stand()}
 
 
 class TotpStartBody(BaseModel):
@@ -1974,7 +2081,7 @@ def _notify(kind: str, title: str, body: str = "", item_type: str = None,
 
 # Hinweise, die nur Admins etwas angehen. Der Fehlerbericht liegt in einer
 # Admin-Karte – ein Zettel dorthin wäre für alle anderen eine Sackgasse.
-ADMIN_NOTES = ("error",)
+ADMIN_NOTES = ("error", "sicherheit")
 
 
 def _note_error(message: str, fp: str) -> None:
