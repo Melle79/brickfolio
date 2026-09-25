@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.90.2 – September 2026
+
+### Neu
+- 🚪 **Hinweis, wenn das Gegenüber das Netzwerk verlassen hat.** Bisher
+  konnte man in so ein Gespräch weiterschreiben, aber es kam nie etwas an.
+  Jetzt steht im Gespräch „hat das Tausch-Netzwerk verlassen", das
+  Eingabefeld verschwindet, und der Verlauf bleibt lesbar. Ist das
+  Gegenüber gesperrt, sagt ein Hinweis, dass Nachrichten erst nach einer
+  Freischaltung ankommen.
+
+### Geändert
+- 📝 Der Text zum Tausch-Netzwerk unter *Mehr* stammte noch aus der Zeit,
+  als nur Abgebbares geteilt wurde. Jetzt sagt er, was wirklich geteilt
+  wird: Angebote, Profil und, wenn man will, die Wunschliste.
+
+Braucht Hub 1.18.0.
+
+## Hub 1.18.0 – September 2026
+
+### Neu
+- `/v1/trades` liefert `from_status`/`to_status` (`active`, `left`,
+  `disabled`, `gone` für gelöschte Mitglieder). Nachrichten an Abgemeldete
+  lehnt der Hub mit 410 ab – sie würden nie abgeholt.
+
+### Geändert
+- Beim Abmelden geht auch das Profil (Über mich, Gegend, Themen). Es
+  bleiben nur Name und Eckdaten, damit die Verwaltung den Austritt sieht
+  und die Gegenseite ihre Gespräche behält.
+
 ## 2.90.1 – September 2026
 
 ### Neu

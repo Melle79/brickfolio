@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.90.1"
+APP_VERSION = "2.90.2"
 
 
 def hash_password(password: str) -> str:
@@ -925,6 +925,10 @@ def init_db():
         if tcols and "shipped_at" not in tcols:
             conn.execute("ALTER TABLE trades ADD COLUMN shipped_at INTEGER")
             conn.execute("ALTER TABLE trades ADD COLUMN arrived_at INTEGER")
+        # Ist das Gegenüber noch dabei? active | left | disabled | gone
+        if tcols and "other_status" not in tcols:
+            conn.execute("ALTER TABLE trades ADD COLUMN other_status TEXT "
+                         "NOT NULL DEFAULT 'active'")
         # Thema (Star Wars, City …) für die Sortierung der Sammlung
         for tbl in ("collection", "wanted"):
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}

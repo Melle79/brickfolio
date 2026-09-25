@@ -277,7 +277,8 @@ async function loadTrades(quiet = false) {
           <div class="card-title">
             <strong>${esc(t.item_name || t.item_id)}</strong>
             <div class="sub">${t.direction === "out" ? "→ an" : "← von"}
-              ${esc(t.other_name || "?")} · ${tradeStatusText(t.status)}
+              ${esc(t.other_name || "?")} · ${["left", "gone"].includes(t.other_status)
+    ? esc(tr("hat das Netzwerk verlassen")) : tradeStatusText(t.status)}
               ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
@@ -446,7 +447,7 @@ async function renderTrade(quiet = false) {
     // Nur neu zeichnen, wenn sich etwas geändert hat: sonst springt beim
     // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
     const sig = JSON.stringify([trade.status, trade.item_gone, trade.taken_at,
-      trade.shipped_at, trade.arrived_at,
+      trade.shipped_at, trade.arrived_at, trade.other_status,
       messages.map((m) => [m.id, m.delivered])]);
     if (quiet && sig === tradeSig) return;
     const box = $("trade-msgs");
@@ -456,9 +457,13 @@ async function renderTrade(quiet = false) {
     $("trade-sub").textContent =
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
-    const entfernt = trade.status === "removed";
+    // Abgemeldet oder ganz gelöscht: Dort holt nie wieder jemand etwas ab.
+    const weg = ["left", "gone"].includes(trade.other_status);
+    const entfernt = trade.status === "removed" || weg;
     $("trade-gone").hidden = !trade.item_gone || entfernt;
-    $("trade-removed").hidden = !entfernt;
+    $("trade-removed").hidden = trade.status !== "removed";
+    $("trade-left").hidden = !weg || trade.status === "removed";
+    $("trade-gesperrt").hidden = trade.other_status !== "disabled";
     $("trade-write-row").hidden = entfernt;
     // Annehmen oder ablehnen kann nur, wer gefragt wurde – und nur, solange
     // noch nichts entschieden ist. Bis 2.88.55 standen beide Knöpfe auch

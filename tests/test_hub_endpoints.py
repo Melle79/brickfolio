@@ -745,3 +745,39 @@ def test_old_pause_is_no_longer_shown(client, monkeypatch):
     core.set_setting("hub_token", "t")
     core.set_setting("hub_pause", '{"von": %d, "bis": %d}' % (alt - 86400, alt))
     assert client.get("/api/hub").json()["pause"] is None
+
+
+# ------------------------------------------------- Gegenüber abgemeldet (2.90.2)
+
+def test_sync_notes_that_the_other_side_left(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    base = {"id": "trd_a", "from_member": "mem_x", "to_member": "mem_me",
+            "to_name": "Ich", "from_name": "X", "item_id": "sw1",
+            "item_name": "A", "status": "open", "created_at": 1,
+            "updated_at": 1, "unread": 0, "from_status": "active",
+            "to_status": "active"}
+    monkeypatch.setattr(hub, "trades", lambda: [base])
+    client.post("/api/hub/trades/sync")
+    assert client.get("/api/hub/trades").json()["trades"][0]["other_status"] == "active"
+    # Eigener Status zählt nicht – nur der des Gegenübers (hier: Absender)
+    monkeypatch.setattr(hub, "trades", lambda: [dict(base, from_status="left")])
+    client.post("/api/hub/trades/sync")
+    assert client.get("/api/hub/trades").json()["trades"][0]["other_status"] == "left"
+
+
+def test_message_to_someone_who_left_marks_the_trade(client, monkeypatch):
+    _trade()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(community, "_fremder_schluessel", lambda m: "k")
+    monkeypatch.setattr(community.crypto_box, "seal", lambda k, t: t)
+
+    def weg(tid, box):
+        raise hub.HubError(410, "Das Gegenüber hat das Tausch-Netzwerk verlassen")
+    monkeypatch.setattr(hub, "send_message", weg)
+    r = client.post("/api/hub/trades/trd_a/messages", json={"text": "Hallo?"})
+    assert r.status_code == 410
+    assert client.get("/api/hub/trades").json()["trades"][0]["other_status"] == "left"

@@ -2370,9 +2370,11 @@ Konto, und zurück geht es nur mit einer neuen Einladung.
 ### 12.9 Abmelden und Pause
 
 **Abmelden** (*Mehr → Tausch-Netzwerk → Aus dem Netzwerk abmelden*, nur
-Admins der Instanz): Die App sagt dem Hub Bescheid. Deine Angebote und
-Wünsche verschwinden sofort aus dem Netzwerk, in der Hub-Verwaltung stehst
-du als „abgemeldet am …". Zurück geht es nur mit einer neuen Einladung, dein
+Admins der Instanz): Die App sagt dem Hub Bescheid. Deine Angebote,
+Wünsche und Profilangaben verschwinden sofort aus dem Netzwerk, in der
+Hub-Verwaltung stehst du als „abgemeldet am …". Wer mit dir im Gespräch
+war, sieht dort „hat das Tausch-Netzwerk verlassen". Sein Verlauf bleibt
+lesbar, weiterschreiben geht nicht mehr. Zurück geht es nur mit einer neuen Einladung, dein
 Anzeigename ist dann wieder frei. Ist der Hub beim Abmelden nicht
 erreichbar, trennt die App trotzdem und sagt dir, dass der Hub nichts davon
 weiß. Deine Angebote verschwinden dort dann mit der Pause.

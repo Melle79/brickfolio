@@ -1775,8 +1775,10 @@ the account, and the only way back is a new invitation.
 ### 12.9 Leaving and pausing
 
 **Leaving** (*More → Trading network → Leave the network*, instance admins
-only): the app tells the hub. Your offers and wishes disappear from the network
-at once, and the hub administration lists you as "left on …". The only way
+only): the app tells the hub. Your offers, wishes and profile details disappear
+from the network at once, and the hub administration lists you as "left on …".
+Anyone in a conversation with you sees "has left the trading network" there;
+their history stays readable, but they can't write any more. The only way
 back is a new invitation; your display name is free again then. If the hub
 can't be reached while leaving, the app disconnects anyway and tells you the
 hub doesn't know about it – your offers then disappear there with the pause.

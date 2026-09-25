@@ -498,6 +498,11 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                 # Nur bei eigenen Anfragen sagt der Hub etwas darüber, ob das
                 # Angebot noch steht – bei eingehenden ist es mein eigenes,
                 # und bei einem Angebot biete ja ich selbst an.
+                # Ein älterer Hub schickt den Status nicht – dann bleibt er.
+                status_gegen = t.get("to_status" if mine else "from_status")
+                if status_gegen:
+                    conn.execute("UPDATE trades SET other_status = ? "
+                                 "WHERE id = ?", (status_gegen, t["id"]))
                 if mine and "item_available" in t:
                     weg = kind == "anfrage" and not t["item_available"]
                     conn.execute("UPDATE trades SET item_gone = ? WHERE id = ?",
@@ -723,6 +728,13 @@ def hub_send_message(trade_id: str, body: TradeMessageBody,
                          "WHERE id = ?", (now_ts, now_ts, trade_id))
         return {"ok": True}
     except hub.HubError as e:
+        if e.status == 410:
+            # Gegenüber abgemeldet – gleich merken, damit das Gespräch es
+            # zeigt, auch bevor der nächste Abgleich kommt.
+            with core.db() as conn:
+                conn.execute("UPDATE trades SET other_status = 'left' "
+                             "WHERE id = ?", (trade_id,))
+            raise HTTPException(410, e.message)
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
