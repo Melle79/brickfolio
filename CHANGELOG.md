@@ -1,5 +1,14 @@
 # Changelog
 
+## Hub 1.21.0 – September 2026
+
+### Neu
+- **Instanz ganz entfernen:** `DELETE /v1/admin/instances/:id` löscht die
+  Instanz samt aller Konten, die je darüber beigetreten sind, und allem, was
+  an ihnen hängt. Für Testinstanzen und verwaiste Installationen – wer nur
+  nicht zurücksoll, bekommt weiter „Neubeitritt sperren“. Instanzen mit
+  Admin-Konto bleiben stehen. In der Konsole unter *Instanzen → Entfernen*.
+
 ## 2.90.11 – September 2026
 
 ### Neu
