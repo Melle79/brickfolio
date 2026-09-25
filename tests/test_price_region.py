@@ -178,7 +178,7 @@ def test_price_guide_falls_back_via_europe_to_worldwide(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(scope)
         if scope in ("DE", "europe"):
             return {}                       # weder DE noch Europa haben Verkäufe
@@ -199,7 +199,7 @@ def test_price_guide_stops_at_europe_when_it_has_data(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(scope)
         if scope == "DE":
             return {"avg_price": "0.0000", "unit_quantity": 0}   # keine Verkäufe
@@ -219,7 +219,7 @@ def test_zero_avg_string_is_not_treated_as_price(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(scope)
         if scope == "DE":
             return {"avg_price": "0.0000", "min_price": "0.0000",
@@ -239,7 +239,7 @@ def test_europe_setting_does_not_query_europe_twice(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(scope)
         return {}                           # nirgends Verkäufe
 
@@ -254,7 +254,7 @@ def test_worldwide_setting_has_no_fallback(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(scope)
         return {}
 
@@ -269,7 +269,7 @@ def test_price_guide_keeps_region_when_data_exists(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(scope)
         return {"currency_code": "EUR", "avg_price": "3.5", "unit_quantity": 2}
 

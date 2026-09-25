@@ -755,6 +755,8 @@ function renderWanted(items) {
     </div>`;
   }).join("");
 
+  angeboteEintragen(list);
+
   list.querySelectorAll(".card").forEach((card) => {
     const wid = Number(card.dataset.wid);
     const item = items.find((i) => i.id === wid);
@@ -1951,6 +1953,84 @@ function priceLine(label, d) {
     + `<strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}${scopeFlagHtml(d)}</div>`;
 }
 
+/** „ab X € zu haben" – das billigste aktuelle Angebot.
+ *
+ * Bewusst eine **eigene Zeile** unter dem Verkaufspreis und nicht daneben:
+ * Es sind zwei verschiedene Zahlen, und nebeneinander gestellt liest man
+ * sie als Spanne desselben Werts.
+ */
+function angebotLine(label, d) {
+  if (!d || d.min == null) return "";
+  const stueck = d.angebote
+    ? " · " + tr("{n} im Angebot", { n: d.angebote }) : "";
+  return `<div class="price-row angebot"><span class="price-tag">${label}</span> `
+    + `${esc(tr("ab"))} <strong>${fmtEur(d.min)}</strong>${stueck}`
+    + `${scopeFlagHtml(d)}</div>`;
+}
+
+/** Beide Zustände als Angebotszeilen, mit erklärender Fußnote. */
+function angebotBlock(stock) {
+  if (!stock) return "";
+  const zeilen = angebotLine(tr("Neu"), stock.new)
+               + angebotLine(tr("Gebraucht"), stock.used);
+  if (!zeilen) return "";
+  return zeilen + `<div class="price-note">`
+    + esc(tr("Billigstes Angebot gerade jetzt (BrickLink) – kein Verkaufswert"))
+    + `</div>`;
+}
+
+/** Trägt „ab X €" in die Zeilen einer Liste nach.
+ *
+ * **Ein Aufruf für die ganze Liste**, nicht einer je Zeile: Fünfzig
+ * Einzelanfragen wären fünfzig Runden zum Server und ein Zappeln in der
+ * Anzeige. Gesucht werden die Zeilen an ihrem `data-info` — das tragen
+ * Wunschliste und Einkaufslisten gleichermaßen, also deckt eine Funktion
+ * beide ab.
+ *
+ * Geholt wird nur **gebraucht**: Das ist fast immer der günstigste Einstieg,
+ * und „ab" meint genau den. Zwei Zustände wären der doppelte Verbrauch am
+ * BrickLink-Tageslimit für eine Zahl, die kaum jemand braucht.
+ *
+ * Läuft nachträglich und still: Schlägt es fehl, bleibt die Liste, wie sie
+ * ist — die Angebotspreise sind eine Zugabe, kein Inhalt.
+ */
+async function angeboteEintragen(container) {
+  if (!state.angebote || !container) return;
+  const zeilen = [...container.querySelectorAll("[data-info]")];
+  const gesucht = new Map();
+  zeilen.forEach((el) => {
+    const [typ, nr] = (el.dataset.info || "").split("|");
+    // Eigene Figuren ohne Katalognummer haben dort nichts zu suchen.
+    if (!nr || /^(fig-|manuell-|custom-)/.test(nr)) return;
+    gesucht.set(`${typ}:${nr}:U`, { item_type: typ, item_no: nr, condition: "U" });
+  });
+  if (!gesucht.size) return;
+
+  const alle = [...gesucht.values()];
+  const treffer = {};
+  for (let i = 0; i < alle.length; i += 60) {
+    try {
+      const res = await api("/prices/angebote",
+        { method: "POST", body: { items: alle.slice(i, i + 60) } });
+      Object.assign(treffer, res.angebote || {});
+    } catch (e) {
+      return;                       // still aufgeben, nichts kaputtmachen
+    }
+  }
+
+  zeilen.forEach((el) => {
+    const [typ, nr] = (el.dataset.info || "").split("|");
+    const d = treffer[`${typ}:${nr}:U`];
+    if (!d || d.min == null) return;
+    if (el.querySelector(".angebot-badge")) return;   // nicht doppelt
+    const span = document.createElement("span");
+    span.className = "angebot-badge";
+    span.title = tr("Billigstes Angebot gerade jetzt (BrickLink) – kein Verkaufswert");
+    span.textContent = tr("ab {p} gebraucht", { p: fmtEur(d.min) });
+    (el.querySelector(".sub") || el).appendChild(span);
+  });
+}
+
 const ANSICHT_KEY = "bf_ansicht";
 
 function showTab(name) {
@@ -2672,6 +2752,8 @@ function showApp() {
     state.uebersetzt = c.such_uebersetzung !== false;
     state.jedipedia = !!c.jedipedia;
     if ($("opt-jedipedia")) $("opt-jedipedia").checked = state.jedipedia;
+    state.angebote = !!c.angebotspreise;
+    if ($("opt-angebote")) $("opt-angebote").checked = state.angebote;
     updateHubTab();
     updatePolling();
     standTaktStarten();
@@ -6292,7 +6374,11 @@ async function loadEntryPrice(card, item, refresh) {
   const out = card.querySelector("[data-price-out]");
   out.textContent = refresh ? "Hole frische Preise von BrickLink …" : "Lade Preise …";
   try {
-    const p = await api(`/collection/${item.id}/price${refresh ? "?refresh=1" : ""}`);
+    const zusatz = [];
+    if (refresh) zusatz.push("refresh=1");
+    if (state.angebote) zusatz.push("angebote=1");
+    const p = await api(`/collection/${item.id}/price`
+      + (zusatz.length ? "?" + zusatz.join("&") : ""));
     if (!refresh && !p.updated_at) {
       // frisch erfasste Figur, Hintergrund-Abruf noch nicht durch → einmal live holen
       return loadEntryPrice(card, item, true);
@@ -6308,7 +6394,8 @@ async function loadEntryPrice(card, item, refresh) {
     out.innerHTML = priceLine(tr("Neu"), p.new) + priceLine(tr("Gebraucht"), p.used)
       + `<div class="price-note">`
       + esc(tr("Ø-Verkaufspreise, letzte 6 Monate (BrickLink)"))
-      + `${stand ? esc(tr(" · Stand {d}", { d: stand })) : ""}</div>` + zweit;
+      + `${stand ? esc(tr(" · Stand {d}", { d: stand })) : ""}</div>`
+      + angebotBlock(p.stock) + zweit;
     // Frische Preise sofort in Karte und Rechnung übernehmen
     if (p.new && p.new.avg != null) item.price_new = p.new.avg;
     if (p.used && p.used.avg != null) item.price_used = p.used.avg;
@@ -8377,6 +8464,7 @@ function renderLists(lists) {
       });
     });
   });
+  angeboteEintragen(box);
 }
 
 function listItemRow(it, dealer) {
@@ -11930,6 +12018,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   katThemenVerdrahten();
   katKategorienVerdrahten();
   jedipediaVerdrahten();
+  angeboteVerdrahten();
   nachObenVerdrahten();
   $("btn-restore").addEventListener("click", () => $("restore-file").click());
   $("btn-backup-dl").addEventListener("click", async () => {
@@ -12716,6 +12805,22 @@ function jedipediaLink(itemId, name) {
      href="${esc(jedipediaZiel(begriff))}"
      title="${esc(tr("In der Jedipedia nachschlagen"))}"
      aria-label="${esc(tr("In der Jedipedia nachschlagen"))}">ⓘ</a>`;
+}
+
+function angeboteVerdrahten() {
+  const schalter = $("opt-angebote");
+  if (!schalter) return;
+  schalter.addEventListener("change", async () => {
+    const an = schalter.checked;
+    state.angebote = an;
+    try {
+      await api("/settings/angebotspreise", { method: "POST", body: { an } });
+    } catch (e) {
+      schalter.checked = !an;
+      state.angebote = !an;
+      toast(tr("Ging nicht."));
+    }
+  });
 }
 
 function jedipediaVerdrahten() {

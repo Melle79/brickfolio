@@ -229,6 +229,19 @@ Unter **Mehr → API-Schlüssel** (nur für Admins sichtbar):
    **Mehr → Rechtliches**, zusammen mit dem Hinweis, den BrickLink im
    Wortlaut vorschreibt. Ohne BrickLink-Zugang bleibt das Feld ohne Wirkung.
 
+### Angebotspreise (optional)
+
+Unter **Mehr → Angebotspreise** lässt sich eine zweite Zahl zuschalten: **ab
+wie viel die Figur gerade zu haben ist**. Der gewohnte Ø-Verkaufspreis sagt,
+was zuletzt tatsächlich bezahlt wurde – was die Figur also *wert* ist. Der
+Angebotspreis sagt, was sie *kostet*, wenn du jetzt kaufst.
+
+Sie erscheint in der Detailansicht und als kleine Marke in Wunsch- und
+Einkaufslisten. Voreingestellt ist sie **aus**: Jede Abfrage kostet
+zusätzliche BrickLink-Abrufe, und das Tageslimit liegt bei 5.000.
+Angebotspreise werden **nicht gespeichert** – der Wert deiner Sammlung
+beruht weiter auf Verkäufen.
+
 **Rebrickable** – liefert die Suche nach Namen:
 
 1. Kostenloses Konto auf rebrickable.com anlegen.

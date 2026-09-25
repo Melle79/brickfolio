@@ -220,6 +220,18 @@ Under **More → API keys** (only visible to admins):
    notice BrickLink prescribes verbatim. Without BrickLink credentials the
    field has no effect.
 
+### Asking prices (optional)
+
+Under **More → Asking prices** you can switch on a second number: **what the
+figure can be had for right now**. The familiar average sold price says what
+was actually paid last – what the figure is *worth*. The asking price says
+what it *costs* if you buy now.
+
+It appears in the detail view and as a small badge in wanted and shopping
+lists. It is **off** by default: every lookup costs additional BrickLink
+requests, and the daily limit is 5,000. Asking prices are **not stored** –
+the value of your collection keeps resting on actual sales.
+
 **Rebrickable** – provides search by name:
 
 1. Create a free account on rebrickable.com.

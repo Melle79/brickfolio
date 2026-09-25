@@ -9,7 +9,7 @@ import integrations
 
 def _mock_request(monkeypatch, calls):
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append((item_no, scope))
         return {"currency_code": "EUR", "avg_price": "5", "unit_quantity": 3}
     monkeypatch.setattr(integrations, "_price_request", fake_request)

@@ -119,7 +119,7 @@ def test_waehrung_geht_an_bricklink(monkeypatch):
     gesehen = {}
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         gesehen["w"] = waehrung
         return {"currency_code": waehrung, "avg_price": "5",
                 "unit_quantity": 3}
@@ -136,7 +136,7 @@ def test_cache_trennt_nach_waehrung(monkeypatch):
     calls = []
 
     def fake_request(bl_type, item_no, condition, scope, auth,
-                     waehrung="EUR"):
+                     waehrung="EUR", guide_type="sold"):
         calls.append(waehrung)
         return {"currency_code": waehrung, "avg_price": "5",
                 "unit_quantity": 3}

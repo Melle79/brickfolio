@@ -130,7 +130,12 @@ def test_der_marker_traegt_typ_und_nummer():
 
 def test_knoepfe_und_bild_behalten_ihre_aufgabe():
     j = js()
-    stelle = j[j.index("[data-info]"):][:900]
+    # **Am Klick-Fänger festmachen, nicht am ersten `[data-info]`.** Der
+    # Marker steht inzwischen auch in `angeboteEintragen`, das die Zeilen
+    # einer Liste einsammelt — und das stand plötzlich weiter oben in der
+    # Datei. Der Test suchte dann dort und schlug an, obwohl der
+    # Klick-Fänger unverändert richtig war.
+    stelle = j[j.index('closest("[data-info]")'):][:900]
     assert "button, a, input, select, label, .card-img" in stelle, (
         "ein Tipp auf einen Knopf oder das Bild würde den Steckbrief öffnen")
 

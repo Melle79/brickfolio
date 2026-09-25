@@ -3009,6 +3009,24 @@ def set_jedipedia(body: JedipediaBody, user: dict = Depends(current_user)):
     return {"ok": True, "an": body.an}
 
 
+class AngebotspreiseBody(BaseModel):
+    an: bool
+
+
+@app.post("/api/settings/angebotspreise")
+def set_angebotspreise(body: AngebotspreiseBody,
+                       user: dict = Depends(current_user)):
+    """Angebotspreise zusätzlich anzeigen – je Benutzer.
+
+    **Ausgeschaltet voreingestellt.** Die gewohnte Ansicht bleibt, wie sie
+    ist; wer die zweite Zahl will, schaltet sie dazu. Sie kostet außerdem
+    zusätzliche BrickLink-Abrufe, und das soll niemand ungefragt zahlen.
+    """
+    core.set_user_setting(user["id"], "angebotspreise",
+                          "1" if body.an else "0")
+    return {"ok": True, "an": body.an}
+
+
 class SchonendBody(BaseModel):
     schonend: bool
 
@@ -3050,6 +3068,8 @@ def config(user: dict = Depends(current_user)):
             "schonend": _schonend(user),
             "jedipedia": core.get_user_setting(user["id"],
                                               "jedipedia") == "1",
+            "angebotspreise": core.get_user_setting(
+                user["id"], "angebotspreise") == "1",
             "offer_percent": _offer_percent(),
             "owner_name": _owner_name(),
             "betreiber_kontakt": core.get_setting("betreiber_kontakt") or "",
@@ -8048,6 +8068,26 @@ def _preise_beider_zustaende(item_type: str, item_no: str,
     return result, not_found
 
 
+def _angebote_beider_zustaende(item_type: str, item_no: str,
+                               use_cache: bool = True) -> dict:
+    """Billigstes aktuelles Angebot für „neu" und „gebraucht".
+
+    Anders als bei den Verkäufen ist ein fehlendes Angebot **kein Fehler**:
+    Eine Figur, die gerade niemand anbietet, ist ein gültiger Zustand und
+    darf die Anzeige der anderen Hälfte nicht verhindern. Deshalb fliegt
+    hier nichts, es bleibt schlicht leer.
+    """
+    out = {}
+    for cond, key in (("N", "new"), ("U", "used")):
+        try:
+            out[key] = integrations.price_guide(
+                item_type, item_no, cond, use_cache=use_cache,
+                guide_type="stock")
+        except (requests.RequestException, ValueError, RuntimeError):
+            out[key] = None
+    return out
+
+
 def _preise_mit_zweitnummer(item_type: str, item_no: str,
                             use_cache: bool = False) -> tuple:
     """Preise holen und bei einem Teil notfalls die BrickLink-Nummer nehmen.
@@ -8151,8 +8191,15 @@ def _fetch_and_store_prices(entry: dict, table: str = "collection",
 
 
 @app.get("/api/collection/{entry_id}/price")
-def entry_price(entry_id: int, refresh: int = 0,
+def entry_price(entry_id: int, refresh: int = 0, angebote: int = 0,
                 user: dict = Depends(current_user)):
+    """Preise zu einem Sammlungseintrag.
+
+    `angebote=1` hängt die **aktuellen Angebote** an. Sie werden bewusst
+    **nicht** mitgespeichert: Was eine Figur gerade kostet, ist morgen
+    überholt, und der gespeicherte Wert der Sammlung soll weiter auf dem
+    beruhen, was tatsächlich bezahlt wurde.
+    """
     if not integrations.bricklink_enabled():
         raise HTTPException(501, "BrickLink-API nicht konfiguriert "
                                  "(Schlüssel unter Mehr → API-Schlüssel eintragen)")
@@ -8166,19 +8213,27 @@ def entry_price(entry_id: int, refresh: int = 0,
         raise HTTPException(400, "Ohne BrickLink-Nummer kein Preis – "
                                  "„BrickLink-Nr. setzen“ in den Details nutzen.")
 
+    def _mit_angeboten(antwort: dict) -> dict:
+        if angebote:
+            antwort["stock"] = _angebote_beider_zustaende(
+                entry["item_type"], entry["item_id"])
+        return antwort
+
     if not refresh:
         if entry.get("price_data"):
             try:
                 data = json.loads(entry["price_data"])
             except ValueError:
                 data = {}
-            return {"new": data.get("new"), "used": data.get("used"),
-                    "updated_at": entry.get("price_updated_at"), "cached": True}
-        return {"new": {"avg": entry["price_new"]} if entry.get("price_new") else None,
-                "used": {"avg": entry["price_used"]} if entry.get("price_used") else None,
-                "updated_at": entry.get("price_updated_at"), "cached": True}
+            return _mit_angeboten(
+                {"new": data.get("new"), "used": data.get("used"),
+                 "updated_at": entry.get("price_updated_at"), "cached": True})
+        return _mit_angeboten(
+            {"new": {"avg": entry["price_new"]} if entry.get("price_new") else None,
+             "used": {"avg": entry["price_used"]} if entry.get("price_used") else None,
+             "updated_at": entry.get("price_updated_at"), "cached": True})
     try:
-        return _fetch_and_store_prices(entry, source="manuell")
+        return _mit_angeboten(_fetch_and_store_prices(entry, source="manuell"))
     except LookupError as e:
         raise HTTPException(404, str(e))
     except requests.Timeout:
@@ -8191,8 +8246,14 @@ def entry_price(entry_id: int, refresh: int = 0,
 
 
 @app.get("/api/price/{item_type}/{item_no}")
-def get_price(item_type: str, item_no: str,
+def get_price(item_type: str, item_no: str, angebote: int = 0,
               user: dict = Depends(current_user)):
+    """Preise zu einer Katalognummer.
+
+    `angebote=1` hängt zusätzlich die **aktuellen Angebote** an (was die
+    Figur gerade kostet) — das kostet zwei weitere BrickLink-Abrufe und
+    wird deshalb nur auf Verlangen geholt.
+    """
     if not integrations.bricklink_enabled():
         raise HTTPException(501, "BrickLink-API nicht konfiguriert "
                                  "(Schlüssel unter Mehr → API-Schlüssel eintragen)")
@@ -8215,7 +8276,52 @@ def get_price(item_type: str, item_no: str,
     # Nummer nirgends wiederfindet.
     if benutzt != item_no:
         result["bl_no"] = benutzt
+    if angebote:
+        # Scheitert der Angebotsteil, bleibt der Verkaufsteil trotzdem
+        # stehen — er ist die wichtigere Zahl.
+        result["stock"] = _angebote_beider_zustaende(item_type, benutzt)
     return result
+
+
+class AngeboteBody(BaseModel):
+    """Bis zu 60 Katalognummern auf einmal."""
+    items: list[dict] = Field(default_factory=list, max_length=60)
+
+
+@app.post("/api/prices/angebote")
+def get_angebote(body: AngeboteBody, user: dict = Depends(current_user)):
+    """Billigstes aktuelles Angebot für eine ganze Liste.
+
+    **Ein Aufruf statt einer je Zeile.** Eine Wunschliste mit fünfzig
+    Einträgen wäre sonst fünfzig Anfragen aus dem Browser, und die
+    Oberfläche stünde zappelnd da, während sie eintröpfeln.
+
+    Die Obergrenze von 60 Nummern ist Absicht: Dahinter stehen bis zu 60
+    BrickLink-Abrufe, und das Tageslimit liegt bei 5.000. Wer eine längere
+    Liste hat, holt sie in Häppchen — der Zwischenspeicher von 20 Minuten
+    fängt die Wiederholungen ab.
+
+    Je Eintrag wird nur der **angefragte Zustand** geholt, nicht beide:
+    Auf einer Wunschliste steht, in welchem Zustand das Stück gesucht wird.
+    """
+    if not integrations.bricklink_enabled():
+        raise HTTPException(501, "BrickLink-API nicht konfiguriert "
+                                 "(Schlüssel unter Mehr → API-Schlüssel eintragen)")
+    out = {}
+    for eintrag in body.items:
+        nr = str(eintrag.get("item_no") or "").strip()
+        typ = str(eintrag.get("item_type") or "minifig").strip()
+        cond = "N" if str(eintrag.get("condition") or "U").upper() == "N" else "U"
+        if not nr:
+            continue
+        schluessel = f"{typ}:{nr}:{cond}"
+        try:
+            out[schluessel] = integrations.price_guide(
+                typ, nr, cond, use_cache=True, guide_type="stock")
+        except (requests.RequestException, ValueError, RuntimeError):
+            # Eine Figur ohne Angebot darf die anderen 59 nicht mitreissen.
+            out[schluessel] = None
+    return {"angebote": out}
 
 
 @app.get("/api/history/{item_type}/{item_no}")

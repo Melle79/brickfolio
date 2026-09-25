@@ -632,6 +632,21 @@ def currency() -> str:
     return value if value in CURRENCIES else "EUR"
 
 
+def _hat_angebot(d: dict) -> bool:
+    """Liegt im gewählten Gebiet überhaupt etwas im Angebot?
+
+    Bei `guide_type=stock` ist der Durchschnitt die falsche Prüfgröße: Steht
+    dort nichts zum Verkauf, meldet BrickLink `0.0000` *und* eine Stückzahl
+    von 0. Gezählt wird deshalb die Stückzahl — sonst liefe der Rückfall auf
+    ein breiteres Gebiet ins Leere und die Figur stünde ohne Angebot da,
+    obwohl es eine Region weiter welche gibt.
+    """
+    try:
+        return int(d.get("total_quantity") or 0) > 0
+    except (TypeError, ValueError):
+        return False
+
+
 def _has_avg(d: dict) -> bool:
     """Steckt ein echter Durchschnitt in der Antwort?
 
@@ -667,8 +682,9 @@ def _fallback_chain(wanted: str) -> list[str]:
 
 
 def _price_request(bl_type: str, item_no: str, condition: str, scope: str,
-                   auth, waehrung: str = "EUR") -> dict:
-    params = {"guide_type": "sold", "new_or_used": condition,
+                   auth, waehrung: str = "EUR",
+                   guide_type: str = "sold") -> dict:
+    params = {"guide_type": guide_type, "new_or_used": condition,
               "currency_code": waehrung}
     if scope:
         # Länderkürzel und Region schließen sich bei BrickLink gegenseitig aus
@@ -698,8 +714,19 @@ PRICE_CACHE_TTL = 20 * 60
 
 def price_guide(item_type: str, item_no: str, condition: str = "U",
                 scope: str | None = None, use_cache: bool = False,
-                waehrung: str | None = None) -> dict:
-    """Preisübersicht (verkaufte Artikel, letzte 6 Monate) von BrickLink.
+                waehrung: str | None = None,
+                guide_type: str = "sold") -> dict:
+    """Preisübersicht von BrickLink – verkauft oder im Angebot.
+
+    `guide_type="sold"` (Vorgabe) sind die **Verkäufe der letzten sechs
+    Monate**: was tatsächlich bezahlt wurde. `guide_type="stock"` sind die
+    **aktuellen Angebote**: was die Figur gerade kostet. Das sind zwei
+    verschiedene Fragen — die erste beantwortet „was ist sie wert", die
+    zweite „was zahle ich, wenn ich jetzt kaufe". Für den Flohmarkt ist oft
+    die zweite die nützlichere.
+
+    Bei `stock` heißt `min` das **billigste Angebot** und `times_sold` wird
+    zu `angebote` — der Zahl der angebotenen Stücke.
 
     `scope` grenzt auf ein Land bzw. eine Region ein; ohne Angabe gilt die
     Einstellung. Gibt es dort keine Verkäufe – bei selteneren Figuren häufig –,
@@ -709,6 +736,10 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     BrickLink rechnet dann selbst um. `use_cache` beschleunigt reine
     Katalog-Abfragen (kurzer TTL).
     """
+    # Erst die Eingaben, dann die Einstellungen: Ein Tippfehler in der
+    # Preisart soll auffliegen, bevor irgendetwas nachgeschlagen wird.
+    if guide_type not in ("sold", "stock"):
+        raise ValueError(f"Unbekannte Preisart: {guide_type}")
     bl_type = _BL_TYPE.get(item_type.lower())
     if not bl_type:
         raise ValueError(f"Unbekannter Typ: {item_type}")
@@ -723,7 +754,7 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     if waehrung not in CURRENCIES:
         waehrung = "EUR"
 
-    cache_key = (bl_type, item_no, condition, wanted, waehrung)
+    cache_key = (bl_type, item_no, condition, wanted, waehrung, guide_type)
     if use_cache:
         hit = _PRICE_CACHE.get(cache_key)
         if hit and time.time() - hit[0] < PRICE_CACHE_TTL:
@@ -734,10 +765,14 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
     used = wanted
     d = {}
     found = False
+    # Bei Angeboten entscheidet die Stückzahl über den Treffer, nicht der
+    # Durchschnitt — siehe `_hat_angebot`.
+    treffer = _hat_angebot if guide_type == "stock" else _has_avg
     for step in _fallback_chain(wanted):
-        d = _price_request(bl_type, item_no, condition, step, auth, waehrung)
+        d = _price_request(bl_type, item_no, condition, step, auth, waehrung,
+                           guide_type)
         used = step
-        found = _has_avg(d)
+        found = treffer(d)
         if found:
             break      # erster Treffer mit echtem Durchschnitt gewinnt
 
@@ -753,7 +788,13 @@ def price_guide(item_type: str, item_no: str, condition: str = "U",
         "scope": wanted,
         "used_scope": used,
         "fell_back": used != wanted,
+        "guide_type": guide_type,
     }
+    if guide_type == "stock":
+        # `unit_quantity` zählt bei Angeboten die *Verkäufer*, nicht die
+        # Stücke. Interessant ist, wie viele Stücke zu haben sind.
+        result["angebote"] = d.get("total_quantity") if found else 0
+        result["times_sold"] = None
     if use_cache:
         _PRICE_CACHE[cache_key] = (time.time(), result)
     return result

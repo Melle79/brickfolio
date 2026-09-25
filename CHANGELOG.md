@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.90.0 – September 2026
+
+### Neu
+- 🏷 **Angebotspreise: was die Figur gerade *kostet*.** Bisher stand überall
+  der Ø-Verkaufspreis – was zuletzt tatsächlich bezahlt wurde, also was die
+  Figur *wert* ist. Neu daneben: **ab wie viel sie zu haben ist**. Zwei
+  verschiedene Fragen, und für den Flohmarkt ist die zweite oft die
+  nützlichere.
+  - In der **Detailansicht** unter dem Verkaufspreis, für neu und gebraucht,
+    mit der Zahl der angebotenen Stücke.
+  - In **Wunsch- und Einkaufslisten** als kleine Marke an der Zeile
+    („ab 6,70 € gebraucht").
+  - **Zuschaltbar unter *Mehr → Angebotspreise*, voreingestellt aus.** Die
+    gewohnte Ansicht bleibt, wie sie war, und die zusätzlichen
+    BrickLink-Abrufe zahlt niemand ungefragt.
+  - Dieselbe Schnittstelle, dieselben Zugangsdaten – nur ein anderer
+    Parameter. Keine neue Quelle.
+  - **Angebote werden nicht gespeichert.** Was heute zu haben ist, ist morgen
+    weg; der Wert deiner Sammlung beruht weiter auf Verkäufen.
+
+### Intern
+- Listen holen ihre Angebote in **einem** Abruf statt einem je Zeile
+  (höchstens 60 Nummern; der 20-Minuten-Speicher fängt Wiederholungen ab).
+  Fällt eine Figur aus, reißt sie die anderen nicht mit.
+- Beim Rückfall auf ein breiteres Preisgebiet entscheidet bei Angeboten die
+  **Stückzahl**, nicht der Durchschnitt: BrickLink meldet in einem leeren
+  Gebiet `0.0000` statt nichts.
+
 ## 2.89.4 – September 2026
 
 ### Neu

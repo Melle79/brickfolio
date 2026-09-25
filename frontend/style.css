@@ -1093,6 +1093,24 @@ span.mf-stern.an {
 .price-range { color: var(--muted); white-space: nowrap; }
 .price-flag { cursor: help; font-size: 1.05em; margin-left: 2px; }
 .price-note { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+
+/* ── Angebotspreise ────────────────────────────────────────────────────
+   Bewusst anders gefärbt als der Verkaufspreis: Es sind zwei verschiedene
+   Zahlen, und gleich aussehend läse man sie als Spanne desselben Werts.
+   Der Verkaufspreis bleibt die Hauptzahl, das Angebot tritt zurück. */
+.price-row.angebot { margin-top: 3px; color: var(--muted); }
+.price-row.angebot strong { color: var(--ink); }
+
+.angebot-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 7px;
+  border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  white-space: nowrap;
+  /* `--info-bg` und `--blue` tragen alle drei Designs mit (klassisch,
+     Galaxie, Nova) – eine fest verdrahtete Farbe wäre im Dunkeln falsch. */
+  background: var(--info-bg);
+  color: var(--blue);
+  border: 1px solid var(--line);
+}
 /* Die Spur unter dem Verlauf: kurze Zeilen, bewusst unauffällig –
    gelesen wird sie nur, wenn etwas schiefging. */
 .diag-spur { margin-top: 10px; font-size: 11.5px; color: var(--muted);
