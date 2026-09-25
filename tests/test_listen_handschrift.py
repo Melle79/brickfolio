@@ -154,3 +154,24 @@ def test_das_jahr_steht_nur_einmal_im_vorschlag():
     n = q.index("function applySuggestInfo")
     teil = q[n:q.index("let gallery", n)]
     assert "schonDa.includes(String(d.year))" in teil
+
+
+def test_suchvorschlaege_wie_die_trefferkarte():
+    """Die Vorschläge beim manuellen Erfassen hatten vier gleich große
+    Knöpfe – jetzt derselbe Aufbau wie die Trefferkarte im Scan."""
+    q = js()
+    n = q.index("function renderSuggestions")
+    teil = q[n:q.index("function erfWahlZeichnen", n)]
+    assert 'class="card-actions scan-tasten"' in teil
+    assert 'class="mini-btn zeichen" data-want=' in teil
+    assert 'class="mini-btn zeichen" data-cart=' in teil
+    assert 'class="karte-weiter"' in teil
+    assert "BrickLink ↗</a>" not in teil, "BrickLink als Knopf"
+
+
+def test_gemerkter_artikel_hat_von_vornherein_einen_vollen_stern():
+    q = js()
+    n = q.index("function applySuggestInfo")
+    teil = q[n:q.index("let gallery", n)]
+    assert 'card.querySelector(".zeichen[data-want]")' in teil
+    assert 'stern.classList.add("an")' in teil

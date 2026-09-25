@@ -1200,5 +1200,6 @@
  "„{name}“: Anzahl erhöht ✔": "“{name}”: quantity increased ✔",
  "„{name}“ ist in der Sammlung ✔": "“{name}” is in the collection ✔",
  "✔ In der Sammlung · jetzt {n}×": "✔ In the collection · now {n}×",
- "✔ In der Sammlung · {zustand}": "✔ In the collection · {zustand}"
+ "✔ In der Sammlung · {zustand}": "✔ In the collection · {zustand}",
+ "✔ Übernehmen": "✔ Use this"
 }

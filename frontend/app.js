@@ -970,6 +970,16 @@ function applySuggestInfo(info, withDetail, geprueft) {
       ownedEl.classList.add("badge-wanted");
       ownedEl.hidden = false;
     }
+    // Steht der Artikel schon auf der Wunschliste, ist der Stern von
+    // vornherein gefüllt – wie in der Katalogliste. Vorher sah man das erst
+    // nach dem Tippen, und dann nur als Zuruf „Steht schon drauf".
+    const stern = card.querySelector(".zeichen[data-want]");
+    if (stern && d.wanted) {
+      stern.textContent = "\u2605";
+      stern.classList.add("an");
+      stern.title = tr("Gemerkt");
+      stern.setAttribute("aria-label", tr("Gemerkt"));
+    }
     // „Nur Foto dazu" hängt ein Foto an einen Artikel, den es schon gibt.
     // Ohne Artikel gibt es nichts, woran es hängen könnte – der Knopf bleibt
     // dann weg. Die Wunschliste zählt hier bewusst nicht: Was man sich
@@ -6877,12 +6887,18 @@ function renderSuggestions(items, meta = {}) {
           <span class="badge badge-owned" data-owned hidden></span>
         </div>
       </div>
-      <div class="card-actions">
-        <button class="mini-btn add" data-suggest="${i}">✔ Übernehmen</button>
-        <button class="mini-btn" data-want="${i}">☆ Merken</button>
-        ${state.user && state.user.is_dealer ? `<button class="mini-btn" data-cart="${i}">🛒 Liste</button>` : ""}
-        ${it.bricklink_url ? `<a class="mini-btn link" href="${esc(it.bricklink_url)}" target="_blank" rel="noopener">BrickLink ↗</a>` : ""}
+      <!-- Derselbe Aufbau wie die Trefferkarte im Scan: eine breite
+           Hauptsache, Merken und Liste als Zeichen, BrickLink als Verweis.
+           Vorher vier gleich große Knöpfe nebeneinander. -->
+      <div class="card-actions scan-tasten">
+        <button class="mini-btn add" data-suggest="${i}">${esc(tr("✔ Übernehmen"))}</button>
+        <button class="mini-btn zeichen" data-want="${i}"
+          title="${esc(tr("Merken"))}" aria-label="${esc(tr("Merken"))}">☆</button>
+        ${state.user && state.user.is_dealer ? `<button class="mini-btn zeichen" data-cart="${i}"
+          title="${esc(tr("Auf eine Liste"))}" aria-label="${esc(tr("Auf eine Liste"))}">🛒</button>` : ""}
       </div>
+      ${it.bricklink_url ? `<div class="karte-weiter"><a href="${esc(it.bricklink_url)}"
+        target="_blank" rel="noopener">${esc(tr("Bei BrickLink ansehen"))} ↗</a></div>` : ""}
     </div>`;
   }).join("");
 

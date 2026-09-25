@@ -45,6 +45,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.42 – September 2026
+
+### Geändert
+- ✏️ **Die Suchvorschläge beim manuellen Erfassen in der neuen Handschrift.**
+  Jeder Treffer trug vier gleich große Knöpfe – „✔ Übernehmen", „☆ Merken",
+  „🛒 Liste", „BrickLink ↗". Jetzt derselbe Aufbau wie die Trefferkarte beim
+  Scannen: **„✔ Übernehmen" breit und grün**, ☆ und 🛒 als Zeichen daneben,
+  „Bei BrickLink ansehen ↗" als Verweis darunter.
+- ⭐ **Der Stern ist gefüllt, wenn der Artikel schon auf der Wunschliste
+  steht** – beim Scannen wie beim Suchen. Vorher erfuhr man das erst nach
+  dem Tippen, als Zuruf „Steht schon auf der Wunschliste".
+- „✔ Übernehmen" ist jetzt auch auf Englisch übersetzt.
+
 ## 2.88.41 – September 2026
 
 ### Geändert
