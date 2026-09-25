@@ -601,7 +601,9 @@
       Ein Hub-Admin hat diese Instanz aus dem Netzwerk genommen. Angebote und
       neue Nachrichten sind bis auf Weiteres nicht möglich; bisherige
       Unterhaltungen bleiben hier lesbar. Nach einer Freischaltung geht es
-      ohne neues Verbinden weiter – melde dich also nicht ab.</p>
+      ohne neues Verbinden weiter – melde dich also nicht ab.
+      <span id="hub-blocked-grund"></span></p>
+    <div id="hub-hinweise"></div>
     <p class="warn-line info" id="hub-pause" hidden></p>
 
     <div class="tab-row" id="hub-subtabs">
@@ -769,7 +771,15 @@
         <p class="warn-line info" id="trade-gesperrt" hidden>🚫 Das Gegenüber ist
           gerade gesperrt. Nachrichten kommen erst nach einer Freischaltung
           an.</p>
-        <p class="warn-line info" id="trade-report-state" hidden></p>
+        <div class="meldung-box" id="trade-report-box" hidden>
+          <p class="warn-line info" id="trade-report-state"></p>
+          <div id="trade-report-msgs"></div>
+          <div class="detail-row">
+            <input id="trade-report-reply" maxlength="2000"
+              placeholder="Nachricht an den Hub-Admin …">
+            <button class="mini-btn" id="trade-report-send">Senden</button>
+          </div>
+        </div>
         <details class="help" id="trade-fp-box" hidden>
           <summary>🔐 Sicherheitsnummer vergleichen</summary>
           <p class="search-hint">Die Nachrichten sind Ende-zu-Ende

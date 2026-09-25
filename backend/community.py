@@ -19,6 +19,7 @@ Eingebunden wird der Router am Ende von `main.py` – nach allem, was er von
 dort braucht (Anmeldung, Sammlung, Einkaufslisten).
 """
 import base64
+import json
 import os
 import re
 import time
@@ -74,11 +75,51 @@ def _hub_status(refresh: bool = False) -> dict:
         if pause["bis"] < time.time() - 14 * 86400:
             pause = None
     tage = core.get_setting("hub_inaktiv_tage")
+    hinweise = hub.hinweise() if hub.enabled() else []
+    _hinweise_melden(hinweise)
     return {"connected": hub.enabled(), "url": c["url"],
             "member_id": c["member_id"], "display_name": c["display_name"],
             "is_admin": c["is_admin"], "last_publish": hub.last_publish(),
-            "blocked": hub.blocked(), "pause": pause,
+            "blocked": hub.blocked(),
+            "block": hub.block_info() if hub.blocked() else None,
+            "pause": pause, "hinweise": hinweise,
             "inaktiv_tage": int(tage) if tage and tage.isdigit() else None}
+
+
+def _hinweise_melden(hinweise: list) -> None:
+    """Jeden Hinweis des Admins einmal als Mitteilung hinterlegen."""
+    gemeldet = set((core.get_setting("hub_hinweise_gemeldet") or "").split(","))
+    neu = [h for h in hinweise if str(h.get("id")) not in gemeldet]
+    if not neu:
+        return
+    core.set_setting("hub_hinweise_gemeldet", ",".join(
+        sorted(gemeldet | {str(h["id"]) for h in neu} - {""})))
+    try:
+        from main import _notify
+    except Exception:
+        return
+    for h in neu:
+        _notify("hub_hinweis", "📣 Mitteilung vom Hub-Admin",
+                "Der Hub-Admin hat dir eine Mitteilung zum Tausch-Netzwerk "
+                "geschickt. Du findest sie oben im Tausch-Tab.",
+                item_type="system", item_id=f"hinweis-{h['id']}")
+
+
+@router.post("/api/hub/hinweise/{notice_id}/gelesen")
+def hub_hinweis_gelesen(notice_id: int, user: dict = Depends(current_user)):
+    """„Verstanden“ – der Hinweis verschwindet hier und beim Hub."""
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    try:
+        hub.ack_notice(notice_id)
+    except hub.HubError as e:
+        if e.status != 404:
+            raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+    rest = [h for h in hub.hinweise() if h.get("id") != notice_id]
+    core.set_setting("hub_hinweise", json.dumps(rest))
+    return {"ok": True, "hinweise": rest}
 
 
 def _pause_melden(pause: dict) -> None:
@@ -543,7 +584,11 @@ def hub_trades(user: dict = Depends(current_user)):
             "(SELECT body FROM trade_messages m WHERE m.trade_id = t.id "
             " ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_body, "
             "(SELECT r.status FROM hub_reports r WHERE r.trade_id = t.id "
-            " ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS report_status "
+            " ORDER BY r.created_at DESC, r.id DESC LIMIT 1) AS report_status, "
+            # Wartet eine Rückfrage des Admins auf Antwort?
+            "(SELECT m.from_admin FROM hub_report_messages m JOIN hub_reports r "
+            " ON r.id = m.report_id WHERE r.trade_id = t.id "
+            " ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS report_frage "
             "FROM trades t ORDER BY t.updated_at DESC").fetchall()
     return {"trades": [dict(r) for r in rows]}
 
@@ -1053,45 +1098,116 @@ def hub_report_trade(trade_id: str, body: TradeReportBody,
 def _meldung_zum_gespraech(trade_id: str) -> dict | None:
     with core.db() as conn:
         r = conn.execute(
-            "SELECT id, status, created_at, handled_at, with_history "
+            "SELECT id, status, created_at, handled_at, with_history, ergebnis "
             "FROM hub_reports WHERE trade_id = ? ORDER BY created_at DESC, "
             "id DESC LIMIT 1", (trade_id,)).fetchone()
-    return dict(r) if r else None
+        if not r:
+            return None
+        msgs = conn.execute(
+            "SELECT from_admin, text, created_at FROM hub_report_messages "
+            "WHERE report_id = ? ORDER BY created_at, id", (r["id"],)).fetchall()
+    d = dict(r)
+    d["messages"] = [{"from_admin": bool(m["from_admin"]), "text": m["text"],
+                      "created_at": m["created_at"]} for m in msgs]
+    return d
 
 
-def _meldungen_abgleichen() -> None:
-    """Stand offener Meldungen beim Hub nachfragen – nur wenn es welche gibt.
+# Der Stand der Meldungen wird beim Nachrichten-Abgleich mitgeholt – der
+# läuft alle 8–20 Sekunden. Für Meldungen genügt einmal die Minute.
+MELDUNG_ABGLEICH_ALLE = 60
+_meldung_zuletzt = {"ts": 0.0}
 
-    Erledigt der Hub-Admin eine, steht das am Gespräch, und es gibt einen
-    Hinweis. Die Notiz des Admins bleibt beim Hub; hier kommt nur an, dass
-    und wann sie bearbeitet wurde.
+
+def _meldungen_abgleichen(sofort: bool = False) -> None:
+    """Stand und Rückfragen eigener Meldungen beim Hub nachfragen.
+
+    Nur wenn es Meldungen aus den letzten 90 Tagen gibt: Auch zu einer
+    erledigten Meldung kann der Hub-Admin noch nachfragen. Erledigt der
+    Admin eine, oder fragt er nach, steht das am Gespräch, und es kommt ein
+    Hinweis. Seine interne Notiz bleibt beim Hub.
     """
+    if not sofort and time.time() - _meldung_zuletzt["ts"] < MELDUNG_ABGLEICH_ALLE:
+        return
+    _meldung_zuletzt["ts"] = time.time()
     with core.db() as conn:
-        offen = conn.execute(
-            "SELECT id, hub_id, other_name FROM hub_reports "
-            "WHERE status = 'open' AND hub_id IS NOT NULL").fetchall()
-    if not offen:
+        lokal = {r["hub_id"]: r for r in conn.execute(
+            "SELECT id, hub_id, status FROM hub_reports WHERE hub_id IS NOT "
+            "NULL AND created_at > ?", (int(time.time()) - 90 * 86400,))}
+    if not lokal:
         return
     try:
-        stand = {r["id"]: r for r in hub.own_reports()}
+        stand = hub.own_reports()
     except Exception:
         return                      # beim nächsten Abgleich wieder
-    for r in offen:
-        h = stand.get(r["hub_id"])
-        if not h or h.get("status") != "handled":
+    try:
+        from main import _notify
+    except Exception:
+        _notify = None
+    for h in stand:
+        r = lokal.get(h.get("id"))
+        if not r:
             continue
+        neu_status = "handled" if h.get("status") == "handled" else "open"
         with core.db() as conn:
-            conn.execute("UPDATE hub_reports SET status = 'handled', "
-                         "handled_at = ? WHERE id = ?",
-                         (h.get("handled_at") or int(time.time()), r["id"]))
-        try:
-            from main import _notify
+            conn.execute("UPDATE hub_reports SET status = ?, handled_at = ?, "
+                         "ergebnis = ? WHERE id = ?",
+                         (neu_status, h.get("handled_at"), h.get("massnahme"),
+                          r["id"]))
+            neue_fragen = []
+            for m in h.get("messages") or []:
+                cur = conn.execute(
+                    "INSERT OR IGNORE INTO hub_report_messages (report_id, "
+                    "hub_msg_id, from_admin, text, created_at) VALUES "
+                    "(?, ?, ?, ?, ?)", (r["id"], m["id"],
+                                        1 if m.get("from_admin") else 0,
+                                        m.get("text") or "", m.get("created_at") or 0))
+                if cur.rowcount and m.get("from_admin"):
+                    neue_fragen.append(m["id"])
+        if not _notify:
+            continue
+        if neu_status == "handled" and r["status"] != "handled":
             _notify("meldung", "✔ Deine Meldung wurde bearbeitet",
                     "Ein Hub-Admin hat sich deine Meldung angesehen und sie "
                     "als erledigt markiert. Den Stand siehst du im Gespräch.",
-                    item_type="system", item_id=f"meldung-{r['hub_id']}")
-        except Exception:
-            pass
+                    item_type="system", item_id=f"meldung-{h['id']}-{h.get('handled_at')}")
+        for mid in neue_fragen:
+            _notify("meldung", "💬 Rückfrage vom Hub-Admin",
+                    "Zu deiner Meldung gibt es eine Rückfrage. Du findest sie "
+                    "im Gespräch und kannst dort antworten.",
+                    item_type="system", item_id=f"frage-{mid}")
+
+
+class MeldungAntwortBody(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+
+
+@router.post("/api/hub/trades/{trade_id}/report/reply")
+def hub_report_reply(trade_id: str, body: MeldungAntwortBody,
+                     user: dict = Depends(current_user)):
+    """Dem Hub-Admin zur eigenen Meldung antworten – oder etwas nachtragen."""
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    with core.db() as conn:
+        r = conn.execute(
+            "SELECT id, hub_id FROM hub_reports WHERE trade_id = ? "
+            "ORDER BY created_at DESC, id DESC LIMIT 1", (trade_id,)).fetchone()
+    if not r or not r["hub_id"]:
+        raise HTTPException(404, "Zu diesem Gespräch gibt es keine Meldung")
+    try:
+        res = hub.report_reply(r["hub_id"], body.text.strip()) or {}
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+    with core.db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO hub_report_messages (report_id, hub_msg_id, "
+            "from_admin, text, created_at) VALUES (?, ?, 0, ?, ?)",
+            (r["id"], res.get("id"), body.text.strip(), int(time.time())))
+        # Die Antwort öffnet eine erledigte Meldung beim Hub wieder.
+        conn.execute("UPDATE hub_reports SET status = 'open', handled_at = NULL "
+                     "WHERE id = ?", (r["id"],))
+    return {"ok": True, "report": _meldung_zum_gespraech(trade_id)}
 
 
 @router.get("/api/hub/invite_quota")

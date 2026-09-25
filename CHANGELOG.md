@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.90.11 – September 2026
+
+### Neu
+- 💬 **Rückfragen zu Meldungen.** Der Hub-Admin kann beim Meldenden
+  nachfragen. Die Frage steht unter der Meldung im Gespräch, es kommt ein
+  Hinweis, und man antwortet gleich dort.
+- 📣 **Maßnahmen, die der Betroffene sieht.** Hinweis und Verwarnung des
+  Hub-Admins stehen oben im Tausch-Tab, bis man „Verstanden“ drückt. Der
+  Sperrhinweis nennt Grund und Ende einer Sperre. Wer gemeldet hat, steht
+  nirgends.
+- ✔ **Der Meldende sieht, was aus seiner Meldung wurde** – die Maßnahme,
+  wenn der Admin sie freigibt, sonst nur „bearbeitet“.
+
+Braucht Hub 1.20.0.
+
+## Hub 1.20.0 – September 2026
+
+### Neu
+- **Rückfragen:** `report_messages`; der Admin schreibt über
+  `POST /v1/admin/reports/:id/messages`, der Meldende über
+  `POST /v1/reports/:id/messages` (öffnet eine erledigte Meldung wieder).
+  Beide Seiten bekommen den Austausch mit den Meldungen geliefert.
+- **Maßnahmen beim Erledigen:** `massnahme` (`keine`, `hinweis`,
+  `verwarnung`, `sperre_zeit` mit `tage`, `sperre`), Text an den
+  Gemeldeten, `ergebnis_sichtbar` für den Meldenden. Hinweise landen in
+  `member_notices` und über `/v1/me` beim Betroffenen, bestätigt mit
+  `POST /v1/notices/:id/ack`. Sperren setzen `blocked_until`/`block_reason`,
+  befristete heben sich beim nächsten Besuch nach Ablauf selbst auf. Der
+  403 einer Sperre nennt Grund und Ende.
+- **Archiv:** erledigte Meldungen und entschiedene Einladungsanfragen lassen
+  sich archivieren (`POST …/archive`, Liste mit `?archiv=1`) oder löschen.
+- Die Meldungsliste der Verwaltung nennt beim Gemeldeten, wie oft er schon
+  gemeldet wurde und welche Maßnahmen es gab. Die Mitgliederliste zeigt
+  Meldungen, Maßnahmen und Sperrgrund.
+
 ## 2.90.10 – September 2026
 
 ### Neu

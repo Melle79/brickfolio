@@ -83,6 +83,51 @@ function wireHubConnectOnce() {
   });
 }
 
+function massnahmeText(kind) {
+  const namen = { hinweis: "Hinweis", verwarnung: "Verwarnung",
+    sperre_zeit: "Befristete Sperre", sperre: "Sperre" };
+  return tr(namen[kind] || kind);
+}
+
+/* Grund und Ende einer Sperre – seit Hub 1.20.0 schickt der Hub beides mit. */
+function zeigeSperrgrund(b) {
+  const el = $("hub-blocked-grund");
+  if (!b || (!b.grund && !b.bis)) { el.textContent = ""; return; }
+  const teile = [];
+  if (b.grund) teile.push(tr("Grund: {grund}", { grund: b.grund }));
+  if (b.bis) {
+    teile.push(tr("Die Sperre endet am {datum}.", { datum:
+      new Date(b.bis * 1000).toLocaleDateString(dateLocale()) }));
+  }
+  el.textContent = teile.join(" ");
+}
+
+/* Mitteilungen des Hub-Admins (Hinweis, Verwarnung, Sperre) – sie stehen
+   oben im Tausch-Tab, bis man „Verstanden“ drückt. Wer gemeldet hat,
+   steht bewusst nicht dabei. */
+function zeigeHinweise(liste) {
+  const box = $("hub-hinweise");
+  box.innerHTML = liste.map((h) => `
+    <div class="warn-line${h.kind === "hinweis" ? " info" : ""}" data-hinweis="${h.id}">
+      <b>📣 ${esc(massnahmeText(h.kind))}</b>
+      <span class="sub">· ${esc(new Date(h.created_at * 1000)
+        .toLocaleDateString(dateLocale()))}</span><br>
+      ${h.text ? esc(h.text) + "<br>" : ""}
+      ${h.until ? esc(tr("Gesperrt bis {datum}.", { datum:
+        new Date(h.until * 1000).toLocaleDateString(dateLocale()) })) + "<br>" : ""}
+      <button class="mini-btn" data-verstanden="${h.id}">${esc(tr("Verstanden"))}</button>
+    </div>`).join("");
+  box.querySelectorAll("[data-verstanden]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      try {
+        const r = await api(`/hub/hinweise/${b.dataset.verstanden}/gelesen`,
+          { method: "POST" });
+        zeigeHinweise(r.hinweise || []);
+      } catch (e) { toast(e.message); }
+    });
+  });
+}
+
 /* Waren die eigenen Angebote pausiert, weil man länger nicht da war? Das
    sagt der Hub erst beim Zurückkommen – hier steht es dann zwei Wochen. */
 function zeigePause(s) {
@@ -116,6 +161,8 @@ async function loadHubView() {
     hubIch = { member_id: s.member_id, display_name: s.display_name };
     $("hub-ich-avatar").textContent = avatarText(s.display_name);
     $("hub-blocked").hidden = !s.blocked;
+    zeigeSperrgrund(s.block);
+    zeigeHinweise(s.hinweise || []);
     zeigePause(s);
     const lp = s.last_publish;
     const lpEl = $("hub-last-publish");
@@ -288,7 +335,8 @@ async function loadTrades(quiet = false) {
     // geändert hat – sonst flackert die Liste im Takt.
     const sig = JSON.stringify(trades.map((t) =>
       [t.id, t.status, t.unread, t.updated_at, t.last_body, t.taken_at,
-        t.shipped_at, t.arrived_at, t.other_status, t.report_status]));
+        t.shipped_at, t.arrived_at, t.other_status, t.report_status,
+        t.report_frage]));
     if (quiet && sig === tradesSig) return;
     tradesSig = sig;
     if (!trades.length) {
@@ -308,8 +356,9 @@ async function loadTrades(quiet = false) {
               ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
-            ${t.report_status ? `<span class="badge badge-low">${esc(t.report_status === "handled"
-    ? tr("⚑ Meldung erledigt") : tr("⚑ gemeldet"))}</span>` : ""}
+            ${t.report_status ? `<span class="badge ${t.report_frage ? "badge-wanted" : "badge-low"}">${esc(
+    t.report_frage ? tr("💬 Rückfrage zur Meldung")
+      : t.report_status === "handled" ? tr("⚑ Meldung erledigt") : tr("⚑ gemeldet"))}</span>` : ""}
             ${["accepted", "closed"].includes(t.status) && !t.taken_at
     ? `<span class="badge badge-wanted">${esc(tauschStand(t))}</span>` : ""}
           </div>
@@ -476,7 +525,7 @@ async function renderTrade(quiet = false) {
     // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
     const sig = JSON.stringify([trade.status, trade.item_gone, trade.taken_at,
       trade.shipped_at, trade.arrived_at, trade.other_status,
-      report && [report.status, report.handled_at],
+      report && [report.status, report.handled_at, report.messages.length],
       messages.map((m) => [m.id, m.delivered])]);
     if (quiet && sig === tradeSig) return;
     const box = $("trade-msgs");
@@ -552,14 +601,29 @@ async function renderTrade(quiet = false) {
 /* Hat man dieses Gespräch gemeldet? Das steht dauerhaft da – bis 2.90.9
    gab es nach dem Absenden nur einen kurzen Hinweis und danach nichts. */
 function zeigeMeldung(r) {
-  const el = $("trade-report-state");
-  el.hidden = !r;
+  const box = $("trade-report-box");
+  box.hidden = !r;
   if (!r) return;
+  const el = $("trade-report-state");
+  // Austausch mit dem Hub-Admin: Rückfragen und eigene Antworten.
+  $("trade-report-msgs").innerHTML = (r.messages || []).map((m) => `
+    <div class="meldung-msg"><span class="wer">${esc(m.from_admin
+      ? tr("Hub-Admin") : tr("Du"))}:</span> ${esc(m.text)}
+      <span class="wann">· ${esc(new Date(m.created_at * 1000)
+        .toLocaleString(dateLocale()))}</span></div>`).join("");
+  const frage = (r.messages || []).length
+    && r.messages[r.messages.length - 1].from_admin;
+  $("trade-report-reply").placeholder = frage
+    ? tr("Antwort an den Hub-Admin …") : tr("Nachricht an den Hub-Admin …");
   const datum = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale());
   el.textContent = r.status === "handled"
     ? tr("✔ Deine Meldung vom {am} ist erledigt – ein Hub-Admin hat sie am "
       + "{erledigt} bearbeitet.", { am: datum(r.created_at),
       erledigt: datum(r.handled_at || r.created_at) })
+      // Die Maßnahme nur, wenn der Admin sie freigegeben hat.
+      + (r.ergebnis && r.ergebnis !== "keine"
+        ? " " + tr("Ergebnis: {was}.", { was: massnahmeText(r.ergebnis) })
+        : r.ergebnis === "keine" ? " " + tr("Ergebnis: keine Maßnahme.") : "")
     : tr("⚑ Du hast dieses Gespräch am {am} gemeldet{verlauf}. Ein Hub-Admin "
       + "schaut es sich an; wenn er fertig ist, steht es hier.",
     { am: datum(r.created_at),
@@ -842,6 +906,22 @@ function wireHubViewOnce() {
     if (ev.target === $("report-overlay")) closeReport();
   });
   $("report-send").addEventListener("click", sendReport);
+  const meldungAntworten = async () => {
+    const inp = $("trade-report-reply");
+    const text = inp.value.trim();
+    if (!text || !openTradeId) return;
+    try {
+      await api(`/hub/trades/${openTradeId}/report/reply`, { method: "POST",
+        body: { text } });
+      inp.value = "";
+      toast(tr("An den Hub-Admin geschickt ✔"));
+      renderTrade();
+    } catch (e) { toast(e.message); }
+  };
+  $("trade-report-send").addEventListener("click", meldungAntworten);
+  $("trade-report-reply").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") { ev.preventDefault(); meldungAntworten(); }
+  });
 
   $("hub-publish").addEventListener("click", async (ev) => {
     const b = ev.currentTarget; b.disabled = true;

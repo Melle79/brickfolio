@@ -3259,6 +3259,14 @@ button.cm-chip { cursor: pointer; min-height: 30px; }
 .trade-schritt.an { background: var(--yellow); color: #1D1D1B; }
 .trade-schritt small { font-weight: 700; opacity: .75; }
 .trade-pfeil { color: var(--muted); font-size: 12px; padding: 0 2px; }
+/* Meldung samt Austausch mit dem Hub-Admin – bewusst nicht als Sprechblasen
+   wie das Gespräch selbst: Das hier ist ein anderer Kanal. */
+.meldung-box { border: 1.5px dashed var(--line); border-radius: 12px;
+  padding: 8px 10px; margin: 8px 0; }
+.meldung-box .warn-line { margin: 0 0 6px; }
+.meldung-msg { font-size: 13px; margin: 4px 0; }
+.meldung-msg .wer { font-weight: 800; }
+.meldung-msg .wann { color: var(--muted); font-size: 11.5px; }
 .cm-chip.jetzt { outline: 2px solid var(--ink); color: var(--ink); }
 .cm-chip.mehr { background: var(--card); border: 1.5px dashed var(--line); }
 .cm-zahlen { display: flex; gap: 8px; margin-top: 10px; }

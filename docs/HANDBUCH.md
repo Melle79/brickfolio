@@ -2361,8 +2361,22 @@ Begründung. Eine Hintertür im Hub gibt es nicht.
 **Die Meldung bleibt sichtbar.** Im Gespräch steht danach „⚑ Du hast dieses
 Gespräch am … gemeldet“, in der Gesprächsliste die Marke „⚑ gemeldet“.
 Sobald ein Hub-Admin sie erledigt hat, heißt es „✔ Deine Meldung vom … ist
-erledigt“, und unter den Mitteilungen erscheint ein Hinweis. Was der Admin
-sich dazu notiert, bleibt beim Hub.
+erledigt“, und unter den Mitteilungen erscheint ein Hinweis. Ob du auch
+erfährst, *was* daraus wurde (etwa „Ergebnis: Verwarnung“), entscheidet der
+Admin. Standard ist nur „bearbeitet“.
+
+**Rückfragen:** Will der Hub-Admin mehr wissen, steht seine Frage unter der
+Meldung im Gespräch, und es kommt ein Hinweis. Antworten oder etwas
+nachtragen kannst du im Feld darunter. Eine Antwort auf eine schon erledigte
+Meldung öffnet sie beim Admin wieder. Der Gemeldete bekommt von alldem
+nichts mit.
+
+**Wenn du gemeldet wurdest:** Der Hub-Admin kann einen *Hinweis*, eine
+*Verwarnung* oder eine *Sperre* aussprechen, befristet oder bis auf
+Weiteres. Hinweis und Verwarnung erscheinen oben im Tausch-Tab mit seinem
+Text, bis du „Verstanden“ drückst. Bei einer Sperre zeigt der Sperrhinweis
+den Grund und das Ende, eine befristete Sperre hebt sich danach von selbst
+auf. Wer gemeldet hat, erfährst du nicht.
 
 ### 12.8 Wenn der Zugang gesperrt wurde
 

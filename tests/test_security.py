@@ -300,6 +300,10 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # zwei Zeitstempel vom Hub
         "hub_pause_gemeldet",   # bis wohin der Hinweis schon hinterlegt ist
         "hub_inaktiv_tage",     # Pausenfrist des Hubs, nur zur Anzeige
+        "hub_block_info",       # Grund und Ende einer Sperre – vom Hub, für
+                                # den Sperrhinweis der eigenen Instanz
+        "hub_hinweise",         # offene Mitteilungen des Hub-Admins
+        "hub_hinweise_gemeldet",  # welche davon schon als Hinweis kamen
         "katalog_quelle",       # Adresse der veröffentlichten Datei. Kein
                                 # Zugang: Sie ist öffentlich, und genau
                                 # deshalb steht kein BrickLink-Inhalt darin

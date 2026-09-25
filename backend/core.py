@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.90.10"
+APP_VERSION = "2.90.11"
 
 
 def hash_password(password: str) -> str:
@@ -387,7 +387,17 @@ def init_db():
                 with_history INTEGER NOT NULL DEFAULT 0,
                 status      TEXT NOT NULL DEFAULT 'open',   -- open | handled
                 created_at  INTEGER NOT NULL,
-                handled_at  INTEGER
+                handled_at  INTEGER,
+                ergebnis    TEXT          -- Maßnahme, falls der Admin sie freigab
+            );
+            -- Rückfragen des Hub-Admins zu einer Meldung und die Antworten.
+            CREATE TABLE IF NOT EXISTS hub_report_messages (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                report_id   INTEGER NOT NULL,      -- hub_reports.id
+                hub_msg_id  INTEGER UNIQUE,
+                from_admin  INTEGER NOT NULL,
+                text        TEXT NOT NULL,
+                created_at  INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS trade_messages (
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -939,6 +949,10 @@ def init_db():
         if tcols and "shipped_at" not in tcols:
             conn.execute("ALTER TABLE trades ADD COLUMN shipped_at INTEGER")
             conn.execute("ALTER TABLE trades ADD COLUMN arrived_at INTEGER")
+        rcols = {r["name"] for r in
+                 conn.execute("PRAGMA table_info(hub_reports)").fetchall()}
+        if rcols and "ergebnis" not in rcols:
+            conn.execute("ALTER TABLE hub_reports ADD COLUMN ergebnis TEXT")
         # Ist das Gegenüber noch dabei? active | left | disabled | gone
         if tcols and "other_status" not in tcols:
             conn.execute("ALTER TABLE trades ADD COLUMN other_status TEXT "

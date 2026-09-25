@@ -1766,8 +1766,20 @@ tick the admin only sees your reason. There is no back door in the hub.
 **The report stays visible.** The conversation then says "⚑ You reported this
 conversation on …", and the conversation list shows the tag "⚑ reported". As
 soon as a hub admin has dealt with it, it says "✔ Your report from … is done",
-and a notice appears among the messages. Whatever the admin notes about it
-stays with the hub.
+and a notice appears among the messages. Whether you also learn *what* came of
+it (such as "Outcome: warning") is up to the admin; by default only "dealt
+with".
+
+**Questions:** If the hub admin wants to know more, the question appears below
+the report in the conversation, with a notice. You can reply or add something
+in the field below. Replying to a report that was already done reopens it for
+the admin. The reported person notices none of this.
+
+**If you were reported:** the hub admin can issue a *notice*, a *warning* or a
+*block* – temporary or until further notice. Notice and warning appear at the
+top of the Trade tab with the admin's text until you press "Got it". With a
+block, the block notice shows the reason and the end date; a temporary block
+lifts itself afterwards. You won't learn who reported you.
 
 ### 12.8 When access has been blocked
 

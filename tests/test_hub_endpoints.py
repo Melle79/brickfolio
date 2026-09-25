@@ -821,11 +821,13 @@ def test_report_is_remembered_and_shown(client, monkeypatch):
 
 
 def test_handled_report_comes_back_with_a_notice(client, monkeypatch):
+    monkeypatch.setitem(community._meldung_zuletzt, "ts", 0.0)
     _trade()
     with core.db() as conn:
         conn.execute("INSERT INTO hub_reports (hub_id, trade_id, against, "
                      "other_name, reason, created_at) VALUES "
-                     "(7, 'trd_a', 'mem_x', 'X', 'unfreundlich', 1)")
+                     "(7, 'trd_a', 'mem_x', 'X', 'unfreundlich', ?)",
+                     (int(time.time()),))
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "config", lambda: {
         "url": "h", "token": "t", "member_id": "mem_me",
@@ -856,3 +858,114 @@ def test_no_report_lookup_without_open_reports(client, monkeypatch):
         raise AssertionError("darf nicht gefragt werden")
     monkeypatch.setattr(hub, "own_reports", nie)
     assert client.post("/api/hub/trades/sync").status_code == 200
+
+
+# ------------------------------------------------- Rückfragen zu Meldungen
+
+def _meldung_da(monkeypatch):
+    monkeypatch.setitem(community._meldung_zuletzt, "ts", 0.0)
+    _trade()
+    with core.db() as conn:
+        conn.execute("INSERT INTO hub_reports (hub_id, trade_id, against, "
+                     "other_name, reason, created_at) VALUES "
+                     "(7, 'trd_a', 'mem_x', 'X', 'unfreundlich', ?)",
+                     (int(time.time()),))
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "trades", lambda: [])
+
+
+def test_admin_question_arrives_in_the_conversation(client, monkeypatch):
+    _meldung_da(monkeypatch)
+    monkeypatch.setattr(hub, "own_reports", lambda: [{
+        "id": 7, "status": "open", "handled_at": None, "messages": [
+            {"id": 1, "from_admin": True, "text": "Was genau ist passiert?",
+             "created_at": 100}]}])
+    client.post("/api/hub/trades/sync")
+    r = client.get("/api/hub/trades/trd_a").json()["report"]
+    assert r["messages"] == [{"from_admin": True,
+                              "text": "Was genau ist passiert?",
+                              "created_at": 100}]
+    assert client.get("/api/hub/trades").json()["trades"][0]["report_frage"] == 1
+    with core.db() as conn:
+        n = conn.execute("SELECT COUNT(*) FROM notifications WHERE "
+                         "title LIKE '%Rückfrage%'").fetchone()[0]
+    assert n == 1
+
+
+def test_reply_goes_to_the_hub_and_reopens(client, monkeypatch):
+    _meldung_da(monkeypatch)
+    with core.db() as conn:
+        conn.execute("UPDATE hub_reports SET status = 'handled', handled_at = 5")
+    gesendet = []
+    monkeypatch.setattr(hub, "report_reply", lambda rid, text:
+                        gesendet.append((rid, text)) or {"ok": True, "id": 2})
+    r = client.post("/api/hub/trades/trd_a/report/reply",
+                    json={"text": "Er hat mich beleidigt."})
+    assert r.status_code == 200, r.text
+    assert gesendet == [(7, "Er hat mich beleidigt.")]
+    rep = r.json()["report"]
+    assert rep["status"] == "open"
+    assert rep["messages"][-1]["from_admin"] is False
+    assert client.get("/api/hub/trades").json()["trades"][0]["report_frage"] == 0
+
+
+def test_reply_without_report_is_404(client, monkeypatch):
+    _trade()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    r = client.post("/api/hub/trades/trd_a/report/reply", json={"text": "x"})
+    assert r.status_code == 404
+
+
+# ------------------------------------------------- Maßnahmen (2.90.11)
+
+def test_notice_is_shown_once_and_can_be_acknowledged(client, monkeypatch):
+    core.set_setting("hub_token", "t")
+    core.set_setting("hub_hinweise", '[{"id": 3, "kind": "verwarnung", '
+                     '"text": "Bitte freundlich bleiben.", "until": null, '
+                     '"created_at": 1}]')
+    s = client.get("/api/hub").json()
+    assert s["hinweise"][0]["kind"] == "verwarnung"
+    client.get("/api/hub")
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM notifications WHERE "
+                            "kind = 'hub_hinweis'").fetchone()[0] == 1
+    gerufen = []
+    monkeypatch.setattr(hub, "ack_notice", lambda i: gerufen.append(i) or {"ok": True})
+    r = client.post("/api/hub/hinweise/3/gelesen").json()
+    assert gerufen == [3] and r["hinweise"] == []
+    assert client.get("/api/hub").json()["hinweise"] == []
+
+
+def test_block_reason_is_kept_for_the_notice(client, monkeypatch):
+    core.set_setting("hub_token", "t")
+
+    class Antwort:
+        ok = False
+        status_code = 403
+        text = ""
+
+        def json(self):
+            return {"error": "gesperrt", "blocked": True,
+                    "grund": "Wiederholt beleidigend.", "bis": 999}
+    monkeypatch.setattr(hub.requests, "request", lambda *a, **k: Antwort())
+    try:
+        hub.trades()
+    except hub.HubError:
+        pass
+    s = client.get("/api/hub").json()
+    assert s["blocked"] is True
+    assert s["block"] == {"grund": "Wiederholt beleidigend.", "bis": 999}
+
+
+def test_report_outcome_is_shown_when_released(client, monkeypatch):
+    _meldung_da(monkeypatch)
+    monkeypatch.setattr(hub, "own_reports", lambda: [{
+        "id": 7, "status": "handled", "handled_at": 50,
+        "massnahme": "verwarnung", "messages": []}])
+    client.post("/api/hub/trades/sync")
+    r = client.get("/api/hub/trades/trd_a").json()["report"]
+    assert r["status"] == "handled" and r["ergebnis"] == "verwarnung"

@@ -83,6 +83,7 @@ def disconnect():
               "hub_is_admin", "hub_last_publish", "hub_blocked",
               "hub_key_sent", "hub_wuensche_zeigen", "hub_wuensche_stand",
               "hub_sammlung_zeigen", "hub_pause", "hub_pause_gemeldet",
+              "hub_block_info", "hub_hinweise", "hub_hinweise_gemeldet",
               "hub_inaktiv_tage"):
         core.set_setting(k, "")
 
@@ -141,9 +142,13 @@ def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):
             # die App es sagen kann – der Token bleibt liegen, denn nach einer
             # Freischaltung geht damit alles weiter.
             core.set_setting("hub_blocked", "1")
+            # Grund und Ende der Sperre (ab Hub 1.20.0) für den Sperrhinweis.
+            core.set_setting("hub_block_info", json.dumps(
+                {"grund": data.get("grund"), "bis": data.get("bis")}))
         raise HubError(resp.status_code, msg or f"Hub-Fehler {resp.status_code}")
     if token and core.get_setting("hub_blocked"):
         core.set_setting("hub_blocked", "")     # Freischaltung bemerkt
+        core.set_setting("hub_block_info", "")
     return data
 
 
@@ -199,7 +204,29 @@ def refresh():
                      if me.get("pause") else "")
     if me.get("inaktiv_tage") is not None:
         core.set_setting("hub_inaktiv_tage", str(me["inaktiv_tage"]))
+    # Hinweise und Verwarnungen des Admins, bis sie bestätigt sind.
+    if "notices" in me:
+        core.set_setting("hub_hinweise", json.dumps(me.get("notices") or []))
     return me
+
+
+def hinweise() -> list:
+    try:
+        return json.loads(core.get_setting("hub_hinweise") or "[]")
+    except ValueError:
+        return []
+
+
+def block_info() -> dict | None:
+    try:
+        raw = core.get_setting("hub_block_info")
+        return json.loads(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def ack_notice(notice_id: int) -> dict:
+    return _authed("POST", f"/v1/notices/{notice_id}/ack")
 
 
 def leave() -> dict:
@@ -343,6 +370,12 @@ def report(against: str, reason: str, trade_id: str = "",
 def own_reports() -> list:
     """Die eigenen Meldungen samt Stand (ab Hub 1.19.0)."""
     return _authed("GET", "/v1/reports").get("reports", [])
+
+
+def report_reply(report_id: int, text: str) -> dict:
+    """Antwort an den Hub-Admin zu einer eigenen Meldung (ab Hub 1.20.0)."""
+    return _authed("POST", f"/v1/reports/{report_id}/messages",
+                   body={"text": text})
 
 
 def last_publish() -> dict | None:
