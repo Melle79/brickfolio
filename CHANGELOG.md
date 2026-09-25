@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.90.8 – September 2026
+
+### Behoben
+- 🧱 **Kompakte Ansicht nach Thema sortiert zeigte Riesenkacheln.** Auf
+  breiten Bildschirmen standen statt der kleinen Kacheln drei 400 px breite
+  Kästen je Reihe. Schuld war die Spaltenregel der Listenansicht: Sie
+  traf auch die kompakte Ansicht und stand später in der Datei. Jetzt gilt
+  sie nur noch für die Liste, und ein Test hält das fest.
+
 ## 2.90.7 – September 2026
 
 ### Neu

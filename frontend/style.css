@@ -2242,15 +2242,21 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   }
   /* Auch die Listenansicht der Sammlung nutzt die Breite: mehrere Zeilen-
      Karten nebeneinander statt einer pro Reihe (adaptiv 2–3 Spalten). */
-  #collection-list:not(.grid-mode) {
+  #collection-list:not(.grid-mode):not(.kompakt-mode) {
     display: grid; gap: 12px;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     align-items: stretch;
   }
   #collection-list:not(.grid-mode) .list-loading { grid-column: 1 / -1; }
-  /* Gruppiert nach Thema: die Spalten gehören in die Themenkarte */
+  /* Gruppiert nach Thema: die Spalten gehören in die Themenkarte.
+
+     **Nur für die Liste, nicht für die kompakte Ansicht.** Bis 2.90.7 stand
+     hier `:not(.grid-mode)` allein – das traf auch die Kacheln, und weil
+     diese Regel dasselbe Gewicht hat wie die Kompakt-Regel weiter oben,
+     aber später steht, gewann sie: Nach Thema sortiert wurden aus den
+     96-px-Kacheln drei 400-px-Kästen je Reihe (gemeldet am 25.09.2026). */
   #collection-list.by-theme:not(.grid-mode) { display: block; }
-  #collection-list.by-theme:not(.grid-mode) .theme-body {
+  #collection-list.by-theme:not(.grid-mode):not(.kompakt-mode) .theme-body {
     display: grid; gap: 12px;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     align-items: stretch;
