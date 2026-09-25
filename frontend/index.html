@@ -513,8 +513,11 @@
         </div>
         <div id="duplicates-box" hidden></div>
         <div id="missing-figs-box" hidden></div>
-        <div class="detail-row" style="margin-top:8px">
-          <input id="new-list-name" placeholder="Neue Einkaufsliste, z. B. Flohmarkt 12.7." maxlength="120">
+        <div class="detail-row liste-anlegen">
+          <!-- Kurzer Platzhalter: der lange („Neue Einkaufsliste, z. B. Flohmarkt 12.7.")
+               brauchte auf dem Telefon 292 px, neben „Anlegen" bleiben 210. -->
+          <input id="new-list-name" placeholder="Neue Liste, z. B. Flohmarkt"
+            aria-label="Neue Einkaufsliste" maxlength="120">
           <button id="btn-new-list" class="mini-btn add">Anlegen</button>
         </div>
       </div>

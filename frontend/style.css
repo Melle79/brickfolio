@@ -660,6 +660,12 @@ code {
   padding-left: 10px;
   transition: box-shadow .2s, padding-left .2s;
 }
+/* Neue Einkaufsliste: Feld und Knopf in einer Zeile. Das Feld nimmt den
+   Rest, der Knopf nur seine Breite – vorher stand „Anlegen" als eigener
+   Balken über die volle Breite darunter. */
+.liste-anlegen { flex-wrap: nowrap; align-items: stretch; margin-top: 8px; }
+.liste-anlegen input { flex: 1 1 auto; min-width: 0; width: auto; margin: 0; }
+.liste-anlegen .mini-btn { flex: none; padding: 0 18px; }
 .liste-angekommen { margin-top: 8px; }
 .liste-angekommen .badge { font-size: 13px; padding: 5px 10px; }
 

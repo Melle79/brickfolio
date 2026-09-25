@@ -45,13 +45,17 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
-## 2.88.45 – September 2026
+## 2.88.46 – September 2026
 
 ### Geändert
 - 🛒 **„Verkaufsliste (Doppelte)" und „Fehlende Set-Figuren" stehen über dem
   Anlegen.** Das Feld für eine neue Einkaufsliste steht jetzt direkt über den
   Listen, zu denen sie gehört; die beiden Auswertungen rücken nach oben, und
   ihre Kästen klappen gleich unter den Knöpfen auf.
+- **Feld und „Anlegen" in einer Zeile.** Vorher stand „Anlegen" als eigener
+  grüner Balken über die volle Breite darunter. Der Platzhalter heißt dafür
+  kürzer „Neue Liste, z. B. Flohmarkt" – der alte hätte auf dem Telefon
+  292 px gebraucht, neben dem Knopf bleiben 210.
 
 ## 2.88.44 – September 2026
 
