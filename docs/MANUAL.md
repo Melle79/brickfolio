@@ -1620,7 +1620,7 @@ empty doesn't appear. Two switches start **off**:
 - **Show collection size** – as a rounded number, e.g. "≈ 950 minifigures".
 
 **Inviting others** is allowed for every connected member: "✉️ Invite a
-friend" in the Trade tab. Everyone has a quota of **three** invitations and can
+friend" at the top of the Trade tab, next to "My profile". Everyone has a quota of **three** invitations and can
 request more from the hub admin. A code works once.
 
 ### 12.4 What I offer

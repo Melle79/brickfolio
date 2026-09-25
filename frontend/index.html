@@ -591,12 +591,17 @@
       <span class="avatar klein" id="hub-ich-avatar" aria-hidden="true"></span>
       <span class="sub" id="hub-view-who"></span>
       <button type="button" class="link-btn" id="hub-mein-profil">Mein Profil</button>
+      <!-- Stand bis 2.90.8 im Reiter „Angebote“ neben „Aktualisieren“ – seit
+           „Entdecken“ der Startreiter ist, fand ihn dort niemand mehr. -->
+      <button type="button" class="link-btn" id="hub-make-invite">✉️ Freund einladen</button>
     </div>
+    <p class="search-hint" id="hub-quota" hidden></p>
+    <p class="search-hint" id="hub-invite-out" hidden></p>
     <p class="warn-line" id="hub-blocked" hidden>🚫 <b>Zugang gesperrt.</b>
       Ein Hub-Admin hat diese Instanz aus dem Netzwerk genommen. Angebote und
       neue Nachrichten sind bis auf Weiteres nicht möglich; bisherige
       Unterhaltungen bleiben hier lesbar. Nach einer Freischaltung geht es
-      ohne neues Verbinden weiter – trenne die Verbindung also nicht.</p>
+      ohne neues Verbinden weiter – melde dich also nicht ab.</p>
     <p class="warn-line info" id="hub-pause" hidden></p>
 
     <div class="tab-row" id="hub-subtabs">
@@ -624,10 +629,7 @@
       </div>
       <div class="detail-row btn-grid">
         <button class="mini-btn" id="hub-refresh-offers">🔄 Aktualisieren</button>
-        <button class="mini-btn" id="hub-make-invite">✉️ Freund einladen</button>
       </div>
-      <p class="search-hint" id="hub-quota" hidden></p>
-      <p class="search-hint" id="hub-invite-out" hidden></p>
       <div id="hub-offers" class="results"></div>
     </section>
 

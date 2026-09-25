@@ -2206,8 +2206,8 @@ nicht. Zwei Schalter stehen anfangs auf **aus**:
   ebenso.
 - **Sammlungsgröße zeigen** – als gerundete Zahl, etwa „≈ 950 Figuren".
 
-**Selbst einladen** darf jedes verbundene Mitglied: im Tausch-Tab
-„✉️ Freund einladen". Jeder hat ein Kontingent von **drei** Einladungen und
+**Selbst einladen** darf jedes verbundene Mitglied: im Tausch-Tab oben
+neben „Mein Profil" über „✉️ Freund einladen". Jeder hat ein Kontingent von **drei** Einladungen und
 kann beim Hub-Admin mehr anfragen. Der Code gilt einmal.
 
 ### 12.4 Was ich anbiete

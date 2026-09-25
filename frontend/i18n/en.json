@@ -1268,7 +1268,7 @@
  "🙋 Für dich": "🙋 For you",
  "🚀 Erste Schritte": "🚀 First steps",
  "🚪 Das Gegenüber hat das Tausch-Netzwerk verlassen – antworten geht nicht mehr. Der Verlauf bleibt hier lesbar.": "🚪 The other side has left the trading network – replying is no longer possible. The history stays readable here.",
- "🚫 <b>Zugang gesperrt.</b> Ein Hub-Admin hat diese Instanz aus dem Netzwerk genommen. Angebote und neue Nachrichten sind bis auf Weiteres nicht möglich; bisherige Unterhaltungen bleiben hier lesbar. Nach einer Freischaltung geht es ohne neues Verbinden weiter – trenne die Verbindung also nicht.": "🚫 <b>Access blocked.</b> A hub admin has taken this instance out of the network. Offers and new messages are not possible for now; existing conversations stay readable here. After being unblocked everything continues without reconnecting – so do not disconnect.",
+ "🚫 <b>Zugang gesperrt.</b> Ein Hub-Admin hat diese Instanz aus dem Netzwerk genommen. Angebote und neue Nachrichten sind bis auf Weiteres nicht möglich; bisherige Unterhaltungen bleiben hier lesbar. Nach einer Freischaltung geht es ohne neues Verbinden weiter – melde dich also nicht ab.": "🚫 <b>Access blocked.</b> A hub admin has taken this instance out of the network. Offers and new messages are not possible for now; existing conversations stay readable here. After being unblocked everything continues without reconnecting – so don't leave the network.",
  "🚫 Das Gegenüber ist gerade gesperrt. Nachrichten kommen erst nach einer Freischaltung an.": "🚫 The other side is currently blocked. Messages will only arrive once they're unblocked.",
  "🛒 Einkaufen": "🛒 Shopping",
  "🛠 Wartung": "🛠 Maintenance",

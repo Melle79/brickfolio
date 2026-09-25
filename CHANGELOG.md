@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.90.9 – September 2026
+
+### Behoben
+- ✉️ **„Freund einladen“ war kaum zu finden.** Der Knopf stand im Reiter
+  „Angebote“ neben „Aktualisieren“. Seit „Entdecken“ der Startreiter ist,
+  sah man ihn gar nicht mehr. Jetzt steht er oben im Tausch-Tab neben „Mein
+  Profil“, samt Einladungszähler, und ist von jedem Reiter aus erreichbar.
+
 ## 2.90.8 – September 2026
 
 ### Behoben
