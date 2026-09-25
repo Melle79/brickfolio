@@ -10,6 +10,7 @@ import pytest
 import core
 import hub
 import main
+import community
 from fastapi.testclient import TestClient
 
 
@@ -518,9 +519,9 @@ def test_erster_schluessel_wird_gemerkt(client, monkeypatch):
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
                         lambda mid: {"public_key": key, "display_name": "Bruno"})
-    assert main._fremder_schluessel("mem_1") == key
+    assert community._fremder_schluessel("mem_1") == key
     # Zweiter Aufruf mit demselben Schlüssel: unauffällig
-    assert main._fremder_schluessel("mem_1") == key
+    assert community._fremder_schluessel("mem_1") == key
 
 
 def test_getauschter_schluessel_stoppt_das_verschicken(client, monkeypatch):
@@ -530,11 +531,11 @@ def test_getauschter_schluessel_stoppt_das_verschicken(client, monkeypatch):
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
                         lambda mid: {"public_key": erst, "display_name": "Bruno"})
-    main._fremder_schluessel("mem_2")
+    community._fremder_schluessel("mem_2")
     monkeypatch.setattr(hub, "member_key",
                         lambda mid: {"public_key": dann, "display_name": "Bruno"})
     with pytest.raises(Exception) as e:
-        main._fremder_schluessel("mem_2")
+        community._fremder_schluessel("mem_2")
     assert "geändert" in str(e.value.detail)
 
 
@@ -543,12 +544,12 @@ def test_nach_bestaetigung_geht_es_weiter(client, monkeypatch):
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
                         lambda mid: {"public_key": erst, "display_name": "Bruno"})
-    main._fremder_schluessel("mem_3")
+    community._fremder_schluessel("mem_3")
     assert client.post("/api/hub/key/accept",
                        json={"member_id": "mem_3"}).status_code == 200
     monkeypatch.setattr(hub, "member_key",
                         lambda mid: {"public_key": dann, "display_name": "Bruno"})
-    assert main._fremder_schluessel("mem_3") == dann
+    assert community._fremder_schluessel("mem_3") == dann
 
 
 def test_sicherheitsnummer_ist_kurz_und_stabil(client, monkeypatch):
@@ -556,7 +557,7 @@ def test_sicherheitsnummer_ist_kurz_und_stabil(client, monkeypatch):
     monkeypatch.setattr(hub, "enabled", lambda: True)
     monkeypatch.setattr(hub, "member_key",
                         lambda mid: {"public_key": key, "display_name": "Bruno"})
-    main._fremder_schluessel("mem_4")
+    community._fremder_schluessel("mem_4")
     d = client.get("/api/hub/key/mem_4").json()
     assert d["known"] is True
     assert d["theirs"] == crypto_box.fingerprint(key)

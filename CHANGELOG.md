@@ -45,6 +45,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.52 – September 2026
+
+### Intern
+- 🤝 **Das Tausch-Netzwerk hat eigene Dateien.** Die 26 Endpunkte standen
+  mitten in `main.py`, der Tausch-Tab mitten in `app.js`. Jetzt liegen sie in
+  `backend/community.py` (als eigener Router) und `frontend/community.js`.
+  `main.py` ist damit gut 700 Zeilen kürzer, `app.js` gut 800. Am Verhalten
+  ändert sich nichts – die angemeldeten Routen sind vorher wie nachher
+  dieselben 171. Grundlage für den Ausbau zur Community (Profile,
+  Entdecken).
+- Beitreten geht weiterhin **nur mit Einladungscode**, und ohne Beitritt
+  bleibt der Tausch-Tab verborgen; ein Test hält beides fest.
+
 ## 2.88.51 – September 2026
 
 ### Geändert

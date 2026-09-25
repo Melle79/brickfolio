@@ -1,9 +1,10 @@
 /* Brickfolio Service Worker – App-Shell offlinefähig, API immer live */
-const CACHE = "brickfolio-v10";
+const CACHE = "brickfolio-v11";
 const SHELL = [
   "/",
   "/static/style.css",
   "/static/fonts.css",
+  "/static/community.js",
   "/static/app.js",
   "/static/jedipedia-titel.js",
   "/static/theme-boot.js",

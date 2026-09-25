@@ -28,14 +28,17 @@ def seitentext():
     """Alles, worin ein deutscher Satz stehen kann.
 
     Zwei Quellen: das Dokument (fester Aufbau, samt Attributen wie
-    placeholder) und app.js – dort stecken die Texte der Karten und
+    placeholder) und die Skripte – dort stecken die Texte der Karten und
     Meldungen, die erst zur Laufzeit entstehen.
     """
     roh = INDEX.read_text()
     roh = re.sub(r"<script\b.*?</script>", " ", roh, flags=re.S)
     attribute = re.findall(
         r'(?:placeholder|title|aria-label|alt)="([^"]*)"', roh)
-    js = (FRONTEND / "app.js").read_text()
+    # Alle Skripte der Oberfläche, nicht nur app.js: Das Tausch-Netzwerk
+    # steht seit 2.88.52 in community.js.
+    js = "\n".join(p.read_text() for p in sorted(FRONTEND.glob("*.js"))
+                    if p.name != "sw.js")
     # Über mehrere Zeilen zusammengesetzte Zeichenketten wieder zusammenfügen
     # ("Teil eins " + "Teil zwei"), sonst fände man den fertigen Satz nie.
     js = re.sub(r'["`]\s*\+\s*["`]', "", js)
