@@ -2527,7 +2527,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    und doppelt stand es sonst untereinander. */
 #wiz-tfa-platz #tfa-on,
 #wiz-tfa-platz #tfa-info,
-#wiz-tfa-platz #tfa-off > .search-hint:first-child { display: none; }
+#wiz-tfa-platz #tfa-off-hint { display: none; }
 .tfa-qr svg { width: 200px; height: 200px; background: #fff; border-radius: 8px; padding: 6px; }
 .tfa-secret {
   font-family: ui-monospace, Menlo, monospace; font-size: 15px;

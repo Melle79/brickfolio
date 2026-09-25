@@ -2811,6 +2811,11 @@ function zeigeExtern(e, aktiv) {
     el.textContent = tr("🏠 In den letzten 30 Tagen nur aus dem Heimnetz genutzt.");
   }
   el.hidden = false;
+  // Der feste Satz „Empfehlenswert, sobald die App von außen erreichbar
+  // ist" widerspricht sonst direkt darunter einem „nötig ist sie nicht".
+  // Jetzt, wo die App es weiß, sagt die Zeile darüber das Passende.
+  const fest = $("tfa-off-hint");
+  if (fest) fest.hidden = true;
 }
 
 function zeigeTfa(zustand, daten) {

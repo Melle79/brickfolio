@@ -45,6 +45,13 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.51 – September 2026
+
+### Geändert
+- Im Zwei-Faktor-Abschnitt fällt der feste Satz „Empfehlenswert, sobald die
+  App von außen erreichbar ist" weg, sobald die App weiß, wie sie genutzt
+  wird. Direkt unter „nötig ist sie nicht" widersprach er sonst.
+
 ## 2.88.50 – September 2026
 
 ### Neu
