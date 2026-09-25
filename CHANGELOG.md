@@ -45,6 +45,16 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.49 – September 2026
+
+### Behoben
+- 🔐 **Rettungscodes ließen sich auf dem Handy nicht eintippen.** Das
+  Code-Feld beim Anmelden holt den Ziffernblock – die Rettungscodes haben
+  aber Buchstaben (a–f). Unter dem Feld steht jetzt **„Rettungscode
+  eingeben"**, das die volle Tastatur holt. Außerdem gilt ein Rettungscode
+  auch **ohne Bindestriche**; vorher hieß „3f9a0b12c7de" „Code stimmt
+  nicht".
+
 ## 2.88.48 – September 2026
 
 ### Neu

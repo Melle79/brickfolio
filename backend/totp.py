@@ -85,3 +85,19 @@ def rettungscode_hash(code: str) -> str:
     """Auch diese Codes werden nicht im Klartext abgelegt."""
     norm = code.strip().lower().replace(" ", "")
     return hashlib.sha256(norm.encode()).hexdigest()
+
+
+def rettungscode_hashes(eingabe: str) -> list:
+    """Die Prüfsummen, unter denen eine Eingabe als Rettungscode zählt.
+
+    Abgelegt sind die Codes **mit** Bindestrichen („3f9a-0b12-c7de"). Wer sie
+    ohne tippt – auf dem Handy naheliegend –, bekam „Code stimmt nicht".
+    Zwölf Hexzeichen ohne Striche werden deshalb auch in der abgelegten
+    Schreibweise geprüft.
+    """
+    norm = eingabe.strip().lower().replace(" ", "")
+    kandidaten = [norm]
+    blank = norm.replace("-", "")
+    if len(blank) == 12 and all(z in "0123456789abcdef" for z in blank):
+        kandidaten.append("-".join(blank[i:i + 4] for i in (0, 4, 8)))
+    return [rettungscode_hash(k) for k in dict.fromkeys(kandidaten)]

@@ -2518,6 +2518,10 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .profile-trenner { border: 0; border-top: 2px dashed var(--line); margin: 18px 0 12px; }
 .profile-titel { margin: 0 0 4px; font-size: 16px; }
 .tfa-qr { display: flex; justify-content: center; margin: 10px 0; }
+/* Ein Knopf, der wie ein Verweis aussieht – für Nebenwege im Satz. */
+.link-btn { background: none; border: 0; padding: 0; margin: 0 0 0 4px;
+  font: inherit; font-weight: 800; color: var(--blue);
+  text-decoration: underline; cursor: pointer; }
 /* Im Assistenten gibt es nichts auszuschalten – der Teil bleibt weg. Die
    Erklärung und „Zurzeit aus." des Profils auch: Der Schritt erklärt selbst,
    und doppelt stand es sonst untereinander. */

@@ -810,7 +810,10 @@ wird beim Anmelden verlangt, nicht bei jedem Öffnen der App.
 
 **Anmelden** läuft danach in zwei Schritten: erst Passwort, dann Code. Wer
 das Telefon nicht zur Hand hat, gibt statt des Codes einen **Rettungscode**
-ein – jeder gilt genau einmal, die App sagt danach, wie viele übrig sind.
+ein – **in dasselbe Feld**, nicht in die Authenticator-App. Auf dem Handy
+erst **„Rettungscode eingeben"** antippen: Das Feld zeigt sonst nur Ziffern,
+die Codes haben aber Buchstaben. Die Bindestriche darf man weglassen. Jeder
+gilt genau einmal, die App sagt danach, wie viele übrig sind.
 
 **Ausschalten** verlangt Passwort *und* einen gültigen Code.
 

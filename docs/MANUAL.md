@@ -521,8 +521,10 @@ code is asked for when signing in, not every time the app opens.
 
 **Signing in** then happens in two steps: first the password, then the code.
 If you do not have your phone at hand, enter a **recovery code** instead of
-the six digits – each works exactly once, and the app tells you how many are
-left.
+the six digits – **in the same field**, not in the authenticator app. On a
+phone, tap **"Enter a recovery code"** first: otherwise the field only offers
+digits, and the codes contain letters. The dashes may be left out. Each works
+exactly once, and the app tells you how many are left.
 
 **Turning it off** requires the password *and* a valid code.
 

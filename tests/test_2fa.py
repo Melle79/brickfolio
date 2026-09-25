@@ -251,3 +251,28 @@ def test_einrichtungsassistent_bietet_zwei_faktor_an():
     # Das Passwort vom Anlegen wird beim Ende des Assistenten vergessen.
     ende = js[js.index("function endWizard"):js.index("function endWizard") + 300]
     assert 'wizPasswort = ""' in ende
+
+
+def test_rettungscode_gilt_auch_ohne_bindestriche(client):
+    """Auf dem Handy tippt man „3f9a0b12c7de" – das galt als falsch."""
+    _, codes = einrichten(client)
+    del client.headers["Authorization"]
+    ohne = codes[1].replace("-", "").upper()
+    ch = anmelden(client).json()["challenge"]
+    r = client.post("/api/login/2fa", json={"challenge": ch, "code": ohne})
+    assert r.status_code == 200 and r.json()["recovery_used"] is True
+    # verbraucht ist er in jeder Schreibweise
+    ch = anmelden(client).json()["challenge"]
+    assert client.post("/api/login/2fa",
+                       json={"challenge": ch, "code": codes[1]}
+                       ).status_code == 401
+
+
+def test_code_feld_holt_fuer_rettungscodes_die_volle_tastatur():
+    import pathlib
+    wurzel = pathlib.Path(__file__).resolve().parent.parent / "frontend"
+    html = (wurzel / "index.html").read_text(encoding="utf-8")
+    js = (wurzel / "app.js").read_text(encoding="utf-8")
+    assert 'id="btn-totp-rettung"' in html
+    teil = js[js.index("function totpFeldAls"):js.index("function totpFeldAls") + 500]
+    assert 'rettung ? "text" : "numeric"' in teil

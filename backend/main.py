@@ -617,8 +617,9 @@ def login_2fa(body: TotpLoginBody, request: Request):
 
     # Kein gültiger Einmalcode – dann vielleicht ein Rettungscode.
     rest = json.loads(row["totp_recovery"] or "[]")
-    gehasht = totp.rettungscode_hash(body.code)
-    if gehasht in rest:
+    gehasht = next((h for h in totp.rettungscode_hashes(body.code)
+                    if h in rest), None)
+    if gehasht:
         rest.remove(gehasht)                 # gilt genau einmal
         with core.db() as conn:
             conn.execute("UPDATE users SET totp_recovery = ? WHERE id = ?",

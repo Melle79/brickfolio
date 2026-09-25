@@ -101,7 +101,10 @@
            maxlength="40" placeholder="123456">
     <button id="btn-totp" class="btn btn-primary">Bestätigen</button>
     <p class="search-hint">Telefon nicht zur Hand? Hier geht auch einer deiner
-      <b>Rettungscodes</b> – jeder gilt einmal.</p>
+      <b>Rettungscodes</b> – jeder gilt einmal.
+      <!-- Das Feld zeigt auf dem Handy nur Ziffern; Rettungscodes haben aber
+           Buchstaben (a–f). Der Umschalter holt die volle Tastatur. -->
+      <button type="button" id="btn-totp-rettung" class="link-btn">Rettungscode eingeben</button></p>
     <button id="btn-totp-cancel" class="btn btn-outline">Abbrechen</button>
     <p id="totp-error" class="error" hidden></p>
   </div>

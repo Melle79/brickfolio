@@ -2238,6 +2238,18 @@ function standTaktStarten() {
   standTimer = setInterval(standPruefen, STAND_TAKT);
 }
 
+/* Das Code-Feld beim Anmelden: sechs Ziffern aus der Authenticator-App –
+   oder ein Rettungscode, der Buchstaben hat und die volle Tastatur braucht. */
+function totpFeldAls(rettung) {
+  const f = $("totp-code");
+  f.inputMode = rettung ? "text" : "numeric";
+  f.autocomplete = rettung ? "off" : "one-time-code";
+  f.autocapitalize = "none";
+  f.placeholder = rettung ? "xxxx-xxxx-xxxx" : "123456";
+  $("btn-totp-rettung").hidden = rettung;
+  if (rettung) { f.blur(); f.focus(); }   // damit das Handy die Tastatur tauscht
+}
+
 /* Escape schließt das oberste Tausch-Fenster. */
 document.addEventListener("keydown", (ev) => {
   if (ev.key !== "Escape") return;
@@ -2708,6 +2720,7 @@ async function doLogin() {
       $("login-box").hidden = true;
       $("totp-box").hidden = false;
       $("totp-code").value = "";
+      totpFeldAls(false);
       $("totp-code").focus();
       return;
     }
@@ -12363,6 +12376,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("totp-code").addEventListener("keydown", (ev) => {
     if (ev.key === "Enter") { ev.preventDefault(); doTotpLogin(); }
   });
+  // Rettungscodes haben Buchstaben; der Ziffernblock des Handys kennt keine.
+  $("btn-totp-rettung").addEventListener("click", () => totpFeldAls(true));
   $("topbar-unread").addEventListener("click", () => {
     showTab("hub");
     showHubTab("trades");
