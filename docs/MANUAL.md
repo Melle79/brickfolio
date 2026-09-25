@@ -206,10 +206,15 @@ Under **More → API keys** (only visible to admins):
    *Token Secret* – into the four fields in the app and save.
 4. Below that is **Operator's contact address**. BrickLink's terms of use
    require a visible contact address in the application. **Not for
-   BrickLink** – they know you from your registration – but so that **third
-   parties using your instance** can reach you. The field is therefore not
-   transmitted anywhere; it is only displayed. They mean **your**
-   address: you registered the access above yourself, which makes you, not
+   BrickLink** – they know you from your registration – but so that
+   **strangers using your instance** can reach you. The field is therefore
+   not transmitted anywhere; it is only displayed.
+
+   **If the instance runs only for you and your family, leave it empty.**
+   Anyone who can ask at the kitchen table needs no email address on a page.
+   The field only starts to make sense once you give an account to someone
+   outside the household, or make the instance publicly reachable. They then
+   mean **your** address: you registered the access above yourself, which makes you, not
    the project, the operator of this instance as far as BrickLink is
    concerned. The address appears under **More → Legal**, together with the
    notice BrickLink prescribes verbatim. Without BrickLink credentials the

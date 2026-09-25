@@ -215,9 +215,15 @@ Unter **Mehr → API-Schlüssel** (nur für Admins sichtbar):
 4. Darunter steht **Kontaktadresse des Betreibers**. BrickLinks
    Nutzungsbedingungen verlangen eine sichtbare Kontaktadresse in der
    Anwendung. **Nicht für BrickLink** – die kennen dich aus der
-   Registrierung –, sondern damit **Dritte, die deine Instanz benutzen**,
+   Registrierung –, sondern damit **Fremde, die deine Instanz benutzen**,
    dich erreichen können. Das Feld wird deshalb auch nirgendwohin
-   übertragen, es wird nur angezeigt. Gemeint ist **deine** Adresse: Den Zugang oben hast du selbst
+   übertragen, es wird nur angezeigt.
+
+   **Läuft die Instanz nur für dich und deine Familie, lass es leer.** Wer
+   am Küchentisch fragen kann, braucht keine E-Mail-Adresse auf einer Seite.
+   Sinn ergibt das Feld erst, wenn du einen Zugang an jemanden außerhalb des
+   Haushalts gibst oder die Instanz öffentlich erreichbar machst. Gemeint
+   ist dann **deine** Adresse: Den Zugang oben hast du selbst
    registriert, damit bist du gegenüber BrickLink der Betreiber dieser
    Instanz, nicht das Projekt. Die Adresse erscheint unter
    **Mehr → Rechtliches**, zusammen mit dem Hinweis, den BrickLink im

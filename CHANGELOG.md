@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.89.2 – September 2026
+
+### Behoben
+- 🤫 **Die Mahnung beim Betreiber-Feld ist wieder weg.** 2.89.0 meldete
+  „BrickLink ist eingerichtet, aber es steht keine Kontaktadresse da" –
+  jeder Instanz, immer. Für die allermeisten ist das Unsinn: Wenn außer
+  der eigenen Familie niemand die Instanz benutzt, gibt es keine Fremden,
+  die jemanden erreichen müssten. Eine Auflage, die im Regelfall ins Leere
+  läuft, gehört nicht als Dauerhinweis in die Einstellungen. Das Feld
+  bleibt, die Mahnung geht.
+- 📝 **Und der Hinweis sagt jetzt, wann man es überhaupt braucht:** bei
+  einem Zugang für jemanden außerhalb des Haushalts oder einer öffentlich
+  erreichbaren Instanz. Sonst: leer lassen.
+
 ## 2.89.1 – September 2026
 
 ### Behoben

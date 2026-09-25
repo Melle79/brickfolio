@@ -7439,18 +7439,7 @@ async function loadApiKeys() {
     // gezeigt: Sie steht ohnehin sichtbar unter »Rechtliches«, und ein
     // maskiertes Feld liesse sich nicht mehr leeren.
     $("k-kontakt").value = state.betreiberKontakt || "";
-    kontaktHinweis();
   } catch (e) { toast(e.message); }
-}
-
-/** Warnt, sobald BrickLink eingerichtet ist, aber niemand erreichbar.
- *
- * BrickLinks Bedingungen verlangen die Adresse nur von dem, der die API
- * auch benutzt - ohne Zugangsdaten ist das Feld schlicht unnoetig. */
-function kontaktHinweis() {
-  const zeile = $("kontakt-fehlt");
-  if (!zeile) return;
-  zeile.hidden = !(state.bricklinkPrices && !(state.betreiberKontakt || "").trim());
 }
 
 /** Traegt den Pflichthinweis und den Betreiber unter »Rechtliches« ein. */
@@ -7476,7 +7465,6 @@ function rechtlichesAktualisieren() {
       }
     }
   }
-  kontaktHinweis();
 }
 
 async function saveApiKeys() {
