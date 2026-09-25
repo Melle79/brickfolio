@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.90.3 – September 2026
+
+### Behoben
+- Eine Nachricht an jemanden, der das Netzwerk verlassen hat, scheiterte
+  mit „502 – Mitglied nicht gefunden“. Jetzt heißt es gleich „Das Gegenüber
+  hat das Tausch-Netzwerk verlassen“. In der Oberfläche war das Eingabefeld
+  dort schon ausgeblendet, es betraf nur den direkten Aufruf.
+
 ## 2.90.2 – September 2026
 
 ### Neu

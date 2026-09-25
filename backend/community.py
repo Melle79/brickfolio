@@ -711,10 +711,16 @@ def hub_send_message(trade_id: str, body: TradeMessageBody,
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
     with core.db() as conn:
-        t = conn.execute("SELECT other_id FROM trades WHERE id = ?",
-                         (trade_id,)).fetchone()
+        t = conn.execute("SELECT other_id, other_status FROM trades "
+                         "WHERE id = ?", (trade_id,)).fetchone()
     if not t:
         raise HTTPException(404, "Vorgang nicht gefunden")
+    # Abgemeldet oder gelöscht: gar nicht erst versuchen. Sonst scheiterte
+    # es schon am Schlüssel des Gegenübers, und heraus kam ein unklarer
+    # „502 – Mitglied nicht gefunden“ statt des eigentlichen Grunds.
+    if t["other_status"] in ("left", "gone"):
+        raise HTTPException(410, "Das Gegenüber hat das Tausch-Netzwerk "
+                                 "verlassen")
     try:
         key = _fremder_schluessel(t["other_id"])
         sent = hub.send_message(trade_id, crypto_box.seal(key, body.text))

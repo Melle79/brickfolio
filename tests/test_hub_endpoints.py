@@ -781,3 +781,18 @@ def test_message_to_someone_who_left_marks_the_trade(client, monkeypatch):
     r = client.post("/api/hub/trades/trd_a/messages", json={"text": "Hallo?"})
     assert r.status_code == 410
     assert client.get("/api/hub/trades").json()["trades"][0]["other_status"] == "left"
+
+
+def test_message_to_known_leaver_is_refused_before_the_key_lookup(client, monkeypatch):
+    """Am 25.09.2026 scheiterte das schon am Schlüssel – mit „502 Mitglied
+    nicht gefunden“ statt des eigentlichen Grunds."""
+    _trade()
+    with core.db() as conn:
+        conn.execute("UPDATE trades SET other_status = 'left'")
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+
+    def nie(m):
+        raise AssertionError("Schlüssel darf gar nicht erst geholt werden")
+    monkeypatch.setattr(community, "_fremder_schluessel", nie)
+    r = client.post("/api/hub/trades/trd_a/messages", json={"text": "Hallo?"})
+    assert r.status_code == 410 and "verlassen" in r.text
