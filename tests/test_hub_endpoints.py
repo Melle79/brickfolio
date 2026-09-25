@@ -796,3 +796,63 @@ def test_message_to_known_leaver_is_refused_before_the_key_lookup(client, monkey
     monkeypatch.setattr(community, "_fremder_schluessel", nie)
     r = client.post("/api/hub/trades/trd_a/messages", json={"text": "Hallo?"})
     assert r.status_code == 410 and "verlassen" in r.text
+
+
+# ------------------------------------------------- eigene Meldungen (2.90.10)
+# Bis 2.90.9 sah der Meldende nach dem Absenden nirgends, dass er gemeldet
+# hatte (gemeldet am 25.09.2026).
+
+def test_report_is_remembered_and_shown(client, monkeypatch):
+    _trade()
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    gesendet = {}
+    monkeypatch.setattr(hub, "report", lambda against, reason, tid, disclosed:
+                        gesendet.update(disclosed=disclosed) or {"ok": True, "id": 7})
+    r = client.post("/api/hub/trades/trd_a/report",
+                    json={"reason": "unfreundlich", "include_history": True})
+    assert r.status_code == 200, r.text
+    assert r.json()["report"]["status"] == "open"
+    d = client.get("/api/hub/trades/trd_a").json()
+    assert d["report"]["status"] == "open" and d["report"]["with_history"] == 1
+    assert client.get("/api/hub/trades").json()["trades"][0]["report_status"] == "open"
+
+
+def test_handled_report_comes_back_with_a_notice(client, monkeypatch):
+    _trade()
+    with core.db() as conn:
+        conn.execute("INSERT INTO hub_reports (hub_id, trade_id, against, "
+                     "other_name, reason, created_at) VALUES "
+                     "(7, 'trd_a', 'mem_x', 'X', 'unfreundlich', 1)")
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "trades", lambda: [])
+    monkeypatch.setattr(hub, "own_reports", lambda: [
+        {"id": 7, "status": "handled", "handled_at": 99}])
+    client.post("/api/hub/trades/sync")
+    client.post("/api/hub/trades/sync")          # zweimal: nur ein Hinweis
+    r = client.get("/api/hub/trades/trd_a").json()["report"]
+    assert r["status"] == "handled" and r["handled_at"] == 99
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM notifications WHERE "
+                            "kind = 'meldung'").fetchone()[0] == 1
+
+
+def test_no_report_lookup_without_open_reports(client, monkeypatch):
+    """Ohne offene Meldung fragt der Abgleich den Hub gar nicht erst."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "config", lambda: {
+        "url": "h", "token": "t", "member_id": "mem_me",
+        "display_name": "Ich", "is_admin": False})
+    monkeypatch.setattr(hub, "put_key", lambda k: {"ok": True})
+    monkeypatch.setattr(hub, "trades", lambda: [])
+
+    def nie():
+        raise AssertionError("darf nicht gefragt werden")
+    monkeypatch.setattr(hub, "own_reports", nie)
+    assert client.post("/api/hub/trades/sync").status_code == 200

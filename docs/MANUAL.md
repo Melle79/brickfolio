@@ -1763,6 +1763,12 @@ tick **"Include the conversation"** is the only way a history ever becomes
 readable: your instance decrypts it and discloses it voluntarily. Without the
 tick the admin only sees your reason. There is no back door in the hub.
 
+**The report stays visible.** The conversation then says "⚑ You reported this
+conversation on …", and the conversation list shows the tag "⚑ reported". As
+soon as a hub admin has dealt with it, it says "✔ Your report from … is done",
+and a notice appears among the messages. Whatever the admin notes about it
+stays with the hub.
+
 ### 12.8 When access has been blocked
 
 A hub admin can block access. The Trade tab then shows a clear notice. What it

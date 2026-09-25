@@ -340,6 +340,11 @@ def report(against: str, reason: str, trade_id: str = "",
     return _authed("POST", "/v1/reports", body=body)
 
 
+def own_reports() -> list:
+    """Die eigenen Meldungen samt Stand (ab Hub 1.19.0)."""
+    return _authed("GET", "/v1/reports").get("reports", [])
+
+
 def last_publish() -> dict | None:
     raw = core.get_setting("hub_last_publish")
     if not raw:

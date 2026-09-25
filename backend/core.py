@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.90.9"
+APP_VERSION = "2.90.10"
 
 
 def hash_password(password: str) -> str:
@@ -374,6 +374,20 @@ def init_db():
                 created_at  INTEGER NOT NULL,
                 updated_at  INTEGER NOT NULL,
                 read_at     INTEGER
+            );
+            -- Eigene Meldungen – damit der Meldende sieht, dass und wann er
+            -- gemeldet hat, und wann der Hub-Admin es erledigt hat.
+            CREATE TABLE IF NOT EXISTS hub_reports (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                hub_id      INTEGER,               -- Nummer beim Hub
+                trade_id    TEXT,
+                against     TEXT NOT NULL,         -- Member-ID des Gemeldeten
+                other_name  TEXT NOT NULL DEFAULT '',
+                reason      TEXT NOT NULL,
+                with_history INTEGER NOT NULL DEFAULT 0,
+                status      TEXT NOT NULL DEFAULT 'open',   -- open | handled
+                created_at  INTEGER NOT NULL,
+                handled_at  INTEGER
             );
             CREATE TABLE IF NOT EXISTS trade_messages (
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,

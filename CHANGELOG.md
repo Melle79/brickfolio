@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.90.10 – September 2026
+
+### Neu
+- ⚑ **Die eigene Meldung bleibt sichtbar.** Bisher kam nach dem Melden nur
+  eine kurze Bestätigung, danach fand man die Meldung nirgends wieder. Jetzt
+  steht im Gespräch, wann man gemeldet hat und ob mit Verlauf, in der
+  Gesprächsliste die Marke „⚑ gemeldet“. Hat ein Hub-Admin die Meldung
+  erledigt, steht das dort ebenfalls, und es kommt ein Hinweis. Braucht
+  Hub 1.19.0.
+
+## Hub 1.19.0 – September 2026
+
+### Neu
+- `POST /v1/reports` gibt die Nummer der Meldung zurück, `GET /v1/reports`
+  liefert die eigenen Meldungen mit Stand (`open`/`handled`) und Datum. Die
+  Notiz des Admins und der offengelegte Verlauf gehen dabei nicht mit.
+
 ## 2.90.9 – September 2026
 
 ### Behoben

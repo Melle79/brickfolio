@@ -2358,6 +2358,12 @@ Möglichkeit, wie ein Verlauf jemals lesbar wird: Deine Instanz entschlüsselt
 ihn und legt ihn freiwillig offen. Ohne Haken sieht der Admin nur deine
 Begründung. Eine Hintertür im Hub gibt es nicht.
 
+**Die Meldung bleibt sichtbar.** Im Gespräch steht danach „⚑ Du hast dieses
+Gespräch am … gemeldet“, in der Gesprächsliste die Marke „⚑ gemeldet“.
+Sobald ein Hub-Admin sie erledigt hat, heißt es „✔ Deine Meldung vom … ist
+erledigt“, und unter den Mitteilungen erscheint ein Hinweis. Was der Admin
+sich dazu notiert, bleibt beim Hub.
+
 ### 12.8 Wenn der Zugang gesperrt wurde
 
 Ein Hub-Admin kann Zugänge sperren. Dann steht im Tausch-Tab ein deutlicher

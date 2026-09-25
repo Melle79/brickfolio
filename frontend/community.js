@@ -288,7 +288,7 @@ async function loadTrades(quiet = false) {
     // geändert hat – sonst flackert die Liste im Takt.
     const sig = JSON.stringify(trades.map((t) =>
       [t.id, t.status, t.unread, t.updated_at, t.last_body, t.taken_at,
-        t.shipped_at, t.arrived_at]));
+        t.shipped_at, t.arrived_at, t.other_status, t.report_status]));
     if (quiet && sig === tradesSig) return;
     tradesSig = sig;
     if (!trades.length) {
@@ -308,6 +308,8 @@ async function loadTrades(quiet = false) {
               ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
+            ${t.report_status ? `<span class="badge badge-low">${esc(t.report_status === "handled"
+    ? tr("⚑ Meldung erledigt") : tr("⚑ gemeldet"))}</span>` : ""}
             ${["accepted", "closed"].includes(t.status) && !t.taken_at
     ? `<span class="badge badge-wanted">${esc(tauschStand(t))}</span>` : ""}
           </div>
@@ -469,11 +471,12 @@ function tauschKommt(t) {
 
 async function renderTrade(quiet = false) {
   try {
-    const { trade, messages } = await api(`/hub/trades/${openTradeId}`);
+    const { trade, messages, report } = await api(`/hub/trades/${openTradeId}`);
     // Nur neu zeichnen, wenn sich etwas geändert hat: sonst springt beim
     // automatischen Nachladen die Bildlaufleiste und Getipptes ginge unter.
     const sig = JSON.stringify([trade.status, trade.item_gone, trade.taken_at,
       trade.shipped_at, trade.arrived_at, trade.other_status,
+      report && [report.status, report.handled_at],
       messages.map((m) => [m.id, m.delivered])]);
     if (quiet && sig === tradeSig) return;
     const box = $("trade-msgs");
@@ -490,6 +493,7 @@ async function renderTrade(quiet = false) {
     $("trade-removed").hidden = trade.status !== "removed";
     $("trade-left").hidden = !weg || trade.status === "removed";
     $("trade-gesperrt").hidden = trade.other_status !== "disabled";
+    zeigeMeldung(report);
     $("trade-write-row").hidden = entfernt;
     // Annehmen oder ablehnen kann nur, wer gefragt wurde – und nur, solange
     // noch nichts entschieden ist. Bis 2.88.55 standen beide Knöpfe auch
@@ -543,6 +547,23 @@ async function renderTrade(quiet = false) {
     if (!quiet || atBottom) box.scrollTop = box.scrollHeight;
     refreshUnread();
   } catch (e) { if (!quiet) toast(e.message); }
+}
+
+/* Hat man dieses Gespräch gemeldet? Das steht dauerhaft da – bis 2.90.9
+   gab es nach dem Absenden nur einen kurzen Hinweis und danach nichts. */
+function zeigeMeldung(r) {
+  const el = $("trade-report-state");
+  el.hidden = !r;
+  if (!r) return;
+  const datum = (ts) => new Date(ts * 1000).toLocaleDateString(dateLocale());
+  el.textContent = r.status === "handled"
+    ? tr("✔ Deine Meldung vom {am} ist erledigt – ein Hub-Admin hat sie am "
+      + "{erledigt} bearbeitet.", { am: datum(r.created_at),
+      erledigt: datum(r.handled_at || r.created_at) })
+    : tr("⚑ Du hast dieses Gespräch am {am} gemeldet{verlauf}. Ein Hub-Admin "
+      + "schaut es sich an; wenn er fertig ist, steht es hier.",
+    { am: datum(r.created_at),
+      verlauf: r.with_history ? tr(" (mit Verlauf)") : "" });
 }
 
 function datumKurz(ts) {
@@ -1004,6 +1025,7 @@ async function sendReport() {
       reason, include_history: $("report-history").checked } });
     closeReport();
     toast("Gemeldet – ein Hub-Admin schaut sich das an ⚑");
+    renderTrade();
   } catch (e) { toast(e.message); } finally { btn.disabled = false; }
 }
 
