@@ -2382,6 +2382,7 @@ async function doSetup() {
     try { await api("/me/lang", { method: "POST", body: { lang } }); }
     catch (_) { /* lokal gilt sie trotzdem */ }
     toast(tr("Willkommen, {name}! 🧱", { name: data.username }));
+    wizPasswort = p1;
     startWizard();
   } catch (e) {
     err.textContent = e.message;
@@ -2449,8 +2450,14 @@ async function setupSicherungEinspielen(file) {
    Schritt ist überspringbar – die App ist ohne Schlüssel benutzbar (Scannen
    braucht keinen), deshalb darf hier nichts blockieren. */
 
-const WIZ_LAST = 7;
+const WIZ_LAST = 8;
+const WIZ_TFA = 7;              // der Schritt „Absichern mit Zwei-Faktor"
 let wizStep = 1;
+// Das Passwort vom Anlegen des Kontos – nur für den Schritt „Absichern",
+// damit man es eine Minute später nicht noch einmal tippen muss. Liegt
+// ausschließlich hier im Speicher und wird beim Ende des Assistenten
+// geleert.
+let wizPasswort = "";
 
 function startWizard() {
   $("view-login").hidden = true;
@@ -2495,10 +2502,28 @@ async function ladeWizGebiet() {
   } catch (_) { /* ohne Liste bleibt der Schritt leer und überspringbar */ }
 }
 
+/* Der Block aus dem Profil zieht für den Schritt „Absichern" in den
+   Assistenten und danach zurück. Eine Oberfläche, nicht zwei: Was dort
+   behoben wird (der QR-Code etwa), gilt hier von selbst mit. */
+function tfaBlockUmziehen(inDenAssistenten) {
+  const block = $("tfa-block");
+  if (!block) return;
+  const ziel = inDenAssistenten ? $("wiz-tfa-platz") : $("tfa-heimat");
+  if (block.parentElement !== ziel) ziel.appendChild(block);
+  if (inDenAssistenten) {
+    wireTfaOnce();
+    ladeTfaStatus();
+    if (wizPasswort && !$("tfa-pass").value) $("tfa-pass").value = wizPasswort;
+  } else {
+    $("tfa-pass").value = "";
+  }
+}
+
 function showWizStep() {
   document.querySelectorAll("#view-wizard .wiz-step").forEach((el) => {
     el.hidden = Number(el.dataset.step) !== wizStep;
   });
+  tfaBlockUmziehen(wizStep === WIZ_TFA);
   $("wiz-step-of").textContent = tr("Schritt {n} von {max}",
     { n: wizStep, max: WIZ_LAST });
   $("wiz-back").hidden = wizStep === 1;
@@ -2509,6 +2534,8 @@ function showWizStep() {
 }
 
 function endWizard() {
+  tfaBlockUmziehen(false);
+  wizPasswort = "";
   $("view-wizard").hidden = true;
   showApp();
 }
@@ -2804,6 +2831,8 @@ function wireTfaOnce() {
   $("btn-tfa-done").addEventListener("click", () => {
     ladeTfaStatus();
     toast(tr("Zwei-Faktor ist aktiv 🔐 – andere Geräte müssen sich neu anmelden"));
+    // Im Assistenten geht es danach gleich weiter – das Profil bleibt stehen.
+    if (!$("view-wizard").hidden && wizStep === WIZ_TFA) $("wiz-next").click();
   });
 
   $("btn-tfa-disable").addEventListener("click", async () => {
@@ -4114,7 +4143,7 @@ function renderScanResults(items) {
       // das ist der schnellste Weg in die Sammlung. Vorher standen hier ein
       // Feld über die volle Breite, ein Satz in Klammern, zwei große grüne
       // Knöpfe und ein „Abbrechen" so groß wie das Hinzufügen selbst. Auch
-      // der erste Umbau (2.88.35) war Sven noch „zu mächtig": Auf der
+      // der erste Umbau (2.88.35) war im Betrieb noch „zu mächtig": Auf der
       // breiten Karte zog sich das Feld über 650 Pixel. Jetzt steht alles
       // in einer Reihe, Abbrechen als rotes ✕ dahinter – dieselbe Sprache
       // wie der Löschen-Knopf in der Sammlung. Dass der Tipp sofort

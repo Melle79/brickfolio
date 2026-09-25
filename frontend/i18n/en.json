@@ -868,7 +868,6 @@
  "z. B. Battle Droid, Tan": "e.g. Battle Droid, Tan",
  "z. B. Herkunft, Set, Besonderheiten": "e.g. origin, set, anything special",
  "z. B. Star Wars – leer = Ohne Thema": "e.g. Star Wars – empty = no theme",
- "z. B. Sven": "e.g. Sven",
  "z. B. Zustand, Herkunft, Set …": "e.g. condition, origin, set …",
  "z. B. sw0001a": "e.g. sw0001a",
  "{code} bei {weg}": "{code} at {weg}",
@@ -1201,5 +1200,6 @@
  "✔ In der Sammlung · {zustand}": "✔ In the collection · {zustand}",
  "✔ Übernehmen": "✔ Use this",
  "Neue Liste, z. B. Flohmarkt": "New list, e.g. flea market",
- "Zwei-Faktor ist aktiv 🔐 – andere Geräte müssen sich neu anmelden": "Two-factor is on 🔐 – other devices need to sign in again"
+ "Zwei-Faktor ist aktiv 🔐 – andere Geräte müssen sich neu anmelden": "Two-factor is on 🔐 – other devices need to sign in again",
+ "z. B. Steinesammler": "e.g. Brick collector"
 }

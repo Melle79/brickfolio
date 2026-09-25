@@ -144,8 +144,8 @@ def test_digitalzoom_faellt_zurueck_wenn_das_stellen_scheitert():
 def test_die_leiste_behauptet_nichts_ueber_objektive():
     """**Kein fester Zahlensatz kann ehrlich sein.**
 
-    Kurzzeitig stand hier 1/2/5, weil moderne iPhones dort einrasten. Sven
-    hat es am 24.09.2026 zerlegt: Auf einem Modell ohne Teleobjektiv wäre
+    Kurzzeitig stand hier 1/2/5, weil moderne iPhones dort einrasten. Die
+    Rückmeldung vom 24.09.2026 hat es zerlegt: Auf einem Modell ohne Teleobjektiv wäre
     die 5 rein gerechnet. Und umgekehrt gilt dasselbe – auf einem Gerät
     *mit* 5×-Tele ist ein 3× eine Zwischenstufe. Es gibt keine Leiter, die
     überall auf Rastpunkte trifft.

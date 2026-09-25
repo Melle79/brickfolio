@@ -45,6 +45,21 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.48 – September 2026
+
+### Neu
+- 🔐 **Zwei-Faktor schon bei der ersten Einrichtung.** Der Assistent hat
+  einen Schritt „Absichern mit Zwei-Faktor" vor dem Abschluss (jetzt acht
+  Schritte). Das Passwort vom Anlegen des Kontos ist schon eingetragen –
+  QR-Code scannen, Code eintippen, Rettungscodes sichern, weiter. Es ist
+  derselbe Block wie im Profil, nicht ein zweiter Nachbau; das Passwort
+  liegt nur im Speicher der Seite und wird beim Ende des Assistenten
+  vergessen. Überspringen geht wie bei jedem Schritt.
+
+### Geändert
+- Als Beispiel für den Anzeigenamen im Tausch-Netzwerk steht „Steinesammler"
+  statt eines echten Vornamens.
+
 ## 2.88.47 – September 2026
 
 ### Behoben

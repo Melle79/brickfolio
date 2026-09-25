@@ -5,9 +5,9 @@ ganze Seite grau machte.
 mit `box-shadow: 0 0 0 9999px` das Foto um sich herum ab. Der Behälter
 schnitt aber nicht ab – seit v1.78.0 (31.07.2026) lief der Schatten über
 die **ganze Seite**. Nach jedem Scan war alles um 28 % dunkler; nur was eine
-Ebene höher liegt, Kopfleiste und Trefferkarte, blieb hell. Sven hielt es
+Ebene höher liegt, Kopfleiste und Trefferkarte, blieb hell. Im Betrieb galt es
 am 24.09.2026 zuerst für einen grauen Hintergrund des Formulars, dann fiel
-ihm auf: „es wird grau, sobald ich ein Foto aufgenommen habe".
+auf: „es wird grau, sobald ich ein Foto aufgenommen habe".
 
 **Das Formular** (Svens Wahl „B"): Typ und Zustand als Pillen wie im
 Steckbrief, Anzahl mit Plus/Minus, das Bild als Kachel statt des rohen

@@ -1,6 +1,6 @@
 """Wunschliste und Einkaufsliste in derselben Sprache wie der Scan.
 
-Am 24.09.2026 von Sven nachgezeigt: „Wunschliste und Einkaufsliste
+Am 24.09.2026 im Betrieb nachgezeigt: „Wunschliste und Einkaufsliste
 ebenso" – dort standen noch vier gleich große Knöpfe im Raster, zwei
 umrandete Zustandsknöpfe (einer gelb), ein grüner ✓-Balken über die volle
 Breite und „Liste löschen" über die volle Breite.

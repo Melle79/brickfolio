@@ -196,12 +196,23 @@
       <label for="wiz-invite">Einladungscode</label>
       <input id="wiz-invite" placeholder="inv_…" autocapitalize="none">
       <label for="wiz-hubname">Anzeigename im Netzwerk</label>
-      <input id="wiz-hubname" placeholder="z. B. Sven" autocapitalize="none">
+      <input id="wiz-hubname" placeholder="z. B. Steinesammler" autocapitalize="none">
       <p id="wiz-hub-out" class="search-hint" hidden></p>
     </div>
 
-    <!-- 7: Fertig -->
+    <!-- 7: Absichern -->
     <div class="wiz-step" data-step="7" hidden>
+      <h3>🔐 Absichern mit Zwei-Faktor</h3>
+      <p class="search-hint">Empfohlen, sobald die App von außen erreichbar
+        ist: Zum Passwort kommt ein sechsstelliger Code aus einer
+        Authenticator-App (etwa Google Authenticator). Gefragt wird er beim
+        Anmelden, nicht bei jedem Öffnen. Später änderbar unter deinem Namen
+        oben rechts.</p>
+      <div id="wiz-tfa-platz"></div>
+    </div>
+
+    <!-- 8: Fertig -->
+    <div class="wiz-step" data-step="8" hidden>
       <h3>🎉 Los geht's</h3>
       <p class="search-hint">Alles Weitere findest du unter <b>Mehr</b>:
         Benutzer anlegen, Sicherung, Design, externer Zugriff. Die Hilfe
@@ -1073,7 +1084,7 @@
         <label for="hub-invite-in">Einladungscode</label>
         <input id="hub-invite-in" placeholder="inv_…" autocapitalize="none">
         <label for="hub-name-in">Anzeigename im Netzwerk</label>
-        <input id="hub-name-in" placeholder="z. B. Sven" autocapitalize="none">
+        <input id="hub-name-in" placeholder="z. B. Steinesammler" autocapitalize="none">
         <div class="detail-row btn-grid">
           <button class="mini-btn add" id="hub-connect-invite">Beitreten</button>
         </div>
@@ -1384,6 +1395,10 @@ sudo bash update.sh</pre>
 
     <hr class="profile-trenner">
     <h4 class="profile-titel">🔐 Zwei-Faktor-Anmeldung</h4>
+    <!-- Der Block zieht für den Assistenten-Schritt „Absichern" dorthin um
+         und danach zurück (siehe `tfaBlockUmziehen`) – eine Oberfläche,
+         nicht zwei. -->
+    <div id="tfa-heimat"><div id="tfa-block">
     <p class="search-hint" id="tfa-info"></p>
 
     <div id="tfa-off">
@@ -1421,6 +1436,7 @@ sudo bash update.sh</pre>
       <button id="btn-tfa-disable" class="btn btn-outline">Ausschalten</button>
     </div>
     <p id="tfa-error" class="error" hidden></p>
+    </div></div>
 
     <button id="btn-logout" class="btn btn-outline">Abmelden</button>
   </div>

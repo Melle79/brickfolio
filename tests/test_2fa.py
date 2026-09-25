@@ -234,3 +234,20 @@ def test_qr_code_laesst_sich_skalieren(client):
     kopf = r.text[r.text.index("<svg"):r.text.index(">", r.text.index("<svg"))]
     assert "viewBox" in kopf
     assert 'width="' not in kopf and 'height="' not in kopf
+
+
+def test_einrichtungsassistent_bietet_zwei_faktor_an():
+    """Die Zwei-Faktor-Anmeldung gehört auch in die erste Einrichtung – mit
+    demselben Block wie im Profil, nicht mit einem zweiten Nachbau."""
+    import pathlib
+    wurzel = pathlib.Path(__file__).resolve().parent.parent / "frontend"
+    html = (wurzel / "index.html").read_text(encoding="utf-8")
+    js = (wurzel / "app.js").read_text(encoding="utf-8")
+    assert '<div class="wiz-step" data-step="7" hidden>' in html
+    assert 'id="wiz-tfa-platz"' in html and 'id="tfa-heimat"' in html
+    assert html.count('id="tfa-confirm"') == 1, "der Block existiert nur einmal"
+    assert "const WIZ_LAST = 8;" in js
+    assert "tfaBlockUmziehen(wizStep === WIZ_TFA)" in js
+    # Das Passwort vom Anlegen wird beim Ende des Assistenten vergessen.
+    ende = js[js.index("function endWizard"):js.index("function endWizard") + 300]
+    assert 'wizPasswort = ""' in ende

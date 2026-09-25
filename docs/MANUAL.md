@@ -139,12 +139,12 @@ On the first visit in the browser you pick a username and password for the
 (German or English) – the choice goes into the profile of the account you are
 about to create, so it applies on every device.
 
-After that you are signed in, and a wizard walks you through the rest in seven
+After that you are signed in, and a wizard walks you through the rest in eight
 steps:
 
 1. **Display name** – the name in the logo, the window title, the **app icon**,
    the small icon in the browser tab and the name on the phone's home screen
-   ("Sven's Brickfolio")
+   ("Anna's Brickfolio")
 2. **Price region and currency** – which market the average prices come from
    and in which currency; preselected is what matches your browser's language
    settings (see chapter 13.1)
@@ -153,7 +153,10 @@ steps:
 5. **Test the connection** – a real test call to both services, so a mixed-up
    key shows up now and not at your first scan
 6. **Trading network** – if somebody invited you (see chapter 12)
-7. **Done**
+7. **Secure with two-factor** – recommended once the app is reachable from
+   outside (see chapter 3.1). The password from creating the account is
+   already filled in; scan the QR code, type the code, keep the recovery codes
+8. **Done**
 
 **Every step can be skipped**, and at the bottom there is "Finish the wizard
 and get started". Without keys everything works except prices, set contents

@@ -145,12 +145,12 @@ die Instanz einrichtet, ist ihr Eigner und soll Kaufpreise, Einkaufslisten
 und Verkaufsliste von Anfang an sehen. Alle weiteren Benutzer starten als
 Standard-Konto; die Profi-Rolle vergibt der Admin in der Benutzerverwaltung.
 
-Danach bist du angemeldet, und ein Assistent führt in sieben Schritten durch
+Danach bist du angemeldet, und ein Assistent führt in acht Schritten durch
 den Rest:
 
 1. **Anzeigename** – der Name in Logo, Fenstertitel, **App-Symbol**, im
    kleinen Symbol im Browser-Reiter und im Namen auf dem Startbildschirm
-   des Handys („Svens Brickfolio")
+   des Handys („Annas Brickfolio")
 2. **Preisgebiet und Währung** – aus welchem Markt die Ø-Preise kommen und
    in welcher Währung; vorausgewählt ist, was zu den Spracheinstellungen des
    Browsers passt (siehe Kapitel 13.1)
@@ -159,7 +159,10 @@ den Rest:
 5. **Verbindung prüfen** – ein echter Testabruf bei beiden Diensten; so
    fällt ein verdrehter Schlüssel sofort auf und nicht erst beim ersten Scan
 6. **Tausch-Netzwerk** – falls dich jemand eingeladen hat (siehe Kapitel 12)
-7. **Fertig**
+7. **Absichern mit Zwei-Faktor** – empfohlen, sobald die App von außen
+   erreichbar ist (siehe Kapitel 3.1). Das Passwort vom Anlegen ist schon
+   eingetragen; QR-Code scannen, Code eintippen, Rettungscodes sichern
+8. **Fertig**
 
 **Jeder Schritt ist überspringbar**, und unten steht „Assistent beenden und
 direkt loslegen". Ohne Schlüssel funktioniert alles außer Preisen,
