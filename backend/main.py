@@ -11,6 +11,7 @@ import re
 import sqlite3
 import threading
 import time
+import urllib.parse
 import uuid
 
 import requests
@@ -815,9 +816,34 @@ def set_default_theme(body: ThemeBody, user: dict = Depends(admin_user)):
     return {"ok": True, "default_theme": body.theme}
 
 
-_UPDATE_CACHE = {"ts": 0.0, "data": None}
-_UPDATE_URL = ("https://api.github.com/repos/Melle79/brickfolio/"
-               "releases/latest")
+_UPDATE_CACHE = {"ts": 0.0, "data": None, "fehler_ts": 0.0, "fehler": None}
+# **Nicht über die API.** Die fragte ohne Anmeldung – 60 Abfragen je Stunde
+# für den ganzen Internetanschluss, geteilt mit jedem anderen Gerät dahinter.
+# Ist das aufgebraucht, blieb der Update-Hinweis aus (so geschehen beim Live-
+# Scanner am 25.09.2026). Die Release-Seite leitet auf die neueste Fassung
+# weiter und zählt nicht mit; mehr als Kennung und Adresse braucht die
+# Oberfläche nicht.
+_UPDATE_SEITE = "https://github.com/Melle79/brickfolio/releases/latest"
+# Ein Fehlschlag wird eine halbe Stunde gemerkt. Vorher fragte jeder Aufruf
+# des Mehr-Tabs erneut – gerade dann, wenn GitHub gerade nicht antwortet.
+_UPDATE_FEHLER_PAUSE = 30 * 60
+
+
+def _neueste_fassung() -> tuple:
+    """(Kennung, Seite) der neuesten Fassung – aus der Weiterleitung von
+    `…/releases/latest`, ohne ihr zu folgen."""
+    r = requests.head(_UPDATE_SEITE, allow_redirects=False, timeout=10,
+                      headers={"User-Agent": integrations.USER_AGENT})
+    ziel = r.headers.get("Location", "")
+    if r.status_code not in (301, 302, 303, 307, 308) \
+            or "/releases/tag/" not in ziel:
+        raise requests.RequestException(
+            "keine Weiterleitung (%s)" % r.status_code)
+    kennung = urllib.parse.unquote(
+        ziel.rsplit("/releases/tag/", 1)[1]).split("?")[0].split("#")[0]
+    if not kennung:
+        raise requests.RequestException("leere Kennung")
+    return kennung, ziel
 
 
 def _ver_tuple(v: str):
@@ -882,26 +908,28 @@ def update_check(force: int = 0, user: dict = Depends(admin_user)):
     if not force and _UPDATE_CACHE["data"] \
             and now - _UPDATE_CACHE["ts"] < 6 * 3600:
         return _UPDATE_CACHE["data"]
+    if not force and _UPDATE_CACHE["fehler"] \
+            and now - _UPDATE_CACHE["fehler_ts"] < _UPDATE_FEHLER_PAUSE:
+        return _UPDATE_CACHE["fehler"]
     data = {"current": core.APP_VERSION, "latest": None,
             "update_available": False, "url": "", "notes": ""}
     try:
-        r = requests.get(_UPDATE_URL, timeout=10,
-                         headers={"Accept": "application/vnd.github+json"})
-        r.raise_for_status()
-        rel = r.json()
-        latest = (rel.get("tag_name") or "").lstrip("v")
-        data.update({
-            "latest": latest or None,
-            "update_available": bool(latest) and
-            _ver_tuple(latest) > _ver_tuple(core.APP_VERSION),
-            "url": rel.get("html_url") or "",
-            "notes": (rel.get("body") or "")[:1500],
-        })
+        kennung, seite = _neueste_fassung()
     except requests.RequestException:
         data["error"] = "GitHub gerade nicht erreichbar"
-        return data          # Fehler nicht cachen – nächster Aufruf probiert neu
+        _UPDATE_CACHE["fehler_ts"] = now
+        _UPDATE_CACHE["fehler"] = data
+        return data
+    latest = kennung.lstrip("vV")
+    data.update({
+        "latest": latest or None,
+        "update_available": bool(latest) and
+        _ver_tuple(latest) > _ver_tuple(core.APP_VERSION),
+        "url": seite,
+    })
     _UPDATE_CACHE["ts"] = now
     _UPDATE_CACHE["data"] = data
+    _UPDATE_CACHE["fehler"] = None
     return data
 
 

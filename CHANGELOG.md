@@ -45,6 +45,19 @@
   niemand könnte zwei Beschreibungen daraufhin ansehen, ob sie überhaupt
   vergleichbar sind.
 
+## 2.88.43 – September 2026
+
+### Geändert
+- ⬆️ **Die Update-Prüfung fragt nicht mehr die GitHub-API.** Die erlaubt
+  ohne Anmeldung nur 60 Abfragen je Stunde – für den ganzen
+  Internetanschluss, geteilt mit jedem anderen Gerät dahinter. War das
+  aufgebraucht, stand unter Mehr „GitHub gerade nicht erreichbar", und der
+  Hinweis auf eine neue Fassung blieb aus. Jetzt liest die App die neueste
+  Fassung aus der Weiterleitung der Release-Seite; die zählt nicht mit.
+- Ein Fehlschlag wird eine halbe Stunde gemerkt. Vorher fragte jeder
+  Aufruf des Mehr-Tabs erneut bei GitHub nach. „Jetzt prüfen" fragt
+  weiterhin sofort.
+
 ## 2.88.42 – September 2026
 
 ### Geändert
