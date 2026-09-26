@@ -955,10 +955,7 @@ function wireHubViewOnce() {
     const b = ev.currentTarget; b.disabled = true;
     try {
       const res = await api("/hub/invite", { method: "POST", body: {} });
-      const out = $("hub-invite-out");
-      out.hidden = false;
-      out.innerHTML = esc(tr("Einladungscode (einmal gültig, an einen "
-        + "Freund geben):")) + ` <code>${esc(res.invite_code)}</code>`;
+      zeigeEinladung(res.invite_code);
       loadInviteQuota();
     } catch (e) {
       // Kontingent aufgebraucht: statt bloßer Fehlermeldung den Weg anbieten
@@ -966,23 +963,69 @@ function wireHubViewOnce() {
       else toast(e.message);
     } finally { b.disabled = false; }
   });
+  $("invite-close").addEventListener("click", schliesseEinladung);
+  $("invite-overlay").addEventListener("click", (ev) => {
+    if (ev.target === ev.currentTarget) schliesseEinladung();
+  });
+  $("invite-copy").addEventListener("click", async () => {
+    const code = $("invite-code").textContent;
+    if (await inZwischenablage(code)) toast(tr("Code kopiert 📋"));
+    else textZumMarkieren(code);
+  });
+  $("invite-share").addEventListener("click", async () => {
+    try {
+      await navigator.share({ title: tr("Einladung ins Brickfolio-Tausch-Netzwerk"),
+        text: einladungsText($("invite-code").textContent) });
+    } catch (_) { /* abgebrochen – nichts zu tun */ }
+  });
+}
+
+/* Was mit dem Code geteilt wird – so, dass der Freund ohne Rückfrage weiß,
+   wohin damit. */
+function einladungsText(code) {
+  return tr("Hallo! Hier ist deine Einladung ins Brickfolio-Tausch-Netzwerk: "
+    + "{code} – in deinem Brickfolio unter Mehr → Tausch-Netzwerk eintragen. "
+    + "Der Code gilt genau einmal.", { code });
+}
+
+function zeigeEinladung(code) {
+  $("invite-code").textContent = code;
+  // Teilen gibt es nur, wo das Gerät es anbietet (Handy, Safari, Edge …).
+  $("invite-share").hidden = !navigator.share;
+  $("invite-rest").textContent = "";
+  $("invite-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function schliesseEinladung() {
+  $("invite-overlay").hidden = true;
+  document.body.style.overflow = "";
 }
 
 /* Einladungs-Kontingent anzeigen – und ab null den Weg zur Anfrage. */
 async function loadInviteQuota() {
   const el = $("hub-quota");
+  const marke = $("hub-invite-left");
   if (!el) return;
   try {
     const q = await api("/hub/invite_quota");
-    if (!q.quota) { el.hidden = true; return; }
+    marke.hidden = !(q.quota && q.left > 0);
+    marke.textContent = tr("{n} frei", { n: q.left });
+    marke.title = tr("Noch {n} von {max} Einladungen frei",
+      { n: q.left, max: q.quota });
+    if (!$("invite-overlay").hidden && q.quota) {
+      $("invite-rest").textContent = q.left > 0
+        ? tr("Du kannst noch {n} weitere einladen.", { n: q.left })
+        : tr("Das war deine letzte freie Einladung – beim Hub-Admin kannst du "
+          + "mehr anfragen.");
+    }
+    // Der Absatz darunter nur noch, wenn es etwas zu tun oder zu wissen gibt.
+    if (!q.quota || (q.left > 0 && !q.pending_request)) { el.hidden = true; return; }
     el.hidden = false;
     if (q.pending_request) {
       el.textContent = tr("✉️ Einladungen: {n} von {max} vergeben · Anfrage "
         + "über {want} weitere läuft.",
         { n: q.used, max: q.quota, want: q.pending_request.want });
-    } else if (q.left > 0) {
-      el.textContent = tr("✉️ Einladungen: noch {n} von {max} frei.",
-        { n: q.left, max: q.quota });
     } else {
       el.innerHTML = esc(tr("✉️ Alle {max} Einladungen vergeben.",
         { max: q.quota })) + " "
@@ -990,7 +1033,7 @@ async function loadInviteQuota() {
       el.querySelector("[data-req-invites]")
         .addEventListener("click", () => offerInviteRequest());
     }
-  } catch (_) { el.hidden = true; }
+  } catch (_) { el.hidden = true; marke.hidden = true; }
 }
 
 /* Anfrage nach mehr Einladungen stellen. */

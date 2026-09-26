@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.90.13 – September 2026
+
+### Geändert
+- ✉️ **Einladen mit eigenem Fenster.** Der Code stand bisher als rohe
+  Zeile unter dem Zähler. Jetzt öffnet „Freund einladen“ ein Fenster mit dem
+  Code in groß, „Kopieren“ und – wo das Gerät es kann – „Teilen“, dazu drei
+  Schritte, was der Freund damit macht. Wie viele Einladungen noch frei
+  sind, steht als kleine Marke direkt am Knopf.
+- 📝 README und Handbuch: Der Tausch-Abschnitt sagt jetzt gleich oben, dass
+  das Netzwerk von Haus aus aus ist und nur geteilt wird, was man
+  ausdrücklich auswählt. Die Flaggen-Beschreibung passt zu 2.90.12.
+
 ## 2.90.12 – September 2026
 
 ### Geändert

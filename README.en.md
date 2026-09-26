@@ -51,9 +51,12 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 - 🌍 **Selectable price region** (More → Price region): worldwide, Germany,
   Austria, Switzerland or Europe – with no sales in the chosen region the app
   widens in two steps (Europe first, then worldwide). Existing prices can be
-  recalculated step by step, priceless items re-fetched with one click. When a
-  price isn't from the chosen region, a small **flag** (🇪🇺/🌍) shows where it
-  came from
+  recalculated step by step, priceless items re-fetched with one click. In the
+  item details a small **flag** (🇩🇪/🇪🇺/🌍) on every price row shows where the
+  price comes from
+- 🏷 **Asking prices** (optional): on top of the average sale price, *from how
+  much* a figure is available right now – in the item details and as a tag in
+  wish and shopping lists
 - 📊 **Stats tab**: key figures, overall value trend, split by type/condition,
   value by release year (tap a bar for the year’s details), Top 10
 
@@ -64,19 +67,35 @@ metadata come from [BrickLink](https://www.bricklink.com) and
   with “missing from your set” – a tap jumps straight to the set
 
 **Trading network** (optional, invite only)
+
+> **It is off by default, and nothing is shared.** Your collection stays on
+> your server. The network only exists for you once you join with an
+> invitation code – and even then only what you explicitly choose goes out:
+> the items you offer, your profile and, if you switch it on, your wishlist.
+> Leaving takes everything out again.
+
 - 🤝 Several Brickfolio instances connect through a small **trading hub**:
-  everyone publishes the items they want to pass on and sees what the others
-  offer – searchable by name and number
+  everyone offers the items they want to pass on – **for trade, for sale or
+  both** – and sees what the others offer
 - 🔢 **You pick what goes in**, and how many: out of three identical figures
-  you can offer just one. Each item shows whether it is already published
+  you can offer just one
+- 🧭 **Discover**: who has what you're looking for, who wants what you have
+  spare, and who collects the same themes – worked out on your own instance
+- 👤 **Profiles**: about me, area, favourite themes, trade record – all
+  optional; the collection size only rounded and only if you want
+- 📦 **Trades with a beginning and an end**: accepted → sent → arrived →
+  booked → completed. Adding and removing book straight into the collection,
+  purchase log included
 - 💬 **Messages are end-to-end encrypted** (X25519 + AES-256-GCM). The hub
   cannot read them and deletes them once delivered; the readable history stays
-  on the instances involved. In an open chat new messages arrive on their own
+  on the instances involved
 - ✉️ **Invitations with a quota**: everyone may invite three friends and can
   request more. Nobody gets in without an invite
-- ⚑ **Reporting**: if something goes wrong, a report reaches the hub admin –
-  optionally with the conversation, which the reporting instance decrypts and
-  discloses voluntarily
+- ⏸ **Pause after inactivity**: if you haven't been around for a while, the hub
+  hides your offers until you come back
+- ⚑ **Reports with a follow-up**: the report stays visible to the reporter, the
+  hub admin can ask questions and take a measure (notice, warning, block) that
+  the person concerned sees in their app – without learning who reported them
 - 🖼️ Custom figures travel with a **downscaled thumbnail** so the other side
   doesn’t just see a placeholder
 

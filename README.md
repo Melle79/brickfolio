@@ -78,9 +78,12 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🌍 **Preisgebiet wählbar** (Mehr → Preisgebiet): weltweit, Deutschland,
   Österreich, Schweiz oder Europa – ohne Verkäufe im gewählten Gebiet weitet die
   App zweistufig aus (erst Europa, dann weltweit). Bestehende Preise lassen sich
-  schrittweise umrechnen, preislose Artikel per Knopfdruck neu abrufen. Stammt
-  ein Preis nicht aus dem eingestellten Gebiet, zeigt eine kleine **Flagge**
-  (🇪🇺/🌍), woher er kommt
+  schrittweise umrechnen, preislose Artikel per Knopfdruck neu abrufen. Im
+  Steckbrief zeigt eine kleine **Flagge** (🇩🇪/🇪🇺/🌍) an jeder Preiszeile,
+  woher der Preis kommt
+- 🏷 **Angebotspreise** (zuschaltbar): zusätzlich zum Ø-Verkaufspreis, *ab wie
+  viel* eine Figur gerade zu haben ist – im Steckbrief und als Marke in
+  Wunsch- und Einkaufslisten
 - 📊 **Statistik-Tab**: Kennzahlen, Wertentwicklung der Gesamtsammlung,
   Aufteilung nach Typ/Zustand, Wert nach Erscheinungsjahr, Top 10
 
@@ -90,22 +93,38 @@ kommen von [BrickLink](https://www.bricklink.com) und
 - 🧩 Figuren, die zu einem eurer Sets gehören und noch fehlen, sind mit „fehlt
   zu eurem Set" gekennzeichnet – ein Tipp springt direkt zum Set
 
-**Tausch-Netzwerk** (optional, mit Einladung)
+**Tausch-Netzwerk** (optional, nur mit Einladung)
+
+> **Von Haus aus ist es aus, und es wird nichts geteilt.** Deine Sammlung
+> bleibt auf deinem Server. Erst wenn du mit einem Einladungscode beitrittst,
+> gibt es das Netzwerk für dich – und auch dann geht nur hinaus, was du
+> ausdrücklich auswählst: die Artikel, die du anbietest, dein Profil und,
+> wenn du es einschaltest, deine Wunschliste. Abmelden nimmt alles wieder
+> heraus.
+
 - 🤝 Mehrere Brickfolio-Instanzen verbinden sich über einen kleinen
-  **Tausch-Hub**: Jeder veröffentlicht die Artikel, die er abgeben möchte,
-  und sieht die Angebote der anderen – mit Suche über Name und Nummer
+  **Tausch-Hub**: Jeder bietet die Artikel an, die er abgeben möchte, **zum
+  Tausch, zum Verkauf oder beides**, und sieht die Angebote der anderen
 - 🔢 **Selbst auswählen, was hineinkommt**, samt Menge: Von drei gleichen
-  Figuren lässt sich auch nur eine anbieten. An jedem Artikel steht, ob er
-  schon veröffentlicht ist
+  Figuren lässt sich auch nur eine anbieten
+- 🧭 **Entdecken**: wer hat, was du suchst, wer sucht, was du übrig hast,
+  und wer dieselben Themen sammelt – verglichen auf deiner eigenen Instanz
+- 👤 **Profile**: Über mich, Gegend, Lieblingsthemen, Tauschbilanz – alles
+  freiwillig, die Sammlungsgröße nur gerundet und nur auf Wunsch
+- 📦 **Tausch mit Anfang und Ende**: angenommen → verschickt → angekommen →
+  gebucht → abgeschlossen. Übernehmen und Austragen buchen gleich in die
+  Sammlung, samt Kaufbuch
 - 💬 **Nachrichten Ende-zu-Ende verschlüsselt** (X25519 + AES-256-GCM). Der
   Hub kann sie nicht lesen und löscht sie, sobald sie zugestellt sind; der
-  lesbare Verlauf bleibt auf den beteiligten Instanzen. Im offenen Gespräch
-  kommen neue Nachrichten von selbst an
+  lesbare Verlauf bleibt auf den beteiligten Instanzen
 - ✉️ **Einladungen mit Kontingent**: Jeder darf drei Freunde einladen und
   kann mehr anfragen. Ohne Einladung kommt niemand hinein
-- ⚑ **Meldefunktion**: Läuft etwas schief, geht eine Meldung an den
-  Hub-Admin – auf Wunsch mit dem Gesprächsverlauf, den die meldende Instanz
-  selbst entschlüsselt und freiwillig offenlegt
+- ⏸ **Pause bei Inaktivität**: Wer länger nicht da war, dessen Angebote
+  blendet der Hub aus, bis er wiederkommt
+- ⚑ **Melden mit Verlauf**: Die Meldung bleibt für den Meldenden sichtbar,
+  der Hub-Admin kann nachfragen und eine Maßnahme aussprechen (Hinweis,
+  Verwarnung, Sperre), die der Betroffene in seiner App sieht – ohne zu
+  erfahren, wer gemeldet hat
 - 🖼️ Eigene Figuren reisen mit **verkleinertem Vorschaubild**, damit beim
   Gegenüber kein Platzhalter steht
 

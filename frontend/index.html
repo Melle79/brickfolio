@@ -594,9 +594,9 @@
       <!-- Stand bis 2.90.8 im Reiter „Angebote“ neben „Aktualisieren“ – seit
            „Entdecken“ der Startreiter ist, fand ihn dort niemand mehr. -->
       <button type="button" class="link-btn" id="hub-make-invite">✉️ Freund einladen</button>
+      <span class="cm-chip einladung-rest" id="hub-invite-left" hidden></span>
     </div>
     <p class="search-hint" id="hub-quota" hidden></p>
-    <p class="search-hint" id="hub-invite-out" hidden></p>
     <p class="warn-line" id="hub-blocked" hidden>🚫 <b>Zugang gesperrt.</b>
       Ein Hub-Admin hat diese Instanz aus dem Netzwerk genommen. Angebote und
       neue Nachrichten sind bis auf Weiteres nicht möglich; bisherige
@@ -705,6 +705,32 @@
     </div>
   </div>
   <!-- Interesse an einem Angebot anmelden -->
+  <!-- Einladung: der Code groß, Kopieren/Teilen, und was der Freund damit
+       macht. Bis 2.90.12 stand er als rohe Zeile unter dem Zähler. -->
+  <div id="invite-overlay" class="card-modal-overlay" hidden>
+    <div class="card-modal">
+      <button class="card-modal-close" id="invite-close" aria-label="Schließen">✕</button>
+      <div class="card modal-inner open einladung" role="dialog" aria-modal="true"
+        aria-labelledby="invite-titel">
+        <h3 id="invite-titel">✉️ Freund einladen</h3>
+        <p class="search-hint">Gib diesen Code an jemanden, den du im
+          Tausch-Netzwerk dabeihaben möchtest. Er gilt genau einmal.</p>
+        <div class="einladung-code" id="invite-code"></div>
+        <div class="detail-row btn-grid">
+          <button class="mini-btn add" id="invite-copy">📋 Kopieren</button>
+          <button class="mini-btn" id="invite-share" hidden>📤 Teilen</button>
+        </div>
+        <ol class="einladung-schritte">
+          <li>Dein Freund braucht ein eigenes Brickfolio.</li>
+          <li>Dort unter <b>Mehr → Tausch-Netzwerk</b> den Code eintragen und
+            einen Anzeigenamen wählen.</li>
+          <li>Fertig – danach findet ihr euch gegenseitig im Tausch-Tab.</li>
+        </ol>
+        <p class="search-hint" id="invite-rest"></p>
+      </div>
+    </div>
+  </div>
+
   <div id="interest-overlay" class="card-modal-overlay" hidden>
     <div class="card-modal">
       <button class="card-modal-close" id="interest-close" aria-label="Schließen">✕</button>

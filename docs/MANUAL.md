@@ -1965,11 +1965,11 @@ market with real sales counts. That way no item is left without a price; the
 valuation is simply mixed then. (If a region or worldwide is set directly, the
 narrower step is skipped.)
 
-**How to spot a fallback price:** if an average price does not come from the
-region you set, a small **flag** sits next to it – 🇪🇺 for Europe, 🌍 for
-worldwide. In the detail price card a tooltip explains why. Prices from the
-region you set stay without a flag, so at a glance you can tell which ones are
-"really German" (or Austrian/Swiss).
+**Where a price comes from:** in the item details every price row carries the
+**flag** of its region – 🇩🇪 for Germany (or 🇦🇹/🇨🇭), 🇪🇺 for Europe, 🌍 for
+worldwide. If the app had to fall back, the tooltip says why ("there was
+nothing in the chosen area"). On the card itself the flag only appears on a
+fallback – there, no flag means: from the region you set.
 
 **Converting an existing collection.** After a change, all stored prices still
 come from the old region – **or from the old currency**. Both count the same:

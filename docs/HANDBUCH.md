@@ -2566,12 +2566,12 @@ Europa Europa. Der erste Markt mit echten Verkäufen zählt. So bleibt kein
 Artikel ohne Preis; die Bewertung ist dann eben gemischt. (Ist eine Region
 oder weltweit direkt eingestellt, entfällt die jeweils engere Stufe.)
 
-**Woran man einen ausgewichenen Preis erkennt:** Stammt ein Ø-Preis nicht
-aus dem eingestellten Gebiet, steht eine kleine **Flagge** daneben – 🇪🇺 für
-Europa, 🌍 für weltweit. In der Detail-Preiskarte erklärt ein Tooltip den
-Grund. Preise aus dem eingestellten Gebiet bleiben ohne Flagge, sind also
-auf einen Blick als „echt deutsch" (bzw. österreichisch/schweizerisch)
-erkennbar.
+**Woher ein Preis kommt:** Im Steckbrief steht hinter jeder Preiszeile die
+**Flagge** ihres Gebiets – 🇩🇪 für Deutschland (bzw. 🇦🇹/🇨🇭), 🇪🇺 für
+Europa, 🌍 für weltweit. Musste die App ausweichen, erklärt der Tooltip den
+Grund („im eingestellten Gebiet gab es nichts“). Auf der Karte selbst steht
+die Flagge nur beim Ausweichen – dort heißt keine Flagge also: aus dem
+eingestellten Gebiet.
 
 **Bestehende Sammlung umstellen.** Nach dem Wechsel stammen alle
 gespeicherten Preise noch aus dem alten Gebiet – **oder aus der alten

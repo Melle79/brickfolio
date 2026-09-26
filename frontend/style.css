@@ -3300,3 +3300,16 @@ button.cm-chip { cursor: pointer; min-height: 30px; }
 .cm-art button { font-size: 12.5px; }
 .cm-art-schild { background: var(--track); color: var(--ink); }
 .cm-art-filter { margin: 8px 0 2px; }
+
+/* Einladung: der Code groß und am Stück markierbar, darunter die Schritte */
+.einladung h3 { margin: 0 0 4px; }
+.einladung-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px; font-weight: 700; letter-spacing: .02em;
+  word-break: break-all; user-select: all; text-align: center;
+  padding: 14px 12px; margin: 10px 0; border-radius: 12px;
+  border: 2px dashed var(--yellow-dark); background: var(--field);
+}
+.einladung-schritte { margin: 12px 0 6px; padding-left: 22px; font-size: 14px; }
+.einladung-schritte li { margin: 4px 0; }
+.hub-ich .einladung-rest { padding: 3px 9px; font-size: 11.5px; }
