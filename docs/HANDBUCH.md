@@ -1606,7 +1606,7 @@ zwar in *jeder* langen Liste, nicht nur hier.
 | Ihr tippt auf … | … dann passiert |
 |---|---|
 | **✔** | die Figur wandert in deine Sammlung (Stück 1, gebraucht) |
-| **irgendwo sonst in der Zeile** | ein Steckbrief mit großem Bild, und darin **✔ Hab ich** und **★ Merken** |
+| **irgendwo sonst in der Zeile** | ein Steckbrief mit großem Bild, den Preisen (wie in der Sammlung, samt Gebietsfahne und – wenn eingeschaltet – Angebotspreisen) und darin **✔ Hab ich** und **★ Merken** |
 
 > **Das Merken ist seit 2.88.28 nur noch im Steckbrief** (vorher stand ein
 > ♥ am Zeilenende). Der Grund ist Platz: Der Knopf kostete 46 Pixel, und
