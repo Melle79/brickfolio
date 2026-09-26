@@ -8318,7 +8318,10 @@ function renderLists(lists) {
     const lOffer = card.querySelector("[data-l-offer]");
     if (lOffer) lOffer.addEventListener("click", () => {
       if (card.querySelector("[data-offer-row]")) return;
-      const actions = lOffer.closest(".card-actions");
+      // Die Knöpfe stehen seit 2.88.37 in der Fußzeile `.liste-fuss`; die
+      // Suche nach `.card-actions` fand nichts mehr, und der Klick brach
+      // ohne Meldung ab.
+      const actions = lOffer.closest(".liste-fuss");
       actions.hidden = true;
       const openValue = list.items.filter((i) => !i.done)
         .reduce((s, i) => s + (((i.condition === "new"
@@ -8350,10 +8353,8 @@ function renderLists(lists) {
       });
       row.querySelector("[data-offer-go]").addEventListener("click",
         async (ev) => {
-          const raw = row.querySelector("[data-offer-total]").value.trim()
-            .replace(",", ".");
-          const total = Number(raw);
-          if (raw === "" || !isFinite(total) || total < 0) {
+          const total = betragLesen(row.querySelector("[data-offer-total]").value);
+          if (total == null) {
             toast("Bitte einen gültigen Gesamtpreis eingeben");
             return;
           }

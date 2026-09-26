@@ -3,6 +3,11 @@
 ## 2.90.19 – September 2026
 
 ### Behoben
+- 💰 **„Gesamtangebot“ in Einkaufslisten geht wieder.** Seit die Knöpfe
+  einer Liste in der eigenen Fußzeile stehen (2.88.37), suchte der Knopf
+  noch den alten Rahmen, fand ihn nicht und brach ohne Meldung ab – es
+  passierte einfach nichts. Der Gesamtpreis nimmt jetzt auch Eingaben wie
+  „411,25“ sicher an; ein leeres Feld gilt nicht mehr als 0 €.
 - 📱 **Tausch-Netzwerk am Handy aufgeräumt.** Unter dem eigenen Namen stehen
   „Mein Profil“, „Freund einladen“ und die freien Einladungen jetzt in einer
   eigenen, eingerückten Zeile, statt links unter das Bild zu rutschen.
