@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.90.16 – September 2026
+
+### Geändert
+- 💶 **Auch das Info-Fenster aus Listen, Sets und Katalog zeigt die Preise
+  wie der Steckbrief** – mit Spanne, Verkaufszahl, Gebietsfahne und den
+  Angebotspreisen, wenn eingeschaltet. Wie beim Suchtreffer (2.90.15) steht
+  die Kurzzeile sofort da, die vollen Angaben folgen.
+
 ## 2.90.15 – September 2026
 
 ### Geändert

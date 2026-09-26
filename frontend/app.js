@@ -1575,7 +1575,7 @@ function steckbriefPreiseHtml(d) {
   if (d.new != null) teile.push(`${tr("Ø neu")} <b>${fmtEur(d.new)}</b>`);
   if (d.used != null) teile.push(`${tr("Ø gebr.")} <b>${fmtEur(d.used)}</b>`);
   return `<div class="price-head"><span>${esc(tr("💶 Marktpreis"))}</span></div>`
-    + `<div class="price-result">`
+    + `<div class="price-result" data-fi-preise>`
     + (teile.length ? teile.join(" · ")
        : `<span class="price-note">${esc(
            tr("Bei BrickLink wurde dazu zuletzt nichts verkauft."))}</span>`)
@@ -1635,6 +1635,13 @@ async function steckbriefOeffnen(itemId, itemType, vorschau) {
       ${d.wanted ? "" : `<button class="mini-btn" data-fi-want>☆ Merken</button>`}
       <a class="mini-btn link" href="${esc(bl)}" target="_blank" rel="noopener">BrickLink ↗</a>
     </div>`;
+
+  // Wie im Steckbrief der Sammlung: erst die Kurzzeile, dann die vollen
+  // Preise mit Spanne, Verkaufszahl, Gebiet und Angeboten (seit 2.90.15).
+  const fiPreise = body.querySelector("[data-fi-preise]");
+  if (fiPreise && (d.new != null || d.used != null)) {
+    preiseVollLaden(fiPreise, typ, itemId);
+  }
 
   body.querySelectorAll("[data-fi-jump]").forEach((b) => {
     b.addEventListener("click", () => {
@@ -7433,10 +7440,17 @@ async function loadSuggestDetail(inner, pit, orig) {
    „Ø neu … · Ø gebr. …“ (gemeldet am 26.09.2026). Dieselben Bausteine wie
    im Steckbrief – damit beides gleich aussieht und gleich bleibt. */
 async function sugPreiseVoll(pr, pit, type) {
+  return preiseVollLaden(pr, type, pit.item_id);
+}
+
+/* Gemeinsam für Suchtreffer-Fenster und Info-Fenster: die Kurzzeile durch
+   die vollen Preisangaben ersetzen, sobald sie da sind. */
+async function preiseVollLaden(pr, type, itemId) {
+  if (!state.bricklinkPrices || /^(fig-|manuell-|custom-)/.test(itemId)) return;
   let p;
   try {
     p = await api(`/price/${encodeURIComponent(type)}/`
-      + `${encodeURIComponent(pit.item_id)}${state.angebote ? "?angebote=1" : ""}`);
+      + `${encodeURIComponent(itemId)}${state.angebote ? "?angebote=1" : ""}`);
   } catch (_) {
     return;               // die Kurzzeile bleibt stehen – besser als nichts
   }

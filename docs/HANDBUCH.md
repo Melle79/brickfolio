@@ -1555,7 +1555,7 @@ Er beantwortet die Frage, die man an dieser Stelle hat:
 | 🔵 🛒 <Listenname> | liegt schon im Einkaufskorb |
 | 🟡 ⭐ auf deiner Wunschliste | willst du |
 | „noch nirgends erfasst" | kennt die App noch gar nicht |
-| 💶 Marktpreis | Ø neu und Ø gebraucht |
+| 💶 Marktpreis | erst kurz Ø neu und Ø gebraucht, einen Moment später wie im Steckbrief: mit Spanne, Verkaufszahl, Gebietsfahne und – wenn eingeschaltet – den Angebotspreisen |
 | 📦 Steckt in diesen Sets | deine Sets zuerst und anklickbar, danach die übrigen bei BrickLink |
 
 Unten stehen **＋ Sammlung**, **☆ Merken** (fällt weg, wenn die Figur schon
