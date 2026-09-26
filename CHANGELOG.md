@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.90.20 – September 2026
+
+### Behoben
+- 🔌 **Vereinzelte „502“ mitten im Betrieb.** Hinter einem Tunnel wie
+  Cloudflare schloss der Server ruhende Verbindungen schon nach 5 Sekunden,
+  der Tunnel hielt sie aber bis zu 90 Sekunden für die nächste Anfrage
+  bereit. Traf eine Anfrage genau diesen Moment, kam sie mit „502“ zurück –
+  ohne dass der Server neu startete. Er hält Verbindungen jetzt 120 Sekunden
+  offen. Wirkt nach dem Update, weil der Startbefehl im Image steckt.
+
 ## 2.90.19 – September 2026
 
 ### Behoben
