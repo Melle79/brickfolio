@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.90.12 – September 2026
+
+### Geändert
+- 🇩🇪 **Jede Preiszeile im Steckbrief zeigt ihr Gebiet.** Bisher stand die
+  Fahne nur, wenn die App auf ein größeres Gebiet ausweichen musste. Dann
+  sah man etwa bei „Gebraucht“ die EU-Fahne und bei „Neu“ nichts. Jetzt
+  steht auch die Fahne des eingestellten Gebiets dahinter, bei Verkaufs-
+  wie Angebotspreisen, und der Tooltip sagt, woher der Preis kommt. Die
+  kurze Zeile auf der Karte bleibt, wie sie war.
+
 ## Hub 1.21.0 – September 2026
 
 ### Neu

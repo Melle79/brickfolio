@@ -594,14 +594,23 @@ function scopeFlag(scope) {
   return REGION_FLAG[scope ?? ""] || "🌍";
 }
 
-/* Für einen Preis-Datensatz (neu/gebraucht): Flagge als HTML mit Tooltip,
-   aber nur, wenn der Preis aus einem anderen Gebiet stammt als eingestellt. */
+/* Für einen Preis-Datensatz (neu/gebraucht): Flagge als HTML mit Tooltip.
+
+   **Immer, nicht nur beim Ausweichen.** Bis 2.90.11 stand sie nur, wenn der
+   Preis aus einem größeren Gebiet kam – dann sah man die EU-Fahne und
+   fragte sich, woher die Zeile ohne Fahne stammt (gewünscht am 26.09.2026).
+   Jetzt trägt jede Preiszeile im Steckbrief ihr Gebiet; der Hinweis auf
+   das Ausweichen steht weiter im Tooltip. Die kurze Kartenzeile bleibt bei
+   „nur beim Ausweichen“ (`fallbackFlagText`). */
 function scopeFlagHtml(d) {
-  if (!d || !d.fell_back) return "";
-  const name = REGION_NAME[d.used_scope ?? ""] || "weltweit";
-  return ` <span class="price-flag" title="Preis aus ${esc(name)} – im`
-    + ` eingestellten Gebiet gab es keine Verkäufe">${scopeFlag(d.used_scope)}`
-    + `</span>`;
+  if (!d || d.used_scope === undefined) return "";
+  const name = tr(REGION_NAME[d.used_scope ?? ""] || "weltweit");
+  const titel = d.fell_back
+    ? tr("Preis aus {gebiet} – im eingestellten Gebiet gab es nichts",
+      { gebiet: name })
+    : tr("Preis aus {gebiet}", { gebiet: name });
+  return ` <span class="price-flag" title="${esc(titel)}">`
+    + `${scopeFlag(d.used_scope)}</span>`;
 }
 
 /* Der Preis-Datensatz, der in der Karte gezeigt wird – spiegelt unitValue():

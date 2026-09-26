@@ -698,6 +698,8 @@
  "Passwort ändern": "Change password",
  "Polen": "Poland",
  "Portugal": "Portugal",
+ "Preis aus {gebiet}": "Price from {gebiet}",
+ "Preis aus {gebiet} – im eingestellten Gebiet gab es nichts": "Price from {gebiet} – there was nothing in the chosen area",
  "Preis bitte als Zahl, z. B. 4,50": "Please enter the price as a number, e.g. 4.50",
  "Preis {cur}": "Price {cur}",
  "Preis {cur} – leer = BrickLink-Ø": "Price {cur} – empty = BrickLink average",
