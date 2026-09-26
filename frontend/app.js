@@ -303,7 +303,10 @@ async function api(path, options = {}) {
     let text;
     if (typeof d === "string" && d) text = tr(d);
     else if (Array.isArray(d) && d.length) {
-      const grund = d.map((f) => pruefText(f && f.msg)).filter(Boolean).join("; ");
+      // Gleiche Gründe nur einmal: „Der Text ist zu kurz; Der Text ist zu
+      // kurz“ stand da, wenn Name und Passwort beide zu kurz waren.
+      const grund = [...new Set(d.map((f) => pruefText(f && f.msg))
+        .filter(Boolean))].join("; ");
       text = grund ? tr("Eingabe nicht gültig: {grund}", { grund })
         : tr("Eingabe nicht gültig");
     } else if (resp.status === 502 || resp.status === 503
@@ -945,11 +948,7 @@ function applySuggestInfo(info, withDetail, geprueft) {
         const links = [];
         const seen = new Set();
         if (d.in_sets) {
-          d.in_sets.split(";;").forEach((s) => {
-            const parts = s.split("|");
-            const no = parts[0];
-            const qty = Number(parts[parts.length - 1]) || 1;
-            const name = parts.slice(1, -1).join("|");
+          parseSetRefs(d.in_sets).forEach(({ no, qty, name }) => {
             seen.add(no);
             links.push(`<button class="set-link owned" data-jump-set="${esc(no)}">`
               + `✔ ${esc(name)} (${esc(no)}${qty > 1 ? `, ${qty}×` : ""})</button>`);
@@ -1546,11 +1545,7 @@ function steckbriefSetsHtml(d) {
   const links = [];
   const gesehen = new Set();
   // Eigene Sets zuerst und anklickbar – dort steckt die Figur wirklich.
-  (d.in_sets || "").split(";;").filter(Boolean).forEach((s) => {
-    const teile = s.split("|");
-    const no = teile[0];
-    const anzahl = Number(teile[teile.length - 1]) || 1;
-    const name = teile.slice(1, -1).join("|");
+  parseSetRefs(d.in_sets).forEach(({ no, qty: anzahl, name }) => {
     gesehen.add(no);
     links.push(`<button class="set-link owned" data-fi-jump="${esc(no)}">`
       + `✔ ${esc(name)} (${esc(no)}${anzahl > 1 ? `, ${anzahl}×` : ""})</button>`);
@@ -1867,11 +1862,7 @@ function setFigsText(it) {
 }
 
 function inSetLinks(raw) {
-  const links = raw.split(";;").map((s) => {
-    const parts = s.split("|");
-    const no = parts[0];
-    const qty = Number(parts[parts.length - 1]) || 1;
-    const name = parts.slice(1, -1).join("|");
+  const links = parseSetRefs(raw).map(({ no, qty, name }) => {
     return `<button class="set-link owned" data-jump-set="${esc(no)}">`
       + `✔ ${esc(name)} (${esc(no)}${qty > 1 ? `, ${qty}×` : ""})</button>`;
   });
@@ -1881,12 +1872,18 @@ function inSetLinks(raw) {
     + `<button class="set-link more-toggle" data-more-sets>+${links.length - 1} weitere ▾</button>`;
 }
 
+/* „Nummer|Name|Anzahl“ – beim Steckbrief kommt seit 30.08.2026 als viertes
+   Feld der Zustand des Sets dazu („…|2|new“). Wer blind das letzte Feld als
+   Anzahl las, bekam „…(2nd edition)|2“ als Namen und keine Anzahl
+   (Gesamttest 26.09.2026). Deshalb liest nur noch diese eine Stelle. */
 function parseSetRefs(raw) {
   if (!raw) return [];
-  return raw.split(";;").map((s) => {
+  return raw.split(";;").filter(Boolean).map((s) => {
     const parts = s.split("|");
+    const zustand = ["new", "used"].includes(parts[parts.length - 1])
+      ? parts.pop() : "";
     return { no: parts[0], qty: Number(parts[parts.length - 1]) || 1,
-             name: parts.slice(1, -1).join("|") };
+             name: parts.slice(1, -1).join("|"), zustand };
   });
 }
 
@@ -2431,10 +2428,15 @@ async function updateListsTab() {
 /* Titel der App inkl. Anzeigename – auch für Kopfzeilen im Druck.
    Ohne gesetzten Namen heisst sie schlicht „Dein Brickfolio"; frueher stand
    dort ein fester Vorname, den jede fremde Installation mitschleppte. */
+/* „Svens Brickfolio“ mit Apostroph wie bisher – aber bei einem Namen auf
+   s, ß, x oder z nur der Apostroph: „Lukas' Brickfolio“, wie es der
+   Hinweis im Assistenten verspricht (nicht „Lukas's“). */
+function besitzTitel(name) {
+  return name + (/[sßxz]$/i.test(name) ? "'" : "'s") + " Brickfolio";
+}
+
 function appTitle() {
-  return state.ownerName
-    ? state.ownerName + "'s Brickfolio"
-    : "Dein Brickfolio";
+  return state.ownerName ? besitzTitel(state.ownerName) : "Dein Brickfolio";
 }
 
 function applyOwnerName(name) {
@@ -2738,7 +2740,7 @@ function wireWizardOnce() {
     // bei leerem Feld stand dort sonst „'s Brickfolio".
     const roh = $("wiz-owner").value.trim();
     $("wiz-name-preview").textContent =
-      roh ? roh + "'s Brickfolio" : "Dein Brickfolio";
+      roh ? besitzTitel(roh) : "Dein Brickfolio";
   });
 
   $("wiz-next").addEventListener("click", async () => {
@@ -6177,6 +6179,10 @@ function wireCollectionDetails(card, item, id, deleteEntry, wireQty) {
           b.classList.toggle("sel", b.dataset.cond === cond));
         const sub = card.querySelector(".card-head [data-sub]");
         if (sub) sub.textContent = collSubMeta(item);
+        // Wert und Gewinn hängen am Zustand (Ø neu oder gebraucht) – sie
+        // blieben bis zum nächsten Öffnen auf dem alten Stand.
+        const gewinn = card.querySelector("[data-profit]");
+        if (gewinn) gewinn.innerHTML = profitLine(item);
         updateStatsOnly();
         toast(cond === "new" ? "Zustand: Neu ✔" : "Zustand: Gebraucht ✔");
       } catch (e) { toast(e.message); }
@@ -8132,6 +8138,9 @@ async function addManualToList(listId) {
       bricklink_url: blUrl, year,
       qty: Math.max(1, Number($("m-qty").value) || 1),
       condition: $("m-cond").value,
+      // Der Einkaufspreis gehört mit auf die Liste – bisher wurde das Feld
+      // still geleert und der Preis war weg (Gesamttest 26.09.2026).
+      paid_price: betragLesen($("m-paid").value),
     }});
     toast(res.merged
       ? tr("Schon auf der Liste – Anzahl erhöht (jetzt {n}×)", { n: res.qty })
@@ -8554,9 +8563,11 @@ function renderLists(lists) {
     card.querySelectorAll("[data-i-undo]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         try {
-          await api(`/lists/items/${btn.dataset.iUndo}/undo`,
+          const r = await api(`/lists/items/${btn.dataset.iUndo}/undo`,
             { method: "POST" });
-          toast("Rückgängig – Sammlung ggf. manuell anpassen");
+          toast(r && r.reverted
+            ? tr("Rückgängig – wieder aus der Sammlung genommen")
+            : tr("Rückgängig – Sammlung ggf. manuell anpassen"));
           showListsTab("shop");
         } catch (e) { toast(e.message); }
       });
@@ -9100,7 +9111,7 @@ function downloadCsvSample() {
     ["Nummer", "Typ", "Name", "Anzahl", "Zustand", "Bezahlt", "Jahr",
      "Notizen"],
     ["sw0815", "Figur", "Shoretrooper", "2", "Gebraucht", "24,50", "2016",
-     "Flohmarkt Ottobrunn"],
+     "Flohmarkt"],
     ["75154", "Set", "TIE Striker", "1", "Neu", "89,99", "2016", ""],
     ["col424", "Figur", "", "1", "Gebraucht", "", "", "leerer Name: Nummer wird als Name verwendet"],
     ["manuell-01", "Figur", "Eigenbau-Ritter", "1", "Gebraucht", "3,00", "",
@@ -9262,7 +9273,9 @@ function renderMissingFigs(data) {
   <div class="card">
     <div class="card-head"><div class="card-title">
       <strong>🧩 Fehlende Set-Figuren</strong>
-      <div class="sub">${esc(tr("{n} Figuren fehlen in {offen} von {ges} Sets",
+      <div class="sub">${esc(tr(s.pieces === 1
+        ? "1 Figur fehlt in {offen} von {ges} Sets"
+        : "{n} Figuren fehlen in {offen} von {ges} Sets",
         { n: s.pieces, offen: s.sets_incomplete, ges: s.sets_total }))}${
           s.est_cost > 0 ? esc(tr(" · Nachkauf ca. {wert}",
             { wert: fmtEur(s.est_cost) })) : ""}</div>
@@ -9417,7 +9430,8 @@ function printMissingFigs() {
   printTable(tr("Fehlende Set-Figuren"),
     // Das „von N Sets" stand hier zweimal – einmal im übersetzten Satz und
     // einmal fest angehängt: „… in 3 von 12 Setsvon 12 Sets".
-    tr("{n} Figuren fehlen in {offen} von {ges} Sets",
+    tr(data.stats.pieces === 1 ? "1 Figur fehlt in {offen} von {ges} Sets"
+      : "{n} Figuren fehlen in {offen} von {ges} Sets",
       { n: data.stats.pieces, offen: data.stats.sets_incomplete,
         ges: data.stats.sets_total })
     + (data.stats.est_cost > 0
@@ -9485,15 +9499,22 @@ const geldSpalte = (text) => tr(text) + " (" + (state.currency || "EUR") + ")";
 
 async function exportCollectionCsv() {
   const data = await api("/collection?q=&sort=name");
+  // „Bezahlt“ und „Thema“ fehlten: Der Import kennt beide Spalten, und wer
+  // die eigene Datei wieder einspielte, verlor Kaufpreise und Themen
+  // (Gesamttest 26.09.2026). Die Kopfzeile ohne Währung, damit der Import
+  // sie wiedererkennt; Kaufpreise wie überall nur für Sammlerprofis.
+  const profi = !!(state.user && state.user.is_dealer);
   const rows = [[tr("Nummer"), tr("Name"), tr("Typ"), tr("Jahr"), tr("Anzahl"),
-    tr("Zustand"), geldSpalte("Ø Neu"), geldSpalte("Ø Gebraucht"),
-    geldSpalte("Wert"), tr("Notizen"), tr("Erfasst von"), tr("Erfasst am")]];
+    tr("Zustand"), tr("Thema"), geldSpalte("Ø Neu"), geldSpalte("Ø Gebraucht"),
+    geldSpalte("Wert"), ...(profi ? [tr("Bezahlt")] : []),
+    tr("Notizen"), tr("Erfasst von"), tr("Erfasst am")]];
   data.items.forEach((it) => {
     const unit = unitValue(it);
     rows.push([it.item_id, it.name, it.item_type, it.year > 0 ? it.year : "",
       it.quantity, it.condition === "new" ? tr("Neu") : tr("Gebraucht"),
-      numLoc(it.price_new), numLoc(it.price_used),
+      it.theme || "", numLoc(it.price_new), numLoc(it.price_used),
       unit ? numLoc((unit * it.quantity).toFixed(2)) : "",
+      ...(profi ? [it.paid_price != null ? numLoc(it.paid_price) : ""] : []),
       it.notes, it.added_by_name || "", _dateDe(it.added_at)]);
   });
   downloadCsv(tr("brickfolio-sammlung.csv"), rows);
@@ -9757,7 +9778,8 @@ async function refreshThemes() {
     // Wenn etwas übrig bleibt: die Nummern nennen. „Lässt sich nicht
     // bestimmen" allein lässt einen raten, welcher Eintrag gemeint ist.
     const fertig = total
-      ? tr("{n} Einträge haben jetzt ein Thema ✔", { n: total })
+      ? tr(total === 1 ? "1 Eintrag hat jetzt ein Thema ✔"
+        : "{n} Einträge haben jetzt ein Thema ✔", { n: total })
       : (offen.length
         ? tr("Kein Thema bestimmbar für: {nummern}",
           { nummern: offen.slice(0, 5).join(", ") })
@@ -11030,8 +11052,8 @@ function renderNotifications(items) {
             <button class="btn" data-merge="${n.id}" data-modus="zusammen">
               ${esc(tr("Zwei Exemplare"))}</button>
           </div>
-          <p class="notice-hint">${esc(tr("„Ein Exemplar\u201c heißt: derselbe "
-            + "Kasten, zweimal erfasst. „Zwei Exemplare\u201c addiert die "
+          <p class="notice-hint">${esc(tr("„Ein Exemplar“ heißt: derselbe "
+            + "Kasten, zweimal erfasst. „Zwei Exemplare“ addiert die "
             + "Stückzahlen."))}</p>`
         : n.new_item_id ? `<button class="btn btn-primary notice-apply"
           data-apply="${n.id}">Nummer übernehmen</button>` : ""}`;
@@ -12631,7 +12653,10 @@ async function katalogReiterOeffnen() {
       // Drei Gründe für dieselbe leere Seite, und sie führen an ganz
       // verschiedene Enden.
       $("kat-leer").textContent =
-        (katArten && !katArten[katStand.art])
+        // „Nur Figuren“ nur, wenn es überhaupt Figuren gibt – ohne jeden
+        // Katalog stand hier sonst dieser Satz statt „nicht geladen“.
+        (katArten && !katArten[katStand.art] && katStand.art === "set"
+         && katArten.minifig)
           ? tr("Der Katalog enthält bisher nur Figuren, keine Sets.")
           : (katThemenAlle.length
              ? tr("Alle Themen sind ausgeblendet. Unter Mehr → Katalog-Themen "

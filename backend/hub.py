@@ -84,8 +84,22 @@ def disconnect():
               "hub_key_sent", "hub_wuensche_zeigen", "hub_wuensche_stand",
               "hub_sammlung_zeigen", "hub_pause", "hub_pause_gemeldet",
               "hub_block_info", "hub_hinweise", "hub_hinweise_gemeldet",
-              "hub_inaktiv_tage"):
+              "hub_inaktiv_tage", "hub_verwaist"):
         core.set_setting(k, "")
+
+
+def _eigener_token(token: str) -> bool:
+    """Ist das der gespeicherte Token? Ohne Einstellungen (frische Datenbank,
+    Tests) einfach nein – das Merken ist Beiwerk, kein Grund zum Absturz."""
+    try:
+        return token == core.get_setting("hub_token")
+    except Exception:
+        return False
+
+
+def verwaist() -> bool:
+    """Kennt der Hub unseren Token nicht mehr (Instanz vom Admin gelöscht)?"""
+    return enabled() and core.get_setting("hub_verwaist") == "1"
 
 
 # ------------------------------------------------------------------ HTTP
@@ -145,7 +159,16 @@ def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):
             # Grund und Ende der Sperre (ab Hub 1.20.0) für den Sperrhinweis.
             core.set_setting("hub_block_info", json.dumps(
                 {"grund": data.get("grund"), "bis": data.get("bis")}))
+        if resp.status_code == 401 and token and _eigener_token(token):
+            # **Der gespeicherte Token gilt nicht mehr** – der Hub-Admin hat
+            # die Instanz oder das Mitglied gelöscht. Bisher blieb die App
+            # „verbunden“ und zeigte überall nur „Token fehlt oder ungültig“
+            # (Tausch-Gesamttest 26.09.2026). Merken, damit sie es sagen und
+            # den Weg zum Neubeitritt anbieten kann.
+            core.set_setting("hub_verwaist", "1")
         raise HubError(resp.status_code, msg or f"Hub-Fehler {resp.status_code}")
+    if token and _eigener_token(token) and core.get_setting("hub_verwaist"):
+        core.set_setting("hub_verwaist", "")
     if token and core.get_setting("hub_blocked"):
         core.set_setting("hub_blocked", "")     # Freischaltung bemerkt
         core.set_setting("hub_block_info", "")

@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.90.20"
+APP_VERSION = "2.90.21"
 
 
 def hash_password(password: str) -> str:
@@ -908,6 +908,12 @@ def init_db():
         if scols and "condition" not in scols:
             conn.execute("ALTER TABLE shopping_items ADD COLUMN "
                          "condition TEXT NOT NULL DEFAULT 'used'")
+        # Was der Wareneingang gebucht hat – damit „Rückgängig“ genau das
+        # zurücknehmen kann (Zeile, Art der Buchung, Kaufposten).
+        for spalte in ("recv_entry_id INTEGER", "recv_mode TEXT",
+                       "recv_purchase_id INTEGER"):
+            if scols and spalte.split()[0] not in scols:
+                conn.execute(f"ALTER TABLE shopping_items ADD COLUMN {spalte}")
         # Als inventarisiert markierte Listen bleiben aus der Einkaufs-Summe
         # der Statistik heraus (bereits erfasst).
         slcols = {r[1] for r in conn.execute(
@@ -965,6 +971,13 @@ def init_db():
         if tcols and "other_status" not in tcols:
             conn.execute("ALTER TABLE trades ADD COLUMN other_status TEXT "
                          "NOT NULL DEFAULT 'active'")
+        # `entfernt`: das Gegenüber hat ein schon zugesagtes Gespräch gelöscht
+        # – die Zusage bleibt, gebucht werden darf weiter. `ehemalig`: aus
+        # einer früheren eigenen Mitgliedschaft (abgemeldet, neu beigetreten).
+        for spalte in ("entfernt", "ehemalig"):
+            if tcols and spalte not in tcols:
+                conn.execute(f"ALTER TABLE trades ADD COLUMN {spalte} "
+                             "INTEGER NOT NULL DEFAULT 0")
         # Thema (Star Wars, City …) für die Sortierung der Sammlung
         for tbl in ("collection", "wanted"):
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}

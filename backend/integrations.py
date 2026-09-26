@@ -1167,6 +1167,38 @@ def begriffe_merken(begriff: str, begriffe: list, quelle: str = "ki"):
                 (schluessel, schluessel, jetzt - BEGRIFF_TIPPFENSTER))
 
 
+def ollama_begriffe(q: str) -> list:
+    """Das Modell selbst fragen – ohne Liste, Wörterbuch und Zwischenspeicher.
+
+    Eigene Funktion, damit der Verbindungstest wirklich das Modell prüft:
+    Über `suchbegriffe` antwortete bei „Ritter“ das mitgelieferte Wörterbuch,
+    und der Test meldete „Verbunden“, obwohl unter der Adresse nichts lief.
+    """
+    key = q.casefold()
+    basis = ollama_setting("ollama_url").strip().rstrip("/")
+    try:
+        resp = requests.post(
+            basis + "/api/chat",
+            json={"model": ollama_modell(), "stream": False, "think": False,
+                  "format": _OLLAMA_SCHEMA, "options": {"temperature": 0},
+                  "keep_alive": _ollama_keep_alive(),
+                  "messages": [{"role": "system", "content": _OLLAMA_SYSTEM},
+                               {"role": "user", "content": q}]},
+            timeout=OLLAMA_TIMEOUT, headers={"User-Agent": USER_AGENT})
+        resp.raise_for_status()
+        inhalt = _ollama_inhalt(resp.json().get("message", {}))
+        roh = json.loads(inhalt).get("begriffe", [])
+    except Exception:
+        roh = []
+    begriffe = []
+    for b in roh if isinstance(roh, list) else []:
+        b = str(b).strip()
+        # Der eigene Begriff bringt nichts – danach wurde schon gesucht.
+        if b and b.casefold() != key and b not in begriffe:
+            begriffe.append(b[:60])
+    return begriffe[:4]
+
+
 def suchbegriffe(q: str, nur_liste: bool = False) -> list:
     """Deutsche Suchanfrage in englische BrickLink-Begriffe uebersetzen.
 
@@ -1223,28 +1255,7 @@ def suchbegriffe(q: str, nur_liste: bool = False) -> list:
     if gelernt:
         _begriff_cache[key] = (None, gelernt)
         return gelernt
-    basis = ollama_setting("ollama_url").strip().rstrip("/")
-    try:
-        resp = requests.post(
-            basis + "/api/chat",
-            json={"model": ollama_modell(), "stream": False, "think": False,
-                  "format": _OLLAMA_SCHEMA, "options": {"temperature": 0},
-                  "keep_alive": _ollama_keep_alive(),
-                  "messages": [{"role": "system", "content": _OLLAMA_SYSTEM},
-                               {"role": "user", "content": q}]},
-            timeout=OLLAMA_TIMEOUT, headers={"User-Agent": USER_AGENT})
-        resp.raise_for_status()
-        inhalt = _ollama_inhalt(resp.json().get("message", {}))
-        roh = json.loads(inhalt).get("begriffe", [])
-    except Exception:
-        roh = []
-    begriffe = []
-    for b in roh if isinstance(roh, list) else []:
-        b = str(b).strip()
-        # Der eigene Begriff bringt nichts – danach wurde schon gesucht.
-        if b and b.casefold() != key and b not in begriffe:
-            begriffe.append(b[:60])
-    begriffe = begriffe[:4]
+    begriffe = ollama_begriffe(q)
     # Das Modell hat nichts hergegeben – dann doch die halbe Übersetzung.
     if not begriffe and halb:
         return halb[:4]

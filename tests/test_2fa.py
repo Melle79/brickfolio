@@ -59,7 +59,9 @@ def test_ohne_zweiten_faktor_meldet_man_sich_wie_bisher_an(client):
 def test_einrichtung_verlangt_das_passwort(client):
     client.headers["Authorization"] = "Bearer " + anmelden(client).json()["token"]
     r = client.post("/api/me/2fa/start", json={"password": "falsch"})
-    assert r.status_code == 401
+    # 403, nicht 401: Ein 401 liest die Oberfläche als „Sitzung abgelaufen“
+    # und meldet ab – ein Tippfehler warf so aus der App (Gesamttest).
+    assert r.status_code == 403
 
 
 def test_einschalten_erst_nach_gueltigem_code(client):
@@ -67,7 +69,7 @@ def test_einschalten_erst_nach_gueltigem_code(client):
     s = client.post("/api/me/2fa/start",
                     json={"password": "geheim12345"}).json()
     assert client.post("/api/me/2fa/confirm",
-                       json={"code": "000000"}).status_code == 401
+                       json={"code": "000000"}).status_code == 403
     assert client.get("/api/me/2fa").json()["active"] is False
     r = client.post("/api/me/2fa/confirm",
                     json={"code": totp.code_jetzt(s["secret"])})
@@ -156,10 +158,10 @@ def test_ausschalten_verlangt_passwort_und_code(client):
     assert client.post("/api/me/2fa/disable",
                        json={"password": "falsch",
                              "code": totp.code_jetzt(secret)}
-                       ).status_code == 401
+                       ).status_code == 403
     assert client.post("/api/me/2fa/disable",
                        json={"password": "geheim12345", "code": "000000"}
-                       ).status_code == 401
+                       ).status_code == 403
 
 
 def test_admin_kann_den_zweiten_faktor_abnehmen(client):

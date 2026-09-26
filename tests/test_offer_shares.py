@@ -44,3 +44,10 @@ def test_all_unpriced_splits_evenly():
 def test_zero_total_yields_zeros():
     shares = main._distribute_offer_shares(0.0, [10.0, 20.0])
     assert shares == [0.0, 0.0]
+
+
+def test_kein_anteil_wird_negativ():
+    """5 Cent auf sieben Artikel: Bis 2.90.20 stand am letzten −0,01 €."""
+    shares = main._distribute_offer_shares(0.05, [0] * 7)
+    assert min(shares) >= 0
+    assert round(sum(shares), 2) == 0.05

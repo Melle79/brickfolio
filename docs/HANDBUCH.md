@@ -1892,6 +1892,10 @@ Sprache**, die Geldspalten der **eingestellten Währung** – auf Englisch
 heißt die Datei `brickfolio-collection.csv` und die Spalte
 `avg used (GBP)`.
 
+Die Sammlungs-CSV enthält auch **Thema** und – für Sammlerprofis –
+**Bezahlt**. Damit lässt sie sich über den CSV-Import wieder einlesen,
+ohne dass Kaufpreise oder Themen verloren gehen.
+
 ### 10.2 CSV-Import *(Sammlerprofi)*
 
 Ganze Bestände in einem Rutsch einlesen – etwa eine Excel-Erfassung oder
@@ -1900,7 +1904,7 @@ korrekte Vorlage. Das Format:
 
 ```csv
 Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen
-sw0815;Figur;Shoretrooper;2;Gebraucht;24,50;2016;Flohmarkt Ottobrunn
+sw0815;Figur;Shoretrooper;2;Gebraucht;24,50;2016;Flohmarkt
 75154;Set;TIE Striker;1;Neu;89,99;2016;
 col424;Figur;;1;Gebraucht;;;leerer Name: Nummer wird als Name verwendet
 ```
@@ -2264,7 +2268,17 @@ Im Gespräch gibt es außerdem:
 - **⚑ Melden** – siehe unten
 
 Nimmt das Gegenüber einen Artikel aus dem Netzwerk, steht am Vorgang und
-über dem Verlauf **„nicht mehr angeboten"**.
+über dem Verlauf **„nicht mehr angeboten"** – solange noch nichts zugesagt
+ist. Nach einem Tausch ist das Angebot natürlich weg; dann erscheint der
+Hinweis nicht mehr.
+
+Löscht das Gegenüber ein Gespräch, das **schon angenommen** war, bleibt die
+Zusage stehen: Die Ware kann unterwegs sein, und **Übernehmen** bzw.
+**Austragen** funktioniert weiter. Nur antworten geht nicht mehr.
+
+Wer sich abmeldet und später wieder beitritt, findet seine alten
+Gespräche als **„frühere Mitgliedschaft"** – lesbar, aber ohne
+Schreibzeile.
 
 ### 12.6 Angenommen – und dann?
 
@@ -3067,6 +3081,7 @@ die jeweiligen Nutzungsbedingungen.
 | Bezahlt | Bezahlt, Kaufpreis, Einkauf, paid |
 | Jahr | Jahr, year |
 | Notizen | Notizen, notes, Bemerkung |
+| Thema | Thema, theme (fehlt es, wird es wie beim Erfassen ermittelt) |
 
 ---
 

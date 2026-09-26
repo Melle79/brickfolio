@@ -22,7 +22,9 @@ import base64
 import hashlib
 import json
 import os
+import functools
 import re
+import threading
 import time
 
 import requests
@@ -34,7 +36,7 @@ import crypto_box
 import hub
 import integrations
 from main import (AddItemBody, ListItemBody, UpdateItemBody,
-                  _duplicate_items, _kaufbuch_abgang, _uploads_dir,
+                  _duplicate_items, _uploads_dir,
                   _wuensche_geaendert,
                   add_item, add_list_item, admin_user, current_user,
                   update_item)
@@ -53,6 +55,31 @@ class HubConnectBody(BaseModel):
 class HubInviteBody(BaseModel):
     note: str = Field(default="", max_length=120)
     expires_in_days: int = Field(default=0, ge=0, le=365)
+
+
+def _hub_antwort(e: "hub.HubError") -> HTTPException:
+    """Eine Absage des Hubs als passende Antwort weitergeben.
+
+    Bis 2.90.20 wurde **jede** zu 502. Die Oberfläche zeichnet alles ab 500
+    als Serverfehler auf – eine Sperre, ein aufgebrauchtes Kontingent oder
+    ein schon benutzter Einladungscode landeten so als „🐞 Fehler“ im
+    Bericht, bei gesperrter Instanz alle 15 Sekunden neu (Tausch-Gesamttest
+    26.09.2026). Absagen sind gewöhnlicher Betrieb: Sie behalten ihren
+    Status. Nur ein 401 nicht – den liest die Oberfläche als „Sitzung
+    abgelaufen“ und meldet ab.
+    """
+    status = getattr(e, "status", 0) or 0
+    if status == 401:
+        if hub.verwaist():
+            return HTTPException(409, "Der Hub kennt diese Instanz nicht mehr "
+                                      "– vermutlich hat der Hub-Admin sie "
+                                      "entfernt. Unter Mehr → Tausch-Netzwerk "
+                                      "abmelden und mit einer neuen Einladung "
+                                      "wieder beitreten.")
+        return HTTPException(400, f"Hub: {e.message}")
+    if 400 <= status < 500:
+        return HTTPException(status, f"Hub: {e.message}")
+    return HTTPException(502, f"Hub: {e.message}")
 
 
 def _hub_status(refresh: bool = False) -> dict:
@@ -82,6 +109,7 @@ def _hub_status(refresh: bool = False) -> dict:
             "member_id": c["member_id"], "display_name": c["display_name"],
             "is_admin": c["is_admin"], "last_publish": hub.last_publish(),
             "blocked": hub.blocked(),
+            "verwaist": hub.verwaist(),
             "block": hub.block_info() if hub.blocked() else None,
             "pause": pause, "hinweise": hinweise,
             "inaktiv_tage": int(tage) if tage and tage.isdigit() else None}
@@ -115,7 +143,7 @@ def hub_hinweis_gelesen(notice_id: int, user: dict = Depends(current_user)):
         hub.ack_notice(notice_id)
     except hub.HubError as e:
         if e.status != 404:
-            raise HTTPException(502, f"Hub: {e.message}")
+            raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     rest = [h for h in hub.hinweise() if h.get("id") != notice_id]
@@ -155,6 +183,19 @@ def hub_status(refresh: int = 0, user: dict = Depends(current_user)):
 
 @router.post("/api/hub/connect")
 def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
+    if hub.enabled():
+        # Ein zweiter Beitritt legte ein zweites Mitglied an; das alte blieb
+        # samt Angeboten aktiv, und niemand holte seine Nachrichten mehr ab
+        # (Tausch-Gesamttest 26.09.2026). Nur wenn der Hub uns vergessen hat,
+        # ist ein Neubeitritt der richtige Weg.
+        if not hub.verwaist():
+            raise HTTPException(409, "Diese Instanz ist schon mit dem Tausch-"
+                                     "Netzwerk verbunden – zum Wechseln erst "
+                                     "abmelden.")
+        hub.disconnect()
+        with core.db() as conn:
+            conn.execute("DELETE FROM hub_invites")
+            conn.execute("UPDATE trades SET ehemalig = 1")
     try:
         if body.token:
             hub.connect_with_token(body.token.strip())
@@ -170,7 +211,7 @@ def hub_connect(body: HubConnectBody, user: dict = Depends(admin_user)):
             pass
         return _hub_status()
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -190,9 +231,11 @@ def hub_disconnect(user: dict = Depends(admin_user)):
     Angebote verschwinden dort spätestens mit der Pause wegen Inaktivität.
     """
     informiert = False
+    verwaist = hub.verwaist()
     try:
-        hub.leave()
-        informiert = True
+        if not verwaist:
+            hub.leave()
+            informiert = True
     except Exception:
         # Ein Hub vor 1.17.0 kennt das Abmelden nicht – dann wenigstens die
         # gezeigte Wunschliste zurückziehen, wie bisher.
@@ -208,7 +251,13 @@ def hub_disconnect(user: dict = Depends(admin_user)):
     hub.disconnect()
     with core.db() as conn:
         conn.execute("DELETE FROM hub_invites")
-    return {"connected": False, "hub_informiert": informiert}
+        # Die Gespräche bleiben lesbar, gehören aber zur alten Mitgliedschaft.
+        # Sonst hielt der Abgleich nach einem Wiederbeitritt alle für „vom
+        # Gegenüber gelöscht“.
+        conn.execute("UPDATE trades SET ehemalig = 1")
+    # Kannte der Hub uns ohnehin nicht mehr, gibt es dort nichts abzumelden –
+    # „nicht erreichbar“ wäre dann die falsche Auskunft.
+    return {"connected": False, "hub_informiert": informiert or verwaist}
 
 
 class ShareBody(BaseModel):
@@ -288,12 +337,20 @@ def share_status(user: dict = Depends(current_user)):
 
 @router.post("/api/share/from_duplicates")
 def share_from_duplicates(user: dict = Depends(current_user)):
-    """Bequemlichkeit: alles aus der Abgabeliste auswählen."""
-    ids = [it["id"] for it in _duplicate_items()["items"]]
+    """Bequemlichkeit: alles aus der Abgabeliste auswählen.
+
+    **Mit der abgebbaren Menge, nicht mit dem ganzen Bestand.** Bis 2.90.20
+    wurde nur `shared` gesetzt; beim Veröffentlichen galt dann
+    `share_qty or quantity` – angeboten wurden also auch das Exemplar zum
+    Behalten und die Figuren, die in eigenen Sets stecken.
+    """
+    posten = [(it["id"], it["surplus"]) for it in _duplicate_items()["items"]
+              if it.get("surplus", 0) > 0]
     with core.db() as conn:
-        for i in ids:
-            conn.execute("UPDATE collection SET shared = 1 WHERE id = ?", (i,))
-    return {"ok": True, "added": len(ids)}
+        for i, menge in posten:
+            conn.execute("UPDATE collection SET shared = 1, share_qty = ? "
+                         "WHERE id = ?", (menge, i))
+    return {"ok": True, "added": len(posten)}
 
 
 @router.post("/api/share/clear")
@@ -381,7 +438,7 @@ def hub_publish(user: dict = Depends(admin_user)):
         res = _angebote_senden()
         return {"ok": True, "count": res.get("count", 0)}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -394,7 +451,7 @@ def hub_offers(q: str = "", member: str = "",
     try:
         return {"offers": hub.offers({"q": q, "member": member})}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -406,7 +463,7 @@ def hub_members(user: dict = Depends(current_user)):
     try:
         return {"members": hub.members()}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -556,12 +613,24 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
             # bis 2.88.55 stand so ein Gespräch ewig als „offen“ da.
             # Nur wenn die Liste vollständig ist (der Hub schickt höchstens
             # 200), sonst hielte man ältere für gelöscht.
+            #
+            # **Zwei Ausnahmen** (Tausch-Gesamttest 26.09.2026): Gespräche aus
+            # einer früheren eigenen Mitgliedschaft kennt der Hub natürlich
+            # nicht mehr – gelöscht hat da niemand etwas. Und war ein Tausch
+            # schon zugesagt, bleibt die Zusage: Die Ware kann unterwegs
+            # sein, verbuchen muss weiter gehen.
             if len(remote) < 200:
                 da = {t["id"] for t in remote}
                 for r in conn.execute(
-                        "SELECT id FROM trades WHERE status != 'removed'"
+                        "SELECT id, status FROM trades WHERE status != "
+                        "'removed' AND ehemalig = 0 AND entfernt = 0"
                         ).fetchall():
-                    if r["id"] not in da:
+                    if r["id"] in da:
+                        continue
+                    if r["status"] in ("accepted", "closed"):
+                        conn.execute("UPDATE trades SET entfernt = 1 "
+                                     "WHERE id = ?", (r["id"],))
+                    else:
                         conn.execute("UPDATE trades SET status = 'removed' "
                                      "WHERE id = ?", (r["id"],))
         _buchungen_nachmelden(remote, me)
@@ -571,7 +640,7 @@ def hub_sync_trades(focus: str = "", user: dict = Depends(current_user)):
                 new_msgs += _sync_trade(t["id"])
         return {"trades": len(remote), "new_messages": new_msgs}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -661,7 +730,22 @@ def _fremder_schluessel(member_id: str, name: str = "") -> str:
     hin, stünde er in der Lage, einen eigenen unterzuschieben und
     mitzulesen. Deshalb zählt der zuerst gesehene.
     """
-    daten = hub.member_key(member_id)
+    try:
+        daten = hub.member_key(member_id)
+    except hub.HubError as e:
+        # **Gesperrt heißt nicht verschwunden.** Der Hub gibt Schlüssel nur
+        # für aktive Mitglieder heraus; für ein gesperrtes Gegenüber kam
+        # „Mitglied nicht gefunden“, obwohl der Hinweis im Gespräch
+        # verspricht, dass die Nachricht nach der Freischaltung ankommt
+        # (Tausch-Gesamttest 26.09.2026). Den schon gemerkten Schlüssel zu
+        # nehmen ist sicher – er ist ja genau der, dem wir vertrauen.
+        if e.status == 404:
+            with core.db() as conn:
+                row = conn.execute("SELECT public_key FROM hub_keys WHERE "
+                                   "member_id = ?", (member_id,)).fetchone()
+            if row:
+                return row["public_key"]
+        raise
     schluessel = daten["public_key"]
     try:
         crypto_box.remember_key(member_id, schluessel,
@@ -748,13 +832,15 @@ def hub_start_trade(body: TradeStartBody, user: dict = Depends(current_user)):
                 (tid, res.get("message_id"), body.text, now_ts))
         return {"ok": True, "trade_id": tid}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
 
 class TradeMessageBody(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
+    # Nur Leerzeichen ist keine Nachricht – die Oberfläche kürzt, die
+    # Schnittstelle nahm es bisher an und schickte eine leere Blase.
+    text: str = Field(min_length=1, max_length=2000, pattern=r"\S")
 
 
 @router.post("/api/hub/trades/{trade_id}/messages")
@@ -793,7 +879,7 @@ def hub_send_message(trade_id: str, body: TradeMessageBody,
                 conn.execute("UPDATE trades SET other_status = 'left' "
                              "WHERE id = ?", (trade_id,))
             raise HTTPException(410, e.message)
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -808,7 +894,7 @@ def hub_delete_trade(trade_id: str, user: dict = Depends(current_user)):
             hub.delete_trade(trade_id)
         except hub.HubError as e:
             if e.status != 404:
-                raise HTTPException(502, f"Hub: {e.message}")
+                raise _hub_antwort(e)
         except requests.RequestException:
             raise HTTPException(502, "Hub nicht erreichbar")
     with core.db() as conn:
@@ -826,6 +912,23 @@ def hub_trade_status(trade_id: str, body: TradeStatusBody,
                      user: dict = Depends(current_user)):
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
+    with core.db() as conn:
+        t = conn.execute("SELECT direction, status FROM trades WHERE id = ?",
+                         (trade_id,)).fetchone()
+    # **Wer darf was?** Annehmen und Ablehnen nur, wer gefragt wurde, und nur
+    # solange offen; Abschließen nur nach einer Zusage; Wiederöffnen nie.
+    # Bisher blendete nur die Oberfläche die Knöpfe aus – über die
+    # Schnittstelle nahm man die eigene Anfrage an (Tausch-Gesamttest).
+    if t:
+        erlaubt = {
+            "accepted": t["direction"] == "in" and t["status"] == "open",
+            "declined": t["direction"] == "in" and t["status"] == "open",
+            "closed": t["status"] == "accepted",
+            "open": False,
+        }[body.status]
+        if not erlaubt:
+            raise HTTPException(409, "Dieser Schritt passt nicht zum Stand "
+                                     "des Gesprächs.")
     try:
         hub.set_trade_status(trade_id, body.status)
         with core.db() as conn:
@@ -833,7 +936,7 @@ def hub_trade_status(trade_id: str, body: TradeStatusBody,
                          (body.status, trade_id))
         return {"ok": True, "status": body.status}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -872,7 +975,7 @@ def hub_trade_progress(trade_id: str, body: TradeProgressBody,
     try:
         hub.trade_progress(trade_id, body.step)
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     spalte = "shipped_at" if body.step == "shipped" else "arrived_at"
@@ -889,12 +992,27 @@ def hub_trade_progress(trade_id: str, body: TradeProgressBody,
     return {"ok": True, "step": body.step}
 
 
+# **Buchungen nacheinander.** Zwei gleichzeitige „Austragen“ lasen beide
+# dieselbe Menge, setzten beide „3 → 2“ – und das Kaufbuch zog zweimal ab
+# (Tausch-Gesamttest 26.09.2026). Die App läuft in einem Prozess; eine
+# Sperre um Übernehmen und Austragen reicht.
+_buchen_sperre = threading.Lock()
+
+
+def _nacheinander(f):
+    @functools.wraps(f)
+    def innen(*args, **kwargs):
+        with _buchen_sperre:
+            return f(*args, **kwargs)
+    return innen
+
+
 class TradeTakeBody(BaseModel):
     ziel: str = Field(default="sammlung", pattern="^(sammlung|liste)$")
     list_id: int | None = Field(default=None, ge=1)
     quantity: int = Field(default=1, ge=1, le=999)
     condition: str = Field(default="used", pattern="^(new|used)$")
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
 
 
 def _art_raten(item_id: str) -> str:
@@ -908,6 +1026,7 @@ def _art_raten(item_id: str) -> str:
 
 
 @router.post("/api/hub/trades/{trade_id}/take")
+@_nacheinander
 def hub_trade_take(trade_id: str, body: TradeTakeBody,
                    user: dict = Depends(current_user)):
     """Einen angenommenen Tausch verbuchen: in die Sammlung oder auf eine Liste.
@@ -1006,6 +1125,7 @@ def hub_trade_candidates(trade_id: str, user: dict = Depends(current_user)):
 
 
 @router.post("/api/hub/trades/{trade_id}/give")
+@_nacheinander
 def hub_trade_give(trade_id: str, body: TradeGiveBody,
                    user: dict = Depends(current_user)):
     """Gegenstück zum Übernehmen: ein zugesagtes Stück austragen.
@@ -1040,12 +1160,10 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
     if row["quantity"] < body.quantity:
         raise HTTPException(400, "So viele stehen gar nicht in der Sammlung.")
     rest = row["quantity"] - body.quantity
+    # Das Kaufbuch geht dabei mit: Seit 2.90.21 bucht `update_item` selbst
+    # ab, wenn die Menge sinkt – hier noch einmal abzuziehen, zählte doppelt.
     ergebnis = update_item(row["id"], UpdateItemBody(quantity=rest), user)
     with core.db() as conn:
-        if rest > 0:
-            # Bleibt etwas übrig, nimmt das Kaufbuch die weggegebenen Stücke
-            # mit hinaus; ist nichts übrig, ging es mit der Zeile ohnehin.
-            _kaufbuch_abgang(conn, row["id"], body.quantity)
         conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
                      (int(time.time()), trade_id))
     angebote_nachziehen_im_hintergrund()
@@ -1083,7 +1201,7 @@ def hub_report_trade(trade_id: str, body: TradeReportBody,
     try:
         res = hub.report(t["other_id"], body.reason, trade_id, disclosed) or {}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     # Festhalten, dass gemeldet wurde. Bis 2.90.9 kam nur eine kurze
@@ -1199,7 +1317,7 @@ def hub_report_reply(trade_id: str, body: MeldungAntwortBody,
     try:
         res = hub.report_reply(r["hub_id"], body.text.strip()) or {}
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     with core.db() as conn:
@@ -1236,7 +1354,7 @@ def hub_invite_request(body: InviteRequestBody,
     try:
         return hub.request_invites(body.want, body.reason)
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
 
@@ -1249,7 +1367,7 @@ def hub_invite(body: HubInviteBody, user: dict = Depends(current_user)):
     try:
         res = hub.create_invite(body.note, body.expires_in_days)
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     code = res.get("invite_code") or ""
@@ -1278,7 +1396,7 @@ def hub_own_invites(user: dict = Depends(current_user)):
     try:
         stand = hub.own_invites()
     except hub.HubError as e:
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     with core.db() as conn:
@@ -1320,7 +1438,7 @@ def hub_withdraw_invite(code_hash: str, user: dict = Depends(current_user)):
         hub.withdraw_invite(code_hash)
     except hub.HubError as e:
         if e.status != 404:
-            raise HTTPException(502, f"Hub: {e.message}")
+            raise _hub_antwort(e)
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
     with core.db() as conn:
@@ -1349,7 +1467,7 @@ def _hub_fehler(e: Exception):
         if e.status == 404 and "unbekannter Endpunkt" in (e.message or ""):
             raise HTTPException(501, "Der Hub kennt Profile noch nicht – "
                                      "er muss erst aktualisiert werden.")
-        raise HTTPException(502, f"Hub: {e.message}")
+        raise _hub_antwort(e)
     raise HTTPException(502, "Hub nicht erreichbar")
 
 

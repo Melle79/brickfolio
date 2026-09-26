@@ -1325,6 +1325,10 @@ Headings, file names and the number format follow the **language you have
 set**, the money columns follow the **currency you have set** – in English the
 file is called `brickfolio-collection.csv` and the column `avg used (GBP)`.
 
+The collection CSV also contains **Theme** and – for Collector-Pro users –
+**Paid**. That way it can be read back in through the CSV import without
+losing purchase prices or themes.
+
 ### 10.2 CSV import *(Collector-Pro)*
 
 Read whole inventories in one go – an Excel sheet, say, or a BrickLink
@@ -1332,7 +1336,7 @@ inventory list. **"Load sample CSV"** provides a correct template. The format:
 
 ```csv
 Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen
-sw0815;Figur;Shoretrooper;2;Gebraucht;24,50;2016;Flea market Ottobrunn
+sw0815;Figur;Shoretrooper;2;Gebraucht;24,50;2016;Flea market
 75154;Set;TIE Striker;1;Neu;89,99;2016;
 col424;Figur;;1;Gebraucht;;;empty name: the number is used as the name
 ```
@@ -1675,7 +1679,16 @@ The conversation also has:
 - **⚑ Report** – see below
 
 If the other side takes an item out of the network, the conversation and the
-area above the history say **"no longer offered"**.
+area above the history say **"no longer offered"** – as long as nothing has
+been agreed. After a trade the offer is gone, of
+course; then the note no longer appears.
+
+If the other side deletes a conversation that was **already accepted**, the
+agreement stays: the item may be on its way, and **Take over** or
+**Remove** keep working. Only replying is no longer possible.
+
+If you leave the network and join again later, your old conversations
+appear as **"earlier membership"** – readable, but without a reply field.
 
 ### 12.6 Accepted – what now?
 
@@ -2384,6 +2397,7 @@ respective owners, and their APIs are subject to their respective terms of use.
 | Paid | Bezahlt, Kaufpreis, Einkauf, paid |
 | Year | Jahr, year |
 | Notes | Notizen, notes, Bemerkung |
+| Theme | Thema, theme (if missing, it is determined as when adding) |
 
 ---
 

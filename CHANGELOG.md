@@ -1,5 +1,88 @@
 # Changelog
 
+## 2.90.21 – September 2026
+
+Ergebnis eines Gesamttests: alle 181 Schnittstellen, die ganze Oberfläche
+(Handy und Desktop, drei Designs, Deutsch und Englisch) und das
+Tausch-Netzwerk mit zwei Instanzen und einem örtlichen Hub.
+
+### Behoben – Sammlung, Listen, Kaufpreise
+- 💥 **Ein unendlicher Preis legte die App lahm.** `1e999` als Kaufpreis
+  wurde angenommen; danach gaben Sammlung, Statistik und Sicherung nur noch
+  Fehler. Unendlich und NaN werden jetzt überall abgelehnt, auch im
+  CSV-Import.
+- ↩️ **„Rückgängig“ in der Einkaufsliste nimmt den Wareneingang zurück** –
+  Menge und Kaufposten. Bisher blieb beides stehen, und wer den Artikel noch
+  einmal annahm, hatte ihn doppelt. Nach „Ersetzen“ bleibt es beim Hinweis,
+  die Sammlung von Hand anzupassen.
+- 🔒 **Kaufpreise nur für Sammlerprofis – auch in der Schnittstelle.** Die
+  Oberfläche blendete sie für Standard-Benutzer aus, geliefert und
+  angenommen wurden sie trotzdem (Sammlung, Kaufbuch, Statistik, Listen).
+- 📉 **Weniger Stück heißt weniger bezahlt.** Menge verringern ließ den
+  ganzen Kaufpreis an der Zeile stehen; jetzt geht das Kaufbuch mit.
+- 🧹 **Gelöschter Kaufpreis bleibt gelöscht.** Nach dem Neuladen war er
+  wieder da.
+- ☑️ **Haken in der Katalogliste entfernen löscht keine Einträge mit
+  Kaufpreis mehr** – und räumt Kaufbuch und Fotos mit auf.
+- 🔢 **Neue Nummer übernehmen** führt zusammen, wenn es die Nummer schon
+  gibt, statt mit einem Serverfehler abzubrechen.
+- 👤 **Benutzer löschen** klappt auch, wenn er ein Foto angehängt hat.
+- 🤝 **„Doppelte übernehmen“ bietet nur den Überschuss an** – nicht mehr das
+  Exemplar zum Behalten und die Figuren aus eigenen Sets.
+- ⭐ **Wunschliste:** Besitz neu *und* gebraucht wird zusammengezählt.
+- 📈 **Wertverlauf** berücksichtigt beide Zustände einer Figur.
+- 💶 **Gesamtangebot:** kein Anteil mehr mit −0,01 €.
+- 📄 **CSV:** Der Export enthält Thema und (für Profis) Bezahlt, der Import
+  liest beides und versteht „1,234.56“ wie „1.234,56“.
+- 🔐 **Falsches Passwort beim Einrichten der Zwei-Faktor-Anmeldung meldet
+  nicht mehr ab.**
+- 🤖 **Der Ollama-Test fragt wirklich das Modell** – vorher antwortete das
+  eingebaute Wörterbuch, und der Test meldete „verbunden“ ohne Dienst.
+- 🧩 **Steckbrief:** „Steckt in diesen Sets“ zeigt wieder Name und Anzahl
+  statt „…|2“.
+- 🛒 **Manuell erfassen → Liste** übernimmt den Einkaufspreis.
+- 🔁 **Zustand im Karten-Fenster umstellen** aktualisiert Wert und Gewinn
+  sofort.
+- Kleinigkeiten: Katalog ohne Abzug meldet „noch nicht geladen“,
+  „Lukas' Brickfolio“ statt „Lukas's“, „1 Figur fehlt“, keine doppelten
+  Fehlergründe, sichere Suche mit `%` und `_`, Push-Geräte ohne Schlüssel
+  werden abgewiesen, Sicherungen mit kaputtem Aufbau bekommen eine klare
+  Meldung, 422-Antworten wiederholen keine Eingaben (auch keine
+  Passwörter), der Update-Vergleich versteht Anhänge wie `-rc1`.
+
+### Behoben – Tausch-Netzwerk
+- 📨 **Nachrichten an ein gesperrtes Gegenüber gehen raus** (und kommen nach
+  der Freischaltung an), statt mit „Mitglied nicht gefunden“ zu scheitern.
+- 📦 **Löscht das Gegenüber ein schon angenommenes Gespräch, bleibt es
+  buchbar.**
+- 🗂 **Nach Abmelden und Wiederbeitritt** stehen alte Gespräche als
+  „frühere Mitgliedschaft“ da, nicht als „vom Gegenüber gelöscht“.
+- 🔁 **Dasselbe Angebot lässt sich nach einem abgeschlossenen Tausch wieder
+  anfragen**; der Zustand (neu/gebraucht) zählt dabei.
+- 🚦 **Statuswechsel werden geprüft** – die eigene Anfrage annehmen oder ein
+  abgeschlossenes Gespräch wieder öffnen geht nicht mehr.
+- 🚪 **Zweimal beitreten** legt kein zweites Mitglied mehr an.
+- 🔌 **Vom Hub-Admin entfernt?** Die App sagt es und zeigt den Weg zum
+  Neubeitritt, statt überall „Token ungültig“ zu melden.
+- 🐞 **Absagen des Hubs sind keine Fehler mehr.** Sperre, Kontingent,
+  benutzte Einladung landeten als 502 im Fehlerbericht.
+- ⚖️ **Gleichzeitiges Austragen** bucht Menge und Kaufbuch sauber
+  nacheinander.
+- Kleinigkeiten: „nicht mehr angeboten“ nur, solange nichts zugesagt ist;
+  der Sperrhinweis sagt nicht „bis auf Weiteres“ neben einem Enddatum;
+  „Freund einladen“ verschwindet bei Sperre; leere Nachrichten werden
+  abgewiesen.
+
+### Geändert – Darstellung
+- 📱 **Sammlung am Handy:** Die Suche hat eine eigene Zeile, „Alle Typen“
+  und „Zuletzt erfasst“ werden nicht mehr abgeschnitten.
+- 📱 **Kacheln am Handy:** Große Beträge passen nebeneinander, auch in der
+  Wunschliste.
+- 🎨 **Galaxy und Nova:** Ausgewählte Zustands-Pillen und das
+  Wunschlisten-Schild haben dunkle Schrift auf Gelb bzw. Hellblau.
+- 🌍 **Englisch:** gut 60 fehlende Übersetzungen im Tausch-Netzwerk
+  (Entdecken, Profil, Einstieg) ergänzt.
+
 ## 2.90.20 – September 2026
 
 ### Behoben

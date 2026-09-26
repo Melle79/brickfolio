@@ -150,7 +150,7 @@ def test_issue_reports_bad_token(ctx, monkeypatch):
     monkeypatch.setattr(main.requests, "post",
                         lambda *a, **k: Resp())
     r = ctx["admin"].post(f"/api/errors/{eid}/issue")
-    assert r.status_code == 401 and "Token" in r.json()["detail"]
+    assert r.status_code == 400 and "Token" in r.json()["detail"]
 
 
 def test_token_setting_is_admin_only(ctx):

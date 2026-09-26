@@ -92,6 +92,9 @@ function massnahmeText(kind) {
 /* Grund und Ende einer Sperre – seit Hub 1.20.0 schickt der Hub beides mit. */
 function zeigeSperrgrund(b) {
   const el = $("hub-blocked-grund");
+  // Steht ein Ende fest, ist es nicht „bis auf Weiteres“ – beides zugleich
+  // stand bis 2.90.20 im selben Kasten.
+  $("hub-blocked-dauer").hidden = !!(b && b.bis);
   if (!b || (!b.grund && !b.bis)) { el.textContent = ""; return; }
   const teile = [];
   if (b.grund) teile.push(tr("Grund: {grund}", { grund: b.grund }));
@@ -161,6 +164,9 @@ async function loadHubView() {
     hubIch = { member_id: s.member_id, display_name: s.display_name };
     $("hub-ich-avatar").textContent = avatarText(s.display_name);
     $("hub-blocked").hidden = !s.blocked;
+    $("hub-verwaist").hidden = !s.verwaist;
+    // Einladen geht weder gesperrt noch ohne Mitgliedschaft.
+    $("hub-make-invite").hidden = !!(s.blocked || s.verwaist);
     zeigeSperrgrund(s.block);
     zeigeHinweise(s.hinweise || []);
     zeigePause(s);
@@ -352,9 +358,13 @@ async function loadTrades(quiet = false) {
           <div class="card-title">
             <strong>${esc(t.item_name || t.item_id)}</strong>
             <div class="sub">${t.direction === "out" ? "→ an" : "← von"}
-              ${esc(t.other_name || "?")} · ${["left", "gone"].includes(t.other_status)
-    ? esc(tr("hat das Netzwerk verlassen")) : tradeStatusText(t.status)}
-              ${t.item_gone ? " · nicht mehr angeboten" : ""}</div>
+              ${esc(t.other_name || "?")} · ${t.ehemalig
+    ? esc(tr("frühere Mitgliedschaft"))
+    : ["left", "gone"].includes(t.other_status)
+      ? esc(tr("hat das Netzwerk verlassen")) : tradeStatusText(t.status)}
+              ${t.item_gone && !["accepted", "closed"].includes(t.status)
+    && !t.ehemalig && !["left", "gone"].includes(t.other_status)
+    ? " · " + esc(tr("nicht mehr angeboten")) : ""}</div>
             ${t.last_body ? `<div class="sub">${esc(t.last_body.slice(0, 70))}${t.last_body.length > 70 ? "…" : ""}</div>` : ""}
             ${t.unread ? `<span class="badge badge-wanted">${t.unread} neu</span>` : ""}
             ${t.report_status ? `<span class="badge ${t.report_frage ? "badge-wanted" : "badge-low"}">${esc(
@@ -538,17 +548,24 @@ async function renderTrade(quiet = false) {
       + ` · ${tradeStatusText(trade.status)}`;
     // Abgemeldet oder ganz gelöscht: Dort holt nie wieder jemand etwas ab.
     const weg = ["left", "gone"].includes(trade.other_status);
-    const entfernt = trade.status === "removed" || weg;
-    $("trade-gone").hidden = !trade.item_gone || entfernt;
-    $("trade-removed").hidden = trade.status !== "removed";
-    $("trade-left").hidden = !weg || trade.status === "removed";
-    $("trade-gesperrt").hidden = trade.other_status !== "disabled";
+    const geloescht = trade.status === "removed" || !!trade.entfernt;
+    const ehemalig = !!trade.ehemalig;
+    const entfernt = geloescht || weg || ehemalig;
+    // „Nicht mehr angeboten“ zählt nur, solange noch nichts zugesagt ist –
+    // nach einem Tausch ist das Angebot natürlich weg, das ist kein Alarm.
+    $("trade-gone").hidden = !trade.item_gone || entfernt
+      || ["accepted", "closed"].includes(trade.status);
+    $("trade-removed").hidden = !geloescht || ehemalig;
+    $("trade-ehemalig").hidden = !ehemalig;
+    $("trade-left").hidden = !weg || geloescht || ehemalig;
+    $("trade-gesperrt").hidden = trade.other_status !== "disabled" || ehemalig;
     zeigeMeldung(report);
     $("trade-write-row").hidden = entfernt;
     // Annehmen oder ablehnen kann nur, wer gefragt wurde – und nur, solange
     // noch nichts entschieden ist. Bis 2.88.55 standen beide Knöpfe auch
     // beim Fragenden, der so seine eigene Anfrage „annehmen“ konnte.
-    const entscheiden = trade.direction === "in" && trade.status === "open";
+    const entscheiden = trade.direction === "in" && trade.status === "open"
+      && !entfernt;
     $("trade-accept").hidden = !entscheiden;
     $("trade-decline").hidden = !entscheiden;
     // Zugesagt heißt noch nicht da: Zwischen Annehmen und Buchen stehen
@@ -1132,7 +1149,7 @@ let interestOffer = null;
 
 async function openOffer(o) {
   // Beim Laden der Angebote schon ermittelt – kein zweiter Abruf nötig
-  const known = tradeByOffer.get(offerKey(o.m, o.i));
+  const known = tradeByOffer.get(offerKey(o.m, o.i, o.zustand));
   if (known) { showHubTab("trades"); openTrade(known.id); return; }
   openInterest(o);
 }
@@ -1220,9 +1237,22 @@ async function sendReport() {
 }
 
 let hubSearchSeq = 0;
-let tradeByOffer = new Map();      // "mitglied|artikel" -> laufender Vorgang
+let tradeByOffer = new Map();      // "mitglied|artikel|zustand" -> laufender Vorgang
 
-function offerKey(memberId, itemId) { return memberId + "|" + itemId; }
+function offerKey(memberId, itemId, zustand) {
+  return memberId + "|" + itemId + "|" + (zustand || "");
+}
+
+/* Nur **laufende** Gespräche gehören an ein Angebot, und nur zum selben
+   Zustand. Bis 2.90.20 öffnete die Karte eines gebrauchten sw0188 das
+   längst abgeschlossene Gespräch über das neue – ein zweites Mal anfragen
+   ging nicht mehr (Tausch-Gesamttest 26.09.2026). */
+function laufendeGespraeche(trades) {
+  return new Map((trades || [])
+    .filter((t) => ["open", "accepted"].includes(t.status) && !t.entfernt
+      && !t.ehemalig && !["left", "gone"].includes(t.other_status))
+    .map((t) => [offerKey(t.other_id, t.item_id, t.condition), t]));
+}
 
 async function loadHubOffers() {
   const seq = ++hubSearchSeq;      // ältere Suchen dürfen nicht überholen
@@ -1237,8 +1267,7 @@ async function loadHubOffers() {
       api("/hub/trades").catch(() => ({ trades: [] })),
     ]);
     const offers = offerRes.offers.filter((o) => cmArtPasst(o.deal));
-    tradeByOffer = new Map((tradeRes.trades || []).map((t) =>
-      [offerKey(t.other_id, t.item_id), t]));
+    tradeByOffer = laufendeGespraeche(tradeRes.trades);
     if (seq !== hubSearchSeq) return;
     if (!offers.length) {
       box.innerHTML = `<p class="search-hint">${q
@@ -1248,7 +1277,7 @@ async function loadHubOffers() {
       return;
     }
     box.innerHTML = offers.map((o) => {
-      const t = tradeByOffer.get(offerKey(o.member_id, o.item_id));
+      const t = tradeByOffer.get(offerKey(o.member_id, o.item_id, o.condition));
       return `
       <div class="card tappable" data-offer-card>
         <div class="card-head">
@@ -1370,7 +1399,7 @@ async function loadEntdecken() {
       api("/hub/trades").catch(() => ({ trades: [] })),
     ]);
     d = e;
-    laufend = new Map((t.trades || []).map((x) => [offerKey(x.other_id, x.item_id), x]));
+    laufend = laufendeGespraeche(t.trades);
   } catch (e) {
     box.innerHTML = `<p class="error">${esc(e.message)}</p>`;
     return;
@@ -1385,7 +1414,7 @@ async function loadEntdecken() {
     teile.push(`<div class="cm-leer">${esc(tr("Gerade bietet niemand etwas von deiner Wunschliste an."))}</div>`);
   } else {
     d.hat.forEach((h, i) => {
-      const lauf = laufend.get(offerKey(h.member_id, h.item_id));
+      const lauf = laufend.get(offerKey(h.member_id, h.item_id, h.condition));
       teile.push(`<div class="cm-karte">
         <img src="${cmBild(h)}" alt="" loading="lazy">
         <div class="cm-mitte"><strong>${esc(h.name)}</strong>

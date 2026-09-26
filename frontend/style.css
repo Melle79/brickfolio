@@ -994,6 +994,13 @@ span.mf-stern.an {
 }
 .stat-chip strong { display: block; font-size: 24px; }
 .stat-chip span { font-size: 12.5px; color: var(--muted); }
+/* Am Telefon passen zwei große Eurobeträge nebeneinander nicht in 24 px –
+   in der Wunschliste ragte die dritte Kachel über den Rand (Gesamttest
+   26.09.2026). Die Zahl wächst mit der Breite, bis 24 px. */
+@media (max-width: 480px) {
+  .stat-chip { padding: 10px 6px; }
+  .stat-chip strong { font-size: clamp(16px, 5.2vw, 24px); }
+}
 .search { margin-top: 14px; }
 
 /* ---------- Einstellungen ---------- */
@@ -1335,6 +1342,13 @@ span.mf-stern.an {
 .search-clear.show { display: flex; }
 .search-clear:hover { background: var(--line); color: var(--ink); }
 .filter-row .search-wrap { flex: 3; }
+/* Am Telefon bekommt die Suche eine eigene Zeile: Zu viert nebeneinander
+   blieben von „Name oder Nummer“, „Alle Typen“ und „Zuletzt erfasst“ nur
+   „Name o…“, „Alle T“ und „Zulet“ übrig. */
+@media (max-width: 560px) {
+  .filter-row { flex-wrap: wrap; }
+  .filter-row .search-wrap { flex: 1 1 100%; }
+}
 
 .set-figs { margin-top: 4px; }
 .fig-row {
@@ -1937,6 +1951,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .mini-btn.cond.sel,
 [data-theme="galaxy"] .tab-row .mini-btn.sel,
 [data-theme="galaxy"] .erf-wahl button.sel,
+[data-theme="galaxy"] .sb-zustand button.sel,
+[data-theme="galaxy"] .badge-wanted,
 [data-theme="galaxy"] .cond-mini.sel { color: #0B1220; }
 
 /* ---------- Hinweise auf dem Startbildschirm ---------- */
@@ -2517,6 +2533,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .mini-btn.cond.sel,
 [data-theme="nova"] .tab-row .mini-btn.sel,
 [data-theme="nova"] .erf-wahl button.sel,
+[data-theme="nova"] .sb-zustand button.sel,
+[data-theme="nova"] .badge-wanted,
 [data-theme="nova"] .cond-mini.sel { color: #04202E; }
 
 /* Etwas rundere, „app-igere" Primärflächen */

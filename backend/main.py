@@ -18,6 +18,7 @@ import uuid
 import requests
 from fastapi import (Depends, FastAPI, File, HTTPException, Request,
                      Response, UploadFile)
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -505,7 +506,7 @@ class AddItemBody(BaseModel):
     quantity: int = Field(default=1, ge=1, le=999)
     condition: str = Field(default="used", pattern="^(new|used)$")
     notes: str = Field(default="", max_length=1000)
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     paid_source: str | None = Field(default=None, pattern="^(manual|set)$")
 
 
@@ -515,14 +516,14 @@ class UpdateItemBody(BaseModel):
     notes: str | None = Field(default=None, max_length=1000)
     item_id: str | None = Field(default=None, min_length=1, max_length=60)
     name: str | None = Field(default=None, min_length=1, max_length=300)
-    img_url: str | None = Field(default=None, max_length=600)
+    img_url: str | None = Field(default=None, max_length=600, pattern=IMG_URL_RE)
     bricklink_url: str | None = Field(default=None, max_length=600)
     year: int | None = Field(default=None, ge=0, le=2100)
     # Von Hand gesetztes Thema. Leer heißt „Ohne Thema“ – und die
     # Automatik rührt ein vorhandenes ohnehin nicht an, ein von Hand
     # gesetztes bleibt also stehen.
     theme: str | None = Field(default=None, max_length=60)
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
 
 
 # ---------------------------------------------------------------- Auth
@@ -543,7 +544,10 @@ def _owner_name() -> str:
 def _app_title() -> str:
     """»Xs Brickfolio«, solange ein Name gesetzt ist – sonst »Dein Brickfolio«."""
     wer = _owner_name()
-    return f"{wer}'s Brickfolio" if wer else "Dein Brickfolio"
+    if not wer:
+        return "Dein Brickfolio"
+    # „Lukas' Brickfolio“, nicht „Lukas's“ – wie in der Oberfläche.
+    return wer + ("'" if re.search(r"[sßxz]$", wer, re.I) else "'s") + " Brickfolio"
 
 
 @app.get("/api/setup")
@@ -793,7 +797,7 @@ def totp_start(body: TotpStartBody, user: dict = Depends(current_user)):
         row = conn.execute("SELECT password_hash, totp_secret FROM users "
                            "WHERE id = ?", (user["id"],)).fetchone()
     if not core.verify_password(body.password, row["password_hash"]):
-        raise HTTPException(401, "Das Passwort ist falsch")
+        raise HTTPException(403, "Das Passwort ist falsch")
     if row["totp_secret"]:
         raise HTTPException(409, "Zwei-Faktor ist bereits aktiv")
     secret = totp.neuer_schluessel()
@@ -852,7 +856,7 @@ def totp_confirm(body: TotpCodeBody, user: dict = Depends(current_user)):
         raise HTTPException(400, "Keine Einrichtung begonnen")
     schritt = totp.pruefe(row["totp_pending"], body.code)
     if schritt is None:
-        raise HTTPException(401, "Code stimmt nicht – Uhrzeit des Geräts prüfen")
+        raise HTTPException(403, "Code stimmt nicht – Uhrzeit des Geräts prüfen")
     codes = totp.neue_rettungscodes()
     with core.db() as conn:
         conn.execute("UPDATE users SET totp_secret = totp_pending, "
@@ -888,9 +892,9 @@ def totp_disable(body: TotpOffBody, user: dict = Depends(current_user)):
     if not row["totp_secret"]:
         raise HTTPException(400, "Zwei-Faktor ist nicht aktiv")
     if not core.verify_password(body.password, row["password_hash"]):
-        raise HTTPException(401, "Das Passwort ist falsch")
+        raise HTTPException(403, "Das Passwort ist falsch")
     if totp.pruefe(row["totp_secret"], body.code, row["totp_last"]) is None:
-        raise HTTPException(401, "Code stimmt nicht")
+        raise HTTPException(403, "Code stimmt nicht")
     with core.db() as conn:
         conn.execute("UPDATE users SET totp_secret = NULL, totp_pending = NULL,"
                      " totp_last = NULL, totp_recovery = NULL WHERE id = ?",
@@ -972,10 +976,13 @@ def _neueste_fassung() -> tuple:
 
 
 def _ver_tuple(v: str):
-    try:
-        return tuple(int(x) for x in v.strip().lstrip("v").split("."))
-    except (ValueError, AttributeError):
+    """„2.90.20“ → (2, 90, 20). Ein Anhang wie „-rc1“ oder „-probe…“ zählt
+    nicht mit – bisher wurde daraus (0,), und jede solche Fassung meldete
+    ein „Update“ auf eine ältere."""
+    m = re.match(r"\s*v?(\d+(?:\.\d+)*)", v or "")
+    if not m:
         return (0,)
+    return tuple(int(x) for x in m.group(1).split("."))
 
 
 @app.get("/api/price_log")
@@ -1503,6 +1510,7 @@ def katalog_liste(thema: str = "", art: str = "minifig", q: str = "",
     """
     art = "set" if art == "set" else "minifig"
     limit = max(1, min(200, limit))
+    offset = max(0, offset)   # negativ lieferte über den Slice das Ende
     praefixe = _praefixe_zum_thema(thema) if thema else []
 
     with core.db() as conn:
@@ -1624,20 +1632,37 @@ def katalog_marke(body: KatalogMarkeBody, user: dict = Depends(current_user)):
         tabelle = "collection" if body.marke == "habe" else "wanted"
 
         if not body.an:
+            # Groß-/Kleinschrift wie beim Nachschlagen im Index: Sonst meldete
+            # „CAS001“ Erfolg, und der Eintrag „cas001“ blieb stehen.
             zeilen = conn.execute(
-                f"SELECT * FROM {tabelle} WHERE item_id = ? AND item_type = ?",
-                (nr, body.item_type)).fetchall()
+                f"SELECT * FROM {tabelle} WHERE lower(item_id) = ? "
+                "AND item_type = ?",
+                (nr.lower(), body.item_type)).fetchall()
             if body.marke == "habe":
+                # Auch ein Kaufpreis ist „mehr dahinter“ – das verspricht
+                # der Docstring, geprüft wurden aber nur Menge und Notiz.
                 schwer = [z for z in zeilen
-                          if (z["quantity"] or 1) > 1 or (z["notes"] or "").strip()]
+                          if (z["quantity"] or 1) > 1
+                          or (z["notes"] or "").strip()
+                          or z["paid_price"] is not None]
                 if len(zeilen) > 1 or schwer:
                     return {"ok": False, "grund": "mehr_dahinter",
                             "eintraege": len(zeilen)}
-            conn.execute(
-                f"DELETE FROM {tabelle} WHERE item_id = ? AND item_type = ?",
-                (nr, body.item_type))
-            return {"ok": True, "an": False}
-
+            for z in zeilen:
+                conn.execute(f"DELETE FROM {tabelle} WHERE id = ?", (z["id"],))
+                if tabelle == "collection":
+                    conn.execute("DELETE FROM purchases WHERE entry_id = ?",
+                                 (z["id"],))
+            weg = [(z["item_type"], z["item_id"]) for z in zeilen]
+        else:
+            weg = None
+    if weg is not None:
+        for typ, nummer in weg:
+            _fotos_aufraeumen(typ, nummer)
+        if tabelle == "wanted":
+            _wuensche_geaendert()
+        return {"ok": True, "an": False}
+    with core.db() as conn:
         now = int(time.time())
         if body.marke == "habe":
             conn.execute(
@@ -1656,6 +1681,8 @@ def katalog_marke(body: KatalogMarkeBody, user: dict = Depends(current_user)):
                 (nr, body.item_type, name, k["img_url"] or "",
                  _bricklink_link(nr, body.item_type), k["jahr"] or 0,
                  user["id"], now))
+    if body.marke != "habe":
+        _wuensche_geaendert()
     return {"ok": True, "an": True}
 
 class KatalogAnBody(BaseModel):
@@ -1948,7 +1975,7 @@ def create_issue(error_id: int, user: dict = Depends(admin_user)):
     except requests.RequestException:
         raise HTTPException(502, "GitHub nicht erreichbar")
     if resp.status_code == 401:
-        raise HTTPException(401, "GitHub-Token ungültig oder abgelaufen")
+        raise HTTPException(400, "GitHub-Token ungültig oder abgelaufen")
     if resp.status_code == 403:
         raise HTTPException(403, "Token darf keine Issues anlegen – "
                                  "Berechtigung „Issues: Read and write“ nötig")
@@ -1987,7 +2014,11 @@ def push_subscribe(body: PushSubBody, request: Request,
                    user: dict = Depends(admin_user)):
     if not push.verfuegbar():
         raise HTTPException(501, "Push ist auf diesem Server nicht verfügbar")
-    if not body.subscription.get("endpoint"):
+    schluessel = body.subscription.get("keys") or {}
+    # Ohne `p256dh` und `auth` lässt sich nichts verschlüsseln – so ein
+    # Gerät stünde in der Liste, bekäme aber nie eine Meldung.
+    if (not body.subscription.get("endpoint") or not isinstance(schluessel, dict)
+            or not schluessel.get("p256dh") or not schluessel.get("auth")):
         raise HTTPException(400, "Ungültiges Abonnement")
     push.abonnieren(user["id"], body.subscription,
                     request.headers.get("User-Agent", "") if request else "")
@@ -2486,6 +2517,30 @@ def _apply_new_number(old_id: str, new_id: str) -> int:
     """Neue BrickLink-Nummer überall eintragen. Gibt geänderte Zeilen zurück."""
     changed = 0
     with core.db() as conn:
+        # **Steht die neue Nummer schon da, wird zusammengeführt.** Ein
+        # blindes UPDATE stieß an `UNIQUE (item_id, item_type, condition)`
+        # und endete mit 500 (Gesamttest 26.09.2026) – genau dann, wenn man
+        # die neue Nummer schon gescannt hatte, also im häufigsten Fall.
+        for alt in conn.execute(
+                "SELECT id, item_type, condition, quantity FROM collection "
+                "WHERE item_id = ?", (old_id,)).fetchall():
+            ziel = conn.execute(
+                "SELECT id FROM collection WHERE item_id = ? AND "
+                "item_type = ? AND condition = ?",
+                (new_id, alt["item_type"], alt["condition"])).fetchone()
+            if not ziel:
+                continue
+            conn.execute("UPDATE collection SET quantity = quantity + ? "
+                         "WHERE id = ?", (alt["quantity"], ziel["id"]))
+            conn.execute("UPDATE purchases SET entry_id = ? WHERE entry_id = ?",
+                         (ziel["id"], alt["id"]))
+            conn.execute("DELETE FROM collection WHERE id = ?", (alt["id"],))
+            _kaufsumme_nachziehen(conn, ziel["id"])
+            changed += 1
+        conn.execute(
+            "DELETE FROM wanted WHERE item_id = ? AND EXISTS (SELECT 1 FROM "
+            "wanted w WHERE w.item_id = ? AND w.item_type = wanted.item_type)",
+            (old_id, new_id))
         for table in PRICE_TABLES:
             cur = conn.execute(
                 f"UPDATE {table} SET item_id = ?, price_updated_at = NULL "
@@ -2664,6 +2719,12 @@ def list_notifications(user: dict = Depends(current_user)):
 @app.delete("/api/notifications/{note_id}")
 def dismiss_notification(note_id: int, user: dict = Depends(current_user)):
     with core.db() as conn:
+        row = conn.execute("SELECT kind FROM notifications WHERE id = ?",
+                           (note_id,)).fetchone()
+        # Wer einen Hinweis gar nicht sieht (Fehlermeldungen sind für Admins),
+        # darf ihn auch nicht wegklicken – die Nummern sind fortlaufend.
+        if not row or (row["kind"] in ADMIN_NOTES and not user["is_admin"]):
+            raise HTTPException(404, "Hinweis nicht gefunden")
         conn.execute("UPDATE notifications SET dismissed_at = ? WHERE id = ?",
                      (int(time.time()), note_id))
     return {"ok": True}
@@ -3324,15 +3385,25 @@ def delete_user(user_id: int, user: dict = Depends(admin_user)):
         # Was der Sammlung gehört, bleibt der Sammlung – nur der Name des
         # Einstellers fällt weg. Sonst nähme das Löschen eines Benutzers
         # Stücke, Wünsche und Listen mit, die alle gemeinsam pflegen.
+        if not conn.execute("SELECT 1 FROM users WHERE id = ?",
+                            (user_id,)).fetchone():
+            raise HTTPException(404, "Benutzer nicht gefunden")
+        # `item_photos` fehlte hier: Hatte er ein Foto angehängt, scheiterte
+        # das Löschen am Fremdschlüssel mit 500 (Gesamttest 26.09.2026).
         for tabelle, spalte in (("collection", "added_by"),
                                 ("wanted", "added_by"),
                                 ("shopping_lists", "created_by"),
-                                ("shopping_items", "done_by")):
+                                ("shopping_items", "done_by"),
+                                ("item_photos", "added_by")):
             conn.execute(f"UPDATE {tabelle} SET {spalte} = NULL "
                          f"WHERE {spalte} = ?", (user_id,))
         # Die Push-Anmeldung gehört dagegen nur ihm und geht mit – sonst
         # bekäme sein Gerät weiter Meldungen dieser Instanz.
         conn.execute("DELETE FROM push_subs WHERE user_id = ?", (user_id,))
+        # Seine eigenen Einstellungen (Sprache, Design …) ebenso – sonst erbte
+        # sie ein später angelegter Benutzer mit derselben Nummer.
+        conn.execute("DELETE FROM benutzer_einstellungen WHERE user_id = ?",
+                     (user_id,))
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
     return {"ok": True}
 
@@ -3580,7 +3651,13 @@ def stats_dashboard(user: dict = Depends(current_user)):
     winners = [w for w in winners if w["gain"] > 0]
 
     # Zeitreihe: pro Tag mit Preisdaten der Gesamtwert der heutigen Sammlung
-    coll = {(r["item_id"], r["item_type"]): r for r in items}
+    # Je Nummer **alle** Zeilen: Dieselbe Figur kann neu und gebraucht
+    # dastehen. Ein einfaches Wörterbuch behielt nur die zuletzt gelesene
+    # Zeile, und der Verlauf zeigte 0 €, wenn ausgerechnet die ganz in
+    # eigenen Sets gebunden war (Gesamttest 26.09.2026).
+    coll: dict = {}
+    for r in items:
+        coll.setdefault((r["item_id"], r["item_type"]), []).append(r)
     latest: dict = {}
     timeline = []
     day = None
@@ -3588,10 +3665,10 @@ def stats_dashboard(user: dict = Depends(current_user)):
     def _snapshot():
         s = 0.0
         for k, prices in latest.items():
-            r = coll[k]
-            u = _unit_price(r["condition"], prices[0], prices[1])
-            qty = max(0, r["quantity"] - bound.get(r["id"], 0))
-            s += (u or 0) * qty
+            for r in coll[k]:
+                u = _unit_price(r["condition"], prices[0], prices[1])
+                qty = max(0, r["quantity"] - bound.get(r["id"], 0))
+                s += (u or 0) * qty
         return round(s, 2)
 
     for h in hist:
@@ -3606,7 +3683,7 @@ def stats_dashboard(user: dict = Depends(current_user)):
     if day is not None:
         timeline.append({"ts": day * 86400 + 43200, "value": _snapshot()})
 
-    return {"totals": {"pieces": pieces,
+    ergebnis = {"totals": {"pieces": pieces,
                        "unique": len(items),
                        "value": round(total_value, 2),
                        "in_sets_value": round(bound_value, 2),
@@ -3642,6 +3719,15 @@ def stats_dashboard(user: dict = Depends(current_user)):
             "top": top[:10],
             "winners": winners[:5],
             "losers": losers[:5]}
+    if not user["is_dealer"]:
+        # Bezahlt, Gewinn und Listen-Einkäufe sind Profisache – die Karten
+        # dafür zeigt die Oberfläche ohnehin nur Profis.
+        for k in ("paid", "profit", "paid_estimated", "lists_paid"):
+            ergebnis["totals"][k] = None
+        ergebnis["totals"]["lists_count"] = 0
+        ergebnis["lists_breakdown"] = []
+        ergebnis["winners"] = ergebnis["losers"] = []
+    return ergebnis
 
 
 class CsvImportBody(BaseModel):
@@ -3652,6 +3738,28 @@ CSV_TYPE_MAP = {"figur": "minifig", "minifig": "minifig", "fig": "minifig",
                 "set": "set", "teil": "part", "part": "part"}
 CSV_COND_MAP = {"neu": "new", "new": "new",
                 "gebraucht": "used", "used": "used"}
+
+
+def _csv_betrag(roh: str) -> float | None:
+    """Preis aus einer CSV-Zelle – deutsch („1.234,56“) wie englisch („1,234.56“).
+
+    Das Zeichen, das zuletzt steht, trennt die Nachkommastellen; das andere
+    gliedert Tausender. Bisher galt jedes Komma als Dezimalzeichen, und aus
+    „1,234.56“ wurden 1,23 €. `inf` und `nan` nimmt `float()` klaglos an –
+    ein unendlicher Kaufpreis legte danach Sammlung und Sicherung lahm.
+    """
+    roh = roh.strip()
+    if "," in roh and "." in roh:
+        if roh.rfind(",") > roh.rfind("."):
+            roh = roh.replace(".", "").replace(",", ".")
+        else:
+            roh = roh.replace(",", "")
+    elif "," in roh:
+        roh = roh.replace(",", ".")
+    wert = float(roh)
+    if not math.isfinite(wert) or wert < 0:
+        return None
+    return round(wert, 2)
 
 
 @app.post("/api/import/csv")
@@ -3694,7 +3802,8 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
            "cond": col("zustand", "condition"),
            "paid": col("bezahlt", "kaufpreis", "einkauf", "paid"),
            "year": col("jahr", "year"),
-           "notes": col("notizen", "notes", "bemerkung")}
+           "notes": col("notizen", "notes", "bemerkung"),
+           "theme": col("thema", "theme")}
     if idx["num"] is None:
         raise HTTPException(400, "Spalte 'Nummer' fehlt in der Kopfzeile")
 
@@ -3731,11 +3840,8 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
             raw_paid = cell(row, "paid").replace("€", "").strip()
             if raw_paid:
                 try:
-                    paid = round(float(raw_paid.replace(".", "")
-                                       .replace(",", ".")
-                                       if "," in raw_paid
-                                       else raw_paid), 2)
-                    if paid < 0:
+                    paid = _csv_betrag(raw_paid)
+                    if paid is None:
                         raise ValueError
                 except ValueError:
                     errors.append({"line": line_no,
@@ -3762,15 +3868,21 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
                     _kauf_buchen(conn, ex["id"], qty, paid, "CSV-Import", now)
                 merged += 1
             else:
+                # Thema aus der Datei, sonst wie beim Erfassen ermittelt –
+                # bisher standen importierte Figuren bis „Themen nachladen“
+                # ohne Thema da.
+                thema = (cell(row, "theme")[:60]
+                         or themes.for_item(num, typ) or None)
                 cur_csv = conn.execute(
                     "INSERT INTO collection (item_id, item_type, name, "
                     "img_url, bricklink_url, quantity, condition, notes, "
                     "year, paid_price, paid_source, paid_at, added_by, "
-                    "added_at) VALUES (?, ?, ?, '', '', ?, ?, ?, ?, ?, ?, "
-                    "?, ?, ?)",
+                    "added_at, theme) VALUES (?, ?, ?, '', '', ?, ?, ?, ?, "
+                    "?, ?, ?, ?, ?, ?)",
                     (num, typ, name, qty, cond, notes, year, paid,
                      "manual" if paid is not None else None,
-                     now if paid is not None else None, user["id"], now))
+                     now if paid is not None else None, user["id"], now,
+                     thema))
                 if paid is not None:
                     _kauf_buchen(conn, cur_csv.lastrowid, qty, paid,
                                  "CSV-Import", now)
@@ -3997,7 +4109,17 @@ def _sicherung_pruefen(body: "RestoreBody") -> list:
     """Ist das eine brauchbare Sicherung? Gibt die Benutzer daraus zurück."""
     if body.app != "brickfolio" or body.version != 1             or not isinstance(body.tables, dict)             or "collection" not in body.tables:
         raise HTTPException(400, "Das ist keine gültige Brickfolio-Sicherung")
+    # Jede Tabelle eine Liste von Zeilen, jede Zeile ein Objekt – eine von
+    # Hand verbogene Datei endete sonst mit 500 statt mit einem Satz.
+    for name, zeilen in body.tables.items():
+        if not isinstance(zeilen, list) or any(
+                not isinstance(z, dict) for z in zeilen):
+            raise HTTPException(400, "Das ist keine gültige Brickfolio-"
+                                     f"Sicherung (Tabelle „{name}“)")
     users = body.tables.get("users") or []
+    if any(not str(u.get("username") or "").strip() for u in users):
+        raise HTTPException(400, "Sicherung enthält einen Benutzer ohne Namen "
+                                 "– Einspielen abgebrochen")
     if not any(u.get("is_admin") for u in users):
         raise HTTPException(400, "Sicherung enthält keinen Admin-Benutzer – "
                                  "Einspielen abgebrochen")
@@ -4707,9 +4829,11 @@ def set_begriff(body: BegriffBody, user: dict = Depends(admin_user)):
 @app.delete("/api/settings/begriffe/{begriff}")
 def del_begriff(begriff: str, user: dict = Depends(admin_user)):
     with core.db() as conn:
-        conn.execute("DELETE FROM suchbegriffe WHERE begriff = ?",
-                     (begriff.casefold().strip(),))
-    integrations._begriff_cache.pop(begriff.casefold().strip(), None)
+        cur = conn.execute("DELETE FROM suchbegriffe WHERE begriff = ?",
+                           (begriff.casefold().strip(),))
+    gemerkt = integrations._begriff_cache.pop(begriff.casefold().strip(), None)
+    if cur.rowcount == 0 and gemerkt is None:
+        raise HTTPException(404, "Begriff nicht gefunden")
     return {"ok": True}
 
 
@@ -4747,8 +4871,7 @@ def test_ollama(user: dict = Depends(admin_user)):
     """
     if not integrations.ollama_enabled():
         return {"ok": False, "info": "Keine Adresse hinterlegt"}
-    integrations._begriff_cache.pop("ritter", None)
-    begriffe = integrations.suchbegriffe("Ritter")
+    begriffe = integrations.ollama_begriffe("Ritter")
     if not begriffe:
         return {"ok": False,
                 "info": f"{integrations.ollama_modell()} antwortet nicht "
@@ -5802,7 +5925,7 @@ def upload_image(file: UploadFile = File(...),
 
 
 class ItemPhotoBody(BaseModel):
-    item_type: str = Field(min_length=1, max_length=20)
+    item_type: str = Field(min_length=1, max_length=20, pattern=ITEM_TYPE_RE)
     item_id: str = Field(min_length=1, max_length=60)
     url: str = Field(min_length=10, max_length=200)
 
@@ -6113,8 +6236,11 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
            "LEFT JOIN users u ON u.id = c.added_by")
     where, params_list = [], []
     if q.strip():
-        like = f"%{q.strip()}%"
-        where.append("(c.name LIKE ? OR c.item_id LIKE ?)")
+        # `%` und `_` sind in LIKE Platzhalter – gesucht ist hier der Text.
+        roh = (q.strip().replace("\\", "\\\\").replace("%", "\\%")
+               .replace("_", "\\_"))
+        like = f"%{roh}%"
+        where.append("(c.name LIKE ? ESCAPE '\\' OR c.item_id LIKE ? ESCAPE '\\')")
         params_list += [like, like]
     if item_type in ("minifig", "part", "set"):
         where.append("c.item_type = ?")
@@ -6198,8 +6324,13 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
         # Sonst rechnet die Oberfläche (z. B. die Themenkarten) anders als der
         # Kopf, und die Summen passen nicht zusammen.
         items = []
+        profi = bool(user["is_dealer"])
         for r in rows:
             d = dict(r)
+            if not profi:
+                # Kaufpreise sehen nur Sammlerprofis (Handbuch, Kapitel 3) –
+                # die Oberfläche blendete sie aus, die Schnittstelle nicht.
+                d["paid_price"] = d["paid_source"] = d["paid_at"] = None
             unit = _unit_price(d["condition"], d["price_new"], d["price_used"])
             in_sets = bound.get(d["id"], 0) if d["item_type"] == "minifig" else 0
             d["unit_price"] = unit
@@ -6599,6 +6730,10 @@ def suggest_catalog(q: str = "", item_type: str = "minifig",
 
 @app.post("/api/collection")
 def add_item(body: AddItemBody, user: dict = Depends(current_user)):
+    # Kaufpreise gehören den Sammlerprofis; von allen anderen wird der Preis
+    # übergangen wie beim Wareneingang aus der Einkaufsliste.
+    if not user["is_dealer"]:
+        body.paid_price, body.paid_source = None, None
     # Vor allem anderen: Nummer und Name auf den Katalogstand bringen. Damit
     # landet eine von Hand getippte `21306` in derselben Zeile wie die
     # gescannte `21306-1`, statt daneben.
@@ -6678,6 +6813,24 @@ def update_item(entry_id: int, body: UpdateItemBody,
                            (entry_id,)).fetchone()
         if not row:
             raise HTTPException(404, "Eintrag nicht gefunden")
+        # Kaufpreise sind Sache der Sammlerprofis – sehen wie setzen. Bisher
+        # nahm die Schnittstelle den Preis von jedem an und setzte dabei das
+        # ganze Kaufbuch auf einen Posten zurück.
+        # „Bezahlt“ geleert kommt als `null` – und ist etwas anderes als
+        # „nicht angegeben“. Bisher galt beides als nicht angegeben: Das Feld
+        # stand leer da, der Preis blieb in der Datenbank und war nach dem
+        # Neuladen zurück (Gesamttest 26.09.2026).
+        preis_leeren = ("paid_price" in body.model_fields_set
+                        and body.paid_price is None)
+        if ((body.paid_price is not None or preis_leeren)
+                and not user["is_dealer"]):
+            raise HTTPException(403, "Kaufpreise setzen nur Sammlerprofis")
+        if preis_leeren:
+            conn.execute("UPDATE collection SET paid_price = NULL, "
+                         "paid_source = NULL, paid_at = NULL WHERE id = ?",
+                         (entry_id,))
+            conn.execute("DELETE FROM purchases WHERE entry_id = ?",
+                         (entry_id,))
         if body.item_id and body.item_id != row["item_id"]:
             dup = conn.execute(
                 "SELECT 1 FROM collection WHERE item_id = ? AND item_type = ? "
@@ -6749,10 +6902,21 @@ def update_item(entry_id: int, body: UpdateItemBody,
             conn.execute("DELETE FROM purchases WHERE entry_id = ?", (entry_id,))
             _kauf_buchen(conn, entry_id, menge["quantity"] if menge else 1,
                          body.paid_price, "manual")
+        elif (body.quantity is not None and 0 < body.quantity < row["quantity"]):
+            # Weniger Stück heißt weniger bezahlt: Das Kaufbuch geht mit,
+            # wie beim Tausch. Sonst standen nach „3 → 1“ weiter die 8 € für
+            # drei Stück an der Zeile, und Einkauf wie Gewinn logen.
+            _kaufbuch_abgang(conn, entry_id, row["quantity"] - body.quantity)
         if body.quantity == 0:
             conn.execute("DELETE FROM collection WHERE id = ?", (entry_id,))
             conn.execute("DELETE FROM purchases WHERE entry_id = ?", (entry_id,))
-            return {"ok": True, "deleted": True}
+            geloescht = True
+        else:
+            geloescht = False
+    if geloescht:
+        # Wie beim Löschen über den Mülleimer: Fotos gehören zum Eintrag.
+        fotos = _fotos_aufraeumen(row["item_type"], row["item_id"])
+        return {"ok": True, "deleted": True, "photos_removed": fotos}
     if body.item_id:
         _maybe_fetch_prices_async(entry_id, body.item_id)
     return {"ok": True}
@@ -6760,14 +6924,14 @@ def update_item(entry_id: int, body: UpdateItemBody,
 
 class KaufBody(BaseModel):
     quantity: int = Field(default=1, ge=1, le=999)
-    price: float | None = Field(default=None, ge=0)   # Gesamtpreis des Kaufs
+    price: float | None = Field(default=None, ge=0, allow_inf_nan=False)   # Gesamtpreis des Kaufs
     source: str = Field(default="", max_length=80)
-    bought_at: int | None = Field(default=None, ge=0)
+    bought_at: int | None = Field(default=None, ge=0, le=4102444800)
     note: str = Field(default="", max_length=300)
 
 
 @app.get("/api/collection/{entry_id}/purchases")
-def kaeufe_lesen(entry_id: int, user: dict = Depends(current_user)):
+def kaeufe_lesen(entry_id: int, user: dict = Depends(dealer_user)):
     """Die einzelnen Käufe zu einem Eintrag – neueste zuerst."""
     with core.db() as conn:
         rows = conn.execute(
@@ -6856,7 +7020,7 @@ class WantedBody(BaseModel):
 
 class AcquireBody(BaseModel):
     condition: str = Field(default="used", pattern="^(new|used)$")
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
 
 
 @app.get("/api/wanted")
@@ -6864,7 +7028,7 @@ def get_wanted(user: dict = Depends(current_user)):
     with core.db() as conn:
         rows = conn.execute(
             "SELECT w.*, u.username AS added_by_name, "
-            "(SELECT c.quantity FROM collection c WHERE c.item_id = w.item_id "
+            "(SELECT SUM(c.quantity) FROM collection c WHERE c.item_id = w.item_id "
             "AND c.item_type = w.item_type) AS owned, "
             "(SELECT GROUP_CONCAT(c2.item_id || '|' || c2.name || '|' || sc.qty, ';;') "
             " FROM set_contents sc JOIN collection c2 "
@@ -7027,7 +7191,7 @@ def acquire_wanted(wanted_id: int, body: AcquireBody,
         if not w:
             raise HTTPException(404, "Eintrag nicht gefunden")
         unit = _unit_price(body.condition, w["price_new"], w["price_used"])
-        manual = body.paid_price is not None
+        manual = body.paid_price is not None and bool(user["is_dealer"])
         paid_val = round(body.paid_price, 2) if manual \
             else (round(unit, 2) if unit else None)
         now = int(time.time())
@@ -7414,7 +7578,7 @@ def _duplicate_items() -> dict:
 # ---------------------------------------------------------------- Einkaufslisten
 
 class ListBody(BaseModel):
-    name: str = Field(min_length=1, max_length=120)
+    name: str = Field(min_length=1, max_length=120, pattern=r"\S")
 
 
 class ListArchiveBody(BaseModel):
@@ -7430,12 +7594,12 @@ class ListItemBody(BaseModel):
     year: int = Field(default=0, ge=0, le=2100)
     qty: int = Field(default=1, ge=1, le=99)
     condition: str = Field(default="used", pattern="^(new|used)$")
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
 
 
 class ReceiveBody(BaseModel):
     condition: str = Field(default="used", pattern="^(new|used)$")
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     mode: str | None = Field(default=None, pattern="^(add|replace)$")
 
 
@@ -7481,8 +7645,14 @@ def get_lists(archived: int = 0, user: dict = Depends(current_user)):
                       for r in items)
             open_n = sum(1 for r in items if not r["done"])
             paid_sum = sum(r["paid_price"] or 0 for r in items)
+            zeilen = [dict(r) for r in items]
+            if not user["is_dealer"]:
+                # Listen sehen alle, was dafür bezahlt wurde nur Profis.
+                for z in zeilen:
+                    z["paid_price"] = None
+                paid_sum = 0
             out.append({**dict(entry),
-                        "items": [dict(r) for r in items],
+                        "items": zeilen,
                         "stats": {"count": len(items), "open": open_n,
                                   "est": round(est, 2),
                                   "est_used": round(est_used, 2),
@@ -7604,7 +7774,7 @@ def add_list_item(list_id: int, body: ListItemBody,
 
 
 class ItemPriceBody(BaseModel):
-    paid_price: float | None = Field(default=None, ge=0)
+    paid_price: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     condition: str | None = Field(default=None, pattern="^(new|used)$")
 
 
@@ -7645,7 +7815,7 @@ def delete_list_item(item_id: int, user: dict = Depends(dealer_user)):
 
 
 class OfferBody(BaseModel):
-    total: float = Field(ge=0)
+    total: float = Field(ge=0, allow_inf_nan=False)
 
 
 def _distribute_offer_shares(total: float, values: list) -> list:
@@ -7653,24 +7823,27 @@ def _distribute_offer_shares(total: float, values: list) -> list:
 
     `values` ist der Marktwert je Artikel (Ø-Preis × Menge) in Reihenfolge.
     Artikel ohne Wert (<= 0) bekommen als Gewicht den Ø der bewerteten
-    Artikel; sind alle ohne Wert, wird gleichmäßig verteilt. Der
-    Rundungsrest landet beim letzten Artikel, sodass die Summe exakt
-    `total` ergibt. Gibt die Anteile in derselben Reihenfolge zurück.
+    Artikel; sind alle ohne Wert, wird gleichmäßig verteilt. Die Summe
+    ergibt exakt `total`. Gibt die Anteile in derselben Reihenfolge zurück.
+
+    Gerechnet wird in Cent: Jeder bekommt seinen abgerundeten Anteil, die
+    übrigen Cent gehen an die größten Nachkommareste. Bis 2.90.20 landete
+    der ganze Rundungsrest beim letzten Artikel – bei 5 Cent auf sieben
+    Artikel stand dort −0,01 € (Gesamttest 26.09.2026).
     """
     priced = [v for v in values if v > 0]
     fallback = (sum(priced) / len(priced)) if priced else 1.0
     weights = [(v if v > 0 else fallback) for v in values]
     total_w = sum(weights) or 1.0
-    shares = []
-    assigned = 0.0
-    for i, w in enumerate(weights):
-        if i == len(values) - 1:         # Rundungsrest am letzten Artikel
-            share = round(total - assigned, 2)
-        else:
-            share = round(total * w / total_w, 2)
-            assigned = round(assigned + share, 2)
-        shares.append(share)
-    return shares
+    cent_gesamt = int(round(total * 100))
+    genau = [cent_gesamt * w / total_w for w in weights]
+    cent = [int(g) for g in genau]
+    rest = cent_gesamt - sum(cent)
+    # Bei gleichem Rest bekommt wie bisher der hintere Artikel den Cent.
+    for i in sorted(range(len(genau)), key=lambda i: (genau[i] - cent[i], i),
+                    reverse=True)[:rest]:
+        cent[i] += 1
+    return [c / 100 for c in cent]
 
 
 @app.post("/api/lists/{list_id}/offer")
@@ -7811,8 +7984,15 @@ def receive_list_item(item_id: int, body: ReceiveBody,
                                 + note_line).strip()[:1000]
                 conn.execute("UPDATE collection SET notes = ? WHERE id = ?",
                              (merged_notes, ziel))
+        posten = conn.execute(
+            "SELECT MAX(id) AS id FROM purchases WHERE entry_id = ?",
+            (ziel,)).fetchone()["id"] if paid_val is not None else None
+        art = "replace" if row and body.mode == "replace" else (
+            "add" if row else "neu")
         conn.execute("UPDATE shopping_items SET done = 1, done_at = ?, "
-                     "done_by = ? WHERE id = ?", (now, user["id"], item_id))
+                     "done_by = ?, recv_entry_id = ?, recv_mode = ?, "
+                     "recv_purchase_id = ? WHERE id = ?",
+                     (now, user["id"], ziel, art, posten, item_id))
         list_id = it["list_id"]
     archived = _maybe_autoarchive(list_id)
     if it["item_type"] == "set":
@@ -7822,18 +8002,52 @@ def receive_list_item(item_id: int, body: ReceiveBody,
 
 @app.post("/api/lists/items/{item_id}/undo")
 def undo_list_item(item_id: int, user: dict = Depends(dealer_user)):
+    """Wareneingang zurücknehmen – samt Menge und Kaufposten.
+
+    Bis 2.90.20 setzte das nur den Haken zurück. Menge und Kaufbuch blieben
+    stehen, und wer den Artikel danach noch einmal annahm, hatte ihn doppelt
+    (3 → 6 → 9 Stück, gefunden beim Gesamttest am 26.09.2026). Jetzt merkt
+    sich der Eingang, was er gebucht hat, und das wird zurückgenommen.
+    „Ersetzen“ lässt sich nicht umkehren – die alte Menge und das alte Buch
+    sind weg; dort bleibt es beim Hinweis, die Sammlung anzupassen.
+    """
+    zurueck, fotos_von = False, None
     with core.db() as conn:
-        row = conn.execute("SELECT list_id, done FROM shopping_items "
-                           "WHERE id = ?", (item_id,)).fetchone()
+        row = conn.execute("SELECT * FROM shopping_items WHERE id = ?",
+                           (item_id,)).fetchone()
         if not row:
             raise HTTPException(404, "Artikel nicht gefunden")
         if not row["done"]:
-            return {"ok": True}
+            return {"ok": True, "reverted": False}
+        eintrag = conn.execute(
+            "SELECT id, quantity, item_id, item_type FROM collection "
+            "WHERE id = ?", (row["recv_entry_id"],)).fetchone() \
+            if row["recv_entry_id"] else None
+        if eintrag and row["recv_mode"] in ("neu", "add"):
+            if row["recv_purchase_id"]:
+                conn.execute("DELETE FROM purchases WHERE id = ? AND "
+                             "entry_id = ?",
+                             (row["recv_purchase_id"], eintrag["id"]))
+            rest = eintrag["quantity"] - row["qty"]
+            if rest > 0:
+                conn.execute("UPDATE collection SET quantity = ? WHERE id = ?",
+                             (rest, eintrag["id"]))
+                _kaufsumme_nachziehen(conn, eintrag["id"])
+            else:
+                conn.execute("DELETE FROM collection WHERE id = ?",
+                             (eintrag["id"],))
+                conn.execute("DELETE FROM purchases WHERE entry_id = ?",
+                             (eintrag["id"],))
+                fotos_von = (eintrag["item_type"], eintrag["item_id"])
+            zurueck = True
         conn.execute("UPDATE shopping_items SET done = 0, done_at = NULL, "
-                     "done_by = NULL WHERE id = ?", (item_id,))
+                     "done_by = NULL, recv_entry_id = NULL, recv_mode = NULL, "
+                     "recv_purchase_id = NULL WHERE id = ?", (item_id,))
         conn.execute("UPDATE shopping_lists SET archived = 0, "
                      "archived_at = NULL WHERE id = ?", (row["list_id"],))
-    return {"ok": True}
+    if fotos_von:
+        _fotos_aufraeumen(*fotos_von)
+    return {"ok": True, "reverted": zurueck}
 
 
 # ---------------------------------------------------------------- Preise
@@ -8403,6 +8617,20 @@ def http_error(request: Request, exc: HTTPException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
+@app.exception_handler(RequestValidationError)
+def eingabe_fehler(request: Request, exc: RequestValidationError):
+    """Eingabefehler ohne die Eingabe selbst.
+
+    FastAPI wiederholt jeden abgelehnten Wert in der Antwort – auch ein zu
+    kurzes Passwort. Und ein abgelehntes `NaN` ließ sich gar nicht erst als
+    JSON schreiben: Aus dem 422 wurde ein 500. Die Oberfläche braucht nur
+    den Grund (`msg`).
+    """
+    return JSONResponse(status_code=422, content={"detail": [
+        {"loc": [str(t) for t in f.get("loc", ())], "msg": str(f.get("msg", "")),
+         "type": str(f.get("type", ""))} for f in exc.errors()]})
+
+
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
@@ -8513,9 +8741,14 @@ def index():
         # Genitiv-s an eine leere Zeichenkette. `_app_title()` kennt den
         # Fall und liefert dann »Dein Brickfolio«.
         seite = (f.read().replace("__APPVERSION__", core.APP_VERSION)
-                 # `quote=False`: Die Marken stehen in Textinhalt, nicht
-                 # in einem Attribut. Sonst würde aus „Anna's Brickfolio"
-                 # im Reiter „Anna&#x27;s Brickfolio".
+                 # Die eine Stelle **im Attribut** zuerst und mit
+                 # Anführungszeichen-Schutz: Ein Name mit `"` brach sonst aus
+                 # `content="…"` aus (Gesamttest 26.09.2026).
+                 .replace('content="__APPTITLE__"',
+                          'content="' + html.escape(_app_title(), True) + '"')
+                 # `quote=False`: Die übrigen Marken stehen in Textinhalt,
+                 # nicht in einem Attribut. Sonst würde aus „Anna's
+                 # Brickfolio" im Reiter „Anna&#x27;s Brickfolio".
                  .replace("__APPTITLE__", html.escape(_app_title(), False))
                  .replace("__OWNERUP__",
                           html.escape(_owner_name().upper(), False))

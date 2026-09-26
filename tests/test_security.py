@@ -260,7 +260,7 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
     aufgeloest = {getattr(push, n, n) if n.isupper() else n for n in namen}
     OFFEN = {                       # bewusst nicht geheim
         "bl_categories", "bl_colors", "currency", "default_theme",
-        "hub_blocked", "hub_display_name", "hub_instance_code", "hub_is_admin",
+        "hub_blocked", "hub_verwaist", "hub_display_name", "hub_instance_code", "hub_is_admin",
         "hub_key_sent", "hub_last_publish", "hub_member_id", "offer_percent",
         "owner_name", "price_region", "vapid_public",
         "ollama_model",         # nur ein Modellname wie „qwen2.5:14b“;
