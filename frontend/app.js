@@ -1976,16 +1976,29 @@ function unitValue(it) {
     : (it.price_used ?? it.price_new);
 }
 
+/* Eine Preiszeile: das gelbe Schild links, alles andere in einer eigenen
+   Spalte daneben (`.price-wert`). Bricht dort etwas um, bleibt es unter dem
+   Preis eingerückt – bis 2.90.17 rutschte „· 13× verkauft 🇩🇪“ auf dem
+   Handy an den linken Rand unter das Schild (gemeldet am 26.09.2026). Die
+   Verkaufszahl samt Fahne steht in `.price-sold`; auf schmalen Schirmen
+   bekommt sie grundsätzlich eine eigene Zeile. */
 function priceLine(label, d) {
   if (!d || !d.avg) {
-    return `<div class="price-row"><span class="price-tag">${label}</span> ${esc(tr("keine Verkäufe"))}</div>`;
+    return `<div class="price-row"><span class="price-tag">${label}</span>`
+      + `<span class="price-wert">${esc(tr("keine Verkäufe"))}</span></div>`;
   }
   const range = (d.min != null && d.max != null)
     ? ` <span class="price-range">(${fmtEur(d.min)} – ${fmtEur(d.max)})</span>` : "";
   const sold = d.times_sold != null
-    ? " · " + tr("{n}× verkauft", { n: d.times_sold }) : "";
-  return `<div class="price-row"><span class="price-tag">${label}</span> `
-    + `<strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}${scopeFlagHtml(d)}</div>`;
+    // Das Leerzeichen *vor* dem Block ist die Umbruchstelle: Passt die
+    // Verkaufszahl nicht mehr, wandert sie als Ganzes in die nächste Zeile,
+    // die Spanne bleibt beim Preis.
+    ? ` <span class="price-sold"><span class="price-sep">·\u00a0</span>`
+      + `${esc(tr("{n}× verkauft", { n: d.times_sold }))}${scopeFlagHtml(d)}</span>`
+    : scopeFlagHtml(d);
+  return `<div class="price-row"><span class="price-tag">${label}</span>`
+    + `<span class="price-wert"><strong>Ø ${fmtEur(d.avg)}</strong>${range}${sold}`
+    + `</span></div>`;
 }
 
 /** „ab X € zu haben" – das billigste aktuelle Angebot.
@@ -1997,10 +2010,12 @@ function priceLine(label, d) {
 function angebotLine(label, d) {
   if (!d || d.min == null) return "";
   const stueck = d.angebote
-    ? " · " + tr("{n} im Angebot", { n: d.angebote }) : "";
-  return `<div class="price-row angebot"><span class="price-tag">${label}</span> `
-    + `${esc(tr("ab"))} <strong>${fmtEur(d.min)}</strong>${stueck}`
-    + `${scopeFlagHtml(d)}</div>`;
+    ? ` <span class="price-menge"><span class="price-sep">·\u00a0</span>`
+      + `${esc(tr("{n} im Angebot", { n: d.angebote }))}${scopeFlagHtml(d)}</span>`
+    : scopeFlagHtml(d);
+  return `<div class="price-row angebot"><span class="price-tag">${label}</span>`
+    + `<span class="price-wert">${esc(tr("ab"))} <strong>${fmtEur(d.min)}</strong>`
+    + `${stueck}</span></div>`;
 }
 
 /** Beide Zustände als Angebotszeilen, mit erklärender Fußnote. */

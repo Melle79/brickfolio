@@ -1080,7 +1080,27 @@ span.mf-stern.an {
 }
 .lightbox-hint { color: rgba(255,255,255,.75); font-size: 13.5px; font-weight: 700; }
 .fix-input { flex: 2; min-width: 130px; }
-.price-row { margin-top: 6px; font-size: 14.5px; }
+.price-row { margin-top: 6px; font-size: 14.5px;
+  /* Schild links, Angaben rechts daneben – Umbrüche bleiben eingerückt. */
+  display: grid; grid-template-columns: auto 1fr; column-gap: 6px;
+  align-items: baseline; }
+.price-row .price-tag { margin-right: 0; }
+.price-wert { min-width: 0; }
+/* „1× verkauft 🇩🇪“ und „6 im Angebot 🇩🇪“ bleiben beisammen – umgebrochen
+   wird davor, nie mittendrin („1× | verkauft“ stand sonst am Desktop da). */
+.price-sold, .price-menge { white-space: nowrap; }
+/* Wird die Preiszeile schmal – auf dem Handy, im Katalogfenster –, bekommt
+   die Verkaufszahl grundsätzlich eine eigene Zeile, eingerückt unter den
+   Preis und ohne den Trennpunkt. Gemessen wird die Zeile selbst, nicht der
+   Bildschirm: Am Desktop ist das Katalogfenster schmal, der Steckbrief
+   breit. Die Angebotsmenge passt meist dahinter und bleibt, wo sie ist.
+   Keine andere Regel setzt `display` an `.price-sold` – das ist wichtig,
+   denn `@container` bringt keine zusätzliche Spezifität mit. */
+.price-row { container-type: inline-size; }
+@container (max-width: 520px) {
+  .price-sold { display: block; }
+  .price-sold .price-sep { display: none; }
+}
 .price-tag {
   display: inline-block; min-width: 86px; font-weight: 900;
   background: var(--yellow); border: 1.5px solid var(--ink);

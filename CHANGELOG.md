@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.90.18 – September 2026
+
+### Geändert
+- 📱 **Preiszeilen brechen sauber um.** Das gelbe Schild steht links, alles
+  andere in einer eigenen Spalte daneben – was umbricht, bleibt unter dem
+  Preis eingerückt. Bisher rutschte „· 13× verkauft 🇩🇪“ auf dem Handy an
+  den linken Rand unter das Schild. Ist die Zeile schmal (Handy,
+  Katalogfenster), steht die Verkaufszahl grundsätzlich in einer eigenen,
+  eingerückten Zeile; ist sie breit, bleibt alles in einer. Angaben wie
+  „1× verkauft 🇩🇪“ werden nie mehr mittendrin getrennt.
+
 ## 2.90.17 – September 2026
 
 ### Geändert
