@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.90.17 – September 2026
+
+### Geändert
+- 💶 **Das Katalogfenster zeigt jetzt auch Preise** – wie der Steckbrief,
+  mit Spanne, Verkaufszahl, Gebietsfahne und den Angebotspreisen, wenn
+  eingeschaltet. Bisher standen dort nur Bild, Name und die Knöpfe. Das
+  Fenster ist dafür etwas breiter geworden.
+- Die Gebietsfahne hängt an der Angabe davor und rutscht nicht mehr allein
+  in die nächste Zeile.
+
 ## 2.90.16 – September 2026
 
 ### Geändert

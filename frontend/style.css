@@ -2913,7 +2913,7 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    Richtung und einen Kasten drumherum. */
 .kat-modal {
   flex-direction: column; align-items: stretch; text-align: center;
-  max-width: 320px; overflow-y: auto;
+  max-width: 440px; overflow-y: auto;
   background: var(--surface); color: var(--ink);
   border: 2px solid var(--line); border-radius: var(--radius);
   padding: 18px 16px 14px;
@@ -2937,6 +2937,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   border-width: 1.5px; border-radius: 12px;
 }
 .kat-modal-link { font-size: .82rem; color: var(--muted); }
+/* Preise wie im Steckbrief – linksbündig, sonst tanzen die Zeilen. */
+.kat-modal-preise { text-align: left; margin-top: 10px; }
 /* Einträge, deren Name noch nicht nachgeschlagen ist: Die Nummer steht
    dann oben, und die Zeile darunter sagt warum – statt die Nummer stumm
    zweimal zu zeigen. */

@@ -609,7 +609,9 @@ function scopeFlagHtml(d) {
     ? tr("Preis aus {gebiet} – im eingestellten Gebiet gab es nichts",
       { gebiet: name })
     : tr("Preis aus {gebiet}", { gebiet: name });
-  return ` <span class="price-flag" title="${esc(titel)}">`
+  // Geschütztes Leerzeichen: Sonst rutscht die Fahne allein in die nächste
+  // Zeile, und man weiß nicht mehr, zu welcher Angabe sie gehört.
+  return `\u00a0<span class="price-flag" title="${esc(titel)}">`
     + `${scopeFlag(d.used_scope)}</span>`;
 }
 
@@ -5676,6 +5678,8 @@ function katDetail(e) {
       <strong class="kat-modal-name">${esc(e.name || e.item_no)}${
         jedipediaLink(e.item_no, e.name)}</strong>
       <div class="sub">${esc(e.item_no)}${e.jahr ? " · " + e.jahr : ""}</div>
+      ${state.bricklinkPrices ? `<div class="price-result kat-modal-preise" data-kat-preise>
+        <span class="price-note">${esc(tr("Lade Preise …"))}</span></div>` : ""}
       <div class="kat-modal-tasten">
         <button class="mini-btn${e.besitz ? " sel" : ""}" data-mmarke="habe">
           ${esc(e.besitz ? "✔ " + tr("Hab ich") : tr("Hab ich"))}</button>
@@ -5691,6 +5695,18 @@ function katDetail(e) {
     if (ev.target === overlay || ev.target.closest(".card-modal-close")) zu();
   });
   document.addEventListener("keydown", taste);
+  // Preise wie im Steckbrief (seit 2.90.17) – dieselben Bausteine. Kommt
+  // nichts, verschwindet der Platzhalter wieder, statt ewig zu „laden“.
+  const katPreise = overlay.querySelector("[data-kat-preise]");
+  if (katPreise) {
+    preiseVollLaden(katPreise, katStand.art === "set" ? "set" : "minifig",
+      e.item_no).then((ok) => {
+      if (!ok && katPreise.isConnected) {
+        katPreise.innerHTML = `<span class="price-note">${esc(
+          tr("Bei BrickLink wurde dazu zuletzt nichts verkauft."))}</span>`;
+      }
+    });
+  }
   overlay.querySelectorAll("[data-mmarke]").forEach((b) => {
     b.addEventListener("click", async () => {
       // **Der einzige Weg auf die Merkliste.** In der Zeile steht dafür
@@ -7446,15 +7462,15 @@ async function sugPreiseVoll(pr, pit, type) {
 /* Gemeinsam für Suchtreffer-Fenster und Info-Fenster: die Kurzzeile durch
    die vollen Preisangaben ersetzen, sobald sie da sind. */
 async function preiseVollLaden(pr, type, itemId) {
-  if (!state.bricklinkPrices || /^(fig-|manuell-|custom-)/.test(itemId)) return;
+  if (!state.bricklinkPrices || /^(fig-|manuell-|custom-)/.test(itemId)) return false;
   let p;
   try {
     p = await api(`/price/${encodeURIComponent(type)}/`
       + `${encodeURIComponent(itemId)}${state.angebote ? "?angebote=1" : ""}`);
   } catch (_) {
-    return;               // die Kurzzeile bleibt stehen – besser als nichts
+    return false;         // die Kurzzeile bleibt stehen – besser als nichts
   }
-  if (!pr.isConnected) return;        // Fenster inzwischen zu
+  if (!pr.isConnected) return false;  // Fenster inzwischen zu
   const zweit = p.bl_no
     ? `<div class="price-note">${esc(tr("BrickLink-Nr. {nr}", { nr: p.bl_no }))}</div>`
     : "";
@@ -7463,6 +7479,7 @@ async function preiseVollLaden(pr, type, itemId) {
     + `<div class="price-note">`
     + esc(tr("Ø-Verkaufspreise, letzte 6 Monate (BrickLink)")) + `</div>`
     + angebotBlock(p.stock) + zweit;
+  return true;
 }
 
 async function resolveBricklinkNo(it) {
