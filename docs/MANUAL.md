@@ -293,7 +293,7 @@ each a lead sentence and a few points, for the quick answer on the go. Anything
 that deserves a fuller explanation lives here in the manual and is linked from
 the help. And **your own
 name** next to it is tappable: behind it is the **profile popup** with change
-display name, change password and sign out.
+username, change password and sign out.
 
 **💬 Unread messages.** If something is waiting in the trade network, a mark
 with the number of unread messages appears to the left – visible from every
@@ -496,7 +496,7 @@ Brickfolio knows three levels, which can be combined:
 exists.
 
 **Creating a user (admin):** More → 👥 Manage users → name + password →
-"Create user". Every user changes their own password and display name by
+"Create user". Every user changes their own password and username by
 **tapping their name at the top right** (profile popup); the admin can reset
 passwords and remove users.
 
@@ -1627,8 +1627,14 @@ empty doesn't appear. Two switches start **off**:
 friend" at the top of the Trade tab, next to "My profile". A window opens with
 the code, "Copy" and – where the device offers it – "Share", plus three steps
 for your friend. A code works once. Everyone has a quota of **three**
-invitations (the tag on the button shows how many are left) and can request
-more from the hub admin.
+invitations (the number in the button shows how many are left) and can
+request more from the hub admin. **Hub admins** invite without a quota –
+after all, they approve everyone else's requests.
+
+**Item profiles here too:** tapping the name or number of an item – in
+Offers, Discover, "I offer", someone else's profile and the header of a
+conversation – opens its item profile with prices and sets, just like in
+the lists. The buttons (Interest, Request, Offer) keep their job.
 
 **My invitations** (expandable below the button): open invitations are listed
 with their code – copy or share again, or withdraw; a withdrawn invitation is
@@ -2275,7 +2281,10 @@ the last successful price fetch, for the number change or the merge. In normal
 operation that page is not touched at all. If it finds something, the notice
 names the new number and **"Use this number"** enters it everywhere:
 collection, wishlist, shopping lists, the set-figure links and the price
-history. Afterwards the app fetches prices under the new number.
+history. Afterwards the app fetches prices under the new number. If the
+new number is already in the collection, the two rows are merged. Because
+this affects the whole instance, admins and Collector-Pros may do it – the
+same goes for merging duplicate numbers and "Reload themes".
 
 **If the log finds nothing** – because the entry really was deleted, say – the
 notice stays anyway, just without a new number. Nothing is lost: the item stays

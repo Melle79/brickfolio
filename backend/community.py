@@ -320,16 +320,22 @@ def share_status(user: dict = Depends(current_user)):
         except Exception:
             live = None
     if live is not None:
-        by_item = {o["item_id"]: o for o in live}
+        # Abgeglichen wird über Nummer **und Zustand**: Wer sw0188 neu
+        # veröffentlicht und gebraucht nur ausgewählt hatte, sah beim
+        # gebrauchten „veröffentlicht“ – und ein abgewähltes neues fehlte
+        # unter „verschwindet beim nächsten Veröffentlichen“ (Tausch-Test).
+        def schluessel(x):
+            return (x["item_id"], x.get("condition") or "used")
+        by_item = {schluessel(o): o for o in live}
         for c in chosen:
-            o = by_item.get(c["item_id"])
+            o = by_item.get(schluessel(c))
             c["published"] = bool(o)
             c["published_qty"] = o["qty"] if o else None
             if o:
                 published.append(c["item_id"])
-        chosen_ids = {c["item_id"] for c in chosen}
+        chosen_ids = {schluessel(c) for c in chosen}
         stale = [{"item_id": o["item_id"], "name": o["name"], "qty": o["qty"]}
-                 for o in live if o["item_id"] not in chosen_ids]
+                 for o in live if schluessel(o) not in chosen_ids]
     return {"shared": len(chosen), "suggested": len(_duplicate_items()["items"]),
             "items": chosen, "known_state": live is not None,
             "published": len(published), "stale": stale}
@@ -652,7 +658,10 @@ def hub_trades(user: dict = Depends(current_user)):
         rows = conn.execute(
             "SELECT t.*, (SELECT COUNT(*) FROM trade_messages m "
             " WHERE m.trade_id = t.id AND m.mine = 0 "
-            " AND (t.read_at IS NULL OR m.created_at > t.read_at)) AS unread, "
+            # Gelesen bis zur gemerkten Nachricht; ältere Vorgänge ohne
+            # Merker zählen wie bisher nach der Uhrzeit.
+            " AND (CASE WHEN t.read_msg_id IS NOT NULL THEN m.id > t.read_msg_id"
+            " ELSE (t.read_at IS NULL OR m.created_at > t.read_at) END)) AS unread, "
             "(SELECT body FROM trade_messages m WHERE m.trade_id = t.id "
             " ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_body, "
             "(SELECT r.status FROM hub_reports r WHERE r.trade_id = t.id "
@@ -675,8 +684,9 @@ def hub_trade_detail(trade_id: str, user: dict = Depends(current_user)):
         msgs = conn.execute(
             "SELECT id, mine, body, created_at, delivered FROM trade_messages "
             "WHERE trade_id = ? ORDER BY created_at, id", (trade_id,)).fetchall()
-        conn.execute("UPDATE trades SET read_at = ? WHERE id = ?",
-                     (int(time.time()), trade_id))
+        conn.execute("UPDATE trades SET read_at = ?, read_msg_id = (SELECT "
+                     "MAX(id) FROM trade_messages WHERE trade_id = ?) "
+                     "WHERE id = ?", (int(time.time()), trade_id, trade_id))
     return {"trade": dict(t), "messages": [dict(m) for m in msgs],
             "report": _meldung_zum_gespraech(trade_id)}
 
@@ -868,8 +878,10 @@ def hub_send_message(trade_id: str, body: TradeMessageBody,
                 "INSERT INTO trade_messages (trade_id, hub_id, mine, body, "
                 "created_at) VALUES (?, ?, 1, ?, ?)",
                 (trade_id, sent.get("message_id"), body.text, now_ts))
-            conn.execute("UPDATE trades SET updated_at = ?, read_at = ? "
-                         "WHERE id = ?", (now_ts, now_ts, trade_id))
+            conn.execute("UPDATE trades SET updated_at = ?, read_at = ?, "
+                         "read_msg_id = (SELECT MAX(id) FROM trade_messages "
+                         "WHERE trade_id = ?) WHERE id = ?",
+                         (now_ts, now_ts, trade_id, trade_id))
         return {"ok": True}
     except hub.HubError as e:
         if e.status == 410:
@@ -1213,6 +1225,7 @@ def hub_report_trade(trade_id: str, body: TradeReportBody,
             "reason, with_history, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (res.get("id"), trade_id, t["other_id"], t["other_name"] or "",
              body.reason, 1 if disclosed else 0, jetzt))
+    _meldung_zuletzt["ts"] = 0.0      # der nächste Abgleich fragt gleich nach
     return {"ok": True, "report": _meldung_zum_gespraech(trade_id)}
 
 
@@ -1235,7 +1248,7 @@ def _meldung_zum_gespraech(trade_id: str) -> dict | None:
 
 # Der Stand der Meldungen wird beim Nachrichten-Abgleich mitgeholt – der
 # läuft alle 8–20 Sekunden. Für Meldungen genügt einmal die Minute.
-MELDUNG_ABGLEICH_ALLE = 60
+MELDUNG_ABGLEICH_ALLE = 30
 _meldung_zuletzt = {"ts": 0.0}
 
 
@@ -1249,13 +1262,16 @@ def _meldungen_abgleichen(sofort: bool = False) -> None:
     """
     if not sofort and time.time() - _meldung_zuletzt["ts"] < MELDUNG_ABGLEICH_ALLE:
         return
-    _meldung_zuletzt["ts"] = time.time()
     with core.db() as conn:
         lokal = {r["hub_id"]: r for r in conn.execute(
             "SELECT id, hub_id, status FROM hub_reports WHERE hub_id IS NOT "
             "NULL AND created_at > ?", (int(time.time()) - 90 * 86400,))}
     if not lokal:
         return
+    # Die Frist beginnt erst, wenn es etwas abzugleichen gibt: Vorher lief
+    # sie auch ohne jede Meldung – und die erste Rückfrage kam bis zu einer
+    # Minute später an (Tausch-Gesamttest 26.09.2026).
+    _meldung_zuletzt["ts"] = time.time()
     try:
         stand = hub.own_reports()
     except Exception:

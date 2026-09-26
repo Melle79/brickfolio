@@ -307,7 +307,7 @@ knapp gehalten: neun aufklappbare Abschnitte mit je einem Leitsatz und ein
 paar Punkten, für die schnelle Antwort unterwegs. Was ausführlicher
 erklärt gehört, steht hier im Handbuch und ist aus der Hilfe verlinkt. Und
 der **eigene Name** daneben ist antippbar: Dahinter
-liegt das **Profil-Popup** mit Anzeigename ändern, Passwort ändern und
+liegt das **Profil-Popup** mit Benutzername ändern, Passwort ändern und
 Abmelden.
 
 **💬 Ungelesene Nachrichten.** Wartet im Tausch-Netzwerk etwas, erscheint
@@ -786,7 +786,7 @@ aktive Liste existiert.
 
 **Benutzer anlegen (Admin):** Mehr → 👥 Benutzer verwalten → Name +
 Passwort → „Benutzer anlegen". Jeder Benutzer ändert sein Passwort und
-seinen Anzeigenamen selbst, indem er **oben rechts auf seinen Namen
+seinen Benutzernamen selbst, indem er **oben rechts auf seinen Namen
 tippt** (Profil-Popup); der Admin kann Passwörter zurücksetzen und
 Benutzer entfernen.
 
@@ -2214,8 +2214,15 @@ nicht. Zwei Schalter stehen anfangs auf **aus**:
 neben „Mein Profil" über „✉️ Freund einladen". Es öffnet sich ein Fenster
 mit dem Code, „Kopieren“ und – wo das Gerät es kann – „Teilen“, dazu drei
 Schritte für den Freund. Der Code gilt einmal. Jeder hat ein Kontingent von
-**drei** Einladungen (die Marke am Knopf zeigt, wie viele frei sind) und
-kann beim Hub-Admin mehr anfragen.
+**drei** Einladungen (die Zahl im Knopf zeigt, wie viele frei sind) und
+kann beim Hub-Admin mehr anfragen. **Hub-Admins** laden ohne Kontingent
+ein – sie genehmigen ja die Anfragen der anderen.
+
+**Steckbriefe gibt es auch hier:** Ein Tipp auf Name oder Nummer eines
+Artikels – in Angeboten, Entdecken, „Ich biete an“, im Profil eines anderen
+und im Kopf eines Gesprächs – öffnet seinen Steckbrief mit Preisen und
+Sets, wie in den Listen. Die Knöpfe (Interesse, Anfragen, Anbieten)
+behalten ihre Aufgabe.
 
 **Meine Einladungen** (aufklappbar unter dem Knopf): Offene Einladungen
 stehen mit ihrem Code da – noch einmal kopieren, teilen oder zurückziehen;
@@ -2953,7 +2960,11 @@ Zusammenlegung. Im Normalbetrieb wird diese Seite also gar nicht
 angefasst. Wird sie fündig, nennt der Hinweis die neue Nummer und
 **„Nummer übernehmen"** trägt sie überall ein: Sammlung, Wunschliste,
 Einkaufslisten, die Set-Figuren-Verknüpfungen und den Preisverlauf.
-Danach holt die App die Preise unter der neuen Nummer frisch.
+Danach holt die App die Preise unter der neuen Nummer frisch. Steht die
+neue Nummer schon in der Sammlung, werden die beiden Zeilen
+zusammengeführt. Weil das die ganze Instanz betrifft, dürfen es Admins
+und Sammlerprofis – ebenso das Zusammenführen doppelter Nummern und
+„Themen nachladen“.
 
 **Findet der Log nichts** – etwa weil der Eintrag wirklich gelöscht wurde
 –, bleibt der Hinweis trotzdem stehen, nur eben ohne neue Nummer. Nichts

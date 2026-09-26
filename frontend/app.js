@@ -348,6 +348,12 @@ function serverfehlerMelden(path, options, code, text, roh) {
   if (code < 500 || path.startsWith("/errors")) return;
   const art = (options && options.method) || "GET";
   const anfang = String(roh || "").replace(/\s+/g, " ").trim().slice(0, 300);
+  // **Ein 502 mit Antwort der App ist ein fremder Ausfall, kein Fehler.**
+  // Die App schickt 502 nur, wenn BrickLink, Brickognize, GitHub oder der
+  // Hub versagt haben – sie hat den Fall abgefangen und sagt es. Aufgezeichnet
+  // wurde es trotzdem, samt großem Hinweis und Push an den Admin
+  // (Gesamttest 26.09.2026). Echte Fehler der App kommen als 500.
+  if (code === 502 && anfang.startsWith("{")) return;
   const melden = () => reportError(
     tr("{code} bei {weg}", { code, weg: art + " /api" + path }),
     (text ? text + "\n\n" : "")
@@ -760,7 +766,7 @@ function renderWanted(items) {
         <div class="card-title tappbar" data-info="${esc(it.item_type || "minifig")}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)}${it.year > 0 ? " · " + it.year : ""}${prices ? " · " + prices : ""}</div>
-          ${it.owned > 0 ? `<span class="badge badge-owned">✔ ${it.owned}× in deiner Sammlung</span>` : ""}
+          ${it.owned > 0 ? `<span class="badge badge-owned">${esc(tr("✔ {n}× in deiner Sammlung", { n: it.owned }))}</span>` : ""}
           ${it.on_lists && it.on_lists.length ? `<span class="badge badge-list" title="${esc(tr("Schon eingeplant – nicht doppelt kaufen"))}">🛒 ${it.on_lists_qty > 1 ? it.on_lists_qty + "× " : ""}${esc(tr("auf Einkaufsliste"))}: ${esc(it.on_lists.join(", "))}</span>` : ""}
           ${it.in_sets && !it.owned ? `<div class="sub in-sets"><span class="in-sets-label">${esc(tr("🧩 fehlt zu deinem Set:"))}</span>${inSetLinks(it.in_sets)}</div>` : ""}
         </div>
@@ -917,7 +923,7 @@ function renderWanted(items) {
         () => renderWanted(items));
     });
     card.querySelector("[data-del]").addEventListener("click", async () => {
-      if (!confirm(tr("„{name}“ von der Wunschliste löschen?", { name: item.name }))) return;
+      if (!(await frage(tr("„{name}“ von der Wunschliste löschen?", { name: item.name }), { gefahr: true }))) return;
       try {
         await api("/wanted/" + wid, { method: "DELETE" });
         loadWanted();
@@ -991,7 +997,7 @@ function applySuggestInfo(info, withDetail, geprueft) {
       }
     }
     if (ownedEl && d.owned > 0) {
-      ownedEl.textContent = `✔ ${d.owned}× in deiner Sammlung`;
+      ownedEl.textContent = tr("✔ {n}× in deiner Sammlung", { n: d.owned });
       ownedEl.hidden = false;
     } else if (ownedEl && d.wanted) {
       ownedEl.textContent = tr("⭐ auf deiner Wunschliste");
@@ -1381,7 +1387,7 @@ async function loadSetFigs(card, item, btn) {
             <div class="sub">${esc(f.item_id)}${f.qty > 1 ? ` · ${f.qty}× im Set` : ""}
               <span class="badge badge-owned" data-fig-badge hidden></span></div>
             <div class="fig-actions" data-fig-actions>
-              <button class="mini-btn add" data-fig-add="${i}">＋ Sammlung</button>
+              <button class="mini-btn add" data-fig-add="${i}">${esc(tr("＋ Sammlung"))}</button>
               <button class="mini-btn" data-fig-want="${i}">☆ Merken</button>
             </div>
           </div>
@@ -1628,7 +1634,7 @@ async function steckbriefOeffnen(itemId, itemType, vorschau) {
     ${steckbriefSetsHtml(d)}
     ${d._fehler ? `<div class="price-note">⚠️ ${esc(d._fehler)}</div>` : ""}
     <div class="fi-actions btn-grid">
-      <button class="mini-btn add" data-fi-add>＋ Sammlung</button>
+      <button class="mini-btn add" data-fi-add>${esc(tr("＋ Sammlung"))}</button>
       ${d.wanted ? "" : `<button class="mini-btn" data-fi-want>☆ Merken</button>`}
       <a class="mini-btn link" href="${esc(bl)}" target="_blank" rel="noopener">BrickLink ↗</a>
     </div>`;
@@ -1755,7 +1761,7 @@ function paidSrcIcon(it) {
   const date = it.paid_at
     ? new Date(it.paid_at * 1000).toLocaleDateString(dateLocale()) : "";
   return it.paid_source === "manual"
-    ? `<span title="manuell eingetragen${date ? " am " + date : ""}">✏️</span>`
+    ? `<span title="${esc(date ? tr("manuell eingetragen am {datum}", { datum: date }) : tr("manuell eingetragen"))}">✏️</span>`
     : `<span title="automatisch: BrickLink-Ø${date ? " vom " + date : ""}">⚙️</span>`;
 }
 
@@ -4684,7 +4690,7 @@ function collCardDetails(it) {
           ${inhalt}
         </div>`).join("")}
         ${hatPreise ? "" : `<div hidden>${preisfelder}</div>`}
-        <div class="meta">Erfasst von ${esc(it.added_by_name || "unbekannt")} am ${new Date(it.added_at * 1000).toLocaleDateString(dateLocale())}</div>
+        <div class="meta">${esc(tr("Erfasst von {wer} am {datum}", { wer: it.added_by_name || tr("unbekannt"), datum: new Date(it.added_at * 1000).toLocaleDateString(dateLocale()) }))}</div>
       </div>`;
 }
 
@@ -5042,7 +5048,7 @@ function karteVerdrahten(card, items) {
     const canPrice = state.bricklinkPrices && !/^(fig-|manuell-|custom-)/.test(item.item_id);
 
     const deleteEntry = async () => {
-      if (!confirm(tr("„{name}“ wirklich löschen?", { name: item.name }))) return;
+      if (!(await frage(tr("„{name}“ wirklich löschen?", { name: item.name }), { gefahr: true }))) return;
       try {
         // Erst fragen (solange das Set noch da ist), dann löschen
         await askRemoveSetFigures(item);
@@ -5830,8 +5836,31 @@ function openCardModal(item, id, listCard, deleteEntry, wireQty, canPrice) {
 
    `felder` ist eine Liste: { name, label, typ, wert, platzhalter, pflicht }
 */
+/* Darf dieses Konto Dinge ändern, die die ganze Instanz betreffen
+   (Nummern umstellen, Zeilen zusammenführen, Themen nachladen)? */
+function darfPflegen() {
+  return !!(state.user && (state.user.is_admin || state.user.is_dealer));
+}
+
+/* Rückfrage und Hinweis im eigenen Fenster statt `confirm()`/`alert()`.
+   Die nativen Kästen sahen auf jedem Gerät anders aus, trugen den
+   Seitennamen im Titel und passten nicht zum Rest (Gesamttest 26.09.2026).
+   Die erste Zeile wird zur Überschrift, der Rest zum Text. */
+function dialogTeile(text) {
+  const [kopf, ...rest] = String(text).split("\n\n");
+  return { titel: kopf, text: rest.join("\n\n") };
+}
+
+async function frage(text, { gefahr = false, ok = tr("Ja") } = {}) {
+  return !!(await appDialog({ ...dialogTeile(text), ok, gefahr }));
+}
+
+async function hinweis(text) {
+  await appDialog({ ...dialogTeile(text), ok: "OK", nurOk: true });
+}
+
 function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
-  gefahr = false }) {
+  gefahr = false, nurOk = false }) {
   return new Promise((fertig) => {
     const alt = document.getElementById("app-dialog");
     if (alt) alt.remove();
@@ -5843,7 +5872,7 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
         <button class="card-modal-close" data-abbruch aria-label="${esc(tr("Schließen"))}">✕</button>
         <div class="card modal-inner open" role="dialog" aria-modal="true">
           <h3 style="margin:0 0 6px">${esc(titel)}</h3>
-          ${text ? `<p class="search-hint">${esc(text)}</p>` : ""}
+          ${text ? `<p class="search-hint" style="white-space:pre-line">${esc(text)}</p>` : ""}
           ${felder.map((f) => `
             <label for="dlg-${esc(f.name)}">${esc(f.label)}</label>
             ${f.typ === "auswahl" ? `
@@ -5858,9 +5887,10 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
               value="${esc(f.wert == null ? "" : f.wert)}"
               placeholder="${esc(f.platzhalter || "")}"
               maxlength="${Number(f.max) || 200}">`}`).join("")}
+          <p class="error" data-dlg-fehler hidden></p>
           <div class="detail-row btn-grid">
             <button class="mini-btn ${gefahr ? "danger" : "add"}" data-ok>${esc(ok)}</button>
-            <button class="mini-btn" data-abbruch>${esc(tr("Abbrechen"))}</button>
+            ${nurOk ? "" : `<button class="mini-btn" data-abbruch>${esc(tr("Abbrechen"))}</button>`}
           </div>
         </div>
       </div>`;
@@ -5878,11 +5908,27 @@ function appDialog({ titel, text = "", felder = [], ok = "Übernehmen",
       overlay.remove();
       fertig(ergebnis);
     };
+    // Prüfen, **bevor** der Dialog zugeht: Vorher schloss er bei „abc“ als
+    // Betrag oder einem zu kurzen Passwort, und alles Eingetippte war weg
+    // (Gesamttest 26.09.2026). Jetzt bleibt er offen und sagt, was fehlt.
+    const grund = (f, v) => {
+      if (f.pflicht && !v) return " ";
+      if (!v) return "";
+      if (f.typ === "zahl" && betragLesen(v) == null) return tr("Das ist kein Betrag.");
+      if (f.minLaenge && v.length < f.minLaenge) {
+        return tr("Mindestens {n} Zeichen.", { n: f.minLaenge });
+      }
+      return "";
+    };
     const bestaetigen = () => {
       const d = werte();
-      const fehlt = felder.find((f) => f.pflicht && !d[f.name]);
+      const fehlt = felder.find((f) => grund(f, d[f.name]));
+      const zeile = overlay.querySelector("[data-dlg-fehler]");
       if (fehlt) {
         const e = overlay.querySelector(`[data-feld="${fehlt.name}"]`);
+        const text = grund(fehlt, d[fehlt.name]).trim();
+        zeile.textContent = text;
+        zeile.hidden = !text;
         e.focus();
         e.classList.add("feld-fehlt");
         setTimeout(() => e.classList.remove("feld-fehlt"), 1200);
@@ -6063,7 +6109,10 @@ async function kaufbuchLaden(card, item, id) {
   box.innerHTML = kaeufe.map((k) => `
     <div class="kauf-zeile" data-kauf="${k.id}">
       <span class="kauf-menge">${k.quantity}×</span>
-      <span class="kauf-preis">${k.unit_price != null ? fmtEur(k.unit_price) : "–"}</span>
+      <span class="kauf-preis">${k.unit_price != null
+    // Der Betrag des Postens, nicht der gerundete Stückpreis: Aus 9,99 € für
+    // zwei stand sonst „2× 5,00 €“ da, und die Posten ergaben nicht die Summe.
+    ? fmtEur(Math.round(k.unit_price * k.quantity * 100) / 100) : "–"}</span>
       <span class="kauf-quelle">${esc(kaufQuelle(k))}</span>
       <button class="kauf-weg" aria-label="${esc(tr("Kauf zurücknehmen"))}">✕</button>
     </div>`).join("");
@@ -6071,7 +6120,7 @@ async function kaufbuchLaden(card, item, id) {
   box.querySelectorAll("[data-kauf]").forEach((zeile) => {
     zeile.querySelector(".kauf-weg").addEventListener("click", async (ev) => {
       ev.stopPropagation();
-      if (!confirm(tr("Diesen Kauf zurücknehmen? Die Stückzahl geht mit zurück."))) return;
+      if (!(await frage(tr("Diesen Kauf zurücknehmen? Die Stückzahl geht mit zurück."), { gefahr: true }))) return;
       try {
         const r = await api(`/collection/${id}/purchases/${zeile.dataset.kauf}`,
           { method: "DELETE" });
@@ -6127,6 +6176,14 @@ function kaufStandUebernehmen(card, item, r) {
     item.quantity = r.quantity;
     card.querySelectorAll("[data-qty-val]").forEach((s) => {
       s.textContent = r.quantity;
+    });
+    // Der Minus-Knopf wechselt mit: Papierkorb bei einem Stück, sonst „−“.
+    // Nach einem Kauf oder seiner Rücknahme behielt er das alte Zeichen.
+    card.querySelectorAll('[data-qty="-1"]').forEach((b) => {
+      b.innerHTML = r.quantity <= 1 ? TRASH_SVG : "−";
+      b.classList.toggle("qty-del", r.quantity <= 1);
+      b.setAttribute("aria-label", r.quantity <= 1
+        ? tr("Aus der Sammlung löschen") : tr("Anzahl verringern"));
     });
   }
   if ("paid_price" in r) {
@@ -6713,9 +6770,9 @@ function historyChart(pts) {
     <text x="${padX}" y="${h - padB - 4}" class="hist-label">${fmtEur(lo)}</text>
   </svg>
   <div class="hist-tip" data-hist-tip hidden></div>
-  <div class="price-note"><span class="hist-dot" style="background:var(--chart-new)"></span> Neu
-    &nbsp;<span class="hist-dot" style="background:var(--chart-used)"></span> Gebraucht
-    · eigene Aufzeichnung seit Erfassung</div>`;
+  <div class="price-note"><span class="hist-dot" style="background:var(--chart-new)"></span> ${esc(tr("Neu"))}
+    &nbsp;<span class="hist-dot" style="background:var(--chart-used)"></span> ${esc(tr("Gebraucht"))}
+    · ${esc(tr("eigene Aufzeichnung seit Erfassung"))}</div>`;
 }
 
 async function updateStatsOnly() {
@@ -7436,7 +7493,7 @@ async function loadSuggestDetail(inner, pit, orig) {
   const badge = inner.querySelector("[data-sug-owned]");
   if (badge) {
     if (d.owned > 0) {
-      badge.textContent = `✔ ${d.owned}× in deiner Sammlung`;
+      badge.textContent = tr("✔ {n}× in deiner Sammlung", { n: d.owned });
       badge.hidden = false;
     } else if (d.wanted) {
       badge.textContent = tr("⭐ auf deiner Wunschliste");
@@ -7745,15 +7802,19 @@ async function loadOllama() {
 async function modelleLaden() {
   const wahl = $("ollama-model");
   const frei = $("ollama-model-frei");
+  const adresse = $("ollama-url").value.trim();
+  // Ohne Adresse passierte beim Knopf gar nichts – jetzt sagt er es.
+  if (!adresse) { toast(tr("Erst die Adresse des Ollama-Servers eintragen.")); return; }
   let d;
   try {
-    d = await api("/settings/ollama/models?url="
-      + encodeURIComponent($("ollama-url").value.trim()));
+    d = await api("/settings/ollama/models?url=" + encodeURIComponent(adresse));
   } catch (e) {
     wahl.hidden = true; frei.hidden = false;
+    toast(e.message);
     return;
   }
   const liste = (d && d.models) || [];
+  if (!liste.length) toast(tr("Unter dieser Adresse wurden keine Modelle gefunden."));
   // Die zweite Auswahl fürs Bilderansehen ist seit 2.41.0 weg: Bilder sieht
   // sich der Hub an, nicht mehr jede Instanz. Was hier bleibt, übersetzt
   // Suchbegriffe.
@@ -8130,6 +8191,12 @@ async function addManualToList(listId) {
   const err = $("manual-error");
   err.hidden = true;
   const name = $("m-name").value.trim();
+  // Vorher ging ein leerer Name an den Server und kam als rohe 422 zurück.
+  if (!name) {
+    err.textContent = tr("Bitte einen Namen eingeben");
+    err.hidden = false;
+    return;
+  }
   const type = $("m-type").value;
   const { itemId, imgUrl, blUrl, year } = manualIdentity(type);
   try {
@@ -8212,7 +8279,7 @@ async function changeOwnUsername() {
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     $("whoami").textContent = res.username;
     $("settings-user").textContent = res.username;
-    toast(tr("Name geändert: {name} ✔", { name: res.username }));
+    toast(tr("Benutzername geändert: {name} ✔", { name: res.username }));
     loadSettings();
   } catch (e) {
     err.textContent = e.message;
@@ -8342,17 +8409,16 @@ function renderLists(lists) {
       row.className = "card-actions btn-grid";
       row.setAttribute("data-offer-row", "");
       row.innerHTML = `
-        <span class="buy-label">Gesamtpreis für alle offenen Artikel –
-          wird anteilig nach Marktwert verteilt.<br>
-          Ø-Marktwert gesamt: ${fmtEur(openValue)}</span>
+        <span class="buy-label">${esc(tr("Gesamtpreis für alle offenen Artikel – wird anteilig nach Marktwert verteilt."))}<br>
+          ${esc(tr("Ø-Marktwert gesamt: {wert}", { wert: fmtEur(openValue) }))}</span>
         <span class="paid-row buy-paid">
-          <span class="paid-label">Gesamt</span>
+          <span class="paid-label">${esc(tr("Gesamt"))}</span>
           <input data-offer-total class="paid-input" inputmode="decimal" placeholder="0,00">
           <span class="paid-suffix" data-cur>${esc(curSymbol())}</span>
-          ${suggestion > 0 ? `<button class="set-link offer-suggest" data-offer-suggest>Vorschlag: ${fmtEur(suggestion)}</button>` : ""}
+          ${suggestion > 0 ? `<button class="set-link offer-suggest" data-offer-suggest>${esc(tr("Vorschlag: {wert}", { wert: fmtEur(suggestion) }))}</button>` : ""}
         </span>
-        <button class="mini-btn add" data-offer-go>Verteilen</button>
-        <button class="mini-btn" data-offer-cancel>Abbrechen</button>`;
+        <button class="mini-btn add" data-offer-go>${esc(tr("Verteilen"))}</button>
+        <button class="mini-btn" data-offer-cancel>${esc(tr("Abbrechen"))}</button>`;
       actions.after(row);
       row.querySelector("[data-offer-cancel]").addEventListener("click",
         () => { row.remove(); actions.hidden = false; });
@@ -8405,8 +8471,8 @@ function renderLists(lists) {
     });
     const lDel = card.querySelector("[data-l-del]");
     if (lDel) lDel.addEventListener("click", async () => {
-      if (!confirm(tr("Liste „{name}“ mitsamt Artikeln löschen?",
-        { name: list.name }))) return;
+      if (!(await frage(tr("Liste „{name}“ mitsamt Artikeln löschen?",
+        { name: list.name }), { gefahr: true }))) return;
       try {
         await api("/lists/" + lid, { method: "DELETE" });
         loadLists();
@@ -8428,10 +8494,11 @@ function renderLists(lists) {
     card.querySelectorAll("[data-ip-save]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const iid = btn.dataset.ipSave;
-        const raw = card.querySelector(`[data-ip="${iid}"]`).value.trim()
-          .replace(",", ".");
-        const paid = Number(raw);
-        if (raw === "" || !isFinite(paid) || paid < 0) {
+        // Leer heißt „kein Einkaufspreis“ (dann gilt der BrickLink-Ø, wie
+        // der Tooltip sagt) – bisher lehnte der Knopf das als ungültig ab.
+        const raw = card.querySelector(`[data-ip="${iid}"]`).value.trim();
+        const paid = raw === "" ? null : betragLesen(raw);
+        if (raw !== "" && paid == null) {
           toast("Bitte einen gültigen Betrag eingeben");
           return;
         }
@@ -8592,7 +8659,7 @@ function listItemRow(it, dealer) {
     ? `${it.condition === "new" ? tr("Ø neu") : tr("Ø gebr.")} `
       + fmtEur(condPrice) : "";
   const doneInfo = it.done
-    ? `<div class="sub done-note">✔ in Sammlung${it.done_by_name ? " von " + esc(it.done_by_name) : ""}${it.done_at ? " am " + new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) : ""}</div>`
+    ? `<div class="sub done-note">${esc(tr("✔ in Sammlung"))}${it.done_by_name ? " " + esc(tr("von {wer}", { wer: it.done_by_name })) : ""}${it.done_at ? " " + esc(tr("am {datum}", { datum: new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) })) : ""}</div>`
     : "";
   return `
   <div class="fig-row tappbar ${it.done ? "done" : ""}" data-iid="${it.id}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
@@ -8943,13 +9010,13 @@ function openListsPaidModal(breakdown, chipEl) {
   overlay.id = "card-modal";
   overlay.innerHTML = `
     <div class="card-modal">
-      <button class="card-modal-close" aria-label="Schließen">✕</button>
+      <button class="card-modal-close" aria-label="${esc(tr("Schließen"))}">✕</button>
       <div class="card modal-inner open" role="dialog" aria-modal="true">
-        <h3 style="margin:0 0 2px">Einkauf auf Listen</h3>
-        <div class="price-note" style="margin-bottom:10px">Häkchen bei <b>inventarisiert</b> nimmt eine Liste aus der Summe – sie ist dann ja schon erfasst.</div>
+        <h3 style="margin:0 0 2px">${esc(tr("Einkauf auf Listen"))}</h3>
+        <div class="price-note" style="margin-bottom:10px">${tr("Häkchen bei <b>inventarisiert</b> nimmt eine Liste aus der Summe – sie ist dann ja schon erfasst.")}</div>
         <div class="lists-paid-list">${rows}</div>
         <div class="lists-paid-total">
-          <span>Zählt zusammen</span>
+          <span>${esc(tr("Zählt zusammen"))}</span>
           <b data-lp-total></b>
         </div>
       </div>
@@ -8967,8 +9034,8 @@ function openListsPaidModal(breakdown, chipEl) {
         s + (!l.archived && !l.inventoried ? l.paid : 0), 0);
       const openN = breakdown.filter((l) => !l.archived && !l.inventoried).length;
       chipEl.querySelector("[data-lists-total]").textContent = fmtEur(openSum);
-      chipEl.querySelector("[data-lists-label]").textContent =
-        "Einkauf auf " + (openN === 1 ? "1 Liste" : openN + " Listen");
+      chipEl.querySelector("[data-lists-label]").textContent = openN === 1
+        ? tr("Einkauf auf 1 Liste") : tr("Einkauf auf {n} Listen", { n: openN });
     }
   };
   recalc();
@@ -9136,8 +9203,8 @@ async function importCsvFile(file) {
     if (res.error_count) msg += `, ${res.error_count} Fehler`;
     toast(msg + " ✔");
     if (res.errors && res.errors.length) {
-      alert("Nicht importierte Zeilen:\n" + res.errors
-        .map((e) => `Zeile ${e.line}: ${e.error}`).join("\n")
+      await hinweis(tr("Nicht importierte Zeilen") + "\n\n" + res.errors
+        .map((e) => tr("Zeile {n}: {grund}", { n: e.line, grund: e.error })).join("\n")
         + (res.error_count > res.errors.length ? "\n…" : ""));
     }
   } catch (e) { toast(e.message); }
@@ -9182,11 +9249,11 @@ function renderDuplicates(data) {
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>
           <div class="sub">${esc(it.item_id)} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}
-            · ${it.quantity}× vorhanden${
+            · ${esc(tr("{n}× vorhanden", { n: it.quantity }))}${
               it.set_reserved > 0
                 ? " " + tr("({n}× für Sets reserviert)", { n: it.set_reserved })
-                : (it.reserved > 0 ? ` (1 behalten)` : "")
-            } → <b>${it.surplus}× abgebbar</b>
+                : (it.reserved > 0 ? " " + tr("(1 behalten)") : "")
+            } → <b>${esc(tr("{n}× abgebbar", { n: it.surplus }))}</b>
             ${it.unit_price ? ` · Ø ${fmtEur(it.unit_price)}${it.surplus > 1 ? " → " + fmtEur(it.value) : ""}` : ""}</div>
         </div>
       </div>`).join("")}
@@ -9316,7 +9383,7 @@ function renderMissingFigs(data) {
       </div>`).join("")}
     </div>
     <div class="mf-fuss">
-      <button class="mini-btn add" id="btn-mf-want-all">${esc(tr("☆ Alle auf die Wunschliste"))}</button>
+      ${data.items.some((x) => !x.wanted) ? `<button class="mini-btn add" id="btn-mf-want-all">${esc(tr("☆ Alle auf die Wunschliste"))}</button>` : ""}
       <button class="mini-btn" id="btn-mf-csv">${esc(tr("Als CSV"))}</button>
       <button class="mini-btn" id="btn-mf-print">${esc(tr("Drucken"))}</button>
     </div>
@@ -9352,7 +9419,8 @@ function renderMissingFigs(data) {
       } catch (e) { toast(e.message); b.disabled = false; }
     });
   });
-  $("btn-mf-want-all").addEventListener("click", async (ev) => {
+  // Stehen schon alle auf der Wunschliste, gibt es den Knopf nicht.
+  if ($("btn-mf-want-all")) $("btn-mf-want-all").addEventListener("click", async (ev) => {
     const b = ev.currentTarget;
     b.disabled = true;
     const open = data.items.filter((i) => !i.wanted);
@@ -9637,8 +9705,8 @@ async function restoreBackupFile(file) {
   const when = data.created_at
     ? new Date(data.created_at * 1000).toLocaleString(dateLocale())
     : tr("unbekannt");
-  if (!confirm(tr("Sicherung vom {wann} einspielen?", { wann: when })
-    + "\n\n" + tr("ACHTUNG: ALLE aktuellen Daten werden ersetzt!"))) return;
+  if (!(await frage(tr("Sicherung vom {wann} einspielen?", { wann: when })
+    + "\n\n" + tr("ACHTUNG: ALLE aktuellen Daten werden ersetzt!")))) return;
   try {
     const res = await api("/restore", { method: "POST", body: data });
     const n = res.restored && res.restored.collection;
@@ -9744,7 +9812,9 @@ async function loadThemeStatus() {
   try {
     const s = await api("/themes/status");
     const hint = $("theme-pending-hint");
-    hint.hidden = s.pending === 0;
+    // Nachladen dürfen Admins und Sammlerprofis – für alle anderen wäre der
+    // Hinweis nur ein Knopf, der mit „nicht erlaubt“ antwortet.
+    hint.hidden = s.pending === 0 || !darfPflegen();
     if (s.pending > 0) {
       $("theme-pending-text").textContent =
         (s.pending === 1 ? tr("Bei 1 Eintrag ist das Thema noch unbekannt.")
@@ -9879,6 +9949,10 @@ function initLangPicker() {
       localStorage.setItem("bf_lang", pick);
       await switchLang(pick);           // ohne Neuladen, Eingaben bleiben
       markLangButtons();
+      // Hinweise sind mit `tr()` gezeichnet, nicht aus der Vorlage – das
+      // Zurücksetzen der Übersetzung kennt ihren deutschen Text nicht, und
+      // nach EN → DE blieb der Titel englisch. Also neu zeichnen.
+      if (state.token) loadNotifications().catch(() => {});
       if (state.user) {
         state.user.lang = pick;
         localStorage.setItem("bf_user", JSON.stringify(state.user));
@@ -11044,6 +11118,10 @@ function renderNotifications(items) {
         ? `<button class="btn btn-primary" data-goto-errors>Fehlerbericht öffnen</button>`
         : n.kind === "sicherheit"
         ? `<button class="btn btn-primary" data-goto-2fa>${esc(tr("Zwei-Faktor einschalten"))}</button>`
+        // Zusammenführen und Nummern umstellen ändern die ganze Instanz –
+        // das bleibt Admins und Sammlerprofis vorbehalten.
+        : (n.kind === "dublette" || n.new_item_id) && !darfPflegen()
+        ? `<p class="notice-hint">${esc(tr("Das kann ein Admin oder Sammlerprofi übernehmen."))}</p>`
         : n.kind === "dublette" ? `
           <p class="notice-body">${esc(tr("Zusammenführen?"))}</p>
           <div class="notice-wahl">
@@ -11089,7 +11167,7 @@ function renderNotifications(items) {
       const karte = $("errors-card");
       if (!karte) return;
       karte.classList.remove("collapsed");
-      karte.scrollIntoView({ block: "center", behavior: "smooth" });
+      karte.scrollIntoView({ block: "start", behavior: "smooth" });   // Die Karte ist rund 2000 px hoch – mittig lag die Fehlerliste über dem Bildschirm.
     });
   });
 
@@ -11225,16 +11303,25 @@ async function loadImagesStatus() {
   } catch (_) { status.textContent = ""; btn.hidden = true; }
 }
 
+/* „Nichts zu tun“ stimmte nicht, wenn noch etwas offen war, sich aber gerade
+   nichts holen ließ (Dienst weg, kein Treffer) – die Statuszeile daneben
+   nannte die offenen Artikel (Gesamttest 26.09.2026). */
+function nichtsGeholt(offen) {
+  return tr("Gerade ließ sich nichts holen – {n} bleiben offen. Später noch "
+    + "einmal versuchen.", { n: offen });
+}
+
 /* Holt in Häppchen und zeigt den Fortschritt – jedes Bild ist ein Abruf beim
    CDN, alles auf einmal wäre bei einer großen Sammlung unhöflich. */
 async function fetchImages() {
   const btn = $("btn-images-fetch");
   btn.disabled = true;
-  let total = 0;
+  let total = 0, offen = 0;
   try {
     for (let runde = 0; runde < 200; runde += 1) {
       const res = await api("/images/fetch?limit=25", { method: "POST" });
       total += res.fetched;
+      offen = res.remaining || 0;
       btn.textContent = tr("🖼 {n} geholt, {rest} offen …",
         { n: total, rest: res.remaining });
       // Nichts mehr offen – oder eine ganze Runde ohne einen einzigen
@@ -11242,7 +11329,7 @@ async function fetchImages() {
       if (!res.remaining || !res.fetched) break;
     }
     toast(total ? tr("{n} Bilder geholt ✔", { n: total })
-      : tr("Nichts zu tun"));
+      : offen ? nichtsGeholt(offen) : tr("Nichts zu tun"));
   } catch (e) {
     toast(e.message);
   } finally {
@@ -11257,12 +11344,13 @@ async function fetchImages() {
 async function recalcPrices() {
   const btn = $("btn-price-recalc");
   btn.disabled = true;
-  let total = 0;
+  let total = 0, offen = 0;
   try {
     for (let round = 0; round < 40; round += 1) {
       const res = await api("/prices/refresh_region?limit=20",
         { method: "POST" });
       total += res.updated;
+      offen = res.remaining || 0;
       priceRegionState.pending = res.remaining;
       btn.textContent = tr("🔄 {n} umgerechnet, {rest} offen …",
         { n: total, rest: res.remaining });
@@ -11273,7 +11361,7 @@ async function recalcPrices() {
       if (!res.remaining || !res.updated) break;
     }
     toast(total ? tr("{n} Artikel umgerechnet ✔", { n: total })
-      : tr("Nichts zu tun"));
+      : offen ? nichtsGeholt(offen) : tr("Nichts zu tun"));
   } catch (e) {
     toast(e.message);
   } finally {
@@ -11288,15 +11376,17 @@ async function recalcPrices() {
 async function fillMissingPrices() {
   const btn = $("btn-price-fill");
   btn.disabled = true;
-  let total = 0, filled = 0;
+  let total = 0, filled = 0, offen = 0;
   try {
     for (let round = 0; round < 40; round += 1) {
       const res = await api("/prices/refresh_missing?limit=20",
         { method: "POST" });
       total += res.updated;
       filled += res.filled;
+      offen = res.remaining || 0;
       priceRegionState.missing = res.remaining;
-      btn.textContent = `🔄 ${filled} gefunden, ${res.remaining} offen …`;
+      btn.textContent = tr("🔄 {n} gefunden, {rest} offen …",
+        { n: filled, rest: res.remaining });
       if (res.failed && res.failed.length) {
         toast(tr("{n} übersprungen: {grund}",
       { n: res.failed.length, grund: res.failed[0].error }));
@@ -11306,7 +11396,7 @@ async function fillMissingPrices() {
     toast(total
       ? tr("{n} von {max} geprüften Artikeln haben jetzt einen Preis",
         { n: filled, max: total })
-      : "Nichts zu tun");
+      : offen ? nichtsGeholt(offen) : tr("Nichts zu tun"));
   } catch (e) {
     toast(e.message);
   } finally {
@@ -11491,6 +11581,10 @@ async function pollUpdateStatus() {
   const lock = $("update-lock");
   if (!bar || !lock) return;
   let next = UPDATE_POLL_MS;
+  // Abgemeldet fragt niemand – vorher lief die Abfrage weiter und bekam
+  // jedes Mal 401 (Gesamttest 26.09.2026). Der Takt bleibt, damit es nach
+  // der nächsten Anmeldung von selbst weitergeht.
+  if (!state.token) { updateTimer = setTimeout(pollUpdateStatus, next); return; }
   try {
     const s = await api("/update/status");
     if (serverWeg) { serverWeg = false; spur("Server wieder da"); }
@@ -11635,7 +11729,7 @@ function renderUpdateInfo(info) {
   }
   const status = $("update-status");
   if (info.error) {
-    status.textContent = info.error;
+    status.textContent = tr(info.error);
     status.hidden = false;
   } else {
     status.hidden = true;
@@ -11737,7 +11831,7 @@ async function loadSettings() {
     $("user-list").querySelectorAll("[data-admin-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const makeAdmin = btn.dataset.adminState !== "1";
-        if (!makeAdmin && !confirm(tr("Admin-Rechte wirklich entziehen?"))) return;
+        if (!makeAdmin && !(await frage(tr("Admin-Rechte wirklich entziehen?"), { gefahr: true }))) return;
         try {
           await api(`/users/${btn.dataset.adminUser}/admin`,
             { method: "POST", body: { is_admin: makeAdmin } });
@@ -11765,7 +11859,7 @@ async function loadSettings() {
           text: tr("Neues Passwort für {name} (mind. 8 Zeichen):",
                    { name: btn.dataset.passName }),
           felder: [{ name: "pw", label: tr("Neues Passwort"),
-                     typ: "password", pflicht: true, max: 200 }],
+                     typ: "password", pflicht: true, max: 200, minLaenge: 8 }],
           ok: tr("Setzen"),
         });
         if (!d) return;
@@ -11780,7 +11874,7 @@ async function loadSettings() {
     });
     $("user-list").querySelectorAll("[data-del-user]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm(tr("Benutzer wirklich entfernen?"))) return;
+        if (!(await frage(tr("Benutzer wirklich entfernen?"), { gefahr: true }))) return;
         try { await api("/users/" + btn.dataset.delUser, { method: "DELETE" }); loadSettings(); }
         catch (e) { toast(e.message); }
       });
@@ -12003,7 +12097,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await kopieren(errorsAsText(), "Bericht kopiert ✔");
   });
   $("btn-errors-clear").addEventListener("click", async () => {
-    if (!confirm(tr("Alle aufgezeichneten Fehler löschen?"))) return;
+    if (!(await frage(tr("Alle aufgezeichneten Fehler löschen?"), { gefahr: true }))) return;
     try {
       await api("/errors", { method: "DELETE" });
       loadErrors();
@@ -12076,8 +12170,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("btn-github-del").addEventListener("click", async () => {
     // Rückfrage, weil GitHub einen Token nur einmal zeigt: Wer ihn hier
     // löscht und nicht anderswo notiert hat, muss einen neuen erzeugen.
-    if (!confirm(tr("Token entfernen? GitHub zeigt ihn kein zweites Mal – "
-      + "zum Wiederherstellen bräuchtest du einen neuen."))) return;
+    if (!(await frage(tr("Token entfernen? GitHub zeigt ihn kein zweites Mal – "
+      + "zum Wiederherstellen bräuchtest du einen neuen."), { gefahr: true }))) return;
     try {
       await api("/settings/github_token", { method: "POST", body: { token: "" } });
       githubFeldOffen = false;
@@ -12107,8 +12201,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const delay = Number(b.dataset.updateGo);
       const wann = delay ? tr("in {n} Minute(n)", { n: delay / 60 })
         : tr("sofort");
-      if (!confirm(tr("Update {wann} einspielen?", { wann }) + "\n\n"
-        + tr("Die App sperrt sich für alle Benutzer und lädt danach neu."))) return;
+      if (!(await frage(tr("Update {wann} einspielen?", { wann }) + "\n\n"
+        + tr("Die App sperrt sich für alle Benutzer und lädt danach neu.")))) return;
       b.disabled = true;
       spur("Update angefordert (" + (delay ? delay + " s" : "sofort") + ")");
       try {
@@ -12202,17 +12296,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     const name = $("backup-select").value;
     if (!name) return;
     const label = name.replace("brickfolio-", "").replace(".db", "");
-    if (!confirm(tr("Wirklich den Stand vom {wann} wiederherstellen?",
+    if (!(await frage(tr("Wirklich den Stand vom {wann} wiederherstellen?",
       { wann: label }) + "\n\n"
       + tr("Alle aktuellen Daten werden durch diesen Tagesstand ersetzt. "
         + "Der jetzige Stand wird vorher automatisch als zusätzliche "
-        + "Sicherung weggeschrieben."))) return;
+        + "Sicherung weggeschrieben.")))) return;
     try {
       const res = await api("/backup_restore_file", { method: "POST",
         body: { name } });
-      alert(tr("Stand {wann} wiederhergestellt.", { wann: label }) + "\n"
-        + tr("Sicherheitskopie: {name}", { name: res.safety })
-        + "\n\n" + tr("Die App lädt jetzt neu."));
+      await hinweis(tr("Stand {wann} wiederhergestellt.", { wann: label })
+        + "\n\n" + tr("Sicherheitskopie: {name}", { name: res.safety })
+        + "\n" + tr("Die App lädt jetzt neu."));
       neuLadenMit("Sicherung wiederhergestellt");
     } catch (e) { toast(e.message); }
   });
@@ -12376,6 +12470,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!input) return;
     const sync = () => btn.classList.toggle("show", input.value !== "");
     input.addEventListener("input", sync);
+    // Auch wenn das Programm den Wert setzt („Filter zurücksetzen“, Sprung
+    // zu einem Set, Formular leeren): Das löst kein `input` aus, und das ×
+    // blieb stehen oder fehlte (Gesamttest 26.09.2026). Deshalb hängt sich
+    // der Abgleich an den Setter dieses einen Felds.
+    const wert = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    Object.defineProperty(input, "value", {
+      configurable: true,
+      get() { return wert.get.call(this); },
+      set(v) { wert.set.call(this, v); sync(); },
+    });
     btn.addEventListener("click", () => {
       input.value = "";
       sync();

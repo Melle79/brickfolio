@@ -67,9 +67,9 @@ function wireHubConnectOnce() {
   });
 
   $("hub-disconnect").addEventListener("click", async () => {
-    if (!confirm(tr("Aus dem Tausch-Netzwerk abmelden? Deine Angebote und "
+    if (!(await frage(tr("Aus dem Tausch-Netzwerk abmelden? Deine Angebote und "
       + "Wünsche werden dort herausgenommen. Zum Wiederkommen brauchst du "
-      + "eine neue Einladung."))) return;
+      + "eine neue Einladung."), { gefahr: true }))) return;
     try {
       const r = await api("/hub/disconnect", { method: "POST" });
       renderHubStatus({ connected: false });
@@ -159,8 +159,9 @@ async function loadHubView() {
     .catch(() => {}));
   try {
     const s = await api("/hub?refresh=1");
+    $("hub-ich-name").textContent = s.display_name || "";
     $("hub-view-who").textContent = s.display_name
-      ? tr("Angemeldet als {name}", { name: s.display_name }) : "";
+      ? tr("Dein Name im Tausch-Netzwerk") : "";
     hubIch = { member_id: s.member_id, display_name: s.display_name };
     $("hub-ich-avatar").textContent = avatarText(s.display_name);
     $("hub-blocked").hidden = !s.blocked;
@@ -543,6 +544,10 @@ async function renderTrade(quiet = false) {
     const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
     tradeSig = sig;
     $("trade-title").textContent = trade.item_name || trade.item_id;
+    // Der Artikel des Gesprächs hat seinen Steckbrief am Titel.
+    Object.assign($("trade-title").dataset, {
+      info: `${trade.item_type || "minifig"}|${trade.item_id}`,
+      infoName: trade.item_name || "", infoImg: trade.img_url || "" });
     $("trade-sub").textContent =
       `${trade.direction === "out" ? "an" : "von"} ${trade.other_name || "?"}`
       + ` · ${tradeStatusText(trade.status)}`;
@@ -754,7 +759,7 @@ async function loadShareView() {
       <div class="card">
         <div class="card-head">
           <img class="card-img" src="${imgSrc(it.img_url, true)}" alt="" loading="lazy">
-          <div class="card-title">
+          <div class="card-title tappbar" ${infoAttr(it)}>
             <strong>${esc(it.name)}</strong>
             <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
               ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}</div>
@@ -851,7 +856,7 @@ function wireHubViewOnce() {
     } catch (e) { toast(e.message); }
   });
   $("hub-share-clear").addEventListener("click", async () => {
-    if (!confirm(tr("Die ganze Auswahl leeren?"))) return;
+    if (!(await frage(tr("Die ganze Auswahl leeren?"), { gefahr: true }))) return;
     try {
       await api("/share/clear", { method: "POST" });
       loadShareView();
@@ -901,8 +906,8 @@ function wireHubViewOnce() {
   $("trade-report").addEventListener("click", openReport);
   $("trade-delete").addEventListener("click", async () => {
     if (!openTradeId) return;
-    if (!confirm(tr("Diese Unterhaltung endgültig löschen? Auch beim "
-      + "Gegenüber verschwindet sie aus dem Hub."))) return;
+    if (!(await frage(tr("Diese Unterhaltung endgültig löschen? Auch beim "
+      + "Gegenüber verschwindet sie aus dem Hub."), { gefahr: true }))) return;
     try {
       await api(`/hub/trades/${openTradeId}`, { method: "DELETE" });
       closeTrade();
@@ -1051,8 +1056,8 @@ async function ladeEinladungen() {
   });
   liste_.querySelectorAll("[data-inv-weg]").forEach((b) => {
     b.addEventListener("click", async () => {
-      if (!confirm(tr("Diese Einladung zurückziehen? Der Code gilt dann nicht "
-        + "mehr, und die Einladung ist wieder frei."))) return;
+      if (!(await frage(tr("Diese Einladung zurückziehen? Der Code gilt dann nicht "
+        + "mehr, und die Einladung ist wieder frei."), { gefahr: true }))) return;
       try {
         await api(`/hub/invites/${b.closest("[data-inv]").dataset.inv}`,
           { method: "DELETE" });
@@ -1094,7 +1099,7 @@ async function loadInviteQuota() {
   try {
     const q = await api("/hub/invite_quota");
     marke.hidden = !(q.quota && q.left > 0);
-    marke.textContent = tr("{n} frei", { n: q.left });
+    marke.textContent = String(q.left);
     marke.title = tr("Noch {n} von {max} Einladungen frei",
       { n: q.left, max: q.quota });
     if (!$("invite-overlay").hidden && q.quota) {
@@ -1157,6 +1162,9 @@ async function openOffer(o) {
 function openInterest(o, text = "") {
   interestOffer = o;
   $("interest-name").textContent = o.n;
+  Object.assign($("interest-name").dataset, {
+    info: `${o.typ || "minifig"}|${o.i}`, infoName: o.n || "",
+    infoImg: o.bild || "" });
   $("interest-sub").textContent = o.id_ + " · " + (o.kind === "angebot"
     ? tr("für {name}", { name: o.who }) : tr("von {name}", { name: o.who }));
   $("interest-img").src = o.img || IMG_PLACEHOLDER;
@@ -1283,8 +1291,10 @@ async function loadHubOffers() {
         <div class="card-head">
           <img class="card-img" src="${o.img_data ? esc(o.img_data) : imgSrc(o.img_url, true)}" data-gid="${esc(o.item_id)}" data-gtype="${esc(o.item_type || "minifig")}" alt="" loading="lazy">
           <div class="card-title">
+            <div class="tappbar" ${infoAttr(o)}>
             <strong>${esc(o.name)}</strong>
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
+            </div>
             <span class="badge badge-owned">von <button type="button" class="cm-name" data-profil="${esc(o.member_id)}">${esc(o.display_name)}</button></span>
             <span class="badge cm-art-schild">${esc(cmArtName(o.deal))}</span>
             ${t ? `<span class="badge badge-wanted">💬 angefragt · ${tradeStatusText(t.status)}${t.unread ? ` · ${t.unread} neu` : ""}</span>` : ""}
@@ -1306,7 +1316,10 @@ async function loadHubOffers() {
                      bild: o.img_url || "", bl: o.bricklink_url || "",
                      zustand: o.condition || "", art: o.deal || "tausch" };
       card.addEventListener("click", (ev) => {
+        // Name und Nummer öffnen den Steckbrief (wie in den Listen) –
+        // das erledigt der gemeinsame Empfänger für `[data-info]`.
         if (ev.target.closest("a, .card-img")) return;
+        if (ev.target.closest("[data-info]") && !ev.target.closest("[data-profil]")) return;
         const wer = ev.target.closest("[data-profil]");
         if (wer) { openProfil(wer.dataset.profil); return; }
         openOffer(data);
@@ -1340,6 +1353,15 @@ function avatarText(name) {
 }
 
 function cmBild(x) { return x.img_data ? x.img_data : imgSrc(x.img_url, true); }
+
+/* Steckbrief am Artikel – dieselben Attribute wie in den Listen, der
+   gemeinsame Empfänger in app.js öffnet ihn beim Tippen auf Name oder
+   Nummer. Knöpfe darin (etwa der Name des Mitglieds) behalten ihre
+   eigene Aufgabe. */
+function infoAttr(x) {
+  return `data-info="${esc(x.item_type || "minifig")}|${esc(x.item_id)}" `
+    + `data-info-name="${esc(x.name || "")}" data-info-img="${esc(x.img_url || "")}"`;
+}
 
 /* So rundet auch der Hub – die Vorschau zeigt, was andere sehen werden. */
 function cmGerundet(n) {
@@ -1417,7 +1439,7 @@ async function loadEntdecken() {
       const lauf = laufend.get(offerKey(h.member_id, h.item_id, h.condition));
       teile.push(`<div class="cm-karte">
         <img src="${cmBild(h)}" alt="" loading="lazy">
-        <div class="cm-mitte"><strong>${esc(h.name)}</strong>
+        <div class="cm-mitte tappbar" ${infoAttr(h)}><strong>${esc(h.name)}</strong>
           <div class="sub">${esc(h.item_id)}${cmZustand(h.condition)} · ${esc(cmArtName(h.deal))} · ${esc(tr("von"))} ${cmName(h.member_id, h.display_name)}</div></div>
         <button class="mini-btn add" data-cm-hat="${i}">${lauf ? "💬 " + esc(tr("Gespräch")) : "💬 " + esc(tr("Anfragen"))}</button>
       </div>`);
@@ -1429,7 +1451,7 @@ async function loadEntdecken() {
   d.sucht.forEach((w, i) => {
     teile.push(`<div class="cm-karte">
       <img src="${cmBild(w)}" alt="" loading="lazy">
-      <div class="cm-mitte"><strong>${esc(w.name)}</strong>
+      <div class="cm-mitte tappbar" ${infoAttr(w)}><strong>${esc(w.name)}</strong>
         <div class="sub">${esc(w.item_id)} · ${esc(tr("du hast {n}× übrig", { n: w.hier_abgebbar }))} · ${esc(tr("sucht"))} ${cmName(w.member_id, w.display_name)}</div></div>
       <button class="mini-btn" data-cm-sucht="${i}">🤝 ${esc(tr("Anbieten"))}</button>
     </div>`);
@@ -1549,7 +1571,11 @@ async function openProfil(memberId) {
     reihe.querySelectorAll(".cm-bild").forEach((b) => {
       const x = liste[Number(b.dataset.i)];
       b.addEventListener("click", () => {
-        if (eigen) return;
+        // Ohne eigene Aufgabe (eigenes Profil, gesuchte Figur, die man nicht
+        // übrig hat) zeigt das Bild den Steckbrief – vorher passierte nichts.
+        const steckbrief = () => steckbriefOeffnen(x.item_id,
+          x.item_type || "minifig", { name: x.name, img_url: x.img_url || "" });
+        if (eigen) { steckbrief(); return; }
         if (liste === angebote) {
           closeProfil();
           openOffer({ m: p.member_id, i: x.item_id, n: x.name, who: p.display_name,
@@ -1558,6 +1584,8 @@ async function openProfil(memberId) {
         } else if (x.hier_abgebbar > 0) {
           closeProfil();
           cmAnbieten({ ...x, member_id: p.member_id, display_name: p.display_name });
+        } else {
+          steckbrief();
         }
       });
     });

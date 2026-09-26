@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.90.21"
+APP_VERSION = "2.90.22"
 
 
 def hash_password(password: str) -> str:
@@ -974,6 +974,10 @@ def init_db():
         # `entfernt`: das Gegenüber hat ein schon zugesagtes Gespräch gelöscht
         # – die Zusage bleibt, gebucht werden darf weiter. `ehemalig`: aus
         # einer früheren eigenen Mitgliedschaft (abgemeldet, neu beigetreten).
+        # Bis zu welcher Nachricht gelesen? Die Uhrzeit auf die Sekunde reichte
+        # nicht: Eine Antwort in derselben Sekunde galt nie als ungelesen.
+        if tcols and "read_msg_id" not in tcols:
+            conn.execute("ALTER TABLE trades ADD COLUMN read_msg_id INTEGER")
         for spalte in ("entfernt", "ehemalig"):
             if tcols and spalte not in tcols:
                 conn.execute(f"ALTER TABLE trades ADD COLUMN {spalte} "

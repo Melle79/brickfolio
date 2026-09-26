@@ -538,9 +538,12 @@ code {
   opacity: 0; transition: opacity .2s; margin-left: 6px;
 }
 .notes-status.show { opacity: 1; }
+/* Rund wie eine Pille – aber mit endlichem Radius: Bricht ein langes
+   Schild („🛒 auf Einkaufsliste: …“) um, stieß die dritte Zeile bei 999px
+   an die Rundung. 11px ist bei einer Zeile dieselbe Pille. */
 .badge {
   display: inline-block; font-size: 12px; font-weight: 900;
-  padding: 2px 8px; border-radius: 999px; margin-top: 4px;
+  padding: 2px 8px; border-radius: 11px; margin-top: 4px;
 }
 .badge-score { background: var(--yellow); border: 1.5px solid var(--ink); }
 .badge-low { background: var(--line); border: 1.5px solid var(--muted); }
@@ -950,7 +953,8 @@ span.mf-stern.an {
 .suggest-count { font-size: 13px; color: var(--muted); font-weight: 700; }
 .suggest-foot .mini-btn { flex: none; padding: 9px 18px; }
 .suggestions .card-img { width: 56px; height: 56px; }
-.search-hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.search-hint { font-size: 13px; color: var(--muted); margin: 8px 0 0;
+  overflow-wrap: break-word; }   /* lange Spaltenlisten ragten über den Rand */
 .warn-line {
   font-size: 13px; margin: 8px 0 0; padding: 6px 10px; border-radius: 8px;
   background: rgba(214, 40, 40, .12); color: var(--danger, #d62828);
@@ -1729,6 +1733,13 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   text-overflow: ellipsis; white-space: nowrap; font-weight: 700;
 }
 .pl-prices { color: var(--muted); flex-shrink: 0; }
+/* Am Telefon blieben für den Namen neben Datum und Preisen 14–65 px –
+   „M.“, „Mill…“. Dort steht er in einer eigenen Zeile darüber. */
+@media (max-width: 560px) {
+  .pl-row { flex-wrap: wrap; row-gap: 1px; }
+  .pl-name { order: -1; flex: 1 1 100%; white-space: normal; }
+  .pl-prices { margin-left: auto; }
+}
 /* Der Pfeil sagt, wohin der Preis ging. Dieselben Farben wie bei
    Gewinn/Verlust (.profit-pos/.profit-neg) – zwei Grüntöne für dasselbe
    „mehr wert" wären eine Stolperfalle. */
@@ -2128,10 +2139,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 
 /* Das Feld sieht aus wie die Zahl daneben, bis man hineingeht. Der Stift
    an der Kachel ist die sichtbare Einladung. */
-.sb-geld { display: inline-flex; align-items: baseline; justify-content: center; }
+/* Das Feld gibt nach, wenn die Kachel schmal ist (drei Kacheln am Handy):
+   Mit fester Breite wurde der Herkunfts-Stift hinter dem „€“ am Rand
+   abgeschnitten (Gesamttest 26.09.2026). */
+.sb-geld { display: inline-flex; align-items: baseline; justify-content: center;
+  max-width: 100%; }
 .sb-geld .paid-input {
-  flex: none; border: 1.5px solid transparent; border-radius: 8px;
-  background: transparent; width: 4.6em; text-align: right;
+  flex: 0 1 4.6em; min-width: 3.2em; border: 1.5px solid transparent;
+  border-radius: 8px; background: transparent; width: auto; text-align: right;
   padding: 0 2px; font: inherit; font-weight: 900; color: var(--ink);
   transition: border-color .15s, background .15s;
 }
@@ -2607,7 +2622,10 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 .tfa-qr svg { width: 200px; height: 200px; background: #fff; border-radius: 8px; padding: 6px; }
 .tfa-secret {
   font-family: ui-monospace, Menlo, monospace; font-size: 15px;
-  letter-spacing: 1px; text-align: center; word-break: break-all;
+  /* Umbrechen nur zwischen den Vierergruppen – `break-all` trennte mitten
+     in einer („… WUKO 3 / R4E C7C6“), und genau so tippt man ihn falsch ab. */
+  letter-spacing: 1px; text-align: center; word-break: normal;
+  overflow-wrap: normal;
   background: var(--field); border-radius: 8px; padding: 8px; margin: 6px 0;
 }
 .tfa-codeliste {
@@ -3259,16 +3277,44 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 
 /* ------------------------------------------ Community: Entdecken, Profile
    Vorsilbe `cm-`, damit nichts mit den übrigen Bauteilen zusammenstößt. */
-.hub-ich { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; flex-wrap: wrap; }
-.hub-ich .sub { margin: 0; }
-.hub-ich-links { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
-.hub-ich-links .link-btn { margin: 0; }
-/* Am Telefon zwei feste Zeilen: Name oben, die Wege darunter eingerückt –
-   statt eines Umbruchs, der unter dem Bild ganz links weitergeht. */
+/* Kopf des Tausch-Netzwerks als kleine Karte: Bild, Name und die zwei Wege.
+   Breit steht alles in einer Zeile, die Knöpfe rechts; am Telefon rutschen
+   die Knöpfe unter den Namen – eingerückt, nie unter das Bild. */
+.hub-ich {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: 8px 12px; margin: 4px 0 12px; padding: 10px 12px;
+  background: var(--card); border: 2px solid var(--ink);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.hub-ich .avatar.klein { width: 42px; height: 42px; font-size: 18px; }
+.hub-ich-text { display: flex; flex-direction: column; min-width: 0; }
+.hub-ich-text strong { font-size: 16px; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hub-ich-text .sub { margin: 0; font-size: 12px; }
+.hub-ich-links { display: flex; align-items: center; flex-wrap: wrap;
+  justify-content: flex-end; gap: 6px; }
+.hub-pill {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px;
+  padding: 5px 12px; border: 2px solid var(--line); border-radius: 999px;
+  background: var(--field); color: var(--ink); cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 800; white-space: nowrap;
+}
+.hub-pill:hover { border-color: var(--ink); }
+.hub-pill:active { transform: translateY(1px); }
+.hub-pill-einladen { background: var(--yellow); border-color: var(--ink);
+  color: #1D1D1B; }
+.hub-pill .einladung-rest {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  background: #1D1D1B; color: #fff; font-size: 11.5px;
+}
+.hub-pill .einladung-rest[hidden] { display: none; }
 @media (max-width: 600px) {
-  .hub-ich { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
-  .hub-ich .avatar { grid-row: 1 / span 2; }
-  .hub-ich-links { grid-column: 2; }
+  .hub-ich { grid-template-columns: auto 1fr; }
+  /* Die Knöpfe als gleich breite Leiste unter Bild und Name – nebeneinander
+     in der schmalen Namensspalte passten sie nicht und brachen um. */
+  .hub-ich-links { grid-column: 1 / -1; flex-wrap: nowrap; }
+  .hub-pill { flex: 1 1 0; justify-content: center; min-width: 0; padding: 5px 8px; }
 }
 /* Vier Reiter nebeneinander, auch am Telefon: Sie teilen sich die Breite
    nach Inhalt, und auf schmalen Schirmen wird die Schrift kleiner. */
@@ -3277,6 +3323,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
   font-size: 13px; white-space: nowrap; }
 @media (max-width: 440px) {
   #hub-subtabs .mini-btn { font-size: 11.5px; padding: 8px 2px; }
+}
+/* Dasselbe für die Listen-Reiter und die Fußzeile einer Einkaufsliste: Wo
+   das Wort nicht mehr passte, rutschte das Zeichen darüber, bei „Archiv“
+   blieb es daneben – vier Knöpfe, zwei Anordnungen (Gesamttest). */
+#lists-subtabs { flex-wrap: nowrap; gap: 4px; }
+#lists-subtabs .mini-btn, .liste-fuss .mini-btn { white-space: nowrap; min-width: 0; }
+@media (max-width: 440px) {
+  #lists-subtabs .mini-btn { flex: 1 1 auto; font-size: 12.5px; padding: 8px 3px; }
+  .liste-fuss .mini-btn { font-size: 13px; padding-left: 6px; padding-right: 6px; }
 }
 .cm-avatar, .avatar.klein {
   width: 56px; height: 56px; border-radius: 50%; background: var(--yellow);
@@ -3375,7 +3430,6 @@ button.cm-chip { cursor: pointer; min-height: 30px; }
 }
 .einladung-schritte { margin: 12px 0 6px; padding-left: 22px; font-size: 14px; }
 .einladung-schritte li { margin: 4px 0; }
-.hub-ich .einladung-rest { padding: 3px 9px; font-size: 11.5px; }
 
 /* Meine Einladungen – klein unter dem Einladen-Knopf */
 .einladungen { margin: -4px 0 10px; font-size: 13px; }

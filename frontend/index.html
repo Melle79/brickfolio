@@ -587,15 +587,20 @@
   <!-- Tausch-Netzwerk -->
   <main id="view-hub" class="view" hidden>
     <h2>🤝 Tausch-Netzwerk</h2>
+    <!-- Kopf als eigene kleine Karte (27.09.2026: „da sollte noch ein
+         bisschen Design rein“) – Name fett, darunter die Erklärung, die
+         beiden Wege als Knöpfe, die freien Einladungen im Einladen-Knopf. -->
     <div class="hub-ich">
       <span class="avatar klein" id="hub-ich-avatar" aria-hidden="true"></span>
-      <span class="sub" id="hub-view-who"></span>
+      <span class="hub-ich-text">
+        <strong id="hub-ich-name"></strong>
+        <span class="sub" id="hub-view-who"></span>
+      </span>
       <span class="hub-ich-links">
-        <button type="button" class="link-btn" id="hub-mein-profil">Mein Profil</button>
+        <button type="button" class="hub-pill" id="hub-mein-profil">👤 Mein Profil</button>
         <!-- Stand bis 2.90.8 im Reiter „Angebote“ neben „Aktualisieren“ – seit
              „Entdecken“ der Startreiter ist, fand ihn dort niemand mehr. -->
-        <button type="button" class="link-btn" id="hub-make-invite">✉️ Freund einladen</button>
-        <span class="cm-chip einladung-rest" id="hub-invite-left" hidden></span>
+        <button type="button" class="hub-pill hub-pill-einladen" id="hub-make-invite">✉️ Freund einladen<span class="einladung-rest" id="hub-invite-left" hidden></span></button>
       </span>
     </div>
     <p class="search-hint" id="hub-quota" hidden></p>
@@ -750,7 +755,7 @@
         <div class="card-head">
           <img class="card-img" id="interest-img" alt="">
           <div class="card-title">
-            <strong id="interest-name"></strong>
+            <strong id="interest-name" class="tappbar"></strong>
             <div class="sub" id="interest-sub"></div>
           </div>
         </div>
@@ -796,7 +801,7 @@
       <button class="card-modal-close" id="trade-close" aria-label="Schließen">✕</button>
       <div class="card modal-inner open" role="dialog" aria-modal="true">
         <div class="card-title">
-          <strong id="trade-title"></strong>
+          <strong id="trade-title" class="tappbar"></strong>
           <div class="sub" id="trade-sub"></div>
         </div>
         <p class="warn-line" id="trade-gone" hidden>⚠ Dieser Artikel wird
@@ -947,7 +952,7 @@
         </div>
         <input type="file" id="csv-file" accept=".csv,text/csv" hidden>
         <p class="search-hint">Spalten (Reihenfolge egal, nur „Nummer" ist
-          Pflicht): Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen.
+          Pflicht): Nummer;Typ;Name;Anzahl;Zustand;Bezahlt;Jahr;Notizen;Thema.
           Preise, Bilder und Set-Inhalte holt die App automatisch nach.</p>
         </div>
     </div>
@@ -1557,9 +1562,11 @@ sudo bash update.sh</pre>
       <button id="btn-profile-close" class="help-close" aria-label="Schließen">✕</button>
     </div>
     <p>Angemeldet als <strong id="settings-user"></strong></p>
-    <label for="own-name">Anzeigename ändern</label>
+    <!-- „Benutzername“, nicht „Anzeigename“: Das Feld ändert den Namen, mit
+         dem man sich anmeldet (Rückmeldung vom 27.09.2026). -->
+    <label for="own-name">Benutzername ändern</label>
     <input id="own-name" autocomplete="username" maxlength="60">
-    <button id="btn-own-name" class="btn btn-outline">Namen ändern</button>
+    <button id="btn-own-name" class="btn btn-outline">Benutzernamen ändern</button>
     <p id="own-name-error" class="error" hidden></p>
     <label for="own-pass-current">Aktuelles Passwort</label>
     <input id="own-pass-current" type="password" autocomplete="current-password">
@@ -1651,7 +1658,7 @@ sudo bash update.sh</pre>
         <p>Im Tab <b>Scannen</b> fotografierst du eine Figur oder ein Set und
         tippst den richtigen Treffer an.</p>
         <ul>
-          <li>Ohne Kamera: unten nach <b>Name oder Nummer</b> suchen.</li>
+          <li>Ohne Kamera: <b>✏️ Manuell erfassen</b> antippen und Name oder Nummer eintippen – passende Vorschläge erscheinen beim Tippen.</li>
           <li><b>＋ Zur Sammlung</b> legt den Fund nach einer kurzen
             Zustandsfrage ab.</li>
           <li>Was die Erkennung nicht kennt, kommt über

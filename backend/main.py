@@ -439,6 +439,15 @@ def dealer_user(user: dict = Depends(current_user)) -> dict:
     return user
 
 
+def pflege_user(user: dict = Depends(current_user)) -> dict:
+    """Admin oder Sammlerprofi – für Eingriffe, die die ganze Instanz
+    betreffen (Nummern umstellen, Zeilen zusammenführen, Themen nachladen).
+    Bis 2.90.21 durfte das jedes Konto."""
+    if not (user["is_admin"] or user["is_dealer"]):
+        raise HTTPException(403, "Nur für Admins und Sammlerprofis")
+    return user
+
+
 def admin_user(user: dict = Depends(current_user)) -> dict:
     if not user["is_admin"]:
         raise HTTPException(403, "Nur für Admins")
@@ -564,11 +573,16 @@ class SetupBody(BaseModel):
     password: str = Field(min_length=8, max_length=200)
 
 
+_setup_sperre = threading.Lock()
+
+
 @app.post("/api/setup")
 def setup_create_admin(body: SetupBody):
     """Legt das erste Admin-Konto an – nur solange keine Benutzer existieren."""
     username = _benutzername(body.username)
-    with core.db() as conn:
+    # Zählen und Anlegen unter einer Sperre: Zwei gleichzeitige Aufrufe
+    # hätten sonst beide „noch kein Konto“ gesehen und zwei Admins angelegt.
+    with _setup_sperre, core.db() as conn:
         count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
         if count > 0:
             raise HTTPException(409, "Die Einrichtung ist bereits "
@@ -619,9 +633,21 @@ def _login_key(request: Request) -> str:
     """Herkunft der Anfrage. Hinter einem Tunnel steht die echte Adresse im
     Header – der ist fälschbar, taugt also nur als grobe Streuung; die
     eigentliche Bremse ist die Zählung je Konto."""
+    direkt = request.client.host if request.client else "?"
+    # Den Kopfzeilen nur glauben, wenn die Anfrage von einem Rechner im
+    # eigenen Netz kommt – dort sitzt der Tunnel oder Proxy. Kommt sie direkt
+    # aus dem Internet, ist die Absenderadresse echt und die Kopfzeile
+    # beliebig; mit ihr ließ sich die Bremse je Herkunft umgehen
+    # (Gesamttest 26.09.2026).
+    try:
+        vertraut = not ipaddress.ip_address(direkt).is_global
+    except ValueError:
+        vertraut = False
+    if not vertraut:
+        return direkt
     fwd = request.headers.get("cf-connecting-ip") or \
         request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-    return fwd or (request.client.host if request.client else "?")
+    return fwd or direkt
 
 
 def _login_blocked(*schluessel) -> int:
@@ -1893,7 +1919,7 @@ def katalog_holen_jetzt(user: dict = Depends(admin_user)):
     try:
         erg = _katalog_ziehen()
     except Exception as e:
-        raise HTTPException(502, scrub(str(e))[:200])
+        raise HTTPException(502, fehlertext(e))
     threading.Thread(target=_katalog_namen, daemon=True).start()
     return erg
 
@@ -2495,7 +2521,7 @@ def _katalog_namen(grenze: int | None = None) -> dict:
                 _namen_lauf["fehler"] = "BrickLink antwortet mit %d" % code
                 break
             except Exception as e:
-                _namen_lauf["fehler"] = scrub(str(e))
+                _namen_lauf["fehler"] = fehlertext(e)
                 break
             name = ((d or {}).get("name") or "").strip()
             if name:
@@ -2651,7 +2677,7 @@ class DubletteBody(BaseModel):
 
 @app.post("/api/notifications/{note_id}/merge")
 def dublette_zusammenfuehren(note_id: int, body: DubletteBody,
-                             user: dict = Depends(current_user)):
+                             user: dict = Depends(pflege_user)):
     """Zwei Zeilen zu einer machen.
 
     `zusammen` addiert die Stückzahlen – für den Fall, dass wirklich zwei
@@ -2731,7 +2757,7 @@ def dismiss_notification(note_id: int, user: dict = Depends(current_user)):
 
 
 @app.post("/api/notifications/{note_id}/apply")
-def apply_notification(note_id: int, user: dict = Depends(current_user)):
+def apply_notification(note_id: int, user: dict = Depends(pflege_user)):
     """Die im Hinweis genannte neue Nummer übernehmen."""
     with core.db() as conn:
         row = conn.execute("SELECT * FROM notifications WHERE id = ?",
@@ -2855,7 +2881,7 @@ def refresh_prices_region(limit: int = 20, user: dict = Depends(admin_user)):
             _fetch_and_store_prices(dict(r), "collection")
             done += 1
         except Exception as e:
-            failed.append({"item_id": r["item_id"], "error": scrub(str(e))[:120]})
+            failed.append({"item_id": r["item_id"], "error": fehlertext(e, 120)})
             # Trotzdem als bearbeitet markieren, sonst hängt der Lauf ewig an
             # derselben Nummer (z. B. wenn BrickLink sie nicht kennt).
             with core.db() as conn:
@@ -2896,7 +2922,7 @@ def refresh_prices_missing(limit: int = 20, user: dict = Depends(admin_user)):
                (res.get("used") and res["used"].get("avg")):
                 filled += 1
         except Exception as e:
-            failed.append({"item_id": r["item_id"], "error": scrub(str(e))[:120]})
+            failed.append({"item_id": r["item_id"], "error": fehlertext(e, 120)})
             # Versuch vermerken, sonst bleibt der Artikel im nächsten Häppchen
             # sofort wieder ganz vorn (z. B. wenn BrickLink die Nummer nicht kennt).
             with core.db() as conn:
@@ -3626,10 +3652,14 @@ def stats_dashboard(user: dict = Depends(current_user)):
         if r["paid_price"] is not None and not skip_paid:
             paid_sum += r["paid_price"]
             value_of_paid_items += value
-            winners.append({"item_id": r["item_id"], "name": r["name"],
-                            "img_url": r["img_url"],
-                            "item_type": r["item_type"],
-                            "gain": round(value - r["paid_price"], 2)})
+            # Ohne Marktpreis ist nichts zu vergleichen: Solche Einträge
+            # standen mit dem ganzen Kaufpreis unter „Größte Wertverluste“,
+            # als wären sie wertlos (Gesamttest 26.09.2026).
+            if value > 0:
+                winners.append({"item_id": r["item_id"], "name": r["name"],
+                                "img_url": r["img_url"],
+                                "item_type": r["item_type"],
+                                "gain": round(value - r["paid_price"], 2)})
         elif r["paid_price"] is not None:
             paid_estimated += r["paid_price"]
         if value > 0:
@@ -3821,6 +3851,14 @@ def import_csv(body: CsvImportBody, user: dict = Depends(dealer_user)):
             num = cell(row, "num")
             if not num:
                 errors.append({"line": line_no, "error": "Nummer fehlt"})
+                continue
+            if "\n" in num or "\r" in num or len(num) > 60:
+                # Ein nicht geschlossenes Anführungszeichen zieht die
+                # folgenden Zeilen in ein Feld – so eine „Nummer“ legte bisher
+                # einen Artikel mit Zeilenumbruch an (Gesamttest).
+                errors.append({"line": line_no, "error":
+                               "Nummer ungültig – vermutlich fehlt ein "
+                               "schließendes Anführungszeichen"})
                 continue
             typ = CSV_TYPE_MAP.get(cell(row, "type").lower(), "minifig")
             name = cell(row, "name") or num
@@ -4881,6 +4919,22 @@ def test_ollama(user: dict = Depends(admin_user)):
                     f"„Ritter“ ergibt: {', '.join(begriffe)}"}
 
 
+def fehlertext(e: Exception, limit: int = 200) -> str:
+    """Ausnahme als Satz für die Oberfläche.
+
+    Ohne Netz stand dort bisher die rohe Python-Meldung –
+    „HTTPSConnectionPool(host='api.bricklink.com', …): ProxyError …“
+    (Gesamttest 26.09.2026). Netzwerkfehler bekommen einen verständlichen
+    Satz; alles andere läuft wie bisher durch `scrub`.
+    """
+    if isinstance(e, requests.exceptions.Timeout):
+        return "Keine Antwort – der Dienst hat sich nicht rechtzeitig gemeldet."
+    if isinstance(e, requests.exceptions.ConnectionError):
+        return ("Keine Verbindung – der Dienst ist gerade nicht erreichbar "
+                "(Netzwerk oder Dienst gestört).")
+    return scrub(str(e), limit)
+
+
 def scrub(msg: str, limit: int = 200) -> str:
     """Geheimnisse aus Fehlermeldungen entfernen, bevor sie nach außen gehen.
 
@@ -4910,7 +4964,7 @@ def test_settings(user: dict = Depends(admin_user)):
             results["bricklink"] = {"ok": True,
                                     "info": f'Verbunden – Test: {item["name"]}'}
         except Exception as e:
-            results["bricklink"] = {"ok": False, "info": scrub(str(e))}
+            results["bricklink"] = {"ok": False, "info": fehlertext(e)}
     else:
         missing = integrations.bricklink_missing()
         results["bricklink"] = {
@@ -4925,7 +4979,7 @@ def test_settings(user: dict = Depends(admin_user)):
                                       "info": f"Verbunden – {hits['count']} "
                                               "Treffer im Test"}
         except Exception as e:
-            results["rebrickable"] = {"ok": False, "info": scrub(str(e))}
+            results["rebrickable"] = {"ok": False, "info": fehlertext(e)}
     else:
         results["rebrickable"] = {"ok": False, "info": "Kein Schlüssel hinterlegt"}
     return results
@@ -5249,6 +5303,20 @@ def suggest_info(body: SuggestInfoBody, detail: int = 0,
                 "WHERE item_id = ? AND item_type = ?",
                 (it.item_id, it.item_type)).fetchone()
             info = {"owned": row["quantity"] if row else 0}
+            if row and not (row["price_new"] or row["price_used"]):
+                # Nicht in der Sammlung, aber auf Wunsch- oder Einkaufsliste:
+                # Deren gespeicherte Preise gelten auch hier. Der Steckbrief
+                # sagte sonst „nichts verkauft“, während die Wunschkarte
+                # daneben Preise zeigte (Gesamttest 26.09.2026).
+                row = conn.execute(
+                    "SELECT MAX(quantity) AS quantity, MAX(year) AS year, "
+                    "MAX(price_new) AS price_new, MAX(price_used) AS price_used "
+                    "FROM (SELECT ? AS quantity, year, price_new, price_used "
+                    "FROM wanted WHERE item_id = ? AND item_type = ? "
+                    "UNION ALL SELECT ?, year, price_new, price_used "
+                    "FROM shopping_items WHERE item_id = ? AND item_type = ?)",
+                    (row["quantity"], it.item_id, it.item_type,
+                     row["quantity"], it.item_id, it.item_type)).fetchone() or row
             wrow = conn.execute(
                 "SELECT 1 FROM wanted WHERE item_id = ? AND item_type = ?",
                 (it.item_id, it.item_type)).fetchone()
@@ -5367,7 +5435,7 @@ def scan(file: UploadFile = File(...), user: dict = Depends(current_user)):
     except requests.Timeout:
         raise HTTPException(504, "Brickognize antwortet nicht – später erneut versuchen")
     except requests.RequestException as e:
-        raise HTTPException(502, f"Erkennung fehlgeschlagen: {e}")
+        raise HTTPException(502, f"Erkennung fehlgeschlagen: {fehlertext(e)}")
     except Exception:
         raise HTTPException(400, "Bild konnte nicht verarbeitet werden")
     return result
@@ -5818,7 +5886,7 @@ def themes_status(user: dict = Depends(current_user)):
 
 
 @app.post("/api/themes/refresh")
-def refresh_themes(limit: int = 25, user: dict = Depends(current_user)):
+def refresh_themes(limit: int = 25, user: dict = Depends(pflege_user)):
     """Fehlende Themen bestimmen: Minifiguren aus der Nummer (ohne Abruf),
     Sets und Teile über die BrickLink-Kategorie. Läuft in Häppchen, damit die
     App Rückmeldung geben kann."""
@@ -6289,6 +6357,15 @@ def get_collection(q: str = "", sort: str = "added", item_type: str = "",
         stats_params = (item_type,)
     with core.db() as conn:
         rows = conn.execute(sql, params).fetchall()
+        if sort == "number":
+            # Zahlen als Zahlen: Rein nach Zeichen stand 10179-1 vor 3001 und
+            # sw1000 vor sw200 (Gesamttest 26.09.2026). `re.split` mit Gruppe
+            # liefert abwechselnd Text und Ziffern – die Stellen vergleichen
+            # also immer Gleiches mit Gleichem.
+            rows = sorted(rows, key=lambda r: (
+                [int(t) if t.isdigit() else t
+                 for t in re.split(r"(\d+)", (r["item_id"] or "").lower())],
+                (r["name"] or "").lower()))
         # Einmal ermitteln, zweimal gebraucht: für die Kopfsumme und für den
         # Wert je Eintrag. Beim Typfilter braucht es die Aufstellung nicht.
         bound = _set_bound_map(conn) if not item_type else {}
@@ -6888,6 +6965,12 @@ def update_item(entry_id: int, body: UpdateItemBody,
             params.append("manual")
             fields.append("paid_at = ?")
             params.append(int(time.time()))
+        if body.item_id and body.item_id != row["item_id"]:
+            # Andere Nummer, andere Preise: Die der alten Nummer blieben
+            # sonst an der Zeile stehen, bis irgendwann ein Abruf kam – ohne
+            # BrickLink-Schlüssel nie (Gesamttest 26.09.2026).
+            fields += ["price_new = NULL", "price_used = NULL",
+                       "price_data = NULL", "price_updated_at = NULL"]
         if not fields:
             return {"ok": True}
         params.append(entry_id)
@@ -7498,7 +7581,7 @@ def refresh_set_contents(limit: int = 10, user: dict = Depends(current_user)):
             _store_set_contents(set_no, integrations.bricklink_subsets(set_no))
             done += 1
         except Exception as e:                      # einzelne Sets überspringen
-            failed.append({"set_no": set_no, "error": scrub(str(e))[:120]})
+            failed.append({"set_no": set_no, "error": fehlertext(e, 120)})
     return {"ok": True, "updated": done,
             "remaining": max(0, len(todo) - done),
             "failed": failed}
@@ -7785,6 +7868,9 @@ def update_list_item(item_id: int, body: ItemPriceBody,
     if body.paid_price is not None:
         fields.append("paid_price = ?")
         params.append(round(body.paid_price, 2))
+    elif "paid_price" in body.model_fields_set:
+        # Ausdrücklich geleert: kein Einkaufspreis, es gilt der BrickLink-Ø.
+        fields.append("paid_price = NULL")
     if body.condition is not None:
         fields.append("condition = ?")
         params.append(body.condition)

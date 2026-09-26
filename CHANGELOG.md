@@ -1,5 +1,60 @@
 # Changelog
 
+## 2.90.22 – September 2026
+
+### Neu
+- 🔎 **Steckbriefe in der Tauschbörse.** Ein Tipp auf Name oder Nummer eines
+  Artikels öffnet seinen Steckbrief – in Angeboten, Entdecken, „Ich biete
+  an“, im Profil eines anderen, im Anfrage-Fenster und im Kopf eines
+  Gesprächs. Die Knöpfe behalten ihre Aufgabe.
+- 🎨 **Kopf des Tausch-Netzwerks als eigene Karte:** größeres Bild, Name
+  fett, „Mein Profil“ und „Freund einladen“ als Knöpfe; die freien
+  Einladungen stehen als Zahl im Einladen-Knopf.
+- 👑 **Hub-Admins laden ohne Kontingent ein** (mit Hub 1.23.0).
+
+### Geändert
+- 👤 **„Benutzername ändern“** statt „Anzeigename ändern“ im Profil – das
+  Feld ändert den Anmeldenamen.
+- 🔒 **Nummern übernehmen, doppelte Nummern zusammenführen und Themen
+  nachladen** dürfen nur noch Admins und Sammlerprofis. Standard-Konten
+  sehen den Hinweis weiter, ohne die Knöpfe.
+- 💬 **Rückfragen im eigenen Fenster** statt der Browser-Kästen
+  (`confirm`/`alert`); Löschen und Entfernen mit rotem Knopf.
+- 🔢 **Sortierung „Nummer“** zählt Zahlen als Zahlen: 3001 vor 10179-1.
+- 🌍 **Englisch:** die übrigen Absätze in den Einstellungen (Jedipedia,
+  Katalog-Abzug, Gelernte Begriffe, Tausch-Netzwerk, Diagnose, Quellen &
+  Rechtliches) und die restlichen Texte aus dem Code übersetzt.
+
+### Behoben
+- 🐞 **Ausfälle von BrickLink & Co. landen nicht mehr als Fehler** mit
+  großem Hinweis und Push – die App hat sie abgefangen und sagt es.
+- 📉 **„Größte Wertverluste“** zählt keine Artikel ohne Marktpreis mehr.
+- 💬 **Dialoge schließen nicht mehr bei falscher Eingabe** („Weiterer Kauf“
+  mit Buchstaben, zu kurzes Passwort) – sie sagen, was fehlt.
+- 🧾 **Kaufbuch** zeigt den Betrag des Postens statt des gerundeten
+  Stückpreises („2× 9,99 €“ statt „2× 5,00 €“).
+- ✏️ **Kleinigkeiten:** das × in Suchfeldern stimmt auch nach „Filter
+  zurücksetzen“; der Stift in der Bezahlt-Kachel wird nicht abgeschnitten;
+  Listen-Reiter und Fußzeile einzeilig; Schilder über mehrere Zeilen stoßen
+  nicht an die Rundung; das Preis-Protokoll ist am Handy lesbar; der
+  Zwei-Faktor-Schlüssel bricht nur zwischen den Vierergruppen um;
+  „Fehlerbericht öffnen“ springt an den Anfang der Karte; der Listenpreis
+  lässt sich leeren; der Minus-Knopf wechselt nach einem Kauf sein Zeichen;
+  der Steckbrief nimmt Preise von Wunsch- und Einkaufsliste; „Modelle
+  laden“ ohne Adresse sagt es; „Nichts zu tun“ nur, wenn wirklich nichts
+  offen ist; „Alle auf die Wunschliste“ verschwindet, wenn schon alle
+  gemerkt sind; Netzwerkfehler als Satz statt Python-Meldung; nach dem
+  Abmelden keine Abfragen mehr; der Hinweistitel wechselt mit der Sprache;
+  die Hilfe verweist auf „Manuell erfassen“ statt auf eine Suche, die es
+  dort nicht gibt.
+- 🤝 **Tausch-Netzwerk:** Der Ungelesen-Zähler verpasst keine Antwort mehr
+  in derselben Sekunde; „Ich biete an“ gleicht Nummer *und* Zustand ab;
+  der Stand einer Meldung kommt nach dem Absenden sofort.
+- 🛡️ **Schnittstelle:** Die Anmeldebremse glaubt Proxy-Kopfzeilen nur aus
+  dem eigenen Netz; die Ersteinrichtung legt auch bei gleichzeitigen
+  Aufrufen nur einen Admin an; eine neue Nummer verwirft die alten Preise;
+  eine CSV-Datei mit offenem Anführungszeichen meldet die Zeile.
+
 ## 2.90.21 – September 2026
 
 Ergebnis eines Gesamttests: alle 181 Schnittstellen, die ganze Oberfläche
