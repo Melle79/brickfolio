@@ -1620,8 +1620,17 @@ empty doesn't appear. Two switches start **off**:
 - **Show collection size** – as a rounded number, e.g. "≈ 950 minifigures".
 
 **Inviting others** is allowed for every connected member: "✉️ Invite a
-friend" at the top of the Trade tab, next to "My profile". Everyone has a quota of **three** invitations and can
-request more from the hub admin. A code works once.
+friend" at the top of the Trade tab, next to "My profile". A window opens with
+the code, "Copy" and – where the device offers it – "Share", plus three steps
+for your friend. A code works once. Everyone has a quota of **three**
+invitations (the tag on the button shows how many are left) and can request
+more from the hub admin.
+
+**My invitations** (expandable below the button): open invitations are listed
+with their code – copy or share again, or withdraw; a withdrawn invitation is
+free again. Redeemed ones show by whom and when, and drop off the list after
+four weeks. Only your instance knows the code; the hub merely stores a
+checksum of it.
 
 ### 12.4 What I offer
 

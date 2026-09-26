@@ -302,6 +302,15 @@ def create_invite(note: str = "", expires_in_days: int = 0) -> dict:
     return _authed("POST", "/v1/invites", body=body)
 
 
+def own_invites() -> list:
+    """Eigene Einladungen mit Stand (ab Hub 1.22.0) – ohne Code, nur Prüfsumme."""
+    return _authed("GET", "/v1/invites").get("invites", [])
+
+
+def withdraw_invite(code_hash: str) -> dict:
+    return _authed("DELETE", f"/v1/invites/{code_hash}")
+
+
 def invite_quota() -> dict:
     """Wie viele Einladungen sind noch offen?"""
     return _authed("GET", "/v1/invites/quota")

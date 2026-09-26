@@ -969,3 +969,57 @@ def test_report_outcome_is_shown_when_released(client, monkeypatch):
     client.post("/api/hub/trades/sync")
     r = client.get("/api/hub/trades/trd_a").json()["report"]
     assert r["status"] == "handled" and r["ergebnis"] == "verwarnung"
+
+
+# ------------------------------------------------- Meine Einladungen (2.90.14)
+import hashlib as _hashlib
+
+
+def _h(code):
+    return _hashlib.sha256(code.encode()).hexdigest()
+
+
+def test_created_invite_code_is_kept_and_listed(client, monkeypatch):
+    """Bis 2.90.13 war der Code nach dem Schließen des Fensters weg."""
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    monkeypatch.setattr(hub, "create_invite", lambda note="", expires_in_days=0:
+                        {"invite_code": "inv_abc", "expires_at": None})
+    client.post("/api/hub/invite", json={})
+    jetzt = int(time.time())
+    monkeypatch.setattr(hub, "own_invites", lambda: [
+        {"id": _h("inv_abc"), "created_at": jetzt, "expires_at": None,
+         "redeemed_at": None, "redeemed_by_name": None},
+        {"id": _h("inv_alt"), "created_at": jetzt - 100, "expires_at": None,
+         "redeemed_at": jetzt - 50, "redeemed_by_name": "Paul"},
+        {"id": _h("inv_uralt"), "created_at": 1, "expires_at": None,
+         "redeemed_at": 5, "redeemed_by_name": "Lang her"}])
+    liste = client.get("/api/hub/invites").json()["invites"]
+    assert [(i["status"], i["code"], i["redeemed_by"]) for i in liste] == [
+        ("offen", "inv_abc", None), ("eingeloest", None, "Paul")]
+
+
+def test_redeemed_code_is_forgotten_locally(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    with core.db() as conn:
+        conn.execute("INSERT INTO hub_invites (code, code_hash, created_at) "
+                     "VALUES ('inv_x', ?, 1)", (_h("inv_x"),))
+    monkeypatch.setattr(hub, "own_invites", lambda: [
+        {"id": _h("inv_x"), "created_at": 1, "expires_at": None,
+         "redeemed_at": int(time.time()), "redeemed_by_name": "Paul"}])
+    client.get("/api/hub/invites")
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM hub_invites").fetchone()[0] == 0
+
+
+def test_withdraw_invite(client, monkeypatch):
+    monkeypatch.setattr(hub, "enabled", lambda: True)
+    with core.db() as conn:
+        conn.execute("INSERT INTO hub_invites (code, code_hash, created_at) "
+                     "VALUES ('inv_y', ?, 1)", (_h("inv_y"),))
+    gerufen = []
+    monkeypatch.setattr(hub, "withdraw_invite", lambda h: gerufen.append(h) or {"ok": True})
+    assert client.delete(f"/api/hub/invites/{_h('inv_y')}").status_code == 200
+    assert gerufen == [_h("inv_y")]
+    with core.db() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM hub_invites").fetchone()[0] == 0
+    assert client.delete("/api/hub/invites/kaputt").status_code == 400

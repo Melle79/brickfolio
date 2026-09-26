@@ -19,6 +19,7 @@ Eingebunden wird der Router am Ende von `main.py` – nach allem, was er von
 dort braucht (Anmeldung, Sammlung, Einkaufslisten).
 """
 import base64
+import hashlib
 import json
 import os
 import re
@@ -205,6 +206,8 @@ def hub_disconnect(user: dict = Depends(admin_user)):
             except Exception:
                 pass
     hub.disconnect()
+    with core.db() as conn:
+        conn.execute("DELETE FROM hub_invites")
     return {"connected": False, "hub_informiert": informiert}
 
 
@@ -1244,11 +1247,85 @@ def hub_invite(body: HubInviteBody, user: dict = Depends(current_user)):
     if not hub.enabled():
         raise HTTPException(400, "Kein Hub verbunden")
     try:
-        return hub.create_invite(body.note, body.expires_in_days)
+        res = hub.create_invite(body.note, body.expires_in_days)
     except hub.HubError as e:
         raise HTTPException(502, f"Hub: {e.message}")
     except requests.RequestException:
         raise HTTPException(502, "Hub nicht erreichbar")
+    code = res.get("invite_code") or ""
+    if code:
+        # Merken, damit der Code nach dem Schließen des Fensters nicht weg
+        # ist – bis 2.90.13 war er es, obwohl die Einladung verbraucht war.
+        with core.db() as conn:
+            conn.execute("INSERT OR IGNORE INTO hub_invites (code, code_hash, "
+                         "created_at) VALUES (?, ?, ?)",
+                         (code, hashlib.sha256(code.encode()).hexdigest(),
+                          int(time.time())))
+    return res
+
+
+# Eingelöste Einladungen verschwinden nach vier Wochen aus der Liste – sie
+# sind erledigt, und die Liste soll kurz bleiben.
+EINLADUNG_EINGELOEST_ZEIGEN = 28 * 86400
+
+
+@router.get("/api/hub/invites")
+def hub_own_invites(user: dict = Depends(current_user)):
+    """Meine Einladungen: offen (samt Code, wenn er hier erzeugt wurde),
+    eingelöst (von wem, wann) oder abgelaufen."""
+    if not hub.enabled():
+        return {"invites": []}
+    try:
+        stand = hub.own_invites()
+    except hub.HubError as e:
+        raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+    with core.db() as conn:
+        codes = {r["code_hash"]: r["code"] for r in conn.execute(
+            "SELECT code, code_hash FROM hub_invites")}
+    jetzt = int(time.time())
+    liste = []
+    for i in stand:
+        if i.get("redeemed_at"):
+            if jetzt - i["redeemed_at"] > EINLADUNG_EINGELOEST_ZEIGEN:
+                continue
+            art = "eingeloest"
+        elif i.get("expires_at") and i["expires_at"] < jetzt:
+            art = "abgelaufen"
+        else:
+            art = "offen"
+        liste.append({"id": i["id"], "status": art,
+                      "code": codes.get(i["id"]) if art == "offen" else None,
+                      "created_at": i.get("created_at"),
+                      "redeemed_at": i.get("redeemed_at"),
+                      "redeemed_by": i.get("redeemed_by_name")})
+    # Eingelöste Codes braucht niemand mehr im Klartext.
+    erledigt = [i["id"] for i in stand if i.get("redeemed_at")]
+    if erledigt:
+        with core.db() as conn:
+            conn.executemany("DELETE FROM hub_invites WHERE code_hash = ?",
+                             [(h,) for h in erledigt])
+    return {"invites": liste}
+
+
+@router.delete("/api/hub/invites/{code_hash}")
+def hub_withdraw_invite(code_hash: str, user: dict = Depends(current_user)):
+    """Offene Einladung zurückziehen – danach ist sie wieder frei."""
+    if not re.fullmatch(r"[0-9a-f]{64}", code_hash):
+        raise HTTPException(400, "Ungültige Kennung")
+    if not hub.enabled():
+        raise HTTPException(400, "Kein Hub verbunden")
+    try:
+        hub.withdraw_invite(code_hash)
+    except hub.HubError as e:
+        if e.status != 404:
+            raise HTTPException(502, f"Hub: {e.message}")
+    except requests.RequestException:
+        raise HTTPException(502, "Hub nicht erreichbar")
+    with core.db() as conn:
+        conn.execute("DELETE FROM hub_invites WHERE code_hash = ?", (code_hash,))
+    return {"ok": True}
 
 
 # ------------------------------------------------ Community: Profile, Entdecken

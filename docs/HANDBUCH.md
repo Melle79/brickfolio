@@ -2207,8 +2207,17 @@ nicht. Zwei Schalter stehen anfangs auf **aus**:
 - **Sammlungsgröße zeigen** – als gerundete Zahl, etwa „≈ 950 Figuren".
 
 **Selbst einladen** darf jedes verbundene Mitglied: im Tausch-Tab oben
-neben „Mein Profil" über „✉️ Freund einladen". Jeder hat ein Kontingent von **drei** Einladungen und
-kann beim Hub-Admin mehr anfragen. Der Code gilt einmal.
+neben „Mein Profil" über „✉️ Freund einladen". Es öffnet sich ein Fenster
+mit dem Code, „Kopieren“ und – wo das Gerät es kann – „Teilen“, dazu drei
+Schritte für den Freund. Der Code gilt einmal. Jeder hat ein Kontingent von
+**drei** Einladungen (die Marke am Knopf zeigt, wie viele frei sind) und
+kann beim Hub-Admin mehr anfragen.
+
+**Meine Einladungen** (aufklappbar unter dem Knopf): Offene Einladungen
+stehen mit ihrem Code da – noch einmal kopieren, teilen oder zurückziehen;
+zurückgezogen ist die Einladung wieder frei. Eingelöste zeigen, von wem und
+wann, und verschwinden nach vier Wochen aus der Liste. Den Code kennt nur
+deine Instanz, der Hub speichert davon lediglich eine Prüfsumme.
 
 ### 12.4 Was ich anbiete
 

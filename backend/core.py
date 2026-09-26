@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.90.13"
+APP_VERSION = "2.90.14"
 
 
 def hash_password(password: str) -> str:
@@ -397,6 +397,14 @@ def init_db():
                 hub_msg_id  INTEGER UNIQUE,
                 from_admin  INTEGER NOT NULL,
                 text        TEXT NOT NULL,
+                created_at  INTEGER NOT NULL
+            );
+            -- Selbst erzeugte Einladungscodes. Der Hub kennt nur ihre
+            -- Prüfsumme; damit man einen offenen Code später noch einmal
+            -- weitergeben kann, bleibt der Klartext hier.
+            CREATE TABLE IF NOT EXISTS hub_invites (
+                code        TEXT PRIMARY KEY,
+                code_hash   TEXT NOT NULL,
                 created_at  INTEGER NOT NULL
             );
             CREATE TABLE IF NOT EXISTS trade_messages (

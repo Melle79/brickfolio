@@ -173,6 +173,7 @@ async function loadHubView() {
     }
   } catch (_) { /* egal */ }
   loadInviteQuota();
+  ladeEinladungen();
   // Die Liste lädt showHubTab() weiter oben – hier nicht doppelt anstoßen.
 }
 
@@ -957,6 +958,7 @@ function wireHubViewOnce() {
       const res = await api("/hub/invite", { method: "POST", body: {} });
       zeigeEinladung(res.invite_code);
       loadInviteQuota();
+      ladeEinladungen();
     } catch (e) {
       // Kontingent aufgebraucht: statt bloßer Fehlermeldung den Weg anbieten
       if (/Kontingent/.test(e.message)) offerInviteRequest(e.message);
@@ -977,6 +979,69 @@ function wireHubViewOnce() {
       await navigator.share({ title: tr("Einladung ins Brickfolio-Tausch-Netzwerk"),
         text: einladungsText($("invite-code").textContent) });
     } catch (_) { /* abgebrochen – nichts zu tun */ }
+  });
+}
+
+/* Meine Einladungen: offene mit Code (noch einmal weitergeben oder
+   zurückziehen), eingelöste mit Name und Datum. Bis 2.90.13 war ein Code
+   nach dem Schließen des Fensters weg, und ob er eingelöst wurde, sah man
+   nirgends. */
+async function ladeEinladungen() {
+  const box = $("hub-invites");
+  let liste = [];
+  try { liste = (await api("/hub/invites")).invites || []; } catch (_) { liste = []; }
+  box.hidden = !liste.length;
+  if (!liste.length) return;
+  const offen = liste.filter((i) => i.status === "offen").length;
+  $("hub-invites-sum").textContent = offen
+    ? tr("Meine Einladungen · {n} offen", { n: offen })
+    : tr("Meine Einladungen");
+  const datum = (ts) => ts ? new Date(ts * 1000).toLocaleDateString(dateLocale()) : "";
+  const kurz = (c) => c.length > 18 ? c.slice(0, 10) + "…" + c.slice(-6) : c;
+  $("hub-invites-list").innerHTML = liste.map((i) => {
+    if (i.status === "eingeloest") {
+      return `<div class="einladung-zeile">✔ ${esc(tr("eingelöst von {wer} am {am}",
+        { wer: i.redeemed_by || "?", am: datum(i.redeemed_at) }))}</div>`;
+    }
+    const knoepfe = i.code ? `
+      <button class="mini-btn" data-inv-kopieren="${esc(i.code)}">📋</button>
+      ${navigator.share ? `<button class="mini-btn" data-inv-teilen="${esc(i.code)}">📤</button>` : ""}` : "";
+    return `<div class="einladung-zeile" data-inv="${esc(i.id)}">
+      <span>${i.status === "abgelaufen" ? esc(tr("abgelaufen")) + " · " : ""}${
+        i.code ? `<code>${esc(kurz(i.code))}</code>`
+          : esc(tr("offen – der Code ist hier nicht mehr gespeichert"))}
+        <span class="sub">· ${esc(tr("seit {am}", { am: datum(i.created_at) }))}</span></span>
+      <span class="einladung-knoepfe">${knoepfe}
+        <button class="mini-btn" data-inv-weg>${esc(tr("Zurückziehen"))}</button></span>
+    </div>`;
+  }).join("");
+  const liste_ = $("hub-invites-list");
+  liste_.querySelectorAll("[data-inv-kopieren]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      if (await inZwischenablage(b.dataset.invKopieren)) toast(tr("Code kopiert 📋"));
+      else textZumMarkieren(b.dataset.invKopieren);
+    });
+  });
+  liste_.querySelectorAll("[data-inv-teilen]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      try {
+        await navigator.share({ title: tr("Einladung ins Brickfolio-Tausch-Netzwerk"),
+          text: einladungsText(b.dataset.invTeilen) });
+      } catch (_) { /* abgebrochen */ }
+    });
+  });
+  liste_.querySelectorAll("[data-inv-weg]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      if (!confirm(tr("Diese Einladung zurückziehen? Der Code gilt dann nicht "
+        + "mehr, und die Einladung ist wieder frei."))) return;
+      try {
+        await api(`/hub/invites/${b.closest("[data-inv]").dataset.inv}`,
+          { method: "DELETE" });
+        toast(tr("Zurückgezogen – die Einladung ist wieder frei"));
+        ladeEinladungen();
+        loadInviteQuota();
+      } catch (e) { toast(e.message); }
+    });
   });
 }
 

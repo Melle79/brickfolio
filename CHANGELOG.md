@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.90.14 – September 2026
+
+### Neu
+- ✉️ **Meine Einladungen.** Unter „Freund einladen“ stehen die eigenen
+  Einladungen: offene mit ihrem Code – noch einmal kopieren, teilen oder
+  zurückziehen –, eingelöste mit Name und Datum (vier Wochen lang). Bisher
+  war ein Code nach dem Schließen des Fensters weg, obwohl die Einladung
+  verbraucht war, und ob er eingelöst wurde, sah man nirgends. Den Code
+  merkt sich die eigene Instanz, der Hub kennt nur seine Prüfsumme. Braucht
+  Hub 1.22.0.
+
+## Hub 1.22.0 – September 2026
+
+### Neu
+- `GET /v1/invites` liefert die eigenen Einladungen mit Stand (Prüfsumme als
+  Kennung, ohne Code), `DELETE /v1/invites/:prüfsumme` zieht eine offene
+  zurück.
+
+### Behoben
+- Abgelaufene, nie eingelöste Einladungen zählten für immer gegen das
+  Kontingent. Jetzt zählen nur noch offene und eingelöste.
+
 ## 2.90.13 – September 2026
 
 ### Geändert
