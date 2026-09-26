@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.90.15 – September 2026
+
+### Geändert
+- 💶 **Das Infofenster eines Suchtreffers zeigt die Preise wie der
+  Steckbrief.** Bisher stand dort nur „Ø neu … · Ø gebr. …“. Jetzt kommen
+  neu und gebraucht mit Spanne, Verkaufszahl und Gebietsfahne, darunter die
+  Angebotspreise, wenn eingeschaltet. Die Kurzzeile steht sofort da, die
+  vollen Angaben folgen einen Moment später.
+
 ## 2.90.14 – September 2026
 
 ### Neu

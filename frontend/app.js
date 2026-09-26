@@ -7417,9 +7417,38 @@ async function loadSuggestDetail(inner, pit, orig) {
       : `<span class="price-note">${/^fig-/.test(pit.item_id)
           ? "Keine BrickLink-Nummer gefunden – Preise erst nach dem Übernehmen."
           : "Keine Preisdaten bei BrickLink."}</span>`;
+    // Die Kurzzeile steht sofort (aus dem Zwischenspeicher der Trefferliste),
+    // die vollen Preise kommen gleich hinterher.
+    if (parts.length && !/^(fig-|manuell-|custom-)/.test(pit.item_id)) {
+      sugPreiseVoll(pr, pit, type);
+    }
   }
 
   if (type === "minifig") renderFigSets(inner, pit);
+}
+
+/* Die Preise im Infofenster eines Suchtreffers so wie im Steckbrief: neu
+   und gebraucht mit Spanne, Verkaufszahl und Gebietsfahne, darunter die
+   Angebotspreise, wenn eingeschaltet. Bis 2.90.14 stand hier nur
+   „Ø neu … · Ø gebr. …“ (gemeldet am 26.09.2026). Dieselben Bausteine wie
+   im Steckbrief – damit beides gleich aussieht und gleich bleibt. */
+async function sugPreiseVoll(pr, pit, type) {
+  let p;
+  try {
+    p = await api(`/price/${encodeURIComponent(type)}/`
+      + `${encodeURIComponent(pit.item_id)}${state.angebote ? "?angebote=1" : ""}`);
+  } catch (_) {
+    return;               // die Kurzzeile bleibt stehen – besser als nichts
+  }
+  if (!pr.isConnected) return;        // Fenster inzwischen zu
+  const zweit = p.bl_no
+    ? `<div class="price-note">${esc(tr("BrickLink-Nr. {nr}", { nr: p.bl_no }))}</div>`
+    : "";
+  pr.classList.add("voll");
+  pr.innerHTML = priceLine(tr("Neu"), p.new) + priceLine(tr("Gebraucht"), p.used)
+    + `<div class="price-note">`
+    + esc(tr("Ø-Verkaufspreise, letzte 6 Monate (BrickLink)")) + `</div>`
+    + angebotBlock(p.stock) + zweit;
 }
 
 async function resolveBricklinkNo(it) {
