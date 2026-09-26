@@ -745,7 +745,6 @@ async function loadShareView() {
               it.published ? tr("veröffentlicht ({n}×)", { n: it.published_qty })
                 : tr("noch nicht veröffentlicht")}</span>` : ""}
           </div>
-          <button class="mini-btn" data-unshare="${it.id}">Entfernen</button>
         </div>
         <div class="cm-art-zeile">
           <div class="erf-wahl cm-art" data-art="${it.id}" role="radiogroup" aria-label="${esc(tr("Angeboten zum"))}">
@@ -754,13 +753,16 @@ async function loadShareView() {
                 aria-checked="${(it.deal || "tausch") === w}">${esc(cmArtName(w))}</button>`).join("")}
           </div>
         </div>
+        <div class="share-fuss">
         ${it.quantity > 1 ? `
-        <label class="share-qty">${esc(tr("Menge:"))}
-          <select data-shareqty="${it.id}">
-            ${Array.from({ length: it.quantity }, (_, n) => n + 1).map((n) =>
-              `<option value="${n}"${n === it.share_qty ? " selected" : ""}>${n}×</option>`).join("")}
-          </select>
-        </label>` : ""}
+          <label class="share-qty">${esc(tr("Menge:"))}
+            <select data-shareqty="${it.id}">
+              ${Array.from({ length: it.quantity }, (_, n) => n + 1).map((n) =>
+                `<option value="${n}"${n === it.share_qty ? " selected" : ""}>${n}×</option>`).join("")}
+            </select>
+          </label>` : ""}
+          <button class="mini-btn danger" data-unshare="${it.id}">Entfernen</button>
+        </div>
       </div>`).join("")
       : stale + `<p class="search-hint">Nichts ausgewählt – veröffentlicht wird dann nichts.</p>`;
     box.querySelectorAll("[data-unshare]").forEach((b) => {

@@ -54,7 +54,8 @@ body {
 }
 
 h1, h2, h3, strong { font-weight: 900; }
-button { font-family: inherit; }
+/* iOS färbt Knöpfe und Auswahllisten ohne eigene Farbe systemblau. */
+button { font-family: inherit; color: var(--ink); }
 
 /* ---------- Noppen (Signatur-Element) ---------- */
 .logo-studs {
@@ -194,6 +195,7 @@ label { display: block; font-size: 13px; margin: 14px 0 4px; color: var(--muted)
 input, textarea, select {
   width: 100%; padding: 12px; font: inherit; font-weight: 600;
   border: 2px solid var(--line); border-radius: 10px; background: var(--field);
+  color: var(--ink);
 }
 select { appearance: none; -webkit-appearance: none; }
 #btn-manual-toggle { margin-top: 24px; }
@@ -958,6 +960,12 @@ span.mf-stern.an {
   font-size: 13px; color: var(--muted);
 }
 .share-qty select { padding: 4px 8px; }
+/* Menge und „Entfernen" teilen sich die Fußzeile, damit der Titel oben die
+   ganze Breite behält. */
+.share-fuss { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.share-fuss .share-qty { margin-top: 0; }
+.share-fuss .mini-btn { flex: none; margin-left: auto; min-height: 36px;
+  padding: 4px 14px; font-size: 13px; }
 .detail-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 /* `display: flex` aus dem eigenen Blatt schlägt das `display: none`, das der
    Browser für `hidden` mitbringt – Autorenregeln gehen vor. Ohne diese Zeile
@@ -1927,6 +1935,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="galaxy"] .btn-primary,
 [data-theme="galaxy"] .mini-btn.add,
 [data-theme="galaxy"] .mini-btn.cond.sel,
+[data-theme="galaxy"] .tab-row .mini-btn.sel,
+[data-theme="galaxy"] .erf-wahl button.sel,
 [data-theme="galaxy"] .cond-mini.sel { color: #0B1220; }
 
 /* ---------- Hinweise auf dem Startbildschirm ---------- */
@@ -2505,6 +2515,8 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 [data-theme="nova"] .btn-primary,
 [data-theme="nova"] .mini-btn.add,
 [data-theme="nova"] .mini-btn.cond.sel,
+[data-theme="nova"] .tab-row .mini-btn.sel,
+[data-theme="nova"] .erf-wahl button.sel,
 [data-theme="nova"] .cond-mini.sel { color: #04202E; }
 
 /* Etwas rundere, „app-igere" Primärflächen */
@@ -3231,6 +3243,15 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
    Vorsilbe `cm-`, damit nichts mit den übrigen Bauteilen zusammenstößt. */
 .hub-ich { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; flex-wrap: wrap; }
 .hub-ich .sub { margin: 0; }
+.hub-ich-links { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.hub-ich-links .link-btn { margin: 0; }
+/* Am Telefon zwei feste Zeilen: Name oben, die Wege darunter eingerückt –
+   statt eines Umbruchs, der unter dem Bild ganz links weitergeht. */
+@media (max-width: 600px) {
+  .hub-ich { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+  .hub-ich .avatar { grid-row: 1 / span 2; }
+  .hub-ich-links { grid-column: 2; }
+}
 /* Vier Reiter nebeneinander, auch am Telefon: Sie teilen sich die Breite
    nach Inhalt, und auf schmalen Schirmen wird die Schrift kleiner. */
 #hub-subtabs { display: flex; flex-wrap: nowrap; gap: 4px; }

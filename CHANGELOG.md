@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.90.19 – September 2026
+
+### Behoben
+- 📱 **Tausch-Netzwerk am Handy aufgeräumt.** Unter dem eigenen Namen stehen
+  „Mein Profil“, „Freund einladen“ und die freien Einladungen jetzt in einer
+  eigenen, eingerückten Zeile, statt links unter das Bild zu rutschen.
+- 📱 **„Ich biete an“:** „Entfernen“ sitzt jetzt klein unten rechts neben der
+  Menge. Bisher nahm der Knopf neben dem Titel fast die halbe Breite ein und
+  quetschte lange Namen auf fünf Zeilen.
+- 🎨 **Keine blaue Schrift mehr auf dem iPhone.** Safari färbt Knöpfe und
+  Auswahllisten ohne eigene Farbe systemblau – betroffen waren etwa die
+  Reiter im Tausch-Netzwerk und die Mengenauswahl. Sie übernehmen jetzt die
+  Textfarbe des Themas. In den dunklen Themen ist die Schrift auf gelb
+  bzw. blau hinterlegten, ausgewählten Reitern und Umschaltern wieder dunkel.
+
 ## 2.90.18 – September 2026
 
 ### Geändert
