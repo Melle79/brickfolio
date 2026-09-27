@@ -4067,6 +4067,12 @@ def backup_restore_file(body: RestoreFileBody,
     #
     # `init_db` ist absichtlich wiederholbar: Es legt nur an, was fehlt.
     core.init_db()
+    # **Neues Zeitalter für den Abgleich.** Mit der Datei kommt auch der
+    # alte Zählerstand zurück – ein Gerät, das schon weiter war, hielte
+    # sich für aktuell und übersähe alles, bis der Zähler aufgeholt hat.
+    import sync
+    with core.db() as conn:
+        sync.neues_zeitalter(conn)
 
     print(f"[brickfolio] Wiederhergestellt: {body.name} "
           f"(Sicherheitskopie: {os.path.basename(safety)})", flush=True)
@@ -4186,6 +4192,13 @@ def _sicherung_einspielen(body: "RestoreBody") -> dict:
                 n += 1
             counts[t] = n
         conn.execute("PRAGMA foreign_keys = ON")
+        # Nach dem Zurückspielen stimmt nichts mehr, was ein Gerät über diese
+        # Instanz weiß: neues Zeitalter, und die App beginnt von vorn. Eine
+        # Sicherung aus der Zeit vor dem Sync bekommt dabei auch erst jetzt
+        # ihre UUIDs – ohne neues Zeitalter stünde auf den Geräten alles doppelt.
+        import sync
+        sync.migrieren(conn)
+        sync.neues_zeitalter(conn)
     counts["uploads"] = _bilder_zurueckschreiben(body.uploads)
     return counts
 
@@ -8848,3 +8861,8 @@ def index():
 import community  # noqa: E402
 
 app.include_router(community.router)
+
+# Abgleich mit der iOS-App – aus demselben Grund am Ende.
+import sync  # noqa: E402
+
+app.include_router(sync.router)
