@@ -1,8 +1,9 @@
-"""Abgleich mit der iOS-App (und allem, was später dasselbe spricht).
+"""Abgleich für externen Zugriff mit eigener Datenbank.
 
-Beschrieben im App-Repo unter `docs/SYNC-API.md`; der Test-Server dort
-(`NachgebauterServer.swift`) ist dieselbe Beschreibung als Code. Wer hier
-eine Regel ändert, ändert sie dort mit.
+Wer von außen zugreift und seine Daten selbst mitführt, holt hier, was sich
+seit seinem letzten Stand geändert hat, und schickt, was bei ihm geändert
+wurde. Die Regeln stehen hier und in `tests/test_sync.py` – wer eine ändert,
+zieht die Tests mit.
 
 **Rückwärtskompatibel.** Alle bestehenden Endpunkte bleiben, wie sie sind.
 Neu sind drei Spalten je Tabelle (`uuid`, `updated_at`, `rev`), zwei
@@ -273,7 +274,8 @@ def pull(since: int = Query(0, ge=0), limit: int = Query(500, ge=1, le=2000),
 
     Sortiert wird nach Stand, nicht nach Tabelle: Ein Kaufposten kann vor
     seinem Eintrag kommen, wenn der Eintrag danach noch einmal geändert
-    wurde. Die App kommt damit zurecht; umsortieren müsste man hier nichts.
+    wurde. Die Gegenstelle kommt damit zurecht; umsortieren müsste man hier
+    nichts.
     """
     haendler = bool(user["is_dealer"])
     with core.db() as conn:
@@ -406,12 +408,12 @@ def _anwenden(conn, c: Aenderung, karten: _Karten, user: dict, haendler: bool,
 
     # Neu vom Gerät, aber die UUID gibt es schon: ein zweites Gerät hat
     # denselben Artikel angelegt (Sammlung und Wunschliste leiten ihre UUID
-    # aus dem Artikel ab). Nie überschreiben – die App führt zusammen.
+    # aus dem Artikel ab). Nie überschreiben – die Gegenstelle führt zusammen.
     if c.base_rev is None and row is not None:
         raise _Abgelehnt("conflict", server=server_fassung())
 
     werte = _eingang(conn, t, c.fields, karten, user, haendler)
-    # Doppelter Artikel unter anderer UUID? Die App führt zusammen, nicht
+    # Doppelter Artikel unter anderer UUID? Die Gegenstelle führt zusammen, nicht
     # die Instanz – so bleibt die Regel an einer Stelle.
     schluessel = info.get("schluessel")
     if schluessel:

@@ -1072,7 +1072,7 @@ def init_db():
             conn.execute("ALTER TABLE set_contents ADD COLUMN name TEXT")
         if sccols and "img_url" not in sccols:
             conn.execute("ALTER TABLE set_contents ADD COLUMN img_url TEXT")
-        # Abgleich mit der iOS-App: Spalten, Tabellen, Trigger (sync.py).
+        # Abgleich für externen Zugriff: Spalten, Tabellen, Trigger (sync.py).
         # Am Ende, damit alle Tabellen und Spalten schon da sind.
         import sync
         sync.migrieren(conn)

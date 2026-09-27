@@ -3,17 +3,18 @@
 ## 2.91.0 – September 2026
 
 ### Neu
-- 🔄 **Abgleich für Apps mit eigener Datenbank.** Eine App kann jetzt
-  holen, was sich seit ihrem letzten Stand geändert hat, und schicken, was
-  auf dem Gerät geändert wurde (`/api/sync/info`, `/pull`, `/push`). Das
-  betrifft Sammlung, Kaufbuch, Wunschliste, Einkaufslisten und Preisverlauf.
-  Konflikte entscheidet die neueste Änderung je Eintrag. Doppelt erfasste
-  Artikel führt die App zusammen, statt dass einer verloren geht.
+- 🔄 **Abgleich für externen Zugriff mit eigener Datenbank.** Wer von
+  außen zugreift und seine Daten selbst mitführt, kann jetzt holen, was sich
+  seit seinem letzten Stand geändert hat, und schicken, was bei ihm geändert
+  wurde (`/api/sync/info`, `/pull`, `/push`). Das betrifft Sammlung,
+  Kaufbuch, Wunschliste, Einkaufslisten und Preisverlauf. Konflikte
+  entscheidet die neueste Änderung je Eintrag. Doppelt erfasste Artikel
+  werden zusammengeführt, statt dass einer verloren geht.
 - Dafür bekommt jede dieser Zeilen eine feste Kennung und einen Stand.
   **Nachgezogen wird über Trigger in der Datenbank**, nicht an den rund 90
   Stellen, an denen die Instanz schreibt: So zählt jeder Schreibweg mit,
   auch einer, der später dazukommt. Gelöschtes hinterlässt einen Vermerk,
-  sonst käme es beim nächsten Abgleich von der App zurück.
+  sonst käme es beim nächsten Abgleich wieder zurück.
 
 ### Rechte wie in der Web-App
 - **Kaufpreise und Kaufbuch nur für Sammlerprofis.** Standard-Konten bekommen
@@ -25,9 +26,9 @@
 
 ### Geändert
 - ↩️ **Nach dem Zurückspielen einer Sicherung** (JSON oder Tagesstand)
-  beginnen verbundene Apps von vorn. Mit einem Tagesstand kommt auch der alte
-  Zählerstand zurück, und eine App, die schon weiter war, hätte sonst
-  Änderungen übersehen.
+  beginnt jeder externe Zugriff mit eigener Datenbank von vorn. Mit einem
+  Tagesstand kommt auch der alte Zählerstand zurück, und wer schon weiter
+  war, hätte sonst Änderungen übersehen.
 
 ## 2.90.22 – September 2026
 

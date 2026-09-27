@@ -1984,26 +1984,26 @@ Empfehlung trotzdem: vor größeren Aktionen zusätzlich eine JSON-Sicherung
 ziehen – und wer ein NAS-Backup (z. B. Hyper Backup) betreibt, nimmt den
 Ordner `data/` mit auf, damit auch ein Hardware-Ausfall abgedeckt ist.
 
-### 11.1a Abgleich mit Apps
+### 11.1a Abgleich für externen Zugriff
 
-Apps mit eigener Datenbank, die also auch ohne Netz funktionieren, gleichen
-sich über die Schnittstelle `/api/sync/…` mit der Instanz ab. Angemeldet
-wird wie in der Web-App, mit Benutzername und Passwort, bei Bedarf mit
-zweitem Faktor und dem Dienst-Token für Cloudflare Access (Kapitel 2).
-Abgeglichen werden Sammlung, Kaufbuch, Wunschliste, Einkaufslisten und
-Preisverlauf.
+Externer Zugriff mit eigener Datenbank, der also auch ohne Netz
+funktioniert, gleicht sich über die Schnittstelle `/api/sync/…` mit der
+Instanz ab. Angemeldet wird wie in der Web-App, mit Benutzername und
+Passwort, bei Bedarf mit zweitem Faktor und dem Dienst-Token für
+Cloudflare Access (Kapitel 2). Abgeglichen werden Sammlung, Kaufbuch,
+Wunschliste, Einkaufslisten und Preisverlauf.
 
 - **Wer gewinnt?** Ändern zwei Seiten denselben Eintrag, gilt die spätere
-  Änderung. Die App hebt die unterlegene Fassung auf.
+  Änderung. Die unterlegene Fassung wird aufgehoben.
 - **Doppelt erfasst:** Wer unterwegs eine Figur erfasst, die zu Hause schon
   steht, hat danach die Summe, genau wie beim Hinzufügen in der Web-App.
 - **Rechte:** wie in der Web-App. Kaufpreise und Kaufbuch sehen und schicken
   nur Sammlerprofis. Einkaufslisten ändern nur Profis, Standard-Konten
   verbuchen Artikel.
 - **Nach dem Zurückspielen** einer Sicherung oder eines Tagesstands beginnen
-  verbundene Apps von vorn und holen den Stand der Instanz. Was auf einem
-  Gerät noch nicht abgeglichen war, geht dabei verloren. Deshalb vorher
-  einmal abgleichen.
+  externe Zugriffe von vorn und holen den Stand der Instanz. Was dort noch
+  nicht abgeglichen war, geht dabei verloren. Deshalb vorher einmal
+  abgleichen.
 
 ### 11.2 Updates einspielen
 

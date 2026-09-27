@@ -4193,7 +4193,7 @@ def _sicherung_einspielen(body: "RestoreBody") -> dict:
             counts[t] = n
         conn.execute("PRAGMA foreign_keys = ON")
         # Nach dem Zurückspielen stimmt nichts mehr, was ein Gerät über diese
-        # Instanz weiß: neues Zeitalter, und die App beginnt von vorn. Eine
+        # Instanz weiß: neues Zeitalter, und die Gegenstelle beginnt von vorn. Eine
         # Sicherung aus der Zeit vor dem Sync bekommt dabei auch erst jetzt
         # ihre UUIDs – ohne neues Zeitalter stünde auf den Geräten alles doppelt.
         import sync
@@ -8862,7 +8862,7 @@ import community  # noqa: E402
 
 app.include_router(community.router)
 
-# Abgleich mit der iOS-App – aus demselben Grund am Ende.
+# Abgleich für externen Zugriff – aus demselben Grund am Ende.
 import sync  # noqa: E402
 
 app.include_router(sync.router)

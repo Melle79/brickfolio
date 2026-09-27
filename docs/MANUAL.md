@@ -1409,24 +1409,24 @@ Still a recommendation: pull an extra JSON backup before bigger operations –
 and anyone running a NAS backup (Hyper Backup, for instance) should include the
 `data/` folder, so a hardware failure is covered too.
 
-### 11.1a Sync with apps
+### 11.1a Sync for external access
 
-Apps with their own database, which therefore also work offline, sync with
-the instance through the `/api/sync/…` interface. They sign in as in the web
-app, with username and password, and if needed with a second factor and the
-Cloudflare Access service token (chapter 2). Collection, purchase ledger,
-wishlist, shopping lists and price history are synced.
+External access with its own database, which therefore also works offline,
+syncs with the instance through the `/api/sync/…` interface. It signs in as
+in the web app, with username and password, and if needed with a second
+factor and the Cloudflare Access service token (chapter 2). Collection,
+purchase ledger, wishlist, shopping lists and price history are synced.
 
 - **Who wins?** If both sides change the same entry, the later change wins.
-  The app keeps the losing version.
+  The losing version is kept.
 - **Recorded twice:** if you record a minifigure on the go that is already
   at home, you get the sum, exactly as when adding in the web app.
 - **Permissions:** as in the web app. Only collector pros see and send
   purchase prices and the ledger. Only pros change shopping lists, standard
   accounts book items in.
-- **After restoring** a backup or a daily snapshot, connected apps start
-  over and fetch the instance's state. Anything not yet synced on a device
-  is lost, so sync once beforehand.
+- **After restoring** a backup or a daily snapshot, external access starts
+  over and fetches the instance's state. Anything not yet synced there is
+  lost, so sync once beforehand.
 
 ### 11.2 Applying updates
 

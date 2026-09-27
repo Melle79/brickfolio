@@ -1,9 +1,8 @@
-"""Abgleich mit der iOS-App (backend/sync.py).
+"""Abgleich für externen Zugriff mit eigener Datenbank (backend/sync.py).
 
-Die App gleicht ihre eigene Datenbank mit der Instanz ab: holen, was sich
-seit ihrem letzten Stand geändert hat, schicken, was auf dem Gerät geändert
-wurde. Diese Tests sind das Gegenstück zu `NachgebauterServer.swift` im
-App-Repo – dort ist dieselbe Beschreibung als Code, hier die echte Instanz.
+Die Gegenstelle gleicht ihre eigene Datenbank mit der Instanz ab: holen, was
+sich seit ihrem letzten Stand geändert hat, schicken, was bei ihr geändert
+wurde. Diese Tests beschreiben die Regeln, nach denen das geht.
 
 Vor allem geprüft wird, was dabei schiefgehen kann, ohne dass es jemand
 merkt: ein Schreibweg der Web-App, der den Stand nicht hochzählt (dann
@@ -195,7 +194,7 @@ def test_konflikt_neuer_gewinnt_gleichstand_instanz(profi):
 
 
 def test_gleiche_uuid_wird_nie_ueberschrieben(profi):
-    """Zwei Geräte, dieselbe Figur, dieselbe UUID (die App leitet sie aus
+    """Zwei Geräte, dieselbe Figur, dieselbe UUID (die Gegenstelle leitet sie aus
     dem Artikel ab). Überschriebe die Instanz, wäre eine Figur weg."""
     _push(profi, {"table": "wanted", "uuid": "gleich", "updated_at": 1,
                   "fields": {"item_id": "sw9", "item_type": "minifig", "name": "a", "added_at": 1}})
@@ -358,7 +357,7 @@ def test_eintrag_samt_kaufposten_loeschen_kommt_durch(profi):
                "base_rev": e["rev"], "deleted": True})
     assert r["rejected"] == []
     assert profi.get("/api/collection").json()["items"] == []
-    # Und in der anderen Reihenfolge – Eltern zuerst, wie die App es jetzt tut.
+    # Und in der anderen Reihenfolge – Eltern zuerst, wie es die Gegenstelle jetzt tut.
     _eintrag(profi, paid_price=4.0, paid_source="manual")
     e = _saetze(profi, table="collection")[-1]
     k = [s for s in _saetze(profi, table="purchases") if not s.get("deleted")][0]
