@@ -2004,6 +2004,11 @@ Wunschliste, Einkaufslisten und Preisverlauf.
   externe Zugriffe von vorn und holen den Stand der Instanz. Was dort noch
   nicht abgeglichen war, geht dabei verloren. Deshalb vorher einmal
   abgleichen.
+- **Katalog:** Über `/api/sync/katalog` bekommt ein externer Zugriff auch
+  den Katalog der Instanz – mit den Namen, die die Instanz über ihren
+  BrickLink-Zugang nachgetragen hat, aber ohne die Schlüssel. So lässt sich
+  auch nachschlagen, wenn die Instanz nicht erreichbar ist. Geholt wird nur,
+  was sich geändert hat.
 
 ### 11.2 Updates einspielen
 

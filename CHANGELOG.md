@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.92.0 – September 2026
+
+### Neu
+- 📚 **Der Katalog für externen Zugriff** (`/api/sync/katalog`). Wer die
+  Sammlung mit eigener Datenbank führt, soll auch dann nachschlagen können,
+  wenn die Instanz gerade nicht erreichbar ist – nach Name, Nummer oder
+  Beschreibung. Dafür gibt die Instanz ihren Katalog heraus: Figuren und
+  Sets mit Bild, Jahr und Beschreibung, dazu Kategorien, Setinhalte und die
+  BrickLink-Nummern.
+- **Mit den Namen, ohne die Schlüssel.** Der öffentliche Abzug hat keine
+  Namen; jede Instanz trägt sie über ihren eigenen BrickLink-Zugang nach.
+  Wer den Katalog von hier holt, bekommt sie mit. Die BrickLink-Schlüssel
+  verlassen die Instanz dabei nicht.
+- Geholt wird nur, was sich seit dem letzten Mal geändert hat, in Seiten zu
+  5.000 Einträgen und gepackt: Der ganze Figurenkatalog (gut 19.000) ist
+  rund 1 MB.
+
 ## 2.91.0 – September 2026
 
 ### Neu

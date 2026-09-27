@@ -1427,6 +1427,10 @@ purchase ledger, wishlist, shopping lists and price history are synced.
 - **After restoring** a backup or a daily snapshot, external access starts
   over and fetches the instance's state. Anything not yet synced there is
   lost, so sync once beforehand.
+- **Catalogue:** through `/api/sync/katalog` external access also gets the
+  instance's catalogue – with the names the instance filled in through its
+  BrickLink access, but without the keys. That way it can look things up
+  even when the instance is unreachable. Only changes are fetched.
 
 ### 11.2 Applying updates
 

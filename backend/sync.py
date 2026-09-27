@@ -521,3 +521,67 @@ def _loeschen(conn, t: str, row, geaendert: int) -> None:
     conn.execute(f"DELETE FROM {t} WHERE id = ?", (row["id"],))
     if t == "purchases":
         _summe_nachziehen(conn, row["entry_id"], geaendert)
+
+
+# --------------------------------------------------------------- Katalog
+
+KATALOG_SEITE = 5000
+
+
+@router.get("/api/sync/katalog")
+def katalog(seit: int = Query(0, ge=0), nach: str = "",
+            limit: int = Query(KATALOG_SEITE, ge=1, le=KATALOG_SEITE),
+            user: dict = Depends(_benutzer())):
+    """Der Katalog dieser Instanz für externen Zugriff – damit er auch dann
+    nachschlagen kann, wenn die Instanz einmal nicht erreichbar ist.
+
+    **Mit den Namen.** Der öffentliche Abzug hat keine; jede Instanz trägt
+    sie über ihren eigenen BrickLink-Zugang nach. Wer den Katalog von hier
+    holt, bekommt sie mit, ohne selbst Schlüssel zu brauchen – die bleiben
+    auf der Instanz.
+
+    **Nur, was sich geändert hat.** `seit` ist der Stand vom letzten Mal
+    (`stand` der Antwort). Zeilen mit genau diesem Stand kommen noch einmal:
+    Die Zeit zählt in Sekunden, und was in derselben Sekunde nach dem
+    letzten Abruf dazukam, fehlte sonst für immer. Doppelt schadet nicht –
+    die Gegenstelle ersetzt. Innerhalb eines Stands wird mit `nach`
+    weitergeblättert – `updated_at` ist nicht eindeutig, ein ganzer Abzug
+    trägt dieselbe Zeit. Setinhalte, BrickLink-Nummern und Kategorien
+    kommen auf der ersten Seite mit; sie sind klein.
+    """
+    zeit, art, nummer = seit, "", ""
+    if nach:
+        teile = nach.split("|", 2)
+        if len(teile) != 3 or not teile[0].isdigit():
+            raise HTTPException(400, "nach ungültig")
+        zeit, art, nummer = int(teile[0]), teile[1], teile[2]
+    with core.db() as conn:
+        zeilen = conn.execute(
+            "SELECT item_no, item_type, name, img_url, farben, art, merkmale, "
+            "category_id, jahr, updated_at FROM katalog_index "
+            "WHERE (updated_at, item_type, item_no) > (?, ?, ?) "
+            "ORDER BY updated_at, item_type, item_no LIMIT ?",
+            (zeit, art, nummer, limit + 1)).fetchall()
+        mehr = len(zeilen) > limit
+        zeilen = zeilen[:limit]
+        antwort = {"eintraege": [dict(z) for z in zeilen], "mehr": mehr,
+                   "aktiv": core.get_setting("katalog_aus") != "1"}
+        if zeilen:
+            z = zeilen[-1]
+            antwort["weiter"] = f"{z['updated_at']}|{z['item_type']}|{z['item_no']}"
+        # Bis wohin es beim nächsten Mal zählt: die jüngste gelieferte Zeit,
+        # sonst bleibt es beim alten Stand.
+        antwort["stand"] = max([seit] + [z["updated_at"] for z in zeilen])
+        if not nach:
+            antwort["kategorien"] = [dict(r) for r in conn.execute(
+                "SELECT id, name, parent_id FROM katalog_kategorien")]
+            # Setinhalte ohne eigene Zeit – dafür steht in `set_meta`, wann
+            # sie geholt wurden.
+            antwort["setinhalte"] = [dict(r) for r in conn.execute(
+                "SELECT c.set_no, c.fig_no, c.qty FROM set_contents c "
+                "JOIN set_meta m ON m.set_no = c.set_no "
+                "WHERE m.figs_fetched_at >= ?", (seit,))]
+            antwort["bl_nummern"] = [dict(r) for r in conn.execute(
+                "SELECT item_id, bl_no FROM bl_nummern WHERE checked_at >= ?",
+                (seit,))]
+    return antwort
