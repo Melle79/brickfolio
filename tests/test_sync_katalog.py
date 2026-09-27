@@ -66,10 +66,21 @@ def test_nur_was_sich_geaendert_hat(client):
         _figur(conn, "sw0002", 200, "Boba Fett")
     d = client.get("/api/sync/katalog", params={"seit": 150}).json()
     assert [e["item_no"] for e in d["eintraege"]] == ["sw0002"]
-    # Dieselbe Sekunde noch einmal – was darin nach dem Abruf dazukam,
-    # fehlte sonst für immer.
-    assert [e["item_no"] for e in client.get("/api/sync/katalog", params={"seit": 200}).json()["eintraege"]] == ["sw0002"]
-    assert client.get("/api/sync/katalog", params={"seit": 201}).json()["eintraege"] == []
+    # Ein ganzer Abzug trägt eine Zeit – nachladen darf ihn nicht noch
+    # einmal bringen.
+    assert client.get("/api/sync/katalog", params={"seit": 200}).json()["eintraege"] == []
+
+
+def test_laufende_sekunde_ist_nicht_abgeschlossen(client):
+    """Was in derselben Sekunde nach dem Abruf dazukommt, fehlte sonst für
+    immer: Der Stand bleibt davor, die Zeile kommt beim nächsten Mal wieder."""
+    jetzt = int(time.time()) + 5          # sicher „laufend“
+    with core.db() as conn:
+        _figur(conn, "sw0001", jetzt)
+    d = client.get("/api/sync/katalog").json()
+    assert d["stand"] < jetzt
+    assert [e["item_no"] for e in client.get(
+        "/api/sync/katalog", params={"seit": d["stand"]}).json()["eintraege"]] == ["sw0001"]
 
 
 def test_setinhalte_nummern_und_kategorien_auf_der_ersten_seite(client):
@@ -87,7 +98,7 @@ def test_setinhalte_nummern_und_kategorien_auf_der_ersten_seite(client):
     zweite = client.get("/api/sync/katalog", params={"limit": 1, "nach": erste["weiter"]}).json()
     assert "setinhalte" not in zweite
     # Später geholt heißt: beim nächsten Mal nicht noch einmal.
-    assert client.get("/api/sync/katalog", params={"seit": 301}).json()["setinhalte"] == []
+    assert client.get("/api/sync/katalog", params={"seit": 300}).json()["setinhalte"] == []
 
 
 def test_kommt_gepackt(client):

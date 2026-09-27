@@ -541,27 +541,32 @@ def katalog(seit: int = Query(0, ge=0), nach: str = "",
     auf der Instanz.
 
     **Nur, was sich geändert hat.** `seit` ist der Stand vom letzten Mal
-    (`stand` der Antwort). Zeilen mit genau diesem Stand kommen noch einmal:
-    Die Zeit zählt in Sekunden, und was in derselben Sekunde nach dem
-    letzten Abruf dazukam, fehlte sonst für immer. Doppelt schadet nicht –
-    die Gegenstelle ersetzt. Innerhalb eines Stands wird mit `nach`
+    (`stand` der Antwort), und es kommt nur, was danach geändert wurde.
+    **Der Stand ist nie die laufende Sekunde:** Die Zeit zählt in Sekunden,
+    und was in derselben Sekunde nach dem Abruf dazukäme, fehlte sonst für
+    immer. Umgekehrt ginge „einschließlich“ nicht – ein ganzer Abzug trägt
+    *eine* Zeit, und jedes Nachladen brächte ihn noch einmal (gut 1 MB, im
+    Test gesehen). Innerhalb eines Stands wird mit `nach`
     weitergeblättert – `updated_at` ist nicht eindeutig, ein ganzer Abzug
     trägt dieselbe Zeit. Setinhalte, BrickLink-Nummern und Kategorien
     kommen auf der ersten Seite mit; sie sind klein.
     """
-    zeit, art, nummer = seit, "", ""
+    # Ohne `nach`: alles nach `seit`. Mit `nach`: weiter hinter dem letzten
+    # gelieferten Schlüssel derselben Abfrage.
+    bedingung, werte = "updated_at > ?", [seit]
     if nach:
         teile = nach.split("|", 2)
         if len(teile) != 3 or not teile[0].isdigit():
             raise HTTPException(400, "nach ungültig")
-        zeit, art, nummer = int(teile[0]), teile[1], teile[2]
+        bedingung = "(updated_at, item_type, item_no) > (?, ?, ?)"
+        werte = [int(teile[0]), teile[1], teile[2]]
     with core.db() as conn:
         zeilen = conn.execute(
             "SELECT item_no, item_type, name, img_url, farben, art, merkmale, "
             "category_id, jahr, updated_at FROM katalog_index "
-            "WHERE (updated_at, item_type, item_no) > (?, ?, ?) "
+            f"WHERE {bedingung} "
             "ORDER BY updated_at, item_type, item_no LIMIT ?",
-            (zeit, art, nummer, limit + 1)).fetchall()
+            (*werte, limit + 1)).fetchall()
         mehr = len(zeilen) > limit
         zeilen = zeilen[:limit]
         antwort = {"eintraege": [dict(z) for z in zeilen], "mehr": mehr,
@@ -569,9 +574,10 @@ def katalog(seit: int = Query(0, ge=0), nach: str = "",
         if zeilen:
             z = zeilen[-1]
             antwort["weiter"] = f"{z['updated_at']}|{z['item_type']}|{z['item_no']}"
-        # Bis wohin es beim nächsten Mal zählt: die jüngste gelieferte Zeit,
-        # sonst bleibt es beim alten Stand.
-        antwort["stand"] = max([seit] + [z["updated_at"] for z in zeilen])
+        # Bis wohin es beim nächsten Mal zählt: die jüngste gelieferte Zeit –
+        # aber höchstens die vorige Sekunde, die laufende ist nicht zu Ende.
+        juengste = max([seit] + [z["updated_at"] for z in zeilen])
+        antwort["stand"] = max(seit, min(juengste, int(time.time()) - 1))
         if not nach:
             antwort["kategorien"] = [dict(r) for r in conn.execute(
                 "SELECT id, name, parent_id FROM katalog_kategorien")]
@@ -580,8 +586,8 @@ def katalog(seit: int = Query(0, ge=0), nach: str = "",
             antwort["setinhalte"] = [dict(r) for r in conn.execute(
                 "SELECT c.set_no, c.fig_no, c.qty FROM set_contents c "
                 "JOIN set_meta m ON m.set_no = c.set_no "
-                "WHERE m.figs_fetched_at >= ?", (seit,))]
+                "WHERE m.figs_fetched_at > ?", (seit,))]
             antwort["bl_nummern"] = [dict(r) for r in conn.execute(
-                "SELECT item_id, bl_no FROM bl_nummern WHERE checked_at >= ?",
+                "SELECT item_id, bl_no FROM bl_nummern WHERE checked_at > ?",
                 (seit,))]
     return antwort
