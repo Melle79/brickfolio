@@ -1091,6 +1091,300 @@ WOERTERBUCH.update({
     "überrascht": ("surprised",),
     "überziehend": ("covering",),
 })
+# ── Dritte Runde: Setnamen und alle Themen ────────────────────────────
+#
+# **Die ersten Runden haben nur Figurennamen gemessen.** Dort deckte die
+# Liste 80 % der Wortvorkommen – in den 21.669 **Setnamen** aber nur 37 %
+# (gemessen am 28.09.2026). Gefehlt haben Alltagswörter: „Bahnhof",
+# „Bagger", „Garage", „Tempel", „Adventskalender" (allein 1.931 Sets)
+# fanden nichts. Wer ein Set erfasst oder im Katalog sucht, tippt aber
+# genau solche Wörter.
+#
+# **Quer durch alle Themen**, nicht nur Star Wars: City, Friends, Ninjago,
+# Harry Potter, Castle, Pirates, Technic, Creator, Duplo, Disney,
+# Marvel/DC, Minecraft, Jurassic World, Super Mario, Botanicals. Eigennamen
+# stehen nur dort, wo der deutsche anders heißt als der englische
+# („Schneewittchen", „Todesstern") – alle anderen tippt man ohnehin so, wie
+# sie im Katalog stehen.
+#
+# **Zusammensetzungen mit eigenem Eintrag** („Feuerwache" → `fire
+# station`): Zerlegt würde daraus `fire` *oder* `guard`, und das findet
+# viel zu viel. Aufgenommen ist nur, was im Katalog auch vorkommt – ein
+# Ziel, das in keinem Namen steht, findet nichts und ist weggelassen.
+
+# Orte und Gebäude: Station, Straße, Garage, Tempel – quer durch City,
+# Friends, Ninjago, Castle, Harry Potter und Creator.
+WOERTERBUCH.update({
+    "bahnhof": ("train station", "station"), "station": ("station",),
+    "haltestelle": ("stop",), "strasse": ("street", "road"),
+    "garage": ("garage",), "garten": ("garden",), "kueche": ("kitchen",),
+    "zimmer": ("room",), "schlafzimmer": ("bedroom",),
+    "badezimmer": ("bathroom",), "wohnzimmer": ("living room",),
+    "huette": ("hut", "cabin", "cottage"), "tempel": ("temple",),
+    "palast": ("palace",), "dorf": ("village",), "markt": ("market",),
+    "geschaeft": ("shop", "store"), "baeckerei": ("bakery",),
+    "cafe": ("cafe",), "restaurant": ("restaurant",), "hotel": ("hotel",),
+    "kino": ("cinema", "movie"), "theater": ("theater", "theatre"),
+    "buehne": ("stage",), "stadion": ("stadium",), "museum": ("museum",),
+    "bibliothek": ("library",), "bank": ("bank",),
+    "tankstelle": ("gas station", "fuel"),
+    "werkstatt": ("workshop", "repair", "garage"), "fabrik": ("factory",),
+    "baustelle": ("construction",), "feuerwache": ("fire station",),
+    "polizeiwache": ("police station",),
+    "polizeistation": ("police station",), "klinik": ("clinic",),
+    "praxis": ("clinic", "office"), "tierklinik": ("vet", "clinic"),
+    "tierarzt": ("vet",), "krankenwagen": ("ambulance",),
+    "freizeitpark": ("amusement park",), "jahrmarkt": ("fair", "fairground"),
+    "kirmes": ("fair", "fairground"), "karussell": ("carousel",),
+    "riesenrad": ("ferris wheel",), "achterbahn": ("roller coaster",),
+    "zirkus": ("circus",), "zoo": ("zoo",), "spielplatz": ("playground",),
+    "schwimmbad": ("pool",), "camping": ("camping", "camper", "camp"),
+    "wohnwagen": ("caravan", "camper"), "wohnmobil": ("camper",),
+    "strand": ("beach",), "hafen": ("harbor", "port", "dock"),
+    "leuchtturm": ("lighthouse",), "bruecke": ("bridge",), "mauer": ("wall",),
+    "tor": ("gate",), "wachturm": ("lookout",),
+    "festung": ("fortress", "fort"), "kerker": ("dungeon",),
+    "verlies": ("dungeon",), "thron": ("throne",),
+    "friedhof": ("graveyard", "cemetery"), "spukhaus": ("haunted house",),
+    "muehle": ("mill",), "windmuehle": ("windmill",),
+    "brunnen": ("fountain", "well"), "denkmal": ("monument",),
+    "hoehle": ("cave",), "vulkan": ("volcano",), "fluss": ("river",),
+    "dach": ("roof",), "fenster": ("window",), "tuer": ("door",),
+    "treppe": ("stairs",), "zaun": ("fence",),
+    "versteck": ("hideout", "hideaway"), "aussenposten": ("outpost",),
+    "stuetzpunkt": ("base", "outpost"), "buero": ("office",),
+    "kirche": ("church",), "rathaus": ("town hall",),
+    "postamt": ("post office",), "supermarkt": ("supermarket",),
+    "einkaufszentrum": ("mall", "shopping"), "eisdiele": ("ice cream",),
+    "pizzeria": ("pizza",), "waschanlage": ("car wash",),
+    "raumstation": ("space station",), "raumhafen": ("spaceport",),
+    "stall": ("stable", "barn"), "scheune": ("barn",),
+    "baumhaus": ("treehouse", "tree house"), "kloster": ("monastery",),
+    "halle": ("hall",), "kammer": ("chamber",), "salon": ("salon",),
+    "friseursalon": ("salon", "hair"), "schuhladen": ("shoe", "shop"),
+    "villa": ("villa", "mansion"), "herrenhaus": ("mansion",),
+    "bergwerk": ("mine",), "mine": ("mine",), "arena": ("arena",),
+})
+
+# Fahrzeuge: Vom Bagger bis zum Sternzerstörer – Technic, City, Speed
+# Champions, Space und Star Wars.
+WOERTERBUCH.update({
+    "lok": ("locomotive", "engine"), "lokomotive": ("locomotive", "engine"),
+    "eisenbahn": ("train", "railway"), "dampflok": ("steam", "locomotive"),
+    "gueterzug": ("cargo train", "freight"),
+    "personenzug": ("passenger train",), "schienen": ("rails", "track"),
+    "gleis": ("track", "rails"), "gleise": ("track", "rails"),
+    "bagger": ("excavator", "digger"), "kipper": ("dump truck", "tipper"),
+    "muellwagen": ("garbage truck", "recycling truck"),
+    "abschleppwagen": ("tow truck",),
+    "betonmischer": ("cement mixer", "mixer"), "planierraupe": ("bulldozer",),
+    "gabelstapler": ("forklift",), "radlader": ("wheel loader", "loader"),
+    "lader": ("loader",), "traktor": ("tractor",),
+    "lieferwagen": ("delivery van", "van"),
+    "transporter": ("transporter", "van"), "rennwagen": ("race car", "racer"),
+    "rennauto": ("race car", "racer"), "sportwagen": ("sports car",),
+    "gelaendewagen": ("off-roader", "4x4"), "quad": ("quad", "atv"),
+    "roller": ("scooter",), "dreirad": ("tricycle", "trike"),
+    "kutsche": ("carriage", "coach"), "wagen": ("wagon", "car", "cart"),
+    "karren": ("cart",), "schneemobil": ("snowmobile",),
+    "panzer": ("tank", "armor"), "kettenfahrzeug": ("crawler",),
+    "faehre": ("ferry",), "uboot": ("submarine",),
+    "unterseeboot": ("submarine",), "schnellboot": ("speedboat",),
+    "yacht": ("yacht",), "jacht": ("yacht",), "kajak": ("kayak",),
+    "kanu": ("canoe",), "floss": ("raft",), "flugzeugtraeger": ("carrier",),
+    "jet": ("jet",), "duesenjaeger": ("jet", "fighter"), "kampfjet": ("jet",),
+    "wasserflugzeug": ("seaplane",), "segelflugzeug": ("glider",),
+    "gleiter": ("glider", "speeder"), "luftschiff": ("airship",),
+    "ballon": ("balloon",), "heissluftballon": ("hot air balloon",),
+    "raumfaehre": ("shuttle",), "satellit": ("satellite",),
+    "rover": ("rover",), "sternjaeger": ("starfighter",),
+    "kreuzer": ("cruiser",), "zerstoerer": ("destroyer",),
+    "bomber": ("bomber",), "kanonenboot": ("gunship",), "laster": ("truck",),
+    "sattelzug": ("truck",), "tankwagen": ("tanker",),
+    "tanklaster": ("tanker",), "feuerwehrauto": ("fire truck", "fire engine"),
+    "loeschfahrzeug": ("fire truck", "fire engine"),
+    "polizeiauto": ("police car",), "streifenwagen": ("police car", "patrol"),
+    "mech": ("mech",), "seilbahn": ("cable car",), "hebebuehne": ("lift",),
+    "fahrzeug": ("vehicle",), "fahrzeuge": ("vehicles",),
+    "kinderwagen": ("stroller", "pram"),
+})
+
+# Tiere: Friends, City, Creator, Duplo und Jurassic World leben davon.
+WOERTERBUCH.update({
+    "dinosaurier": ("dinosaur", "dino"), "dino": ("dino", "dinosaur"),
+    "flugsaurier": ("pteranodon",), "tiger": ("tiger",), "panda": ("panda",),
+    "schildkroete": ("turtle",), "schaf": ("sheep",), "ziege": ("goat",),
+    "esel": ("donkey",), "hase": ("rabbit", "bunny"), "hamster": ("hamster",),
+    "meerschweinchen": ("guinea pig",), "igel": ("hedgehog",),
+    "wolf": ("wolf",), "hirsch": ("deer", "stag"), "reh": ("deer",),
+    "elch": ("moose",), "eichhoernchen": ("squirrel",),
+    "waschbaer": ("raccoon",), "biber": ("beaver",), "otter": ("otter",),
+    "robbe": ("seal",), "eisbaer": ("polar bear",), "wal": ("whale",),
+    "krake": ("octopus",), "tintenfisch": ("squid", "octopus"),
+    "krabbe": ("crab",), "qualle": ("jellyfish",), "eidechse": ("lizard",),
+    "gans": ("goose",), "schwan": ("swan",), "rabe": ("raven", "crow"),
+    "kueken": ("chick",), "giraffe": ("giraffe",), "nashorn": ("rhino",),
+    "nilpferd": ("hippo",), "kamel": ("camel",), "faultier": ("sloth",),
+    "kaenguru": ("kangaroo",), "welpe": ("puppy",), "kaetzchen": ("kitten",),
+    "fohlen": ("foal",), "haustier": ("pet",), "haustiere": ("pets",),
+    "marienkaefer": ("ladybug",), "kaefer": ("beetle", "bug"),
+})
+
+# Feste, Jahreszeiten, Essen: Adventskalender allein stehen in 1.931
+# Setnamen.
+WOERTERBUCH.update({
+    "adventskalender": ("advent calendar",), "kalender": ("calendar",),
+    "advent": ("advent",), "weihnachtsbaum": ("christmas tree",),
+    "tannenbaum": ("christmas tree", "tree"), "weihnachtsmann": ("santa",),
+    "nikolaus": ("santa",), "lebkuchen": ("gingerbread",),
+    "lebkuchenhaus": ("gingerbread house",), "kerze": ("candle",),
+    "kranz": ("wreath",), "ornament": ("ornament",),
+    "christbaumkugel": ("bauble", "ornament"),
+    "geschenk": ("gift", "present"), "geschenke": ("gifts", "presents"),
+    "ostern": ("easter",), "osterhase": ("easter bunny",),
+    "osterei": ("easter egg",), "kuerbis": ("pumpkin",),
+    "karneval": ("carnival",), "fasching": ("carnival",),
+    "geburtstag": ("birthday",), "hochzeit": ("wedding",),
+    "valentinstag": ("valentine",), "neujahr": ("new year",),
+    "winter": ("winter",), "sommer": ("summer",),
+    "herbst": ("autumn", "fall"), "fruehling": ("spring",),
+    "urlaub": ("vacation", "holiday"), "ferien": ("vacation", "holiday"),
+    "picknick": ("picnic",), "grill": ("barbecue", "grill"),
+    "kuchen": ("cake",), "torte": ("cake",), "keks": ("cookie",),
+    "plaetzchen": ("cookie",), "eiscreme": ("ice cream",),
+    "eiswagen": ("ice cream truck", "ice cream"), "essen": ("food",),
+    "lebensmittel": ("food", "grocery"), "tee": ("tea",), "milch": ("milk",),
+    "nudeln": ("noodle",), "pizza": ("pizza",), "burger": ("burger",),
+})
+
+# Spiel und Abenteuer: Wörter, aus denen Setnamen gebaut sind –
+# Verfolgung, Flucht, Schatz, Rettung.
+WOERTERBUCH.update({
+    "baukasten": ("set", "kit"), "bausatz": ("kit",),
+    "tuete": ("bag", "polybag"), "beutel": ("bag", "polybag"),
+    "sammlung": ("collection",), "serie": ("series",),
+    "aufbewahrung": ("storage",), "ersatzteile": ("replacement", "parts"),
+    "grundplatte": ("baseplate",), "bauplatte": ("baseplate", "plate"),
+    "schatz": ("treasure",), "schatzsuche": ("treasure hunt", "treasure"),
+    "schatzkarte": ("map",), "abenteuer": ("adventure",),
+    "verfolgung": ("chase", "pursuit"),
+    "verfolgungsjagd": ("chase", "pursuit"), "flucht": ("escape", "getaway"),
+    "angriff": ("attack", "assault"),
+    "ueberfall": ("ambush", "raid", "heist"), "hinterhalt": ("ambush",),
+    "raub": ("heist", "robbery"), "schlacht": ("battle",),
+    "duell": ("duel", "showdown"), "einsatz": ("mission", "response"),
+    "expedition": ("expedition",), "forschung": ("research", "exploration"),
+    "entdeckung": ("discovery", "exploration"),
+    "reise": ("journey", "trip", "tour"),
+    "rennstrecke": ("race track", "track"),
+    "meisterschaft": ("championship",), "spielzeug": ("toy",),
+    "mosaik": ("mosaic",), "kunst": ("art",), "magie": ("magic", "magical"),
+    "zauber": ("magic", "spell"), "geheimnis": ("secret", "mystery"),
+    "geheim": ("secret",), "verzaubert": ("enchanted",),
+    "verboten": ("forbidden",), "fliegend": ("flying",),
+    "elektrisch": ("electric",), "ferngesteuert": ("remote control",),
+    "fernbedienung": ("remote",), "motorisiert": ("motorized",),
+    "batterie": ("battery",), "riese": ("giant",), "riesig": ("giant",),
+    "ungeheuer": ("monster", "beast"), "biest": ("beast",),
+    "freundschaft": ("friendship",), "familie": ("family",),
+})
+
+# Menschen und Berufe: Was bei City und Friends die Figuren sind.
+WOERTERBUCH.update({
+    "rettungsschwimmer": ("lifeguard",),
+    "muellmann": ("garbage", "recycling"), "postbote": ("mail", "postman"),
+    "kellner": ("waiter",), "kellnerin": ("waitress", "waiter"),
+    "lehrerin": ("teacher",), "archaeologe": ("archaeologist",),
+    "bergsteiger": ("climber",), "saenger": ("singer",),
+    "saengerin": ("singer",), "taenzer": ("dancer",),
+    "taenzerin": ("dancer",), "zauberkuenstler": ("magician",),
+    "landwirt": ("farmer",), "fischer": ("fisherman",),
+    "foerster": ("ranger", "forest"), "detektiv": ("detective",),
+    "gauner": ("crook", "robber"), "straefling": ("prisoner",),
+    "roemer": ("roman",), "ork": ("orc",), "kaiser": ("emperor",),
+    "pharao": ("pharaoh",),
+    "flugbegleiter": ("flight attendant", "stewardess"),
+    "stewardess": ("stewardess",), "lokfuehrer": ("train driver", "engineer"),
+    "schaffner": ("conductor",), "busfahrer": ("bus driver",),
+    "taxifahrer": ("taxi driver",), "techniker": ("technician",),
+    "hausmeister": ("janitor",), "pfleger": ("nurse",),
+    "zahnarzt": ("dentist",), "tierpfleger": ("zookeeper", "keeper"),
+    "sportler": ("athlete",), "turnerin": ("gymnast",),
+    "schiedsrichter": ("referee",), "zuschauer": ("spectator",),
+    "besucher": ("visitor",), "oma": ("grandma", "grandmother"),
+    "grossmutter": ("grandmother", "grandma"),
+    "opa": ("grandpa", "grandfather"),
+    "grossvater": ("grandfather", "grandpa"), "mama": ("mom", "mother"),
+    "mutter": ("mother", "mom"), "papa": ("dad", "father"),
+    "vater": ("father", "dad"), "schwester": ("sister", "nurse"),
+    "bruder": ("brother",), "zwilling": ("twin",), "nachbar": ("neighbor",),
+    "superheld": ("superhero", "super hero"), "heldin": ("hero",),
+    "schurke": ("villain",), "boesewicht": ("villain",),
+    "handlanger": ("henchman",), "schmuggler": ("smuggler",),
+})
+
+# Fantasy, Märchen, Filme: Wo der deutsche Name ein anderer ist als der
+# englische – Harry Potter, Disney, Marvel, DC, Star Wars, Minecraft,
+# Mario.
+WOERTERBUCH.update({
+    "zaubertrank": ("potion",), "zauberbuch": ("book",),
+    "phoenix": ("phoenix",), "phonix": ("phoenix",), "greif": ("griffin",),
+    "hauself": ("house-elf", "elf"), "zentaur": ("centaur",),
+    "eulerei": ("owlery",), "schach": ("chess",),
+    "schneewittchen": ("snow white",), "aschenputtel": ("cinderella",),
+    "dornroeschen": ("sleeping beauty", "aurora"), "arielle": ("ariel",),
+    "eiskoenigin": ("frozen", "elsa"), "micky": ("mickey",),
+    "puuh": ("pooh",), "batmobil": ("batmobile",), "bathoehle": ("batcave",),
+    "raecher": ("avengers",), "todesstern": ("death star",),
+    "sternzerstoerer": ("star destroyer",),
+    "sternenzerstoerer": ("star destroyer",),
+    "sturmtruppler": ("stormtrooper",), "schneetruppler": ("snowtrooper",),
+    "klonkrieger": ("clone trooper", "clone"),
+    "imperium": ("empire", "imperial"), "republik": ("republic",),
+    "macht": ("force",), "landgleiter": ("landspeeder",),
+    "duesenschlitten": ("speeder bike",), "schneegleiter": ("snowspeeder",),
+    "kampflaeufer": ("walker",), "sandkriecher": ("sandcrawler",),
+    "kriecher": ("creeper",), "dorfbewohner": ("villager",),
+    "pilz": ("mushroom",), "sensei": ("sensei",),
+})
+
+# Pflanzen, Wahrzeichen, Technik: Botanicals, Architecture, Technic.
+WOERTERBUCH.update({
+    "blumenstrauss": ("bouquet", "flower bouquet"),
+    "strauss": ("bouquet", "ostrich"), "rose": ("rose",),
+    "orchidee": ("orchid",), "tulpe": ("tulip",), "kaktus": ("cactus",),
+    "sukkulente": ("succulent",), "bonsai": ("bonsai",),
+    "eiffelturm": ("eiffel tower",),
+    "freiheitsstatue": ("statue of liberty",), "kolosseum": ("colosseum",),
+    "skyline": ("skyline",), "zahnrad": ("gear",), "zahnraeder": ("gears",),
+    "achse": ("axle",), "achsen": ("axles",),
+    "getriebe": ("gearbox", "transmission"), "kolben": ("piston",),
+    "reifen": ("tire", "tyre"), "felge": ("rim",), "lenkung": ("steering",),
+    "federung": ("suspension",), "kabel": ("cable", "wire"),
+    "stecker": ("connector", "plug"), "verbinder": ("connector",),
+    "pneumatik": ("pneumatic",), "lochbalken": ("liftarm", "beam"),
+    "balken": ("beam",), "sensor": ("sensor",),
+})
+
+# **Korrekturen an früheren Einträgen.** „Pony" war nur die Frisur,
+# „Motorrad" zerfiel in `motor` + `wheel`, „Anhänger" war nur Schmuck,
+# „Steine" nur Edelsteine, „See" nur das Meer. Die bisherige Bedeutung
+# bleibt jeweils vorn, die fehlende kommt dazu.
+WOERTERBUCH.update({
+    "pony": ("bangs", "pony"),
+    "motorrad": ("motorcycle", "motorbike", "bike"),
+    "anhaenger": ("pendant", "trailer"), "anhänger": ("pendant", "trailer"),
+    "steine": ("bricks", "gems"), "fahrrad": ("bicycle", "bike"),
+    "schlitten": ("sled", "sleigh"),
+    "weihnachten": ("christmas", "santa", "holiday"),
+    "weihnacht": ("christmas", "santa", "holiday"),
+    "fussball": ("soccer", "football"), "fußball": ("soccer", "football"),
+    "see": ("sea", "lake"), "spiel": ("play", "game"),
+    "dieb": ("crook", "bandit", "thief", "robber"),
+    "raeuber": ("bandit", "robber"), "räuber": ("bandit", "robber"),
+    "waechter": ("guard", "guardian"), "wächter": ("guard", "guardian"),
+    "koch": ("chef", "cook"), "koechin": ("chef", "cook"),
+})
 # ══════════════════════════════════════════════════════════════════════
 # Nachschlagen
 #

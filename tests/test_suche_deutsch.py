@@ -39,10 +39,43 @@ def test_umlaute_in_beiden_schreibweisen():
 def test_zusammengesetzte_woerter_werden_zerlegt():
     """Der Teil, an dem eine reine Wortliste sonst scheitert."""
     assert woerterbuch.nachschlagen("protokolldroide") == ("protocol", "droid")
-    assert woerterbuch.nachschlagen("sturmtruppler") == ("storm", "trooper")
+    assert woerterbuch.nachschlagen("ritterhelm") == ("knight", "helmet")
     assert woerterbuch.nachschlagen("piratenkapitaen") == ("pirate", "captain")
     # Mit Fugen-s
     assert woerterbuch.nachschlagen("arbeitshose")[0] == "work"
+
+
+def test_setnamen_und_alle_themen():
+    """Gemessen wurde bis 2.92 nur an Figurennamen – dort deckte die Liste
+    80 % der Wörter, in den Setnamen aber 37 %. „Bahnhof", „Bagger",
+    „Adventskalender" fanden nichts (28.09.2026). Und nicht nur Star Wars:
+    Figuren, Sets und Wörter aus City, Friends, Harry Potter, Disney,
+    Technic und Botanicals gehören dazu."""
+    assert woerterbuch.nachschlagen("bahnhof")[0] == "train station"
+    assert woerterbuch.nachschlagen("bagger")[0] == "excavator"
+    assert woerterbuch.nachschlagen("adventskalender") == ("advent calendar",)
+    assert woerterbuch.nachschlagen("tierklinik")[0] == "vet"
+    assert woerterbuch.nachschlagen("besen")[0] == "broom"
+    assert woerterbuch.nachschlagen("schneewittchen") == ("snow white",)
+    assert woerterbuch.nachschlagen("zahnrad") == ("gear",)
+    assert woerterbuch.nachschlagen("sonnenblume") == ("sunflower",)
+    assert woerterbuch.nachschlagen("todesstern") == ("death star",)
+
+
+def test_zusammensetzung_mit_eigenem_eintrag_bleibt_genau():
+    """Zerlegt hieße „Feuerwache" `fire` + `guard` – das trifft Wachen aller
+    Art. Mit eigenem Eintrag ist es die Feuerwache."""
+    assert woerterbuch.nachschlagen("feuerwache") == ("fire station",)
+    assert woerterbuch.uebersetzen("Feuerwache") == ["fire station"]
+
+
+def test_fehlende_bedeutungen_ergaenzt():
+    """„Pony" war nur die Frisur, „Motorrad" zerfiel in Motor und Rad,
+    „Anhänger" war nur Schmuck – die bisherige Bedeutung bleibt vorn."""
+    assert woerterbuch.nachschlagen("pony") == ("bangs", "pony")
+    assert woerterbuch.nachschlagen("motorrad")[0] == "motorcycle"
+    assert woerterbuch.nachschlagen("anhänger") == ("pendant", "trailer")
+    assert "lake" in woerterbuch.nachschlagen("see")
 
 
 def test_unbekanntes_bleibt_stehen():

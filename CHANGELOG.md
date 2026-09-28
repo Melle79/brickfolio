@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.92.1 – September 2026
+
+### Verbessert
+- 🔎 **Das Suchwörterbuch kennt jetzt auch die Wörter der Setnamen** – rund
+  450 neue Stichwörter quer durch alle Themen: City, Friends, Ninjago,
+  Harry Potter, Castle, Pirates, Technic, Creator, Duplo, Disney,
+  Marvel/DC, Minecraft, Jurassic World, Super Mario, Botanicals. Gemessen
+  worden war bisher nur an Figurennamen; dort deckte die Liste 80 % der
+  Wörter, in den 21.669 Setnamen aber nur 37 %. „Bahnhof", „Bagger",
+  „Garage", „Tempel" oder „Adventskalender" (allein 1.931 Sets) fanden
+  nichts. Jetzt sind es 59 % – der Rest sind Eigennamen und Marken, die man
+  so tippt, wie sie im Katalog stehen.
+- **Häufige Zusammensetzungen mit eigenem Eintrag.** Zerlegt wurde
+  „Feuerwache" zu `fire` + `guard` und traf Wachen aller Art; jetzt ist es
+  `fire station`. Ebenso „Polizeiwache", „Feuerwehrauto", „Todesstern".
+- **Deutsche Namen, die anders lauten:** „Schneewittchen", „Aschenputtel",
+  „Dornröschen", „Arielle", „Todesstern", „Sternzerstörer",
+  „Kopfgeldjäger", „Besen", „Zaubertrank" und andere.
+- Aufgenommen ist nur, was im Katalog auch vorkommt – ein Ziel, das in
+  keinem Namen steht, fände nichts.
+
+### Behoben
+- **Fehlende Bedeutungen:** „Pony" war nur die Frisur (jetzt auch das
+  Tier), „Motorrad" zerfiel in `motor` + `wheel`, „Anhänger" war nur der
+  Schmuck (jetzt auch der Anhänger am Auto), „Steine" nur Edelsteine, „See"
+  nur das Meer. Die bisherige Bedeutung bleibt jeweils vorn.
+
 ## 2.92.0 – September 2026
 
 ### Neu

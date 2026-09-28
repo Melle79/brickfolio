@@ -524,11 +524,17 @@ eigenen Datenbank, in der Sammlung (siehe 5.1) wie im Katalog (siehe 4.2
 und 4.4).
 
 **Seit 2.82.0 geht das auch ohne KI.** Die App bringt ein Wörterbuch mit:
-rund 1.400 deutsche Stichwörter, dazu die Fähigkeit, Endungen abzustreifen
+rund 1.800 deutsche Stichwörter, dazu die Fähigkeit, Endungen abzustreifen
 und zusammengesetzte Wörter zu zerlegen – „Protokolldroide" wird zu
-`protocol droid`, „Sturmtruppler" zu `storm trooper`. Es deckt 95 % der
-Wörter ab, die in den Katalognamen vorkommen; der Rest sind Eigennamen, die
-man ohnehin so tippt, wie sie geschrieben werden.
+`protocol droid`. Häufige Zusammensetzungen haben einen eigenen Eintrag:
+„Feuerwache" ist `fire station` und nicht `fire` oder `guard`. Es deckt 95 %
+der Wörter ab, die in den Figurennamen vorkommen; der Rest sind Eigennamen,
+die man ohnehin so tippt, wie sie geschrieben werden.
+
+Seit 2.92.1 auch die Wörter der **Setnamen**, quer durch alle Themen:
+„Bahnhof", „Bagger", „Tierklinik", „Adventskalender", „Sonnenblume",
+„Zahnrad". Wo ein Name im Deutschen anders lautet, steht er ebenfalls drin
+– „Schneewittchen", „Todesstern".
 
 Die lokale KI bleibt trotzdem nützlich: Sie springt ein, wenn mit dem
 Wörterbuch **nichts gefunden** wurde, und was dabei wirklich etwas trifft,
