@@ -1115,7 +1115,7 @@ WOERTERBUCH.update({
 # Orte und Gebäude: Station, Straße, Garage, Tempel – quer durch City,
 # Friends, Ninjago, Castle, Harry Potter und Creator.
 WOERTERBUCH.update({
-    "bahnhof": ("train station", "station"), "station": ("station",),
+    "bahnhof": ("train station", "railway station"), "station": ("station",),
     "haltestelle": ("stop",), "strasse": ("street", "road"),
     "garage": ("garage",), "garten": ("garden",), "kueche": ("kitchen",),
     "zimmer": ("room",), "schlafzimmer": ("bedroom",),
