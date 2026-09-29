@@ -1,4 +1,4 @@
-/* Brickfolio – LEGO-inspiriertes Design
+/* Nupplo – LEGO-inspiriertes Design
    Palette: Gelb #FFCF00 · Rot #D01012 · Blau #0057A6 · Grün #00963E
    Anthrazit #1D1D1B · Grundplatte #E9EBEE */
 
@@ -71,6 +71,35 @@ button { font-family: inherit; color: var(--ink); }
 .logo-studs i:nth-child(4) { background: var(--green); box-shadow: inset 0 -3px 0 #00702E; }
 .logo-studs.small i { width: 12px; height: 6px; }
 
+/* ---------- Wortmarke „Nupplo“ ----------
+   Das l ist ein Turm aus vier Steinen – oben gelb, dann rot, blau, unten
+   grün – genau so hoch wie ein l der Schrift, damit sich das Wort weiter
+   als „Nupplo“ liest. Maße in em: Die Marke wächst mit ihrer Schriftgröße,
+   im Startbild wie in der Kopfleiste. Die Buchstaben nehmen die Textfarbe
+   des Designs an, die Steine behalten ihre Farben. Dieselbe Form wie im
+   Logo und in der iOS-App. */
+.wortmarke {
+  display: inline-flex; align-items: baseline; justify-content: center;
+  letter-spacing: 0;
+}
+/* Ein einfacher Block mit Blöcken darin, **kein** Flex: Ein Flex-Behälter
+   nähme die Grundlinie vom obersten Stein, und der Turm hinge wie der
+   Bogen eines p unter die Zeile. Ohne Textzeilen sitzt ein Block dagegen
+   mit seiner Unterkante auf der Grundlinie – wie ein l. */
+.turm {
+  display: block; width: .48em; height: .72em; margin: 0 .035em 0 .045em;
+}
+.turm i {
+  display: block; height: .1635em; margin-top: .022em;
+  border-radius: .055em .055em .035em .035em;
+  background: var(--yellow); box-shadow: inset 0 -.05em 0 var(--yellow-dark);
+}
+.turm i:first-child { margin-top: 0; }
+.turm i:nth-child(2) { background: var(--red); box-shadow: inset 0 -.05em 0 #A50D0F; }
+.turm i:nth-child(3) { background: var(--blue); box-shadow: inset 0 -.05em 0 #003F7A; }
+.turm i:nth-child(4) { background: var(--green); box-shadow: inset 0 -.05em 0 #00702E; }
+.logo .wortmarke { font-size: 40px; }
+
 /* ---------- Startbildschirm ----------
    Er deckt die Ladezeit ab, er verlängert sie nicht: `app.js` nimmt ihn
    weg, sobald die erste Ansicht steht (`.weg`), mindestens aber nach der
@@ -105,19 +134,23 @@ button { font-family: inherit; color: var(--ink); }
 .splash-laeuft #app { opacity: 0; }
 #view-login, #view-wizard, #app { transition: opacity .28s ease-out; }
 
-/* Die vier Steine fallen nacheinander ein und federn leicht – danach
-   Name, Wortmarke und Unterzeile, jeweils einen Wimpernschlag versetzt. */
-#splash .logo-studs i { animation: splash-fall .5s cubic-bezier(.3, 1.5, .5, 1) backwards; }
-#splash .logo-studs i:nth-child(1) { animation-delay: 0s; }
-#splash .logo-studs i:nth-child(2) { animation-delay: .09s; }
-#splash .logo-studs i:nth-child(3) { animation-delay: .18s; }
-#splash .logo-studs i:nth-child(4) { animation-delay: .27s; }
-#splash .logo-name { animation: splash-ein .45s ease-out .42s backwards; }
-#splash .logo h1   { animation: splash-ein .45s ease-out .52s backwards; }
-#splash .logo p    { animation: splash-ein .45s ease-out .62s backwards; }
+/* Der Turm baut sich Stein für Stein auf – von unten grün, blau, rot, gelb,
+   jeder fällt ein und federt leicht. Dann gleiten „Nupp“ von links und „o“
+   von rechts heran, danach Name und Unterzeile. Wie in der iOS-App. */
+#splash .turm i { animation: splash-fall .5s cubic-bezier(.3, 1.5, .5, 1) backwards; }
+#splash .turm i:nth-child(4) { animation-delay: 0s; }
+#splash .turm i:nth-child(3) { animation-delay: .12s; }
+#splash .turm i:nth-child(2) { animation-delay: .24s; }
+#splash .turm i:nth-child(1) { animation-delay: .36s; }
+#splash .wm-links  { display: inline-block; animation: wm-links .4s ease-out .6s backwards; }
+#splash .wm-rechts { display: inline-block; animation: wm-rechts .4s ease-out .6s backwards; }
+#splash .logo-name { animation: splash-ein .45s ease-out .8s backwards; }
+#splash .logo p    { animation: splash-ein .45s ease-out .9s backwards; }
 
 @keyframes splash-fall { from { transform: translateY(-46px); opacity: 0; } }
 @keyframes splash-ein  { from { transform: translateY(-7px);  opacity: 0; } }
+@keyframes wm-links    { from { transform: translateX(-16px); opacity: 0; } }
+@keyframes wm-rechts   { from { transform: translateX(16px);  opacity: 0; } }
 
 /* Ein Balken, der läuft – aber nichts behauptet: Er zeigt, dass etwas
    geschieht, nicht wie weit es ist. Einen echten Fortschritt gibt es hier
@@ -135,9 +168,10 @@ button { font-family: inherit; color: var(--ink); }
 /* **Wer Bewegung abgestellt hat, bekommt keine.** Das Bild bleibt, die
    Animation entfällt – der Startbildschirm ist Schmuck, kein Inhalt. */
 @media (prefers-reduced-motion: reduce) {
-  #splash .logo-studs i,
+  #splash .turm i,
+  #splash .wm-links,
+  #splash .wm-rechts,
   #splash .logo-name,
-  #splash .logo h1,
   #splash .logo p,
   .splash-bar i { animation: none; }
   .splash-bar i { width: 100%; }
@@ -152,6 +186,14 @@ button { font-family: inherit; color: var(--ink); }
   border-bottom: 3px solid var(--yellow-dark);
 }
 .topbar h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
+.topbar .wortmarke.klein { font-size: 23px; line-height: 1; letter-spacing: 0; }
+/* Gelb auf gelber Kopfleiste: Die Steine bekommen dieselbe haarfeine Kante
+   wie früher die Noppen, sonst verschwände der gelbe. */
+.topbar .turm i { box-shadow: inset 0 -.05em 0 var(--yellow-dark),
+                              0 0 0 1px var(--noppen-kante); }
+.topbar .turm i:nth-child(2) { box-shadow: inset 0 -.05em 0 #A50D0F, 0 0 0 1px var(--noppen-kante); }
+.topbar .turm i:nth-child(3) { box-shadow: inset 0 -.05em 0 #003F7A, 0 0 0 1px var(--noppen-kante); }
+.topbar .turm i:nth-child(4) { box-shadow: inset 0 -.05em 0 #00702E, 0 0 0 1px var(--noppen-kante); }
 .topbar .whoami { margin-left: auto; font-size: 13px; color: rgba(29,29,27,.65); }
 
 /* ---------- Views ---------- */
@@ -435,7 +477,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
    **Am 29.08.2026 versuchsweise ausgebaut – und wieder eingebaut.**
 
    Der Verdacht war: Von 40 Absturz-Dumps auf einem Rechner im Betrieb sind alle 40
-   auf Brickfolio, und `content-visibility` ist das Ungewöhnlichste, was
+   auf Nupplo, und `content-visibility` ist das Ungewöhnlichste, was
    diese Seite tut. Ausgebaut in 2.67.0.
 
    Die Antwort kam in zweieinhalb Stunden: Der Bericht zu 2.70.0 führt

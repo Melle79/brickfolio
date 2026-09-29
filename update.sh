@@ -1,5 +1,5 @@
 #!/bin/sh
-# Brickfolio aktualisieren (ohne git, z. B. auf Synology).
+# Nupplo (früher Brickfolio) aktualisieren (ohne git, z. B. auf Synology).
 # Aufruf im Projektordner:  sudo bash update.sh
 #
 # Zwei Betriebsarten, das Skript erkennt sie selbst:
@@ -9,7 +9,7 @@ set -e
 cd "$(dirname "$0")"
 
 if [ ! -f docker-compose.yml ]; then
-  echo "Keine docker-compose.yml gefunden – bitte im Brickfolio-Ordner ausführen."
+  echo "Keine docker-compose.yml gefunden – bitte im Nupplo-Ordner ausführen."
   exit 1
 fi
 
@@ -54,4 +54,4 @@ else
   docker compose up -d --build
 fi
 
-echo "Fertig – Brickfolio ist auf dem neuesten Stand. 🧱"
+echo "Fertig – Nupplo ist auf dem neuesten Stand. 🧱"

@@ -1,4 +1,4 @@
-# Brickfolio 🧱
+# Nupplo 🧱
 
 Self-hosted PWA to scan, manage and value a **LEGO® collection** – built for a
 whole family on one shared database, with an optional collector mode for
@@ -8,7 +8,7 @@ people who buy and sell at flea markets.
 phone, tap the match, done.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Melle79/brickfolio/blob/main/LICENSE)
-[![Platforms](https://img.shields.io/badge/arch-x86--64%20(Intel%2FAMD)%20%7C%20arm64-informational)](https://hub.docker.com/r/melle79/brickfolio/tags)
+[![Platforms](https://img.shields.io/badge/arch-x86--64%20(Intel%2FAMD)%20%7C%20arm64-informational)](https://hub.docker.com/r/melle79/nupplo/tags)
 [![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/Melle79/brickfolio)
 
 📖 **[Full documentation on GitHub](https://github.com/Melle79/brickfolio)** ·
@@ -22,9 +22,9 @@ phone, tap the match, done.
 
 ```yaml
 services:
-  brickfolio:
-    image: melle79/brickfolio:latest
-    container_name: brickfolio
+  nupplo:
+    image: melle79/nupplo:latest
+    container_name: nupplo
     restart: unless-stopped
     ports:
       - "8300:8300"
@@ -71,7 +71,7 @@ The database lives in `/data` – that is the only volume that matters.
 Intel *or* AMD machine: a PC, an Intel NAS, an old office desktop – and
 `linux/arm64` for Raspberry Pi, ARM NAS and Apple Silicon. Docker picks the
 right one by itself; the command is the same everywhere.
-Also available as `ghcr.io/melle79/brickfolio`.
+Also available as `ghcr.io/melle79/nupplo`.
 
 ## Tags
 
@@ -83,7 +83,7 @@ Also available as `ghcr.io/melle79/brickfolio`.
 
 ## Notes
 
-Your collection stays on your server – there is no Brickfolio service in
+Your collection stays on your server – there is no Nupplo service in
 between and no account to sign up for. Prices and catalogue search use your
 own free BrickLink and Rebrickable keys.
 

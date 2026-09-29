@@ -1,23 +1,23 @@
 # Ein-Klick-Bereitstellung bei Render.
 #
 # Die Instanz gehört dem, der sie anlegt – Daten, Kosten und Zugang. Es gibt
-# keinen Brickfolio-Dienst dazwischen.
+# keinen Nupplo-Dienst dazwischen.
 #
-# Wichtig: Brickfolio braucht ein dauerhaftes Verzeichnis (`/data`). Renders
+# Wichtig: Nupplo braucht ein dauerhaftes Verzeichnis (`/data`). Renders
 # kostenloser Tarif hat keines – ohne eigene Platte wäre die Sammlung nach
 # jedem Neustart weg. Deshalb ist hier bewusst der kleinste **bezahlte**
 # Tarif eingetragen, statt eine Bereitstellung anzubieten, die Daten
 # verliert.
 services:
   - type: web
-    name: brickfolio
+    name: nupplo
     runtime: image
     plan: starter
     image:
-      url: ghcr.io/melle79/brickfolio:latest
+      url: ghcr.io/melle79/nupplo:latest
     healthCheckPath: /api/setup
     disk:
-      name: brickfolio-data
+      name: nupplo-data
       mountPath: /data
       sizeGB: 2
     envVars:

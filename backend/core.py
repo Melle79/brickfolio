@@ -1,4 +1,4 @@
-"""Brickfolio – Datenbank & Authentifizierung."""
+"""Nupplo – Datenbank & Authentifizierung."""
 import hashlib
 import hmac
 import os
@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "2.92.1"
+APP_VERSION = "3.0.0"
 
 
 def hash_password(password: str) -> str:
@@ -674,7 +674,7 @@ def init_db():
                 conn.commit()
             finally:
                 conn.execute("PRAGMA foreign_keys = ON")
-            print("[brickfolio] Migration: Sammlung erlaubt jetzt "
+            print("[nupplo] Migration: Sammlung erlaubt jetzt "
                   "getrennte Einträge je Zustand", flush=True)
 
         # Migration: Bildadresse im Katalog-Abzug.
@@ -707,7 +707,7 @@ def init_db():
                 " || '.png' WHERE item_type = 'minifig'"
                 " AND img_url LIKE 'https://img.bricklink.com/ML/%'").rowcount
             if n:
-                print("[brickfolio] %d Bildadressen umgestellt" % n, flush=True)
+                print("[nupplo] %d Bildadressen umgestellt" % n, flush=True)
         # Migration: HTML-Zeichen in Namen auflösen. Der Dateiimport aus
         # 2.46.0 gab sie unverändert weiter – in BrickLinks Ausfuhr steht
         # `&amp;#39;`, das XML macht daraus `&#39;`, und erst `unescape`
@@ -732,7 +732,7 @@ def init_db():
                     (klar, wortanfaenge(klar)[0],
                      r["item_no"], r["item_type"]))
             if kaputt:
-                print("[brickfolio] %d Namen entschlüsselt" % len(kaputt),
+                print("[nupplo] %d Namen entschlüsselt" % len(kaputt),
                       flush=True)
         # Migration: die wortweise Spalte nachrüsten und füllen. Sie ist
         # neu in 2.81.0 und der Grund, warum „king" überhaupt etwas findet.
@@ -758,7 +758,7 @@ def init_db():
                     " WHERE item_no = ? AND item_type = ?",
                     (suchwoerter(r["name"]), r["item_no"], r["item_type"]))
             if offen:
-                print("[brickfolio] %d Zeilen wortweise erfasst" % len(offen),
+                print("[nupplo] %d Zeilen wortweise erfasst" % len(offen),
                       flush=True)
         # Migration: die Bildbeschreibungen eindeutschen.
         #
@@ -790,7 +790,7 @@ def init_db():
             try:
                 anzahl = _merkmale_eindeutschen(conn)
             except Exception as e:                 # nie den Start blockieren
-                print("[brickfolio] Eindeutschen übersprungen: %s" % e,
+                print("[nupplo] Eindeutschen übersprungen: %s" % e,
                       flush=True)
             else:
                 conn.execute(
@@ -798,7 +798,7 @@ def init_db():
                     " ON CONFLICT(name) DO UPDATE SET value = '1'",
                     ("merkmale_deutsch",))
                 if anzahl:
-                    print("[brickfolio] %d Bildbeschreibungen eingedeutscht"
+                    print("[nupplo] %d Bildbeschreibungen eingedeutscht"
                           % anzahl, flush=True)
         # Migration: Suchtext neu bilden, wo ein Umlaut drinsteckt. Bis
         # 2.80.3 waren Umlaute Trennzeichen – ein Name wie „Café" stand
@@ -817,7 +817,7 @@ def init_db():
                     " WHERE item_no = ? AND item_type = ?",
                     (wortanfaenge(r["name"])[0], r["item_no"], r["item_type"]))
             if umlaute:
-                print("[brickfolio] %d Suchtexte mit Umlaut neu gebildet"
+                print("[nupplo] %d Suchtexte mit Umlaut neu gebildet"
                       % len(umlaute), flush=True)
         # Migration: Die Figur Teil für Teil – Torso, Kopf, Haare, Helm, samt
         # Aufdruck und dessen Farben. Vorher standen hier Art und bis zu drei
@@ -835,7 +835,7 @@ def init_db():
                 "'https://img.bricklink.com/ML/' || item_no || '.jpg' "
                 "WHERE img_url = ''").rowcount
             if n:
-                print(f"[brickfolio] Migration: {n} Bildadressen im "
+                print(f"[nupplo] Migration: {n} Bildadressen im "
                       f"Katalog-Abzug nachgetragen", flush=True)
 
         # Migration: Quelle je Preisverlaufs-Punkt (auto/manuell)
@@ -1124,4 +1124,4 @@ def _bootstrap_admin():
             "VALUES (?, ?, 1, ?)",
             (user, hash_password(password), int(time.time())),
         )
-        print(f"[brickfolio] Admin-Benutzer '{user}' angelegt.", flush=True)
+        print(f"[nupplo] Admin-Benutzer '{user}' angelegt.", flush=True)

@@ -1,4 +1,4 @@
-/* Brickfolio – Frontend-Logik */
+/* Nupplo – Frontend-Logik */
 "use strict";
 
 const $ = (id) => document.getElementById(id);
@@ -2432,23 +2432,23 @@ async function updateListsTab() {
 }
 
 /* Titel der App inkl. Anzeigename – auch für Kopfzeilen im Druck.
-   Ohne gesetzten Namen heisst sie schlicht „Dein Brickfolio"; frueher stand
+   Ohne gesetzten Namen heisst sie schlicht „Dein Nupplo"; frueher stand
    dort ein fester Vorname, den jede fremde Installation mitschleppte. */
-/* „Svens Brickfolio“ mit Apostroph wie bisher – aber bei einem Namen auf
-   s, ß, x oder z nur der Apostroph: „Lukas' Brickfolio“, wie es der
+/* „Svens Nupplo“ mit Apostroph wie bisher – aber bei einem Namen auf
+   s, ß, x oder z nur der Apostroph: „Lukas' Nupplo“, wie es der
    Hinweis im Assistenten verspricht (nicht „Lukas's“). */
 function besitzTitel(name) {
-  return name + (/[sßxz]$/i.test(name) ? "'" : "'s") + " Brickfolio";
+  return name + (/[sßxz]$/i.test(name) ? "'" : "'s") + " Nupplo";
 }
 
 function appTitle() {
-  return state.ownerName ? besitzTitel(state.ownerName) : "Dein Brickfolio";
+  return state.ownerName ? besitzTitel(state.ownerName) : "Dein Nupplo";
 }
 
 function applyOwnerName(name) {
   // **Auch der leere Name ist ein Name.** Vorher stand hier ein frühes
   // `return`: Wer keinen setzte, behielt den festen Vornamen aus der Vorlage im Logo
-  // und „'s Brickfolio" im Reiter – auf jeder frischen Installation.
+  // und „'s Nupplo" im Reiter – auf jeder frischen Installation.
   state.ownerName = name || "";
   document.querySelectorAll(".logo-name").forEach((el) => {
     el.textContent = state.ownerName.toUpperCase();
@@ -2743,10 +2743,10 @@ function wireWizardOnce() {
 
   $("wiz-owner").addEventListener("input", () => {
     // Vorschau zeigt den **fertigen Titel**, nicht den nackten Namen –
-    // bei leerem Feld stand dort sonst „'s Brickfolio".
+    // bei leerem Feld stand dort sonst „'s Nupplo".
     const roh = $("wiz-owner").value.trim();
     $("wiz-name-preview").textContent =
-      roh ? besitzTitel(roh) : "Dein Brickfolio";
+      roh ? besitzTitel(roh) : "Dein Nupplo";
   });
 
   $("wiz-next").addEventListener("click", async () => {
@@ -9174,7 +9174,7 @@ function yearChart(list) {
 
 /* ---------------------------------------------------------------- CSV-Import */
 function downloadCsvSample() {
-  downloadCsv("brickfolio-import-beispiel.csv", [
+  downloadCsv("nupplo-import-beispiel.csv", [
     ["Nummer", "Typ", "Name", "Anzahl", "Zustand", "Bezahlt", "Jahr",
      "Notizen"],
     ["sw0815", "Figur", "Shoretrooper", "2", "Gebraucht", "24,50", "2016",
@@ -9274,7 +9274,7 @@ function exportDuplicatesCsv() {
   data.items.forEach((it) => rows.push([it.item_id, it.name,
     it.condition === "new" ? tr("Neu") : tr("Gebraucht"), it.quantity, it.surplus,
     numLoc(it.unit_price), numLoc(it.value)]));
-  downloadCsv(tr("brickfolio-verkaufsliste.csv"), rows);
+  downloadCsv(tr("nupplo-verkaufsliste.csv"), rows);
   toast(tr("Verkaufsliste exportiert ✔"));
 }
 
@@ -9486,7 +9486,7 @@ function exportMissingFigsCsv() {
     it.needed, it.owned, numLoc(it.unit_price),
     it.sets.map((s) => `${s.name} (${s.no})`).join(" / "),
     (it.on_lists || []).join(" / ")]));
-  downloadCsv(tr("brickfolio-fehlende-set-figuren.csv"), rows);
+  downloadCsv(tr("nupplo-fehlende-set-figuren.csv"), rows);
   toast(tr("Liste exportiert ✔"));
 }
 
@@ -9585,7 +9585,7 @@ async function exportCollectionCsv() {
       ...(profi ? [it.paid_price != null ? numLoc(it.paid_price) : ""] : []),
       it.notes, it.added_by_name || "", _dateDe(it.added_at)]);
   });
-  downloadCsv(tr("brickfolio-sammlung.csv"), rows);
+  downloadCsv(tr("nupplo-sammlung.csv"), rows);
   toast(tr("Sammlung exportiert ✔"));
 }
 
@@ -9599,7 +9599,7 @@ async function exportWantedCsv() {
       numLoc(it.price_new), numLoc(it.price_used), it.notes,
       it.added_by_name || "", _dateDe(it.added_at)]);
   });
-  downloadCsv(tr("brickfolio-wunschliste.csv"), rows);
+  downloadCsv(tr("nupplo-wunschliste.csv"), rows);
   toast(tr("Wunschliste exportiert ✔"));
 }
 
@@ -9683,7 +9683,7 @@ async function downloadBackup() {
       { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `brickfolio-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `nupplo-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(alsEigenMerken(a));
     a.click();
     a.remove();
@@ -9871,17 +9871,17 @@ async function refreshThemes() {
    Token bleibt im Browser – die App kann den Tunnel selbst nicht starten (kein
    Docker-Zugriff), deshalb erzeugt sie nur die fertige Konfiguration. */
 function cfSnippet() {
-  const host = ($("cf-host").value.trim()) || tr("brickfolio.deine-domain.de");
+  const host = ($("cf-host").value.trim()) || tr("nupplo.deine-domain.de");
   const token = ($("cf-token").value.trim()) || tr("DEIN-CLOUDFLARE-TUNNEL-TOKEN");
   return "  cloudflared:\n"
     + "    image: cloudflare/cloudflared:latest\n"
-    + "    container_name: brickfolio-tunnel\n"
+    + "    container_name: nupplo-tunnel\n"
     + "    restart: unless-stopped\n"
     + "    command: tunnel run\n"
     + "    environment:\n"
     + `      TUNNEL_TOKEN: "${token}"\n`
     + `    # ${tr("Public Hostname im Cloudflare-Dashboard")}: ${host}\n`
-    + "    #   -> Service: http://brickfolio:8300";
+    + "    #   -> Service: http://nupplo:8300";
 }
 
 function renderCfSnippet() {
@@ -9889,7 +9889,7 @@ function renderCfSnippet() {
   if (el) el.textContent = cfSnippet();
   const url = $("cf-url");
   if (url) {
-    const host = ($("cf-host").value.trim()) || tr("brickfolio.deine-domain.de");
+    const host = ($("cf-host").value.trim()) || tr("nupplo.deine-domain.de");
     url.textContent = "https://" + host;
   }
 }
@@ -10717,7 +10717,7 @@ function diagText() {
   // ist – und das ist bei einem Absturz die eigentliche Frage.
   const spuren = spurLesen().map((e) =>
     new Date(e.t).toLocaleString(dateLocale()) + "  ·  " + e.w);
-  const text = "Brickfolio – Speicher-Verlauf\n" + zeilen.join("\n")
+  const text = "Nupplo – Speicher-Verlauf\n" + zeilen.join("\n")
     + (spuren.length ? "\n\nSpur (was zuletzt passierte)\n"
       + spuren.join("\n") : "");
   return text;
@@ -12241,7 +12241,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const info = await checkForUpdate(true);
     renderUpdateInfo(info);
     if (info && !info.update_available && !info.error) {
-      toast("Brickfolio ist aktuell ✔");
+      toast("Nupplo ist aktuell ✔");
     }
     btn.disabled = false;
   });
@@ -12677,7 +12677,7 @@ window.addEventListener("beforeinstallprompt", (ev) => {
 window.addEventListener("appinstalled", () => {
   installPrompt = null;
   updateInstallCard();
-  toast("Brickfolio liegt jetzt auf dem Startbildschirm 📲");
+  toast("Nupplo liegt jetzt auf dem Startbildschirm 📲");
 });
 
 function updateInstallCard() {
@@ -12694,7 +12694,7 @@ function updateInstallCard() {
   const go = $("install-go");
   const text = $("install-text");
   if (installPrompt) {
-    text.textContent = tr("Ein Tipp, und Brickfolio startet künftig wie eine "
+    text.textContent = tr("Ein Tipp, und Nupplo startet künftig wie eine "
       + "eigene App – ohne Adresszeile, mit eigenem Symbol.");
     go.hidden = false;
     card.hidden = false;
@@ -12702,7 +12702,7 @@ function updateInstallCard() {
     // Safari kennt keinen Knopf dafür – hier hilft nur der Weg über „Teilen".
     text.innerHTML = tr("In Safari unten auf <b>Teilen</b> tippen (das "
       + "Quadrat mit dem Pfeil nach oben), dann <b>„Zum Home-Bildschirm“</b>. "
-      + "Danach startet Brickfolio wie eine eigene App.");
+      + "Danach startet Nupplo wie eine eigene App.");
     go.hidden = true;
     card.hidden = false;
   } else if (!window.isSecureContext) {

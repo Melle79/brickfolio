@@ -27,10 +27,10 @@ def test_startpage_carries_the_current_version(client):
 def test_anmeldeseite_zeigt_die_version(client):
     """Damit man sie beim Melden eines Fehlers nicht suchen muss."""
     html = client.get("/").text
-    assert f"Brickfolio {core.APP_VERSION}" in html
+    assert f"Nupplo {core.APP_VERSION}" in html
     # Und zwar innerhalb der Anmeldeseite, nicht irgendwo.
     anmeldung = html[html.index('id="view-login"'):]
-    assert f'class="login-version">Brickfolio {core.APP_VERSION}' in anmeldung
+    assert f'class="login-version">Nupplo {core.APP_VERSION}' in anmeldung
 
 
 def test_startpage_is_never_cached(client):

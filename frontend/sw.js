@@ -1,5 +1,5 @@
-/* Brickfolio Service Worker – App-Shell offlinefähig, API immer live */
-const CACHE = "brickfolio-v11";
+/* Nupplo Service Worker – App-Shell offlinefähig, API immer live */
+const CACHE = "nupplo-v12";
 const SHELL = [
   "/",
   "/static/style.css",
@@ -63,14 +63,14 @@ self.addEventListener("fetch", (e) => {
 /* Meldung vom eigenen Server. Der Inhalt ist bewusst knapp – Einzelheiten
    stehen in der App, nicht auf dem Sperrbildschirm. */
 self.addEventListener("push", (e) => {
-  let d = { title: "Brickfolio", body: "", url: "/" };
+  let d = { title: "Nupplo", body: "", url: "/" };
   try { if (e.data) d = Object.assign(d, e.data.json()); } catch (_) { /* egal */ }
   e.waitUntil(self.registration.showNotification(d.title, {
     body: d.body,
     icon: "/static/icons/icon-192.png",
     badge: "/static/icons/icon-192.png",
     // Gleichartige Meldungen ersetzen einander, statt sich zu stapeln.
-    tag: "brickfolio",
+    tag: "nupplo",
     data: { url: d.url || "/" },
   }));
 });

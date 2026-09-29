@@ -1,4 +1,14 @@
-# Brickfolio 🧱
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/nupplo-logo-hell.svg">
+    <img src="docs/logo/nupplo-logo.svg" alt="Nupplo" width="320">
+  </picture>
+</p>
+
+# Nupplo 🧱
+
+> **Formerly Brickfolio.** Since 3.0.0 the app is called Nupplo – same app,
+> new name. Existing installations keep running without any change.
 
 *🇬🇧 English · [🇩🇪 Deutsch](README.md)*
 
@@ -74,7 +84,7 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 > the items you offer, your profile and, if you switch it on, your wishlist.
 > Leaving takes everything out again.
 
-- 🤝 Several Brickfolio instances connect through a small **trading hub**:
+- 🤝 Several Nupplo instances connect through a small **trading hub**:
   everyone offers the items they want to pass on – **for trade, for sale or
   both** – and sees what the others offer
 - 🔢 **You pick what goes in**, and how many: out of three identical figures
@@ -165,7 +175,7 @@ metadata come from [BrickLink](https://www.bricklink.com) and
 No source code, no build – two commands:
 
 ```bash
-mkdir brickfolio && cd brickfolio
+mkdir nupplo && cd nupplo
 curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
 docker compose up -d
 ```
@@ -176,8 +186,8 @@ button) and, if you have one, your invite to the trading network. Every step
 can be skipped; anything can be added later under *More*. The database is
 stored persistently at `./data/brickfolio.db`.
 
-The image (`ghcr.io/melle79/brickfolio:latest`, mirrored as
-`melle79/brickfolio:latest` on Docker Hub) is built for **amd64** – that is
+The image (`ghcr.io/melle79/nupplo:latest`, mirrored as
+`melle79/nupplo:latest` on Docker Hub) is built for **amd64** – that is
 **x86-64**, any ordinary Intel *or* AMD machine (Synology,
 Intel NAS, PC) and **arm64** (Raspberry Pi, ARM NAS).
 
@@ -185,7 +195,7 @@ Intel NAS, PC) and **arm64** (Raspberry Pi, ARM NAS).
 
 No shell needed: **Container Manager → Project → Create**, paste the YAML,
 done. Step by step in [`docs/SYNOLOGY.md`](docs/SYNOLOGY.md) (in German).
-Over SSH it works just as well – create `/volume1/docker/brickfolio` and run
+Over SSH it works just as well – create `/volume1/docker/nupplo` and run
 the commands above with `sudo`.
 
 ### Other NAS systems and computers
@@ -213,7 +223,7 @@ add this address –
 https://github.com/Melle79/unraid-templates
 ```
 
-– and Brickfolio appears under *Docker → Add Container* in the template
+– and Nupplo appears under *Docker → Add Container* in the template
 picker, with the port, the `/data` path and the optional keys pre-filled.
 The template is maintained in
 [Melle79/unraid-templates](https://github.com/Melle79/unraid-templates);
@@ -223,11 +233,11 @@ a copy lives here under [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
 
 If you would rather not run your own hardware, rent the instance. **It
 belongs to whoever creates it** – data, cost and access. There is still no
-Brickfolio service in between.
+Nupplo service in between.
 
 | Provider | How | Note |
 |---|---|---|
-| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Reads [`render.yaml`](render.yaml). Needs the smallest **paid** plan: Brickfolio requires a persistent disk for `/data`, and the free plan has none |
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Reads [`render.yaml`](render.yaml). Needs the smallest **paid** plan: Nupplo requires a persistent disk for `/data`, and the free plan has none |
 | **Railway** | New project → *Deploy from GitHub* → this repo, then set *Settings → Config-as-Code* to `deploy/railway/railway.json` | Afterwards attach a **volume** at `/data`, otherwise the collection is gone after every restart |
 | **Coolify / Dokploy** | Paste `docker-compose.example.yml` | On your own VPS, full control |
 
@@ -238,9 +248,9 @@ Brickfolio service in between.
 Without a compose UI:
 
 ```bash
-docker run -d --name brickfolio --restart unless-stopped \
+docker run -d --name nupplo --restart unless-stopped \
   -p 8300:8300 -v /path/to/data:/data \
-  ghcr.io/melle79/brickfolio:latest
+  ghcr.io/melle79/nupplo:latest
 ```
 
 ### Building it yourself (instead of the ready-made image)
@@ -248,10 +258,10 @@ docker run -d --name brickfolio --restart unless-stopped \
 Only needed if you want to run your own changes:
 
 ```bash
-mkdir brickfolio && cd brickfolio
+mkdir nupplo && cd nupplo
 curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
 cp docker-compose.example.yml docker-compose.yml
-sed -i 's|image: ghcr.io/melle79/brickfolio:latest|build: .|' docker-compose.yml
+sed -i 's|image: ghcr.io/melle79/nupplo:latest|build: .|' docker-compose.yml
 docker compose up -d --build
 ```
 
@@ -296,7 +306,7 @@ docker compose pull && docker compose up -d
 ```
 
 On a Synology the same works without a shell: *Container Manager → Project →
-brickfolio → Action → Build and restart*.
+nupplo → Action → Build and restart*.
 
 The `data/` folder is untouched, database migrations run automatically on
 start and are idempotent. **A snapshot beforehand never hurts** – download the
@@ -339,16 +349,16 @@ User-defined script
 | --- | --- |
 | General | User: **`root`** (otherwise the script may not run `docker compose`) |
 | Schedule | Daily · start `00:00` · “Continue running within the same day” ✔ · repeat **every minute** · last run time: **`23:59`** |
-| Task Settings | Command: `sh /path/to/brickfolio/update-watch.sh` |
+| Task Settings | Command: `sh /path/to/nupplo/update-watch.sh` |
 
 > ⚠️ “Last run time” defaults to `00:59` – the task would then only run during
 > the first hour of the day. Set it to `23:59`.
 
-**Linux with cron:** `* * * * * sh /path/to/brickfolio/update-watch.sh`
+**Linux with cron:** `* * * * * sh /path/to/nupplo/update-watch.sh`
 
 #### Multiple instances
 
-Running several Brickfolios (each in its own folder with its own
+Running several Nupplos (each in its own folder with its own
 `docker-compose.yml`)? Prefer **one task per instance**. That is the most
 robust setup: each runs independently, and the task scheduler shows you per
 instance whether it succeeded.
@@ -356,8 +366,8 @@ instance whether it succeeded.
 If you would rather use a single task, append `|| true` to every line:
 
 ```sh
-sh /volume1/docker/brickfolio/update-watch.sh || true
-sh /volume1/docker/brickfolio-nerdfan/update-watch.sh || true
+sh /volume1/docker/nupplo/update-watch.sh || true
+sh /volume1/docker/nupplo-zweit/update-watch.sh || true
 ```
 
 > ⚠️ Without `|| true` the second line may never run: if the first one exits
@@ -441,7 +451,7 @@ server, none of it is kept in the browser.
 
 ## Support
 
-Brickfolio is a private hobby project and free to use. If you like it and want
+Nupplo is a private hobby project and free to use. If you like it and want
 to support development, I'd be happy about a coffee ☕
 
 <a href="https://buymeacoffee.com/melle79"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-melle79-ffdd00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>

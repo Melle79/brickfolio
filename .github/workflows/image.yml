@@ -70,8 +70,14 @@ jobs:
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
         with:
+          # **Zwei Namen, eine Weile lang.** Seit 3.0.0 heißt die App Nupplo;
+          # bestehende Installationen ziehen aber `brickfolio`. Beide Namen
+          # bekommen dasselbe Abbild, bis alle umgestellt haben (Übergang
+          # rund drei Monate), danach fällt `brickfolio` weg.
           images: |
+            ghcr.io/${{ github.repository_owner }}/nupplo
             ghcr.io/${{ github.repository_owner }}/brickfolio
+            ${{ vars.DOCKERHUB_USER != '' && format('docker.io/{0}/nupplo', vars.DOCKERHUB_USER) || '' }}
             ${{ vars.DOCKERHUB_USER != '' && format('docker.io/{0}/brickfolio', vars.DOCKERHUB_USER) || '' }}
           tags: |
             type=ref,event=branch

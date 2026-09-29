@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.0.0 – Oktober 2026
+
+**Brickfolio heißt jetzt Nupplo.** Gleiche App, neuer Name – bestehende
+Installationen laufen ohne Umstellung weiter.
+
+### Neu
+- 🧱 **Neuer Name und neues Logo.** Die Wortmarke „Nupplo“, deren l ein Turm
+  aus vier Steinen ist – oben gelb, dann rot, blau, unten grün. Sie steht im
+  Startbild, bei der Anmeldung und in der Kopfleiste und nimmt die Farben
+  jedes Designs an.
+- 🎬 **Startbild:** Der Turm baut sich Stein für Stein auf, dann gleiten die
+  Buchstaben heran. Wer „Bewegung reduzieren“ eingestellt hat, sieht alles
+  sofort.
+- 📲 **Neues App-Symbol:** der Steinturm auf Gelb, mit dem Namen der Instanz
+  darüber, wenn einer eingestellt ist. Auf dem Startbildschirm erscheint es
+  beim nächsten Hinzufügen.
+- 🔔 Nach dem Update sagt ein einmaliger Hinweis, dass Brickfolio jetzt Nupplo
+  heißt.
+
+### Für Betreiber
+- **Nichts umstellen nötig.** Datenbank (`data/brickfolio.db`), tägliche
+  Sicherungen und JSON-Sicherungen behalten ihre Namen und ihr Format –
+  Sicherungen lassen sich weiter in ältere Instanzen und in die iOS-App
+  einspielen.
+- **Docker-Image:** Neu ist `ghcr.io/melle79/nupplo` (und `melle79/nupplo`
+  auf Docker Hub). Das bisherige `…/brickfolio` bekommt während eines
+  Übergangs von etwa drei Monaten dieselben Fassungen; wer es in seiner
+  `docker-compose.yml` stehen hat, muss nichts tun, sollte aber bei
+  Gelegenheit auf `nupplo` wechseln.
+- Die Umgebungsvariable für den Anzeigenamen heißt jetzt `NUPPLO_NAME`;
+  `BRICKFOLIO_NAME` gilt weiter.
+- Die Verbindung zum Tausch-Netzwerk und dessen Verschlüsselung bleiben
+  unverändert.
+
 ## 2.92.1 – September 2026
 
 ### Verbessert

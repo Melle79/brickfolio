@@ -1000,7 +1000,7 @@ function wireHubViewOnce() {
   });
   $("invite-share").addEventListener("click", async () => {
     try {
-      await navigator.share({ title: tr("Einladung ins Brickfolio-Tausch-Netzwerk"),
+      await navigator.share({ title: tr("Einladung ins Nupplo-Tausch-Netzwerk"),
         text: einladungsText($("invite-code").textContent) });
     } catch (_) { /* abgebrochen – nichts zu tun */ }
   });
@@ -1049,7 +1049,7 @@ async function ladeEinladungen() {
   liste_.querySelectorAll("[data-inv-teilen]").forEach((b) => {
     b.addEventListener("click", async () => {
       try {
-        await navigator.share({ title: tr("Einladung ins Brickfolio-Tausch-Netzwerk"),
+        await navigator.share({ title: tr("Einladung ins Nupplo-Tausch-Netzwerk"),
           text: einladungsText(b.dataset.invTeilen) });
       } catch (_) { /* abgebrochen */ }
     });
@@ -1072,8 +1072,8 @@ async function ladeEinladungen() {
 /* Was mit dem Code geteilt wird – so, dass der Freund ohne Rückfrage weiß,
    wohin damit. */
 function einladungsText(code) {
-  return tr("Hallo! Hier ist deine Einladung ins Brickfolio-Tausch-Netzwerk: "
-    + "{code} – in deinem Brickfolio unter Mehr → Tausch-Netzwerk eintragen. "
+  return tr("Hallo! Hier ist deine Einladung ins Nupplo-Tausch-Netzwerk: "
+    + "{code} – in deinem Nupplo unter Mehr → Tausch-Netzwerk eintragen. "
     + "Der Code gilt genau einmal.", { code });
 }
 

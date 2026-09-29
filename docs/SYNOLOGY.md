@@ -1,4 +1,4 @@
-# Brickfolio auf einer Synology-NAS
+# Nupplo auf einer Synology-NAS
 
 Zwei Wege. Der erste braucht keine Konsole und ist der empfohlene.
 
@@ -11,8 +11,8 @@ neuer). Bei älterem DSM heißt das Paket **Docker**; dann geht Weg 2.
 
 ### 1. Ordner anlegen
 
-In der **File Station** unter `docker` einen Ordner `brickfolio` anlegen, darin
-einen Ordner `data`. Ergebnis: `/volume1/docker/brickfolio/data`.
+In der **File Station** unter `docker` einen Ordner `nupplo` anlegen, darin
+einen Ordner `data`. Ergebnis: `/volume1/docker/nupplo/data`.
 
 Der Ordner `data` ist der einzige, auf den es ankommt – dort liegt deine
 Datenbank. Alles andere ist ersetzbar.
@@ -23,17 +23,17 @@ Datenbank. Alles andere ist ersetzbar.
 
 | Feld | Eingabe |
 |---|---|
-| Projektname | `brickfolio` |
-| Pfad | über **Pfad fes…** auf `/docker/brickfolio` |
+| Projektname | `nupplo` |
+| Pfad | über **Pfad fes…** auf `/docker/nupplo` |
 | Quelle | **docker-compose.yml erstellen** |
 
 In das Textfeld kommt:
 
 ```yaml
 services:
-  brickfolio:
-    image: ghcr.io/melle79/brickfolio:latest
-    container_name: brickfolio
+  nupplo:
+    image: ghcr.io/melle79/nupplo:latest
+    container_name: nupplo
     restart: unless-stopped
     ports:
       - "8300:8300"
@@ -46,9 +46,9 @@ es. Beim ersten Mal dauert das ein bis zwei Minuten (rund 75 MB).
 
 > **Lieber über die Suche?** Das Image liegt auch auf Docker Hub, und das
 > durchsucht der Container Manager von Haus aus: **Registrierung** öffnen,
-> nach `brickfolio` suchen, `melle79/brickfolio` herunterladen, Marke
+> nach `nupplo` suchen, `melle79/nupplo` herunterladen, Marke
 > `latest` wählen. Danach unter **Container → Erstellen** das Image auswählen,
-> Port `8300` und den Ordner `/docker/brickfolio/data` auf `/data` legen.
+> Port `8300` und den Ordner `/docker/nupplo/data` auf `/data` legen.
 >
 > **Den Ordner auf `/data` nicht vergessen** – das ist der eine Schritt, den
 > man dabei übersieht. Ohne ihn legt Docker ein *anonymes Volume* an: Die
@@ -70,7 +70,7 @@ es. Beim ersten Mal dauert das ein bis zwei Minuten (rund 75 MB).
 
 ### 4. Aktualisieren
 
-**Container Manager → Projekt → brickfolio → Aktion → Erstellen neu starten.**
+**Container Manager → Projekt → nupplo → Aktion → Erstellen neu starten.**
 Damit zieht DSM das aktuelle Image und startet neu; die Datenbank in `data`
 bleibt unangetastet.
 
@@ -88,7 +88,7 @@ Handarbeit:
 
 1. In der App **Mehr → 💾 Sicherung** herunterladen. Pflicht, wenn kein
    Ordner auf `/data` liegt (siehe Kasten oben), sonst Vorsichtsmaßnahme.
-2. **Registrierung** → `melle79/brickfolio` erneut herunterladen, Marke
+2. **Registrierung** → `melle79/nupplo` erneut herunterladen, Marke
    `latest`. Das überschreibt das vorhandene Image.
 3. Container **stoppen** und **löschen**.
 4. Aus dem Image einen neuen Container anlegen – gleicher Port, und diesmal
@@ -106,7 +106,7 @@ an. Danach ist jedes Update ein Klick.
 Für älteres DSM oder wenn die Konsole ohnehin offen ist:
 
 ```bash
-sudo mkdir -p /volume1/docker/brickfolio && cd /volume1/docker/brickfolio
+sudo mkdir -p /volume1/docker/nupplo && cd /volume1/docker/nupplo
 sudo curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
 sudo docker compose up -d
 ```
@@ -141,7 +141,7 @@ braucht man dafür nicht.
 **Rechte auf `data`** – wenn der Container nicht startet und im Protokoll von
 fehlenden Schreibrechten die Rede ist, gehört dem Ordner `data` der falsche
 Besitzer. In der File Station unter *Eigenschaften → Berechtigung* für
-`brickfolio` (inkl. Unterordner) Schreibrechte setzen.
+`nupplo` (inkl. Unterordner) Schreibrechte setzen.
 
 **ARM-NAS** (z. B. DS220j, DS223) – funktioniert, das Image gibt es für
 `arm64`. Sehr alte 32-Bit-Modelle (`armv7`) werden nicht unterstützt.

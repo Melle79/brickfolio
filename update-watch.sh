@@ -1,5 +1,5 @@
 #!/bin/sh
-# Brickfolio: Update ausführen, wenn die App eines angefordert hat.
+# Nupplo: Update ausführen, wenn die App eines angefordert hat.
 #
 # Die App schreibt dafür data/update-requested.json (Knopf unter
 # Mehr → Version & Updates). Dieses Skript gehört auf den Server und wird
@@ -9,9 +9,9 @@
 # Synology (DSM): Systemsteuerung → Aufgabenplaner → Erstellen →
 #   Geplante Aufgabe → Benutzerdefiniertes Skript
 #   Benutzer: root · Zeitplan: täglich, jede 1 Minute wiederholen
-#   Befehl:  sh /pfad/zu/brickfolio/update-watch.sh
+#   Befehl:  sh /pfad/zu/nupplo/update-watch.sh
 #
-# Linux mit cron:  * * * * * sh /pfad/zu/brickfolio/update-watch.sh
+# Linux mit cron:  * * * * * sh /pfad/zu/nupplo/update-watch.sh
 set -e
 cd "$(dirname "$0")"
 

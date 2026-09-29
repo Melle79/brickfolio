@@ -1,6 +1,6 @@
 """Web-Push von der eigenen Instanz.
 
-Damit erfährt ein Admin von einem Fehler auch dann, wenn Brickfolio gerade
+Damit erfährt ein Admin von einem Fehler auch dann, wenn Nupplo gerade
 zu ist. Wichtig ist, was dabei **nicht** passiert:
 
 - Es geht kein Weg über den Tausch-Hub. Fehler sind Sache dieser Instanz;

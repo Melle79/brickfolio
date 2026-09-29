@@ -226,3 +226,34 @@ def test_geleerter_kaufpreis_bleibt_leer(ctx):
     c.patch(f"/api/collection/{e['id']}", json={"paid_price": 3.0})
     c.patch(f"/api/collection/{e['id']}", json={"notes": "x"})
     assert _posten(e["id"]) == [(1, 3.0)]
+
+
+# ------------------------------------------------ Umbenennung in Nupplo (3.0.0)
+
+def test_titel_heisst_nupplo(ctx):
+    assert main._app_title() == "Dein Nupplo"
+
+
+def test_name_aus_alter_und_neuer_umgebungsvariable(ctx, monkeypatch):
+    monkeypatch.setenv("BRICKFOLIO_NAME", "Anna")
+    assert main._app_title() == "Anna's Nupplo"
+    monkeypatch.setenv("NUPPLO_NAME", "Lukas")
+    assert main._app_title() == "Lukas' Nupplo"
+
+
+def test_sicherung_bleibt_fuer_alte_leser_lesbar(ctx):
+    """Ältere Instanzen und die iOS-App prüfen `app == "brickfolio"`."""
+    c, _ = ctx
+    assert c.get("/api/backup").json()["app"] == "brickfolio"
+
+
+def test_hinweis_zur_umbenennung_nur_einmal_und_nur_fuer_bestehende(ctx):
+    with core.db() as conn:
+        conn.execute("DELETE FROM notifications")
+    core.set_setting("hinweis_nupplo", "")
+    main._umbenennung_melden()
+    main._umbenennung_melden()
+    with core.db() as conn:
+        n = conn.execute("SELECT COUNT(*) FROM notifications WHERE "
+                         "kind = 'umbenennung'").fetchone()[0]
+    assert n == 1

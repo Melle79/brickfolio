@@ -1,6 +1,6 @@
 """Instanz-Seite des Tausch-Hubs.
 
-Spricht server-zu-server mit dem Brickfolio-Hub (Cloudflare Worker). Der
+Spricht server-zu-server mit dem Nupplo-Hub (Cloudflare Worker). Der
 Instanz-Token bleibt hier in der DB (settings) und geht nie an den Browser.
 """
 import json
@@ -11,7 +11,7 @@ import requests
 import core
 
 TIMEOUT = 15
-USER_AGENT = "Brickfolio-Instance/1.0"
+USER_AGENT = "Nupplo-Instance/1.0"
 
 # Feste Hub-Adresse für dieses Netzwerk. Über die Umgebung überschreibbar
 # (z. B. später hub.brickfolio.cc), aber kein Eingabefeld in der App.
@@ -118,7 +118,7 @@ def _stoerung(method, path, grund):
     einen gesperrten Zugang sind Antworten, keine Ausfälle – die gehören
     nicht ins Protokoll.
     """
-    print(f"[brickfolio] Hub {method} {path} – {grund}", flush=True)
+    print(f"[nupplo] Hub {method} {path} – {grund}", flush=True)
 
 
 def _request(method, url, path, token=None, body=None, timeout=TIMEOUT):

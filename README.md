@@ -1,4 +1,14 @@
-# Brickfolio 🧱
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/nupplo-logo-hell.svg">
+    <img src="docs/logo/nupplo-logo.svg" alt="Nupplo" width="320">
+  </picture>
+</p>
+
+# Nupplo 🧱
+
+> **Früher Brickfolio.** Seit 3.0.0 heißt die App Nupplo – gleiche App,
+> neuer Name. Bestehende Installationen laufen ohne Umstellung weiter.
 
 *[🇬🇧 English](README.en.md) · 🇩🇪 Deutsch*
 
@@ -102,7 +112,7 @@ kommen von [BrickLink](https://www.bricklink.com) und
 > wenn du es einschaltest, deine Wunschliste. Abmelden nimmt alles wieder
 > heraus.
 
-- 🤝 Mehrere Brickfolio-Instanzen verbinden sich über einen kleinen
+- 🤝 Mehrere Nupplo-Instanzen verbinden sich über einen kleinen
   **Tausch-Hub**: Jeder bietet die Artikel an, die er abgeben möchte, **zum
   Tausch, zum Verkauf oder beides**, und sieht die Angebote der anderen
 - 🔢 **Selbst auswählen, was hineinkommt**, samt Menge: Von drei gleichen
@@ -202,7 +212,7 @@ Fotos in der Galerie sind selbst erzeugte Beispielbilder.)*
 Kein Quellcode, kein Bauen – zwei Befehle:
 
 ```bash
-mkdir brickfolio && cd brickfolio
+mkdir nupplo && cd nupplo
 curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
 docker compose up -d
 ```
@@ -225,8 +235,8 @@ Adressen:
 
 | Registry | Name |
 |---|---|
-| GitHub Container Registry | `ghcr.io/melle79/brickfolio:latest` |
-| Docker Hub | `melle79/brickfolio:latest` |
+| GitHub Container Registry | `ghcr.io/melle79/nupplo:latest` |
+| Docker Hub | `melle79/nupplo:latest` |
 
 Die YAML oben nimmt `ghcr.io`. Docker Hub braucht ihr, wenn eure NAS-Oberfläche
 eine **Suchmaske** für Images hat – die durchsucht meist nur Docker Hub.
@@ -235,13 +245,13 @@ eine **Suchmaske** für Images hat – die durchsucht meist nur Docker Hub.
 
 Ganz ohne Konsole: **Container Manager → Projekt → Erstellen**, YAML einfügen,
 fertig. Schritt für Schritt in [`docs/SYNOLOGY.md`](docs/SYNOLOGY.md).
-Per SSH geht es genauso – Ordner unter `/volume1/docker/brickfolio` anlegen
+Per SSH geht es genauso – Ordner unter `/volume1/docker/nupplo` anlegen
 und die Befehle oben mit `sudo` ausführen.
 
 ### Andere NAS-Systeme und Rechner
 
 Es ist ein gewöhnliches OCI-Image auf zwei öffentlichen Registries – überall
-dort, wo Container laufen, läuft auch Brickfolio. Dasselbe YAML wie oben,
+dort, wo Container laufen, läuft auch Nupplo. Dasselbe YAML wie oben,
 nur an anderer Stelle eingefügt:
 
 | System | Wo das YAML hingehört |
@@ -265,7 +275,7 @@ Template Repositories* diese Adresse eintragen –
 https://github.com/Melle79/unraid-templates
 ```
 
-– danach steht Brickfolio unter *Docker → Add Container* in der
+– danach steht Nupplo unter *Docker → Add Container* in der
 Vorlagen-Auswahl, mit vorbelegtem Port, `/data`-Pfad und den optionalen
 Schlüsseln. Die Vorlage pflegen wir in
 [Melle79/unraid-templates](https://github.com/Melle79/unraid-templates);
@@ -275,11 +285,11 @@ eine Kopie liegt hier unter [`unraid/brickfolio.xml`](unraid/brickfolio.xml).
 
 Wer keine eigene Hardware laufen lassen will, mietet die Instanz. **Sie
 gehört dann dem, der sie anlegt** – Daten, Kosten und Zugang. Es gibt
-weiterhin keinen Brickfolio-Dienst dazwischen.
+weiterhin keinen Nupplo-Dienst dazwischen.
 
 | Anbieter | Weg | Anmerkung |
 |---|---|---|
-| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Liest [`render.yaml`](render.yaml). Braucht den kleinsten **bezahlten** Tarif: Brickfolio benötigt eine dauerhafte Platte für `/data`, und die gibt es im kostenlosen Tarif nicht |
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Liest [`render.yaml`](render.yaml). Braucht den kleinsten **bezahlten** Tarif: Nupplo benötigt eine dauerhafte Platte für `/data`, und die gibt es im kostenlosen Tarif nicht |
 | **Railway** | Neues Projekt → *Deploy from GitHub* → dieses Repo, dann unter *Settings → Config-as-Code* `deploy/railway/railway.json` eintragen | Danach eine **Volume** auf `/data` legen, sonst ist die Sammlung nach jedem Neustart weg |
 | **Coolify / Dokploy** | `docker-compose.example.yml` einfügen | Auf dem eigenen v-Server, volle Kontrolle |
 
@@ -290,9 +300,9 @@ weiterhin keinen Brickfolio-Dienst dazwischen.
 Wer keine Compose-Oberfläche hat, kommt auch so ans Ziel:
 
 ```bash
-docker run -d --name brickfolio --restart unless-stopped \
+docker run -d --name nupplo --restart unless-stopped \
   -p 8300:8300 -v /pfad/zu/data:/data \
-  ghcr.io/melle79/brickfolio:latest
+  ghcr.io/melle79/nupplo:latest
 ```
 
 ### Selbst bauen (statt fertiges Image)
@@ -300,10 +310,10 @@ docker run -d --name brickfolio --restart unless-stopped \
 Nur nötig, wenn du eigene Änderungen einspielen willst:
 
 ```bash
-mkdir brickfolio && cd brickfolio
+mkdir nupplo && cd nupplo
 curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
 cp docker-compose.example.yml docker-compose.yml
-sed -i 's|image: ghcr.io/melle79/brickfolio:latest|build: .|' docker-compose.yml
+sed -i 's|image: ghcr.io/melle79/nupplo:latest|build: .|' docker-compose.yml
 docker compose up -d --build
 ```
 
@@ -351,7 +361,7 @@ docker compose pull && docker compose up -d
 ```
 
 Auf einer Synology geht dasselbe ohne Konsole: *Container Manager → Projekt →
-brickfolio → Aktion → Erstellen neu starten*.
+nupplo → Aktion → Erstellen neu starten*.
 
 > **Ohne Projekt, also von Hand aus der *Registrierung* geklickt?** Dann gibt
 > es diesen Knopf nicht – ein Container kann sein Image nicht wechseln, und
@@ -402,16 +412,16 @@ Geplante Aufgabe → Benutzerdefiniertes Skript
 | --- | --- |
 | Allgemein | Benutzer: **`root`** (sonst darf das Skript kein `docker compose`) |
 | Zeitplan | Täglich · Start `00:00` · „Weiterhin innerhalb desselben Tages ausführen" ✔ · Wiederholen: **jede Minute** · Letzte Ausführungszeit: **`23:59`** |
-| Aufgabeneinstellungen | Befehl: `sh /pfad/zu/brickfolio/update-watch.sh` |
+| Aufgabeneinstellungen | Befehl: `sh /pfad/zu/nupplo/update-watch.sh` |
 
 > ⚠️ Die „Letzte Ausführungszeit" steht anfangs auf `00:59` – dann liefe die
 > Aufgabe nur in der ersten Stunde des Tages. Unbedingt auf `23:59` stellen.
 
-**Linux mit cron:** `* * * * * sh /pfad/zu/brickfolio/update-watch.sh`
+**Linux mit cron:** `* * * * * sh /pfad/zu/nupplo/update-watch.sh`
 
 #### Mehrere Instanzen
 
-Betreibt ihr mehrere Brickfolios (je eigener Ordner mit eigener
+Betreibt ihr mehrere Nupplos (je eigener Ordner mit eigener
 `docker-compose.yml`), legt am besten **je Instanz eine eigene Aufgabe** an.
 Das ist der robusteste Weg: Jede läuft unabhängig, und im Aufgabenplaner seht
 ihr pro Instanz, ob sie durchgelaufen ist.
@@ -419,8 +429,8 @@ ihr pro Instanz, ob sie durchgelaufen ist.
 Wollt ihr trotzdem nur **eine** Aufgabe, hängt an jede Zeile `|| true`:
 
 ```sh
-sh /volume1/docker/brickfolio/update-watch.sh || true
-sh /volume1/docker/brickfolio-nerdfan/update-watch.sh || true
+sh /volume1/docker/nupplo/update-watch.sh || true
+sh /volume1/docker/nupplo-zweit/update-watch.sh || true
 ```
 
 > ⚠️ Ohne `|| true` kann die zweite Zeile ausfallen: Bricht die erste mit einem
@@ -488,13 +498,13 @@ abgerufen, übernommen oder gespeichert, und solange niemand das ⓘ antippt,
 geht nichts dorthin. Welcher Artikel zu welcher Figur gehört, wurde
 **einmalig** über die MediaWiki-Schnittstelle des Wikis erfragt
 (`tools/jedipedia_titel.py`) und liegt als feste Liste bei; im Betrieb
-fragt Brickfolio dort nichts. Die Artikel stehen unter der GNU-FDL 1.3
+fragt Nupplo dort nichts. Die Artikel stehen unter der GNU-FDL 1.3
 und gehören ihren Autoren; die Jedipedia steht in keiner Verbindung zu
 diesem Projekt.
 
 ### Haftung
 
-Brickfolio ist ein privates Hobby-Projekt und wird **„wie besehen"**
+Nupplo ist ein privates Hobby-Projekt und wird **„wie besehen"**
 bereitgestellt – ohne Gewähr für Fehlerfreiheit, Verfügbarkeit oder Eignung
 für einen bestimmten Zweck. Soweit gesetzlich zulässig, wird keine Haftung
 für Schäden aus der Nutzung übernommen. Das betrifft vor allem drei Dinge:
@@ -540,7 +550,7 @@ immer live vom eigenen Server, nichts davon liegt im Browser.
 
 ## Unterstützen
 
-Brickfolio ist ein privates Hobby-Projekt und kostenlos. Wenn es dir gefällt
+Nupplo ist ein privates Hobby-Projekt und kostenlos. Wenn es dir gefällt
 und du die Entwicklung unterstützen magst, freue ich mich über einen Kaffee ☕
 
 <a href="https://buymeacoffee.com/melle79"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-melle79-ffdd00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>

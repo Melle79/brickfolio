@@ -1,4 +1,4 @@
-"""Brickfolio – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
+"""Nupplo – FastAPI-Backend (Scan, Sammlung, Benutzer)."""
 import base64
 import hashlib
 import collections
@@ -32,7 +32,7 @@ import push
 import totp
 import themes
 
-app = FastAPI(title="Brickfolio", docs_url=None, redoc_url=None)
+app = FastAPI(title="Nupplo", docs_url=None, redoc_url=None)
 
 FRONTEND_DIR = os.environ.get("FRONTEND_DIR", "/app/frontend")
 
@@ -187,7 +187,7 @@ def _extern_merken(weg: str, access: bool) -> None:
         # Fester Schlüssel statt NULL: Im eindeutigen Index der Tabelle ist
         # NULL nie gleich NULL – ohne ihn käme der Hinweis immer wieder.
         _notify("sicherheit",
-                "Brickfolio wird von außen genutzt – ohne Zugangsschutz davor",
+                "Nupplo wird von außen genutzt – ohne Zugangsschutz davor",
                 "Vor der App steht nur das Passwort. Mit der "
                 "Zwei-Faktor-Anmeldung kommt ein Code aus einer "
                 "Authenticator-App dazu.",
@@ -228,9 +228,34 @@ async def extern_beobachten(request: Request, call_next):
     return response
 
 
+def _umbenennung_melden() -> None:
+    """Einmal sagen, dass Brickfolio jetzt Nupplo heißt (3.0.0).
+
+    Nur auf Instanzen, die es schon gab – eine frisch eingerichtete kennt
+    den alten Namen nicht. Der Merker verhindert, dass der Hinweis nach dem
+    Wegklicken bei jedem Neustart wiederkommt.
+    """
+    if core.get_setting("hinweis_nupplo"):
+        return
+    with core.db() as conn:
+        bestehend = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    if bestehend:
+        _notify("umbenennung", "Brickfolio heißt jetzt Nupplo",
+                "Neuer Name, neues Logo – sonst bleibt alles, wie es war: "
+                "deine Sammlung, deine Einstellungen und die Verbindung zum "
+                "Tausch-Netzwerk. Das Symbol auf dem Startbildschirm "
+                "aktualisiert sich beim nächsten Hinzufügen.",
+                item_type="system", item_id="nupplo")
+    core.set_setting("hinweis_nupplo", "1")
+
+
 @app.on_event("startup")
 def startup():
     core.init_db()
+    try:
+        _umbenennung_melden()
+    except Exception as e:                      # nie am Start scheitern
+        print(f"[nupplo] Hinweis zur Umbenennung übersprungen: {e}", flush=True)
     threading.Thread(target=_price_refresher, daemon=True).start()
     threading.Thread(target=_sicherungs_waechter, daemon=True).start()
     # Die breiten Merkmalswörter im Hintergrund bereitlegen. Steht das
@@ -267,7 +292,7 @@ def _sicherungs_waechter():
         try:
             _auto_backup()
         except Exception as e:
-            print(f"[brickfolio] Auto-Sicherung übersprungen: {e}",
+            print(f"[nupplo] Auto-Sicherung übersprungen: {e}",
                   flush=True)
         time.sleep(SICHERUNG_TAKT)
 
@@ -328,7 +353,7 @@ def _price_refresher():
                         filled += 1
                         time.sleep(1.5)
                     if filled:
-                        print(f"[brickfolio] Jahres-Nachtrag ({table}): "
+                        print(f"[nupplo] Jahres-Nachtrag ({table}): "
                               f"{filled} Einträge", flush=True)
                     cutoff = int(time.time()) - PRICE_STALE_SECONDS
                     with core.db() as conn:
@@ -355,7 +380,7 @@ def _price_refresher():
                             pass
                         time.sleep(2)   # BrickLink nicht fluten
                     if rows:
-                        print(f"[brickfolio] Preis-Refresh ({table}): "
+                        print(f"[nupplo] Preis-Refresh ({table}): "
                               f"{len(rows)} Einträge", flush=True)
                 with core.db() as conn:
                     srows = conn.execute(
@@ -372,29 +397,29 @@ def _price_refresher():
                         pass
                     time.sleep(2)
                 if srows:
-                    print(f"[brickfolio] Set-Inhalte: {len(srows)} Sets "
+                    print(f"[nupplo] Set-Inhalte: {len(srows)} Sets "
                           f"geladen", flush=True)
         except Exception as e:
-            print(f"[brickfolio] Preis-Refresh übersprungen: {e}", flush=True)
+            print(f"[nupplo] Preis-Refresh übersprungen: {e}", flush=True)
         try:
             _resolve_gone_items()
         except Exception as e:
-            print(f"[brickfolio] Change-Log-Abgleich übersprungen: {e}",
+            print(f"[nupplo] Change-Log-Abgleich übersprungen: {e}",
                   flush=True)
         try:
             _katalog_changelog()
         except Exception as e:
-            print(f"[brickfolio] Katalog-Abgleich übersprungen: {e}",
+            print(f"[nupplo] Katalog-Abgleich übersprungen: {e}",
                   flush=True)
         try:
             _katalog_ziehen()
         except Exception as e:
-            print(f"[brickfolio] Katalog holen übersprungen: {e}", flush=True)
+            print(f"[nupplo] Katalog holen übersprungen: {e}", flush=True)
         try:
             # Nach dem Ziehen: Die neuen Zeilen haben noch keinen Namen.
             _katalog_namen()
         except Exception as e:
-            print(f"[brickfolio] Namen nachschlagen übersprungen: {e}",
+            print(f"[nupplo] Namen nachschlagen übersprungen: {e}",
                   flush=True)
         time.sleep(12 * 3600)
 
@@ -541,22 +566,25 @@ def _owner_name() -> str:
     """Anzeigename für Logo/Titel: DB-Einstellung, sonst ENV, sonst leer.
 
     Leer ist ein gültiger Zustand: Dann trägt das Symbol keinen Namen und der
-    Titel lautet schlicht »Dein Brickfolio«. Früher stand hier ein fester
+    Titel lautet schlicht »Dein Nupplo«. Früher stand hier ein fester
     Vorname – der erschien dann bei jedem, der nichts eingestellt hatte.
     """
     import os as _os
-    name = core.get_setting("owner_name") or _os.environ.get(
-        "BRICKFOLIO_NAME", "").strip()
+    # NUPPLO_NAME seit 3.0.0; BRICKFOLIO_NAME gilt weiter, damit bestehende
+    # docker-compose-Dateien nach dem Umbenennen nichts verlieren.
+    name = core.get_setting("owner_name") or (
+        _os.environ.get("NUPPLO_NAME") or _os.environ.get(
+            "BRICKFOLIO_NAME", "")).strip()
     return name
 
 
 def _app_title() -> str:
-    """»Xs Brickfolio«, solange ein Name gesetzt ist – sonst »Dein Brickfolio«."""
+    """»Xs Nupplo«, solange ein Name gesetzt ist – sonst »Dein Nupplo«."""
     wer = _owner_name()
     if not wer:
-        return "Dein Brickfolio"
-    # „Lukas' Brickfolio“, nicht „Lukas's“ – wie in der Oberfläche.
-    return wer + ("'" if re.search(r"[sßxz]$", wer, re.I) else "'s") + " Brickfolio"
+        return "Dein Nupplo"
+    # „Lukas' Nupplo“, nicht „Lukas's“ – wie in der Oberfläche.
+    return wer + ("'" if re.search(r"[sßxz]$", wer, re.I) else "'s") + " Nupplo"
 
 
 @app.get("/api/setup")
@@ -1780,7 +1808,7 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
 
     Dieselben Namen stehen in einer Datei, die BrickLink jedem Mitglied zum
     Herunterladen anbietet (*My Account → Downloads → Catalog Items*). Wer
-    Brickfolio betreibt, hat ohnehin ein Konto – ohne das gibt es keine
+    Nupplo betreibt, hat ohnehin ein Konto – ohne das gibt es keine
     Preise. Ein Import dauert Sekunden statt Tage, kostet kein Kontingent
     und ist vollständig: alle 19.158 Figuren, nicht nur die im Abzug.
 
@@ -1866,7 +1894,7 @@ async def katalog_datei(request: Request, user: dict = Depends(admin_user)):
             " SUM(CASE WHEN item_type = 'minifig' THEN 1 ELSE 0 END) AS f,"
             " SUM(CASE WHEN item_type = 'set' THEN 1 ELSE 0 END) AS s"
             " FROM katalog_index").fetchone()
-    print("[brickfolio] Katalogdatei eingelesen: %d neu, %d berichtigt, "
+    print("[nupplo] Katalogdatei eingelesen: %d neu, %d berichtigt, "
           "%d übersprungen" % (neu, geaendert, uebersprungen), flush=True)
     if uebersprungen and not neu and not geaendert:
         # Die ganze Datei war für uns nichts – das ist fast sicher die
@@ -1971,7 +1999,7 @@ def _issue_body(e: dict) -> str:
     if e.get("detail"):
         parts += ["", "<details><summary>Details</summary>", "",
                   "```", scrub(e["detail"], 3000), "```", "", "</details>"]
-    parts += ["", "*Automatisch aus Brickfolio gemeldet.*"]
+    parts += ["", "*Automatisch aus Nupplo gemeldet.*"]
     return "\n".join(parts)
 
 
@@ -2063,7 +2091,7 @@ def push_test(user: dict = Depends(admin_user)):
     unterwegs etwas klemmt."""
     if not push.verfuegbar():
         raise HTTPException(501, "Push ist auf diesem Server nicht verfügbar")
-    n = push.senden("🧱 Brickfolio", "Probemeldung – die Zustellung klappt.", "/")
+    n = push.senden("🧱 Nupplo", "Probemeldung – die Zustellung klappt.", "/")
     return {"ok": True, "sent": n}
 
 
@@ -2176,7 +2204,7 @@ def _note_error(message: str, fp: str) -> None:
     # „höchstens einer offen"-Riegel: Sonst käme bei einem kaputten Update
     # ein Dutzend Meldungen hintereinander.
     try:
-        push.senden("🐞 Brickfolio", "Ein Fehler wurde aufgezeichnet.", "/")
+        push.senden("🐞 Nupplo", "Ein Fehler wurde aufgezeichnet.", "/")
     except Exception:
         pass          # Melden darf nie stören
     _notify("error", "🐞 Ein Fehler wurde aufgezeichnet",
@@ -2312,7 +2340,7 @@ def _katalog_changelog() -> dict:
     # nicht zu Ende, und eine Änderung von morgen fehlte sonst für immer.
     core.set_setting("katalog_log_stand", "%d-%d" % (heute.year, heute.month))
     if umbenannt or neunummeriert:
-        print("[brickfolio] Change Log: %d umbenannt, %d neu nummeriert"
+        print("[nupplo] Change Log: %d umbenannt, %d neu nummeriert"
               % (umbenannt, neunummeriert), flush=True)
     return {"umbenannt": umbenannt, "neunummeriert": neunummeriert}
 
@@ -2466,7 +2494,7 @@ def _katalog_ziehen() -> dict:
     if r.headers.get("ETag"):
         core.set_setting("katalog_etag", r.headers["ETag"])
     core.set_setting("katalog_geholt_at", str(jetzt))
-    print("[brickfolio] Katalog geholt: %d neu, %d geändert"
+    print("[nupplo] Katalog geholt: %d neu, %d geändert"
           % (neu, geaendert), flush=True)
     return {"geholt": neu + geaendert, "neu": neu, "geaendert": geaendert}
 
@@ -3947,7 +3975,7 @@ class OwnerNameBody(BaseModel):
 
 @app.post("/api/settings/owner_name")
 def set_owner_name(body: OwnerNameBody, user: dict = Depends(admin_user)):
-    """Anzeigename anpassen (leer = namenloses Symbol, Titel »Dein Brickfolio«)."""
+    """Anzeigename anpassen (leer = namenloses Symbol, Titel »Dein Nupplo«)."""
     core.set_setting("owner_name", body.name.strip())
     return {"ok": True, "owner_name": _owner_name()}
 
@@ -4036,7 +4064,7 @@ def backup_restore_file(body: RestoreFileBody,
         check.close()
     except sqlite3.Error:
         raise HTTPException(400, "Sicherung ist beschädigt oder kein "
-                                 "Brickfolio-Stand")
+                                 "Nupplo-Stand")
     if admins < 1:
         raise HTTPException(400, "Sicherung enthält keinen Admin – "
                                  "Wiederherstellung würde aussperren")
@@ -4074,7 +4102,7 @@ def backup_restore_file(body: RestoreFileBody,
     with core.db() as conn:
         sync.neues_zeitalter(conn)
 
-    print(f"[brickfolio] Wiederhergestellt: {body.name} "
+    print(f"[nupplo] Wiederhergestellt: {body.name} "
           f"(Sicherheitskopie: {os.path.basename(safety)})", flush=True)
     return {"ok": True, "restored": body.name,
             "safety": os.path.basename(safety)}
@@ -4115,6 +4143,9 @@ def uploads_info(user: dict = Depends(admin_user)):
 
 @app.get("/api/backup")
 def download_backup(images: int = 0, user: dict = Depends(admin_user)):
+    # **Die Kennung bleibt „brickfolio“,** auch seit der Umbenennung in
+    # Nupplo (3.0.0): Ältere Instanzen und die iOS-App prüfen genau dieses
+    # Feld – eine Sicherung von heute soll sich dort weiter einspielen lassen.
     dump = {"app": "brickfolio", "version": 1,
             "created_at": int(time.time()), "tables": {}}
     with core.db() as conn:
@@ -4151,14 +4182,14 @@ class RestoreBody(BaseModel):
 
 def _sicherung_pruefen(body: "RestoreBody") -> list:
     """Ist das eine brauchbare Sicherung? Gibt die Benutzer daraus zurück."""
-    if body.app != "brickfolio" or body.version != 1             or not isinstance(body.tables, dict)             or "collection" not in body.tables:
-        raise HTTPException(400, "Das ist keine gültige Brickfolio-Sicherung")
+    if body.app not in ("brickfolio", "nupplo") or body.version != 1             or not isinstance(body.tables, dict)             or "collection" not in body.tables:
+        raise HTTPException(400, "Das ist keine gültige Nupplo-Sicherung")
     # Jede Tabelle eine Liste von Zeilen, jede Zeile ein Objekt – eine von
     # Hand verbogene Datei endete sonst mit 500 statt mit einem Satz.
     for name, zeilen in body.tables.items():
         if not isinstance(zeilen, list) or any(
                 not isinstance(z, dict) for z in zeilen):
-            raise HTTPException(400, "Das ist keine gültige Brickfolio-"
+            raise HTTPException(400, "Das ist keine gültige Nupplo-"
                                      f"Sicherung (Tabelle „{name}“)")
     users = body.tables.get("users") or []
     if any(not str(u.get("username") or "").strip() for u in users):
@@ -8193,7 +8224,7 @@ def _sicherungen_aufraeumen(bdir: str) -> None:
                          if muster.match(os.path.basename(f)))
         for f in passend[:-BACKUP_KEEP] if BACKUP_KEEP > 0 else []:
             os.remove(f)
-            print("[brickfolio] alte Sicherung entfernt: %s"
+            print("[nupplo] alte Sicherung entfernt: %s"
                   % os.path.basename(f), flush=True)
 
 
@@ -8221,7 +8252,7 @@ def _auto_backup():
         dst_conn.close()
         src_conn.close()
     _sicherungen_aufraeumen(bdir)
-    print(f"[brickfolio] Auto-Sicherung angelegt: {target}", flush=True)
+    print(f"[nupplo] Auto-Sicherung angelegt: {target}", flush=True)
 
 
 def _backup_list():
@@ -8794,23 +8825,37 @@ def _ico_bauen(wer: str) -> bytes:
 
 
 def _icon_bauen(wer: str, groesse: int) -> bytes:
+    """Das Nupplo-Symbol: der Steinturm auf Gelb – mit dem Namen darüber.
+
+    Ohne Namen ist es genau das Symbol der Marke. Mit Namen rückt der Turm
+    etwas kleiner nach unten, und der Name steht oben, wie zuvor auf dem
+    Nupplo-Symbol: Jede Instanz trägt ihr eigenes Zeichen.
+    """
     from PIL import Image, ImageDraw, ImageFont
-    basis = os.path.join(FRONTEND_DIR, "icons", "icon-basis.png")
-    im = Image.open(basis).convert("RGBA")
-    d = ImageDraw.Draw(im)
-    # Größte Schrift, die in das freie Feld über dem Kopf passt.
-    breite, kasten = 0, 372
-    for gr in range(96, 20, -4):
-        f = ImageFont.load_default(size=gr)
-        l, t, r, b = d.textbbox((0, 0), wer, font=f)
-        breite = r - l
-        if breite <= kasten:
-            break
-    # Strichstärke: Die mitgelieferte Schrift ist dünner als der ursprüngliche
-    # Zug – ein Rand in derselben Farbe macht sie wieder kräftig.
-    d.text(((im.width - breite) / 2 - l, 105 - (b - t) / 2 - t), wer, font=f,
-           fill=(255, 255, 255, 255), stroke_width=max(1, gr // 28),
-           stroke_fill=(255, 255, 255, 255))
+    ordner = os.path.join(FRONTEND_DIR, "icons")
+    if not wer:
+        im = Image.open(os.path.join(ordner, "icon-basis.png")).convert("RGBA")
+    else:
+        im = Image.new("RGBA", (512, 512), (255, 207, 0, 255))
+        turm = Image.open(os.path.join(ordner, "turm.png")).convert("RGBA")
+        hoehe = 262
+        breite_t = round(turm.width * hoehe / turm.height)
+        im.paste(turm.resize((breite_t, hoehe), Image.LANCZOS),
+                 ((512 - breite_t) // 2, 196))
+        d = ImageDraw.Draw(im)
+        # Größte Schrift, die in das freie Feld über dem Turm passt.
+        breite, kasten = 0, 400
+        for gr in range(92, 20, -4):
+            f = ImageFont.load_default(size=gr)
+            l, t, r, b = d.textbbox((0, 0), wer, font=f)
+            breite = r - l
+            if breite <= kasten:
+                break
+        # Dunkel auf Gelb wie die Wortmarke; der Rand in derselben Farbe
+        # macht die mitgelieferte, dünnere Schrift kräftig.
+        d.text(((im.width - breite) / 2 - l, 112 - (b - t) / 2 - t), wer, font=f,
+               fill=(29, 29, 27, 255), stroke_width=max(1, gr // 28),
+               stroke_fill=(29, 29, 27, 255))
     if groesse != im.width:
         im = im.resize((groesse, groesse), Image.LANCZOS)
     raus = io.BytesIO()
@@ -8836,9 +8881,9 @@ def index():
     """
     with open(os.path.join(FRONTEND_DIR, "index.html"), encoding="utf-8") as f:
         # `__APPTITLE__` statt des nackten Namens: Ohne gesetzten Namen
-        # stand im Reiter sonst „'s Brickfolio" – die Vorlage klebte das
+        # stand im Reiter sonst „'s Nupplo" – die Vorlage klebte das
         # Genitiv-s an eine leere Zeichenkette. `_app_title()` kennt den
-        # Fall und liefert dann »Dein Brickfolio«.
+        # Fall und liefert dann »Dein Nupplo«.
         seite = (f.read().replace("__APPVERSION__", core.APP_VERSION)
                  # Die eine Stelle **im Attribut** zuerst und mit
                  # Anführungszeichen-Schutz: Ein Name mit `"` brach sonst aus
@@ -8847,7 +8892,7 @@ def index():
                           'content="' + html.escape(_app_title(), True) + '"')
                  # `quote=False`: Die übrigen Marken stehen in Textinhalt,
                  # nicht in einem Attribut. Sonst würde aus „Anna's
-                 # Brickfolio" im Reiter „Anna&#x27;s Brickfolio".
+                 # Nupplo" im Reiter „Anna&#x27;s Nupplo".
                  .replace("__APPTITLE__", html.escape(_app_title(), False))
                  .replace("__OWNERUP__",
                           html.escape(_owner_name().upper(), False))

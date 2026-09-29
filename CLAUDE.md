@@ -1,4 +1,4 @@
-# Arbeiten an Brickfolio
+# Arbeiten an Nupplo (bis 2.92 „Brickfolio“)
 
 Selbstgehostete PWA für LEGO-Sammlungen: FastAPI + SQLite im Rücken,
 Vanilla-JS im Browser. **Kein Bauschritt**, keine Abhängigkeiten im Frontend –

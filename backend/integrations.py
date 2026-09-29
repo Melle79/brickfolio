@@ -1,4 +1,4 @@
-"""Brickfolio – externe Dienste: Brickognize (Erkennung) & BrickLink (Preise)."""
+"""Nupplo – externe Dienste: Brickognize (Erkennung) & BrickLink (Preise)."""
 import base64
 import html as html_mod
 import io
@@ -15,9 +15,9 @@ import woerterbuch
 
 BRICKOGNIZE_URL = "https://api.brickognize.com/predict/"
 # Echte Version und ein Kontaktweg: Brickognize stellt seine Erkennung
-# kostenlos bereit. Wenn Brickfolio dort einmal auffällt, soll man uns
+# kostenlos bereit. Wenn Nupplo dort einmal auffällt, soll man uns
 # erreichen können, statt nur sperren zu müssen.
-USER_AGENT = (f"Brickfolio/{core.APP_VERSION} "
+USER_AGENT = (f"Nupplo/{core.APP_VERSION} "
               "(self-hosted LEGO collection manager; "
               "+https://github.com/Melle79/brickfolio)")
 

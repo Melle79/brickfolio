@@ -35,8 +35,8 @@ def client(tmp_path, monkeypatch):
 def test_manifest_traegt_den_eingestellten_namen(client):
     client.post("/api/settings/owner_name", json={"name": "Anna"})
     m = client.get("/manifest.webmanifest").json()
-    assert m["short_name"] == "Anna's Brickfolio"
-    assert "Anna's Brickfolio" in m["name"]
+    assert m["short_name"] == "Anna's Nupplo"
+    assert "Anna's Nupplo" in m["name"]
     assert "Carla" not in m["name"]
 
 
@@ -47,14 +47,14 @@ def test_manifest_ohne_einstellung_heisst_dein_brickfolio(client):
     Installation, die nichts eingestellt hatte, bis aufs Handy.
     """
     m = client.get("/manifest.webmanifest").json()
-    assert m["short_name"] == "Dein Brickfolio"
+    assert m["short_name"] == "Dein Nupplo"
     assert "'s" not in m["short_name"]
 
 
 def test_titel_der_seite_traegt_den_namen(client):
     client.post("/api/settings/owner_name", json={"name": "Anna"})
     html = client.get("/").text
-    assert "<title>Anna's Brickfolio</title>" in html
+    assert "<title>Anna's Nupplo</title>" in html
     assert "__OWNER__" not in html          # Platzhalter muss ersetzt sein
 
 
@@ -125,8 +125,8 @@ def test_titel_ohne_namen_ist_nicht_s_brickfolio(client):
     Fall längst richtig, die Seite nicht.
     """
     html = client.get("/").text
-    assert "<title>Dein Brickfolio</title>" in html
-    assert "'s Brickfolio</title>" not in html
+    assert "<title>Dein Nupplo</title>" in html
+    assert "'s Nupplo</title>" not in html
     assert "__APPTITLE__" not in html
 
 

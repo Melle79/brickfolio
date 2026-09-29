@@ -53,7 +53,7 @@ def test_fehlerseite_vor_dem_worker_steht_im_protokoll(monkeypatch, capsys):
     with pytest.raises(hub.HubError):
         hub._request("POST", hub.HUB_URL, "/v1/trades")
     aus = capsys.readouterr().out
-    assert "[brickfolio] Hub POST /v1/trades" in aus
+    assert "[nupplo] Hub POST /v1/trades" in aus
     assert "502" in aus
     assert "kein JSON" in aus
     assert "DOCTYPE html" in aus, "der Anfang der Antwort fehlt"

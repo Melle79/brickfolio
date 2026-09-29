@@ -36,8 +36,9 @@
 <div id="splash">
   <div class="logo">
     <span class="logo-name">__OWNERUP__</span>
-    <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
-    <h1>Brickfolio</h1>
+    <!-- Die Wortmarke: das l ist ein Turm aus vier Steinen. In HTML statt
+         als Bild, damit sie die Farben jedes Designs annimmt. -->
+    <h1 class="wortmarke" aria-label="Nupplo"><span class="wm-links" aria-hidden="true">Nupp</span><span class="turm" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="wm-rechts" aria-hidden="true">o</span></h1>
     <p>Deine LEGO-Sammlung</p>
   </div>
   <div class="splash-bar"><i></i></div>
@@ -77,8 +78,7 @@
   <div class="login-box" id="login-box">
     <div class="logo">
       <span class="logo-name">__OWNERUP__</span>
-      <span class="logo-studs"><i></i><i></i><i></i><i></i></span>
-      <h1>Brickfolio</h1>
+      <h1 class="wortmarke" aria-label="Nupplo"><span class="wm-links" aria-hidden="true">Nupp</span><span class="turm" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="wm-rechts" aria-hidden="true">o</span></h1>
       <p>Deine LEGO-Sammlung</p>
     </div>
     <p id="login-hint" class="setup-hint" hidden></p>
@@ -108,7 +108,7 @@
     <button id="btn-totp-cancel" class="btn btn-outline">Abbrechen</button>
     <p id="totp-error" class="error" hidden></p>
   </div>
-  <p class="login-version">Brickfolio __APPVERSION__</p>
+  <p class="login-version">Nupplo __APPVERSION__</p>
 </section>
 
 <!-- ===== Einrichtungsassistent (nur beim allerersten Start) ===== -->
@@ -124,7 +124,7 @@
     <div class="wiz-step" data-step="1" hidden>
       <h3>🏷 Wem gehört die Sammlung?</h3>
       <p class="search-hint">Der Name steht im Logo und im Fenstertitel:
-        „<span id="wiz-name-preview">Dein Brickfolio</span>". Das Feld darf
+        „<span id="wiz-name-preview">Dein Nupplo</span>". Das Feld darf
         leer bleiben. Später änderbar unter <b>Mehr → Anzeigename</b>.</p>
       <label for="wiz-owner">Name</label>
       <input id="wiz-owner" maxlength="40" placeholder="ohne Namen" autocapitalize="words">
@@ -237,11 +237,11 @@
 <!-- ===== App ===== -->
 <div id="app" hidden>
   <header class="topbar">
-    <span class="logo-mini">
+    <!-- Name der Sammlung über der Wortmarke, wie in der iOS-App. -->
+    <div class="logo-mini">
       <span class="logo-name mini">__OWNERUP__</span>
-      <span class="logo-studs small"><i></i><i></i><i></i><i></i></span>
-    </span>
-    <h1>Brickfolio</h1>
+      <h1 class="wortmarke klein" aria-label="Nupplo"><span class="wm-links" aria-hidden="true">Nupp</span><span class="turm" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="wm-rechts" aria-hidden="true">o</span></h1>
+    </div>
     <button id="topbar-unread" class="unread-btn" hidden
             title="Ungelesene Nachrichten">💬<span data-unread-count>0</span></button>
     <button id="btn-help" class="help-btn" title="Hilfe" aria-label="Hilfe">?</button>
@@ -738,7 +738,7 @@
           <button class="mini-btn" id="invite-share" hidden>📤 Teilen</button>
         </div>
         <ol class="einladung-schritte">
-          <li>Dein Freund braucht ein eigenes Brickfolio.</li>
+          <li>Dein Freund braucht ein eigenes Nupplo.</li>
           <li>Dort unter <b>Mehr → Tausch-Netzwerk</b> den Code eintragen und
             einen Anzeigenamen wählen.</li>
           <li>Fertig – danach findet ihr euch gegenseitig im Tausch-Tab.</li>
@@ -1023,8 +1023,8 @@
     <div id="name-card" class="settings-card" hidden>
       <h3>🏷 Anzeigename</h3>
       <p class="search-hint">Der Name im Logo und Fenstertitel, z. B.
-        „Lukas' Brickfolio". Leer lassen: Das Symbol bleibt namenlos und der
-        Titel lautet „Dein Brickfolio".</p>
+        „Lukas' Nupplo". Leer lassen: Das Symbol bleibt namenlos und der
+        Titel lautet „Dein Nupplo".</p>
       <label for="owner-name">Name</label>
       <input id="owner-name" maxlength="40" placeholder="ohne Namen" autocapitalize="words">
       <button id="btn-owner-name" class="btn btn-primary">Speichern</button>
@@ -1213,18 +1213,18 @@
       <p class="settings-group-hint">Wege aus dem Heimnetz heraus – beide freiwillig.</p>
     <div class="settings-card" id="external-access-card" hidden>
       <h3>🌐 Externer Zugriff</h3>
-      <p class="search-hint">Von unterwegs auf Brickfolio zugreifen – ohne
+      <p class="search-hint">Von unterwegs auf Nupplo zugreifen – ohne
         Portfreigabe, per <b>Cloudflare Tunnel</b>. Trage Adresse und
         Tunnel-Token ein; die App baut dir daraus den fertigen
         <code>docker-compose</code>-Block. <b>Der Token bleibt im Browser</b>
         und wird nicht gespeichert oder verschickt.</p>
       <label for="cf-host">Adresse (Public Hostname)</label>
-      <input id="cf-host" placeholder="brickfolio.deine-domain.de" autocapitalize="none">
+      <input id="cf-host" placeholder="nupplo.deine-domain.de" autocapitalize="none">
       <label for="cf-token">Cloudflare Tunnel-Token</label>
       <input id="cf-token" placeholder="eyJhIjoi…" autocapitalize="none">
       <p class="search-hint">Token im <b>Cloudflare Zero Trust</b>-Dashboard
         unter <i>Networks → Tunnels</i> beim Anlegen kopieren. Als
-        <i>Public Hostname</i> dort <code>http://brickfolio:8300</code> als
+        <i>Public Hostname</i> dort <code>http://nupplo:8300</code> als
         Service eintragen.</p>
       <label>Diesen Block in die <code>docker-compose.yml</code> ergänzen:</label>
       <pre class="code-block" id="cf-snippet" aria-live="polite"></pre>
@@ -1289,7 +1289,7 @@
       <p class="search-hint">Enthält alles: Benutzer, Sammlung, Wünsche,
         Preisverläufe, Set-Zuordnungen und Einstellungen.</p>
       <p class="search-hint" id="backup-auto-info">Zusätzlich sichert
-        Brickfolio die Datenbank täglich von selbst nach
+        Nupplo die Datenbank täglich von selbst nach
         <code>data/backups/</code>.</p>
       <div id="backup-restore-block" hidden>
         <label for="backup-select">Automatischen Tagesstand wiederherstellen</label>
@@ -1318,9 +1318,9 @@
           </div>
         </div>
         <p class="search-hint">Von Hand auf dem Server:</p>
-        <pre class="update-cmd">cd /pfad/zu/brickfolio
+        <pre class="update-cmd">cd /pfad/zu/nupplo
 sudo bash update.sh</pre>
-        <p class="search-hint">…im Brickfolio-Ordner auf dem Server (dort,
+        <p class="search-hint">…im Nupplo-Ordner auf dem Server (dort,
           wo die docker-compose.yml liegt).</p>
       </div>
       <!-- Status des Update-Helfers: immer sichtbar, damit sich die
@@ -1389,7 +1389,7 @@ sudo bash update.sh</pre>
       <div id="push-box" class="push-box" hidden>
         <p class="search-hint" style="margin:0 0 6px"><b>🔔 Benachrichtigung
           aufs Gerät.</b> Damit erfährst du von einem Fehler auch, wenn
-          Brickfolio gerade zu ist. Die Meldung kommt von <b>deinem eigenen
+          Nupplo gerade zu ist. Die Meldung kommt von <b>deinem eigenen
           Server</b> und sagt nur, <i>dass</i> etwas passiert ist –
           Einzelheiten stehen hier in der App. Je Gerät einzeln
           einzuschalten.</p>
@@ -1428,7 +1428,7 @@ sudo bash update.sh</pre>
 
     <div class="settings-card" id="about-card">
       <h3>ℹ️ Quellen &amp; Rechtliches</h3>
-      <p class="search-hint">Brickfolio ist ein privates Hobby-Projekt ohne
+      <p class="search-hint">Nupplo ist ein privates Hobby-Projekt ohne
         kommerzielle Absicht und läuft auf deinem eigenen Server.</p>
       <p class="search-hint"><b>Daten &amp; Bilder</b> stammen von
         <a href="https://rebrickable.com/" target="_blank" rel="noopener">Rebrickable</a>
@@ -1447,7 +1447,7 @@ sudo bash update.sh</pre>
         keine Inhalte abgerufen, übernommen oder gespeichert, und solange
         niemand das Zeichen antippt, geht nichts dorthin. Welcher Artikel zu
         welcher Figur gehört, wurde <b>einmalig</b> beim Wiki erfragt und
-        liegt als feste Liste bei; im Betrieb fragt Brickfolio dort nichts.
+        liegt als feste Liste bei; im Betrieb fragt Nupplo dort nichts.
         Die Artikel stehen unter der GNU-FDL 1.3 und gehören ihren
         Autoren.</p>
       <div id="bricklink-rechtliches" hidden>
@@ -1469,9 +1469,9 @@ sudo bash update.sh</pre>
       <p class="search-hint"><b>Schrift</b>: Nunito, SIL Open Font License 1.1 –
         wird lokal ausgeliefert, es werden keine Daten an Dritte übertragen.</p>
       <p class="search-hint"><b>Programm</b>:
-        <a href="https://github.com/Melle79/brickfolio" target="_blank" rel="noopener">Brickfolio</a>
+        <a href="https://github.com/Melle79/brickfolio" target="_blank" rel="noopener">Nupplo</a>
         unter MIT-Lizenz.</p>
-      <p class="search-hint"><b>Haftung.</b> Brickfolio ist ein privates
+      <p class="search-hint"><b>Haftung.</b> Nupplo ist ein privates
         Hobby-Projekt und wird „wie besehen“ bereitgestellt – ohne Gewähr für
         Fehlerfreiheit, Verfügbarkeit oder Eignung für einen bestimmten
         Zweck. Soweit gesetzlich zulässig, wird keine Haftung für Schäden aus

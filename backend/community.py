@@ -1,6 +1,6 @@
 """Tausch-Netzwerk (Community) – die Seite der Instanz.
 
-Alles, was diese Brickfolio-Instanz mit dem Hub bespricht: Verbindung per
+Alles, was diese Nupplo-Instanz mit dem Hub bespricht: Verbindung per
 Einladung, Freigaben, Angebote, Mitglieder, Tauschvorgänge mit
 Ende-zu-Ende-verschlüsselten Nachrichten, Einladungen. Der Hub selbst ist
 ein eigenes Projekt (Cloudflare Worker); hier liegt nur der Teil, den jede

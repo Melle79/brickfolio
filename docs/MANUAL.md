@@ -1,14 +1,16 @@
-# Brickfolio – The Manual
+# Nupplo – The Manual
 
 *July 2026 · [🇩🇪 Deutsche Fassung](HANDBUCH.md)*
 
-Brickfolio is a self-hosted Progressive Web App (PWA) for scanning, managing
+*Up to version 2.92, Nupplo was called “Brickfolio”.*
+
+Nupplo is a self-hosted Progressive Web App (PWA) for scanning, managing
 and valuing a LEGO® collection. This manual explains every feature – from the
 first start to a day at the flea market.
 
 ## Contents
 
-1. [About Brickfolio](#1-about-brickfolio)
+1. [About Nupplo](#1-about-nupplo)
 2. [Installation & first setup](#2-installation--first-setup)
 3. [Users & roles](#3-users--roles)
 4. [Scanning & adding](#4-scanning--adding)
@@ -27,9 +29,9 @@ first start to a day at the flea market.
 
 ---
 
-## 1. About Brickfolio
+## 1. About Nupplo
 
-Brickfolio follows three basic ideas:
+Nupplo follows three basic ideas:
 
 **Adding something should take seconds.** Photograph a figure or a set with
 your phone, tap the match, pick the condition – done. Recognition is handled
@@ -41,7 +43,7 @@ fetched automatically and recorded continuously – from that come price
 histories per item and the value trend of the whole collection.
 
 **Your data stays with you.** Everything runs in a single Docker container on
-your own server (FastAPI + SQLite). There is no Brickfolio service in between
+your own server (FastAPI + SQLite). There is no Nupplo service in between
 that you would have to sign up for, and your collection lives nowhere else.
 Several family members share one database, each with their own login.
 
@@ -99,7 +101,7 @@ your home screen.
 There is a ready-made image – nothing to build, no source code needed:
 
 ```bash
-mkdir brickfolio && cd brickfolio
+mkdir nupplo && cd nupplo
 curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
 docker compose up -d
 ```
@@ -109,7 +111,7 @@ persistently at `./data/brickfolio.db` – that folder survives updates and
 container rebuilds.
 
 The image exists on two registries (identical in content, pick one):
-`ghcr.io/melle79/brickfolio:latest` and `melle79/brickfolio:latest`. It is
+`ghcr.io/melle79/nupplo:latest` and `melle79/nupplo:latest`. It is
 built for **amd64** (Intel/AMD, most NAS boxes) and **arm64** (Raspberry Pi,
 ARM NAS, Apple Silicon). Very old 32-bit ARM devices are not supported.
 
@@ -124,12 +126,12 @@ and replace the `image: …` line in `docker-compose.yml` with `build: .`, then
 **Changing the port / running several instances:** the reachable port is the
 *first* number in the `ports` mapping of `docker-compose.yml` – `"8301:8300"`
 makes the app available on port 8301 (the second number always stays 8300).
-That is also how you run several Brickfolio instances side by side, e.g. for
+That is also how you run several Nupplo instances side by side, e.g. for
 separate collections or a test installation: its own folder, its own
 `container_name`, its own port – every instance has its own `data/` folder and
 therefore its own database.
 
-**Synology note:** create the folder under `/volume1/docker/brickfolio` and
+**Synology note:** create the folder under `/volume1/docker/nupplo` and
 run all commands over SSH with `sudo`.
 
 ### 2.3 First start: the setup wizard
@@ -144,7 +146,7 @@ steps:
 
 1. **Display name** – the name in the logo, the window title, the **app icon**,
    the small icon in the browser tab and the name on the phone's home screen
-   ("Anna's Brickfolio")
+   ("Anna's Nupplo")
 2. **Price region and currency** – which market the average prices come from
    and in which currency; preselected is what matches your browser's language
    settings (see chapter 13.1)
@@ -185,7 +187,7 @@ with your **existing credentials** – same name, same password as before.
 > *More → Backup* and a signed-in admin.
 
 *For unattended setups:* if the environment variables
-`ADMIN_USER`/`ADMIN_PASSWORD` are set, Brickfolio creates the admin on the
+`ADMIN_USER`/`ADMIN_PASSWORD` are set, Nupplo creates the admin on the
 very first start; the wizard is then skipped and the keys come either from
 environment variables or from *More → API keys*.
 
@@ -247,7 +249,7 @@ precedence.
 
 ### 2.5 Onto your phone as an app (PWA)
 
-If Brickfolio is still running in the browser on a phone, the scan page shows
+If Nupplo is still running in the browser on a phone, the scan page shows
 the card **"📲 Add to the home screen"** at the top. What it offers depends on
 the device:
 
@@ -261,7 +263,7 @@ the device:
 
 **Pull down to reload.** Started from the home screen there is no address
 bar and therefore no reload button; on iOS there is no gesture for it either.
-So Brickfolio brings its own: at the top of the list, pull down until the
+So Nupplo brings its own: at the top of the list, pull down until the
 brick turns green, then let go. In the browser it stays off – the address bar
 already does that.
 
@@ -269,7 +271,7 @@ As soon as the app runs from the home screen the card disappears by itself –
 it detects the display mode. "Don't show again" hides it permanently, per
 device.
 
-Once installed, Brickfolio starts like a native app in full screen –
+Once installed, Nupplo starts like a native app in full screen –
 including camera access for scanning.
 
 ### 2.6 Getting your bearings: header and the More tab
@@ -278,7 +280,7 @@ including camera access for scanning.
 another, then your instance's name, the wordmark and the subtitle appear;
 after three seconds the image fades and the content comes up. The name
 comes from the server – without a display name set it simply reads
-"Brickfolio". The image covers the time the app is loading anyway; it does
+"Nupplo". The image covers the time the app is loading anyway; it does
 not add any. With **reduced motion** enabled on the device, the same image
 shows briefly without the animation.
 
@@ -298,7 +300,7 @@ username, change password and sign out.
 **💬 Unread messages.** If something is waiting in the trade network, a mark
 with the number of unread messages appears to the left – visible from every
 tab. Tapping it goes straight to *Trade → Messages*. If nothing is
-open, there is no mark either. When the app opens, Brickfolio asks the hub
+open, there is no mark either. When the app opens, Nupplo asks the hub
 once so the number is right immediately instead of after the next cycle.
 
 > **Phone or computer?** The navigation sits **at the bottom on a phone** and
@@ -353,7 +355,7 @@ recognition, and lists trademark, font and program licences.
 
 ### 2.7 Reaching it from anywhere (Cloudflare Tunnel)
 
-By default Brickfolio only runs on your **home network**. If you also want
+By default Nupplo only runs on your **home network**. If you also want
 access from elsewhere (phone on mobile data, another location), you should
 **not open ports on your router** – that exposes the server to the whole
 internet. The recommendation instead is a **Cloudflare Tunnel**: safer,
@@ -373,19 +375,19 @@ simpler and free.
 (register a cheap one or move an existing one).
 
 **Recommended installation** – `cloudflared` as a second container right next
-to Brickfolio, driven by a tunnel token:
+to Nupplo, driven by a tunnel token:
 
 1. In the **Cloudflare Zero Trust** dashboard under *Networks → Tunnels*
    create a tunnel and copy the **token** shown.
 2. On the tunnel enter a *Public Hostname*, e.g.
-   `brickfolio.your-domain.com`, with the service
-   **`http://brickfolio:8300`** (the container name and port from above).
-3. Add this next to the `brickfolio` service in `docker-compose.yml`:
+   `nupplo.your-domain.com`, with the service
+   **`http://nupplo:8300`** (the container name and port from above).
+3. Add this next to the `nupplo` service in `docker-compose.yml`:
 
    ```yaml
      cloudflared:
        image: cloudflare/cloudflared:latest
-       container_name: brickfolio-tunnel
+       container_name: nupplo-tunnel
        restart: unless-stopped
        command: tunnel run
        environment:
@@ -393,17 +395,17 @@ to Brickfolio, driven by a tunnel token:
    ```
 
    Both containers sit on the same compose network, so `cloudflared` reaches
-   the app at `http://brickfolio:8300`. Then `docker compose up -d`.
+   the app at `http://nupplo:8300`. Then `docker compose up -d`.
 
-Brickfolio is then reachable encrypted from anywhere at
-`https://brickfolio.your-domain.com` – with no port forwarding at all. Over
+Nupplo is then reachable encrypted from anywhere at
+`https://nupplo.your-domain.com` – with no port forwarding at all. Over
 that address it can also be put on your phone as a PWA (see 2.5).
 
 > **An extra lock (recommended):** in the Zero Trust dashboard you can put an
 > **access policy** in front of the app – for example sign-in by one-time
 > email code, or a restriction to certain addresses. Then only people
 > Cloudflare has confirmed reach the login page at all. For your own family
-> the normal Brickfolio login is often enough; the access policy is the second
+> the normal Nupplo login is often enough; the access policy is the second
 > door for anyone who wants to be certain.
 
 **Several instances** (e.g. one per family member): simply create several
@@ -412,7 +414,7 @@ that address it can also be put on your phone as a PWA (see 2.5).
 
 ### 2.8 How the app is secured – and what it is not built for
 
-Brickfolio is built for the **home network**. If you forward a port on your
+Nupplo is built for the **home network**. If you forward a port on your
 router, you should know what protects you and what does not.
 
 **What is there:**
@@ -448,11 +450,11 @@ router, you should know what protects you and what does not.
 - **`latest` means trusting the registry.** With `:latest` every update pulls
   the newest state from there – even if that account ever fell into the wrong
   hands. If you would rather not, pin a **fixed version**
-  (`image: ghcr.io/melle79/brickfolio:1.67.0`). Then only what you picked runs.
+  (`image: ghcr.io/melle79/nupplo:1.67.0`). Then only what you picked runs.
   > **But:** a fixed version number only fixes the *name*. Whoever controls
   > the registry could serve something else under `1.67.0` just as under
   > `latest`. Real protection comes only from a **digest**
-  > (`image: ghcr.io/melle79/brickfolio@sha256:…`) – it describes the content
+  > (`image: ghcr.io/melle79/nupplo@sha256:…`) – it describes the content
   > itself and cannot be re-pointed. The release page or `docker image
   > inspect` shows the digest.
   >
@@ -482,7 +484,7 @@ use a long, unique password and restrict access to known addresses.
 
 ## 3. Users & roles
 
-Brickfolio knows three levels, which can be combined:
+Nupplo knows three levels, which can be combined:
 
 | Action | Standard | Collector-Pro 💼 | Admin 🔧 |
 |---|:-:|:-:|:-:|
@@ -628,7 +630,7 @@ decision, and the app cannot tell.
 > too. Nothing is lost, something is added.
 
 > **Why the phone asks for the camera every time.** That is iOS, not
-> Brickfolio: for a web app on the home screen Safari does **not** remember
+> Nupplo: for a web app on the home screen Safari does **not** remember
 > the camera permission across app starts (WebKit bug 215884). So it asks once
 > per start, and no setting in the app changes that. What went away in 2.88.23
 > is the *repeated* asking: the camera stream stays alive for half a minute
@@ -1042,7 +1044,7 @@ This also applies to the wishlist and the CSV import.
 
 ### 5.4 Sets and their figures
 
-Brickfolio knows the figure inventories of your sets (via BrickLink, loaded
+Nupplo knows the figure inventories of your sets (via BrickLink, loaded
 automatically):
 
 - The set card shows **"👥 3/4"** discreetly in its info line – three of the
@@ -1139,7 +1141,7 @@ The centrepiece for Collector-Pros: shopping in a structured way, with market
 knowledge. Standard users see active lists and may book in items that arrived;
 everything else is a pro matter.
 
-> **The view keeps itself current.** Every five seconds Brickfolio asks
+> **The view keeps itself current.** Every five seconds Nupplo asks
 > whether anything in the data has changed – and reloads the open view **only
 > then**. So if a family member puts something on a list from their phone, or
 > a tool talking to the interface does, it appears seconds later. No reload,
@@ -1226,7 +1228,7 @@ collection entry deliberately stays and is adjusted manually if needed).
 *(Collector-Pro only – the "📋 Sell list (duplicates)" button under
 **Lists → 🛒 Shopping**.)*
 
-At the press of a button Brickfolio produces the list of all items you own
+At the press of a button Nupplo produces the list of all items you own
 more than once – calculated live, no maintenance needed. The basic rule:
 
 > **"As many figures stay as your sets need – but at least one."**
@@ -1323,7 +1325,7 @@ for insurance or the display cabinet.
 
 Headings, file names and the number format follow the **language you have
 set**, the money columns follow the **currency you have set** – in English the
-file is called `brickfolio-collection.csv` and the column `avg used (GBP)`.
+file is called `nupplo-collection.csv` and the column `avg used (GBP)`.
 
 The collection CSV also contains **Theme** and – for Collector-Pro users –
 **Paid**. That way it can be read back in through the CSV import without
@@ -1387,7 +1389,7 @@ pictures of custom minifigures are **files**, not database rows – without them
 the backup would carry only the reference, and after a move the items would
 point at nothing. So the card shows a checkbox as soon as there are any; it
 names their number and size and is ticked by default. The images then travel
-inside the same JSON file, and on restore Brickfolio writes them back under
+inside the same JSON file, and on restore Nupplo writes them back under
 their old names – so the references still fit. That applies to the backup you
 restore at the **very first start** as well (chapter 2.3).
 
@@ -1396,7 +1398,7 @@ restore at the **very first start** as well (chapter 2.3).
 > case take the `data/uploads/` folder (or all of `data/`) along via your
 > normal backup.
 
-**It also happens automatically:** Brickfolio writes a consistent backup of the
+**It also happens automatically:** Nupplo writes a consistent backup of the
 database to `data/backups/` every day and keeps the last 14 daily snapshots
 (adjustable via the environment variable `BACKUP_KEEP`, 0 turns it off). The
 backup card shows the date of the last automatic backup. The daily snapshots
@@ -1434,7 +1436,7 @@ purchase ledger, wishlist, shopping lists and price history are synced.
 
 ### 11.2 Applying updates
 
-Brickfolio tells you itself: the card **More → 🔄 Version & updates** (admin)
+Nupplo tells you itself: the card **More → 🔄 Version & updates** (admin)
 compares the installed version against the latest GitHub release –
 automatically at app start and when opening the More tab (cached server-side
 for 6 hours), immediately via "Check for updates". It asks the **release
@@ -1445,7 +1447,7 @@ before trying again. If an update is waiting, a
 toast and a yellow banner with a link to the release notes appear.
 
 > **Checking without signing in:** the running version sits in small print
-> below the sign-in card ("Brickfolio 2.4.1"). Handy when several instances
+> below the sign-in card ("Nupplo 2.4.1"). Handy when several instances
 > are running and you want to know which one you are looking at – or when
 > somebody reports a fault and needs the version to go with it.
 
@@ -1454,12 +1456,12 @@ How you apply it depends on how you installed.
 **With the ready-made image** (the usual way, see 2.2):
 
 ```bash
-cd /path/to/brickfolio
+cd /path/to/nupplo
 docker compose pull && docker compose up -d
 ```
 
 On a Synology the same works **without a shell**: *Container Manager → Project
-→ brickfolio → Action → Build and restart*.
+→ nupplo → Action → Build and restart*.
 
 > **This needs a project.** If you created the container by hand via
 > *Registry → Create container*, that button is not there – and that is no
@@ -1486,7 +1488,7 @@ On a Synology the same works **without a shell**: *Container Manager → Project
 **Built from source:**
 
 ```bash
-cd /path/to/brickfolio
+cd /path/to/nupplo
 sudo bash update.sh
 ```
 
@@ -1513,7 +1515,7 @@ With a small helper on the server it also works without SSH: the card
 > installation from the ready-made image, where they do not come along:
 >
 > ```bash
-> cd /path/to/brickfolio
+> cd /path/to/nupplo
 > curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
 > curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
 > ```
@@ -1544,12 +1546,12 @@ Scheduler → Create → Scheduled Task → User-defined script.
 |---|---|
 | General | User: **`root`** (otherwise no `docker compose`) |
 | Schedule | Daily · start `00:00` · "Continue running within the same day" ✔ · every minute · Last run time: **`23:59`** |
-| Task Settings | `sh /path/to/brickfolio/update-watch.sh` |
+| Task Settings | `sh /path/to/nupplo/update-watch.sh` |
 
 > ⚠️ "Last run time" starts at `00:59` – the task would then only run during
 > the first hour of the day. Do set it to `23:59`.
 
-On Linux with cron: `* * * * * sh /path/to/brickfolio/update-watch.sh`
+On Linux with cron: `* * * * * sh /path/to/nupplo/update-watch.sh`
 
 **Several instances:** best to use **one task per instance** – that way you see
 per instance whether it ran. If you put everything into one task, append
@@ -1566,7 +1568,7 @@ never come. A log of every run: `data/update-watch.log`.
 
 ## 12. The trading network
 
-Several Brickfolio instances – in one family or a circle of friends, say – can
+Several Nupplo instances – in one family or a circle of friends, say – can
 connect: everyone publishes the items they want to pass on, sees what the
 others offer and writes messages about them. All voluntary; without a
 connection the tab simply is not there.
@@ -2121,7 +2123,7 @@ note would be a dead end. There is always **at most one** open: a single
 problem often triggers several different errors. Once dismissed, the next
 **new** error reports again – the same one a second time does not.
 
-**🔔 Notification on your device.** If you want to know even when Brickfolio is
+**🔔 Notification on your device.** If you want to know even when Nupplo is
 closed, switch on web push in the same card – **per device**, with the
 browser's permission prompt. After that a new error sends a message to your
 phone or desktop.
@@ -2206,7 +2208,7 @@ the settings just because that is where they last looked something up.
 
 **🐢 Gentle image mode.** A checkbox in the same card, off by default. "But
 other sites don't crash" – true, and the likely reason is: hardly any other
-page gives the browser this work. Brickfolio decodes photos, paints them onto
+page gives the browser this work. Nupplo decodes photos, paints them onto
 canvases, reads pixels back and re-encodes as JPEG – a dozen times over during
 the round-robin search. Browsers like to push that onto the **graphics unit**,
 and that is exactly where renderers abort.
@@ -2358,7 +2360,7 @@ the building instructions.
 
 ## 15. FAQ
 
-**Does Brickfolio need the internet?** For scanning, prices and search: yes
+**Does Nupplo need the internet?** For scanning, prices and search: yes
 (those APIs live on the net). Your own data still stays entirely on your
 server. What works without internet is listed in the README.
 
@@ -2378,11 +2380,11 @@ region can differ in reality.
 first only a few items are "priced". Once everything has prices, the curve
 shows real market movement.
 
-**Several collections/families?** One Brickfolio instance = one shared
+**Several collections/families?** One Nupplo instance = one shared
 collection. For separate collections simply start a second container with its
 own `data/` folder and port.
 
-**Is this legal with the LEGO name?** Brickfolio is a private hobby project.
+**Is this legal with the LEGO name?** Nupplo is a private hobby project.
 LEGO® is a trademark of the LEGO Group, which does not sponsor, authorise or
 endorse this project; BrickLink and Rebrickable are trademarks of their
 respective owners, and their APIs are subject to their respective terms of use.
