@@ -1211,7 +1211,27 @@
 
     <section class="settings-group" id="grp-aussen">
       <h3 class="settings-group-title">🌐 Nach außen</h3>
-      <p class="settings-group-hint">Wege aus dem Heimnetz heraus – beide freiwillig.</p>
+      <p class="settings-group-hint">Wege aus dem Heimnetz heraus – alle freiwillig.</p>
+    <div class="settings-card" id="connect-card" hidden>
+      <h3>📡 Zugriff ohne Portfreigabe</h3>
+      <p class="search-hint">Nupplo SE hält von sich aus eine Verbindung zu
+        einem Vermittler offen (<code>connect.nupplo.com</code>). Am Router
+        muss nichts freigegeben werden, und es braucht weder Domain noch
+        Tunnel. Geräte koppelst du einmal per QR-Code – im Profil unter
+        „Geräte koppeln“.</p>
+      <p class="search-hint"><b>Ende zu Ende verschlüsselt:</b> Der Vermittler
+        reicht nur durch und kann nichts lesen. Und nur gekoppelte Geräte
+        kommen überhaupt bis zur Anmeldung – ein Fremder sieht nicht einmal
+        die Anmeldeseite.</p>
+      <label class="wahl-kasten">
+        <input type="checkbox" id="connect-an">
+        <span>Zugriff ohne Portfreigabe einschalten</span>
+      </label>
+      <p class="search-hint" id="connect-stand" aria-live="polite"></p>
+      <p class="search-hint" id="connect-id-zeile" hidden>Instanz-ID:
+        <code id="connect-id"></code> – solange der Dienst im Aufbau ist, muss
+        sie beim Vermittler freigeschaltet sein.</p>
+    </div>
     <div class="settings-card" id="external-access-card" hidden>
       <h3>🌐 Externer Zugriff</h3>
       <p class="search-hint">Von unterwegs auf Nupplo zugreifen – ohne
@@ -1575,6 +1595,22 @@ sudo bash update.sh</pre>
     <input id="own-pass-new" type="password" autocomplete="new-password">
     <button id="btn-own-pass" class="btn btn-primary">Passwort ändern</button>
     <p id="own-pass-error" class="error" hidden></p>
+
+    <div id="koppeln-block" hidden>
+      <hr class="profile-trenner">
+      <h4 class="profile-titel">📡 Geräte koppeln</h4>
+      <p class="search-hint">Ein Gerät, das von unterwegs ohne Portfreigabe
+        zugreifen soll, einmal koppeln: Code scannen, fertig. Anmelden musst
+        du dich dort trotzdem.</p>
+      <button id="btn-koppeln" class="btn btn-outline">Gerät koppeln</button>
+      <div id="koppeln-code" hidden>
+        <div id="koppeln-qr" class="tfa-qr"></div>
+        <p class="tfa-secret" id="koppeln-text"></p>
+        <p class="search-hint" id="koppeln-frist"></p>
+      </div>
+      <ul class="koppeln-liste" id="koppeln-liste"></ul>
+      <p id="koppeln-fehler" class="error" hidden></p>
+    </div>
 
     <hr class="profile-trenner">
     <h4 class="profile-titel">🔐 Zwei-Faktor-Anmeldung</h4>

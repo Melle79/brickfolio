@@ -436,6 +436,47 @@ es sich über diese Adresse auch aufs Handy legen (siehe 2.5).
 *Public Hostnames* anlegen, die auf die jeweiligen Container-Ports zeigen –
 ein einziger `cloudflared`-Container reicht dafür aus.
 
+#### Ohne Tunnel und ohne Domain: Zugriff ohne Portfreigabe (ab 3.1)
+
+> **Im Aufbau.** Der Vermittler `connect.nupplo.com` nimmt vorerst nur
+> freigeschaltete Instanzen an. Die Instanz-ID steht in der Karte, sobald
+> der Zugriff eingeschaltet ist.
+
+Für alle, die keinen Cloudflare-Tunnel einrichten wollen: Nupplo SE baut
+**von sich aus** eine Verbindung zu einem Vermittler auf und hält sie offen –
+wie ein Browser, der eine Seite geöffnet hat. Externe Geräte verbinden sich
+ebenfalls dorthin, der Vermittler reicht durch. Am Router wird nichts
+freigegeben, es braucht keine Domain und keinen zweiten Container.
+
+**Einschalten (Admin):** *Mehr → Nach außen → 📡 Zugriff ohne
+Portfreigabe*. Darunter steht, ob die Verbindung zum Vermittler steht – und
+wenn nicht, warum.
+
+**Ein Gerät koppeln (jeder für sich):** Profil (oben rechts) → *Geräte
+koppeln* → *Gerät koppeln*. Es erscheint ein QR-Code mit einem Einmalcode:
+Er gilt **zehn Minuten und genau einmal**. Das Gerät scannt ihn, danach
+steht es in der Liste darunter. Angemeldet wird auf dem Gerät trotzdem wie
+immer, mit Benutzername und Passwort (und zweitem Faktor, falls an).
+
+**Warum das sicher ist:**
+
+- **Ende zu Ende verschlüsselt** (Noise-Protokoll, wie bei WireGuard). Der
+  Vermittler sieht nur, *dass* und *wie viel* übertragen wird – nicht was.
+  Den Schlüssel der Instanz bekommt das Gerät aus dem QR-Code; wer sich
+  dazwischensetzen wollte, fiele beim ersten Verbindungsaufbau auf.
+- **Nur gekoppelte Geräte kommen durch.** Ein fremdes Gerät erreicht nicht
+  einmal die Anmeldeseite. Bei einer Portfreigabe steht die Anmeldung für das
+  ganze Internet offen.
+- **Entkoppeln wirkt sofort:** In der Geräteliste *Entkoppeln* – eine gerade
+  offene Verbindung des Geräts endet damit auch.
+- Der Schlüssel der Instanz liegt als `connect.key` neben dem Geheimnis im
+  Datenordner, **nicht** in der Datenbank – Sicherungen tragen ihn also nicht
+  mit sich herum.
+
+Wer einen **eigenen Vermittler** betreibt, trägt dessen Adresse in der
+Umgebungsvariable `CONNECT_VERMITTLER` ein (z. B. `wss://connect.example.org`).
+Das Protokoll steht in `docs/CONNECT.md`.
+
 ### 2.8 Wie die App abgesichert ist – und wofür sie nicht gebaut ist
 
 Nupplo ist für das **Heimnetz** gebaut. Wer den Port am Router

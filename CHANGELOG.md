@@ -1,5 +1,41 @@
 # Changelog
 
+## 3.1.0 – Oktober 2026
+
+### Neu
+- 📡 **Zugriff ohne Portfreigabe.** Nupplo SE kann von sich aus eine
+  Verbindung zu einem Vermittler (`connect.nupplo.com`) aufbauen und offen
+  halten. Externe Geräte erreichen die Instanz darüber, ohne dass am Router
+  etwas freigegeben wird – ohne Domain, ohne Tunnel, ohne zweiten
+  Container. Aus, bis ein Admin es unter *Mehr → Nach außen* einschaltet.
+  **Im Aufbau:** Der Vermittler nimmt vorerst nur freigeschaltete
+  Instanzen an.
+- 🔐 **Ende zu Ende verschlüsselt** mit dem Noise-Protokoll (IK). Der
+  Vermittler reicht nur durch und kann nichts lesen. Geprüft gegen die
+  offiziellen Testvektoren.
+- 📱 **Geräte koppeln per QR-Code** im Profil: Einmalcode, zehn Minuten
+  gültig. **Nur gekoppelte Geräte kommen durch** – ein fremdes Gerät sieht
+  nicht einmal die Anmeldeseite. Entkoppeln beendet auch eine gerade offene
+  Verbindung. Angemeldet wird danach wie immer.
+- „Von außen genutzt“ in den Einstellungen zum zweiten Faktor kennt den
+  neuen Weg und meldet ihn nicht als „ohne Zugangsschutz“.
+
+### Warum so gebaut
+- **Anfragen gehen im Prozess an den Server**, nicht über eine
+  HTTP-Bibliothek an 127.0.0.1. Im Probelauf hängte eine solche Bibliothek
+  von sich aus `Accept-Encoding: gzip` an, und Fotos kamen gepackt an,
+  obwohl niemand danach gefragt hatte. Kopfzeilen gehen jetzt unverändert
+  durch; ein Test hält das fest.
+- **Die Absenderadresse des Geräts** gibt der Verbinder als Client-Adresse
+  weiter. Sonst hätte die Sperre gegen Passwortraten („je Herkunft“) alle
+  Geräte gemeinsam gebremst.
+- **Die Anmeldung beim Vermittler trägt eine Zufallszahl.** Ed25519
+  unterschreibt gleichen Inhalt immer gleich; eine Instanz, die sich in
+  derselben Sekunde neu verbindet, wäre sonst als Wiederholung abgewiesen
+  worden (beim Bau bemerkt).
+- Der Schlüssel liegt als `connect.key` neben dem Geheimnis, nicht in der
+  Datenbank – Sicherungen wandern herum.
+
 ## 3.0.1 – Oktober 2026
 
 **Das Repository heißt jetzt [Melle79/nupplo](https://github.com/Melle79/nupplo).**

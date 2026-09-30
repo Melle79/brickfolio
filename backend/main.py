@@ -141,11 +141,15 @@ async def cache_control(request: Request, call_next):
 # Schutz". Gefälschte Kopfzeilen aus dem Heimnetz ändern nur die Anzeige.
 EXTERN_FRIST = 30 * 86400           # so lange gilt „von außen genutzt"
 EXTERN_SCHREIBTAKT = 600            # höchstens alle zehn Minuten schreiben
-_extern_geschrieben = {"mit": 0.0, "ohne": 0.0}
+_extern_geschrieben = {"mit": 0.0, "ohne": 0.0, "connect": 0.0}
 
 
 def _extern_art(request: Request):
     """(Weg, mit Access) für eine Anfrage von außen – sonst None."""
+    # Über den Vermittler (connect.py): steht im ASGI-Scope, nicht in einer
+    # Kopfzeile – die ließe sich aus dem Heimnetz fälschen.
+    if request.scope.get("nupplo.connect"):
+        return "connect", False
     h = request.headers
     if h.get("cf-ray") or h.get("cf-connecting-ip"):
         weg = "cloudflare"
@@ -164,12 +168,17 @@ def _extern_art(request: Request):
 
 def _extern_merken(weg: str, access: bool) -> None:
     jetzt = time.time()
-    art = "mit" if access else "ohne"
+    # Über den Vermittler kommen nur gekoppelte Geräte – das ist weder „ohne
+    # Zugangsschutz“ noch Cloudflare Access, sondern ein eigener Fall.
+    art = "connect" if weg == "connect" else "mit" if access else "ohne"
     if jetzt - _extern_geschrieben[art] < EXTERN_SCHREIBTAKT:
         return
     _extern_geschrieben[art] = jetzt
     core.set_setting("extern_zuletzt", str(int(jetzt)))
     core.set_setting("extern_weg", weg)
+    if art == "connect":
+        core.set_setting("extern_connect", str(int(jetzt)))
+        return
     if access:
         core.set_setting("extern_mit_access", str(int(jetzt)))
     else:
@@ -205,12 +214,14 @@ def extern_stand() -> dict:
             return 0
     zuletzt = zeit("extern_zuletzt")
     mit, ohne = zeit("extern_mit_access"), zeit("extern_ohne_access")
+    ueber_connect = zeit("extern_connect")
     return {"genutzt": jetzt - zuletzt < EXTERN_FRIST,
             "zuletzt": zuletzt or None,
             "weg": core.get_setting("extern_weg") or None,
             "mit_access": jetzt - mit < EXTERN_FRIST,
             "ohne_access": jetzt - ohne < EXTERN_FRIST,
-            "ohne_access_zuletzt": ohne or None}
+            "ohne_access_zuletzt": ohne or None,
+            "connect": jetzt - ueber_connect < EXTERN_FRIST}
 
 
 @app.middleware("http")
@@ -8930,3 +8941,20 @@ app.include_router(community.router)
 import sync  # noqa: E402
 
 app.include_router(sync.router)
+
+# Externer Zugriff ohne Portfreigabe – ruft den Server im Prozess auf, braucht
+# ihn also fertig.
+import connect  # noqa: E402
+
+app.include_router(connect.router)
+
+
+@app.on_event("startup")
+async def _connect_starten():
+    # Im laufenden Ereignis-Loop, weil die Leitung zum Vermittler asynchron
+    # ist. Ist der Zugriff aus (Vorgabe), passiert hier nichts weiter als das
+    # Anlegen der Schlüssel.
+    try:
+        connect.verbinder.einrichten(app)
+    except Exception as e:                  # nie am Start scheitern
+        print(f"[connect] nicht gestartet: {e}", flush=True)

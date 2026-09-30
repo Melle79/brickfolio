@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "3.0.1"
+APP_VERSION = "3.1.0"
 
 
 def hash_password(password: str) -> str:
@@ -1076,6 +1076,9 @@ def init_db():
         # Am Ende, damit alle Tabellen und Spalten schon da sind.
         import sync
         sync.migrieren(conn)
+        # Externer Zugriff ohne Portfreigabe: gekoppelte Geräte, Codes.
+        import connect
+        connect.migrieren(conn)
         # Startpunkte für den Preisverlauf aus bereits gespeicherten Preisen
         conn.execute(
             "INSERT INTO price_history (item_id, item_type, ts, price_new, "

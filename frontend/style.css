@@ -2683,6 +2683,14 @@ details.help a { color: var(--blue, #0057A6); font-weight: 700; }
 #wiz-tfa-platz #tfa-info,
 #wiz-tfa-platz #tfa-off-hint { display: none; }
 .tfa-qr svg { width: 200px; height: 200px; background: #fff; border-radius: 8px; padding: 6px; }
+/* Gekoppelte Geräte im Profil (Zugriff ohne Portfreigabe). */
+.koppeln-liste { list-style: none; padding: 0; margin: 10px 0 0; }
+.koppeln-liste li { display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.koppeln-liste li small { color: var(--muted); }
+#koppeln-code .tfa-secret { text-align: center; font-size: 1.3em; letter-spacing: 2px; }
+#koppeln-frist { text-align: center; }
+.koppeln-liste .mini-btn { width: auto; flex: none; }
 .tfa-secret {
   font-family: ui-monospace, Menlo, monospace; font-size: 15px;
   /* Umbrechen nur zwischen den Vierergruppen – `break-all` trennte mitten

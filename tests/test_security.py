@@ -291,7 +291,13 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
         "extern_zuletzt",       # wann die App zuletzt von außen genutzt
         "extern_mit_access",    # wurde, mit bzw. ohne Cloudflare Access –
         "extern_ohne_access",   # Zeitstempel, kein Zugang, keine Adresse
-        "extern_weg",           # „cloudflare" oder „proxy"
+        "extern_weg",           # „cloudflare", „proxy" oder „connect"
+        "extern_connect",       # zuletzt über den Vermittler genutzt –
+                                # Zeitstempel, keine Adresse
+        "connect_an",           # „1" = Zugriff ohne Portfreigabe an. Die
+                                # Schlüssel liegen in einer eigenen Datei,
+                                # nicht in den Einstellungen
+        "connect_vermittler",   # Adresse eines eigenen Vermittlers
         "hub_wuensche_zeigen",  # Merker „Wunschliste im Netzwerk zeigen" –
                                 # die Quelle ist das Hub-Profil
         "hub_wuensche_stand",   # Prüfsumme der zuletzt gezeigten Liste, damit

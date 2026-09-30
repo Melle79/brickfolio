@@ -2949,6 +2949,131 @@ async function ladeTfaStatus() {
   } catch (_) { /* nicht angemeldet o. Ä. */ }
 }
 
+/* Zugriff ohne Portfreigabe (backend/connect.py). Admins schalten ihn in den
+   Einstellungen ein; koppeln darf danach jeder im eigenen Profil. */
+let connectVerdrahtet = false;
+async function ladeConnect() {
+  if (!connectVerdrahtet) {
+    connectVerdrahtet = true;
+    $("connect-an").addEventListener("change", async (ev) => {
+      const an = ev.target.checked;
+      try {
+        await api("/connect", { method: "POST", body: { an } });
+        $("connect-stand").textContent = an ? tr("⏳ Verbindet …") : tr("Aus.");
+        // Die Leitung baut sich im Hintergrund auf – kurz danach den
+        // echten Stand zeigen, samt Grund, falls der Vermittler abweist.
+        if (an) setTimeout(ladeConnect, 3000);
+      } catch (e) {
+        ev.target.checked = !an;
+        toast(e.message);
+      }
+    });
+  }
+  try {
+    const d = await api("/connect");
+    $("connect-an").checked = d.an;
+    const el = $("connect-stand");
+    if (!d.an) el.textContent = tr("Aus.");
+    else if (d.verbunden) {
+      el.textContent = tr("✅ Mit dem Vermittler verbunden seit {zeit}.", {
+        zeit: new Date(d.seit * 1000).toLocaleString(dateLocale(),
+          { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }) });
+    } else if (d.fehler) {
+      el.textContent = tr("⏳ Noch nicht verbunden – {grund}", { grund: d.fehler });
+    } else el.textContent = tr("⏳ Verbindet …");
+    $("connect-id-zeile").hidden = !d.an || !d.instanz_id;
+    $("connect-id").textContent = d.instanz_id || "";
+  } catch (_) { /* Stand ist Zugabe – die Karte bleibt bedienbar */ }
+}
+
+let koppelnUhr = null, koppelnAbfrage = null, koppelnVerdrahtet = false;
+
+function koppelnBeenden() {
+  clearInterval(koppelnUhr);
+  clearInterval(koppelnAbfrage);
+  koppelnUhr = koppelnAbfrage = null;
+  $("koppeln-code").hidden = true;
+  $("koppeln-qr").innerHTML = "";
+}
+
+async function ladeKoppeln() {
+  koppelnBeenden();
+  $("koppeln-fehler").hidden = true;
+  let d;
+  try { d = await api("/connect"); } catch (_) { d = { an: false }; }
+  $("koppeln-block").hidden = !d.an;
+  if (!d.an) return;
+  if (!koppelnVerdrahtet) {
+    koppelnVerdrahtet = true;
+    $("btn-koppeln").addEventListener("click", koppelnStarten);
+    $("koppeln-liste").addEventListener("click", async (ev) => {
+      const knopf = ev.target.closest("[data-entkoppeln]");
+      if (!knopf) return;
+      const ok = await frage(tr("Gerät entkoppeln?") + "\n\n" + tr("Es kommt danach von "
+        + "unterwegs nicht mehr durch – auch nicht bis zur Anmeldung. Wieder koppeln geht jederzeit."),
+        { gefahr: true, ok: tr("Entkoppeln") });
+      if (!ok) return;
+      try {
+        await api("/connect/geraete/" + knopf.dataset.entkoppeln, { method: "DELETE" });
+        zeigeGeraete();
+      } catch (e) { toast(e.message); }
+    });
+  }
+  zeigeGeraete();
+}
+
+async function zeigeGeraete() {
+  let liste = [];
+  try { liste = await api("/connect/geraete"); } catch (_) { return []; }
+  const wann = (ts) => ts ? new Date(ts * 1000).toLocaleDateString(dateLocale(),
+    { day: "numeric", month: "numeric", year: "2-digit" }) : "–";
+  $("koppeln-liste").innerHTML = liste.map((g) => `
+    <li>
+      <span><b>${esc(g.name || tr("Gerät ohne Namen"))}</b>${g.eigenes ? ""
+        : " · " + esc(g.benutzer || tr("gelöschtes Konto"))}<br>
+        <small>${esc(tr("gekoppelt {am}, zuletzt {zuletzt}",
+          { am: wann(g.gekoppelt), zuletzt: wann(g.zuletzt) }))}</small></span>
+      <button class="mini-btn" data-entkoppeln="${g.id}">${esc(tr("Entkoppeln"))}</button>
+    </li>`).join("");
+  return liste;
+}
+
+async function koppelnStarten() {
+  $("koppeln-fehler").hidden = true;
+  try {
+    const r = await api("/connect/koppeln", { method: "POST" });
+    // Das Bild mit Anmeldung holen – ein <img> könnte sie nicht mitschicken.
+    const svg = await fetch("/api/connect/koppeln.svg?link=" + encodeURIComponent(r.link),
+      { headers: { Authorization: "Bearer " + state.token } });
+    $("koppeln-qr").innerHTML = svg.ok ? await svg.text() : "";
+    $("koppeln-text").textContent = r.code;
+    $("koppeln-code").hidden = false;
+    clearInterval(koppelnUhr);
+    const ticken = () => {
+      const rest = r.ablauf - Math.floor(Date.now() / 1000);
+      if (rest <= 0) { koppelnBeenden(); return; }
+      $("koppeln-frist").textContent = tr("Gilt noch {min}:{sek} und nur einmal.",
+        { min: Math.floor(rest / 60), sek: String(rest % 60).padStart(2, "0") });
+    };
+    ticken();
+    koppelnUhr = setInterval(ticken, 1000);
+    // Sobald das Gerät gescannt hat, steht es in der Liste – dann den Code
+    // wegnehmen, er ist verbraucht.
+    const vorher = (await zeigeGeraete()).length;
+    clearInterval(koppelnAbfrage);
+    koppelnAbfrage = setInterval(async () => {
+      const jetzt = await zeigeGeraete();
+      if (jetzt.length > vorher) {
+        koppelnBeenden();
+        toast(tr("Gerät gekoppelt ✔"));
+      }
+    }, 3000);
+  } catch (e) {
+    $("koppeln-fehler").textContent = e.message;
+    $("koppeln-fehler").hidden = false;
+  }
+}
+
 /* Wird die App von außen genutzt – und steht etwas davor? Der Server merkt
    es sich an den Kopfzeilen der Anfragen (Cloudflare, Access, Proxy); hier
    steht nur, was daraus folgt. */
@@ -2972,6 +3097,10 @@ function zeigeExtern(e, aktiv) {
       + "(zuletzt {wann}). Vor der App steht nur das Passwort.",
       { wann: wann(e.ohne_access_zuletzt) })
       + (aktiv ? "" : " " + tr("Zwei-Faktor wird empfohlen."));
+  } else if (e.connect && !e.mit_access) {
+    el.textContent = tr("🌐 Von außen genutzt über den Zugriff ohne "
+      + "Portfreigabe (zuletzt {wann}). Nur gekoppelte Geräte kommen durch.",
+      { wann: wann(e.zuletzt) });
   } else if (e.mit_access) {
     el.textContent = tr("🌐 Von außen genutzt, geschützt durch Cloudflare "
       + "Access (zuletzt {wann}). Zwei-Faktor ist hier eine zusätzliche "
@@ -11834,6 +11963,8 @@ async function loadSettings() {
   $("images-card").hidden = !isAdmin;
   if (isAdmin) loadImagesStatus();
   $("external-access-card").hidden = !isAdmin;
+  $("connect-card").hidden = !isAdmin;
+  if (isAdmin) ladeConnect();
   loadSortCard();               // Sortierung darf jeder für sich einstellen
   $("hub-card").hidden = !isAdmin;
   if (isAdmin) loadHubCard();
@@ -12044,8 +12175,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.style.overflow = "hidden";
     wireTfaOnce();
     ladeTfaStatus();
+    ladeKoppeln();
   });
-  $("btn-profile-close").addEventListener("click", closeProfile);
+  $("btn-profile-close").addEventListener("click", () => {
+    koppelnBeenden();
+    closeProfile();
+  });
   $("profile-overlay").addEventListener("click", (ev) => {
     if (ev.target === $("profile-overlay")) closeProfile();
   });
