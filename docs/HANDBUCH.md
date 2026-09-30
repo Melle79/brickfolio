@@ -1827,8 +1827,10 @@ bestehen und wird bei Bedarf manuell angepasst).
 ### 7.5 Liste als PDF – zum Einkaufen oder zum Verkaufen
 
 Unter jeder Liste steht **„📄 PDF“**. Es fragt, welche Fassung es sein soll,
-und öffnet dann den Druckdialog – dort **„Als PDF sichern“** (am iPhone oben in der
-Druckvorschau auf „Teilen“ tippen, dann „In Dateien sichern“).
+und die Instanz baut daraus ein fertiges PDF. Am Rechner wird es
+heruntergeladen; am Handy kommt „PDF ist fertig“ und ein Tipp auf **„📤 Teilen
+oder sichern“** öffnet das Teilen-Menü – In Dateien sichern, AirDrop, Mail,
+Nachrichten.
 
 - **🛒 Einkaufsliste** – alle Artikel mit Bild, Zustand, Menge, Ø-Preis und
   Summe, dazu eingetragene Einkaufspreise und ein Kästchen zum Abhaken auf

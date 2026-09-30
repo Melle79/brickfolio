@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.2.1 – Oktober 2026
+
+### Verbessert
+- 📄 **Listen-PDF kommt fertig vom Server.** Bisher lief es über den
+  Druckdialog des Browsers – am iPhone ohne „Als PDF sichern“, mit Rändern
+  und Skalierung nach Gutdünken. Jetzt baut die Instanz das PDF selbst
+  (gleiches Aussehen überall, Nunito wie in der App, Seitenzahlen). Am
+  Handy geht danach das Teilen-Menü auf (In Dateien sichern, AirDrop,
+  Mail), am Rechner wird die Datei heruntergeladen – als
+  „Verkaufsliste ‹Name›.pdf“ bzw. „Einkaufsliste ‹Name›.pdf“.
+
+### Für Betreiber
+- Neue Abhängigkeit **fpdf2** (reines Python). Wer das Image zieht oder
+  mit `update.sh` baut, muss nichts tun.
+
 ## 3.2.0 – Oktober 2026
 
 ### Neu

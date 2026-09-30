@@ -20,7 +20,7 @@ from fastapi import (Depends, FastAPI, File, HTTPException, Request,
                      Response, UploadFile)
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -7843,6 +7843,58 @@ def get_lists(archived: int = 0, user: dict = Depends(current_user)):
                                   "est_new": round(est_new, 2),
                                   "paid_sum": round(paid_sum, 2)}})
     return {"lists": out}
+
+
+def _listen_bild(item: dict) -> str | None:
+    """Ein kleines Bild zum Artikel für das PDF – eigene Uploads direkt,
+    Katalogbilder aus dem eigenen Speicher (einmal geholt, danach lokal)."""
+    url = item.get("img_url") or ""
+    try:
+        if url.startswith("/uploads/"):
+            pfad = os.path.join(_uploads_dir(), os.path.basename(url))
+            return pfad if os.path.isfile(pfad) else None
+        if url:
+            pfad = _katalog_bild(url)
+            return (_daumennagel(pfad, 160) or pfad) if pfad else None
+    except Exception:
+        return None
+    return None
+
+
+@app.get("/api/lists/{list_id}/pdf")
+def list_pdf(list_id: int, art: str = "einkauf", prozent: float = 100,
+             sprache: str = "de", user: dict = Depends(current_user)):
+    """Die Liste als PDF – `art` ist „einkauf“ oder „verkauf“. Einkaufspreise
+    stehen nur in der Einkaufsliste und nur für Profis (wie in der Liste
+    selbst); in der Verkaufsliste nie."""
+    import listen_pdf
+    if art not in ("einkauf", "verkauf"):
+        raise HTTPException(422, "Unbekannte Fassung")
+    with core.db() as conn:
+        liste = conn.execute("SELECT * FROM shopping_lists WHERE id = ?",
+                             (list_id,)).fetchone()
+        if not liste:
+            raise HTTPException(404, "Liste nicht gefunden")
+        if liste["archived"] and not user["is_dealer"]:
+            raise HTTPException(403, "Das Archiv ist nur für Sammlerprofis")
+        items = [dict(r) for r in conn.execute(
+            "SELECT * FROM shopping_items WHERE list_id = ? "
+            "ORDER BY done, added_at", (list_id,))]
+    if not user["is_dealer"]:
+        for z in items:
+            z["paid_price"] = None
+    waehrung = next((z["price_currency"] for z in items
+                     if z.get("price_currency")), None) or "EUR"
+    sprache = "en" if sprache == "en" else "de"
+    daten = listen_pdf.erzeugen(
+        dict(liste), items, art=art, prozent=prozent, sprache=sprache,
+        waehrung=waehrung, absender=_app_title(), bild_fuer=_listen_bild,
+        profi=bool(user["is_dealer"]))
+    name = listen_pdf.dateiname(liste["name"], art, sprache)
+    return Response(content=daten, media_type="application/pdf", headers={
+        "Content-Disposition": "attachment; filename*=UTF-8''"
+                               + urllib.parse.quote(name),
+        "Cache-Control": "no-store"})
 
 
 @app.post("/api/lists")

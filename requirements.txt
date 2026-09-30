@@ -9,3 +9,5 @@ cryptography>=42
 segno>=1.6
 # Web-Push von der eigenen Instanz (Benachrichtigung bei Fehlern)
 pywebpush>=2.0
+# PDF-Abzug von Listen (Einkaufs-/Verkaufsliste)
+fpdf2>=2.8

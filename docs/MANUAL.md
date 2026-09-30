@@ -1223,9 +1223,10 @@ collection entry deliberately stays and is adjusted manually if needed).
 
 ### 7.5 List as PDF – for buying or for selling
 
-Every list has **“📄 PDF”** at the bottom. It asks which version you want
-and then opens the print dialog – choose **“Save as PDF”** there (on an
-iPhone, tap “Share” at the top of the print preview, then “Save to Files”).
+Every list has **“📄 PDF”** at the bottom. It asks which version you want,
+and the instance builds a finished PDF from it. On a computer it is
+downloaded; on a phone you get “PDF is ready”, and tapping **“📤 Share or
+save”** opens the share sheet – Save to Files, AirDrop, Mail, Messages.
 
 - **🛒 Shopping list** – every item with picture, condition, quantity,
   average price and total, plus purchase prices you entered and a box to
