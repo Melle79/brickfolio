@@ -2040,9 +2040,11 @@ function angebotBlock(stock) {
  * Wunschliste und Einkaufslisten gleichermaßen, also deckt eine Funktion
  * beide ab.
  *
- * Geholt wird nur **gebraucht**: Das ist fast immer der günstigste Einstieg,
- * und „ab" meint genau den. Zwei Zustände wären der doppelte Verbrauch am
- * BrickLink-Tageslimit für eine Zahl, die kaum jemand braucht.
+ * **Je Zeile ein Zustand – der, den die Zeile trägt** (`data-zustand`):
+ * Eine neue Figur mit „ab 2,70 € gebraucht“ daneben führt in die Irre.
+ * Wo eine Zeile keinen Zustand hat (Wunschliste), wird gebraucht geholt –
+ * fast immer der günstigste Einstieg. Beide Zustände je Zeile wären der
+ * doppelte Verbrauch am BrickLink-Tageslimit.
  *
  * Läuft nachträglich und still: Schlägt es fehl, bleibt die Liste, wie sie
  * ist — die Angebotspreise sind eine Zugabe, kein Inhalt.
@@ -2055,7 +2057,8 @@ async function angeboteEintragen(container) {
     const [typ, nr] = (el.dataset.info || "").split("|");
     // Eigene Figuren ohne Katalognummer haben dort nichts zu suchen.
     if (!nr || /^(fig-|manuell-|custom-)/.test(nr)) return;
-    gesucht.set(`${typ}:${nr}:U`, { item_type: typ, item_no: nr, condition: "U" });
+    const z = el.dataset.zustand === "new" ? "N" : "U";
+    gesucht.set(`${typ}:${nr}:${z}`, { item_type: typ, item_no: nr, condition: z });
   });
   if (!gesucht.size) return;
 
@@ -2073,13 +2076,15 @@ async function angeboteEintragen(container) {
 
   zeilen.forEach((el) => {
     const [typ, nr] = (el.dataset.info || "").split("|");
-    const d = treffer[`${typ}:${nr}:U`];
+    const z = el.dataset.zustand === "new" ? "N" : "U";
+    const d = treffer[`${typ}:${nr}:${z}`];
     if (!d || d.min == null) return;
     if (el.querySelector(".angebot-badge")) return;   // nicht doppelt
     const span = document.createElement("span");
     span.className = "angebot-badge";
     span.title = tr("Billigstes Angebot gerade jetzt (BrickLink) – kein Verkaufswert");
-    span.textContent = tr("ab {p} gebraucht", { p: fmtEur(d.min) });
+    span.textContent = z === "N" ? tr("ab {p} neu", { p: fmtEur(d.min) })
+      : tr("ab {p} gebraucht", { p: fmtEur(d.min) });
     (el.querySelector(".sub") || el).appendChild(span);
   });
 }
@@ -8849,7 +8854,7 @@ function listItemRow(it, dealer, verkauf = false) {
     ? `<div class="sub done-note">${esc(verkauf ? tr("✔ verkauft") : tr("✔ in Sammlung"))}${it.done_by_name ? " " + esc(tr("von {wer}", { wer: it.done_by_name })) : ""}${it.done_at ? " " + esc(tr("am {datum}", { datum: new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) })) : ""}</div>`
     : "";
   return `
-  <div class="fig-row tappbar ${it.done ? "done" : ""}" data-iid="${it.id}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
+  <div class="fig-row tappbar ${it.done ? "done" : ""}" data-iid="${it.id}" data-zustand="${it.condition === "new" ? "new" : "used"}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
     <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
     <div class="fig-info">
       <strong>${esc(it.name)}</strong>
@@ -9462,7 +9467,7 @@ function renderDuplicates(data) {
     </div></div>
     <div class="set-figs">
       ${data.items.map((it) => `
-      <div class="fig-row tappbar" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
+      <div class="fig-row tappbar" data-zustand="${it.condition === "new" ? "new" : "used"}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
         <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
         <div class="fig-info">
           <strong>${esc(it.name)}</strong>

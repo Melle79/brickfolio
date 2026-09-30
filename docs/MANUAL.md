@@ -230,7 +230,8 @@ was actually paid last – what the figure is *worth*. The asking price says
 what it *costs* if you buy now.
 
 It appears in the detail view and as a small badge in wanted and shopping
-lists. It is **off** by default: every lookup costs additional BrickLink
+lists – there for the condition the item has on the list (“from … new” or
+“from … used”; on the wanted list, used). It is **off** by default: every lookup costs additional BrickLink
 requests, and the daily limit is 5,000. Asking prices are **not stored** –
 the value of your collection keeps resting on actual sales.
 

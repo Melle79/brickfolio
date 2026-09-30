@@ -239,7 +239,8 @@ was zuletzt tatsächlich bezahlt wurde – was die Figur also *wert* ist. Der
 Angebotspreis sagt, was sie *kostet*, wenn du jetzt kaufst.
 
 Sie erscheint in der Detailansicht und als kleine Marke in Wunsch- und
-Einkaufslisten. Voreingestellt ist sie **aus**: Jede Abfrage kostet
+Einkaufslisten – dort für den Zustand, den der Artikel auf der Liste hat
+(„ab … neu“ bzw. „ab … gebraucht“; auf der Wunschliste gebraucht). Voreingestellt ist sie **aus**: Jede Abfrage kostet
 zusätzliche BrickLink-Abrufe, und das Tageslimit liegt bei 5.000.
 Angebotspreise werden **nicht gespeichert** – der Wert deiner Sammlung
 beruht weiter auf Verkäufen.

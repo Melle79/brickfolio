@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.2 – Oktober 2026
+
+### Behoben
+- 🏷️ **„ab … €“ passt zum Zustand.** Die Angebotsmarke in Einkaufs- und
+  Verkaufslisten (und bei den Doppelten) zeigte immer den billigsten
+  **gebrauchten** Preis, auch bei Artikeln im Zustand Neu. Jetzt steht dort
+  „ab … neu“ bzw. „ab … gebraucht“, passend zum Artikel. Weiterhin eine
+  Abfrage je Zeile – das BrickLink-Tageslimit wird nicht stärker belastet.
+
 ## 3.3.1 – Oktober 2026
 
 ### Verbessert
