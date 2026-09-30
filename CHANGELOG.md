@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.3 – Oktober 2026
+
+### Behoben
+- ↩︎ **Rückgängig bei Verkäufen aus der App.** Was in der iOS-App verkauft
+  wurde, trägt keinen Schnappschuss des alten Stands. „Rückgängig“ in der
+  Web-App setzte dann nur den Haken zurück, die Stücke fehlten weiter in
+  der Sammlung. Jetzt sagt sie „In der App verkauft – bitte dort
+  zurücknehmen“ und lässt alles, wie es ist.
+
 ## 3.3.2 – Oktober 2026
 
 ### Behoben

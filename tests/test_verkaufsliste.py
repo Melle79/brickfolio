@@ -164,3 +164,20 @@ def test_erloes_zaehlt_nicht_als_einkauf(ctx):
     namen = [x["name"] for x in
              c.get("/api/stats/dashboard").json()["lists_breakdown"]]
     assert "Flohmarkt" in namen and "Verkauf Olli" not in namen
+
+
+def test_in_der_app_verkauft_wird_hier_nicht_still_zurueckgesetzt(ctx):
+    """Die iOS-App verkauft selbst und schreibt keinen Schnappschuss. Ohne
+    ihn setzte „Rückgängig“ nur den Haken zurück – die Stücke fehlten
+    weiter. Jetzt lehnt der Server ab, und der Haken bleibt."""
+    c = ctx
+    lid = _verkaufsliste(c)
+    iid = _auf_liste(c, lid)
+    with core.db() as conn:
+        conn.execute("UPDATE shopping_items SET done = 1, recv_mode = 'verkauft' "
+                     "WHERE id = ?", (iid,))
+    r = c.post(f"/api/lists/items/{iid}/undo")
+    assert r.status_code == 409 and "In der App verkauft" in r.text
+    with core.db() as conn:
+        assert conn.execute("SELECT done FROM shopping_items WHERE id = ?",
+                            (iid,)).fetchone()["done"] == 1

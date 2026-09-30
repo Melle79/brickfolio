@@ -8385,6 +8385,13 @@ def undo_list_item(item_id: int, user: dict = Depends(dealer_user)):
             "SELECT id, quantity, item_id, item_type FROM collection "
             "WHERE id = ?", (row["recv_entry_id"],)).fetchone() \
             if row["recv_entry_id"] else None
+        if row["recv_mode"] == "verkauft" and not row["recv_snapshot"]:
+            # In der iOS-App verkauft: Sie hält den alten Stand nur bei sich
+            # und pusht keinen Schnappschuss. Ohne ihn ließe sich hier nur
+            # der Haken zurücksetzen – die Stücke fehlten weiter in der
+            # Sammlung. Lieber ehrlich ablehnen; die App macht es umgekehrt
+            # genauso.
+            raise HTTPException(409, "In der App verkauft – bitte dort zurücknehmen")
         if row["recv_mode"] == "verkauft":
             zurueck = _verkauf_zuruecknehmen(conn, row)
         elif eintrag and row["recv_mode"] in ("neu", "add"):
