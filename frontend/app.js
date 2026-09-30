@@ -8514,6 +8514,7 @@ function renderLists(lists) {
       </div>
       ${dealer ? `<div class="liste-fuss">
         ${!state.showArchive && l.stats.open > 0 ? `<button class="mini-btn add" data-l-offer>${esc(tr("💰 Gesamtangebot"))}</button>` : ""}
+        ${l.items.length ? `<button class="mini-btn" data-l-pdf>${esc(tr("📄 PDF"))}</button>` : ""}
         ${state.showArchive
           ? `<button class="mini-btn" data-l-restore>${esc(tr("↩︎ Reaktivieren"))}</button>`
           : `<button class="mini-btn" data-l-archive>${esc(tr("📦 Archivieren"))}</button>`}
@@ -8575,6 +8576,8 @@ function renderLists(lists) {
       });
     }
     const list = lists.find((l) => l.id === lid);
+    const lPdf = card.querySelector("[data-l-pdf]");
+    if (lPdf) lPdf.addEventListener("click", () => listePdf(list));
     const lOffer = card.querySelector("[data-l-offer]");
     if (lOffer) lOffer.addEventListener("click", () => {
       if (card.querySelector("[data-offer-row]")) return;
@@ -9791,6 +9794,7 @@ function printTable(title, subtitle, headers, rows, cols) {
   cols = cols || headers.map(() => "");
   const cls = (i) => (cols[i] ? ` class="pc-${cols[i]}"` : "");
   const area = $("print-area");
+  area.className = "";
   area.innerHTML = `<h1>${esc(title)}</h1>`
     + `<p>${esc(subtitle)}${esc(tr(" · Stand {d}",
         { d: new Date().toLocaleDateString(dateLocale()) }))} · ${esc(appTitle())}</p>`
@@ -9798,6 +9802,113 @@ function printTable(title, subtitle, headers, rows, cols) {
     + `<thead><tr>${headers.map((h, i) => `<th${cls(i)}>${esc(h)}</th>`).join("")}</tr></thead>`
     + `<tbody>${rows.map((r) =>
         `<tr>${r.map((c, i) => `<td${cls(i)}>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  window.print();
+}
+
+/* ------------------------------------------------- Liste als PDF
+
+   Eine Einkaufsliste zum Mitnehmen oder Weitergeben – über den Druckdialog,
+   dort „Als PDF sichern“. Zwei Fassungen zur Auswahl:
+
+   - **Einkaufsliste**: alle Artikel mit Ø-Preis je Zustand, Summe und einem
+     Kästchen zum Abhaken; eingetragene Einkaufspreise mit.
+   - **Verkaufsliste**: für den, der kauft – nur die offenen Artikel, ein
+     Preis je Stück (auf Wunsch ein Anteil vom Marktwert) und die Summe.
+     **Ohne Einkaufspreise**: Was man selbst bezahlt hat, geht den Käufer
+     nichts an.
+
+   Gewertet wird wie beim Gesamtangebot: der Ø des eingetragenen Zustands,
+   fehlt er, der andere. */
+function listenWert(i) {
+  return (i.condition === "new" ? (i.price_new || i.price_used)
+    : (i.price_used || i.price_new)) || 0;
+}
+
+async function listePdf(list) {
+  const d = await appDialog({
+    titel: tr("„{name}“ als PDF", { name: list.name }),
+    text: tr("Es öffnet sich der Druckdialog – dort „Als PDF sichern“ wählen."),
+    felder: [
+      { name: "art", label: tr("Fassung"), typ: "auswahl", wert: "einkauf",
+        optionen: [
+          { wert: "einkauf", label: tr("🛒 Einkaufsliste – Ø-Preise, zum Abhaken") },
+          { wert: "verkauf", label: tr("💰 Verkaufsliste – Preise für den Käufer") }] },
+      { name: "prozent", label: tr("Preis in der Verkaufsliste (% vom Marktwert)"),
+        typ: "zahl", wert: "100" }],
+    ok: tr("📄 PDF erstellen"),
+  });
+  if (!d) return;
+  const verkauf = d.art === "verkauf";
+  const pct = Math.min(1000, Math.max(1, betragLesen(d.prozent) || 100)) / 100;
+  const items = verkauf ? list.items.filter((i) => !i.done) : list.items;
+  if (!items.length) { toast(tr("Keine offenen Artikel auf der Liste.")); return; }
+
+  let summe = 0, stueck = 0;
+  const zeilen = items.map((i, n) => {
+    const q = i.qty || 1;
+    const stk = verkauf ? Math.round(listenWert(i) * pct * 100) / 100 : listenWert(i);
+    summe += stk * q; stueck += q;
+    const zust = i.condition === "new" ? tr("Neu") : tr("Gebraucht");
+    return `<tr${i.done && !verkauf ? ' class="erledigt"' : ""}>
+      <td class="dl-nr">${n + 1}</td>
+      <td class="dl-bild"><img src="${imgSrc(i.img_url, true)}" alt=""></td>
+      <td class="dl-name"><strong>${esc(i.name)}</strong>
+        <span>${esc(i.item_id)} · ${esc(i.item_type === "set" ? tr("Set") : tr("Figur"))}</span></td>
+      <td><span class="dl-zust dl-${i.condition === "new" ? "neu" : "gebr"}">${esc(zust)}</span></td>
+      <td class="dl-zahl">${q}×</td>
+      <td class="dl-zahl">${stk ? esc(fmtEur(stk)) : "–"}</td>
+      <td class="dl-zahl dl-summe">${stk ? esc(fmtEur(stk * q)) : "–"}</td>
+      ${verkauf ? "" : `<td class="dl-zahl">${i.paid_price != null ? esc(fmtEur(i.paid_price)) : ""}</td>
+      <td class="dl-haken"><span>${i.done ? "✓" : ""}</span></td>`}
+    </tr>`;
+  }).join("");
+  const eingekauft = items.reduce((s, i) => s + (i.paid_price || 0), 0);
+  const heute = new Date().toLocaleDateString(dateLocale());
+  const titel = verkauf ? tr("Verkaufsliste") : tr("Einkaufsliste");
+  const hinweis = verkauf
+    ? (pct === 1
+      ? tr("Preise: durchschnittlicher BrickLink-Verkaufspreis der letzten 6 Monate für den angegebenen Zustand, Stand {d}.", { d: heute })
+      : tr("Preise: {p} % des durchschnittlichen BrickLink-Verkaufspreises der letzten 6 Monate für den angegebenen Zustand, Stand {d}.",
+        { p: Math.round(pct * 100), d: heute }))
+    : tr("Ø Preis: durchschnittlicher BrickLink-Verkaufspreis der letzten 6 Monate für den angegebenen Zustand, Stand {d}.", { d: heute });
+
+  const area = $("print-area");
+  area.className = "druck-liste";
+  area.innerHTML = `
+    <div class="dl-kopf">
+      <div class="wortmarke"><span class="wm-links">Nupp</span><span class="turm"><i></i><i></i><i></i><i></i></span><span class="wm-rechts">o</span></div>
+      <div class="dl-titel"><h1>${esc(list.name)}</h1>
+        <p>${esc(titel)} · ${esc(appTitle())} · ${esc(heute)}</p></div>
+    </div>
+    <div class="dl-kacheln">
+      <div><b>${items.length}</b><span>${esc(tr("Artikel"))}</span></div>
+      <div><b>${stueck}</b><span>${esc(tr("Stück"))}</span></div>
+      <div><b>${esc(fmtEur(summe))}</b><span>${esc(verkauf ? tr("Preis gesamt") : tr("Marktwert je Zustand"))}</span></div>
+      ${verkauf ? "" : `<div><b>${eingekauft ? esc(fmtEur(eingekauft)) : "–"}</b><span>${esc(tr("Einkauf eingetragen"))}</span></div>`}
+    </div>
+    <table class="dl-tabelle">
+      <colgroup><col class="dl-c-nr"><col class="dl-c-bild"><col><col class="dl-c-zust">
+        <col class="dl-c-menge"><col class="dl-c-preis"><col class="dl-c-summe">
+        ${verkauf ? "" : '<col class="dl-c-ek"><col class="dl-c-haken">'}</colgroup>
+      <thead><tr><th>#</th><th></th><th>${esc(tr("Artikel"))}</th><th>${esc(tr("Zustand"))}</th>
+        <th class="dl-zahl">${esc(tr("Menge"))}</th>
+        <th class="dl-zahl">${esc(verkauf ? tr("Preis") : tr("Ø Preis"))}</th>
+        <th class="dl-zahl">${esc(tr("Summe"))}</th>
+        ${verkauf ? "" : `<th class="dl-zahl">${esc(tr("Einkauf"))}</th><th>✓</th>`}</tr></thead>
+      <tbody>${zeilen}
+        <tr class="dl-gesamt"><td></td><td></td><td>${esc(tr("Gesamt"))}</td><td></td>
+          <td class="dl-zahl">${stueck}×</td><td></td><td class="dl-zahl">${esc(fmtEur(summe))}</td>
+          ${verkauf ? "" : `<td class="dl-zahl">${eingekauft ? esc(fmtEur(eingekauft)) : ""}</td><td></td>`}</tr>
+      </tbody>
+    </table>
+    <p class="dl-fuss">${esc(hinweis)}</p>`;
+  // **Erst drucken, wenn die Bilder da sind** – sonst stehen im PDF leere
+  // Kästen. Länger als ein paar Sekunden wird aber nicht gewartet.
+  const bilder = [...area.querySelectorAll("img")].map((b) =>
+    b.complete ? null : new Promise((ok) => { b.onload = b.onerror = ok; })).filter(Boolean);
+  await Promise.race([Promise.all(bilder), new Promise((ok) => setTimeout(ok, 5000))]);
+  const aufraeumen = () => { area.className = ""; window.removeEventListener("afterprint", aufraeumen); };
+  window.addEventListener("afterprint", aufraeumen);
   window.print();
 }
 

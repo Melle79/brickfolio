@@ -1824,6 +1824,23 @@ reaktivieren, von Hand archivieren oder löschen – und Verbuchungen
 **rückgängig** machen (↩︎; der Sammlung-Eintrag bleibt dabei bewusst
 bestehen und wird bei Bedarf manuell angepasst).
 
+### 7.5 Liste als PDF – zum Einkaufen oder zum Verkaufen
+
+Unter jeder Liste steht **„📄 PDF“**. Es fragt, welche Fassung es sein soll,
+und öffnet dann den Druckdialog – dort **„Als PDF sichern“** (am iPhone oben in der
+Druckvorschau auf „Teilen“ tippen, dann „In Dateien sichern“).
+
+- **🛒 Einkaufsliste** – alle Artikel mit Bild, Zustand, Menge, Ø-Preis und
+  Summe, dazu eingetragene Einkaufspreise und ein Kästchen zum Abhaken auf
+  Papier. Schon Verbuchtes steht durchgestrichen und abgehakt da.
+- **💰 Verkaufsliste** – für den, der kauft: nur die **offenen** Artikel,
+  ein Preis je Stück und die Summe. Der Preis ist der Ø-Marktwert des
+  Zustands oder ein Anteil davon (**„% vom Marktwert“**, z. B. 90).
+  **Eigene Einkaufspreise stehen dort nie drin.**
+
+Oben stehen Name der Liste, Datum und die Eckdaten, unten, woher die
+Preise kommen.
+
 ---
 
 ## 8. Die Verkaufsliste (Doppelte)

@@ -1221,6 +1221,24 @@ reactivate lists,
 archive them by hand or delete them – and **undo** bookings (↩︎; the
 collection entry deliberately stays and is adjusted manually if needed).
 
+### 7.5 List as PDF – for buying or for selling
+
+Every list has **“📄 PDF”** at the bottom. It asks which version you want
+and then opens the print dialog – choose **“Save as PDF”** there (on an
+iPhone, tap “Share” at the top of the print preview, then “Save to Files”).
+
+- **🛒 Shopping list** – every item with picture, condition, quantity,
+  average price and total, plus purchase prices you entered and a box to
+  tick off on paper. Items already booked in appear struck through and
+  ticked.
+- **💰 Sales list** – for the buyer: only the **open** items, one price per
+  piece and the total. The price is the average market value for the
+  condition or a share of it (**“% of market value”**, e.g. 90).
+  **Your own purchase prices never appear on it.**
+
+At the top: list name, date and the key figures; at the bottom, where the
+prices come from.
+
 ---
 
 ## 8. The sell list (duplicates)

@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.2.0 – Oktober 2026
+
+### Neu
+- 📄 **Listen als PDF.** Unter jeder Einkaufsliste steht „📄 PDF“, zur
+  Auswahl in zwei Fassungen:
+  - **🛒 Einkaufsliste** – alle Artikel mit Bild, Zustand, Menge, Ø-Preis,
+    Summe, eingetragenen Einkaufspreisen und einem Kästchen zum Abhaken.
+  - **💰 Verkaufsliste** – für den Käufer: nur die offenen Artikel, ein
+    Preis je Stück (auf Wunsch ein Anteil vom Marktwert, z. B. 90 %) und
+    die Summe – **ohne** eigene Einkaufspreise.
+  Oben Wortmarke, Listenname und Eckdaten; gedruckt bzw. gesichert über den
+  Druckdialog des Browsers („Als PDF sichern“).
+
 ## 3.1.3 – Oktober 2026
 
 ### Neu
