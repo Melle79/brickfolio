@@ -19,7 +19,7 @@ BRICKOGNIZE_URL = "https://api.brickognize.com/predict/"
 # erreichen können, statt nur sperren zu müssen.
 USER_AGENT = (f"Nupplo/{core.APP_VERSION} "
               "(self-hosted LEGO collection manager; "
-              "+https://github.com/Melle79/brickfolio)")
+              "+https://github.com/Melle79/nupplo)")
 
 # API-Schlüssel: in der App gespeicherte Werte (DB) haben Vorrang,
 # ENV-Variablen aus docker-compose dienen als Startwerte.

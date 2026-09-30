@@ -24,7 +24,7 @@ VAPID_PUB = "vapid_public"
 
 # Ohne Kontaktangabe lehnen manche Push-Dienste ab. Eine Seite tut es auch –
 # eine E-Mail-Adresse wäre hier ein unnötiges Datum.
-VAPID_CLAIMS_SUB = "https://github.com/Melle79/brickfolio"
+VAPID_CLAIMS_SUB = "https://github.com/Melle79/nupplo"
 
 
 def verfuegbar() -> bool:

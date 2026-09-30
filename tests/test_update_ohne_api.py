@@ -41,7 +41,8 @@ def client(tmp_path, monkeypatch):
 
 def test_kein_aufruf_der_api():
     quelle = open(main.__file__, encoding="utf-8").read()
-    assert "api.github.com/repos/Melle79/brickfolio/releases" not in quelle
+    for repo in ("brickfolio", "nupplo"):
+        assert "api.github.com/repos/Melle79/%s/releases" % repo not in quelle
 
 
 def test_neue_fassung_aus_der_weiterleitung(client, monkeypatch):
@@ -86,3 +87,45 @@ def test_ohne_weiterleitung_ist_es_ein_fehler(client, monkeypatch):
     monkeypatch.setattr(main.requests, "head",
                         lambda url, **kw: _Antwort(200))
     assert "error" in client.get("/api/update_check").json()
+
+
+def test_folgt_dem_umzug_des_repos(client, monkeypatch):
+    """Nach dem Umbenennen leitet GitHub erst auf den neuen Namen um, dann
+    auf die Fassung. Bis 3.0.0 endete die Prüfung am ersten Sprung."""
+    alt = "https://github.com/Melle79/brickfolio/releases/latest"
+    neu = "https://github.com/Melle79/nupplo/releases/latest"
+    monkeypatch.setattr(main, "_UPDATE_SEITE", alt)
+    gefragt = []
+
+    def head(url, **kw):
+        gefragt.append(url)
+        assert kw.get("allow_redirects") is False
+        if url == alt:
+            return _Antwort(301, neu)
+        return _Antwort(302, "https://github.com/Melle79/nupplo/"
+                             "releases/tag/v99.1.0")
+    monkeypatch.setattr(main.requests, "head", head)
+    d = client.get("/api/update_check").json()
+    assert d["latest"] == "99.1.0" and d["update_available"] is True
+    assert gefragt == [alt, neu]
+
+
+def test_weiterleitung_nur_innerhalb_von_github(client, monkeypatch):
+    monkeypatch.setattr(main.requests, "head", lambda url, **kw: _Antwort(
+        302, "https://example.com/releases/tag/v99.0.0"))
+    assert "error" in client.get("/api/update_check").json()
+
+
+def test_weiterleitung_im_kreis_endet(client, monkeypatch):
+    zaehler = []
+
+    def head(url, **kw):
+        zaehler.append(url)
+        return _Antwort(301, "https://github.com/x/y/releases/latest")
+    monkeypatch.setattr(main.requests, "head", head)
+    assert "error" in client.get("/api/update_check").json()
+    assert len(zaehler) == 3
+
+
+def test_alter_repo_name_wird_zum_neuen():
+    assert main.GITHUB_REPO == "Melle79/nupplo"

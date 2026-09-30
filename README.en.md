@@ -177,7 +177,7 @@ No source code, no build – two commands:
 
 ```bash
 mkdir nupplo && cd nupplo
-curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/nupplo/main/docker-compose.example.yml
 docker compose up -d
 ```
 
@@ -238,7 +238,7 @@ Nupplo service in between.
 
 | Provider | How | Note |
 |---|---|---|
-| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Reads [`render.yaml`](render.yaml). Needs the smallest **paid** plan: Nupplo requires a persistent disk for `/data`, and the free plan has none |
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/nupplo) | Reads [`render.yaml`](render.yaml). Needs the smallest **paid** plan: Nupplo requires a persistent disk for `/data`, and the free plan has none |
 | **Railway** | New project → *Deploy from GitHub* → this repo, then set *Settings → Config-as-Code* to `deploy/railway/railway.json` | Afterwards attach a **volume** at `/data`, otherwise the collection is gone after every restart |
 | **Coolify / Dokploy** | Paste `docker-compose.example.yml` | On your own VPS, full control |
 
@@ -260,7 +260,7 @@ Only needed if you want to run your own changes:
 
 ```bash
 mkdir nupplo && cd nupplo
-curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
+curl -sL https://github.com/Melle79/nupplo/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
 cp docker-compose.example.yml docker-compose.yml
 sed -i 's|image: ghcr.io/melle79/nupplo:latest|build: .|' docker-compose.yml
 docker compose up -d --build
@@ -275,7 +275,7 @@ docker compose up -d --build
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | no | BrickLink Store API for prices & set inventories ([request a key](https://www.bricklink.com/v2/api/register_consumer.page)) |
 | `BACKUP_KEEP` | no | Keep this many automatic daily backups (default 14, 0 = off) |
 | `REBRICKABLE_KEY` | no | Rebrickable API for name search ([create a key](https://rebrickable.com/api/)) |
-| `GITHUB_REPO` | no | Target repository for issues from the error report (default `Melle79/brickfolio`) |
+| `GITHUB_REPO` | no | Target repository for issues from the error report (default `Melle79/nupplo`) |
 | `BRICKFOLIO_NAME` | no | Display name in logo/title (empty by default); also settable in-app |
 
 All API keys can alternatively be stored **in the app** (More → API keys,
@@ -318,8 +318,8 @@ JSON file in the app under *More → Backup*.
 > (automatic snapshot, updating from inside the app), fetch them once:
 >
 > ```bash
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update-watch.sh
 > ```
 
 **Built from source**: `sudo bash update.sh` in the project folder. It takes a

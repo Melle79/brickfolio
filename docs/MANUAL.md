@@ -102,7 +102,7 @@ There is a ready-made image – nothing to build, no source code needed:
 
 ```bash
 mkdir nupplo && cd nupplo
-curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/nupplo/main/docker-compose.example.yml
 docker compose up -d
 ```
 
@@ -1482,7 +1482,7 @@ On a Synology the same works **without a shell**: *Container Manager → Project
 > want the convenience, fetch the script once:
 >
 > ```bash
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update.sh
 > ```
 
 **Built from source:**
@@ -1516,8 +1516,8 @@ With a small helper on the server it also works without SSH: the card
 >
 > ```bash
 > cd /path/to/nupplo
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update-watch.sh
 > ```
 >
 > Without them the buttons **do not appear at all** – the app shows a note
@@ -2417,7 +2417,7 @@ respective owners, and their APIs are subject to their respective terms of use.
 | `DB_PATH` | Path to the SQLite file (default: `/data/brickfolio.db`) |
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | BrickLink store API (fallback to the app settings) |
 | `REBRICKABLE_KEY` | Rebrickable API (fallback to the app settings) |
-| `GITHUB_REPO` | Target repository for issues from the error report (default: `Melle79/brickfolio`) |
+| `GITHUB_REPO` | Target repository for issues from the error report (default: `Melle79/nupplo`) |
 
 ### 16.3 CSV import: recognised column names
 
@@ -2436,4 +2436,4 @@ respective owners, and their APIs are subject to their respective terms of use.
 ---
 
 *Happy collecting! Questions, bugs or ideas are welcome as an issue at
-[github.com/Melle79/brickfolio](https://github.com/Melle79/brickfolio).* 🧱
+[github.com/Melle79/nupplo](https://github.com/Melle79/nupplo).* 🧱

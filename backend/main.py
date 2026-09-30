@@ -1008,7 +1008,7 @@ _UPDATE_CACHE = {"ts": 0.0, "data": None, "fehler_ts": 0.0, "fehler": None}
 # Scanner am 25.09.2026). Die Release-Seite leitet auf die neueste Fassung
 # weiter und zählt nicht mit; mehr als Kennung und Adresse braucht die
 # Oberfläche nicht.
-_UPDATE_SEITE = "https://github.com/Melle79/brickfolio/releases/latest"
+_UPDATE_SEITE = "https://github.com/Melle79/nupplo/releases/latest"
 # Ein Fehlschlag wird eine halbe Stunde gemerkt. Vorher fragte jeder Aufruf
 # des Mehr-Tabs erneut – gerade dann, wenn GitHub gerade nicht antwortet.
 _UPDATE_FEHLER_PAUSE = 30 * 60
@@ -1016,14 +1016,27 @@ _UPDATE_FEHLER_PAUSE = 30 * 60
 
 def _neueste_fassung() -> tuple:
     """(Kennung, Seite) der neuesten Fassung – aus der Weiterleitung von
-    `…/releases/latest`, ohne ihr zu folgen."""
-    r = requests.head(_UPDATE_SEITE, allow_redirects=False, timeout=10,
-                      headers={"User-Agent": integrations.USER_AGENT})
-    ziel = r.headers.get("Location", "")
-    if r.status_code not in (301, 302, 303, 307, 308) \
-            or "/releases/tag/" not in ziel:
-        raise requests.RequestException(
-            "keine Weiterleitung (%s)" % r.status_code)
+    `…/releases/latest`, ohne auf der Release-Seite selbst zu landen.
+
+    **Höchstens drei Sprünge, nur innerhalb von github.com.** Seit dem
+    Umzug von Melle79/brickfolio nach Melle79/nupplo (3.0.1) kann vor der
+    Weiterleitung auf die Fassung eine zweite stehen: die vom alten auf den
+    neuen Repo-Namen. Fassungen bis 3.0.0 folgten der nicht und sahen nach
+    dem Umzug keinen Update-Hinweis mehr."""
+    url = _UPDATE_SEITE
+    for _ in range(3):
+        r = requests.head(url, allow_redirects=False, timeout=10,
+                          headers={"User-Agent": integrations.USER_AGENT})
+        ziel = urllib.parse.urljoin(url, r.headers.get("Location", ""))
+        if r.status_code not in (301, 302, 303, 307, 308) \
+                or urllib.parse.urlsplit(ziel).hostname != "github.com":
+            raise requests.RequestException(
+                "keine Weiterleitung (%s)" % r.status_code)
+        if "/releases/tag/" in ziel:
+            break
+        url = ziel
+    else:
+        raise requests.RequestException("zu viele Weiterleitungen")
     kennung = urllib.parse.unquote(
         ziel.rsplit("/releases/tag/", 1)[1]).split("?")[0].split("#")[0]
     if not kennung:
@@ -1130,7 +1143,11 @@ _STARTED_AT = int(time.time())
 # ---------------------------------------------------------------- Fehlerberichte
 
 ERROR_LOG_KEEP = 100          # ältere Einträge fallen automatisch weg
-GITHUB_REPO = os.environ.get("GITHUB_REPO", "Melle79/brickfolio")
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "Melle79/nupplo")
+# Der alte Name leitet weiter – aber nicht für jede Anfrage: Ein POST auf
+# eine 301 wird unterwegs zum GET, und das Issue entstünde nie.
+if GITHUB_REPO.lower() == "melle79/brickfolio":
+    GITHUB_REPO = "Melle79/nupplo"
 
 
 class ErrorReportBody(BaseModel):
@@ -2350,7 +2367,7 @@ def _katalog_changelog() -> dict:
 # Wo der veröffentlichte Abzug liegt. Eine Datei, kein Dienst: Sie ist über
 # GitHub für jede Installation erreichbar, ohne dass jemand einen Zugang von
 # irgendwem braucht und ohne dass bei irgendwem etwas laufen muss.
-KATALOG_QUELLE = ("https://raw.githubusercontent.com/Melle79/brickfolio/"
+KATALOG_QUELLE = ("https://raw.githubusercontent.com/Melle79/nupplo/"
                   "main/katalog/index.ndjson")
 
 # Wie viel die Datei höchstens haben darf. Bei 9.741 Figuren sind es 3,3 MB;
@@ -4146,7 +4163,7 @@ def uploads_info(user: dict = Depends(admin_user)):
 @app.get("/api/backup")
 def download_backup(images: int = 0, user: dict = Depends(admin_user)):
     # **Die Kennung bleibt „brickfolio“,** auch seit der Umbenennung in
-    # Nupplo (3.0.0): Ältere Instanzen und die iOS-App prüfen genau dieses
+    # Nupplo (3.0.0): Ältere Instanzen und andere Leser prüfen genau dieses
     # Feld – eine Sicherung von heute soll sich dort weiter einspielen lassen.
     dump = {"app": "brickfolio", "version": 1,
             "created_at": int(time.time()), "tables": {}}

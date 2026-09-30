@@ -107,7 +107,7 @@ Für älteres DSM oder wenn die Konsole ohnehin offen ist:
 
 ```bash
 sudo mkdir -p /volume1/docker/nupplo && cd /volume1/docker/nupplo
-sudo curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+sudo curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/nupplo/main/docker-compose.example.yml
 sudo docker compose up -d
 ```
 

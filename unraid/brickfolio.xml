@@ -8,10 +8,10 @@
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Shell>sh</Shell>
-  <GitHub>https://github.com/Melle79/brickfolio</GitHub>
-  <ReadMe>https://github.com/Melle79/brickfolio/blob/main/README.en.md</ReadMe>
-  <Support>https://github.com/Melle79/brickfolio/issues</Support>
-  <Project>https://github.com/Melle79/brickfolio</Project>
+  <GitHub>https://github.com/Melle79/nupplo</GitHub>
+  <ReadMe>https://github.com/Melle79/nupplo/blob/main/README.en.md</ReadMe>
+  <Support>https://github.com/Melle79/nupplo/issues</Support>
+  <Project>https://github.com/Melle79/nupplo</Project>
   <Overview>
     Self-hosted PWA for scanning, managing and valuing a LEGO collection - built for a whole family sharing one database, with an optional collector mode for people who buy and sell at flea markets.
 
@@ -24,12 +24,12 @@
     LEGO is a trademark of the LEGO Group, which does not sponsor, authorise or endorse this project. Private hobby project, no commercial intent.
   </Overview>
   <WebUI>http://[IP]:[PORT:8300]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/Melle79/brickfolio/main/unraid/brickfolio.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/Melle79/brickfolio/main/frontend/icons/icon-512.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/Melle79/nupplo/main/unraid/brickfolio.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Melle79/nupplo/main/frontend/icons/icon-512.png</Icon>
   <DonateText>If you like it, buy me a coffee</DonateText>
   <DonateLink>https://buymeacoffee.com/melle79</DonateLink>
   <Date>2026-07-28</Date>
-  <Changes>https://github.com/Melle79/brickfolio/blob/main/CHANGELOG.md</Changes>
+  <Changes>https://github.com/Melle79/nupplo/blob/main/CHANGELOG.md</Changes>
 
   <Config Name="Port: Web Interface" Target="8300" Default="8300" Mode="tcp"
           Description="Web interface. Open it once after starting - a setup wizard walks you through the admin account and the API keys."

@@ -214,7 +214,7 @@ Kein Quellcode, kein Bauen – zwei Befehle:
 
 ```bash
 mkdir nupplo && cd nupplo
-curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/nupplo/main/docker-compose.example.yml
 docker compose up -d
 ```
 
@@ -290,7 +290,7 @@ weiterhin keinen Nupplo-Dienst dazwischen.
 
 | Anbieter | Weg | Anmerkung |
 |---|---|---|
-| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/brickfolio) | Liest [`render.yaml`](render.yaml). Braucht den kleinsten **bezahlten** Tarif: Nupplo benötigt eine dauerhafte Platte für `/data`, und die gibt es im kostenlosen Tarif nicht |
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Melle79/nupplo) | Liest [`render.yaml`](render.yaml). Braucht den kleinsten **bezahlten** Tarif: Nupplo benötigt eine dauerhafte Platte für `/data`, und die gibt es im kostenlosen Tarif nicht |
 | **Railway** | Neues Projekt → *Deploy from GitHub* → dieses Repo, dann unter *Settings → Config-as-Code* `deploy/railway/railway.json` eintragen | Danach eine **Volume** auf `/data` legen, sonst ist die Sammlung nach jedem Neustart weg |
 | **Coolify / Dokploy** | `docker-compose.example.yml` einfügen | Auf dem eigenen v-Server, volle Kontrolle |
 
@@ -312,7 +312,7 @@ Nur nötig, wenn du eigene Änderungen einspielen willst:
 
 ```bash
 mkdir nupplo && cd nupplo
-curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
+curl -sL https://github.com/Melle79/nupplo/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
 cp docker-compose.example.yml docker-compose.yml
 sed -i 's|image: ghcr.io/melle79/nupplo:latest|build: .|' docker-compose.yml
 docker compose up -d --build
@@ -330,7 +330,7 @@ docker compose up -d --build
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | nein | BrickLink-Store-API für Preise & Set-Inhalte ([Key beantragen](https://www.bricklink.com/v2/api/register_consumer.page)) |
 | `BACKUP_KEEP` | nein | Automatische tägliche Sicherungen aufbewahren (Standard 14, 0 = aus) |
 | `REBRICKABLE_KEY` | nein | Rebrickable-API für die Namenssuche ([Key erstellen](https://rebrickable.com/api/)) |
-| `GITHUB_REPO` | nein | Ziel-Repository für Issues aus dem Fehlerbericht (Default `Melle79/brickfolio`) |
+| `GITHUB_REPO` | nein | Ziel-Repository für Issues aus dem Fehlerbericht (Default `Melle79/nupplo`) |
 
 Alle API-Keys lassen sich alternativ **in der App** hinterlegen
 (Mehr → API-Schlüssel, nur Admin) – ENV-Variablen dienen als Fallback.
@@ -381,8 +381,8 @@ nie** – in der App unter *Mehr → Sicherung* die JSON-Datei herunterladen.
 > dazu:
 >
 > ```bash
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update-watch.sh
 > ```
 
 **Aus dem Quellcode gebaut**: `sudo bash update.sh` im Projektordner. Das

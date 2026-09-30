@@ -34,6 +34,11 @@ on:
 jobs:
   beschreibung:
     runs-on: ubuntu-latest
+    # Seit 3.0.0 zwei Namen für dasselbe Image: `nupplo` und – für den
+    # Übergang – `brickfolio`. Beide Seiten tragen denselben Text.
+    strategy:
+      matrix:
+        name: [nupplo, brickfolio]
     permissions:
       contents: read
     steps:
@@ -44,6 +49,6 @@ jobs:
         with:
           username: ${{ vars.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_DESC_TOKEN }}
-          repository: ${{ vars.DOCKERHUB_USER }}/brickfolio
+          repository: ${{ vars.DOCKERHUB_USER }}/${{ matrix.name }}
           readme-filepath: ./docs/DOCKERHUB.md
           short-description: "Self-hosted PWA to scan, manage and value your LEGO® collection"

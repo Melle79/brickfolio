@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.0.1 – Oktober 2026
+
+**Das Repository heißt jetzt [Melle79/nupplo](https://github.com/Melle79/nupplo).**
+Die alte Adresse leitet weiter – Links, `git`, `update.sh` und die
+Katalogdatei kommen dort weiter an.
+
+### Neu
+- 👋 **Gruß in der Kopfleiste** statt des Namens über der Wortmarke:
+  „Guten Morgen“, „Guten Abend“ … mit dem eigenen Benutzernamen, passend
+  zur Tageszeit. Der Name der Sammlung steht weiter im Startbild und bei
+  der Anmeldung.
+
+### Behoben
+- **Update-Hinweis nach dem Umzug.** Die Prüfung liest, wohin
+  `…/releases/latest` weiterleitet. Seit dem Umzug steht davor eine zweite
+  Weiterleitung – vom alten auf den neuen Namen –, und der folgte sie
+  nicht. Jetzt folgt sie bis zu drei Sprüngen, nur innerhalb von GitHub.
+  **Wer 3.0.0 oder älter betreibt, bekommt den Hinweis auf diese Fassung
+  deshalb nicht angezeigt** und aktualisiert einmal von Hand.
+- Fehler melden legt die Issues im neuen Repository an; ein noch auf
+  `Melle79/brickfolio` gesetztes `GITHUB_REPO` gilt als der neue Name.
+
 ## 3.0.0 – Oktober 2026
 
 **Brickfolio heißt jetzt Nupplo SE** – SE steht für *Server Edition*, die
@@ -23,8 +45,7 @@ Installationen laufen ohne Umstellung weiter.
 ### Für Betreiber
 - **Nichts umstellen nötig.** Datenbank (`data/brickfolio.db`), tägliche
   Sicherungen und JSON-Sicherungen behalten ihre Namen und ihr Format –
-  Sicherungen lassen sich weiter in ältere Instanzen und in die iOS-App
-  einspielen.
+  Sicherungen lassen sich weiter in ältere Instanzen einspielen.
 - **Docker-Image:** Neu ist `ghcr.io/melle79/nupplo` (und `melle79/nupplo`
   auf Docker Hub). Das bisherige `…/brickfolio` bekommt während eines
   Übergangs von etwa drei Monaten dieselben Fassungen; wer es in seiner

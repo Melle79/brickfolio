@@ -49,7 +49,7 @@ if grep -qE '^[[:space:]]*image:[[:space:]]*ghcr\.io/' docker-compose.yml; then
   docker compose up -d
 else
   echo "Hole aktuellen Stand von GitHub …"
-  curl -sL https://github.com/Melle79/brickfolio/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
+  curl -sL https://github.com/Melle79/nupplo/archive/refs/heads/main.tar.gz | tar xz --strip-components=1
   echo "Baue und starte den Container …"
   docker compose up -d --build
 fi

@@ -242,7 +242,7 @@ def test_name_aus_alter_und_neuer_umgebungsvariable(ctx, monkeypatch):
 
 
 def test_sicherung_bleibt_fuer_alte_leser_lesbar(ctx):
-    """Ältere Instanzen und die iOS-App prüfen `app == "brickfolio"`."""
+    """Ältere Instanzen und andere Leser prüfen `app == "brickfolio"`."""
     c, _ = ctx
     assert c.get("/api/backup").json()["app"] == "brickfolio"
 

@@ -7,16 +7,16 @@ people who buy and sell at flea markets.
 **Photo → recognition → collection.** Photograph a minifigure or set with your
 phone, tap the match, done.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Melle79/brickfolio/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Melle79/nupplo/blob/main/LICENSE)
 [![Platforms](https://img.shields.io/badge/arch-x86--64%20(Intel%2FAMD)%20%7C%20arm64-informational)](https://hub.docker.com/r/melle79/nupplo/tags)
-[![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/Melle79/brickfolio)
+[![GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/Melle79/nupplo)
 
-📖 **[Full documentation on GitHub](https://github.com/Melle79/brickfolio)** ·
-🇩🇪 [Deutsches Handbuch](https://github.com/Melle79/brickfolio/blob/main/docs/HANDBUCH.md)
+📖 **[Full documentation on GitHub](https://github.com/Melle79/nupplo)** ·
+🇩🇪 [Deutsches Handbuch](https://github.com/Melle79/nupplo/blob/main/docs/HANDBUCH.md)
 
 | Scan | Collection | Statistics |
 |---|---|---|
-| ![Scanning](https://raw.githubusercontent.com/Melle79/brickfolio/main/docs/screenshots/scannen.png) | ![Collection](https://raw.githubusercontent.com/Melle79/brickfolio/main/docs/screenshots/sammlung.png) | ![Statistics](https://raw.githubusercontent.com/Melle79/brickfolio/main/docs/screenshots/statistik.png) |
+| ![Scanning](https://raw.githubusercontent.com/Melle79/nupplo/main/docs/screenshots/scannen.png) | ![Collection](https://raw.githubusercontent.com/Melle79/nupplo/main/docs/screenshots/sammlung.png) | ![Statistics](https://raw.githubusercontent.com/Melle79/nupplo/main/docs/screenshots/statistik.png) |
 
 ## Quick start
 

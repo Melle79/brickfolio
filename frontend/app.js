@@ -2786,6 +2786,32 @@ function wireWizardOnce() {
   });
 }
 
+/* Der Gruß neben der Wortmarke – nach Tageszeit, mit dem Benutzernamen.
+   Er wird beim Öffnen gesetzt und jedes Mal, wenn die App wieder nach vorn
+   kommt: Eine morgens geöffnete Seite soll abends nicht „Guten Morgen“
+   sagen. */
+function grussText(stunde) {
+  if (stunde >= 5 && stunde < 11) return "Guten Morgen, {name}";
+  if (stunde >= 11 && stunde < 14) return "Schönen Mittag, {name}";
+  if (stunde >= 14 && stunde < 18) return "Hallo, {name}";
+  if (stunde >= 18 && stunde < 22) return "Guten Abend, {name}";
+  return "Noch wach, {name}?";
+}
+
+function setzeGruss() {
+  const el = $("topbar-gruss");
+  if (!el) return;
+  const u = state.user && state.user.username;
+  if (!u) { el.textContent = ""; return; }
+  const name = u.charAt(0).toUpperCase() + u.slice(1);
+  el.textContent = tr(grussText(new Date().getHours()), { name });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) setzeGruss();
+});
+setInterval(setzeGruss, 10 * 60 * 1000);
+
 function showApp() {
   updateListsTab();
   updateManualListBtn();
@@ -2793,6 +2819,7 @@ function showApp() {
   $("view-login").hidden = true;
   $("app").hidden = false;
   $("whoami").textContent = state.user ? state.user.username : "";
+  setzeGruss();
   api("/config").then((c) => {
     state.offerPercent = c.offer_percent || 60;
     state.bricklinkPrices = c.bricklink_prices;
@@ -8278,6 +8305,7 @@ async function changeOwnUsername() {
     localStorage.setItem("bf_token", res.token);
     localStorage.setItem("bf_user", JSON.stringify(state.user));
     $("whoami").textContent = res.username;
+    setzeGruss();
     $("settings-user").textContent = res.username;
     toast(tr("Benutzername geändert: {name} ✔", { name: res.username }));
     loadSettings();
@@ -11686,7 +11714,7 @@ function renderUpdateInfo(info) {
   $("ver-latest-ok").hidden = hasUpdate || !info.latest;
   if (hasUpdate) {
     $("ver-latest").textContent = "v" + info.latest;
-    $("ver-url").href = info.url || "https://github.com/Melle79/brickfolio/releases";
+    $("ver-url").href = info.url || "https://github.com/Melle79/nupplo/releases";
   }
   // Direkt einspielen nur anbieten, wenn der Helfer auf dem Server läuft –
   // sonst würde die App auf ein Update warten, das nie kommt.
@@ -11702,7 +11730,7 @@ function renderUpdateInfo(info) {
   if (diag && admin) {
     const seen = state.helperSeenAt;
     const anleitung = tr("Einrichtung (eine Aufgabe je Instanz, die jede "
-      + "Minute läuft) steht im <a href=\"https://github.com/Melle79/brickfolio"
+      + "Minute läuft) steht im <a href=\"https://github.com/Melle79/nupplo"
       + "#update-aus-der-app-heraus-optional\" target=\"_blank\""
       + " rel=\"noopener\">README</a>.");
     if (helper) {

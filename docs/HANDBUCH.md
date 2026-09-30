@@ -105,7 +105,7 @@ Es gibt ein fertiges Image – nichts zu bauen, kein Quellcode nötig:
 
 ```bash
 mkdir nupplo && cd nupplo
-curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/brickfolio/main/docker-compose.example.yml
+curl -sLo docker-compose.yml https://raw.githubusercontent.com/Melle79/nupplo/main/docker-compose.example.yml
 docker compose up -d
 ```
 
@@ -570,7 +570,7 @@ BrickLink abklappert und ein lokales Sehmodell die Katalogfotos beschreiben
 lässt. Das Ergebnis veröffentlicht er als Datei:
 
 ```
-https://raw.githubusercontent.com/Melle79/brickfolio/main/katalog/index.ndjson
+https://raw.githubusercontent.com/Melle79/nupplo/main/katalog/index.ndjson
 ```
 
 Jede Installation zieht sie sich alle zwölf Stunden – **ohne Zugang zu
@@ -2069,7 +2069,7 @@ Projekt → nupplo → Aktion → Erstellen neu starten*.
 > dazu:
 >
 > ```bash
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update.sh
 > ```
 
 **Aus dem Quellcode gebaut:**
@@ -2104,8 +2104,8 @@ Minute** und **In 5 Minuten**.
 >
 > ```bash
 > cd /pfad/zu/nupplo
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update.sh
-> curl -sLO https://raw.githubusercontent.com/Melle79/brickfolio/main/update-watch.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update.sh
+> curl -sLO https://raw.githubusercontent.com/Melle79/nupplo/main/update-watch.sh
 > ```
 >
 > Ohne sie erscheinen die Knöpfe **gar nicht erst** – die App zeigt statt
@@ -3112,7 +3112,7 @@ die jeweiligen Nutzungsbedingungen.
 | `DB_PATH` | Pfad zur SQLite-Datei (Default: `/data/brickfolio.db`) |
 | `BL_CONSUMER_KEY` / `BL_CONSUMER_SECRET` / `BL_TOKEN` / `BL_TOKEN_SECRET` | BrickLink-Store-API (Fallback zu den App-Einstellungen) |
 | `REBRICKABLE_KEY` | Rebrickable-API (Fallback zu den App-Einstellungen) |
-| `GITHUB_REPO` | Ziel-Repository für Issues aus dem Fehlerbericht (Default: `Melle79/brickfolio`) |
+| `GITHUB_REPO` | Ziel-Repository für Issues aus dem Fehlerbericht (Default: `Melle79/nupplo`) |
 
 ### 16.3 CSV-Import: erkannte Spaltennamen
 
@@ -3131,4 +3131,4 @@ die jeweiligen Nutzungsbedingungen.
 ---
 
 *Viel Spaß beim Sammeln! Fragen, Fehler oder Ideen gern als Issue auf
-[github.com/Melle79/brickfolio](https://github.com/Melle79/brickfolio).* 🧱
+[github.com/Melle79/nupplo](https://github.com/Melle79/nupplo).* 🧱
