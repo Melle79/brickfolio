@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <Container version="2">
-  <Name>Nupplo</Name>
+  <Name>Nupplo-SE</Name>
   <Beta>false</Beta>
   <Category>Productivity: Tools:Utilities</Category>
   <Repository>melle79/nupplo:latest</Repository>
@@ -35,9 +35,9 @@
           Description="Web interface. Open it once after starting - a setup wizard walks you through the admin account and the API keys."
           Type="Port" Display="always" Required="true" Mask="false">8300</Config>
 
-  <Config Name="Path: /data" Target="/data" Default="/mnt/user/appdata/brickfolio" Mode="rw"
+  <Config Name="Path: /data" Target="/data" Default="/mnt/user/appdata/nupplo" Mode="rw"
           Description="Database, automatic backups and uploaded images. This is the only folder that matters - keep it, everything else is replaceable."
-          Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/brickfolio</Config>
+          Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/nupplo</Config>
 
   <Config Name="Admin user (optional)" Target="ADMIN_USER" Default="" Mode=""
           Description="Only for unattended setups: creates the admin account on first start and skips the wizard. Leave empty to set it up in the browser."
