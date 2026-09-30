@@ -99,6 +99,14 @@ button { font-family: inherit; color: var(--ink); }
 .turm i:nth-child(3) { background: var(--blue); box-shadow: inset 0 -.05em 0 #003F7A; }
 .turm i:nth-child(4) { background: var(--green); box-shadow: inset 0 -.05em 0 #00702E; }
 .logo .wortmarke { font-size: 40px; }
+/* „SE“ – Server Edition, die selbst betriebene Fassung (die iOS-App heißt
+   schlicht Nupplo). Ein umrandetes Schild in der Textfarbe, oben an der
+   Wortmarke: So trägt es in jedem Design, ohne eigene Farbe. */
+.wm-se {
+  align-self: flex-start; margin: .1em 0 0 .16em; padding: .06em .28em .02em;
+  border: .07em solid currentColor; border-radius: .22em;
+  font-size: .3em; line-height: 1.15; letter-spacing: .05em;
+}
 
 /* ---------- Startbildschirm ----------
    Er deckt die Ladezeit ab, er verlängert sie nicht: `app.js` nimmt ihn
@@ -144,6 +152,7 @@ button { font-family: inherit; color: var(--ink); }
 #splash .turm i:nth-child(1) { animation-delay: .36s; }
 #splash .wm-links  { display: inline-block; animation: wm-links .4s ease-out .6s backwards; }
 #splash .wm-rechts { display: inline-block; animation: wm-rechts .4s ease-out .6s backwards; }
+#splash .wm-se     { animation: splash-ein .4s ease-out .75s backwards; }
 #splash .logo-name { animation: splash-ein .45s ease-out .8s backwards; }
 #splash .logo p    { animation: splash-ein .45s ease-out .9s backwards; }
 
@@ -171,6 +180,7 @@ button { font-family: inherit; color: var(--ink); }
   #splash .turm i,
   #splash .wm-links,
   #splash .wm-rechts,
+  #splash .wm-se,
   #splash .logo-name,
   #splash .logo p,
   .splash-bar i { animation: none; }
@@ -187,6 +197,7 @@ button { font-family: inherit; color: var(--ink); }
 }
 .topbar h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
 .topbar .wortmarke.klein { font-size: 23px; line-height: 1; letter-spacing: 0; }
+.topbar .wm-se { font-size: 9px; border-width: 1.5px; }
 /* Gelb auf gelber Kopfleiste: Die Steine bekommen dieselbe haarfeine Kante
    wie früher die Noppen, sonst verschwände der gelbe. */
 .topbar .turm i { box-shadow: inset 0 -.05em 0 var(--yellow-dark),

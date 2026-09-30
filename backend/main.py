@@ -32,7 +32,7 @@ import push
 import totp
 import themes
 
-app = FastAPI(title="Nupplo", docs_url=None, redoc_url=None)
+app = FastAPI(title="Nupplo SE", docs_url=None, redoc_url=None)
 
 FRONTEND_DIR = os.environ.get("FRONTEND_DIR", "/app/frontend")
 
@@ -229,7 +229,7 @@ async def extern_beobachten(request: Request, call_next):
 
 
 def _umbenennung_melden() -> None:
-    """Einmal sagen, dass Brickfolio jetzt Nupplo heißt (3.0.0).
+    """Einmal sagen, dass Brickfolio jetzt Nupplo SE heißt (3.0.0).
 
     Nur auf Instanzen, die es schon gab – eine frisch eingerichtete kennt
     den alten Namen nicht. Der Merker verhindert, dass der Hinweis nach dem
@@ -240,8 +240,10 @@ def _umbenennung_melden() -> None:
     with core.db() as conn:
         bestehend = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     if bestehend:
-        _notify("umbenennung", "Brickfolio heißt jetzt Nupplo",
-                "Neuer Name, neues Logo – sonst bleibt alles, wie es war: "
+        _notify("umbenennung", "Brickfolio heißt jetzt Nupplo SE",
+                "SE steht für Server Edition – die Fassung, die du selbst "
+                "betreibst. Neuer Name, neues Logo – sonst bleibt alles, wie "
+                "es war: "
                 "deine Sammlung, deine Einstellungen und die Verbindung zum "
                 "Tausch-Netzwerk. Das Symbol auf dem Startbildschirm "
                 "aktualisiert sich beim nächsten Hinzufügen.",

@@ -1,8 +1,8 @@
-# Nupplo – The Manual
+# Nupplo SE – The Manual
 
 *July 2026 · [🇩🇪 Deutsche Fassung](HANDBUCH.md)*
 
-*Up to version 2.92, Nupplo was called “Brickfolio”.*
+*Nupplo SE (Server Edition) is the edition you run yourself. Up to version 2.92 it was called “Brickfolio”.*
 
 Nupplo is a self-hosted Progressive Web App (PWA) for scanning, managing
 and valuing a LEGO® collection. This manual explains every feature – from the

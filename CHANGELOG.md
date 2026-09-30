@@ -2,22 +2,23 @@
 
 ## 3.0.0 – Oktober 2026
 
-**Brickfolio heißt jetzt Nupplo.** Gleiche App, neuer Name – bestehende
+**Brickfolio heißt jetzt Nupplo SE** – SE steht für *Server Edition*, die
+Fassung, die man selbst betreibt. Gleiche App, neuer Name – bestehende
 Installationen laufen ohne Umstellung weiter.
 
 ### Neu
 - 🧱 **Neuer Name und neues Logo.** Die Wortmarke „Nupplo“, deren l ein Turm
   aus vier Steinen ist – oben gelb, dann rot, blau, unten grün. Sie steht im
-  Startbild, bei der Anmeldung und in der Kopfleiste und nimmt die Farben
-  jedes Designs an.
+  Startbild, bei der Anmeldung und in der Kopfleiste, mit einem kleinen
+  „SE“ daneben, und nimmt die Farben jedes Designs an.
 - 🎬 **Startbild:** Der Turm baut sich Stein für Stein auf, dann gleiten die
   Buchstaben heran. Wer „Bewegung reduzieren“ eingestellt hat, sieht alles
   sofort.
 - 📲 **Neues App-Symbol:** der Steinturm auf Gelb, mit dem Namen der Instanz
   darüber, wenn einer eingestellt ist. Auf dem Startbildschirm erscheint es
   beim nächsten Hinzufügen.
-- 🔔 Nach dem Update sagt ein einmaliger Hinweis, dass Brickfolio jetzt Nupplo
-  heißt.
+- 🔔 Nach dem Update sagt ein einmaliger Hinweis, dass Brickfolio jetzt
+  Nupplo SE heißt.
 
 ### Für Betreiber
 - **Nichts umstellen nötig.** Datenbank (`data/brickfolio.db`), tägliche

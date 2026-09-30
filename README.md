@@ -5,10 +5,11 @@
   </picture>
 </p>
 
-# Nupplo 🧱
+# Nupplo SE 🧱
 
-> **Früher Brickfolio.** Seit 3.0.0 heißt die App Nupplo – gleiche App,
-> neuer Name. Bestehende Installationen laufen ohne Umstellung weiter.
+> **Früher Brickfolio.** Seit 3.0.0 heißt die App **Nupplo SE** – SE steht
+> für *Server Edition*, die Fassung, die du selbst betreibst. Gleiche App,
+> neuer Name; bestehende Installationen laufen ohne Umstellung weiter.
 
 *[🇬🇧 English](README.en.md) · 🇩🇪 Deutsch*
 

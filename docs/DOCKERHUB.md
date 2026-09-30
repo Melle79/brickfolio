@@ -1,4 +1,4 @@
-# Nupplo 🧱
+# Nupplo SE 🧱
 
 Self-hosted PWA to scan, manage and value a **LEGO® collection** – built for a
 whole family on one shared database, with an optional collector mode for

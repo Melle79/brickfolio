@@ -1,4 +1,4 @@
-# Nupplo auf einer Synology-NAS
+# Nupplo SE auf einer Synology-NAS
 
 Zwei Wege. Der erste braucht keine Konsole und ist der empfohlene.
 
