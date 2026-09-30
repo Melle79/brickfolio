@@ -298,6 +298,8 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # Schlüssel liegen in einer eigenen Datei,
                                 # nicht in den Einstellungen
         "connect_vermittler",   # Adresse eines eigenen Vermittlers
+        "connect_nur_2fa",      # „1" = über den Vermittler nur mit zweitem
+                                # Faktor. Eine Entscheidung, kein Zugang
         "hub_wuensche_zeigen",  # Merker „Wunschliste im Netzwerk zeigen" –
                                 # die Quelle ist das Hub-Profil
         "hub_wuensche_stand",   # Prüfsumme der zuletzt gezeigten Liste, damit

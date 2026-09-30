@@ -467,6 +467,12 @@ immer, mit Benutzername und Passwort (und zweitem Faktor, falls an).
 - **Nur gekoppelte Geräte kommen durch.** Ein fremdes Gerät erreicht nicht
   einmal die Anmeldeseite. Bei einer Portfreigabe steht die Anmeldung für das
   ganze Internet offen.
+- **Nur mit zweitem Faktor (Admin, empfohlen):** Unter dem Schalter
+  *Nur mit zweitem Faktor* ankreuzen – dann kommt über diesen Weg nur
+  herein, wer im Profil die Zwei-Faktor-Anmeldung eingerichtet hat. Geprüft
+  wird bei jeder Anfrage, auch für ein Gerät, das sich zu Hause angemeldet
+  hat. Wichtig, wenn vor der Web-App sonst Cloudflare Access fragt: Dieser
+  Weg führt nicht durch Access.
 - **Entkoppeln wirkt sofort:** In der Geräteliste *Entkoppeln* – eine gerade
   offene Verbindung des Geräts endet damit auch.
 - Der Schlüssel der Instanz liegt als `connect.key` neben dem Geheimnis im

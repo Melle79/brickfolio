@@ -454,10 +454,11 @@ def current_user(request: Request) -> dict:
     with core.db() as conn:
         row = conn.execute(
             "SELECT id, username, is_admin, is_dealer, theme, sort_pref, lang, "
-            "token_epoch FROM users "
+            "token_epoch, totp_secret FROM users "
             "WHERE id = ?", (int(payload["sub"]),)).fetchone()
     if not row:
         raise HTTPException(401, "Sitzung ungültig – bitte neu anmelden")
+    _connect_zweiter_faktor(request, row)
     # Rechte und Gültigkeit kommen aus der Datenbank, nicht aus dem Token:
     # Ein Passwortwechsel zählt den Stand hoch und beendet damit alle
     # bisherigen Sitzungen – sonst liefe ein abhandengekommenes Token bis zu
@@ -469,6 +470,29 @@ def current_user(request: Request) -> dict:
             "is_dealer": bool(row["is_dealer"]),
             "theme": row["theme"], "sort_pref": row["sort_pref"],
             "lang": row["lang"]}
+
+
+CONNECT_OHNE_2FA = ("Über den Zugriff ohne Portfreigabe geht es auf dieser "
+                    "Instanz nur mit zweitem Faktor – bitte in der Web-App "
+                    "unter Profil die Zwei-Faktor-Anmeldung einrichten.")
+
+
+def _connect_zweiter_faktor(request: Request, row) -> None:
+    """Über Nupplo Connect nur mit zweitem Faktor, wenn der Admin es will.
+
+    **Bei jeder Anfrage, nicht nur beim Anmelden.** Das Gerät meldet sich zu
+    Hause oft direkt an und geht erst unterwegs über den Vermittler – eine
+    Prüfung nur beim Anmelden ließe diese Sitzung durch. Gewünscht am
+    30.09.2026, nachdem über den Vermittler keine Code-Abfrage kam: Das
+    Konto hatte keinen zweiten Faktor, und Cloudflare Access, das sonst vor
+    der Web-App fragt, liegt auf diesem Weg nicht dazwischen.
+    """
+    if not request.scope.get("nupplo.connect"):
+        return
+    if core.get_setting("connect_nur_2fa") != "1":
+        return
+    if not ("totp_secret" in row.keys() and row["totp_secret"]):
+        raise HTTPException(403, CONNECT_OHNE_2FA)
 
 
 def dealer_user(user: dict = Depends(current_user)) -> dict:
@@ -737,6 +761,9 @@ def login(body: LoginBody, request: Request):
     # gültige Zugangsdaten; wer keine hat, kommt nie an diese Stelle.
     for k in keys:
         _login_fails.pop(k, None)
+    # Schon hier, nicht erst beim ersten Datenzugriff: Wer ohne zweiten
+    # Faktor über den Vermittler kommt, soll gleich lesen, warum.
+    _connect_zweiter_faktor(request, row)
 
     # Zweiter Faktor, falls eingeschaltet: Das Passwort allein reicht dann
     # nicht. Statt des Sitzungs-Tokens kommt eine kurzlebige Zwischenmarke

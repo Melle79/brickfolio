@@ -2969,9 +2969,22 @@ async function ladeConnect() {
       }
     });
   }
+  if (!$("connect-2fa").dataset.verdrahtet) {
+    $("connect-2fa").dataset.verdrahtet = "1";
+    $("connect-2fa").addEventListener("change", async (ev) => {
+      const nur2fa = ev.target.checked;
+      try {
+        await api("/connect", { method: "POST", body: { nur_2fa: nur2fa } });
+      } catch (e) {
+        ev.target.checked = !nur2fa;
+        toast(e.message);
+      }
+    });
+  }
   try {
     const d = await api("/connect");
     $("connect-an").checked = d.an;
+    $("connect-2fa").checked = !!d.nur_2fa;
     const el = $("connect-stand");
     if (!d.an) el.textContent = tr("Aus.");
     else if (d.verbunden) {

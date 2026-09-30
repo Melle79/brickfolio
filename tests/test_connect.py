@@ -344,3 +344,54 @@ def test_nachweis_fuer_den_vermittler(instanz):
         f"nupplo-connect-v1\n{iid}\n{teile['zeit']}\n{teile['zufall']}".encode())
     assert abs(int(teile["zeit"]) - time.time()) < 5
     assert teile["zufall"] != dict(urllib.parse.parse_qsl(connect.nachweis(instanz.ed25519)))["zufall"]
+
+
+# ------------------------------------------------------------- Nur mit 2FA
+
+def test_nur_mit_zweitem_faktor(instanz):
+    """Am 30.09.2026 gemeldet: Über den Vermittler kam keine Code-Abfrage.
+    Das Konto hatte keinen zweiten Faktor, und Cloudflare Access – sonst vor
+    der Web-App – liegt auf diesem Weg nicht dazwischen. Mit dem Schalter
+    kommt über den Vermittler nur herein, wer einen zweiten Faktor hat; bei
+    jeder Anfrage, auch mit einer Sitzung aus dem Heimnetz."""
+    chefin = _client(1, "chefin", True)
+    assert chefin.post("/api/connect", json={"nur_2fa": True}).json()["nur_2fa"] is True
+    code = chefin.post("/api/connect/koppeln").json()["code"]
+    token = core.create_token(1, "chefin", True)   # z. B. zu Hause angemeldet
+
+    async def ablauf():
+        g = Geraet(instanz)
+        assert await g.koppeln({"code": code}) == {"ok": True}
+        kopf, koerper = await g.anfrage("GET", "/api/sync/info", {"Authorization": f"Bearer {token}"})
+        assert kopf["s"] == 403
+        assert "zweitem Faktor" in json.loads(koerper)["detail"]
+        # Mit eingerichtetem zweiten Faktor geht es.
+        with core.db() as conn:
+            conn.execute("UPDATE users SET totp_secret = 'JBSWY3DPEHPK3PXP' WHERE id = 1")
+        kopf, _ = await g.anfrage("GET", "/api/sync/info", {"Authorization": f"Bearer {token}"}, nummer=2)
+        assert kopf["s"] == 200
+    lauf(ablauf())
+    # Im Heimnetz ändert der Schalter nichts.
+    assert _client(2, "gast", False).get("/api/sync/info").status_code == 200
+
+
+def test_anmelden_ohne_zweiten_faktor_ueber_connect(instanz):
+    with core.db() as conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = 2", (core.hash_password("geheim1234"),))
+    core.set_setting("connect_nur_2fa", "1")
+    code = _client(2, "gast", False).post("/api/connect/koppeln").json()["code"]
+
+    async def ablauf():
+        g = Geraet(instanz)
+        assert await g.koppeln({"code": code}) == {"ok": True}
+        kopf, koerper = await g.anfrage("POST", "/api/login", {"Content-Type": "application/json"},
+                                        json.dumps({"username": "gast", "password": "geheim1234"}).encode())
+        assert kopf["s"] == 403
+        assert "token" not in json.loads(koerper)
+    lauf(ablauf())
+    assert TestClient(main.app).post("/api/login", json={"username": "gast", "password": "geheim1234"}).status_code == 200
+
+
+def test_nur_admins_setzen_nur_2fa(instanz):
+    assert _client(2, "gast", False).post("/api/connect", json={"nur_2fa": True}).status_code == 403
+    assert core.get_setting("connect_nur_2fa") != "1"

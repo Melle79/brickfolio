@@ -507,7 +507,8 @@ def _heimnetz_adresse(request: Request) -> str | None:
 
 @router.get("/api/connect")
 def connect_status(user: dict = Depends(_benutzer())):
-    d = {"an": core.get_setting("connect_an") == "1", **verbinder.zustand}
+    d = {"an": core.get_setting("connect_an") == "1",
+         "nur_2fa": core.get_setting("connect_nur_2fa") == "1", **verbinder.zustand}
     if user["is_admin"]:
         d["instanz_id"] = instanz_id(verbinder.ed25519) if verbinder.ed25519 else None
         d["vermittler"] = verbinder.vermittler
@@ -515,13 +516,18 @@ def connect_status(user: dict = Depends(_benutzer())):
 
 
 class ConnectBody(BaseModel):
-    an: bool
+    an: bool | None = None
+    nur_2fa: bool | None = None
 
 
 @router.post("/api/connect")
 def connect_umschalten(body: ConnectBody, user: dict = Depends(_admin())):
-    verbinder.umschalten(body.an)
-    return {"an": body.an}
+    if body.nur_2fa is not None:
+        core.set_setting("connect_nur_2fa", "1" if body.nur_2fa else "0")
+    if body.an is not None:
+        verbinder.umschalten(body.an)
+    return {"an": core.get_setting("connect_an") == "1",
+            "nur_2fa": core.get_setting("connect_nur_2fa") == "1"}
 
 
 @router.post("/api/connect/koppeln")

@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.1.2 – Oktober 2026
+
+### Neu
+- 🔐 **„Nur mit zweitem Faktor“** für den Zugriff ohne Portfreigabe
+  (*Mehr → Nach außen*, Admin). Dann kommt über den Vermittler nur herein,
+  wer die Zwei-Faktor-Anmeldung eingerichtet hat; im Heimnetz ändert sich
+  nichts.
+
+### Warum
+- Gemeldet: Über den Vermittler kam keine Code-Abfrage. Das Konto hatte
+  keinen zweiten Faktor – gefragt hatte bisher Cloudflare Access vor der
+  Web-App, und dieser Weg führt nicht durch Access.
+- **Geprüft wird bei jeder Anfrage, nicht nur beim Anmelden.** Ein Gerät
+  meldet sich zu Hause oft direkt an und geht erst unterwegs über den
+  Vermittler; eine Prüfung nur beim Anmelden hätte diese Sitzung
+  durchgelassen.
+
 ## 3.1.1 – Oktober 2026
 
 ### Neu
