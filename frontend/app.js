@@ -8584,13 +8584,18 @@ function renderLists(lists) {
         .reduce((s, i) => s + (((i.condition === "new"
           ? (i.price_new || i.price_used)
           : (i.price_used || i.price_new)) || 0) * i.qty), 0);
-      const pct = (state.offerPercent || 60) / 100;
+      // Beim Einkauf schlägt der Angebots-Anteil vor (was man bietet); beim
+      // Verkauf der volle Marktwert – 60 % wären dort ein Käuferpreis.
+      const verkauf = list.art === "verkauf";
+      const pct = verkauf ? 1 : (state.offerPercent || 60) / 100;
       const suggestion = Math.round(openValue * pct * 100) / 100;
       const row = document.createElement("div");
       row.className = "card-actions btn-grid";
       row.setAttribute("data-offer-row", "");
       row.innerHTML = `
-        <span class="buy-label">${esc(tr("Gesamtpreis für alle offenen Artikel – wird anteilig nach Marktwert verteilt."))}<br>
+        <span class="buy-label">${esc(verkauf
+          ? tr("Gesamterlös für alle offenen Artikel – wird anteilig nach Marktwert verteilt.")
+          : tr("Gesamtpreis für alle offenen Artikel – wird anteilig nach Marktwert verteilt."))}<br>
           ${esc(tr("Ø-Marktwert gesamt: {wert}", { wert: fmtEur(openValue) }))}</span>
         <span class="paid-row buy-paid">
           <span class="paid-label">${esc(tr("Gesamt"))}</span>

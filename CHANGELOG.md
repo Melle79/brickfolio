@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.1 – Oktober 2026
+
+### Verbessert
+- 💰 **Gesamterlös auf Verkaufslisten.** „💰 Gesamtpreis“ verteilt einen
+  Betrag anteilig nach Marktwert auf die offenen Artikel – auf einer
+  Verkaufsliste heißt das Feld jetzt „Gesamterlös“, und der Vorschlag ist
+  der volle Marktwert statt des Angebots-Anteils (60 %), der fürs Einkaufen
+  gedacht ist.
+
 ## 3.3.0 – Oktober 2026
 
 ### Neu

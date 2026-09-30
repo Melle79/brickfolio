@@ -1254,6 +1254,10 @@ the collection”**.
   notes record when it was sold via which list.
 - **The price field holds the proceeds**, not a purchase. It does not count
   towards the purchase total in the statistics.
+- **Total proceeds** for everything at once go in via **“💰 Total price”** at
+  the bottom: the amount is split across the open items by market value, and
+  each one gets its share in the price field. The suggestion next to it is
+  the full market value here.
 - If the item is not in the collection in that condition, or not often
   enough, the app says so and changes nothing.
 - **↩︎ Undo** puts everything back exactly: quantity, purchase log and note –

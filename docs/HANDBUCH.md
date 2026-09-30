@@ -1857,6 +1857,10 @@ Knopf **„✔ Verkauft – raus aus der Sammlung“**.
   Zeile. In den Notizen steht, wann über welche Liste verkauft wurde.
 - **Im Preisfeld steht der Erlös**, nicht ein Einkauf. Er zählt nicht in
   die Einkaufs-Summe der Statistik.
+- **Einen Gesamterlös** für alles auf einmal trägt man unten über
+  **„💰 Gesamtpreis“** ein: Er wird anteilig nach Marktwert auf die offenen
+  Artikel verteilt, jeder bekommt seinen Anteil ins Preisfeld. Der
+  Vorschlag daneben ist hier der volle Marktwert.
 - Ist der Artikel in diesem Zustand gar nicht oder nicht oft genug in der
   Sammlung, sagt die App es und ändert nichts.
 - **↩︎ Rückgängig** legt alles genau so zurück: Menge, Kaufbuch und Notiz –
