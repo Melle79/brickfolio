@@ -1240,6 +1240,28 @@ save”** opens the share sheet – Save to Files, AirDrop, Mail, Messages.
 At the top: list name, date and the key figures; at the bottom, where the
 prices come from.
 
+
+### 7.6 Sales lists – ticking off removes from the collection
+
+A list can also do the opposite: with the **pencil ✏️** next to its name it
+becomes a **💰 sales list**. It then carries a “Sales list” label, and
+instead of “Got it! Into the collection” every item has **“✔ Sold – out of
+the collection”**.
+
+- **Ticking off takes the pieces out of the collection** – from the row with
+  the same number and condition. The purchase log goes along (newest
+  purchase first), and if they were the last pieces the row disappears. The
+  notes record when it was sold via which list.
+- **The price field holds the proceeds**, not a purchase. It does not count
+  towards the purchase total in the statistics.
+- If the item is not in the collection in that condition, or not often
+  enough, the app says so and changes nothing.
+- **↩︎ Undo** puts everything back exactly: quantity, purchase log and note –
+  even a row that disappeared completely when it was sold.
+- Items on a sales list do not count as “on the way” for the wish list and
+  missing set figures.
+- The PDF (7.5) suggests the sales version for sales lists right away.
+
 ---
 
 ## 8. The sell list (duplicates)

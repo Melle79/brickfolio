@@ -1368,6 +1368,12 @@ span.mf-stern.an {
   font-weight: 900; cursor: pointer; font-size: 14px; padding: 4px 8px;
 }
 .buy-label { grid-column: 1 / -1; font-weight: 800; font-size: 14px; }
+/* Das Schild „Verkaufsliste“ im Kopf der Liste – damit man nicht aus
+   Versehen in die falsche Richtung abhakt. */
+.listen-art {
+  display: inline-block; padding: 0 7px; border-radius: 8px;
+  background: var(--yellow); color: #1D1D1B; font-weight: 800;
+}
 .mini-btn.link {
   display: flex; align-items: center; justify-content: center;
   line-height: 1.25;

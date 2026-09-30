@@ -3693,6 +3693,9 @@ def stats_dashboard(user: dict = Depends(current_user)):
             "FROM shopping_lists l "
             "LEFT JOIN shopping_items si ON si.list_id = l.id "
             "AND si.paid_price IS NOT NULL "
+            # Auf einer Verkaufsliste steht im Preisfeld der Erlös, kein
+            # Einkauf – der gehört nicht in diese Summe.
+            "WHERE l.art = 'einkauf' "
             "GROUP BY l.id HAVING paid > 0 "
             "ORDER BY l.inventoried, l.archived, l.created_at DESC").fetchall()
 
@@ -7228,7 +7231,7 @@ def get_wanted(user: dict = Depends(current_user)):
                 "SELECT i.item_id, i.item_type, i.qty, l.name "
                 "FROM shopping_items i "
                 "JOIN shopping_lists l ON l.id = i.list_id "
-                "WHERE i.done = 0 AND l.archived = 0"):
+                "WHERE i.done = 0 AND l.archived = 0 AND l.art = 'einkauf'"):
             e = auf_listen.setdefault((r["item_id"], r["item_type"]),
                                       {"qty": 0, "names": []})
             e["qty"] += r["qty"] or 1
@@ -7578,7 +7581,7 @@ def missing_set_figs(user: dict = Depends(current_user)):
                 "FROM shopping_items i "
                 "JOIN shopping_lists l ON l.id = i.list_id "
                 "WHERE i.item_type = 'minifig' AND i.done = 0 "
-                "AND l.archived = 0"):
+                "AND l.archived = 0 AND l.art = 'einkauf'"):
             e = on_lists.setdefault(r["item_id"], {"qty": 0, "lists": []})
             e["qty"] += r["qty"] or 1
             if r["list_name"] not in e["lists"]:
@@ -7909,6 +7912,8 @@ def create_list(body: ListBody, user: dict = Depends(dealer_user)):
 
 class RenameListBody(BaseModel):
     name: str = Field(min_length=1, max_length=120)
+    # Einkaufs- oder Verkaufsliste; ohne Angabe bleibt es, wie es ist.
+    art: str | None = Field(default=None, pattern="^(einkauf|verkauf)$")
 
 
 @app.post("/api/lists/{list_id}/rename")
@@ -7922,8 +7927,9 @@ def rename_list(list_id: int, body: RenameListBody,
                            (list_id,)).fetchone()
         if not row:
             raise HTTPException(404, "Liste nicht gefunden")
-        conn.execute("UPDATE shopping_lists SET name = ? WHERE id = ?",
-                     (name, list_id))
+        conn.execute("UPDATE shopping_lists SET name = ?, "
+                     "art = COALESCE(?, art) WHERE id = ?",
+                     (name, body.art, list_id))
     return {"ok": True, "name": name}
 
 
@@ -8116,6 +8122,116 @@ def distribute_offer(list_id: int, body: OfferBody,
             "shares": [{"id": iid, "paid_price": s} for s, iid in shares]}
 
 
+# Was „Rückgängig“ nach einem Verkauf nicht aus dem Schnappschuss zurückschreibt:
+# Die Schlüssel vergibt die Datenbank neu, der Abgleich zählt selbst.
+_SCHNAPPSCHUSS_OHNE = {"id", "uuid", "updated_at", "rev"}
+
+
+def _verkaufen(conn, it, body: "ReceiveBody", user: dict, list_name: str,
+               now: int) -> dict:
+    """Abhaken auf einer **Verkaufsliste**: das Gegenteil des Wareneingangs.
+
+    Die Stücke gehen aus der Sammlung heraus – aus der Zeile mit derselben
+    Nummer und demselben Zustand. Das Kaufbuch geht mit (vom jüngsten
+    Posten her, wie beim Tausch), und fällt die Menge auf null, verschwindet
+    die Zeile. Vorher wird festgehalten, wie Zeile und Kaufbuch aussahen:
+    „Rückgängig“ legt es genau so zurück.
+
+    Im Preisfeld steht hier der **Erlös**, nicht ein Einkauf.
+    """
+    zustand = body.condition
+    row = conn.execute(
+        "SELECT * FROM collection WHERE item_id = ? AND item_type = ? "
+        "AND condition = ?", (it["item_id"], it["item_type"], zustand)).fetchone()
+    if not row:
+        raise HTTPException(409, "Nicht in der Sammlung ({z})".format(
+            z="neu" if zustand == "new" else "gebraucht"))
+    menge = it["qty"] or 1
+    if row["quantity"] < menge:
+        raise HTTPException(409, f"In der Sammlung sind nur {row['quantity']} Stück")
+    posten = [dict(p) for p in conn.execute(
+        "SELECT * FROM purchases WHERE entry_id = ? ORDER BY id", (row["id"],))]
+    schnappschuss = json.dumps({"zeile": dict(row), "kaufbuch": posten},
+                               ensure_ascii=False)
+    rest = row["quantity"] - menge
+    if rest > 0:
+        conn.execute("UPDATE collection SET quantity = ? WHERE id = ?",
+                     (rest, row["id"]))
+        _kaufbuch_abgang(conn, row["id"], menge)
+        import datetime as _dt
+        tag = _dt.datetime.fromtimestamp(now).strftime("%d.%m.%Y")
+        zeile = f"{menge}× verkauft über Liste »{list_name}« ({tag})"
+        notiz = ((row["notes"] or "") + ("\n" if row["notes"] else "")
+                 + zeile).strip()[:1000]
+        conn.execute("UPDATE collection SET notes = ? WHERE id = ?",
+                     (notiz, row["id"]))
+    else:
+        conn.execute("DELETE FROM purchases WHERE entry_id = ?", (row["id"],))
+        conn.execute("DELETE FROM collection WHERE id = ?", (row["id"],))
+    erloes = (round(body.paid_price, 2)
+              if body.paid_price is not None and user["is_dealer"]
+              else it["paid_price"])
+    conn.execute(
+        "UPDATE shopping_items SET done = 1, done_at = ?, done_by = ?, "
+        "condition = ?, paid_price = ?, recv_entry_id = ?, "
+        "recv_mode = 'verkauft', recv_purchase_id = NULL, recv_snapshot = ? "
+        "WHERE id = ?",
+        (now, user["id"], zustand, erloes, row["id"] if rest > 0 else None,
+         schnappschuss, it["id"]))
+    return {"ok": True, "sold": True, "rest": rest}
+
+
+def _verkauf_zuruecknehmen(conn, row) -> bool:
+    """Den Verkauf aus `_verkaufen` rückgängig machen – Menge und Kaufbuch
+    wie vorher. Steht die Zeile noch, bekommt sie die Stücke zurück;
+    ist sie weg, wird sie aus dem Schnappschuss neu angelegt."""
+    try:
+        schnapp = json.loads(row["recv_snapshot"] or "")
+    except ValueError:
+        return False
+    alt = schnapp.get("zeile") or {}
+    menge = row["qty"] or 1
+    jetzt = conn.execute(
+        "SELECT id FROM collection WHERE item_id = ? AND item_type = ? "
+        "AND condition = ?",
+        (alt.get("item_id"), alt.get("item_type"), alt.get("condition"))).fetchone()
+    kaufbuch = schnapp.get("kaufbuch") or []
+    if jetzt:
+        ziel = jetzt["id"]
+        conn.execute("UPDATE collection SET quantity = quantity + ? WHERE id = ?",
+                     (menge, ziel))
+        if ziel == alt.get("id"):
+            # Dieselbe Zeile wie beim Verkauf: Kaufbuch und Notiz wie vorher.
+            # Der Abgang hat Posten gekürzt oder gelöscht – welche genau,
+            # rechnet man nicht nach, man legt den alten Stand zurück.
+            conn.execute("DELETE FROM purchases WHERE entry_id = ?", (ziel,))
+            if alt.get("notes") is not None:
+                conn.execute("UPDATE collection SET notes = ? WHERE id = ?",
+                             (alt["notes"], ziel))
+        else:
+            # Die alte Zeile ist weg, inzwischen gibt es eine neue: deren
+            # Buch bleibt, die verkauften Stücke kommen mit ihrem Anteil dazu.
+            kaufbuch = [dict(p, quantity=min(p.get("quantity") or 0, menge))
+                        for p in kaufbuch[-1:]] if kaufbuch else []
+    else:
+        spalten = {r[1] for r in conn.execute("PRAGMA table_info(collection)")}
+        werte = {k: v for k, v in alt.items()
+                 if k in spalten and k not in _SCHNAPPSCHUSS_OHNE}
+        werte["quantity"] = menge
+        ziel = conn.execute(
+            f"INSERT INTO collection ({', '.join(werte)}) VALUES "
+            f"({', '.join('?' for _ in werte)})", tuple(werte.values())).lastrowid
+    pspalten = {r[1] for r in conn.execute("PRAGMA table_info(purchases)")}
+    for p in kaufbuch:
+        werte = {k: v for k, v in p.items()
+                 if k in pspalten and k not in _SCHNAPPSCHUSS_OHNE}
+        werte["entry_id"] = ziel
+        conn.execute(f"INSERT INTO purchases ({', '.join(werte)}) VALUES "
+                     f"({', '.join('?' for _ in werte)})", tuple(werte.values()))
+    _kaufsumme_nachziehen(conn, ziel)
+    return True
+
+
 @app.post("/api/lists/items/{item_id}/receive")
 def receive_list_item(item_id: int, body: ReceiveBody,
                       user: dict = Depends(current_user)):
@@ -8128,9 +8244,16 @@ def receive_list_item(item_id: int, body: ReceiveBody,
             raise HTTPException(404, "Artikel nicht gefunden")
         if it["done"]:
             raise HTTPException(409, "Artikel ist schon in der Sammlung")
-        lst = conn.execute("SELECT name FROM shopping_lists WHERE id = ?",
+        lst = conn.execute("SELECT name, art FROM shopping_lists WHERE id = ?",
                            (it["list_id"],)).fetchone()
         list_name = lst["name"] if lst else ""
+        if lst and lst["art"] == "verkauf":
+            antwort = _verkaufen(conn, it, body, user, list_name, now)
+            list_id = it["list_id"]
+    if lst and lst["art"] == "verkauf":
+        antwort["list_archived"] = _maybe_autoarchive(list_id)
+        return antwort
+    with core.db() as conn:
         import datetime as _dt
         _d = _dt.datetime.fromtimestamp(now).strftime("%d.%m.%Y")
         note_line = f"Von Liste »{list_name}« ({_d})" if list_name else ""
@@ -8262,7 +8385,9 @@ def undo_list_item(item_id: int, user: dict = Depends(dealer_user)):
             "SELECT id, quantity, item_id, item_type FROM collection "
             "WHERE id = ?", (row["recv_entry_id"],)).fetchone() \
             if row["recv_entry_id"] else None
-        if eintrag and row["recv_mode"] in ("neu", "add"):
+        if row["recv_mode"] == "verkauft":
+            zurueck = _verkauf_zuruecknehmen(conn, row)
+        elif eintrag and row["recv_mode"] in ("neu", "add"):
             if row["recv_purchase_id"]:
                 conn.execute("DELETE FROM purchases WHERE id = ? AND "
                              "entry_id = ?",
@@ -8281,7 +8406,8 @@ def undo_list_item(item_id: int, user: dict = Depends(dealer_user)):
             zurueck = True
         conn.execute("UPDATE shopping_items SET done = 0, done_at = NULL, "
                      "done_by = NULL, recv_entry_id = NULL, recv_mode = NULL, "
-                     "recv_purchase_id = NULL WHERE id = ?", (item_id,))
+                     "recv_purchase_id = NULL, recv_snapshot = NULL "
+                     "WHERE id = ?", (item_id,))
         conn.execute("UPDATE shopping_lists SET archived = 0, "
                      "archived_at = NULL WHERE id = ?", (row["list_id"],))
     if fotos_von:

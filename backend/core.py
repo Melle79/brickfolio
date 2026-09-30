@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "3.2.1"
+APP_VERSION = "3.3.0"
 
 
 def hash_password(password: str) -> str:
@@ -921,6 +921,16 @@ def init_db():
         if slcols and "inventoried" not in slcols:
             conn.execute("ALTER TABLE shopping_lists ADD COLUMN "
                          "inventoried INTEGER NOT NULL DEFAULT 0")
+        # Einkaufs- oder Verkaufsliste (3.3.0). Eine Verkaufsliste tut das
+        # Gegenteil: Abhaken nimmt die Stücke aus der Sammlung heraus.
+        if slcols and "art" not in slcols:
+            conn.execute("ALTER TABLE shopping_lists ADD COLUMN "
+                         "art TEXT NOT NULL DEFAULT 'einkauf'")
+        # Was ein Verkauf aus der Sammlung genommen hat (Zeile samt
+        # Kaufbuch, als JSON) – damit „Rückgängig“ es genau so zurücklegt.
+        if scols and "recv_snapshot" not in scols:
+            conn.execute("ALTER TABLE shopping_items ADD COLUMN "
+                         "recv_snapshot TEXT")
         # Was stelle ich ins Tausch-Netzwerk? Bewusst eine eigene Markierung –
         # „abgebbar“ (Menge > 1) ist nur ein Vorschlag, entscheiden tut man.
         ccols = {r[1] for r in conn.execute("PRAGMA table_info(collection)")}

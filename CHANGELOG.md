@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.3.0 – Oktober 2026
+
+### Neu
+- 💰 **Verkaufslisten.** Über den Stift ✏️ an einer Liste lässt sich jetzt
+  auch die Art wählen: Einkaufs- oder Verkaufsliste. Eine Verkaufsliste tut
+  beim Abhaken das Gegenteil – **„✔ Verkauft – raus aus der Sammlung“**
+  nimmt die Stücke aus der Sammlung, das Kaufbuch geht mit, und die letzten
+  Stücke nehmen die Zeile mit. Im Preisfeld steht der Erlös; er zählt nicht
+  als Einkauf. „Rückgängig“ legt Menge, Kaufbuch und Notiz genau zurück.
+- Das Listen-PDF schlägt für Verkaufslisten gleich die Verkaufsfassung vor.
+
+### Geändert
+- Der Stift an einer Liste öffnet jetzt einen Dialog mit Name und Art statt
+  einer Zeile nur zum Umbenennen.
+
 ## 3.2.1 – Oktober 2026
 
 ### Verbessert

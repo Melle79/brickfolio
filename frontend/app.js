@@ -8502,18 +8502,20 @@ function renderLists(lists) {
     <div class="card list-card${state.showArchive ? " list-card-archiv" : ""}" data-lid="${l.id}">
       <div class="card-head">
         <div class="card-title">
-          <strong>${state.showArchive ? "📦 " : "🛒 "}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="${esc(tr("Liste umbenennen"))}">✏️</button>` : ""}</strong>
-          <div class="sub">${esc(tr("{n} Artikel · {offen} offen · Marktwert ca. {wert} (je Zustand)",
+          <strong>${state.showArchive ? "📦 " : (l.art === "verkauf" ? "💰 " : "🛒 ")}<span data-l-name>${esc(l.name)}</span>${dealer && !state.showArchive ? ` <button class="set-link rename-btn" data-l-rename title="${esc(tr("Liste bearbeiten"))}">✏️</button>` : ""}</strong>
+          <div class="sub">${l.art === "verkauf" ? `<span class="listen-art">${esc(tr("Verkaufsliste"))}</span> · ` : ""}${esc(tr("{n} Artikel · {offen} offen · Marktwert ca. {wert} (je Zustand)",
             { n: l.stats.count, offen: l.stats.open, wert: fmtEur(l.stats.est) }))}${
-            l.stats.paid_sum > 0 ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(l.stats.paid_sum) })) : ""}</div>
+            l.stats.paid_sum > 0 ? esc(l.art === "verkauf"
+              ? tr(" · Erlös {sum}", { sum: fmtEur(l.stats.paid_sum) })
+              : tr(" · Einkauf {sum}", { sum: fmtEur(l.stats.paid_sum) })) : ""}</div>
         </div>
       </div>
       <div class="set-figs">
-        ${listeOffen(l.id) ? l.items.map((it) => listItemRow(it, dealer)).join("") : ""}
+        ${listeOffen(l.id) ? l.items.map((it) => listItemRow(it, dealer, l.art === "verkauf")).join("") : ""}
         ${!l.items.length ? `<div class="price-note">Noch leer – beim Scannen oder Suchen auf 🛒 tippen.</div>` : ""}
       </div>
       ${dealer ? `<div class="liste-fuss">
-        ${!state.showArchive && l.stats.open > 0 ? `<button class="mini-btn add" data-l-offer>${esc(tr("💰 Gesamtangebot"))}</button>` : ""}
+        ${!state.showArchive && l.stats.open > 0 ? `<button class="mini-btn add" data-l-offer>${esc(l.art === "verkauf" ? tr("💰 Gesamtpreis") : tr("💰 Gesamtangebot"))}</button>` : ""}
         ${l.items.length ? `<button class="mini-btn" data-l-pdf>${esc(tr("📄 PDF"))}</button>` : ""}
         ${state.showArchive
           ? `<button class="mini-btn" data-l-restore>${esc(tr("↩︎ Reaktivieren"))}</button>`
@@ -8537,42 +8539,34 @@ function renderLists(lists) {
     });
     const renameBtn = card.querySelector("[data-l-rename]");
     if (renameBtn) {
-      renameBtn.addEventListener("click", () => {
-        if (card.querySelector("[data-l-rename-row]")) return;
-        const nameEl = card.querySelector("[data-l-name]");
-        const current = nameEl.textContent;
-        const row = document.createElement("div");
-        row.className = "card-actions btn-grid";
-        row.setAttribute("data-l-rename-row", "");
-        row.innerHTML = `
-          <input data-l-newname maxlength="120" style="grid-column:1/-1">
-          <button class="mini-btn add" data-l-rename-save>Umbenennen</button>
-          <button class="mini-btn" data-l-rename-cancel style="grid-column:auto">Abbrechen</button>`;
-        nameEl.closest(".card-head").after(row);
-        const input = row.querySelector("[data-l-newname]");
-        input.value = current;
-        input.focus();
-        input.select();
-        const closeRow = () => row.remove();
-        row.querySelector("[data-l-rename-cancel]")
-          .addEventListener("click", closeRow);
-        const save = async () => {
-          const name = input.value.trim();
-          if (!name) { toast("Bitte einen Namen eingeben"); return; }
-          if (name === current) { closeRow(); return; }
-          try {
-            await api(`/lists/${lid}/rename`, { method: "POST",
-              body: { name } });
-            toast(tr("Liste heißt jetzt »{name}« ✔", { name }));
-            loadLists();
-          } catch (e) { toast(e.message); }
-        };
-        row.querySelector("[data-l-rename-save]")
-          .addEventListener("click", save);
-        input.addEventListener("keydown", (ev) => {
-          if (ev.key === "Enter") save();
-          if (ev.key === "Escape") { ev.stopPropagation(); closeRow(); }
+      // **Name und Art an einer Stelle.** Eine Verkaufsliste tut beim
+      // Abhaken das Gegenteil einer Einkaufsliste: Die Stücke gehen aus der
+      // Sammlung heraus statt hinein.
+      renameBtn.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        const l = lists.find((x) => x.id === lid);
+        const d = await appDialog({
+          titel: tr("Liste bearbeiten"),
+          text: tr("Einkaufsliste: Abhaken legt die Artikel in die Sammlung.")
+            + "\n" + tr("Verkaufsliste: Abhaken nimmt sie aus der Sammlung heraus."),
+          felder: [
+            { name: "name", label: tr("Name"), wert: l.name, pflicht: true, max: 120 },
+            { name: "art", label: tr("Art der Liste"), typ: "auswahl",
+              wert: l.art === "verkauf" ? "verkauf" : "einkauf",
+              optionen: [
+                { wert: "einkauf", label: tr("🛒 Einkaufsliste") },
+                { wert: "verkauf", label: tr("💰 Verkaufsliste") }] }],
+          ok: tr("Speichern"),
         });
+        if (!d) return;
+        try {
+          await api(`/lists/${lid}/rename`, { method: "POST",
+            body: { name: d.name, art: d.art } });
+          toast(d.art !== l.art && d.art === "verkauf"
+            ? tr("»{name}« ist jetzt eine Verkaufsliste 💰", { name: d.name })
+            : tr("Liste heißt jetzt »{name}« ✔", { name: d.name }));
+          loadLists();
+        } catch (e) { toast(e.message); }
       });
     }
     const list = lists.find((l) => l.id === lid);
@@ -8703,8 +8697,9 @@ function renderLists(lists) {
     });
 
     card.querySelectorAll("[data-i-recv]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const iid = Number(btn.dataset.iRecv);
+        if (list.art === "verkauf") { await verkaufVerbuchen(list, iid, btn); return; }
         const listItem = list.items.find((x) => x.id === iid);
         const row = btn.closest(".fig-row");
         if (row.querySelector("[data-recv-row]")) return;
@@ -8839,21 +8834,21 @@ function renderLists(lists) {
   angeboteEintragen(box);
 }
 
-function listItemRow(it, dealer) {
+function listItemRow(it, dealer, verkauf = false) {
   const condPrice = it.condition === "new"
     ? (it.price_new || it.price_used) : (it.price_used || it.price_new);
   const prices = condPrice
     ? `${it.condition === "new" ? tr("Ø neu") : tr("Ø gebr.")} `
       + fmtEur(condPrice) : "";
   const doneInfo = it.done
-    ? `<div class="sub done-note">${esc(tr("✔ in Sammlung"))}${it.done_by_name ? " " + esc(tr("von {wer}", { wer: it.done_by_name })) : ""}${it.done_at ? " " + esc(tr("am {datum}", { datum: new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) })) : ""}</div>`
+    ? `<div class="sub done-note">${esc(verkauf ? tr("✔ verkauft") : tr("✔ in Sammlung"))}${it.done_by_name ? " " + esc(tr("von {wer}", { wer: it.done_by_name })) : ""}${it.done_at ? " " + esc(tr("am {datum}", { datum: new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) })) : ""}</div>`
     : "";
   return `
   <div class="fig-row tappbar ${it.done ? "done" : ""}" data-iid="${it.id}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
     <img class="card-img fig-img" src="${imgSrc(it.img_url, true)}" data-gid="${esc(it.item_id)}" data-gtype="${esc(it.item_type)}" alt="" loading="lazy">
     <div class="fig-info">
       <strong>${esc(it.name)}</strong>
-      <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${prices ? " · " + prices : ""}${it.paid_price != null ? esc(tr(" · Einkauf {sum}", { sum: fmtEur(it.paid_price) })) : ""}</div>
+      <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${prices ? " · " + prices : ""}${it.paid_price != null ? esc(verkauf ? tr(" · Erlös {sum}", { sum: fmtEur(it.paid_price) }) : tr(" · Einkauf {sum}", { sum: fmtEur(it.paid_price) })) : ""}</div>
       ${doneInfo}
       ${!it.done && dealer ? `
       <!-- Einkaufspreis mit kleinem ✓ und daneben der Zustand als Pille.
@@ -8861,7 +8856,7 @@ function listItemRow(it, dealer) {
            ✓-Balken über die volle Breite. -->
       <div class="liste-artikel">
         <input data-ip="${it.id}" class="paid-input" inputmode="decimal"
-          placeholder="${esc(tr("Einkauf {cur}", { cur: curSymbol() }))}"
+          placeholder="${esc(verkauf ? tr("Erlös {cur}", { cur: curSymbol() }) : tr("Einkauf {cur}", { cur: curSymbol() }))}"
           title="${esc(tr("leer = BrickLink-Ø"))}"
           aria-label="${esc(tr("Einkauf {cur} – leer = BrickLink-Ø", { cur: curSymbol() }))}"
           value="${it.paid_price != null ? fmtPaidInput(it.paid_price) : ""}">
@@ -8875,13 +8870,44 @@ function listItemRow(it, dealer) {
         </div>
       </div>` : ""}
       <div class="fig-actions">
-        ${!it.done ? `<button class="mini-btn add" data-i-recv="${it.id}">${esc(tr("✔ Da! Ab in die Sammlung"))}</button>` : ""}
+        ${!it.done ? `<button class="mini-btn add" data-i-recv="${it.id}">${esc(verkauf ? tr("✔ Verkauft – raus aus der Sammlung") : tr("✔ Da! Ab in die Sammlung"))}</button>` : ""}
         ${!it.done && dealer ? `<button class="mini-btn zust-abbruch" data-i-del="${it.id}"
           title="${esc(tr("Von der Liste nehmen"))}" aria-label="${esc(tr("Von der Liste nehmen"))}">✕</button>` : ""}
         ${it.done && dealer ? `<button class="mini-btn" data-i-undo="${it.id}">${esc(tr("↩︎ Rückgängig"))}</button>` : ""}
       </div>
     </div>
   </div>`;
+}
+
+/* Abhaken auf einer Verkaufsliste: Die Stücke gehen aus der Sammlung. Im
+   Preisfeld steht, was der Käufer gezahlt hat (leer lassen geht auch).
+   Fehlt der Artikel in diesem Zustand oder in dieser Menge, sagt der
+   Server es – dann bleibt alles, wie es war. */
+async function verkaufVerbuchen(list, iid, btn) {
+  const it = list.items.find((x) => x.id === iid);
+  const row = btn.closest(".fig-row");
+  const feld = row.querySelector(`[data-ip="${iid}"]`);
+  const roh = feld ? feld.value.trim() : "";
+  const erloes = roh ? betragLesen(roh) : null;
+  if (roh && erloes == null) { toast(tr("Das ist kein Betrag.")); return; }
+  const aktiv = row.querySelector("[data-ic].sel");
+  const zustand = aktiv ? aktiv.dataset.ic : ((it && it.condition) || "used");
+  btn.disabled = true;
+  try {
+    const res = await api(`/lists/items/${iid}/receive`, { method: "POST",
+      body: { condition: zustand, paid_price: erloes } });
+    const name = (it && it.name) || "";
+    toast(res.list_archived
+      ? tr("Verkauft ✔ – Liste abgearbeitet, ab ins Archiv 🎉")
+      : (res.rest > 0
+        ? tr("„{name}“ verkauft ✔ – noch {n}× in der Sammlung", { name, n: res.rest })
+        : tr("„{name}“ verkauft ✔ – nicht mehr in der Sammlung", { name })));
+    row.classList.add("angekommen");
+    setTimeout(() => { loadLists(); updateListsTab(); }, 900);
+  } catch (e) {
+    toast(e.message);
+    btn.disabled = false;
+  }
 }
 
 async function addToList(list, it, condition, paidPrice) {
@@ -9823,11 +9849,14 @@ function printTable(title, subtitle, headers, rows, cols) {
 async function listePdf(list) {
   const d = await appDialog({
     titel: tr("„{name}“ als PDF", { name: list.name }),
+    text: tr("Einkaufsliste: alle Artikel mit Ø-Preis, zum Abhaken.")
+      + "\n" + tr("Verkaufsliste: nur Offenes, Preis für den Käufer, ohne deine Einkaufspreise."),
     felder: [
-      { name: "art", label: tr("Fassung"), typ: "auswahl", wert: "einkauf",
+      { name: "art", label: tr("Fassung"), typ: "auswahl",
+        wert: list.art === "verkauf" ? "verkauf" : "einkauf",
         optionen: [
-          { wert: "einkauf", label: tr("🛒 Einkaufsliste – Ø-Preise, zum Abhaken") },
-          { wert: "verkauf", label: tr("💰 Verkaufsliste – Preise für den Käufer") }] },
+          { wert: "einkauf", label: tr("🛒 Einkaufsliste") },
+          { wert: "verkauf", label: tr("💰 Verkaufsliste") }] },
       { name: "prozent", label: tr("Preis in der Verkaufsliste (% vom Marktwert)"),
         typ: "zahl", wert: "100" }],
     ok: tr("📄 PDF erstellen"),

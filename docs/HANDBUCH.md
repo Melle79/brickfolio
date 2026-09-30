@@ -1843,6 +1843,28 @@ Nachrichten.
 Oben stehen Name der Liste, Datum und die Eckdaten, unten, woher die
 Preise kommen.
 
+
+### 7.6 Verkaufslisten – Abhaken nimmt aus der Sammlung
+
+Eine Liste kann auch das Gegenteil tun: Über den **Stift ✏️** neben dem
+Namen wird aus ihr eine **💰 Verkaufsliste**. Sie trägt dann das Schild
+„Verkaufsliste“, und jeder Artikel hat statt „Da! Ab in die Sammlung“ den
+Knopf **„✔ Verkauft – raus aus der Sammlung“**.
+
+- **Abhaken nimmt die Stücke aus der Sammlung** – aus der Zeile mit
+  derselben Nummer und demselben Zustand. Das Kaufbuch geht mit (vom
+  jüngsten Kauf her), und sind es die letzten Stücke, verschwindet die
+  Zeile. In den Notizen steht, wann über welche Liste verkauft wurde.
+- **Im Preisfeld steht der Erlös**, nicht ein Einkauf. Er zählt nicht in
+  die Einkaufs-Summe der Statistik.
+- Ist der Artikel in diesem Zustand gar nicht oder nicht oft genug in der
+  Sammlung, sagt die App es und ändert nichts.
+- **↩︎ Rückgängig** legt alles genau so zurück: Menge, Kaufbuch und Notiz –
+  auch eine Zeile, die beim Verkauf ganz verschwunden war.
+- Artikel auf einer Verkaufsliste zählen nicht als „unterwegs“ für
+  Wunschliste und fehlende Set-Figuren.
+- Das PDF (7.5) schlägt für Verkaufslisten gleich die Verkaufsfassung vor.
+
 ---
 
 ## 8. Die Verkaufsliste (Doppelte)
