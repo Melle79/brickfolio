@@ -252,6 +252,8 @@ button { font-family: inherit; color: var(--ink); }
 .logo { text-align: center; margin-bottom: 20px; }
 .logo h1 { margin: 4px 0 2px; font-size: 30px; }
 .logo p { margin: 0; color: var(--muted); font-size: 14px; }
+/* Der Spruch: Nupplo kommt von „Noppe“. */
+.logo p.slogan { font-weight: 800; letter-spacing: .02em; }
 label { display: block; font-size: 13px; margin: 14px 0 4px; color: var(--muted); }
 input, textarea, select {
   width: 100%; padding: 12px; font: inherit; font-weight: 600;

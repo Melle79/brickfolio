@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.1 – Oktober 2026
+
+### Neu
+- 🧱 **„Jede Noppe zählt.“** – der neue Spruch unter der Wortmarke im
+  Startbild und bei der Anmeldung (englisch „Every stud counts.“). Nupplo
+  kommt von „Noppe“.
+
+### Doku
+- Neue Bildschirmfotos in der README: Scannen, Sammlung, Einkaufsliste,
+  Statistik, eigene Fotos und Sicherung – mit der Nupplo-Kopfleiste und
+  erfundenen Beispieldaten.
+
 ## 3.1.0 – Oktober 2026
 
 ### Neu
