@@ -120,7 +120,7 @@ button { font-family: inherit; color: var(--ink); }
      diesem Element ab, statt eine zweite Zahl zu führen – sonst liefen
      Balken und Ausblenden früher oder später auseinander, und genau das
      sieht man sofort: Der Balken stünde voll da, während das Logo noch
-     wartet. 1,1 s baut sich das Logo auf, den Rest steht es einfach. */
+     wartet. Gut 1,9 s baut sich das Logo auf, den Rest steht es einfach. */
   --halt: 3s;
   position: fixed; inset: 0; z-index: 9999;
   display: grid; place-items: center;
@@ -142,23 +142,44 @@ button { font-family: inherit; color: var(--ink); }
 #view-login, #view-wizard, #app { transition: opacity .28s ease-out; }
 
 /* Der Turm baut sich Stein für Stein auf – von unten grün, blau, rot, gelb,
-   jeder fällt ein und federt leicht. Dann gleiten „Nupp“ von links und „o“
-   von rechts heran, danach Name und Unterzeile. */
-#splash .turm i { animation: splash-fall .5s cubic-bezier(.3, 1.5, .5, 1) backwards; }
-#splash .turm i:nth-child(4) { animation-delay: 0s; }
-#splash .turm i:nth-child(3) { animation-delay: .12s; }
-#splash .turm i:nth-child(2) { animation-delay: .24s; }
-#splash .turm i:nth-child(1) { animation-delay: .36s; }
-#splash .wm-links  { display: inline-block; animation: wm-links .4s ease-out .6s backwards; }
-#splash .wm-rechts { display: inline-block; animation: wm-rechts .4s ease-out .6s backwards; }
-#splash .wm-se     { animation: splash-ein .4s ease-out .75s backwards; }
-#splash .logo-name { animation: splash-ein .45s ease-out .8s backwards; }
-#splash .logo p    { animation: splash-ein .45s ease-out .9s backwards; }
+   jeder fällt von weit oben ein und federt beim Aufsetzen nach. Dann
+   gleiten „Nupp“ von links und „o“ von rechts heran, zuletzt steigen Gruß
+   und Spruch von unten auf.
 
-@keyframes splash-fall { from { transform: translateY(-46px); opacity: 0; } }
+   **Takt und Wege** wie bei den übrigen Nupplo-Oberflächen: erster
+   Stein nach 0,25 s, dann alle 0,17 s; die Schrift 0,37 s nach dem
+   letzten, der Gruß 0,35 s danach. Die Wege stehen in `em`, damit sie mit
+   der Wortmarke wachsen – 2,2 Schrifthöhen fällt ein Stein, eine halbe
+   gleitet ein Buchstabe. */
+#splash .wortmarke { font-size: 54px; }
+#splash .turm i {
+  position: relative;
+  animation: splash-fall .55s cubic-bezier(.34, 1.45, .55, 1) backwards;
+}
+/* Der fallende Stein liegt vorn – federt er nach, taucht er nicht hinter
+   den unteren ab. */
+#splash .turm i:nth-child(1) { z-index: 4; animation-delay: .76s; }
+#splash .turm i:nth-child(2) { z-index: 3; animation-delay: .59s; }
+#splash .turm i:nth-child(3) { z-index: 2; animation-delay: .42s; }
+#splash .turm i:nth-child(4) { z-index: 1; animation-delay: .25s; }
+#splash .wm-links  { display: inline-block; animation: wm-links .5s cubic-bezier(.3, 1.25, .5, 1) 1.13s backwards; }
+#splash .wm-rechts { display: inline-block; animation: wm-rechts .5s cubic-bezier(.3, 1.25, .5, 1) 1.13s backwards; }
+#splash .wm-se     { animation: splash-ein .4s ease-out 1.3s backwards; }
+#splash .splash-gruss,
+#splash .logo p.slogan { animation: splash-auf .45s ease-out 1.48s backwards; }
+
+/* Gruß kräftig in Textfarbe, der Spruch leise darunter. */
+#splash .splash-gruss {
+  margin: 18px 0 6px; font-size: 20px; font-weight: 900; color: var(--ink);
+}
+#splash .splash-gruss:empty { display: none; }
+#splash .logo p.slogan { font-size: 15px; }
+
+@keyframes splash-fall { from { transform: translateY(-2.2em); opacity: 0; } }
 @keyframes splash-ein  { from { transform: translateY(-7px);  opacity: 0; } }
-@keyframes wm-links    { from { transform: translateX(-16px); opacity: 0; } }
-@keyframes wm-rechts   { from { transform: translateX(16px);  opacity: 0; } }
+@keyframes splash-auf  { from { transform: translateY(10px);  opacity: 0; } }
+@keyframes wm-links    { from { transform: translateX(-.5em); opacity: 0; } }
+@keyframes wm-rechts   { from { transform: translateX(.5em);  opacity: 0; } }
 
 /* Ein Balken, der läuft – aber nichts behauptet: Er zeigt, dass etwas
    geschieht, nicht wie weit es ist. Einen echten Fortschritt gibt es hier
@@ -180,7 +201,7 @@ button { font-family: inherit; color: var(--ink); }
   #splash .wm-links,
   #splash .wm-rechts,
   #splash .wm-se,
-  #splash .logo-name,
+  #splash .splash-gruss,
   #splash .logo p,
   .splash-bar i { animation: none; }
   .splash-bar i { width: 100%; }

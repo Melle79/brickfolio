@@ -2786,25 +2786,39 @@ function wireWizardOnce() {
   });
 }
 
-/* Der Gruß neben der Wortmarke – nach Tageszeit, mit dem Benutzernamen.
-   Er wird beim Öffnen gesetzt und jedes Mal, wenn die App wieder nach vorn
+/* Der Gruß zur Tageszeit – im Startbild unter der Wortmarke und in der
+   Kopfleiste daneben. **Beide Stellen sprechen gleich** – und genauso wie
+   die übrigen Nupplo-Oberflächen: Niemand soll zweimal verschieden gegrüßt
+   werden. Ohne Namen – im Startbild vor der ersten Anmeldung –
+   schlicht „Guten Morgen!“.
+
+   Gesetzt wird er beim Öffnen und jedes Mal, wenn die App wieder nach vorn
    kommt: Eine morgens geöffnete Seite soll abends nicht „Guten Morgen“
    sagen. */
-function grussText(stunde) {
-  if (stunde >= 5 && stunde < 11) return "Guten Morgen, {name}";
-  if (stunde >= 11 && stunde < 14) return "Schönen Mittag, {name}";
-  if (stunde >= 14 && stunde < 18) return "Hallo, {name}";
-  if (stunde >= 18 && stunde < 22) return "Guten Abend, {name}";
-  return "Noch wach, {name}?";
+function grussText(stunde, mitName) {
+  if (stunde >= 5 && stunde < 11) return mitName ? "Guten Morgen, {name}!" : "Guten Morgen!";
+  if (stunde >= 11 && stunde < 18) return mitName ? "Hallo, {name}!" : "Hallo!";
+  if (stunde >= 18 && stunde < 23) return mitName ? "Guten Abend, {name}!" : "Guten Abend!";
+  return mitName ? "Noch wach, {name}?" : "Noch wach?";
+}
+
+/* Benutzernamen sind oft klein geschrieben („mia“) – in der Anrede groß.
+   Wer sich „McFly“ nennt, bleibt so. */
+function anrede(name) {
+  const n = (name || "").trim();
+  return n && n === n.toLowerCase() ? n.charAt(0).toUpperCase() + n.slice(1) : n;
+}
+
+function grussFuer(name) {
+  const n = anrede(name);
+  return tr(grussText(new Date().getHours(), !!n), { name: n });
 }
 
 function setzeGruss() {
   const el = $("topbar-gruss");
   if (!el) return;
   const u = state.user && state.user.username;
-  if (!u) { el.textContent = ""; return; }
-  const name = u.charAt(0).toUpperCase() + u.slice(1);
-  el.textContent = tr(grussText(new Date().getHours()), { name });
+  el.textContent = u ? grussFuer(u) : "";
 }
 
 document.addEventListener("visibilitychange", () => {
@@ -12130,6 +12144,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadLang();
   translateTree(document.body);
   watchForTranslation();
+  // Der Gruß im Startbild – mit dem Namen, der hier zuletzt angemeldet
+  // war. Er erscheint erst nach dem Turm, bis dahin ist er gesetzt.
+  const splashGruss = $("splash-gruss");
+  if (splashGruss) splashGruss.textContent = grussFuer(state.user && state.user.username);
 
   $("btn-login").addEventListener("click", doLogin);
   $("btn-totp").addEventListener("click", doTotpLogin);

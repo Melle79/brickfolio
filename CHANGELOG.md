@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.3 – Oktober 2026
+
+### Neu
+- 🎬 **Neues Startbild.** Die Wortmarke steht größer da, die
+  Steine fallen von weit oben ein und federn nach, „Nupp“ und „o“ gleiten
+  weiter heran. Darunter steigen ein **Gruß zur Tageszeit** („Guten
+  Morgen, Mia!“, ohne Anmeldung schlicht „Guten Morgen!“) und der Spruch
+  auf. Der Name der Sammlung steht dort nicht mehr – er bleibt bei der
+  Anmeldung.
+- Der Gruß in der Kopfleiste spricht jetzt genauso wie das Startbild:
+  „Guten Morgen“ bis 11 Uhr, „Hallo“ bis 18 Uhr, „Guten Abend“ bis 23 Uhr,
+  danach „Noch wach?“.
+
 ## 3.1.2 – Oktober 2026
 
 ### Neu
