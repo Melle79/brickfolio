@@ -296,7 +296,7 @@ def set_shared(entry_id: int, body: ShareBody,
 def _shared_rows(conn):
     return conn.execute(
         "SELECT id, item_id, item_type, name, img_url, bricklink_url, "
-        "condition, quantity, share_qty, share_deal FROM collection "
+        "condition, quantity, share_qty, share_deal, share_price FROM collection "
         "WHERE shared = 1 "
         "ORDER BY name COLLATE NOCASE").fetchall()
 
@@ -311,7 +311,8 @@ def share_status(user: dict = Depends(current_user)):
                "item_type": r["item_type"], "img_url": r["img_url"],
                "condition": r["condition"], "quantity": r["quantity"],
                "share_qty": r["share_qty"] or r["quantity"],
-               "deal": r["share_deal"] or "tausch"} for r in rows]
+               "deal": r["share_deal"] or "tausch",
+               "price": r["share_price"]} for r in rows]
 
     published, stale, live = [], [], None
     if hub.enabled():
@@ -412,6 +413,10 @@ def _angebote_senden() -> dict:
             # Nur so viele anbieten, wie ausgewählt (Standard: alle)
             "qty": min(r["share_qty"] or r["quantity"], r["quantity"]),
             "deal": r["share_deal"] or "tausch",
+            # Preis je Stück aus der Verkaufsliste (3.4.0, Hub ab 1.24.0).
+            # Ältere Hubs übergehen die Felder einfach.
+            "price": r["share_price"],
+            "currency": integrations.currency() if r["share_price"] is not None else None,
         })
     return hub.publish(offers) or {"count": len(offers)}
 
@@ -1136,6 +1141,45 @@ def hub_trade_candidates(trade_id: str, user: dict = Depends(current_user)):
     return {"candidates": [dict(r) for r in rows]}
 
 
+def _verkaufsliste_abhaken(conn, row, menge: int, user: dict) -> list:
+    """Über das Netzwerk verkauft: den Artikel auf seiner Verkaufsliste
+    abhaken – **ohne** die Sammlung noch einmal anzufassen, das hat das
+    Austragen eben getan. Gibt die Namen der Listen zurück.
+
+    Ging nur ein Teil weg, sinkt die Menge auf der Liste."""
+    jetzt = int(time.time())
+    namen = []
+    for it in conn.execute(
+            "SELECT i.id, i.qty, i.list_id, l.name FROM shopping_items i "
+            "JOIN shopping_lists l ON l.id = i.list_id "
+            "WHERE l.art = 'verkauf' AND i.done = 0 AND i.im_netz = 1 "
+            "AND i.item_id = ? AND i.item_type = ? AND i.condition = ? "
+            "ORDER BY i.added_at", (row["item_id"], row["item_type"],
+                                    row["condition"])).fetchall():
+        if menge <= 0:
+            break
+        if it["qty"] > menge:
+            conn.execute("UPDATE shopping_items SET qty = qty - ? WHERE id = ?",
+                         (menge, it["id"]))
+            menge = 0
+        else:
+            menge -= it["qty"]
+            conn.execute(
+                "UPDATE shopping_items SET done = 1, done_at = ?, done_by = ?, "
+                "recv_mode = 'netz', im_netz = 0 WHERE id = ?",
+                (jetzt, user["id"], it["id"]))
+        namen.append(it["name"])
+    for lid in {r[0] for r in conn.execute(
+            "SELECT DISTINCT list_id FROM shopping_items WHERE recv_mode = 'netz' "
+            "AND done_at = ?", (jetzt,))}:
+        offen = conn.execute("SELECT COUNT(*) FROM shopping_items WHERE "
+                             "list_id = ? AND done = 0", (lid,)).fetchone()[0]
+        if not offen:
+            conn.execute("UPDATE shopping_lists SET archived = 1, archived_at = ? "
+                         "WHERE id = ?", (jetzt, lid))
+    return namen
+
+
 @router.post("/api/hub/trades/{trade_id}/give")
 @_nacheinander
 def hub_trade_give(trade_id: str, body: TradeGiveBody,
@@ -1178,11 +1222,13 @@ def hub_trade_give(trade_id: str, body: TradeGiveBody,
     with core.db() as conn:
         conn.execute("UPDATE trades SET taken_at = ? WHERE id = ?",
                      (int(time.time()), trade_id))
+        abgehakt = _verkaufsliste_abhaken(conn, row, body.quantity, user)
     angebote_nachziehen_im_hintergrund()
     status = _buchung_melden(trade_id, False) if hub.enabled() else None
     return {"ok": True, "rest": rest, "geloescht": rest == 0,
             "status": status or t["status"],
-            "condition": row["condition"], "ergebnis": ergebnis}
+            "condition": row["condition"], "ergebnis": ergebnis,
+            "liste_abgehakt": abgehakt}
 
 
 class TradeReportBody(BaseModel):
@@ -1643,7 +1689,8 @@ def entdecken(user: dict = Depends(current_user)):
             "item_id": o["item_id"], "item_type": o.get("item_type"),
             "name": o["name"], "img_url": o.get("img_url"),
             "img_data": o.get("img_data"), "condition": o.get("condition"),
-            "qty": o.get("qty") or 1, "deal": o.get("deal") or "tausch"}
+            "qty": o.get("qty") or 1, "deal": o.get("deal") or "tausch",
+            "price": o.get("price"), "currency": o.get("currency")}
            for o in angebote
            if (o["item_id"], o.get("item_type") or "minifig") in gesucht]
 

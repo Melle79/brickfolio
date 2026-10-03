@@ -1869,6 +1869,17 @@ Knopf **„✔ Verkauft – raus aus der Sammlung“**.
 - Artikel auf einer Verkaufsliste zählen nicht als „unterwegs“ für
   Wunschliste und fehlende Set-Figuren.
 - Das PDF (7.5) schlägt für Verkaufslisten gleich die Verkaufsfassung vor.
+- **Im Tausch-Netzwerk anbieten:** Unter der Liste steht dann
+  **„🤝 Im Netz anbieten“**. Die offenen Artikel erscheinen im Netzwerk als
+  Verkauf – so viele Stück, wie auf der Liste stehen, zum Preis aus dem
+  Preisfeld je Stück (sonst zum Ø-Marktwert). Andere sehen den Preis am
+  Angebot. Artikel, die gerade angeboten sind, tragen „🤝 im Netz“.
+  - Wird ein Artikel auf der Liste als verkauft abgehakt, geht er aus dem
+    Angebot.
+  - Wird er über das Netzwerk verkauft und dort **ausgetragen**, hakt die
+    Liste ihn von selbst ab („über das Tausch-Netzwerk verkauft“) – die
+    Sammlung wird dabei nicht noch einmal angefasst.
+  - **„🤝 Aus dem Netz nehmen“** zieht die Angebote der Liste zurück.
 
 ---
 
@@ -2365,6 +2376,9 @@ Unter **📤 Ich biete an** im Tab **Tausch** steht, was ins Netzwerk geht:
   „🤝 In der Tauschbörse anbieten".
 - „➕ Abgebbare übernehmen" holt in einem Rutsch alles aus der
   Verkaufsliste (Doppelte, siehe Kapitel 8).
+- Eine **eigene Verkaufsliste** stellt „🤝 Im Netz anbieten“ unter der
+  Liste ins Netzwerk – mit **Preis** je Stück (siehe 7.6). Der Preis steht
+  beim Gegenüber an der Karte („💶 Verkauf · 7,50 €“).
 - Bei mehrfach vorhandenen Figuren wählst du die **Menge**, die angeboten
   wird – von drei Yodas also auch nur einen.
 - An jedem Artikel steht, ob er **schon veröffentlicht** ist oder noch

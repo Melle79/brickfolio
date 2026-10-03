@@ -1266,6 +1266,16 @@ the collection”**.
 - Items on a sales list do not count as “on the way” for the wish list and
   missing set figures.
 - The PDF (7.5) suggests the sales version for sales lists right away.
+- **Offer on the trading network:** below the list there is
+  **“🤝 Offer on the network”**. The open items appear on the network for
+  sale – as many pieces as the list says, at the price from the price field
+  per piece (otherwise the average market value). Others see the price on
+  the offer. Items currently on offer carry “🤝 on the network”.
+  - Ticking an item off as sold on the list takes it off the offer.
+  - If it is sold via the network and **given out** there, the list ticks it
+    off by itself (“sold via the trading network”) – without touching the
+    collection a second time.
+  - **“🤝 Take off the network”** withdraws the list’s offers.
 
 ---
 
@@ -1719,6 +1729,9 @@ Under **📤 I offer** in the **Trade** tab is what goes into the network:
 
 - You pick individual items in the **collection**: open a card → "🤝 Offer it
   in the trading network".
+- Your own **sales list** goes onto the network via “🤝 Offer on the network”
+  below the list – with a **price** per piece (see 7.6). The other side sees
+  the price on the card (“💶 Sale · €7.50”).
 - "➕ Take over spares" fetches everything from the sell list (duplicates, see
   chapter 8) in one go.
 - For figures you own several times you pick the **quantity** that is offered –

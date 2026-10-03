@@ -762,7 +762,7 @@ async function loadShareView() {
           <div class="card-title tappbar" ${infoAttr(it)}>
             <strong>${esc(it.name)}</strong>
             <div class="sub">${esc(it.item_id)} · ${it.quantity}× vorhanden ·
-              ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}</div>
+              ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${esc(cmPreis(it))}</div>
             ${s.known_state ? `<span class="badge ${it.published ? "badge-owned" : "badge-wanted"}">${
               it.published ? tr("veröffentlicht ({n}×)", { n: it.published_qty })
                 : tr("noch nicht veröffentlicht")}</span>` : ""}
@@ -1296,7 +1296,7 @@ async function loadHubOffers() {
             <div class="sub">${esc(o.item_id)}${o.condition ? " · " + (o.condition === "new" ? tr("Neu") : tr("Gebraucht")) : ""}${o.qty > 1 ? " · " + o.qty + "×" : ""}</div>
             </div>
             <span class="badge badge-owned">von <button type="button" class="cm-name" data-profil="${esc(o.member_id)}">${esc(o.display_name)}</button></span>
-            <span class="badge cm-art-schild">${esc(cmArtName(o.deal))}</span>
+            <span class="badge cm-art-schild">${esc(cmArtName(o.deal) + cmPreis(o))}</span>
             ${t ? `<span class="badge badge-wanted">💬 angefragt · ${tradeStatusText(t.status)}${t.unread ? ` · ${t.unread} neu` : ""}</span>` : ""}
           </div>
         </div>
@@ -1390,6 +1390,18 @@ async function communityThemenLaden() {
 
 /* Tausch, Verkauf oder beides. Fehlt die Angabe (ältere Instanzen), ist es
    ein Tausch – so war jedes Angebot gemeint, bevor es die Wahl gab. */
+/* Der Preis eines Angebots je Stück (Hub 1.24.0) – „ · 7,50 €“ oder leer. */
+function cmPreis(o) {
+  if (!o || o.price == null || o.price === "") return "";
+  const w = o.currency || state.currency || "EUR";
+  try {
+    return " · " + Number(o.price).toLocaleString(dateLocale(),
+      { style: "currency", currency: w });
+  } catch (_) {
+    return " · " + Number(o.price).toFixed(2) + " " + w;
+  }
+}
+
 function cmArtName(art) {
   if (art === "verkauf") return tr("💶 Verkauf");
   if (art === "beides") return tr("🔄 Tausch · 💶 Verkauf");
@@ -1440,7 +1452,7 @@ async function loadEntdecken() {
       teile.push(`<div class="cm-karte">
         <img src="${cmBild(h)}" alt="" loading="lazy">
         <div class="cm-mitte tappbar" ${infoAttr(h)}><strong>${esc(h.name)}</strong>
-          <div class="sub">${esc(h.item_id)}${cmZustand(h.condition)} · ${esc(cmArtName(h.deal))} · ${esc(tr("von"))} ${cmName(h.member_id, h.display_name)}</div></div>
+          <div class="sub">${esc(h.item_id)}${cmZustand(h.condition)} · ${esc(cmArtName(h.deal) + cmPreis(h))} · ${esc(tr("von"))} ${cmName(h.member_id, h.display_name)}</div></div>
         <button class="mini-btn add" data-cm-hat="${i}">${lauf ? "💬 " + esc(tr("Gespräch")) : "💬 " + esc(tr("Anfragen"))}</button>
       </div>`);
     });
@@ -1542,7 +1554,7 @@ async function openProfil(memberId) {
     zahlen.push(`<div class="cm-zahl"><b>≈ ${p.collection_count}</b><span>${esc(tr("Figuren"))}</span></div>`);
   }
   const bilder = (liste, markiere) => `<div class="cm-bilder">${liste.map((x, i) =>
-    `<button type="button" class="cm-bild${markiere(x) ? " an" : ""}" data-i="${i}" title="${esc(x.name)} (${esc(x.item_id)})${x.deal ? " · " + esc(cmArtName(x.deal)) : ""}">
+    `<button type="button" class="cm-bild${markiere(x) ? " an" : ""}" data-i="${i}" title="${esc(x.name)} (${esc(x.item_id)})${x.deal ? " · " + esc(cmArtName(x.deal) + cmPreis(x)) : ""}">
       <img src="${cmBild(x)}" alt="" loading="lazy"></button>`).join("")}</div>`;
   const angebote = p.offers || [];
   const wuensche = p.wants || [];

@@ -731,7 +731,10 @@ code {
 
 /* Fuß einer Einkaufsliste: die Aktionen teilen sich die Breite, Löschen
    steht als rotes 🗑 am Ende. Vorher „Liste löschen" über die volle Breite. */
-.liste-fuss { display: flex; gap: 8px; margin-top: 8px; }
+.liste-fuss { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+/* „Im Netz anbieten“ bekommt eine eigene Zeile: Mit fünf Knöpfen
+   nebeneinander war er am Handy auf „Aus dem Netz neh…“ gekürzt. */
+.liste-fuss .mini-btn[data-l-netz] { flex: 1 1 100%; order: -1; }
 .liste-fuss .mini-btn { flex: 1; min-height: 44px; }
 .liste-fuss .zust-abbruch {
   flex: none; width: 44px; padding: 0;

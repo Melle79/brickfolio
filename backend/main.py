@@ -8091,6 +8091,77 @@ def _distribute_offer_shares(total: float, values: list) -> list:
     return [c / 100 for c in cent]
 
 
+class NetzBody(BaseModel):
+    an: bool = True
+
+
+@app.post("/api/lists/{list_id}/netz")
+def liste_ins_netz(list_id: int, body: NetzBody, user: dict = Depends(dealer_user)):
+    """Eine Verkaufsliste im Tausch-Netzwerk anbieten – oder herausnehmen.
+
+    Angebote im Netz sind Zeilen der Sammlung (`shared`). Für jeden offenen
+    Artikel der Liste wird die passende Zeile (Nummer und Zustand) als
+    Verkauf angeboten: so viele Stück, wie auf der Liste stehen, zum Preis
+    aus dem Preisfeld der Liste (geteilt durch die Menge) oder sonst zum
+    Ø-Marktwert des Zustands. War die Zeile schon zum Tausch angeboten,
+    heißt es danach „Tausch oder Verkauf“.
+
+    Herausnehmen nimmt die Angebote dieser Liste wieder aus dem Netz.
+    """
+    import community
+    if not hub.enabled():
+        raise HTTPException(400, "Nicht mit dem Tausch-Netzwerk verbunden")
+    with core.db() as conn:
+        lst = conn.execute("SELECT art, archived FROM shopping_lists WHERE id = ?",
+                           (list_id,)).fetchone()
+        if not lst:
+            raise HTTPException(404, "Liste nicht gefunden")
+        if lst["art"] != "verkauf":
+            raise HTTPException(400, "Nur Verkaufslisten lassen sich anbieten")
+        items = conn.execute(
+            "SELECT * FROM shopping_items WHERE list_id = ? AND done = 0",
+            (list_id,)).fetchall()
+        angeboten, fehlt = [], []
+        for it in items:
+            z = conn.execute(
+                "SELECT * FROM collection WHERE item_id = ? AND item_type = ? "
+                "AND condition = ?", (it["item_id"], it["item_type"],
+                                      it["condition"])).fetchone()
+            if not body.an:
+                if it["im_netz"] and z:
+                    conn.execute("UPDATE collection SET shared = 0, share_qty = NULL, "
+                                 "share_price = NULL, share_deal = CASE WHEN "
+                                 "share_deal = 'beides' THEN 'tausch' ELSE share_deal END "
+                                 "WHERE id = ?", (z["id"],))
+                conn.execute("UPDATE shopping_items SET im_netz = 0 WHERE id = ?",
+                             (it["id"],))
+                continue
+            if not z:
+                fehlt.append(it["name"])
+                continue
+            menge = min(it["qty"] or 1, z["quantity"])
+            if it["paid_price"] is not None:
+                preis = round(it["paid_price"] / max(1, it["qty"] or 1), 2)
+            else:
+                unit = _unit_price(it["condition"], it["price_new"], it["price_used"])
+                preis = round(unit, 2) if unit else None
+            deal = "beides" if (z["shared"] and (z["share_deal"] or "tausch")
+                                in ("tausch", "beides")) else "verkauf"
+            conn.execute("UPDATE collection SET shared = 1, share_qty = ?, "
+                         "share_deal = ?, share_price = ? WHERE id = ?",
+                         (menge, deal, preis, z["id"]))
+            conn.execute("UPDATE shopping_items SET im_netz = 1 WHERE id = ?",
+                         (it["id"],))
+            angeboten.append(it["name"])
+    try:
+        community._angebote_senden()
+        gesendet = True
+    except Exception:
+        gesendet = False             # der nächste Abgleich holt es nach
+    return {"ok": True, "angeboten": len(angeboten), "fehlt": fehlt,
+            "veroeffentlicht": gesendet}
+
+
 @app.post("/api/lists/{list_id}/offer")
 def distribute_offer(list_id: int, body: OfferBody,
                      user: dict = Depends(dealer_user)):
@@ -8158,6 +8229,16 @@ def _verkaufen(conn, it, body: "ReceiveBody", user: dict, list_name: str,
         conn.execute("UPDATE collection SET quantity = ? WHERE id = ?",
                      (rest, row["id"]))
         _kaufbuch_abgang(conn, row["id"], menge)
+        # Stand das Stück im Tausch-Netzwerk, gehen die verkauften aus dem
+        # Angebot – sonst bietet man an, was schon weg ist.
+        if row["shared"]:
+            angeboten = (row["share_qty"] or row["quantity"]) - menge
+            if angeboten > 0:
+                conn.execute("UPDATE collection SET share_qty = ? WHERE id = ?",
+                             (angeboten, row["id"]))
+            else:
+                conn.execute("UPDATE collection SET shared = 0, share_qty = NULL, "
+                             "share_price = NULL WHERE id = ?", (row["id"],))
         import datetime as _dt
         tag = _dt.datetime.fromtimestamp(now).strftime("%d.%m.%Y")
         zeile = f"{menge}× verkauft über Liste »{list_name}« ({tag})"
@@ -8174,11 +8255,12 @@ def _verkaufen(conn, it, body: "ReceiveBody", user: dict, list_name: str,
     conn.execute(
         "UPDATE shopping_items SET done = 1, done_at = ?, done_by = ?, "
         "condition = ?, paid_price = ?, recv_entry_id = ?, "
-        "recv_mode = 'verkauft', recv_purchase_id = NULL, recv_snapshot = ? "
-        "WHERE id = ?",
+        "recv_mode = 'verkauft', recv_purchase_id = NULL, recv_snapshot = ?, "
+        "im_netz = 0 WHERE id = ?",
         (now, user["id"], zustand, erloes, row["id"] if rest > 0 else None,
          schnappschuss, it["id"]))
-    return {"ok": True, "sold": True, "rest": rest}
+    return {"ok": True, "sold": True, "rest": rest,
+            "war_im_netz": bool(row["shared"])}
 
 
 def _verkauf_zuruecknehmen(conn, row) -> bool:
@@ -8252,6 +8334,9 @@ def receive_list_item(item_id: int, body: ReceiveBody,
             list_id = it["list_id"]
     if lst and lst["art"] == "verkauf":
         antwort["list_archived"] = _maybe_autoarchive(list_id)
+        if antwort.get("war_im_netz"):
+            import community
+            community.angebote_nachziehen_im_hintergrund()
         return antwort
     with core.db() as conn:
         import datetime as _dt
@@ -8385,6 +8470,9 @@ def undo_list_item(item_id: int, user: dict = Depends(dealer_user)):
             "SELECT id, quantity, item_id, item_type FROM collection "
             "WHERE id = ?", (row["recv_entry_id"],)).fetchone() \
             if row["recv_entry_id"] else None
+        if row["recv_mode"] == "netz":
+            raise HTTPException(409, "Über das Tausch-Netzwerk verkauft – das "
+                                     "Austragen dort hat die Sammlung geändert")
         if row["recv_mode"] == "verkauft" and not row["recv_snapshot"]:
             # In der iOS-App verkauft: Sie hält den alten Stand nur bei sich
             # und pusht keinen Schnappschuss. Ohne ihn ließe sich hier nur

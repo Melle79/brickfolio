@@ -42,7 +42,7 @@ SECRET_KEY = _load_secret()
 
 # ---------------------------------------------------------------- Passwörter
 
-APP_VERSION = "3.3.3"
+APP_VERSION = "3.4.0"
 
 
 def hash_password(password: str) -> str:
@@ -931,9 +931,17 @@ def init_db():
         if scols and "recv_snapshot" not in scols:
             conn.execute("ALTER TABLE shopping_items ADD COLUMN "
                          "recv_snapshot TEXT")
+        # Steht dieser Artikel einer Verkaufsliste im Tausch-Netzwerk? (3.4.0)
+        if scols and "im_netz" not in scols:
+            conn.execute("ALTER TABLE shopping_items ADD COLUMN "
+                         "im_netz INTEGER NOT NULL DEFAULT 0")
         # Was stelle ich ins Tausch-Netzwerk? Bewusst eine eigene Markierung –
         # „abgebbar“ (Menge > 1) ist nur ein Vorschlag, entscheiden tut man.
         ccols = {r[1] for r in conn.execute("PRAGMA table_info(collection)")}
+        # Preis je Stück für das Angebot im Tausch-Netzwerk (3.4.0) – kommt
+        # aus der Verkaufsliste. NULL = kein Preis.
+        if ccols and "share_price" not in ccols:
+            conn.execute("ALTER TABLE collection ADD COLUMN share_price REAL")
         if ccols and "shared" not in ccols:
             conn.execute("ALTER TABLE collection ADD COLUMN shared "
                          "INTEGER NOT NULL DEFAULT 0")

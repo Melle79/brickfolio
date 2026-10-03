@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.4.0 – Oktober 2026
+
+### Neu
+- 🤝 **Verkaufslisten im Tausch-Netzwerk.** Unter einer Verkaufsliste steht
+  „🤝 Im Netz anbieten“: Die offenen Artikel erscheinen im Netzwerk als
+  Verkauf, so viele Stück wie auf der Liste, **mit Preis je Stück** (aus dem
+  Preisfeld der Liste, sonst Ø-Marktwert). „Aus dem Netz nehmen“ zieht sie
+  zurück; angebotene Artikel tragen „🤝 im Netz“.
+- **Liste und Netzwerk wissen voneinander:** Auf der Liste als verkauft
+  abgehakt → raus aus dem Angebot. Über das Netzwerk verkauft und
+  ausgetragen → die Liste hakt den Artikel von selbst ab, ohne die Sammlung
+  ein zweites Mal anzufassen.
+- 💶 **Preise an Angeboten.** Wer mit Preis anbietet, bei dem steht er an
+  der Karte – unter Angebote, in Entdecken und im Profil. Braucht Hub 1.24.0.
+
 ## 3.3.3 – Oktober 2026
 
 ### Behoben

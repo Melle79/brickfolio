@@ -8522,6 +8522,9 @@ function renderLists(lists) {
       ${dealer ? `<div class="liste-fuss">
         ${!state.showArchive && l.stats.open > 0 ? `<button class="mini-btn add" data-l-offer>${esc(l.art === "verkauf" ? tr("💰 Gesamtpreis") : tr("💰 Gesamtangebot"))}</button>` : ""}
         ${l.items.length ? `<button class="mini-btn" data-l-pdf>${esc(tr("📄 PDF"))}</button>` : ""}
+        ${l.art === "verkauf" && !state.showArchive && state.hubConnected && l.stats.open > 0
+          ? `<button class="mini-btn" data-l-netz="${l.items.some((i) => i.im_netz && !i.done) ? "aus" : "an"}">${esc(
+            l.items.some((i) => i.im_netz && !i.done) ? tr("🤝 Aus dem Netz nehmen") : tr("🤝 Im Netz anbieten"))}</button>` : ""}
         ${state.showArchive
           ? `<button class="mini-btn" data-l-restore>${esc(tr("↩︎ Reaktivieren"))}</button>`
           : `<button class="mini-btn" data-l-archive>${esc(tr("📦 Archivieren"))}</button>`}
@@ -8577,6 +8580,8 @@ function renderLists(lists) {
     const list = lists.find((l) => l.id === lid);
     const lPdf = card.querySelector("[data-l-pdf]");
     if (lPdf) lPdf.addEventListener("click", () => listePdf(list));
+    const lNetz = card.querySelector("[data-l-netz]");
+    if (lNetz) lNetz.addEventListener("click", () => listeImNetz(list, lNetz.dataset.lNetz === "an"));
     const lOffer = card.querySelector("[data-l-offer]");
     if (lOffer) lOffer.addEventListener("click", () => {
       if (card.querySelector("[data-offer-row]")) return;
@@ -8851,7 +8856,8 @@ function listItemRow(it, dealer, verkauf = false) {
     ? `${it.condition === "new" ? tr("Ø neu") : tr("Ø gebr.")} `
       + fmtEur(condPrice) : "";
   const doneInfo = it.done
-    ? `<div class="sub done-note">${esc(verkauf ? tr("✔ verkauft") : tr("✔ in Sammlung"))}${it.done_by_name ? " " + esc(tr("von {wer}", { wer: it.done_by_name })) : ""}${it.done_at ? " " + esc(tr("am {datum}", { datum: new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) })) : ""}</div>`
+    ? `<div class="sub done-note">${esc(it.recv_mode === "netz" ? tr("✔ über das Tausch-Netzwerk verkauft")
+      : (verkauf ? tr("✔ verkauft") : tr("✔ in Sammlung")))}${it.done_by_name ? " " + esc(tr("von {wer}", { wer: it.done_by_name })) : ""}${it.done_at ? " " + esc(tr("am {datum}", { datum: new Date(it.done_at * 1000).toLocaleDateString(dateLocale()) })) : ""}</div>`
     : "";
   return `
   <div class="fig-row tappbar ${it.done ? "done" : ""}" data-iid="${it.id}" data-zustand="${it.condition === "new" ? "new" : "used"}" data-info="${esc(it.item_type)}|${esc(it.item_id)}" data-info-name="${esc(it.name)}" data-info-img="${esc(it.img_url || "")}">
@@ -8860,6 +8866,7 @@ function listItemRow(it, dealer, verkauf = false) {
       <strong>${esc(it.name)}</strong>
       <div class="sub">${esc(it.item_id)}${it.qty > 1 ? ` · ${it.qty}×` : ""} · ${it.condition === "new" ? tr("Neu") : tr("Gebraucht")}${prices ? " · " + prices : ""}${it.paid_price != null ? esc(verkauf ? tr(" · Erlös {sum}", { sum: fmtEur(it.paid_price) }) : tr(" · Einkauf {sum}", { sum: fmtEur(it.paid_price) })) : ""}</div>
       ${doneInfo}
+      ${verkauf && it.im_netz && !it.done ? `<span class="badge badge-owned">${esc(tr("🤝 im Netz"))}</span>` : ""}
       ${!it.done && dealer ? `
       <!-- Einkaufspreis mit kleinem ✓ und daneben der Zustand als Pille.
            Vorher: zwei umrandete Zustandsknöpfe, einer gelb, und ein grüner
@@ -8887,6 +8894,31 @@ function listItemRow(it, dealer, verkauf = false) {
       </div>
     </div>
   </div>`;
+}
+
+/* Eine Verkaufsliste im Tausch-Netzwerk anbieten – oder herausnehmen.
+   Angeboten wird je Artikel die passende Zeile der Sammlung, als Verkauf,
+   zum Preis aus dem Preisfeld (geteilt durch die Menge) oder sonst zum
+   Ø-Marktwert. Verkauft man danach über die Liste, geht das Angebot mit
+   herunter; verkauft man übers Netz und trägt aus, hakt die Liste ab. */
+async function listeImNetz(list, an) {
+  const ok = await frage(an
+    ? tr("„{name}“ im Tausch-Netzwerk anbieten?", { name: list.name }) + "\n\n"
+      + tr("Die offenen Artikel erscheinen dort als Verkauf – mit dem Preis aus dem Preisfeld je Stück, sonst dem Ø-Marktwert.")
+    : tr("„{name}“ aus dem Tausch-Netzwerk nehmen?", { name: list.name }),
+    { ok: an ? tr("🤝 Anbieten") : tr("Herausnehmen") });
+  if (!ok) return;
+  try {
+    const r = await api(`/lists/${list.id}/netz`, { method: "POST", body: { an } });
+    if (an) {
+      toast(tr("{n} Artikel im Netz angeboten 🤝", { n: r.angeboten })
+        + (r.fehlt && r.fehlt.length
+          ? " · " + tr("nicht in der Sammlung: {namen}", { namen: r.fehlt.slice(0, 3).join(", ") }) : ""));
+    } else {
+      toast(tr("Aus dem Netz genommen"));
+    }
+    loadLists();
+  } catch (e) { toast(e.message); }
 }
 
 /* Abhaken auf einer Verkaufsliste: Die Stücke gehen aus der Sammlung. Im
