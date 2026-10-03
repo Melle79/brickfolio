@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.4.2 – Oktober 2026
+
+### Behoben
+- 🐞 **Fehlerliste: kopierter Text und Issue nennen jetzt auch die jüngste
+  Fassung.** Bisher stand dort nur die Version vom ersten Auftreten – ein
+  heute wieder aufgetretener Fehler sah so aus, als käme er von einer Seite,
+  die seit Tagen nicht neu geladen wurde. Jetzt steht dort wie in der Karte
+  „2.92.0 → 3.4.0 (zuerst → zuletzt)“.
+
 ## 3.4.1 – Oktober 2026
 
 ### Behoben

@@ -266,3 +266,13 @@ def test_normale_benutzer_sehen_den_zettel_nicht(ctx):
     _report(ctx["kid"], "Nur für Admins")
     assert _offene_hinweise(ctx["admin"])
     assert _offene_hinweise(ctx["kid"]) == []
+
+
+def test_issue_nennt_erste_und_juengste_fassung():
+    """Ein seit Tagen bekannter Fehler, heute wieder aufgetreten: Das Issue
+    zeigt beide Fassungen, nicht nur die vom ersten Mal."""
+    e = {"message": "502", "count": 3, "last_at": 0,
+         "app_version": "2.92.0", "last_version": "3.4.0"}
+    assert "`2.92.0` → `3.4.0` (zuerst → zuletzt)" in main._issue_body(e)
+    e["last_version"] = "2.92.0"
+    assert "- Version: `2.92.0`\n" in main._issue_body(e)

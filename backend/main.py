@@ -2040,13 +2040,26 @@ def clear_errors(user: dict = Depends(admin_user)):
     return {"ok": True}
 
 
+def _fassungen(e: dict, mark: str = "") -> str:
+    """Erste und jüngste Fassung eines zusammengefassten Fehlers.
+
+    Die Karte zeigte das schon („v2.92.0 → v3.4.0“), der kopierte Text und
+    das Issue nur die erste – ein heute aufgetretener Fehler sah dort aus,
+    als käme er von einer Seite, die seit Tagen nicht neu geladen wurde."""
+    erst = e.get("app_version") or "?"
+    zuletzt = e.get("last_version")
+    if zuletzt and zuletzt != erst:
+        return f"{mark}{erst}{mark} → {mark}{zuletzt}{mark} (zuerst → zuletzt)"
+    return f"{mark}{erst}{mark}"
+
+
 def _issue_body(e: dict) -> str:
     """Meldung für GitHub – bewusst ohne Benutzernamen und ohne Schlüssel."""
     when = time.strftime("%d.%m.%Y %H:%M", time.localtime(e["last_at"]))
     parts = [
         f"**Fehler:** {e['message']}",
         "",
-        f"- Version: `{e.get('app_version') or '?'}`",
+        f"- Version: {_fassungen(e, '`')}",
         f"- Aufgetreten: {e['count']}×, zuletzt {when}",
     ]
     if e.get("context"):

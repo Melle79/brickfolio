@@ -10443,7 +10443,9 @@ function errorsAsText() {
   return data.items.map((e) =>
     `## ${e.message}\n`
     + `- ${e.count}×, zuletzt ${errorWhen(e.last_at)}\n`
-    + `- Version: ${e.app_version || "?"}\n`
+    + `- Version: ${e.app_version || "?"}${
+      e.last_version && e.last_version !== e.app_version
+        ? ` → ${e.last_version} (zuerst → zuletzt)` : ""}\n`
     + (e.context ? `- Stelle: ${e.context}\n` : "")
     + (e.user_agent ? `- Browser: ${e.user_agent}\n` : "")
     + (e.detail ? `\n\`\`\`\n${e.detail}\n\`\`\`\n` : "")
