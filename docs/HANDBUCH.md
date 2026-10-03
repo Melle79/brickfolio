@@ -613,6 +613,10 @@ Wort zum Suchen. Zu jeder Figur steht darin, was auf dem Bild zu sehen ist,
 Teil für Teil: „torso red black chest panel; cape yellow green dragon with
 red wings".
 
+**Wo er steht:** unter **Mehr → 📚 Katalog-Abzug** (nur für Admins), seit
+3.4.3 als eigene Karte. Dort steht auch, wie viele Figuren und Sets
+angekommen sind und wann zuletzt geholt wurde.
+
 **Erzeugt wird er nicht hier.** Beim Betreiber des Katalogs läuft ein Dienst, der
 BrickLink abklappert und ein lokales Sehmodell die Katalogfotos beschreiben
 lässt. Das Ergebnis veröffentlicht er als Datei:

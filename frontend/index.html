@@ -1121,8 +1121,11 @@
         <span id="begriff-bilanz" class="search-hint"></span>
         <button id="btn-begriffe" class="mini-btn">Ansehen und pflegen</button>
       </div>
-
-      <h4>📚 Katalog-Abzug</h4>
+    </div>
+    <!-- Bis 3.4.2 stand der Abzug unten in der KI-Karte – dort sucht ihn
+         niemand, er hat mit der KI nichts zu tun. -->
+    <div id="katalog-card" class="settings-card" hidden>
+      <h3>📚 Katalog-Abzug</h3>
       <p class="search-hint">Der Abzug macht die Suche nach dem Aussehen
         möglich – „roter Protokolldroide mit schwarzem Aufdruck" findet
         <code>R-3PO Protocol Droid</code>, wofür sonst kein Weg führt: Der
@@ -1133,9 +1136,9 @@
         Katalogfoto zu sehen ist. Namen stehen <b>nicht</b> darin; die
         schlägt diese Instanz über ihren <b>eigenen</b> BrickLink-Zugang
         nach, gedrosselt im Hintergrund.</p>
-      <p class="search-hint"><b>Er kostet etwas.</b> 3,3 MB alle zwölf
-        Stunden, und beim ersten Mal rund 9.700 BrickLink-Abrufe für die
-        Namen – verteilt über gut drei Tage, damit den Preisen genug
+      <p class="search-hint"><b>Er kostet etwas.</b> Gut 6 MB, wenn er sich
+        geändert hat, und beim ersten Mal rund 19.000 BrickLink-Abrufe für
+        die Namen – verteilt über mehrere Tage, damit den Preisen genug
         Kontingent bleibt. Wer die Suche nach dem Aussehen nicht braucht,
         schaltet ihn hier ab.</p>
       <label class="share-toggle">
@@ -1150,7 +1153,7 @@
         (<i>My Account → Downloads → Catalog Items</i>). Wähle dort
         <b>Item Type: Minifigures</b> oder <b>Sets</b> und Format XML –
         beide werden eingelesen, Teile und Zubehör nicht. Nach dem Einlesen
-        stehen alle Namen sofort da, statt über drei Tage einzeln abgerufen
+        stehen alle Namen sofort da, statt über Tage einzeln abgerufen
         zu werden. Kostet kein Kontingent, und die Beschreibungen bleiben
         erhalten.</p>
       <div class="detail-row">

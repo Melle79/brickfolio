@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.4.3 – Oktober 2026
+
+### Geändert
+- 📚 **Der Katalog-Abzug hat eine eigene Karte.** Bisher stand er samt
+  Stand („… Figuren und … Sets · zuletzt geholt am …“) unten in der Karte
+  „Lokale KI für die Suche“ – dort sucht ihn niemand. Jetzt unter
+  **Mehr → 📚 Katalog-Abzug**. Die Zahlen im Erklärtext stimmen wieder
+  (gut 19.000 Figuren, gut 6 MB).
+
 ## 3.4.2 – Oktober 2026
 
 ### Behoben

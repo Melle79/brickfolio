@@ -7973,7 +7973,6 @@ async function loadOllama() {
     state.kiSuche = !!d.enabled;
     if (d.url) modelleLaden();          // ohne Adresse gibt es nichts zu holen
     begriffeBilanz();     // auch ohne KI: die eigenen Zeilen gelten trotzdem
-    katalogStand();
   } catch (e) { /* kein Admin oder alte Fassung: Karte bleibt leer */ }
 }
 
@@ -12090,7 +12089,8 @@ async function loadSettings() {
   const isAdmin = !!(state.user && state.user.is_admin);
   $("api-panel").hidden = !isAdmin;
   $("ollama-panel").hidden = !isAdmin;
-  if (isAdmin) loadOllama();
+  $("katalog-card").hidden = !isAdmin;
+  if (isAdmin) { loadOllama(); katalogStand(); }
   $("name-card").hidden = !isAdmin;
   document.querySelectorAll(".theme-default-star").forEach((s) => {
     s.hidden = !isAdmin;
