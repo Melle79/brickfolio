@@ -462,3 +462,61 @@ def test_die_migration_stellt_alte_bildadressen_um(client):
                          "WHERE item_no = 'sw0307'").fetchone()
     assert r["img_url"] == \
         "https://img.bricklink.com/ItemImage/MN/0/sw0307.png"
+
+
+# ------------------------------------------ Nachsehen beim Öffnen (3.4.3)
+
+class _GleichLaufen:
+    """Den Hintergrundfaden sofort ausführen – sonst prüft der Test, bevor
+    etwas passiert ist."""
+    def __init__(self, target, daemon=None):
+        self.target = target
+
+    def start(self):
+        self.target()
+
+
+def test_beim_oeffnen_wird_nachgesehen(client, monkeypatch):
+    monkeypatch.setattr(main.threading, "Thread", _GleichLaufen)
+    _datei(monkeypatch, [{"item_no": "sw0001", "merkmale": "torso tan"}])
+    r = client.post("/api/katalog/auffrischen").json()
+    assert r == {"angestossen": True}
+    stand = client.get("/api/katalog/stand").json()
+    assert stand["figuren"] == 1 and stand["geprueft_at"] >= stand["geholt_at"] > 0
+    # Gleich noch einmal geöffnet: kein zweiter Abruf.
+    abrufe = []
+    monkeypatch.setattr(main.requests, "get", lambda url, **kw: abrufe.append(url))
+    r = client.post("/api/katalog/auffrischen").json()
+    assert r["angestossen"] is False and abrufe == []
+
+
+def test_unveraendert_rueckt_nur_die_pruefzeit_vor(client, monkeypatch):
+    monkeypatch.setattr(main.threading, "Thread", _GleichLaufen)
+    core.set_setting("katalog_geholt_at", "1000")
+    _datei(monkeypatch, [], status=304)
+    client.post("/api/katalog/auffrischen")
+    assert core.get_setting("katalog_geholt_at") == "1000"
+    assert int(core.get_setting("katalog_geprueft_at")) > 1000
+
+
+def test_beim_oeffnen_keine_namen_und_nicht_wenn_abgeschaltet(client, monkeypatch):
+    monkeypatch.setattr(main.threading, "Thread", _GleichLaufen)
+    namen = []
+    monkeypatch.setattr(main, "_katalog_namen", lambda *a, **k: namen.append(1))
+    _datei(monkeypatch, [{"item_no": "sw0002", "merkmale": "x"}])
+    client.post("/api/katalog/auffrischen")
+    assert namen == []                       # Kontingent bleibt unberührt
+    core.set_setting("katalog_aus", "1")
+    core.set_setting("katalog_geprueft_at", "0")
+    assert client.post("/api/katalog/auffrischen").json()["grund"] == "abgeschaltet"
+
+
+def test_auch_kinder_duerfen_nachsehen_lassen(client, monkeypatch):
+    monkeypatch.setattr(main.threading, "Thread", _GleichLaufen)
+    _datei(monkeypatch, [], status=304)
+    with core.db() as conn:
+        kid = conn.execute("INSERT INTO users (username, password_hash, is_admin,"
+                           " is_dealer, created_at) VALUES ('kind', 'x', 0, 0, 1)").lastrowid
+    k = TestClient(main.app)
+    k.headers["Authorization"] = "Bearer " + core.create_token(kid, "kind", False)
+    assert k.post("/api/katalog/auffrischen").status_code == 200

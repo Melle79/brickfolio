@@ -625,8 +625,10 @@ lässt. Das Ergebnis veröffentlicht er als Datei:
 https://raw.githubusercontent.com/Melle79/nupplo/main/katalog/index.ndjson
 ```
 
-Jede Installation zieht sie sich alle zwölf Stunden – **ohne Zugang zu
-irgendwem und ohne dass irgendwo etwas laufen muss**.
+Jede Installation zieht sie sich alle zwölf Stunden und zusätzlich beim
+Öffnen der App (höchstens alle 15 Minuten, nur wenn sich die Datei geändert
+hat) – **ohne Zugang zu irgendwem und ohne dass irgendwo etwas laufen
+muss**.
 
 > **Darin steht nur, was uns gehört:** die BrickLink-Nummer als Kennung und
 > der Text, den das Sehmodell über das Foto geschrieben hat. Name, Jahr,

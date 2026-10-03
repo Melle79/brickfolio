@@ -1340,6 +1340,7 @@ def katalog_stand(user: dict = Depends(admin_user)):
             "namen_fehler": _namen_lauf["fehler"],
             "hat_bricklink": integrations.bricklink_enabled(),
             "geholt_at": int(core.get_setting("katalog_geholt_at") or 0),
+            "geprueft_at": int(core.get_setting("katalog_geprueft_at") or 0),
             "quelle": core.get_setting("katalog_quelle") or KATALOG_QUELLE}
 
 
@@ -1998,6 +1999,46 @@ def katalog_kategorien_holen(user: dict = Depends(admin_user)):
     return {"ok": True, "kategorien": len(baum)}
 
 
+# Beim Öffnen der App nachsehen (3.4.3) – höchstens alle 15 Minuten.
+KATALOG_START_PAUSE = 15 * 60
+_katalog_sperre = threading.Lock()
+
+
+def _katalog_beim_oeffnen() -> None:
+    if not _katalog_sperre.acquire(blocking=False):
+        return                      # läuft schon – einmal reicht
+    try:
+        _katalog_ziehen()
+    except Exception as e:
+        print(f"[nupplo] Katalog beim Öffnen übersprungen: {e}", flush=True)
+    finally:
+        _katalog_sperre.release()
+
+
+@app.post("/api/katalog/auffrischen")
+def katalog_auffrischen(user: dict = Depends(current_user)):
+    """Beim Öffnen der App den Abzug nachsehen, wie es die übrigen
+    Nupplo-Oberflächen auch tun – statt bis zu zwölf Stunden auf den
+    nächsten Hintergrundlauf zu warten.
+
+    Kostet kein BrickLink-Kontingent: Es ist ein Abruf mit `If-None-Match`,
+    bei unverändertem Stand ein paar hundert Byte. **Namen schlägt dieser Weg
+    bewusst nicht nach** – das Tagesbudget dafür ist auf die zwei
+    Hintergrundläufe zugeschnitten, jedes Öffnen wäre ein dritter, vierter …
+    Gefunden werden neue Figuren trotzdem, über die Beschreibung.
+
+    Für jeden angemeldeten Benutzer, nicht nur Admins: Die App öffnen auch
+    die Kinder, und der Abruf verändert nichts, was einer Erlaubnis bedürfte.
+    """
+    if core.get_setting("katalog_aus") == "1":
+        return {"angestossen": False, "grund": "abgeschaltet"}
+    zuletzt = int(core.get_setting("katalog_geprueft_at") or 0)
+    if time.time() - zuletzt < KATALOG_START_PAUSE:
+        return {"angestossen": False, "grund": "eben erst nachgesehen"}
+    threading.Thread(target=_katalog_beim_oeffnen, daemon=True).start()
+    return {"angestossen": True}
+
+
 @app.post("/api/katalog/holen")
 def katalog_holen_jetzt(user: dict = Depends(admin_user)):
     """Von Hand nachziehen, statt bis zum nächsten Zwölfstundenlauf zu warten."""
@@ -2509,7 +2550,7 @@ def _katalog_ziehen() -> dict:
 
     Die Datei ist ein vollständiger Stand, kein Zuwachs. Über `ETag` merkt
     sich die Instanz, welchen sie schon hat – ist er unverändert, kostet der
-    Abruf ein paar hundert Byte statt 3,3 MB.
+    Abruf ein paar hundert Byte statt gut 6 MB.
     """
     if core.get_setting("katalog_aus") == "1":
         return {"geholt": 0, "grund": "abgeschaltet"}
@@ -2519,6 +2560,9 @@ def _katalog_ziehen() -> dict:
     if etag:
         kopf["If-None-Match"] = etag
     r = requests.get(quelle, headers=kopf, timeout=120)
+    # Wann zuletzt *nachgesehen* wurde – `katalog_geholt_at` rückt nur vor,
+    # wenn sich die Datei geändert hat, und sähe sonst nach Stillstand aus.
+    core.set_setting("katalog_geprueft_at", str(int(time.time())))
     if r.status_code == 304:
         return {"geholt": 0, "grund": "unverändert"}
     r.raise_for_status()

@@ -286,6 +286,7 @@ def test_jede_gespeicherte_einstellung_ist_eingeordnet():
                                 # diese Instanz schon hat – spart 3,3 MB,
                                 # wenn sich nichts geändert hat
         "katalog_geholt_at",    # wann zuletzt geholt wurde
+        "katalog_geprueft_at",  # wann zuletzt nachgesehen wurde
         "katalog_aus",          # „1" heißt: Diese Instanz holt den Abzug
                                 # nicht. Eine Entscheidung, kein Zugang
         "extern_zuletzt",       # wann die App zuletzt von außen genutzt

@@ -9,6 +9,14 @@
   **Mehr → 📚 Katalog-Abzug**. Die Zahlen im Erklärtext stimmen wieder
   (gut 19.000 Figuren, gut 6 MB).
 
+### Neu
+- 🔄 **Beim Öffnen der App wird der Katalog-Abzug nachgesehen** – wie bei
+  den übrigen Nupplo-Oberflächen, statt bis zu zwölf Stunden auf den
+  nächsten Hintergrundlauf zu warten. Geholt wird nur, was sich geändert
+  hat, höchstens alle 15 Minuten, ohne BrickLink-Kontingent (die Namen
+  schlägt weiter der Hintergrundlauf nach). Die Karte zeigt dazu
+  „Zuletzt nachgesehen: …“.
+
 ## 3.4.2 – Oktober 2026
 
 ### Behoben

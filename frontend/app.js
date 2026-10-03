@@ -2867,6 +2867,10 @@ function showApp() {
     if (state.hubConnected) syncTrades(true).then(refreshUnread);
   }).catch(() => {});
   startUpdateWatch();
+  // Den Katalog-Abzug nachsehen lassen, wie es die übrigen Oberflächen beim
+  // Start auch tun. Der Server holt im Hintergrund nur, was sich geändert
+  // hat, und höchstens alle 15 Minuten – hier wird auf nichts gewartet.
+  api("/katalog/auffrischen", { method: "POST" }).catch(() => {});
   // **Vor** der Diagnose: Sie schreibt gleich in ihre Startzeile, was in der
   // Seite fremd ist – und das geht nur, wenn vorher feststeht, was von uns
   // stammt.
@@ -8261,6 +8265,14 @@ async function katalogStand() {
         { n: d.figuren, b: d.beschrieben, s: d.sets ?? 0,
           d: new Date(d.geholt_at * 1000).toLocaleDateString() })
     : tr("{n} Figuren · noch nichts geholt", { n: d.figuren }));
+  // Geholt wird nur, was sich geändert hat – nachgesehen aber bei jedem
+  // Öffnen der App. Ohne diese Zeile sähe ein unveränderter Abzug nach
+  // Stillstand aus.
+  if (d.geprueft_at && d.geprueft_at > d.geholt_at) {
+    teile.push(tr("Zuletzt nachgesehen: {d}.", { d: new Date(
+      d.geprueft_at * 1000).toLocaleString([], { dateStyle: "short",
+      timeStyle: "short" }) }));
+  }
   // Die Namen fehlen am Anfang allen: Der veröffentlichte Abzug enthält sie
   // nicht, jede Installation schlägt sie über ihren eigenen Zugang nach.
   // Das gehört gesagt, sonst hält man es für einen Fehler.
