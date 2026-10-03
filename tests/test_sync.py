@@ -388,3 +388,26 @@ def test_tagesstand_zurueckspielen_beginnt_neues_zeitalter(profi):
     r = profi.post("/api/backup_restore_file", json={"name": name})
     assert r.status_code == 200, r.text
     assert profi.get("/api/sync/info").json()["epoch"] != vorher
+
+
+# --------------------------------------------- Angebote nach dem Push (3.4.1)
+
+def test_push_auf_angebotene_zeile_zieht_angebote_nach(profi, monkeypatch):
+    """Verkauft das Gerät eine angebotene Figur und schickt das per Push,
+    veröffentlicht die Instanz selbst neu – sonst stand das Angebot weiter im
+    Netz, und neu veröffentlichen darf nur ein Admin."""
+    import community
+    nachgezogen = []
+    monkeypatch.setattr(community, "angebote_nachziehen_im_hintergrund",
+                        lambda: nachgezogen.append(1))
+    _eintrag(profi)
+    with core.db() as conn:
+        conn.execute("UPDATE collection SET shared = 1, share_qty = 2")
+    s = [x for x in _saetze(profi, table="collection")][0]
+    _push(profi, {"table": "collection", "uuid": s["uuid"], "updated_at": int(time.time() * 1000),
+                  "base_rev": s["rev"], "fields": {"shared": 0, "share_qty": None}})
+    assert nachgezogen == [1]
+    # Eine gewöhnliche Änderung an einer nie angebotenen Zeile löst nichts aus.
+    _push(profi, {"table": "collection", "uuid": "neu-1", "updated_at": 1,
+                  "fields": {**FIGUR, "item_id": "sw0002", "added_at": 1}})
+    assert nachgezogen == [1]

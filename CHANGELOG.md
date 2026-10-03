@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.4.1 – Oktober 2026
+
+### Behoben
+- 🤝 **Angebote ziehen nach dem Abgleich selbst nach.** Wurde eine im
+  Tausch-Netzwerk angebotene Figur über externen Zugriff verkauft oder
+  geändert, stand das alte Angebot weiter im Netz – neu veröffentlichen
+  durfte nur ein Admin. Jetzt veröffentlicht die Instanz nach so einem
+  Abgleich im Hintergrund neu, wie nach einem Tausch (nur, wenn schon einmal
+  veröffentlicht wurde).
+
 ## 3.4.0 – Oktober 2026
 
 ### Neu

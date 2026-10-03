@@ -334,6 +334,10 @@ def push(body: PushBody, user: dict = Depends(_benutzer())):
         # ausgelöst (etwa die Summe eines Eintrags, dessen Kaufposten es
         # eben geschickt hat) – das ist kein Konflikt mit ihm selbst.
         beginn = _gesamt_stand(conn)
+        # Was gerade im Tausch-Netzwerk angeboten ist – um nach dem Push zu
+        # erkennen, ob ein Angebot betroffen war (siehe unten).
+        angeboten_vorher = {r[0] for r in conn.execute(
+            "SELECT uuid FROM collection WHERE shared = 1")}
         for c in body.changes:
             if c.table not in TABELLEN:
                 abgelehnt.append({"table": c.table, "uuid": c.uuid, "reason": "invalid",
@@ -358,6 +362,17 @@ def push(body: PushBody, user: dict = Depends(_benutzer())):
                 conn.execute("RELEASE aenderung")
                 abgelehnt.append({"table": c.table, "uuid": c.uuid, "reason": "invalid",
                                   "message": str(e)})
+        geaendert = {a["uuid"] for a in angenommen if a["table"] == "collection"}
+        angeboten_nachher = {r[0] for r in conn.execute(
+            "SELECT uuid FROM collection WHERE shared = 1")} if geaendert else set()
+    # **Angebote nachziehen, wenn ein Gerät eine angebotene Zeile geändert
+    # hat** – verkauft, Menge gesenkt, aus dem Angebot genommen. Sonst stand
+    # im Tausch-Netzwerk weiter, was es nicht mehr gibt, bis jemand von Hand
+    # veröffentlichte; und das darf nur ein Admin (3.4.1). Wie nach einem
+    # Tausch nur bei denen, die schon einmal veröffentlicht haben.
+    if geaendert & (angeboten_vorher | angeboten_nachher):
+        import community
+        community.angebote_nachziehen_im_hintergrund()
     return {"accepted": angenommen, "rejected": abgelehnt}
 
 
